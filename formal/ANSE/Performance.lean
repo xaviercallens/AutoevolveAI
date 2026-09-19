@@ -159,4 +159,57 @@ theorem vectorization_energy_reduction
     mul_le_mul_of_nonneg_left model.ram_le (le_of_lt w.w_ram_pos)
   exact add_lt_add_of_lt_of_le ht hr
 
+/-- Theorem P6 (Hash Lookup Energy Reduction):
+    Formalizes the transition from quadratic search O(N^2) to linear hash lookup O(N).
+    For any scale N > c_hash / c_linear, hash lookup achieves strictly lower energy. -/
+theorem hash_lookup_energy_reduction
+    (w : PerformanceWeights)
+    (c_linear c_hash ram_linear ram_hash : ℝ)
+    (h_linear_pos : 0 < c_linear)
+    (h_hash_pos : 0 < c_hash)
+    (h_ram_linear : 0 ≤ ram_linear)
+    (h_ram_hash : 0 ≤ ram_hash)
+    (h_ram_le : ram_hash ≤ ram_linear)
+    (N : ℝ)
+    (hN_pos : 0 < N)
+    (hN : c_hash / c_linear < N) :
+    let m_linear : ComputationalMetrics := {
+      time_ms := c_linear * (N ^ 2),
+      peak_ram_mb := ram_linear,
+      time_nonneg := mul_nonneg (le_of_lt h_linear_pos) (sq_nonneg N),
+      ram_nonneg := h_ram_linear
+    }
+    let m_hash : ComputationalMetrics := {
+      time_ms := c_hash * N,
+      peak_ram_mb := ram_hash,
+      time_nonneg := mul_nonneg (le_of_lt h_hash_pos) (le_of_lt hN_pos),
+      ram_nonneg := h_ram_hash
+    }
+    physicalEnergy w m_hash < physicalEnergy w m_linear := by
+  intro m_linear m_hash
+  dsimp [physicalEnergy, m_linear, m_hash]
+  have h_time : c_hash * N < c_linear * (N ^ 2) := by
+    have h1 : c_hash < c_linear * N := by
+      have := (div_lt_iff₀ h_linear_pos).mp hN
+      linarith
+    calc c_hash * N < (c_linear * N) * N := mul_lt_mul_of_pos_right h1 hN_pos
+    _ = c_linear * (N ^ 2) := by ring
+  have ht : w.w_time * (c_hash * N) < w.w_time * (c_linear * (N ^ 2)) :=
+    mul_lt_mul_of_pos_left h_time w.w_time_pos
+  have hr : w.w_ram * ram_hash ≤ w.w_ram * ram_linear :=
+    mul_le_mul_of_nonneg_left h_ram_le (le_of_lt w.w_ram_pos)
+  exact add_lt_add_of_lt_of_le ht hr
+
+/-- Theorem P7 (Catastrophic Backtracking Timeout Avoidance):
+    A backtracking parser that times out triggers ExecutionStatus.failure with E = penalty_fail (10^6).
+    Any deterministic linear parser that finishes within physical bounds achieves
+    status ExecutionStatus.success with strictly lower energy. -/
+theorem catastrophic_backtracking_timeout_avoidance
+    (w : PerformanceWeights)
+    (m_det : ComputationalMetrics) :
+    performanceEnergy w (ExecutionStatus.success m_det) <
+    performanceEnergy w (ExecutionStatus.failure (α := Unit)) := by
+  dsimp [performanceEnergy]
+  exact w.penalty_large m_det
+
 end ANSE.Performance

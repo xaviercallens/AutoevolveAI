@@ -28,6 +28,8 @@
 | **Phase 1** | **Algorithmic Performance Engineer** | Computational Physics | Minimize $E = \text{Duration (ms)} + \text{Peak RAM (MB)}$ via cache locality & SIMD. |
 | **Phase 2** | **Micro-ML Architect** | Neural Network Architecture | Classify messy datasets with $>95\%$ accuracy under $<50{,}000$ parameters. |
 | **Phase 3** | **Autopoietic Bootstrap** | Self-Referential Engine | Refactor internal System 2 attention mechanisms with FlashAttention and hot-swap. |
+| **Use Case 4**| **Algorithmic Complexity Explorer** | Big-O Physics | Transition from $O(N \times M)$ linear scans to $O(N+M)$ hash set lookups ($>9.5\times$ speedup). |
+| **Use Case 5**| **Catastrophic Backtracking Parser** | Automata Physics | Eliminate exponential backtracking $O(2^N) \to O(N)$ and enforce timeout trap $E = 10^6$. |
 
 ---
 
@@ -54,16 +56,16 @@ cd ..
 
 ### Running Tests
 ```bash
-# Run unit & performance regression test suite (32 tests across all 3 phases)
-uv run pytest tests/performance tests/phase2/test_ml_evaluator.py tests/phase2/test_ml_sandbox.py tests/autopoiesis
+# Run complete test suite (195 tests across all modules)
+uv run pytest tests/
 ```
 
 ---
 
 ## Formal Theorems Certified in Lean 4
-All proofs compile cleanly via `lake build`:
-- **Theorem P1–P5 (`ANSE.Performance`)**: Computational energy non-negativity, maximal penalty on failure, monotonicity, and vectorization supremacy.
-- **Theorem M1–M3 (`ANSE.MicroML`)**: Shape mismatch maximal pain barrier, parameter boundary penalty, and validation loss monotonicity.
+All 2,491 proof jobs compile cleanly via `lake build`:
+- **Theorems P1–P7 (`ANSE.Performance`)**: Computational energy non-negativity, maximal penalty on failure, monotonicity, vectorization supremacy, hash lookup complexity reduction, and catastrophic backtracking timeout avoidance.
+- **Theorems M1–M3 (`ANSE.MicroML`)**: Shape mismatch maximal pain barrier, parameter boundary penalty, and validation loss monotonicity.
 - **Autopoietic Fixed Point & Hot-Swap (`ANSE.Autopoiesis`)**: Banach contraction mapping equilibrium and thermodynamic hot-swap validity.
 
 ---

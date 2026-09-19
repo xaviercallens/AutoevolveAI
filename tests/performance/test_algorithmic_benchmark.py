@@ -35,16 +35,18 @@ def evaluator():
 
 
 def test_benchmark_suite_task_count(benchmark_tasks):
-    assert len(benchmark_tasks) == 5
+    assert len(benchmark_tasks) == 7
     task_names = [t["name"] for t in benchmark_tasks]
     assert "pairwise_euclidean_distances" in task_names
     assert "matrix_multiplication" in task_names
     assert "spatial_2d_convolution" in task_names
     assert "text_ngram_frequency" in task_names
     assert "sliding_window_maximum" in task_names
+    assert "hash_table_lookup_optimization" in task_names
+    assert "catastrophic_backtracking_regex" in task_names
 
 
-@pytest.mark.parametrize("task_idx", range(5))
+@pytest.mark.parametrize("task_idx", range(7))
 def test_benchmark_task_correctness_and_speedup(task_idx, benchmark_tasks, sandbox, evaluator):
     task = benchmark_tasks[task_idx]
     name = task["name"]

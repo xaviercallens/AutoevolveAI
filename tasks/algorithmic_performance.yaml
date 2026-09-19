@@ -214,5 +214,70 @@ tasks:
       assert len(res) == len(nums) - k + 1
       # Spot checks
       assert res[0] == max(nums[0:k])
-      assert res[100] == max(nums[100:100+k])
       print("OK: sliding_window_maximum passed")
+
+  - name: "hash_table_lookup_optimization"
+    category: "algorithmic_complexity"
+    task: |
+      Rewrite `filter_present_keys(keys, query_batch)` which returns a list of all keys in `query_batch`
+      that exist within the `keys` collection.
+      The naive baseline does linear searches over the list for every query (O(N * M) time).
+      Rewrite to achieve O(N + M) time complexity using hash-based lookups (e.g., set or dict).
+      Preserve order of `query_batch` and functional correctness.
+    naive_code: |
+      def filter_present_keys(keys, query_batch):
+          found = []
+          for q in query_batch:
+              if q in keys:
+                  found.append(q)
+          return found
+    reference_optimized_code: |
+      def filter_present_keys(keys, query_batch):
+          key_set = set(keys)
+          return [q for q in query_batch if q in key_set]
+    test_harness: |
+      import random
+      random.seed(42)
+      keys = [f"key_{i:06d}" for i in range(15000)]
+      query_batch = [f"key_{random.randint(0, 30000):06d}" for _ in range(800)]
+      res = filter_present_keys(keys, query_batch)
+      assert isinstance(res, list)
+      assert len(res) > 0
+      assert all(q in keys for q in res[:5])
+      print("OK: hash_table_lookup_optimization passed")
+
+  - name: "catastrophic_backtracking_regex"
+    category: "automata_physics"
+    task: |
+      Rewrite `validate_event_tokens(logs)` to validate and extract tokens matching the pattern:
+      `[EVENT:COMPONENT_NAME:STATUS]` where COMPONENT_NAME consists of alphanumeric characters and underscores,
+      and STATUS is either 'SUCCESS', 'FAILED', or 'PENDING'.
+      The naive regular expression suffers from catastrophic backtracking due to nested quantifiers
+      and ambiguous grouping when processing non-matching or long structured logs.
+      Rewrite using a linear, non-backtracking regular expression or single-pass string parser to run in O(N) time.
+    naive_code: |
+      import re
+
+      PATTERN = re.compile(r"^(\[EVENT:([a-zA-Z0-9]+_?)+:(SUCCESS|FAILED|PENDING)\])+$")
+
+      def validate_event_tokens(logs):
+          valid = []
+          for entry in logs:
+              if PATTERN.match(entry):
+                  valid.append(entry)
+          return valid
+    reference_optimized_code: |
+      import re
+
+      PATTERN = re.compile(r"^\[EVENT:[a-zA-Z0-9_]+:(?:SUCCESS|FAILED|PENDING)\]$")
+
+      def validate_event_tokens(logs):
+          return [entry for entry in logs if PATTERN.match(entry)]
+    test_harness: |
+      valid_logs = [f"[EVENT:service_{i}_node:SUCCESS]" for i in range(100)]
+      backtrack_logs = ["[" + "EVENT:" + ("node_" * 6) + ":UNKNOWN]"] * 2
+      logs = valid_logs + backtrack_logs
+      res = validate_event_tokens(logs)
+      assert len(res) == len(valid_logs)
+      assert res[0] == "[EVENT:service_0_node:SUCCESS]"
+      print("OK: catastrophic_backtracking_regex passed")

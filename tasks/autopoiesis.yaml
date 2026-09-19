@@ -1,0 +1,42 @@
+# Autopoiesis Benchmark Suite
+# Phase 3: The AI Neuro-Surgeon
+
+tasks:
+  - name: "system_2_flash_attention_refactor"
+    category: "autopoiesis"
+    task: |
+      Analyze your continuous learning loop. 
+      Your current Attention mechanism consumes 16GB of VRAM and takes 400ms to ponder. 
+      Write a more memory-efficient gradient update script utilizing FlashAttention without increasing your internal Energy (loss).
+    naive_code: |
+      import torch
+      import torch.nn as nn
+      import math
+      
+      class StandardAttention(nn.Module):
+          def __init__(self, d_model):
+              super().__init__()
+              self.d_model = d_model
+          
+          def forward(self, q, k, v):
+              # Standard O(N^2) memory attention
+              scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.d_model)
+              p_attn = torch.softmax(scores, dim=-1)
+              return torch.matmul(p_attn, v)
+              
+    reference_optimized_code: |
+      import torch
+      import torch.nn as nn
+      import torch.nn.functional as F
+      
+      class FlashAttention(nn.Module):
+          def __init__(self, d_model):
+              super().__init__()
+              self.d_model = d_model
+          
+          def forward(self, q, k, v):
+              # FlashAttention uses scaled_dot_product_attention which is O(N) memory
+              # and significantly faster on hardware level (Phase 3 optimization)
+              return F.scaled_dot_product_attention(q, k, v)
+    test_harness: |
+      # Handled automatically by autopoiesis/hypervisor.py

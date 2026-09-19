@@ -1,0 +1,218 @@
+# Algorithmic Performance Benchmark Suite
+# Use Case 1: The Algorithmic Performance Engineer
+# Continuous Computational Physics: Latency & RAM minimization
+
+tasks:
+  - name: "pairwise_euclidean_distances"
+    category: "vectorization"
+    task: |
+      Rewrite the function `compute_pairwise_distances(A, B)` to compute the Euclidean distance matrix
+      between two sets of vectors: A (shape N x D) and B (shape M x D).
+      Inputs A and B are lists of lists of floats.
+      Return the distance matrix as a list of lists of floats.
+      Rewrite this slow, unvectorized code using NumPy vectorization / broadcasting to be as fast as possible.
+      Preserve functional correctness.
+    naive_code: |
+      def compute_pairwise_distances(A, B):
+          N = len(A)
+          M = len(B)
+          D = len(A[0])
+          dist = [[0.0] * M for _ in range(N)]
+          for i in range(N):
+              for j in range(M):
+                  s = 0.0
+                  for d in range(D):
+                      diff = A[i][d] - B[j][d]
+                      s += diff * diff
+                  dist[i][j] = s ** 0.5
+          return dist
+    reference_optimized_code: |
+      import numpy as np
+
+      def compute_pairwise_distances(A, B):
+          a = np.asarray(A, dtype=np.float64)
+          b = np.asarray(B, dtype=np.float64)
+          diff = a[:, np.newaxis, :] - b[np.newaxis, :, :]
+          dist = np.linalg.norm(diff, axis=-1)
+          return dist.tolist()
+    test_harness: |
+      import random, math
+      random.seed(42)
+      N, M, D = 200, 200, 32
+      A = [[random.random() for _ in range(D)] for _ in range(N)]
+      B = [[random.random() for _ in range(D)] for _ in range(M)]
+      res = compute_pairwise_distances(A, B)
+      assert len(res) == N
+      assert len(res[0]) == M
+      # Verify sample distance
+      expected_0_0 = math.sqrt(sum((A[0][d] - B[0][d]) ** 2 for d in range(D)))
+      assert abs(res[0][0] - expected_0_0) < 1e-5
+      print("OK: pairwise_euclidean_distances passed")
+
+  - name: "matrix_multiplication"
+    category: "vectorization"
+    task: |
+      Rewrite `matrix_multiply(A, B)` which computes the product of two square matrices of size 120 x 120.
+      Inputs A and B are lists of lists of floats.
+      Return the product C as a list of lists of floats.
+      Rewrite this naive triple-nested loop to use NumPy vectorization to achieve maximum performance.
+    naive_code: |
+      def matrix_multiply(A, B):
+          N = len(A)
+          C = [[0.0] * N for _ in range(N)]
+          for i in range(N):
+              for j in range(N):
+                  s = 0.0
+                  for k in range(N):
+                      s += A[i][k] * B[k][j]
+                  C[i][j] = s
+          return C
+    reference_optimized_code: |
+      import numpy as np
+
+      def matrix_multiply(A, B):
+          a = np.asarray(A, dtype=np.float64)
+          b = np.asarray(B, dtype=np.float64)
+          return (a @ b).tolist()
+    test_harness: |
+      import random
+      random.seed(42)
+      N = 120
+      A = [[random.random() for _ in range(N)] for _ in range(N)]
+      B = [[random.random() for _ in range(N)] for _ in range(N)]
+      C = matrix_multiply(A, B)
+      assert len(C) == N
+      assert len(C[0]) == N
+      # Spot check element (0, 0)
+      expected_0_0 = sum(A[0][k] * B[k][0] for k in range(N))
+      assert abs(C[0][0] - expected_0_0) < 1e-5
+      print("OK: matrix_multiplication passed")
+
+  - name: "spatial_2d_convolution"
+    category: "vectorization"
+    task: |
+      Rewrite `convolve_2d(image, kernel)` to apply a 2D filter kernel (size 5x5) over an image (size 100x100).
+      Inputs are lists of lists of floats.
+      Pad boundaries with zero ('same' mode).
+      Return the filtered image as a list of lists of floats.
+      Rewrite the slow nested loops with NumPy vectorization.
+    naive_code: |
+      def convolve_2d(image, kernel):
+          H = len(image)
+          W = len(image[0])
+          kH = len(kernel)
+          kW = len(kernel[0])
+          pad_h = kH // 2
+          pad_w = kW // 2
+          out = [[0.0] * W for _ in range(H)]
+          for i in range(pad_h, H - pad_h):
+              for j in range(pad_w, W - pad_w):
+                  val = 0.0
+                  for ki in range(kH):
+                      for kj in range(kW):
+                          val += image[i - pad_h + ki][j - pad_w + kj] * kernel[ki][kj]
+                  out[i][j] = val
+          return out
+    reference_optimized_code: |
+      import numpy as np
+
+      def convolve_2d(image, kernel):
+          img = np.asarray(image, dtype=np.float64)
+          k = np.asarray(kernel, dtype=np.float64)
+          H, W = img.shape
+          kH, kW = k.shape
+          pad_h, pad_w = kH // 2, kW // 2
+          out = np.zeros_like(img)
+          
+          for ki in range(kH):
+              for kj in range(kW):
+                  weight = k[ki, kj]
+                  if weight == 0.0:
+                      continue
+                  img_slice = img[ki : H - (kH - 1 - ki), kj : W - (kW - 1 - kj)]
+                  out[pad_h : H - pad_h, pad_w : W - pad_w] += weight * img_slice
+          return out.tolist()
+    test_harness: |
+      import random
+      random.seed(42)
+      H, W = 100, 100
+      image = [[random.random() for _ in range(W)] for _ in range(H)]
+      kernel = [[0.04] * 5 for _ in range(5)]
+      out = convolve_2d(image, kernel)
+      assert len(out) == H
+      assert len(out[0]) == W
+      # Center check
+      expected_val = sum(image[10 - 2 + ki][10 - 2 + kj] * 0.04 for ki in range(5) for kj in range(5))
+      assert abs(out[10][10] - expected_val) < 1e-5
+      print("OK: spatial_2d_convolution passed")
+
+  - name: "text_ngram_frequency"
+    category: "memory_and_hashing"
+    task: |
+      Rewrite `top_ngrams(tokens, n, top_k)` to find the top k most frequent n-grams in a sequence of string tokens.
+      The baseline builds unneeded lists and uses repeated O(N) `.count()` scans.
+      Rewrite using `collections.Counter` to achieve O(N) time and minimal memory.
+    naive_code: |
+      def top_ngrams(tokens, n=3, top_k=5):
+          ngrams = []
+          for i in range(len(tokens) - n + 1):
+              ngrams.append(tuple(tokens[i : i + n]))
+          unique_ngrams = list(set(ngrams))
+          counts = []
+          for ug in unique_ngrams:
+              c = ngrams.count(ug)
+              counts.append((ug, c))
+          counts.sort(key=lambda x: x[1], reverse=True)
+          return counts[:top_k]
+    reference_optimized_code: |
+      from collections import Counter
+
+      def top_ngrams(tokens, n=3, top_k=5):
+          counts = Counter(tuple(tokens[i : i + n]) for i in range(len(tokens) - n + 1))
+          return counts.most_common(top_k)
+    test_harness: |
+      words = ["the", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"]
+      corpus = words * 1500  # 13,500 tokens
+      top5 = top_ngrams(corpus, n=3, top_k=5)
+      assert len(top5) == 5
+      assert top5[0][1] >= top5[1][1]
+      print("OK: text_ngram_frequency passed")
+
+  - name: "sliding_window_maximum"
+    category: "algorithmic_complexity"
+    task: |
+      Rewrite `sliding_window_maximum(nums, k)` which finds the maximum in every sliding window of width k.
+      The baseline slices the list and calls `max()` repeatedly (O(N*k) time).
+      Rewrite to run in O(N) time using a monotonic deque or optimized sliding algorithm.
+    naive_code: |
+      def sliding_window_maximum(nums, k):
+          result = []
+          for i in range(len(nums) - k + 1):
+              result.append(max(nums[i : i + k]))
+          return result
+    reference_optimized_code: |
+      from collections import deque
+
+      def sliding_window_maximum(nums, k):
+          q = deque()  # stores indices
+          res = []
+          for i, x in enumerate(nums):
+              while q and nums[q[-1]] <= x:
+                  q.pop()
+              q.append(i)
+              while q[0] <= i - k:
+                  q.popleft()
+              if i >= k - 1:
+                  res.append(nums[q[0]])
+          return res
+    test_harness: |
+      import random
+      random.seed(42)
+      nums = [random.randint(-1000, 1000) for _ in range(12000)]
+      k = 150
+      res = sliding_window_maximum(nums, k)
+      assert len(res) == len(nums) - k + 1
+      # Spot checks
+      assert res[0] == max(nums[0:k])
+      assert res[100] == max(nums[100:100+k])
+      print("OK: sliding_window_maximum passed")

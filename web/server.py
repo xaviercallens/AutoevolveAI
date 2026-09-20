@@ -28,6 +28,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from anse.symbolic.performance_evaluator import PerformanceEnergyEvaluator  # noqa: E402
 from anse.symbolic.sandbox import SandboxExecutor  # noqa: E402
+from demo_self_evolution import run_self_evolution_demo  # noqa: E402
 from execution_attestation import ImplementationAuditor, generate_attestation_proof  # noqa: E402
 
 logger = logging.getLogger("anse.web")
@@ -211,6 +212,17 @@ async def evaluate_hotswap(req: HotSwapRequest) -> dict[str, Any]:
         "child_category": eval_res.category.value,
         "improvement_pct": round((-delta_e / max(req.parent_energy, 1e-4)) * 100.0, 2) if is_safe else 0.0,
     }
+
+
+@app.post("/api/autopoiesis/evolve")
+async def execute_live_self_evolution() -> dict[str, Any]:
+    """Execute complete live autopoietic self-evolution and hot-swapping demonstration."""
+    try:
+        results = run_self_evolution_demo()
+        return {"status": "success", "data": results}
+    except Exception as e:
+        logger.exception("Error executing live self-evolution")
+        return {"status": "error", "error": str(e)}
 
 
 def main() -> None:

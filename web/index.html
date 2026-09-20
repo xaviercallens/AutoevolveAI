@@ -929,19 +929,40 @@ print(f"SHA-256 Digest: {digest[:16]}...")
     // =================================================================
     // AUTOPOIESIS HOT-SWAP DEMO
     // =================================================================
-    function executeHotSwap() {
+    async function executeHotSwap() {
       const btn = document.getElementById('hotswap-action-btn');
       const log = document.getElementById('hotswap-log');
       btn.disabled = true;
-      btn.innerHTML = '<span>⏳</span> Hot-Swapping Process...';
+      btn.innerHTML = '<span>⚡</span> Running Real Live Self-Evolution...';
       log.classList.remove('hidden');
+      log.innerHTML = '<div>[HYPERVISOR] Initiating self-evolution on anse/memory/harvester.py :: deduplicate_traces...</div>';
 
-      setTimeout(() => {
-        btn.innerHTML = '<span>✅</span> Hot-Swap Successful (Zero Downtime)';
-        btn.className = 'px-6 py-3 rounded-xl bg-slate-800 text-emerald-400 font-bold text-sm border border-emerald-500/40 cursor-default';
-        document.getElementById('hotswap-parent-energy').innerText = '5.410 (Swapped)';
-        document.getElementById('hotswap-parent-energy').className = 'text-2xl font-black font-mono text-emerald-400';
-      }, 1200);
+      try {
+        const resp = await fetch('/api/autopoiesis/evolve', { method: 'POST' });
+        const res = await resp.json();
+        if (res.status === 'success') {
+          const d = res.data;
+          document.getElementById('hotswap-parent-energy').innerText = `${d.parent.energy.toFixed(3)} (${d.parent.duration_ms}ms)`;
+          document.getElementById('hotswap-child-energy').innerText = `${d.attempt_2_evolved.energy.toFixed(3)} (${d.attempt_2_evolved.duration_ms}ms)`;
+          document.getElementById('hotswap-delta-val').innerText = `ΔE = ${d.thermodynamics.delta_energy.toFixed(3)} (${d.thermodynamics.speedup_factor}x speedup)`;
+
+          log.innerHTML = `
+            <div>[STAGE 1] Parent Baseline Benchmark: E = ${d.parent.energy.toFixed(3)} | Latency: ${d.parent.duration_ms}ms | Peak RAM: ${d.parent.ram_mb}MB</div>
+            <div class="text-red-400">[STAGE 2] Intercepted Lazy Shortcut: AST Whistleblower caught stub! ${d.attempt_1_lazy.violations.join(' ')} -> E = 1,000,000.0 (Maximum Pain)</div>
+            <div class="text-cyan-300">[STAGE 3] Synthesized Evolved Child: Proof Token [${d.attempt_2_evolved.proof_token || 'TOKEN'}] Minted! Latency: ${d.attempt_2_evolved.duration_ms}ms | Output Verified.</div>
+            <div>[STAGE 4] Thermodynamic Admissibility Gate: ΔE = ${d.thermodynamics.delta_energy.toFixed(3)} &lt; 0 -> PASS (${d.thermodynamics.improvement_pct}% reduction).</div>
+            <div>[STAGE 5] Live Hot-Swap Executed: ${d.hotswap.target_instance} evolved to ${d.hotswap.new_version}. Live Latency: ${d.hotswap.live_latency_us} µs!</div>
+            <div class="text-emerald-400 font-bold">✅ AUTOPOIETIC CONTRACTION MAPPING CONVERGED (Lean 4: ${d.thermodynamics.lean4_theorem})</div>
+          `;
+
+          btn.innerHTML = '<span>✅</span> Self-Evolution & Hot-Swap Complete';
+          btn.className = 'px-6 py-3 rounded-xl bg-slate-800 text-emerald-400 font-bold text-sm border border-emerald-500/40';
+        }
+      } catch (err) {
+        log.innerHTML += `<div class="text-red-400">Execution note: ${err.message}</div>`;
+      } finally {
+        btn.disabled = false;
+      }
     }
 
     // Initializer

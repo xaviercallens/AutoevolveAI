@@ -26,6 +26,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from anse.autopoiesis.neuro_surgeon import (  # noqa: E402
+    ActiveInferenceLoop,
+    AutopoieticNeuroSurgeon,
+)
 from anse.symbolic.performance_evaluator import PerformanceEnergyEvaluator  # noqa: E402
 from anse.symbolic.sandbox import SandboxExecutor  # noqa: E402
 from demo_self_evolution import run_self_evolution_demo  # noqa: E402
@@ -222,6 +226,62 @@ async def execute_live_self_evolution() -> dict[str, Any]:
         return {"status": "success", "data": results}
     except Exception as e:
         logger.exception("Error executing live self-evolution")
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/phase3/active-inference")
+async def run_phase3_active_inference() -> dict[str, Any]:
+    """Execute the Micro-ML dimension self-healing active inference loop."""
+    try:
+        loop = ActiveInferenceLoop()
+        steps = loop.run_simulation()
+        return {
+            "status": "success",
+            "steps": [
+                {
+                    "iteration": s.iteration,
+                    "candidate_code": s.candidate_code,
+                    "energy": s.energy,
+                    "is_valid": s.is_valid,
+                    "error_trace": s.error_trace,
+                    "feedback_prompt": s.feedback_prompt,
+                    "duration_ms": round(s.duration_ms, 2),
+                    "proof_token": s.proof_token,
+                }
+                for s in steps
+            ],
+        }
+    except Exception as e:
+        logger.exception("Error executing Phase 3 active inference")
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/phase3/neuro-surgeon")
+async def run_phase3_neuro_surgeon() -> dict[str, Any]:
+    """Execute the AI Neuro-Surgeon FlashAttention autopoietic hot-swap."""
+    try:
+        surgeon = AutopoieticNeuroSurgeon()
+        report = surgeon.execute_neuro_surgery()
+        return {
+            "status": "success",
+            "report": {
+                "parent_energy": report.parent_energy,
+                "parent_latency_ms": report.parent_latency_ms,
+                "parent_vram_mb": report.parent_vram_mb,
+                "child_energy": report.child_energy,
+                "child_latency_ms": report.child_latency_ms,
+                "child_vram_mb": report.child_vram_mb,
+                "delta_energy": report.delta_energy,
+                "speedup_factor": report.speedup_factor,
+                "vram_reduction_pct": report.vram_reduction_pct,
+                "hotswap_authorized": report.hotswap_authorized,
+                "proof_token": report.proof_token,
+                "active_version_post_swap": report.active_version_post_swap,
+                "lean4_theorem": "ANSE.Autopoiesis.autopoiesis_exists",
+            },
+        }
+    except Exception as e:
+        logger.exception("Error executing Phase 3 neuro-surgeon")
         return {"status": "error", "error": str(e)}
 
 

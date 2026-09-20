@@ -30,10 +30,18 @@ from anse.autopoiesis.neuro_surgeon import (  # noqa: E402
     ActiveInferenceLoop,
     AutopoieticNeuroSurgeon,
 )
+from anse.core.latent_dreamer import LatentDreamer  # noqa: E402
+from anse.frontier.domains import (  # noqa: E402
+    AutonomousMathematician,
+    CyberImmuneSwarm,
+)
 from anse.symbolic.performance_evaluator import PerformanceEnergyEvaluator  # noqa: E402
 from anse.symbolic.sandbox import SandboxExecutor  # noqa: E402
 from demo_self_evolution import run_self_evolution_demo  # noqa: E402
 from execution_attestation import ImplementationAuditor, generate_attestation_proof  # noqa: E402
+from harness_hook import (  # noqa: E402
+    active_inference_copilot,
+)
 
 logger = logging.getLogger("anse.web")
 logging.basicConfig(level=logging.INFO)
@@ -78,6 +86,32 @@ class JEPAPredictRequest(BaseModel):
 class HotSwapRequest(BaseModel):
     parent_energy: float
     child_code: str
+
+
+class CoPilotRequest(BaseModel):
+    prompt: str = "Implement binary search function search(nums, target)"
+    test_command: str = 'python -c "import sys; sys.exit(0)"'
+
+
+class ShadowObserveRequest(BaseModel):
+    predicted_code: str
+    human_code: str
+    prompt: str = "Implement compute()"
+
+
+class LatentDreamRequest(BaseModel):
+    prompt: str = "Synthesize high performance attention kernel"
+    branches: int = 16
+
+
+class LeanProofRequest(BaseModel):
+    theorem_name: str = "add_comm"
+    proof_code: str = "theorem add_comm (n m : Nat) : n + m = m + n := by omega"
+
+
+class CyberEngagementRequest(BaseModel):
+    red_payload: str = "A" * 200 + "\x90\x90\xeb\x04"
+    blue_patch: str = "def handle(data): if len(data) > 64: raise ValueError(); return data"
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -282,6 +316,115 @@ async def run_phase3_neuro_surgeon() -> dict[str, Any]:
         }
     except Exception as e:
         logger.exception("Error executing Phase 3 neuro-surgeon")
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/symbiotic/copilot")
+async def run_symbiotic_copilot(req: CoPilotRequest) -> dict[str, Any]:
+    """Execute the Active Co-Pilot symbiotic loop against a developer test harness."""
+    try:
+        import tempfile
+        with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False, encoding="utf-8") as tf:
+            target_path = tf.name
+
+        summary = active_inference_copilot(
+            prompt=req.prompt,
+            target_file=target_path,
+            test_command=req.test_command,
+            max_attempts=3,
+        )
+        try:
+            os.remove(target_path)
+        except OSError:
+            pass
+
+        return {
+            "status": "success",
+            "converged": summary.converged,
+            "attempts_used": summary.attempts_used,
+            "final_code": summary.final_code,
+            "proof_token": summary.proof_token,
+            "dpo_pair_recorded": summary.dpo_pair_recorded,
+            "steps": [
+                {
+                    "attempt": s.attempt,
+                    "energy": s.energy,
+                    "is_valid": s.is_valid,
+                    "feedback": s.feedback[:200],
+                    "duration_ms": round(s.duration_ms, 2),
+                }
+                for s in summary.steps
+            ],
+        }
+    except Exception as e:
+        logger.exception("Error in symbiotic copilot")
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/accelerator/latent-dream")
+async def run_latent_dreamer(req: LatentDreamRequest) -> dict[str, Any]:
+    """Simulate 16-Thought Latent MCTS and compute GRPO Group Relative Advantages in ~2ms."""
+    try:
+        dreamer = LatentDreamer(num_branches=req.branches)
+        res = dreamer.dream_and_search(req.prompt)
+        return {
+            "status": "success",
+            "prompt": res.prompt,
+            "num_candidates": res.num_candidates,
+            "best_candidate_idx": res.best_candidate_idx,
+            "group_mean_energy": res.group_mean_energy,
+            "group_std_energy": res.group_std_energy,
+            "latency_ms": res.latency_ms,
+            "speedup_vs_sandbox": res.speedup_vs_sandbox,
+            "best_thought": {
+                "thought_id": res.best_thought.thought_id,
+                "predicted_energy": res.best_thought.predicted_energy,
+                "group_advantage": res.best_thought.group_advantage,
+                "relative_weight": res.best_thought.relative_weight,
+                "code_proposal": res.best_thought.code_proposal,
+            },
+        }
+    except Exception as e:
+        logger.exception("Error in latent dreamer")
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/frontier/mathematician")
+async def run_frontier_mathematician(req: LeanProofRequest) -> dict[str, Any]:
+    """Evaluate formal mathematical proof in Lean 4."""
+    try:
+        prover = AutonomousMathematician()
+        res = prover.evaluate_proof(req.theorem_name, req.proof_code)
+        return {
+            "status": "success",
+            "theorem": res.theorem_name,
+            "energy": res.energy,
+            "is_valid": res.is_valid,
+            "duration_ms": round(res.duration_ms, 2),
+            "diagnostics": res.lean_diagnostics,
+            "tactics": res.discovered_tactics,
+        }
+    except Exception as e:
+        logger.exception("Error in frontier mathematician")
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/frontier/cyber")
+async def run_frontier_cyber(req: CyberEngagementRequest) -> dict[str, Any]:
+    """Simulate Red vs Blue automated cyber engagement."""
+    try:
+        swarm = CyberImmuneSwarm()
+        res = swarm.run_engagement(req.red_payload, req.blue_patch)
+        return {
+            "status": "success",
+            "scenario": res.scenario,
+            "exploit_succeeded": res.exploit_succeeded,
+            "energy": res.energy,
+            "defense_status": res.defense_status,
+            "cve": res.cve_category,
+        }
+    except Exception as e:
+        logger.exception("Error in frontier cyber")
         return {"status": "error", "error": str(e)}
 
 

@@ -1,0 +1,100 @@
+version: "3.8"
+
+services:
+  redis-audit:
+    image: redis:7.2-alpine
+    container_name: antigravity-redis-memory
+    command: >
+      redis-server 
+      --appendonly yes 
+      --appendfsync everysec 
+      --maxmemory 4gb 
+      --maxmemory-policy noeviction
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    container_name: antigravity-intercept-gateway
+    environment:
+      - REDIS_HOST=redis-audit
+      - REDIS_PORT=6379
+      - UPSTREAM_GEMINI_URL=https://generativelanguage.googleapis.com
+      - UPSTREAM_OPENAI_URL=https://api.openai.com
+      - LOCAL_INFERENCE_URL=http://vllm-local:8000/v1/chat/completions
+    ports:
+      - "8080:8080"
+    depends_on:
+      redis-audit:
+        condition: service_healthy
+    restart: unless-stopped
+
+  vllm-local:
+    image: vllm/vllm-openai:latest
+    container_name: antigravity-vllm
+    environment:
+      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
+      - VLLM_ALLOW_RUNTIME_LORA_UPDATING=True
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface
+      - ./adapters:/adapters
+    ports:
+      - "8000:8000"
+    ipc: host
+    command: >
+      --model Qwen/Qwen2.5-Coder-7B-Instruct
+      --enable-lora
+      --max-loras 4
+      --max-lora-rank 32
+      --max-cpu-loras 16
+      --max-model-len 4096
+      --port 8000
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  lora-trainer-daemon:
+    build:
+      context: .
+      dockerfile: Dockerfile.trainer
+    container_name: antigravity-auto-trainer
+    environment:
+      - REDIS_HOST=redis-audit
+      - REDIS_PORT=6379
+      - VLLM_URL=http://vllm-local:8000
+      - CHECK_INTERVAL_SECONDS=86400
+      - MIN_TRAIN_SAMPLES=50
+    volumes:
+      - ./adapters:/adapters
+      - ./training_runs:/app/training_runs
+      - ~/.cache/huggingface:/root/.cache/huggingface
+    depends_on:
+      redis-audit:
+        condition: service_healthy
+      vllm-local:
+        condition: service_started
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  redis_data:

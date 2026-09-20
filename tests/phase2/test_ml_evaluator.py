@@ -1,11 +1,14 @@
 import pytest
-from anse.symbolic.ml_sandbox import MLExecutionResult
+
 from anse.symbolic.ml_evaluator import MLEnergyEvaluator
+from anse.symbolic.ml_sandbox import MLExecutionResult
 from anse.symbolic.performance_evaluator import PerformanceCategory
+
 
 @pytest.fixture
 def evaluator():
     return MLEnergyEvaluator()
+
 
 class TestMLEnergyEvaluator:
     def test_shape_mismatch_max_pain(self, evaluator):
@@ -16,7 +19,7 @@ class TestMLEnergyEvaluator:
             timed_out=False,
             duration_ms=100.0,
             tier_used=1,
-            is_shape_mismatch=True
+            is_shape_mismatch=True,
         )
         energy = evaluator.evaluate(result)
         assert energy.category == PerformanceCategory.CRASH
@@ -33,7 +36,7 @@ class TestMLEnergyEvaluator:
             tier_used=1,
             parameters=75000,
             accuracy=0.96,
-            val_loss=0.04
+            val_loss=0.04,
         )
         energy = evaluator.evaluate(result)
         assert energy.category == PerformanceCategory.INEFFICIENT
@@ -51,7 +54,7 @@ class TestMLEnergyEvaluator:
             tier_used=1,
             parameters=10000,
             accuracy=0.80,
-            val_loss=0.65
+            val_loss=0.65,
         )
         energy = evaluator.evaluate(result)
         assert energy.category == PerformanceCategory.MODERATE
@@ -69,7 +72,7 @@ class TestMLEnergyEvaluator:
             tier_used=1,
             parameters=15000,
             accuracy=0.97,
-            val_loss=0.08
+            val_loss=0.08,
         )
         energy = evaluator.evaluate(result)
         assert energy.category == PerformanceCategory.OPTIMIZED

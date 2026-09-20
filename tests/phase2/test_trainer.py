@@ -11,14 +11,12 @@ import json
 import tempfile
 from pathlib import Path
 
-import pytest
 import torch
 
 from anse.config import JEPAConfig
 from anse.jepa.dataset import JEPADataset
 from anse.jepa.trainer import JEPATrainer, TrainingSummary
 from anse.jepa.world_model import JEPAWorldModel
-
 
 D_INPUT = 64
 D_HIDDEN = 32
@@ -27,7 +25,7 @@ D_LATENT = 16
 
 def _create_dataset(n: int = 100) -> JEPADataset:
     """Create a synthetic JSONL dataset for training tests."""
-    path = Path(tempfile.mktemp(suffix=".jsonl"))
+    path = Path(tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False).name)
     with open(path, "w") as f:
         for i in range(n):
             trace = {
@@ -76,8 +74,9 @@ class TestJEPATrainer:
         summary = trainer.train(ds, epochs=3, batch_size=16)
 
         for record in summary.history:
-            assert record["train_loss"] >= 0, \
+            assert record["train_loss"] >= 0, (
                 f"Train loss must be ≥ 0, got {record['train_loss']} at epoch {record['epoch']}"
+            )
 
     def test_training_loss_decreases(self):
         """Loss should decrease over 10 epochs on simple synthetic data.
@@ -91,8 +90,9 @@ class TestJEPATrainer:
         last_loss = summary.history[-1]["train_loss"]
 
         # Allow some tolerance — loss should generally decrease
-        assert last_loss <= first_loss * 1.5, \
+        assert last_loss <= first_loss * 1.5, (
             f"Loss should not increase dramatically: first={first_loss:.4f} last={last_loss:.4f}"
+        )
 
     def test_ema_applied_each_step(self):
         """Target encoder weights should change each step due to EMA.
@@ -102,10 +102,7 @@ class TestJEPATrainer:
         model = JEPAWorldModel(D_INPUT, D_HIDDEN, D_LATENT)
 
         # Record initial target encoder params
-        initial_params = {
-            name: p.data.clone()
-            for name, p in model.tgt_encoder.named_parameters()
-        }
+        initial_params = {name: p.data.clone() for name, p in model.tgt_encoder.named_parameters()}
 
         trainer = JEPATrainer(
             model=model,
@@ -131,8 +128,9 @@ class TestJEPATrainer:
         summary = trainer.train(ds, epochs=3, batch_size=16)
 
         assert summary.checkpoint_path is not None
-        assert Path(summary.checkpoint_path).exists(), \
+        assert Path(summary.checkpoint_path).exists(), (
             f"Checkpoint file should exist at {summary.checkpoint_path}"
+        )
 
     def test_validation_metrics_computed(self):
         """Validation should produce all required metrics.
@@ -198,16 +196,21 @@ class TestJEPATrainer:
         model2.load_state_dict(model1.state_dict())
 
         trainer1 = JEPATrainer(
-            model=model1, lr=1e-3, device="cpu",
+            model=model1,
+            lr=1e-3,
+            device="cpu",
             checkpoint_dir=Path(tempfile.mkdtemp()),
         )
         trainer2 = JEPATrainer(
-            model=model2, lr=1e-3, device="cpu",
+            model=model2,
+            lr=1e-3,
+            device="cpu",
             checkpoint_dir=Path(tempfile.mkdtemp()),
         )
 
         summary1 = trainer1.train(ds, epochs=3, batch_size=16, seed=42)
         summary2 = trainer2.train(ds, epochs=3, batch_size=16, seed=42)
 
-        assert abs(summary1.final_train_loss - summary2.final_train_loss) < 1e-3, \
+        assert abs(summary1.final_train_loss - summary2.final_train_loss) < 1e-3, (
             f"Reproducibility failed: {summary1.final_train_loss} vs {summary2.final_train_loss}"
+        )

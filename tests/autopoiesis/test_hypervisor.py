@@ -1,12 +1,17 @@
 import pytest
+
 from anse.autopoiesis.hypervisor import AutopoiesisHypervisor, BaselineMetrics
-from anse.symbolic.performance_evaluator import PerformanceEnergyResult, PerformanceCategory
+from anse.symbolic.performance_evaluator import PerformanceCategory, PerformanceEnergyResult
 from anse.symbolic.sandbox import ExecutionResult
+
 
 @pytest.fixture
 def hypervisor():
     # Parent has 5.0 energy
-    return AutopoiesisHypervisor(parent_baseline=BaselineMetrics(energy=5.0, duration_ms=400.0, peak_ram_mb=100.0))
+    return AutopoiesisHypervisor(
+        parent_baseline=BaselineMetrics(energy=5.0, duration_ms=400.0, peak_ram_mb=100.0)
+    )
+
 
 class TestAutopoiesisHypervisor:
     def test_hot_swap_authorized(self, hypervisor):
@@ -22,9 +27,9 @@ class TestAutopoiesisHypervisor:
             speedup_factor=1.3,
             memory_reduction_ratio=1.2,
             energy_delta=2.0,
-            relative_energy=0.6
+            relative_energy=0.6,
         )
-        assert hypervisor.attempt_hot_swap(child_result, "print('child')") == True
+        assert hypervisor.attempt_hot_swap(child_result, "print('child')")
 
     def test_hot_swap_rejected_worse_energy(self, hypervisor):
         # Child has 6.0 energy (worse)
@@ -39,9 +44,9 @@ class TestAutopoiesisHypervisor:
             speedup_factor=0.8,
             memory_reduction_ratio=0.8,
             energy_delta=-1.0,
-            relative_energy=1.2
+            relative_energy=1.2,
         )
-        assert hypervisor.attempt_hot_swap(child_result, "print('child')") == False
+        assert not hypervisor.attempt_hot_swap(child_result, "print('child')")
 
     def test_hot_swap_rejected_invalid(self, hypervisor):
         # Child is invalid
@@ -56,6 +61,6 @@ class TestAutopoiesisHypervisor:
             speedup_factor=0.0,
             memory_reduction_ratio=0.0,
             energy_delta=-995.0,
-            relative_energy=200.0
+            relative_energy=200.0,
         )
-        assert hypervisor.attempt_hot_swap(child_result, "print('child')") == False
+        assert not hypervisor.attempt_hot_swap(child_result, "print('child')")

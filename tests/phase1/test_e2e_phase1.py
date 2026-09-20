@@ -23,24 +23,23 @@ Each test docstring references the corresponding Lean 4 theorem or structure.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 import torch
 
-from anse.config import ANSEConfig, MemoryConfig, ModelConfig, SandboxConfig
+from anse.config import MemoryConfig, ModelConfig, SandboxConfig
 from anse.core.agent_loop import AgentLoop
 from anse.core.encoder import HiddenStateExtractor, HiddenStateRecord
 from anse.memory.harvester import Harvester, LoopTrace
-from anse.symbolic.evaluator import EnergyCategory, EnergyEvaluator, EnergyResult
-from anse.symbolic.parser import NoCodeFoundError, extract_all_code_blocks, extract_code
+from anse.symbolic.evaluator import EnergyCategory, EnergyEvaluator
+from anse.symbolic.parser import extract_code
 from anse.symbolic.sandbox import SandboxExecutor, scan_dangerous_imports
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Fixtures
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def sandbox():
@@ -85,6 +84,7 @@ def agent_loop(mock_extractor, sandbox, evaluator, harvester):
 # Lean 4 ref: EnergyCategory.PERFECT → energy = 0.0
 #             EnergyFn.eval : X → Y → ℝ  (lower = better)
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class TestE2EPipelineCorrectCode:
     """Verifies that correct code flows cleanly through the entire pipeline."""
@@ -157,6 +157,7 @@ class TestE2EPipelineCorrectCode:
 # Lean 4 ref: _DEFAULT_ENERGY maps categories to scalar scores ∈ [0, 100]
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class TestE2EPipelineBuggyCode:
     """Verifies that buggy code produces the correct energy category."""
 
@@ -217,9 +218,7 @@ class TestE2EPipelineBuggyCode:
         Lean 4: EnergyCategory.TIMEOUT → score = 80.0
         Uses a short timeout to verify timed_out = True.
         """
-        short_timeout_sandbox = SandboxExecutor(
-            config=SandboxConfig(timeout_seconds=1.0)
-        )
+        short_timeout_sandbox = SandboxExecutor(config=SandboxConfig(timeout_seconds=1.0))
         evaluator = EnergyEvaluator()
 
         raw = "```python\nimport time\ntime.sleep(10)\n```"
@@ -251,6 +250,7 @@ class TestE2EPipelineBuggyCode:
 #             "lower energy = more compatible" (Basic.lean, §1.1)
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class TestEnergyInvariants:
     """Verify energy scale invariants matching the Lean 4 specification."""
 
@@ -280,6 +280,7 @@ class TestEnergyInvariants:
         Verify all default energy levels.
         """
         from anse.symbolic.evaluator import _DEFAULT_ENERGY
+
         for cat, score in _DEFAULT_ENERGY.items():
             assert 0.0 <= score <= 100.0, f"{cat} has out-of-range energy {score}"
 
@@ -290,6 +291,7 @@ class TestEnergyInvariants:
                 < RUNTIME_ERROR < TIMEOUT < SYNTAX_ERROR
         """
         from anse.symbolic.evaluator import _DEFAULT_ENERGY
+
         expected_order = [
             EnergyCategory.PERFECT,
             EnergyCategory.NO_TESTS,
@@ -311,6 +313,7 @@ class TestEnergyInvariants:
 #   abbrev HiddenState (d : ℕ) := EuclideanSpace ℝ (Fin d)
 #   d = 4096 for Qwen-7B
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class TestHiddenStateInvariants:
     """Verify hidden state extraction matches the Lean 4 HiddenState(d) specification."""
@@ -359,6 +362,7 @@ class TestHiddenStateInvariants:
 #     targets : Fin n → Y
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class TestDatasetPersistence:
     """Verify JSONL persistence matches the Lean 4 Dataset structure."""
 
@@ -402,10 +406,10 @@ class TestDatasetPersistence:
     def test_multiple_traces_form_dataset(self, harvester, sandbox, evaluator, mock_extractor):
         """
         Lean 4: Dataset(X, Y, n) requires n labelled pairs.
-        Verify we can persist and reload N traces.
+        Verify we can persist and reload n_traces traces.
         """
-        N = 5
-        for i in range(N):
+        n_traces = 5
+        for i in range(n_traces):
             text, hs = mock_extractor.extract(f"Task {i}")
             parsed = extract_code(text)
             exec_result = sandbox.execute(parsed.code)
@@ -428,14 +432,14 @@ class TestDatasetPersistence:
             )
             harvester.record(trace)
 
-        assert harvester.get_trace_count() == N
-        loaded = harvester.load_traces(limit=N)
-        assert len(loaded) == N
+        assert harvester.get_trace_count() == n_traces
+        loaded = harvester.load_traces(limit=n_traces)
+        assert len(loaded) == n_traces
 
         # Verify JSONL file is well-formed line-by-line
-        with open(harvester.log_path, "r") as f:
+        with open(harvester.log_path) as f:
             lines = f.readlines()
-        assert len(lines) == N
+        assert len(lines) == n_traces
         for line in lines:
             obj = json.loads(line.strip())
             assert "task" in obj
@@ -448,6 +452,7 @@ class TestDatasetPersistence:
 #
 # Lean 4 ref: sandbox.py implements the bounded oracle E(x, y)
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class TestSafetyEscalation:
     """Verify the AST scanner detects dangerous imports and triggers tier escalation."""
@@ -482,6 +487,7 @@ class TestSafetyEscalation:
 # Lean 4 ref: exists_minimiser (Energy converges to minimum)
 #             AgentLoop implements iterative energy descent
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class MockExtractorForE2E:
     """Mock extractor that returns specific code responses for E2E agent loop tests."""
@@ -552,7 +558,7 @@ class TestAgentLoopE2E:
         # Verify energy decreased monotonically
         assert summary.traces[0].energy > summary.traces[1].energy
         assert summary.traces[0].energy == 60.0  # RuntimeError
-        assert summary.traces[1].energy == 0.0   # Perfect
+        assert summary.traces[1].energy == 0.0  # Perfect
 
     def test_exhaust_retries_on_persistent_failure(self, sandbox, evaluator, harvester):
         """
@@ -610,6 +616,7 @@ class TestAgentLoopE2E:
 # Lean 4 ref: Phase 1 DoD: convergence rate ≥ 70%
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class TestBenchmarkSmoke:
     """Verify the benchmark runner works end-to-end with mock LLM."""
 
@@ -618,7 +625,7 @@ class TestBenchmarkSmoke:
         The mock extractor produces working code with asserts.
         It should achieve 100% convergence on any task.
         """
-        from main import load_tasks, run_benchmark
+        from main import run_benchmark
 
         extractor = HiddenStateExtractor(mock_mode=True)
         harvester = Harvester(enable_chroma=False)
@@ -639,6 +646,8 @@ class TestBenchmarkSmoke:
         summaries, rate = run_benchmark(loop, tasks, max_retries=1)
         assert len(summaries) == 3
         assert rate == 100.0  # Mock always generates correct code
+
+
 """
 End-to-end test summary
 ========================

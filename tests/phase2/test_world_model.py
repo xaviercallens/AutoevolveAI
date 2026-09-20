@@ -12,18 +12,14 @@ Lean 4 refs:
     jepEnergy_eq_zero         — proved ↔ z_pred = z_tgt
 """
 
-import pytest
 import torch
 
 from anse.jepa.world_model import (
     ContextEncoder,
-    EnergyHead,
     JEPAWorldModel,
     Predictor,
     TargetEncoder,
-    VICRegLoss,
 )
-
 
 D_INPUT = 128  # Use small dims for fast testing
 D_HIDDEN = 64
@@ -57,8 +53,7 @@ class TestContextEncoder:
                 hasattr(layer, "parametrizations")
                 and "weight" in layer.parametrizations
                 and any(
-                    "spectralnorm" in str(type(p)).lower()
-                    for p in layer.parametrizations.weight
+                    "spectralnorm" in str(type(p)).lower() for p in layer.parametrizations.weight
                 )
             )
             assert has_sn, f"Expected spectral normalisation on {layer}"
@@ -79,8 +74,9 @@ class TestTargetEncoder:
         h = torch.randn(BATCH, D_INPUT)
         z_ctx = ctx(h)
         z_tgt = tgt(h)
-        assert torch.allclose(z_ctx, z_tgt, atol=1e-5), \
+        assert torch.allclose(z_ctx, z_tgt, atol=1e-5), (
             "Target encoder should be an exact copy initially"
+        )
 
     def test_target_encoder_no_grad(self):
         """All target encoder params should have requires_grad=False.
@@ -91,8 +87,7 @@ class TestTargetEncoder:
         tgt = TargetEncoder(ctx)
 
         for name, p in tgt.named_parameters():
-            assert not p.requires_grad, \
-                f"Parameter {name} should have requires_grad=False"
+            assert not p.requires_grad, f"Parameter {name} should have requires_grad=False"
 
 
 class TestPredictor:
@@ -106,8 +101,9 @@ class TestPredictor:
         pred = Predictor(D_LATENT, D_HIDDEN)
         z = torch.randn(BATCH, D_LATENT)
         z_pred = pred(z, z)
-        assert z_pred.shape == (BATCH, D_LATENT), \
+        assert z_pred.shape == (BATCH, D_LATENT), (
             f"Expected ({BATCH}, {D_LATENT}), got {z_pred.shape}"
+        )
 
     def test_predictor_spectral_norm(self):
         """Spectral normalisation should be applied.
@@ -121,8 +117,7 @@ class TestPredictor:
                 hasattr(layer, "parametrizations")
                 and "weight" in layer.parametrizations
                 and any(
-                    "spectralnorm" in str(type(p)).lower()
-                    for p in layer.parametrizations.weight
+                    "spectralnorm" in str(type(p)).lower() for p in layer.parametrizations.weight
                 )
             )
             assert has_sn, f"Expected spectral normalisation on {layer}"
@@ -189,8 +184,7 @@ class TestEnergyHead:
         model = JEPAWorldModel(D_INPUT, D_HIDDEN, D_LATENT)
         h = torch.randn(D_INPUT)
         predicted = model.predict_energy_scalar(h)
-        assert 0.0 <= predicted <= 100.0, \
-            f"Predicted energy should be in [0, 100], got {predicted}"
+        assert 0.0 <= predicted <= 100.0, f"Predicted energy should be in [0, 100], got {predicted}"
 
 
 class TestWorldModelPersistence:

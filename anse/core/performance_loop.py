@@ -17,7 +17,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from anse.config import ANSEConfig, get_config
 from anse.core.encoder import HiddenStateExtractor, HiddenStateRecord
@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 # ─── Summary ─────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class PerformanceLoopSummary:
@@ -95,6 +96,7 @@ and provide the complete optimized Python code in a ```python ... ``` block."""
 
 # ─── Loop ────────────────────────────────────────────────────────────────────
 
+
 class PerformanceAgentLoop:
     """
     Orchestrates the generate -> execute -> measure physics -> pain signal -> retry cycle.
@@ -102,11 +104,11 @@ class PerformanceAgentLoop:
 
     def __init__(
         self,
-        extractor: Optional[HiddenStateExtractor] = None,
-        sandbox: Optional[SandboxExecutor] = None,
-        evaluator: Optional[PerformanceEnergyEvaluator] = None,
-        harvester: Optional[Harvester] = None,
-        config: Optional[ANSEConfig] = None,
+        extractor: HiddenStateExtractor | None = None,
+        sandbox: SandboxExecutor | None = None,
+        evaluator: PerformanceEnergyEvaluator | None = None,
+        harvester: Harvester | None = None,
+        config: ANSEConfig | None = None,
         world_model: Any | None = None,
         max_retries: int = 3,
         target_speedup: float = 2.0,
@@ -120,13 +122,97 @@ class PerformanceAgentLoop:
         self.max_retries = max_retries
         self.target_speedup = target_speedup
 
+    def _run_iteration(
+        self,
+        task: str,
+        test_harness: str,
+        baseline_exec: ExecutionResult,
+        baseline_energy: PerformanceEnergyResult,
+        prompt: str,
+        iteration: int,
+        desired_speedup: float,
+    ) -> tuple[bool, str, PerformanceEnergyResult, ExecutionResult, LoopTrace, str]:
+        iter_start = time.time()
+
+        raw_response, hs_record = self.extractor.extract(
+            prompt=prompt,
+            system_prompt=PERF_SYSTEM_PROMPT,
+        )
+
+        parse_res = extract_code(raw_response)
+        candidate_code = parse_res.code
+
+        candidate_full = candidate_code.strip() + "\n\n" + test_harness.strip()
+        exec_res = self.sandbox.execute(candidate_full)
+
+        energy_res = self.evaluator.evaluate(
+            result=exec_res,
+            baseline_result=baseline_exec,
+            code=candidate_code,
+        )
+
+        iter_duration_ms = (time.time() - iter_start) * 1000.0
+        speedup = energy_res.speedup_factor or 0.0
+
+        converged = False
+        if energy_res.is_valid and (
+            speedup >= desired_speedup
+            or energy_res.category
+            in (PerformanceCategory.VECTORIZED, PerformanceCategory.OPTIMIZED)
+        ):
+            converged = True
+
+        logger.info(
+            "Iteration %d: Energy=%.2f (%s) - Speedup=%.1fx - Converged=%s (took %.1fms)",
+            iteration,
+            energy_res.score,
+            energy_res.category.value,
+            speedup,
+            converged,
+            iter_duration_ms,
+        )
+
+        trace_metadata = self._build_perf_trace_metadata(
+            hs_record=hs_record,
+            exec_res=exec_res,
+            energy_res=energy_res,
+            baseline_energy=baseline_energy.score,
+        )
+
+        trace = LoopTrace(
+            task=task,
+            prompt=prompt,
+            code=candidate_code,
+            raw_response=raw_response,
+            energy=energy_res.score,
+            energy_category=energy_res.category.value,
+            converged=converged,
+            iteration=iteration,
+            duration_ms=iter_duration_ms,
+            returncode=exec_res.returncode,
+            execution_stdout=exec_res.stdout,
+            execution_stderr=exec_res.stderr,
+            hidden_state=hs_record.to_embedding(),
+            metadata=trace_metadata,
+        )
+        self.harvester.record(trace)
+
+        next_prompt = PERF_PAIN_PROMPT_TEMPLATE.format(
+            task=task,
+            pain_signal=energy_res.pain_signal,
+            returncode=exec_res.returncode,
+            stderr=exec_res.stderr[-800:] if exec_res.stderr else "(clean)",
+            stdout=exec_res.stdout[-800:] if exec_res.stdout else "(clean)",
+        )
+        return converged, candidate_code, energy_res, exec_res, trace, next_prompt
+
     def run_optimization(
         self,
         task: str,
         naive_code: str,
         test_harness: str,
-        max_retries: Optional[int] = None,
-        target_speedup: Optional[float] = None,
+        max_retries: int | None = None,
+        target_speedup: float | None = None,
     ) -> PerformanceLoopSummary:
         """
         Execute the autonomous performance optimization loop.
@@ -172,103 +258,53 @@ class PerformanceAgentLoop:
         )
 
         best_code = naive_code
-        last_energy_res: Optional[PerformanceEnergyResult] = None
-        last_exec_res: Optional[ExecutionResult] = None
+        last_energy_res: PerformanceEnergyResult | None = None
         converged = False
 
         for iteration in range(1, retries_limit + 1):
-            logger.info("Optimization Iteration %d/%d for '%s'", iteration, retries_limit, task[:30])
-            iter_start = time.time()
-
-            # 2. Generate candidate solution and extract code hidden state
-            raw_response, hs_record = self.extractor.extract(
-                prompt=prompt,
-                system_prompt=PERF_SYSTEM_PROMPT,
-            )
-
-            # 3. Parse code
-            parse_res = extract_code(raw_response)
-            candidate_code = parse_res.code
-
-            # 4. Sandbox Execution with test harness
-            candidate_full = candidate_code.strip() + "\n\n" + test_harness.strip()
-            exec_res = self.sandbox.execute(candidate_full)
-            last_exec_res = exec_res
-
-            # 5. Evaluate Computational Physics Energy
-            energy_res = self.evaluator.evaluate(
-                result=exec_res,
-                baseline_result=baseline_exec,
-                code=candidate_code,
-            )
-            last_energy_res = energy_res
-
-            iter_duration_ms = (time.time() - iter_start) * 1000.0
-            speedup = energy_res.speedup_factor or 0.0
-
-            # Convergence criteria: valid code + speedup >= target OR category vectorized/optimized
-            if energy_res.is_valid and (
-                speedup >= desired_speedup
-                or energy_res.category in (PerformanceCategory.VECTORIZED, PerformanceCategory.OPTIMIZED)
-            ):
-                converged = True
-                best_code = candidate_code
-
             logger.info(
-                "Iteration %d: Energy=%.2f (%s) - Speedup=%.1fx - Converged=%s (took %.1fms)",
-                iteration,
-                energy_res.score,
-                energy_res.category.value,
-                speedup,
+                "Optimization Iteration %d/%d for '%s'", iteration, retries_limit, task[:30]
+            )
+
+            (
                 converged,
-                iter_duration_ms,
-            )
-
-            # 6. Record LoopTrace
-            trace_metadata = self._build_perf_trace_metadata(
-                hs_record=hs_record,
-                exec_res=exec_res,
-                energy_res=energy_res,
-                baseline_energy=baseline_energy.score,
-            )
-
-            trace = LoopTrace(
+                candidate_code,
+                energy_res,
+                exec_res,
+                trace,
+                next_prompt,
+            ) = self._run_iteration(
                 task=task,
+                test_harness=test_harness,
+                baseline_exec=baseline_exec,
+                baseline_energy=baseline_energy,
                 prompt=prompt,
-                code=candidate_code,
-                raw_response=raw_response,
-                energy=energy_res.score,
-                energy_category=energy_res.category.value,
-                converged=converged,
                 iteration=iteration,
-                duration_ms=iter_duration_ms,
-                returncode=exec_res.returncode,
-                execution_stdout=exec_res.stdout,
-                execution_stderr=exec_res.stderr,
-                hidden_state=hs_record.to_embedding(),
-                metadata=trace_metadata,
+                desired_speedup=desired_speedup,
             )
+
+            last_energy_res = energy_res
             traces.append(trace)
-            self.harvester.record(trace)
 
             if converged:
-                logger.info("Performance optimization converged on iteration %d! Speedup: %.1fx", iteration, speedup)
+                best_code = candidate_code
+                logger.info(
+                    "Performance optimization converged on iteration %d! Speedup: %.1fx",
+                    iteration,
+                    energy_res.speedup_factor or 0.0,
+                )
                 break
 
-            # 7. Inject Pain Signal for next iteration
-            if iteration < retries_limit:
-                prompt = PERF_PAIN_PROMPT_TEMPLATE.format(
-                    task=task,
-                    pain_signal=energy_res.pain_signal,
-                    returncode=exec_res.returncode,
-                    stderr=exec_res.stderr[-800:] if exec_res.stderr else "(clean)",
-                    stdout=exec_res.stdout[-800:] if exec_res.stdout else "(clean)",
-                )
+            prompt = next_prompt
 
         total_wall_ms = (time.time() - start_wall_time) * 1000.0
         final_energy = last_energy_res.score if last_energy_res else baseline_energy.score
         final_category = last_energy_res.category.value if last_energy_res else "baseline"
-        final_speedup = last_energy_res.speedup_factor if (last_energy_res and last_energy_res.speedup_factor) else 1.0
+        final_speedup = (
+            last_energy_res.speedup_factor
+            if (last_energy_res and last_energy_res.speedup_factor)
+            else 1.0
+        )
         energy_drop = baseline_energy.score - final_energy
 
         return PerformanceLoopSummary(
@@ -308,6 +344,7 @@ class PerformanceAgentLoop:
         if self.world_model is not None:
             try:
                 import torch
+
                 embedding = hs_record.to_embedding()
                 h_tensor = torch.tensor(embedding, dtype=torch.float32)
                 predicted_energy = self.world_model.predict_energy_scalar(h_tensor)

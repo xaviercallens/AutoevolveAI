@@ -71,13 +71,15 @@ class JEPADataset(Dataset):
         self._build_pairs(traces)
         logger.info(
             "JEPADataset: loaded %d pairs from %d traces (%s)",
-            len(self._pairs), len(traces), jsonl_path,
+            len(self._pairs),
+            len(traces),
+            jsonl_path,
         )
 
     def _load_traces(self, path: Path) -> list[dict[str, Any]]:
         """Parse JSONL file into a list of trace dicts."""
         traces = []
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             for line_num, line in enumerate(f, 1):
                 line = line.strip()
                 if not line:
@@ -177,4 +179,4 @@ def train_val_split(
     n_train = n_total - n_val
 
     generator = torch.Generator().manual_seed(seed)
-    return random_split(dataset, [n_train, n_val], generator=generator)
+    return random_split(dataset, [n_train, n_val], generator=generator)  # type: ignore

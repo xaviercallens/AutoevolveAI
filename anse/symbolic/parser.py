@@ -14,8 +14,8 @@ import re
 import textwrap
 from dataclasses import dataclass
 
-
 # ─── Output types ────────────────────────────────────────────────────────────
+
 
 @dataclass
 class ParseResult:
@@ -55,6 +55,7 @@ _CODE_HEURISTIC_RE = re.compile(
 
 # ─── Public API ──────────────────────────────────────────────────────────────
 
+
 def extract_code(text: str) -> ParseResult:
     """
     Extract the first Python code block from *text*.
@@ -93,9 +94,7 @@ def extract_code(text: str) -> ParseResult:
 
     # Strategy 3 — heuristic code lines
     lines = text.splitlines()
-    code_lines = [
-        line for line in lines if _CODE_HEURISTIC_RE.match(line)
-    ]
+    code_lines = [line for line in lines if _CODE_HEURISTIC_RE.match(line)]
     if code_lines:
         code = _clean("\n".join(code_lines))
         return ParseResult(
@@ -144,6 +143,7 @@ def extract_all_code_blocks(text: str) -> list[ParseResult]:
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
+
 
 def _clean(code: str) -> str:
     """Strip trailing whitespace and de-dent if the whole block is indented."""

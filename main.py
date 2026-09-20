@@ -16,7 +16,7 @@ from typing import Any
 
 import yaml
 
-from anse.config import ANSEConfig, get_config
+from anse.config import get_config
 from anse.core.agent_loop import AgentLoop, LoopSummary
 from anse.core.encoder import HiddenStateExtractor
 from anse.memory.harvester import Harvester
@@ -36,7 +36,7 @@ def load_tasks(tasks_path: Path) -> list[dict[str, Any]]:
         logger.error("Tasks file not found: %s", tasks_path)
         return []
 
-    with open(tasks_path, "r", encoding="utf-8") as f:
+    with open(tasks_path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
     if isinstance(data, list):
@@ -82,16 +82,14 @@ def run_benchmark(
     print(f"Total tasks:       {len(tasks)}")
     print(f"Converged tasks:   {converged_count}")
     print(f"Convergence rate:  {convergence_rate:.1f}%")
-    print(f"Target threshold:  70.0%")
+    print("Target threshold:  70.0%")
     print("=" * 70 + "\n")
 
     return summaries, convergence_rate
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="ANSE Phase 1: Neuro-Symbolic Reality Engine CLI"
-    )
+    parser = argparse.ArgumentParser(description="ANSE Phase 1: Neuro-Symbolic Reality Engine CLI")
     parser.add_argument(
         "--model",
         type=str,

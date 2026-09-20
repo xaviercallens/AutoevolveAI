@@ -135,7 +135,7 @@ def test_evaluator_import_error(evaluator):
 
 def test_global_evaluate_energy():
     from anse.symbolic.evaluator import evaluate_energy
-    
+
     code = "assert 1 + 1 == 2\nprint('Done')"
     result = ExecutionResult(
         stdout="Done\n",

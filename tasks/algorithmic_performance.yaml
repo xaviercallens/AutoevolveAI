@@ -168,12 +168,13 @@ tasks:
       from collections import Counter
 
       def top_ngrams(tokens, n=3, top_k=5):
-          counts = Counter(tuple(tokens[i : i + n]) for i in range(len(tokens) - n + 1))
+          counts = Counter(zip(*[tokens[i:] for i in range(n)]))
           return counts.most_common(top_k)
     test_harness: |
       words = ["the", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"]
-      corpus = words * 1500  # 13,500 tokens
+      corpus = words * 3000  # 27,000 tokens
       top5 = top_ngrams(corpus, n=3, top_k=5)
+
       assert len(top5) == 5
       assert top5[0][1] >= top5[1][1]
       print("OK: text_ngram_frequency passed")

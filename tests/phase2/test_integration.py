@@ -8,15 +8,13 @@ Tests the end-to-end flow:
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import pytest
 import torch
 
 from anse.jepa.dataset import JEPADataset
 from anse.jepa.trainer import JEPATrainer
 from anse.jepa.world_model import JEPAWorldModel
-
 
 D_INPUT = 64
 D_HIDDEN = 32
@@ -25,7 +23,7 @@ D_LATENT = 16
 
 def _create_dataset(n: int = 50) -> JEPADataset:
     """Create a synthetic JSONL dataset."""
-    path = Path(tempfile.mktemp(suffix=".jsonl"))
+    path = Path(tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False).name)
     with open(path, "w") as f:
         for i in range(n):
             trace = {
@@ -125,7 +123,9 @@ class TestAgentLoopIntegration:
         ds_small = _create_dataset(20)
         model_small = JEPAWorldModel(D_INPUT, D_HIDDEN, D_LATENT)
         trainer_small = JEPATrainer(
-            model=model_small, lr=1e-3, device="cpu",
+            model=model_small,
+            lr=1e-3,
+            device="cpu",
             checkpoint_dir=Path(tempfile.mkdtemp()),
         )
         summary_small = trainer_small.train(ds_small, epochs=5, batch_size=8)
@@ -133,7 +133,9 @@ class TestAgentLoopIntegration:
         ds_large = _create_dataset(100)
         model_large = JEPAWorldModel(D_INPUT, D_HIDDEN, D_LATENT)
         trainer_large = JEPATrainer(
-            model=model_large, lr=1e-3, device="cpu",
+            model=model_large,
+            lr=1e-3,
+            device="cpu",
             checkpoint_dir=Path(tempfile.mkdtemp()),
         )
         summary_large = trainer_large.train(ds_large, epochs=5, batch_size=16)

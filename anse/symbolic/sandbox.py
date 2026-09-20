@@ -20,12 +20,11 @@ import textwrap
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 from anse.config import SandboxConfig, get_config
 
-
 # ─── Result type ─────────────────────────────────────────────────────────────
+
 
 @dataclass
 class ExecutionResult:
@@ -42,6 +41,7 @@ class ExecutionResult:
 
 
 # ─── AST safety scanner ──────────────────────────────────────────────────────
+
 
 class _DangerousImportVisitor(ast.NodeVisitor):
     """Walk an AST and collect imports from a blocklist."""
@@ -85,7 +85,16 @@ def scan_dangerous_imports(code: str, blocklist: list[str]) -> list[str]:
 _RUNNER_SCRIPT = textwrap.dedent("""
 import sys
 import runpy
-import resource
+try:
+    import resource
+except ImportError:
+    resource = None
+
+try:
+    import psutil
+except ImportError:
+    psutil = None
+
 import time
 import traceback
 
@@ -113,8 +122,14 @@ finally:
     t_end = time.perf_counter()
     duration_ms = (t_end - t_start) * 1000.0
     try:
-        kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        mb = kb / (1024.0 * 1024.0) if sys.platform == "darwin" else kb / 1024.0
+        mb = 0.0
+        if resource is not None:
+            kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            mb = kb / (1024.0 * 1024.0) if sys.platform == "darwin" else kb / 1024.0
+        elif psutil is not None:
+            proc = psutil.Process()
+            mem_info = proc.memory_info()
+            mb = getattr(mem_info, "peak_wset", mem_info.rss) / (1024.0 * 1024.0)
         with open(mem_out, "w", encoding="utf-8") as f:
             f.write(f"{mb:.4f}")
         if time_out:
@@ -143,13 +158,27 @@ def _tier1_execute(code: str, timeout: float) -> ExecutionResult:
 
         start = time.perf_counter()
         try:
+            sub_env = {"PATH": os.environ.get("PATH", ""), "HOME": tmpdir}
+            if sys.platform == "win32":
+                for k in (
+                    "SYSTEMROOT",
+                    "WINDIR",
+                    "TEMP",
+                    "TMP",
+                    "SYSTEMDRIVE",
+                    "COMSPEC",
+                    "PATHEXT",
+                ):
+                    if k in os.environ:
+                        sub_env[k] = os.environ[k]
+
             proc = subprocess.run(
                 [sys.executable, str(runner_path), str(script_path), str(mem_path), str(time_path)],
                 capture_output=True,
                 text=True,
                 timeout=timeout,
                 cwd=tmpdir,
-                env={"PATH": os.environ.get("PATH", ""), "HOME": tmpdir},
+                env=sub_env,
             )
             elapsed_ms = (time.perf_counter() - start) * 1000.0
             if time_path.exists():
@@ -189,6 +218,7 @@ def _tier1_execute(code: str, timeout: float) -> ExecutionResult:
 
 # ─── Tier 2 — Docker ─────────────────────────────────────────────────────────
 
+
 def _tier2_execute(
     code: str,
     timeout: float,
@@ -201,14 +231,13 @@ def _tier2_execute(
     """
     try:
         import docker  # type: ignore[import-untyped]
+
         client = docker.from_env()
     except Exception:
         # Docker not available — fall back to Tier 1 with a warning in stderr
         result = _tier1_execute(code, timeout)
         result.tier_used = 2
-        result.stderr = (
-            "[WARN] Docker unavailable, fell back to Tier-1 sandbox.\n" + result.stderr
-        )
+        result.stderr = "[WARN] Docker unavailable, fell back to Tier-1 sandbox.\n" + result.stderr
         result.dangerous_imports = dangerous_imports
         return result
 
@@ -258,6 +287,7 @@ def _tier2_execute(
 
 # ─── Public executor ─────────────────────────────────────────────────────────
 
+
 class SandboxExecutor:
     """
     Transparently selects Tier-1 (subprocess) or Tier-2 (Docker) execution
@@ -272,12 +302,12 @@ class SandboxExecutor:
 
     def __init__(
         self,
-        cfg: Optional[SandboxConfig] = None,
-        config: Optional[SandboxConfig] = None,
+        cfg: SandboxConfig | None = None,
+        config: SandboxConfig | None = None,
     ) -> None:
         self._cfg = config or cfg or get_config().sandbox
 
-    def execute(self, code: str, force_tier: Optional[int] = None) -> ExecutionResult:
+    def execute(self, code: str, force_tier: int | None = None) -> ExecutionResult:
         """
         Execute *code* in the appropriate sandbox tier.
 

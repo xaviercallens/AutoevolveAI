@@ -11,8 +11,6 @@ import json
 import tempfile
 from pathlib import Path
 
-import pytest
-import torch
 from torch.utils.data import DataLoader
 
 from anse.jepa.dataset import JEPADataset, train_val_split
@@ -20,7 +18,7 @@ from anse.jepa.dataset import JEPADataset, train_val_split
 
 def _create_jsonl(n: int = 20, hidden_dim: int = 64) -> Path:
     """Create a temporary JSONL file with synthetic traces."""
-    path = Path(tempfile.mktemp(suffix=".jsonl"))
+    path = Path(tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False).name)
     with open(path, "w") as f:
         for i in range(n):
             trace = {
@@ -69,8 +67,7 @@ class TestJEPADataset:
 
         for i in range(len(dataset)):
             _, _, energy = dataset[i]
-            assert 0.0 <= energy.item() <= 1.0, \
-                f"Energy should be in [0, 1], got {energy.item()}"
+            assert 0.0 <= energy.item() <= 1.0, f"Energy should be in [0, 1], got {energy.item()}"
 
     def test_dataset_pairs_consecutive_traces(self):
         """Pairs should be formed from traces grouped by task.
@@ -84,7 +81,7 @@ class TestJEPADataset:
 
     def test_dataset_empty_jsonl(self):
         """Empty JSONL should produce an empty dataset gracefully."""
-        path = Path(tempfile.mktemp(suffix=".jsonl"))
+        path = Path(tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False).name)
         path.write_text("")
         dataset = JEPADataset(path, hidden_dim=64)
         assert len(dataset) == 0

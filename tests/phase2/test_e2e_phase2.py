@@ -33,23 +33,17 @@ import torch
 import torch.nn as nn
 
 from anse.jepa.dataset import JEPADataset, train_val_split
-from anse.jepa.ema import cosine_ema_schedule, ema_update
+from anse.jepa.ema import cosine_ema_schedule
 from anse.jepa.trainer import JEPATrainer, TrainingSummary
 from anse.jepa.world_model import (
-    ContextEncoder,
-    EnergyHead,
-    JEPAEnergyResult,
     JEPAWorldModel,
-    Predictor,
-    TargetEncoder,
     VICRegLoss,
 )
 
-
 # ── Dimensions matching a small test configuration ────────────────────────
-D_INPUT = 64     # d  (Lean: HiddenState d)
-D_HIDDEN = 32    # internal hidden dim
-D_LATENT = 16    # k  (Lean: LatentCode k)
+D_INPUT = 64  # d  (Lean: HiddenState d)
+D_HIDDEN = 32  # internal hidden dim
+D_LATENT = 16  # k  (Lean: LatentCode k)
 BATCH = 24
 N_TRACES = 120
 
@@ -70,7 +64,7 @@ def _create_synthetic_jsonl(
         - Early iterations have high energy (syntax errors, crashes)
         - Later iterations converge toward E=0 (clean execution)
     """
-    path = Path(tempfile.mktemp(suffix=".jsonl"))
+    path = Path(tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False).name)
     with open(path, "w") as f:
         for i in range(n):
             task_id = f"task_{i % 10}"
@@ -132,7 +126,7 @@ def _build_trainer(
 # ══════════════════════════════════════════════════════════════════════════
 
 
-class TestE2E01_FullTrainingPipeline:
+class TestE2E01FullTrainingPipeline:
     """Complete pipeline: JSONL → Dataset → Trainer → Checkpoint → Predict."""
 
     def test_pipeline_trains_and_produces_checkpoint(self):
@@ -219,7 +213,7 @@ class TestE2E01_FullTrainingPipeline:
 # ══════════════════════════════════════════════════════════════════════════
 
 
-class TestE2E02_CheckpointRoundtrip:
+class TestE2E02CheckpointRoundtrip:
     """Train → save → create fresh model → load → same predictions."""
 
     def test_save_load_predictions_match(self):
@@ -273,7 +267,7 @@ class TestE2E02_CheckpointRoundtrip:
 # ══════════════════════════════════════════════════════════════════════════
 
 
-class TestE2E03_JEPAEnergyProperties:
+class TestE2E03JEPAEnergyProperties:
     """Validate Lean 4 formal properties end-to-end on a trained model."""
 
     @pytest.fixture(autouse=True)
@@ -306,7 +300,7 @@ class TestE2E03_JEPAEnergyProperties:
         h = torch.randn(1, D_INPUT)
         # Pass the SAME hidden state as both context and target
         z_ctx = self.model.ctx_encoder(h)
-        z_tgt = self.model.tgt_encoder(h)
+        self.model.tgt_encoder(h)
         z_pred = self.model.predictor(z_ctx, z_ctx)
 
         # If z_pred == z_tgt, energy should be 0
@@ -335,9 +329,7 @@ class TestE2E03_JEPAEnergyProperties:
             delta = abs(e_perturbed - e_base)
             # Due to Lipschitz, delta should be bounded by K * eps * something
             # The key property is that it should shrink with eps
-            assert delta < e_base + 1000 * eps, (
-                f"Energy discontinuity at eps={eps}: delta={delta}"
-            )
+            assert delta < e_base + 1000 * eps, f"Energy discontinuity at eps={eps}: delta={delta}"
 
     def test_jepa_energy_differentiable(self):
         """Energy must have gradients for training (gradient-based optimisation).
@@ -359,7 +351,7 @@ class TestE2E03_JEPAEnergyProperties:
 # ══════════════════════════════════════════════════════════════════════════
 
 
-class TestE2E04_VICRegAntiCollapse:
+class TestE2E04VICRegAntiCollapse:
     """Verify that the JEPA latent space doesn't collapse during training.
 
     Lean 4: vicreg_prevents_collapse (T2) — vicreg_variance = 0 → σ_j ≥ γ.
@@ -423,7 +415,7 @@ class TestE2E04_VICRegAntiCollapse:
 # ══════════════════════════════════════════════════════════════════════════
 
 
-class TestE2E05_EMADuringTraining:
+class TestE2E05EMADuringTraining:
     """Verify EMA target encoder is properly updated during training.
 
     Lean 4: ema_converges_step (T1).
@@ -440,9 +432,7 @@ class TestE2E05_EMADuringTraining:
 
         # Record initial target params (= copy of context)
         initial_diff = 0.0
-        for p_ctx, p_tgt in zip(
-            model.ctx_encoder.parameters(), model.tgt_encoder.parameters()
-        ):
+        for p_ctx, p_tgt in zip(model.ctx_encoder.parameters(), model.tgt_encoder.parameters()):
             initial_diff += (p_ctx.data - p_tgt.data).abs().sum().item()
         assert initial_diff == 0.0, "Target should start as exact copy"
 
@@ -452,9 +442,7 @@ class TestE2E05_EMADuringTraining:
 
         # After training, they should differ
         final_diff = 0.0
-        for p_ctx, p_tgt in zip(
-            model.ctx_encoder.parameters(), model.tgt_encoder.parameters()
-        ):
+        for p_ctx, p_tgt in zip(model.ctx_encoder.parameters(), model.tgt_encoder.parameters()):
             final_diff += (p_ctx.data - p_tgt.data).abs().sum().item()
         assert final_diff > 0.0, "After training, target and context should diverge"
 
@@ -476,7 +464,7 @@ class TestE2E05_EMADuringTraining:
         # Should be monotonically non-decreasing
         for i in range(len(taus) - 1):
             assert taus[i] <= taus[i + 1] + 1e-10, (
-                f"EMA schedule not monotonic at step {i}: {taus[i]} > {taus[i+1]}"
+                f"EMA schedule not monotonic at step {i}: {taus[i]} > {taus[i + 1]}"
             )
 
 
@@ -485,7 +473,7 @@ class TestE2E05_EMADuringTraining:
 # ══════════════════════════════════════════════════════════════════════════
 
 
-class TestE2E06_DatasetIntegrity:
+class TestE2E06DatasetIntegrity:
     """Verify dataset correctness end-to-end."""
 
     def test_jsonl_to_tensor_pipeline(self):
@@ -533,7 +521,7 @@ class TestE2E06_DatasetIntegrity:
 # ══════════════════════════════════════════════════════════════════════════
 
 
-class TestE2E07_AgentLoopIntegration:
+class TestE2E07AgentLoopIntegration:
     """Full integration of JEPA into the Phase 1 AgentLoop."""
 
     def test_world_model_produces_predictions_in_loop(self):
@@ -604,7 +592,7 @@ class TestE2E07_AgentLoopIntegration:
 # ══════════════════════════════════════════════════════════════════════════
 
 
-class TestE2E08_Reproducibility:
+class TestE2E08Reproducibility:
     """Two identical training runs with the same seed must produce
     identical results."""
 
@@ -652,7 +640,7 @@ class TestE2E08_Reproducibility:
 # ══════════════════════════════════════════════════════════════════════════
 
 
-class TestE2E09_ComponentWiring:
+class TestE2E09ComponentWiring:
     """Verify all components are wired correctly in the full model."""
 
     def test_forward_pass_shapes(self):
@@ -700,11 +688,20 @@ class TestE2E09_ComponentWiring:
 
         # total_loss should equal the sum of components
         expected_total = (
-            metrics["prediction_loss"]
-            + metrics["vicreg_loss"]
-            + metrics["energy_head_loss"]
+            metrics["prediction_loss"] + metrics["vicreg_loss"] + metrics["energy_head_loss"]
         )
         assert abs(metrics["total_loss"] - expected_total) < 1e-4
+
+    def _assert_has_gradients(self, module: nn.Module, name_prefix: str):
+        for name, p in module.named_parameters():
+            if p.requires_grad:
+                assert p.grad is not None, f"No gradient for {name_prefix}.{name}"
+
+    def _assert_no_gradients(self, module: nn.Module, name_prefix: str):
+        for name, p in module.named_parameters():
+            assert p.grad is None or torch.all(p.grad == 0), (
+                f"Target encoder {name_prefix}.{name} should not have gradients"
+            )
 
     def test_gradient_flows_through_all_trainable_params(self):
         """Gradients must reach ctx_encoder, predictor, and energy_head.
@@ -719,26 +716,10 @@ class TestE2E09_ComponentWiring:
         loss, _ = model.compute_training_loss(h_ctx, h_tgt, energy_actual)
         loss.backward()
 
-        # ctx_encoder should have gradients
-        for name, p in model.ctx_encoder.named_parameters():
-            if p.requires_grad:
-                assert p.grad is not None, f"No gradient for ctx_encoder.{name}"
-
-        # predictor should have gradients
-        for name, p in model.predictor.named_parameters():
-            if p.requires_grad:
-                assert p.grad is not None, f"No gradient for predictor.{name}"
-
-        # energy_head should have gradients
-        for name, p in model.energy_head.named_parameters():
-            if p.requires_grad:
-                assert p.grad is not None, f"No gradient for energy_head.{name}"
-
-        # tgt_encoder should have NO gradients (EMA only)
-        for name, p in model.tgt_encoder.named_parameters():
-            assert p.grad is None or torch.all(p.grad == 0), (
-                f"Target encoder {name} should not have gradients"
-            )
+        self._assert_has_gradients(model.ctx_encoder, "ctx_encoder")
+        self._assert_has_gradients(model.predictor, "predictor")
+        self._assert_has_gradients(model.energy_head, "energy_head")
+        self._assert_no_gradients(model.tgt_encoder, "tgt_encoder")
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -746,12 +727,12 @@ class TestE2E09_ComponentWiring:
 # ══════════════════════════════════════════════════════════════════════════
 
 
-class TestE2E10_StressAndEdgeCases:
+class TestE2E10StressAndEdgeCases:
     """Edge cases and stress tests."""
 
     def test_empty_dataset_graceful(self):
         """Training on empty dataset should not crash."""
-        path = Path(tempfile.mktemp(suffix=".jsonl"))
+        path = Path(tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False).name)
         path.touch()  # empty file
         ds = JEPADataset(path, hidden_dim=D_INPUT)
         assert len(ds) == 0
@@ -764,7 +745,7 @@ class TestE2E10_StressAndEdgeCases:
 
     def test_single_sample_dataset(self):
         """Training with 1 sample should complete without error."""
-        path = Path(tempfile.mktemp(suffix=".jsonl"))
+        path = Path(tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False).name)
         with open(path, "w") as f:
             trace = {
                 "task": "singleton",
@@ -786,7 +767,7 @@ class TestE2E10_StressAndEdgeCases:
 
         Roadmap: Syntax Error / Crash = High Energy (E = 100).
         """
-        path = Path(tempfile.mktemp(suffix=".jsonl"))
+        path = Path(tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False).name)
         with open(path, "w") as f:
             for i in range(30):
                 trace = {
@@ -808,7 +789,7 @@ class TestE2E10_StressAndEdgeCases:
 
         Roadmap: Clean Execution = Zero Energy (E = 0).
         """
-        path = Path(tempfile.mktemp(suffix=".jsonl"))
+        path = Path(tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False).name)
         with open(path, "w") as f:
             for i in range(30):
                 trace = {

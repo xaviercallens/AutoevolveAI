@@ -1,11 +1,14 @@
 import pytest
-from anse.symbolic.ml_sandbox import MLSandboxExecutor
+
 from anse.config import SandboxConfig
+from anse.symbolic.ml_sandbox import MLSandboxExecutor
+
 
 @pytest.fixture
 def sandbox():
     cfg = SandboxConfig(timeout_seconds=30.0)
     return MLSandboxExecutor(cfg=cfg)
+
 
 class TestMLSandboxExecutor:
     def test_successful_training(self, sandbox):
@@ -20,7 +23,7 @@ class SimpleModel(nn.Module):
 """
         result = sandbox.execute(code)
         assert result.returncode == 0
-        assert result.parameters == 42 # (20 * 2) + 2
+        assert result.parameters == 42  # (20 * 2) + 2
         assert result.val_loss < float("inf")
         assert not result.is_shape_mismatch
 

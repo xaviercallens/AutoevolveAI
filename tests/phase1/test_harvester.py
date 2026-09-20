@@ -1,7 +1,5 @@
 """Tests for Harvester and LoopTrace storage."""
 
-import json
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -120,11 +118,13 @@ def test_harvester_disabled_chroma_query(temp_memory):
 
 
 def test_harvester_chroma_init_exception(temp_memory, monkeypatch):
-    import sys
     # Ensure chromadb is imported so we can mock it
     import chromadb
-    monkeypatch.setattr(chromadb, "PersistentClient", MagicMock(side_effect=Exception("Mock Init Error")))
-    
+
+    monkeypatch.setattr(
+        chromadb, "PersistentClient", MagicMock(side_effect=Exception("Mock Init Error"))
+    )
+
     # Should silently fallback to JSONL
     harvester = Harvester(config=temp_memory, enable_chroma=True)
     assert harvester._chroma_collection is None
@@ -132,24 +132,33 @@ def test_harvester_chroma_init_exception(temp_memory, monkeypatch):
 
 def test_harvester_chroma_upsert_exception(temp_memory, monkeypatch):
     import chromadb
-    
+
     mock_collection = MagicMock()
     mock_collection.upsert.side_effect = Exception("Mock Upsert Error")
-    
+
     mock_client = MagicMock()
     mock_client.get_or_create_collection.return_value = mock_collection
-    
+
     monkeypatch.setattr(chromadb, "PersistentClient", lambda path: mock_client)
-    
+
     harvester = Harvester(config=temp_memory, enable_chroma=True)
-    
+
     trace = LoopTrace(
-        task="Test task", prompt="P", code="C", raw_response="R",
-        energy=0.0, energy_category="C", converged=True, iteration=1,
-        duration_ms=10.0, returncode=0, execution_stdout="", execution_stderr="",
-        hidden_state=[0.1] * 128
+        task="Test task",
+        prompt="P",
+        code="C",
+        raw_response="R",
+        energy=0.0,
+        energy_category="C",
+        converged=True,
+        iteration=1,
+        duration_ms=10.0,
+        returncode=0,
+        execution_stdout="",
+        execution_stderr="",
+        hidden_state=[0.1] * 128,
     )
-    
+
     # Should not raise exception, but log it and continue writing to jsonl
     harvester.record(trace)
     assert harvester.get_trace_count() == 1
@@ -157,17 +166,17 @@ def test_harvester_chroma_upsert_exception(temp_memory, monkeypatch):
 
 def test_harvester_chroma_query_exception(temp_memory, monkeypatch):
     import chromadb
-    
+
     mock_collection = MagicMock()
     mock_collection.query.side_effect = Exception("Mock Query Error")
-    
+
     mock_client = MagicMock()
     mock_client.get_or_create_collection.return_value = mock_collection
-    
+
     monkeypatch.setattr(chromadb, "PersistentClient", lambda path: mock_client)
-    
+
     harvester = Harvester(config=temp_memory, enable_chroma=True)
-    
+
     results = harvester.query_similar([0.1] * 128)
     # Should return empty list gracefully
     assert results == []
@@ -175,12 +184,12 @@ def test_harvester_chroma_query_exception(temp_memory, monkeypatch):
 
 def test_harvester_json_load_exception(temp_memory):
     harvester = Harvester(config=temp_memory, enable_chroma=False)
-    
+
     # Write a malformed json line
     temp_memory.interactions_log.parent.mkdir(parents=True, exist_ok=True)
     with open(temp_memory.interactions_log, "w") as f:
         f.write("{malformed json\n")
-        
+
     # Should skip the bad line
     traces = harvester.load_traces()
     assert traces == []

@@ -19,13 +19,12 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 from anse.config import PerformanceConfig, get_config
 from anse.symbolic.sandbox import ExecutionResult
 
-
 # ─── Categories ──────────────────────────────────────────────────────────────
+
 
 class PerformanceCategory(str, Enum):
     SYNTAX_ERROR = "syntax_error"
@@ -64,20 +63,21 @@ class PerformanceEnergyResult:
     pain_signal: str
     """Pain/reward diagnostic feedback for System 2 pondering or prompt injection."""
 
-    speedup_factor: Optional[float] = None
+    speedup_factor: float | None = None
     """Speedup relative to baseline: T_baseline / T_cand."""
 
-    memory_reduction_ratio: Optional[float] = None
+    memory_reduction_ratio: float | None = None
     """Fractional memory saved relative to baseline: 1.0 - (RAM_cand / RAM_baseline)."""
 
-    energy_delta: Optional[float] = None
+    energy_delta: float | None = None
     """Change in energy: E_baseline - E_cand. Positive indicates improvement."""
 
-    relative_energy: Optional[float] = None
+    relative_energy: float | None = None
     """Normalized energy relative to baseline: (T / T_base) + (M / M_base)."""
 
 
 # ─── Evaluator ───────────────────────────────────────────────────────────────
+
 
 class PerformanceEnergyEvaluator:
     """
@@ -85,15 +85,118 @@ class PerformanceEnergyEvaluator:
     Execution Time (ms) + Peak RAM Usage (MB).
     """
 
-    def __init__(self, config: Optional[PerformanceConfig] = None) -> None:
+    def __init__(self, config: PerformanceConfig | None = None) -> None:
         self.config = config or get_config().performance
+
+    def _check_correctness_gate(
+        self, result: ExecutionResult, stdout: str, stderr: str, expected_output: str | None
+    ) -> PerformanceEnergyResult | None:
+        if result.timed_out:
+            return self._build_failure_result(
+                result=result,
+                category=PerformanceCategory.TIMEOUT,
+                pain_signal=(
+                    f"COMPUTATIONAL CRASH (TIMEOUT): Execution exceeded time limit.\n"
+                    f"Stderr:\n{stderr[-1000:]}"
+                ),
+            )
+        if re.search(r"SyntaxError", stderr, re.IGNORECASE):
+            return self._build_failure_result(
+                result=result,
+                category=PerformanceCategory.SYNTAX_ERROR,
+                pain_signal=(
+                    f"COMPUTATIONAL CRASH (SYNTAX ERROR): Code could not be parsed.\n"
+                    f"Traceback:\n{stderr[-1000:]}"
+                ),
+            )
+        if re.search(r"AssertionError", stderr, re.IGNORECASE) or re.search(r"FAILED|FAIL", stdout):
+            return self._build_failure_result(
+                result=result,
+                category=PerformanceCategory.TEST_FAILURE,
+                pain_signal=(
+                    f"CORRECTNESS FAILURE: Code failed functional verification tests.\n"
+                    f"Optimization must strictly preserve algorithmic correctness.\n"
+                    f"Stderr:\n{stderr[-1000:]}\nStdout:\n{stdout[-1000:]}"
+                ),
+            )
+        if result.returncode != 0:
+            return self._build_failure_result(
+                result=result,
+                category=PerformanceCategory.CRASH,
+                pain_signal=(
+                    f"COMPUTATIONAL CRASH: Runtime exception raised (exit code {result.returncode}).\n"
+                    f"Traceback:\n{stderr[-1000:]}"
+                ),
+            )
+        if expected_output is not None:
+            actual = stdout.strip()
+            expected = expected_output.strip()
+            if actual != expected:
+                return self._build_failure_result(
+                    result=result,
+                    category=PerformanceCategory.WRONG_OUTPUT,
+                    pain_signal=(
+                        f"CORRECTNESS FAILURE: Output does not match expected reference.\n"
+                        f"Expected:\n{expected[:500]}\n\nActual:\n{actual[:500]}"
+                    ),
+                )
+        return None
+
+    def _categorize_performance(
+        self, speedup: float | None, duration_ms: float, base_t: float
+    ) -> PerformanceCategory:
+        if speedup is not None:
+            if speedup >= 5.0 or (duration_ms < 0.15 * base_t):
+                return PerformanceCategory.VECTORIZED
+            if speedup >= 2.0:
+                return PerformanceCategory.OPTIMIZED
+            if speedup >= 1.05:
+                return PerformanceCategory.MODERATE
+            return PerformanceCategory.INEFFICIENT
+        return (
+            PerformanceCategory.OPTIMIZED if duration_ms < 50.0 else PerformanceCategory.INEFFICIENT
+        )
+
+    def _generate_pain_signal(
+        self,
+        category: PerformanceCategory,
+        raw_energy: float,
+        duration_ms: float,
+        peak_ram_mb: float,
+        speedup: float | None,
+        baseline_result: ExecutionResult | None,
+    ) -> str:
+        if category in (PerformanceCategory.VECTORIZED, PerformanceCategory.OPTIMIZED):
+            speedup_str = f"{speedup:.1f}x speedup" if speedup else "fast execution"
+            return (
+                f"PERFORMANCE REWARD: Massive Energy Drop! (Energy = {raw_energy:.2f})\n"
+                f"- Execution Time: {duration_ms:.2f} ms ({speedup_str})\n"
+                f"- Peak RAM: {peak_ram_mb:.2f} MB\n"
+                f"- Status: {category.value.upper()} implementation successfully discovered."
+            )
+        base_info = ""
+        if baseline_result is not None:
+            base_info = (
+                f" (Baseline: {baseline_result.duration_ms:.2f} ms, "
+                f"{baseline_result.peak_ram_mb:.2f} MB)"
+            )
+        return (
+            f"PERFORMANCE PAIN SIGNAL: High Computational Energy (E = {raw_energy:.2f})\n"
+            f"- Execution Time: {duration_ms:.2f} ms{base_info}\n"
+            f"- Peak RAM: {peak_ram_mb:.2f} MB\n"
+            f"System 2 Pain Diagnosis:\n"
+            f"The algorithm is functionally correct but computationally inefficient. "
+            f"Nested Python loops and unvectorized allocations create high latency and memory overhead. "
+            f"Ponder further: replace sequential for-loops with NumPy array broadcasting, "
+            f"contiguous memory layout, or SIMD vectorization to minimize Energy towards zero."
+        )
 
     def evaluate(
         self,
         result: ExecutionResult,
-        baseline_result: Optional[ExecutionResult] = None,
-        expected_output: Optional[str] = None,
-        code: Optional[str] = None,
+        baseline_result: ExecutionResult | None = None,
+        expected_output: str | None = None,
+        code: str | None = None,
     ) -> PerformanceEnergyResult:
         """
         Evaluate *result* and compute the continuous energy score.
@@ -114,59 +217,9 @@ class PerformanceEnergyEvaluator:
         stdout = result.stdout or ""
 
         # 1. Correctness Gate: Any fatal failure spikes energy to infinity (penalty)
-        if result.timed_out:
-            return self._build_failure_result(
-                result=result,
-                category=PerformanceCategory.TIMEOUT,
-                pain_signal=(
-                    f"COMPUTATIONAL CRASH (TIMEOUT): Execution exceeded time limit.\n"
-                    f"Stderr:\n{stderr[-1000:]}"
-                ),
-            )
-
-        if re.search(r"SyntaxError", stderr, re.IGNORECASE):
-            return self._build_failure_result(
-                result=result,
-                category=PerformanceCategory.SYNTAX_ERROR,
-                pain_signal=(
-                    f"COMPUTATIONAL CRASH (SYNTAX ERROR): Code could not be parsed.\n"
-                    f"Traceback:\n{stderr[-1000:]}"
-                ),
-            )
-
-        if re.search(r"AssertionError", stderr, re.IGNORECASE) or re.search(r"FAILED|FAIL", stdout):
-            return self._build_failure_result(
-                result=result,
-                category=PerformanceCategory.TEST_FAILURE,
-                pain_signal=(
-                    f"CORRECTNESS FAILURE: Code failed functional verification tests.\n"
-                    f"Optimization must strictly preserve algorithmic correctness.\n"
-                    f"Stderr:\n{stderr[-1000:]}\nStdout:\n{stdout[-1000:]}"
-                ),
-            )
-
-        if result.returncode != 0:
-            return self._build_failure_result(
-                result=result,
-                category=PerformanceCategory.CRASH,
-                pain_signal=(
-                    f"COMPUTATIONAL CRASH: Runtime exception raised (exit code {result.returncode}).\n"
-                    f"Traceback:\n{stderr[-1000:]}"
-                ),
-            )
-
-        if expected_output is not None:
-            actual = stdout.strip()
-            expected = expected_output.strip()
-            if actual != expected:
-                return self._build_failure_result(
-                    result=result,
-                    category=PerformanceCategory.WRONG_OUTPUT,
-                    pain_signal=(
-                        f"CORRECTNESS FAILURE: Output does not match expected reference.\n"
-                        f"Expected:\n{expected[:500]}\n\nActual:\n{actual[:500]}"
-                    ),
-                )
+        failure_res = self._check_correctness_gate(result, stdout, stderr, expected_output)
+        if failure_res is not None:
+            return failure_res
 
         # 2. Continuous Physics Calculation
         duration_ms = max(result.duration_ms, 0.001)
@@ -176,10 +229,11 @@ class PerformanceEnergyEvaluator:
             self.config.weight_peak_ram_mb * peak_ram_mb
         )
 
-        speedup: Optional[float] = None
-        mem_red: Optional[float] = None
-        energy_delta: Optional[float] = None
-        rel_energy: Optional[float] = None
+        speedup: float | None = None
+        mem_red: float | None = None
+        energy_delta: float | None = None
+        rel_energy: float | None = None
+        base_t = float("inf")
 
         if baseline_result is not None:
             base_t = max(baseline_result.duration_ms, 0.001)
@@ -194,44 +248,12 @@ class PerformanceEnergyEvaluator:
             rel_energy = (duration_ms / base_t) + (peak_ram_mb / base_m)
 
         # 3. Categorization based on performance gain
-        if speedup is not None:
-            if speedup >= 5.0 or (duration_ms < 0.15 * base_t):
-                category = PerformanceCategory.VECTORIZED
-            elif speedup >= 2.0:
-                category = PerformanceCategory.OPTIMIZED
-            elif speedup >= 1.1:
-                category = PerformanceCategory.MODERATE
-            else:
-                category = PerformanceCategory.INEFFICIENT
-        else:
-            category = PerformanceCategory.OPTIMIZED if duration_ms < 50.0 else PerformanceCategory.INEFFICIENT
+        category = self._categorize_performance(speedup, duration_ms, base_t)
 
         # 4. Generate Latent Feedback (Pain vs Reward Signal)
-        if category in (PerformanceCategory.VECTORIZED, PerformanceCategory.OPTIMIZED):
-            speedup_str = f"{speedup:.1f}x speedup" if speedup else "fast execution"
-            pain_signal = (
-                f"PERFORMANCE REWARD: Massive Energy Drop! (Energy = {raw_energy:.2f})\n"
-                f"- Execution Time: {duration_ms:.2f} ms ({speedup_str})\n"
-                f"- Peak RAM: {peak_ram_mb:.2f} MB\n"
-                f"- Status: {category.value.upper()} implementation successfully discovered."
-            )
-        else:
-            base_info = ""
-            if baseline_result is not None:
-                base_info = (
-                    f" (Baseline: {baseline_result.duration_ms:.2f} ms, "
-                    f"{baseline_result.peak_ram_mb:.2f} MB)"
-                )
-            pain_signal = (
-                f"PERFORMANCE PAIN SIGNAL: High Computational Energy (E = {raw_energy:.2f})\n"
-                f"- Execution Time: {duration_ms:.2f} ms{base_info}\n"
-                f"- Peak RAM: {peak_ram_mb:.2f} MB\n"
-                f"System 2 Pain Diagnosis:\n"
-                f"The algorithm is functionally correct but computationally inefficient. "
-                f"Nested Python loops and unvectorized allocations create high latency and memory overhead. "
-                f"Ponder further: replace sequential for-loops with NumPy array broadcasting, "
-                f"contiguous memory layout, or SIMD vectorization to minimize Energy towards zero."
-            )
+        pain_signal = self._generate_pain_signal(
+            category, raw_energy, duration_ms, peak_ram_mb, speedup, baseline_result
+        )
 
         return PerformanceEnergyResult(
             score=raw_energy,

@@ -39,7 +39,9 @@ def parse_args() -> argparse.Namespace:
 
     # Data
     parser.add_argument(
-        "--data", type=Path, required=True,
+        "--data",
+        type=Path,
+        required=True,
         help="Path to interactions.jsonl from Phase 1 Harvester.",
     )
 
@@ -47,27 +49,36 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--epochs", type=int, default=100, help="Number of training epochs.")
     parser.add_argument("--batch-size", type=int, default=32, help="Mini-batch size.")
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate.")
-    parser.add_argument("--val-fraction", type=float, default=0.2, help="Validation split fraction.")
+    parser.add_argument(
+        "--val-fraction", type=float, default=0.2, help="Validation split fraction."
+    )  # noqa: E501
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
 
     # Model
-    parser.add_argument("--hidden-dim", type=int, default=4096, help="Input hidden state dimension.")
+    parser.add_argument(
+        "--hidden-dim", type=int, default=4096, help="Input hidden state dimension."
+    )  # noqa: E501
     parser.add_argument("--latent-dim", type=int, default=512, help="JEPA latent dimension.")
     parser.add_argument("--device", type=str, default="cpu", help="Device: cpu, cuda, auto.")
 
     # Checkpoint
     parser.add_argument(
-        "--checkpoint-dir", type=Path, default=Path("checkpoints"),
+        "--checkpoint-dir",
+        type=Path,
+        default=Path("checkpoints"),
         help="Directory for saving model checkpoints.",
     )
     parser.add_argument(
-        "--checkpoint", type=Path, default=None,
+        "--checkpoint",
+        type=Path,
+        default=None,
         help="Load model from checkpoint (for --validate or resume).",
     )
 
     # Mode
     parser.add_argument(
-        "--validate", action="store_true",
+        "--validate",
+        action="store_true",
         help="Run validation only (requires --checkpoint).",
     )
 
@@ -125,6 +136,7 @@ def main() -> int:
             return 1
 
         from torch.utils.data import DataLoader
+
         from anse.jepa.dataset import train_val_split
 
         _, val_ds = train_val_split(dataset, args.val_fraction, args.seed)

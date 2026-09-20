@@ -24,7 +24,7 @@ import time
 import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from anse.config import MemoryConfig, get_config
 
@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 # ─── Loop Trace Dataclass ────────────────────────────────────────────────────
 
+
 @dataclass
 class LoopTrace:
     """
@@ -40,6 +41,7 @@ class LoopTrace:
 
     Corresponds to a sample in Lean 4 `Dataset X Y n`.
     """
+
     task: str
     prompt: str
     code: str
@@ -64,6 +66,7 @@ class LoopTrace:
 
 
 # ─── Trace Harvester ─────────────────────────────────────────────────────────
+
 
 class Harvester:
     """
@@ -95,11 +98,12 @@ class Harvester:
         """Initialize ChromaDB client and collection."""
         try:
             import chromadb
+
             persist_dir = str(self.config.persist_directory)
             Path(persist_dir).mkdir(parents=True, exist_ok=True)
 
-            self._chroma_client = chromadb.PersistentClient(path=persist_dir)
-            self._chroma_collection = self._chroma_client.get_or_create_collection(
+            self._chroma_client = chromadb.PersistentClient(path=persist_dir)  # type: ignore
+            self._chroma_collection = self._chroma_client.get_or_create_collection(  # type: ignore
                 name=self.collection_name,
                 metadata={"hnsw:space": "cosine"},
             )
@@ -147,7 +151,7 @@ class Harvester:
                 "timestamp": float(trace.timestamp),
             }
 
-            self._chroma_collection.upsert(
+            self._chroma_collection.upsert(  # type: ignore
                 ids=[trace.trace_id],
                 embeddings=[trace.hidden_state],
                 documents=[trace.code],
@@ -177,12 +181,20 @@ class Harvester:
             hits = []
             if results and results.get("ids") and results["ids"][0]:
                 for i in range(len(results["ids"][0])):
-                    hits.append({
-                        "id": results["ids"][0][i],
-                        "document": results["documents"][0][i] if results.get("documents") else "",
-                        "metadata": results["metadatas"][0][i] if results.get("metadatas") else {},
-                        "distance": results["distances"][0][i] if results.get("distances") else 0.0,
-                    })
+                    hits.append(
+                        {
+                            "id": results["ids"][0][i],
+                            "document": results["documents"][0][i]
+                            if results.get("documents")
+                            else "",
+                            "metadata": results["metadatas"][0][i]
+                            if results.get("metadatas")
+                            else {},
+                            "distance": results["distances"][0][i]
+                            if results.get("distances")
+                            else 0.0,
+                        }
+                    )
             return hits
         except Exception as e:
             logger.warning("ChromaDB query failed: %s", e)
@@ -193,7 +205,7 @@ class Harvester:
         if not self.log_path.exists():
             return 0
         count = 0
-        with open(self.log_path, "r", encoding="utf-8") as f:
+        with open(self.log_path, encoding="utf-8") as f:
             for _ in f:
                 count += 1
         return count
@@ -203,7 +215,7 @@ class Harvester:
         if not self.log_path.exists():
             return []
         traces = []
-        with open(self.log_path, "r", encoding="utf-8") as f:
+        with open(self.log_path, encoding="utf-8") as f:
             lines = f.readlines()
             for line in lines[-limit:]:
                 line = line.strip()

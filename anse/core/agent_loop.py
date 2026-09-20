@@ -20,8 +20,8 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass, field
-from typing import Any, Optional
+from dataclasses import dataclass
+from typing import Any
 
 from anse.config import ANSEConfig, get_config
 from anse.core.encoder import HiddenStateExtractor, HiddenStateRecord
@@ -41,9 +41,11 @@ logger = logging.getLogger(__name__)
 
 # ─── Loop Result Summary ─────────────────────────────────────────────────────
 
+
 @dataclass
 class LoopSummary:
     """Outcome of running the agent loop on a single task."""
+
     task: str
     converged: bool
     iterations: int
@@ -77,6 +79,7 @@ Analyze the failure, correct the bug, and provide the complete fixed Python code
 
 
 # ─── Agent Loop ──────────────────────────────────────────────────────────────
+
 
 class AgentLoop:
     """
@@ -121,7 +124,6 @@ class AgentLoop:
 
         prompt = f"TASK:\n{task}"
         code = ""
-        last_exec_result: ExecutionResult | None = None
         last_energy: EnergyResult | None = None
 
         for iteration in range(1, retries_limit + 1):
@@ -140,7 +142,6 @@ class AgentLoop:
 
             # 3. Execute in Sandbox
             exec_res = self.sandbox.execute(code)
-            last_exec_result = exec_res
 
             # 4. Evaluate Energy
             energy_res = self.evaluator.evaluate(
@@ -199,7 +200,9 @@ class AgentLoop:
 
         total_duration_ms = (time.time() - start_time) * 1000.0
         final_energy = last_energy.score if last_energy else 100.0
-        final_category = last_energy.category.value if last_energy else EnergyCategory.RUNTIME_ERROR.value
+        final_category = (
+            last_energy.category.value if last_energy else EnergyCategory.RUNTIME_ERROR.value
+        )
         converged = final_energy <= self.convergence_threshold
 
         return LoopSummary(
@@ -231,6 +234,7 @@ class AgentLoop:
         if self.world_model is not None:
             try:
                 import torch
+
                 embedding = hs_record.to_embedding()
                 h_tensor = torch.tensor(embedding, dtype=torch.float32)
                 predicted_energy = self.world_model.predict_energy_scalar(h_tensor)
@@ -242,7 +246,9 @@ class AgentLoop:
 
                 logger.info(
                     "JEPA prediction: predicted=%.1f actual=%.1f surprise=%.1f",
-                    predicted_energy, actual_energy, surprise,
+                    predicted_energy,
+                    actual_energy,
+                    surprise,
                 )
             except Exception as e:
                 logger.warning("JEPA prediction failed: %s", e)

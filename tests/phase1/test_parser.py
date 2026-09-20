@@ -49,10 +49,7 @@ def test_parser_extract_all_blocks():
 
 def test_parser_extract_all_generic_blocks():
     # When no python blocks exist, it should fallback to all generic blocks
-    text = (
-        "Block A:\n```\na = 10\n```\n"
-        "Block B:\n```\nb = 20\n```\n"
-    )
+    text = "Block A:\n```\na = 10\n```\nBlock B:\n```\nb = 20\n```\n"
     blocks = extract_all_code_blocks(text)
     assert len(blocks) == 2
     assert blocks[0].code == "a = 10"

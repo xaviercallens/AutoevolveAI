@@ -7,8 +7,6 @@ Lean 4 refs:
     TargetEncoder.hmom  — 0 < τ ∧ τ ≤ 1
 """
 
-import math
-
 import pytest
 import torch
 import torch.nn as nn
@@ -43,8 +41,9 @@ class TestEMAUpdate:
         ema_update(target, source, tau=0.9)
 
         for p in target.parameters():
-            assert torch.allclose(p.data, torch.full_like(p.data, 0.1), atol=1e-6), \
+            assert torch.allclose(p.data, torch.full_like(p.data, 0.1), atol=1e-6), (
                 f"Expected 0.1, got {p.data.mean().item()}"
+            )
 
     def test_ema_momentum_1_freezes_target(self):
         """τ=1.0 means target stays unchanged (frozen).
@@ -69,8 +68,9 @@ class TestEMAUpdate:
         ema_update(target, source, tau=0.001)
 
         for p_tgt, p_src in zip(target.parameters(), source.parameters()):
-            assert torch.allclose(p_tgt.data, p_src.data, atol=1e-2), \
+            assert torch.allclose(p_tgt.data, p_src.data, atol=1e-2), (
                 "Very small τ should make target ≈ source"
+            )
 
     def test_ema_precondition_assertion(self):
         """τ outside (0, 1] must raise ValueError.
@@ -109,8 +109,9 @@ class TestCosineEMASchedule:
         """τ should monotonically increase from tau_start to tau_end."""
         values = [cosine_ema_schedule(i, 100, 0.996, 1.0) for i in range(101)]
         for i in range(len(values) - 1):
-            assert values[i] <= values[i + 1] + 1e-10, \
-                f"τ must be monotonic: τ[{i}]={values[i]} > τ[{i+1}]={values[i+1]}"
+            assert values[i] <= values[i + 1] + 1e-10, (
+                f"τ must be monotonic: τ[{i}]={values[i]} > τ[{i + 1}]={values[i + 1]}"
+            )
 
     def test_ema_cosine_schedule_invalid_inputs(self):
         """Invalid inputs should raise ValueError."""

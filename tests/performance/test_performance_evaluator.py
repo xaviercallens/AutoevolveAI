@@ -5,11 +5,11 @@ pain signal generation, and speedup tracking.
 """
 
 import pytest
+
 from anse.config import PerformanceConfig
 from anse.symbolic.performance_evaluator import (
     PerformanceCategory,
     PerformanceEnergyEvaluator,
-    PerformanceEnergyResult,
 )
 from anse.symbolic.sandbox import ExecutionResult
 

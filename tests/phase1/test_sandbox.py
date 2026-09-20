@@ -59,8 +59,9 @@ def test_sandbox_ast_safety_import_from(sandbox):
 
 def test_sandbox_tier2_docker_missing(sandbox, monkeypatch):
     import sys
+
     monkeypatch.setitem(sys.modules, "docker", None)
-    
+
     # Force tier 2
     code = "import os\nprint('danger')"
     result = sandbox.execute(code, force_tier=2)
@@ -73,17 +74,19 @@ def test_sandbox_tier2_execution_success(sandbox, monkeypatch):
         class MockContainers:
             def run(self, *args, **kwargs):
                 return b"hello docker"
+
         containers = MockContainers()
 
     import sys
     from unittest.mock import MagicMock
+
     docker_mock = MagicMock()
     docker_mock.from_env = lambda: MockDockerClient()
     monkeypatch.setitem(sys.modules, "docker", docker_mock)
-    
+
     code = "import os\nprint('hello docker')"
     result = sandbox.execute(code, force_tier=2)
-    
+
     assert result.tier_used == 2
     assert result.returncode == 0
     assert "hello docker" in result.stdout
@@ -91,22 +94,24 @@ def test_sandbox_tier2_execution_success(sandbox, monkeypatch):
 
 def test_sandbox_tier2_execution_timeout(sandbox, monkeypatch):
     import requests
-    
+
     class MockDockerClient:
         class MockContainers:
             def run(self, *args, **kwargs):
                 raise requests.exceptions.ReadTimeout("Timeout")
+
         containers = MockContainers()
 
     import sys
     from unittest.mock import MagicMock
+
     docker_mock = MagicMock()
     docker_mock.from_env = lambda: MockDockerClient()
     monkeypatch.setitem(sys.modules, "docker", docker_mock)
-    
+
     code = "import os\nimport time\ntime.sleep(5)"
     result = sandbox.execute(code, force_tier=2)
-    
+
     assert result.tier_used == 2
     assert result.timed_out is True
     assert result.returncode == -1

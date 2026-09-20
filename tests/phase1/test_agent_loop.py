@@ -1,14 +1,10 @@
 """Tests for AgentLoop and pain-signal injection."""
 
 from unittest.mock import MagicMock
-import pytest
 
-from anse.config import ANSEConfig
 from anse.core.agent_loop import AgentLoop
-from anse.core.encoder import HiddenStateExtractor, HiddenStateRecord
+from anse.core.encoder import HiddenStateRecord
 from anse.memory.harvester import Harvester
-from anse.symbolic.evaluator import EnergyCategory, EnergyEvaluator
-from anse.symbolic.sandbox import ExecutionResult, SandboxExecutor
 
 
 class MockExtractorSequential:
@@ -68,7 +64,7 @@ def test_agent_loop_retry_and_converge(tmp_path):
     assert summary.converged is True
     assert summary.iterations == 2
     assert summary.traces[0].energy == 60.0  # ZeroDivisionError
-    assert summary.traces[1].energy == 0.0   # Converged
+    assert summary.traces[1].energy == 0.0  # Converged
     assert "PAIN SIGNAL" in summary.traces[1].prompt
     assert "ZeroDivisionError" in summary.traces[1].prompt
 
@@ -124,4 +120,3 @@ def test_agent_loop_custom_convergence_threshold(tmp_path):
     s_relaxed = loop_relaxed.run("No asserts task")
     assert s_relaxed.converged is True
     assert s_relaxed.final_energy == 5.0
-

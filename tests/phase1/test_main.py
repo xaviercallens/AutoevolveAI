@@ -1,13 +1,11 @@
 """Tests for CLI entry point main.py."""
 
-from pathlib import Path
-import pytest
 import yaml
 
-from main import load_tasks, run_benchmark
 from anse.core.agent_loop import AgentLoop
 from anse.core.encoder import HiddenStateExtractor
 from anse.memory.harvester import Harvester
+from main import load_tasks, run_benchmark
 
 
 def test_load_tasks(tmp_path):
@@ -56,16 +54,18 @@ def test_load_tasks_missing_file(tmp_path):
 
 def test_main_cli_single_task(monkeypatch, tmp_path):
     import sys
+
     from main import main
 
     test_args = [
         "main.py",
         "--mock-llm",
         "--no-chroma",
-        "--output-dir", str(tmp_path),
-        "--single-task", "Write simple solution",
+        "--output-dir",
+        str(tmp_path),
+        "--single-task",
+        "Write simple solution",
     ]
     monkeypatch.setattr(sys, "argv", test_args)
     exit_code = main()
     assert exit_code == 0
-

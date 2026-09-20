@@ -4,6 +4,7 @@ Simulates candidate optimization cycles from slow loops to vectorized implementa
 """
 
 from unittest.mock import MagicMock
+
 import pytest
 import torch
 

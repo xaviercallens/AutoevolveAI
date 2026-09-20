@@ -8,59 +8,59 @@ Converts `MLExecutionResult` into a continuous energy score.
 from __future__ import annotations
 
 import re
-from typing import Optional
 
-from anse.symbolic.ml_sandbox import MLExecutionResult
-from anse.symbolic.performance_evaluator import PerformanceEnergyResult, PerformanceCategory
 from anse.config import PerformanceConfig, get_config
+from anse.symbolic.ml_sandbox import MLExecutionResult
+from anse.symbolic.performance_evaluator import PerformanceCategory, PerformanceEnergyResult
 
 
 class MLEnergyEvaluator:
     """
     Evaluates ML architecture candidate code.
     """
-    def __init__(self, config: Optional[PerformanceConfig] = None) -> None:
+
+    def __init__(self, config: PerformanceConfig | None = None) -> None:
         self.config = config or get_config().performance
         self.max_pain = 1000.0
         self.max_params = 50000
 
     def evaluate(self, result: MLExecutionResult) -> PerformanceEnergyResult:
         stderr = result.stderr or ""
-        
+
         # 1. Fatal Errors
         if result.timed_out:
             return self._build_failure_result(
-                result, 
-                PerformanceCategory.TIMEOUT, 
-                "COMPUTATIONAL CRASH (TIMEOUT): Training took too long. Check for infinite loops or extremely heavy layers."
+                result,
+                PerformanceCategory.TIMEOUT,
+                "COMPUTATIONAL CRASH (TIMEOUT): Training took too long. Check for infinite loops or extremely heavy layers.",
             )
 
         if re.search(r"SyntaxError", stderr, re.IGNORECASE):
             return self._build_failure_result(
-                result, 
-                PerformanceCategory.SYNTAX_ERROR, 
-                f"COMPUTATIONAL CRASH (SYNTAX ERROR): Code could not be parsed.\nTraceback:\n{stderr[-1000:]}"
+                result,
+                PerformanceCategory.SYNTAX_ERROR,
+                f"COMPUTATIONAL CRASH (SYNTAX ERROR): Code could not be parsed.\nTraceback:\n{stderr[-1000:]}",
             )
 
         if result.is_shape_mismatch:
             return self._build_failure_result(
                 result,
                 PerformanceCategory.CRASH,
-                f"MAXIMUM PAIN: Tensor Shape Mismatch.\nSystem 2 Diagnosis: Your linear/conv layer dimensions do not align with the forward pass tensor shapes. Trace the tensor shapes carefully.\nTraceback:\n{stderr[-1000:]}"
+                f"MAXIMUM PAIN: Tensor Shape Mismatch.\nSystem 2 Diagnosis: Your linear/conv layer dimensions do not align with the forward pass tensor shapes. Trace the tensor shapes carefully.\nTraceback:\n{stderr[-1000:]}",
             )
-            
+
         if result.is_oom:
             return self._build_failure_result(
                 result,
                 PerformanceCategory.CRASH,
-                f"MAXIMUM PAIN: CUDA Out of Memory.\nSystem 2 Diagnosis: Your model allocated too many tensors or excessively large hidden states.\nTraceback:\n{stderr[-1000:]}"
+                f"MAXIMUM PAIN: CUDA Out of Memory.\nSystem 2 Diagnosis: Your model allocated too many tensors or excessively large hidden states.\nTraceback:\n{stderr[-1000:]}",
             )
 
         if result.returncode != 0:
             return self._build_failure_result(
-                result, 
-                PerformanceCategory.CRASH, 
-                f"COMPUTATIONAL CRASH: Runtime exception raised.\nTraceback:\n{stderr[-1000:]}"
+                result,
+                PerformanceCategory.CRASH,
+                f"COMPUTATIONAL CRASH: Runtime exception raised.\nTraceback:\n{stderr[-1000:]}",
             )
 
         # 2. Physics / Architectural Constraints
@@ -81,7 +81,7 @@ class MLEnergyEvaluator:
                 speedup_factor=1.0,
                 memory_reduction_ratio=0.0,
                 energy_delta=-energy,
-                relative_energy=float("inf")
+                relative_energy=float("inf"),
             )
 
         # 3. Model Accuracy and Loss
@@ -116,10 +116,12 @@ class MLEnergyEvaluator:
             speedup_factor=1.0,
             memory_reduction_ratio=1.0,
             energy_delta=0.0,
-            relative_energy=1.0
+            relative_energy=1.0,
         )
 
-    def _build_failure_result(self, result: MLExecutionResult, category: PerformanceCategory, pain_signal: str) -> PerformanceEnergyResult:
+    def _build_failure_result(
+        self, result: MLExecutionResult, category: PerformanceCategory, pain_signal: str
+    ) -> PerformanceEnergyResult:
         return PerformanceEnergyResult(
             score=self.max_pain,
             category=category,
@@ -131,5 +133,5 @@ class MLEnergyEvaluator:
             speedup_factor=0.0,
             memory_reduction_ratio=0.0,
             energy_delta=-self.max_pain,
-            relative_energy=float("inf")
+            relative_energy=float("inf"),
         )

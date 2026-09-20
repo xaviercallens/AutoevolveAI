@@ -1,0 +1,20 @@
+FROM pytorch/pytorch:2.2.1-cuda12.1-cudnn8-devel
+
+WORKDIR /app
+RUN pip install --no-cache-dir \
+    transformers \
+    peft \
+    trl \
+    datasets \
+    accelerate \
+    bitsandbytes \
+    redis \
+    httpx \
+    radon
+
+COPY harvest_delta.py .
+COPY train_checkpoint.py .
+COPY vllm_reloader.py .
+COPY daily_trainer_daemon.py .
+
+CMD ["python", "daily_trainer_daemon.py"]

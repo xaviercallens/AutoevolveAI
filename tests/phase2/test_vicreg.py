@@ -8,11 +8,9 @@ Lean 4 refs:
     vicreg_prevents_collapse — if variance loss = 0, all dims have std ≥ γ
 """
 
-import pytest
 import torch
 
 from anse.jepa.world_model import VICRegLoss
-
 
 D_LATENT = 32
 BATCH = 16
@@ -66,8 +64,9 @@ class TestVICReg:
         z_diverse = torch.randn(BATCH, D_LATENT) * 5.0
         loss_diverse, metrics_diverse = vicreg(z_diverse)
 
-        assert loss_collapsed.item() > loss_diverse.item(), \
+        assert loss_collapsed.item() > loss_diverse.item(), (
             f"Collapsed loss ({loss_collapsed.item()}) should exceed diverse loss ({loss_diverse.item()})"
+        )  # noqa: E501
 
     def test_vicreg_diverse_input_low_loss(self):
         """Diverse z with high variance → low variance loss.
@@ -80,8 +79,9 @@ class TestVICReg:
         z = torch.randn(BATCH, D_LATENT) * 10.0
         _, metrics = vicreg(z)
 
-        assert metrics["std_loss"] < 0.1, \
+        assert metrics["std_loss"] < 0.1, (
             f"High-variance input should have near-zero std_loss, got {metrics['std_loss']}"
+        )
 
     def test_vicreg_gradient_flows(self):
         """loss.backward() should update encoder parameters.
@@ -98,8 +98,5 @@ class TestVICReg:
         loss, _ = vicreg(z)
         loss.backward()
 
-        has_grad = any(
-            p.grad is not None and p.grad.abs().sum() > 0
-            for p in encoder.parameters()
-        )
+        has_grad = any(p.grad is not None and p.grad.abs().sum() > 0 for p in encoder.parameters())
         assert has_grad, "VICReg gradients should flow through the encoder"

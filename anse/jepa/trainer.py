@@ -35,6 +35,7 @@ logger = logging.getLogger("anse.jepa.trainer")
 @dataclass
 class TrainingSummary:
     """Summary of a JEPA training run."""
+
     epochs_completed: int = 0
     best_val_loss: float = float("inf")
     final_train_loss: float = float("inf")
@@ -48,6 +49,7 @@ class TrainingSummary:
 @dataclass
 class ValidationMetrics:
     """Validation metrics for the JEPA world model."""
+
     val_loss: float
     prediction_loss: float
     vicreg_loss: float
@@ -106,6 +108,56 @@ class JEPATrainer:
             weight_decay=self.weight_decay,
         )
 
+    def _train_epoch(
+        self,
+        train_loader: DataLoader,
+        global_step: int,
+        total_steps: int,
+    ) -> tuple[dict[str, float], int]:
+        self.model.train()
+        epoch_metrics: dict[str, float] = {
+            "prediction_loss": 0.0,
+            "vicreg_loss": 0.0,
+            "energy_head_loss": 0.0,
+            "total_loss": 0.0,
+        }
+        n_batches = 0
+
+        for h_ctx, h_tgt, energy_actual in train_loader:
+            h_ctx = h_ctx.to(self.device)
+            h_tgt = h_tgt.to(self.device)
+            energy_actual = energy_actual.to(self.device)
+
+            # Forward
+            loss, metrics = self.model.compute_training_loss(h_ctx, h_tgt, energy_actual)
+
+            # Backward
+            self.optimizer.zero_grad()
+            loss.backward()
+            # Gradient clipping for stability
+            nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+            self.optimizer.step()
+
+            # EMA update target encoder
+            tau = cosine_ema_schedule(global_step, total_steps, self.tau_start, self.tau_end)
+            ema_update(
+                self.model.tgt_encoder,  # type: ignore
+                self.model.ctx_encoder,  # type: ignore
+                tau,
+            )
+
+            global_step += 1
+            n_batches += 1
+            for k, v in metrics.items():
+                if k in epoch_metrics:
+                    epoch_metrics[k] += v
+
+        # Average epoch metrics
+        for k in epoch_metrics:
+            epoch_metrics[k] /= max(n_batches, 1)
+
+        return epoch_metrics, global_step
+
     def train(
         self,
         dataset: JEPADataset,
@@ -136,16 +188,18 @@ class JEPATrainer:
         if len(dataset) < 3:
             # Too few samples for a meaningful split — use all for both
             logger.warning(
-                "Dataset too small (%d samples) for train/val split — "
-                "using full dataset for both", len(dataset),
+                "Dataset too small (%d samples) for train/val split — using full dataset for both",
+                len(dataset),
             )
             train_ds = dataset
             val_ds = dataset
         else:
-            train_ds, val_ds = train_val_split(dataset, val_fraction, seed)
+            train_ds, val_ds = train_val_split(dataset, val_fraction, seed)  # type: ignore
 
         train_loader = DataLoader(
-            train_ds, batch_size=batch_size, shuffle=True,
+            train_ds,
+            batch_size=batch_size,
+            shuffle=True,
             generator=torch.Generator().manual_seed(seed),
         )
         val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False)
@@ -156,59 +210,20 @@ class JEPATrainer:
         best_val_loss = float("inf")
         start_time = time.time()
 
+        # We need epoch_metrics in scope for the final summary assignment,
+        # so initialize it to a default.
+        epoch_metrics: dict[str, float] = {"total_loss": 0.0}
+
         logger.info(
-            "Starting JEPA training: %d epochs, %d train / %d val samples, "
-            "%d total steps",
-            epochs, len(train_ds), len(val_ds), total_steps,
+            "Starting JEPA training: %d epochs, %d train / %d val samples, %d total steps",
+            epochs,
+            len(train_ds),
+            len(val_ds),
+            total_steps,
         )
 
         for epoch in range(1, epochs + 1):
-            # ── Training phase ──────────────────────────────────────
-            self.model.train()
-            epoch_metrics: dict[str, float] = {
-                "prediction_loss": 0.0,
-                "vicreg_loss": 0.0,
-                "energy_head_loss": 0.0,
-                "total_loss": 0.0,
-            }
-            n_batches = 0
-
-            for h_ctx, h_tgt, energy_actual in train_loader:
-                h_ctx = h_ctx.to(self.device)
-                h_tgt = h_tgt.to(self.device)
-                energy_actual = energy_actual.to(self.device)
-
-                # Forward
-                loss, metrics = self.model.compute_training_loss(
-                    h_ctx, h_tgt, energy_actual
-                )
-
-                # Backward
-                self.optimizer.zero_grad()
-                loss.backward()
-                # Gradient clipping for stability
-                nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
-                self.optimizer.step()
-
-                # EMA update target encoder
-                tau = cosine_ema_schedule(
-                    global_step, total_steps, self.tau_start, self.tau_end
-                )
-                ema_update(
-                    self.model.tgt_encoder,
-                    self.model.ctx_encoder,
-                    tau,
-                )
-
-                global_step += 1
-                n_batches += 1
-                for k, v in metrics.items():
-                    if k in epoch_metrics:
-                        epoch_metrics[k] += v
-
-            # Average epoch metrics
-            for k in epoch_metrics:
-                epoch_metrics[k] /= max(n_batches, 1)
+            epoch_metrics, global_step = self._train_epoch(train_loader, global_step, total_steps)
 
             # ── Validation phase ────────────────────────────────────
             val_metrics = self.validate(val_loader, energy_accuracy_threshold)
@@ -231,9 +246,9 @@ class JEPATrainer:
 
             if epoch % 10 == 0 or epoch == 1:
                 logger.info(
-                    "Epoch %d/%d | Train Loss: %.4f | Val Loss: %.4f | "
-                    "Energy Acc: %.1f%%",
-                    epoch, epochs,
+                    "Epoch %d/%d | Train Loss: %.4f | Val Loss: %.4f | Energy Acc: %.1f%%",
+                    epoch,
+                    epochs,
                     epoch_metrics["total_loss"],
                     val_metrics.val_loss,
                     val_metrics.energy_prediction_accuracy * 100,
@@ -248,7 +263,9 @@ class JEPATrainer:
 
         logger.info(
             "Training complete: %d epochs, %.1fs, best val loss: %.4f",
-            epochs, summary.training_time_seconds, summary.best_val_loss,
+            epochs,
+            summary.training_time_seconds,
+            summary.best_val_loss,
         )
 
         return summary
@@ -283,9 +300,7 @@ class JEPATrainer:
             h_tgt = h_tgt.to(self.device)
             energy_actual = energy_actual.to(self.device)
 
-            loss, metrics = self.model.compute_training_loss(
-                h_ctx, h_tgt, energy_actual
-            )
+            loss, metrics = self.model.compute_training_loss(h_ctx, h_tgt, energy_actual)
 
             total_loss += loss.item()
             total_pred_loss += metrics["prediction_loss"]
@@ -294,8 +309,8 @@ class JEPATrainer:
             n_batches += 1
 
             # Energy prediction accuracy
-            z_ctx = self.model.ctx_encoder(h_ctx)
-            energy_pred = self.model.energy_head(z_ctx)
+            z_ctx = self.model.ctx_encoder(h_ctx)  # type: ignore
+            energy_pred = self.model.energy_head(z_ctx)  # type: ignore
             diff = (energy_pred - energy_actual).abs()
             n_correct += (diff < energy_accuracy_threshold).sum().item()
             n_total += h_ctx.shape[0]

@@ -1,6 +1,7 @@
 """Tests for HiddenStateExtractor and HiddenStateRecord."""
 
 from unittest.mock import MagicMock
+
 import pytest
 import torch
 
@@ -108,7 +109,7 @@ def test_encoder_device_resolution_mps(monkeypatch):
     if not hasattr(torch.backends, "mps"):
         monkeypatch.setattr(torch.backends, "mps", MagicMock())
     monkeypatch.setattr(torch.backends.mps, "is_available", lambda: True)
-    
+
     config = ModelConfig(device="auto")
     extractor = HiddenStateExtractor(config=config, mock_mode=False)
     assert extractor._resolve_device() == "mps"
@@ -116,6 +117,7 @@ def test_encoder_device_resolution_mps(monkeypatch):
 
 def test_encoder_transformers_import_error(monkeypatch):
     import sys
+
     monkeypatch.setitem(sys.modules, "transformers", None)
     config = ModelConfig(device="cpu")
     extractor = HiddenStateExtractor(config=config, mock_mode=False)
@@ -125,7 +127,7 @@ def test_encoder_transformers_import_error(monkeypatch):
 
 def test_encoder_real_pipeline_no_chat_template():
     extractor = HiddenStateExtractor(config=ModelConfig(device="cpu"), mock_mode=False)
-    
+
     mock_tok = MagicMock()
     mock_tok.chat_template = None
     mock_tok.eos_token_id = 0
@@ -135,7 +137,7 @@ def test_encoder_real_pipeline_no_chat_template():
         "attention_mask": torch.tensor([[1, 1, 1]]),
     }
     mock_tok.decode.return_value = "no chat template output"
-    
+
     mock_model = MagicMock()
     mock_model.device = torch.device("cpu")
     mock_outputs = MagicMock()
@@ -143,10 +145,10 @@ def test_encoder_real_pipeline_no_chat_template():
     last_hidden = torch.randn(1, 1, 4096)
     mock_outputs.hidden_states = ((last_hidden,),)
     mock_model.generate.return_value = mock_outputs
-    
+
     extractor._tokenizer = mock_tok
     extractor._model = mock_model
-    
+
     text, record = extractor.extract("Test prompt", temperature=0.0)
     assert text == "no chat template output"
     assert record.hidden_state.shape == (1, 4096)
@@ -155,18 +157,18 @@ def test_encoder_real_pipeline_no_chat_template():
 
 def test_encoder_transformers_lazy_load_success(monkeypatch):
     import sys
-    
+
     mock_transformers = MagicMock()
     mock_model = MagicMock()
     mock_transformers.AutoModelForCausalLM.from_pretrained.return_value = mock_model
-    
+
     monkeypatch.setitem(sys.modules, "transformers", mock_transformers)
-    
+
     config = ModelConfig(device="cpu", load_in_4bit=False)
     extractor = HiddenStateExtractor(config=config, mock_mode=False)
-    
+
     extractor._load_model_if_needed()
-    
+
     assert extractor._model is mock_model
     assert extractor._tokenizer is not None
     # Verify mock model wasn't moved to device since device is CPU and it matches
@@ -175,17 +177,17 @@ def test_encoder_transformers_lazy_load_success(monkeypatch):
 
 def test_encoder_transformers_lazy_load_4bit(monkeypatch):
     import sys
-    
+
     mock_transformers = MagicMock()
     mock_transformers.AutoModelForCausalLM.from_pretrained.return_value = MagicMock()
-    
+
     monkeypatch.setitem(sys.modules, "transformers", mock_transformers)
-    
+
     config = ModelConfig(device="cuda", load_in_4bit=True)
     extractor = HiddenStateExtractor(config=config, mock_mode=False)
-    
+
     extractor._load_model_if_needed()
-    
+
     kwargs = mock_transformers.AutoModelForCausalLM.from_pretrained.call_args[1]
     assert kwargs.get("load_in_4bit") is True
     assert kwargs.get("device_map") == "auto"

@@ -7,16 +7,11 @@ If the child process demonstrates lower computational energy (faster, lower memo
 the hypervisor authorizes a hot-swap, replacing the parent process with the child.
 """
 
-import os
-import signal
-import subprocess
-import time
 from dataclasses import dataclass
-from typing import Optional
-from pathlib import Path
 
-from anse.symbolic.sandbox import SandboxExecutor
 from anse.symbolic.performance_evaluator import PerformanceEnergyEvaluator, PerformanceEnergyResult
+from anse.symbolic.sandbox import SandboxExecutor
+
 
 @dataclass
 class BaselineMetrics:
@@ -24,16 +19,20 @@ class BaselineMetrics:
     duration_ms: float
     peak_ram_mb: float
 
+
 class AutopoiesisHypervisor:
     """
     Manages the singularity bootstrap. Validates child code and performs hot-swaps.
     """
+
     def __init__(self, parent_baseline: BaselineMetrics):
         self.parent_baseline = parent_baseline
         self.sandbox = SandboxExecutor()
         self.evaluator = PerformanceEnergyEvaluator()
 
-    def evaluate_child(self, child_code: str, test_dataset_path: str = "") -> PerformanceEnergyResult:
+    def evaluate_child(
+        self, child_code: str, _test_dataset_path: str = ""
+    ) -> PerformanceEnergyResult:
         """
         Runs the child core in an isolated sandbox with the standard benchmark suite
         to determine its energy footprint.
@@ -51,17 +50,21 @@ class AutopoiesisHypervisor:
         if not child_result.is_valid:
             print("Child is invalid. Hot-swap REJECTED.")
             return False
-            
+
         child_energy = child_result.score
-        
+
         # Strict domination: Child must have lower energy
         if child_energy < self.parent_baseline.energy:
-            print(f"Child Energy ({child_energy:.4f}) < Parent Energy ({self.parent_baseline.energy:.4f}).")
+            print(
+                f"Child Energy ({child_energy:.4f}) < Parent Energy ({self.parent_baseline.energy:.4f})."
+            )
             print("Authorizing Hot-Swap...")
             self._execute_hot_swap(child_code)
             return True
         else:
-            print(f"Child Energy ({child_energy:.4f}) >= Parent Energy ({self.parent_baseline.energy:.4f}).")
+            print(
+                f"Child Energy ({child_energy:.4f}) >= Parent Energy ({self.parent_baseline.energy:.4f})."
+            )
             print("Hot-swap REJECTED.")
             return False
 

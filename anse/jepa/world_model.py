@@ -185,7 +185,7 @@ class VICRegLoss(nn.Module):
         # Zero out diagonal
         diag_mask = torch.eye(cov_matrix.shape[0], device=z.device, dtype=torch.bool)
         off_diag = cov_matrix.masked_fill(diag_mask, 0.0)
-        cov_loss = (off_diag ** 2).sum() / z.shape[1]
+        cov_loss = (off_diag**2).sum() / z.shape[1]
 
         total = self.std_coeff * std_loss + self.cov_coeff * cov_loss
 
@@ -232,10 +232,11 @@ class EnergyHead(nn.Module):
 @dataclass
 class JEPAEnergyResult:
     """Result of a JEPA energy computation."""
-    latent_energy: float      # ‖z_pred − z_tgt‖² (JEPA latent energy)
-    predicted_energy: float   # Scalar energy prediction ∈ [0, 100]
-    z_pred: torch.Tensor      # Predicted latent code
-    z_tgt: torch.Tensor       # Target latent code
+
+    latent_energy: float  # ‖z_pred − z_tgt‖² (JEPA latent energy)
+    predicted_energy: float  # Scalar energy prediction ∈ [0, 100]
+    z_pred: torch.Tensor  # Predicted latent code
+    z_tgt: torch.Tensor  # Target latent code
 
 
 class JEPAWorldModel(nn.Module):
@@ -279,9 +280,7 @@ class JEPAWorldModel(nn.Module):
         self.energy_head = EnergyHead(d_latent)
         self.vicreg = VICRegLoss()
 
-    def jepa_energy(
-        self, h_context: torch.Tensor, h_target: torch.Tensor
-    ) -> torch.Tensor:
+    def jepa_energy(self, h_context: torch.Tensor, h_target: torch.Tensor) -> torch.Tensor:
         """Compute JEPA energy: ‖z_pred − z_tgt‖².
 
         Lean 4 ref::
@@ -297,9 +296,9 @@ class JEPAWorldModel(nn.Module):
         Returns:
             Scalar energy per sample [B].
         """
-        z_ctx = self.ctx_encoder(h_context)
-        z_tgt = self.tgt_encoder(h_target)
-        z_pred = self.predictor(z_ctx, z_ctx)
+        z_ctx = self.ctx_encoder(h_context)  # type: ignore
+        z_tgt = self.tgt_encoder(h_target)  # type: ignore
+        z_pred = self.predictor(z_ctx, z_ctx)  # type: ignore
 
         # ‖z_pred − z_tgt‖²  (per-sample)
         energy = (z_pred - z_tgt).pow(2).sum(dim=-1)
@@ -324,9 +323,9 @@ class JEPAWorldModel(nn.Module):
         if h_context.dim() == 1:
             h_context = h_context.unsqueeze(0)
 
-        z_ctx = self.ctx_encoder(h_context)
-        raw = self.energy_head(z_ctx)
-        return (raw.item() * 100.0)
+        z_ctx = self.ctx_encoder(h_context)  # type: ignore
+        raw = self.energy_head(z_ctx)  # type: ignore
+        return raw.item() * 100.0
 
     def compute_training_loss(
         self,
@@ -347,18 +346,18 @@ class JEPAWorldModel(nn.Module):
         Returns:
             (total_loss, metrics_dict)
         """
-        z_ctx = self.ctx_encoder(h_context)
-        z_tgt = self.tgt_encoder(h_target)
-        z_pred = self.predictor(z_ctx, z_ctx)
+        z_ctx = self.ctx_encoder(h_context)  # type: ignore
+        z_tgt = self.tgt_encoder(h_target)  # type: ignore
+        z_pred = self.predictor(z_ctx, z_ctx)  # type: ignore
 
         # JEPA prediction loss: ‖z_pred − z_tgt‖²
         prediction_loss = (z_pred - z_tgt).pow(2).sum(dim=-1).mean()
 
         # VICReg anti-collapse on predicted embeddings
-        vicreg_loss, vicreg_metrics = self.vicreg(z_pred)
+        vicreg_loss, vicreg_metrics = self.vicreg(z_pred)  # type: ignore
 
         # Energy head MSE loss (predicts actual sandbox energy)
-        energy_pred = self.energy_head(z_ctx)
+        energy_pred = self.energy_head(z_ctx)  # type: ignore
         energy_head_loss = F.mse_loss(energy_pred, energy_actual)
 
         # Total loss (Lean 4: jepTrainingLoss = prediction_loss + vicreg)

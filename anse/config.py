@@ -108,9 +108,7 @@ class PlasticityConfig:
     lora_alpha: int = 32
     """LoRA alpha scaling factor (effective scale = alpha / rank)."""
 
-    lora_target_modules: list[str] = field(
-        default_factory=lambda: ["q_proj", "v_proj"]
-    )
+    lora_target_modules: list[str] = field(default_factory=lambda: ["q_proj", "v_proj"])
     """Which attention projection matrices to apply LoRA to."""
 
     lora_layers: str = "last_8"
@@ -153,8 +151,16 @@ class SandboxConfig:
 
     dangerous_modules: list[str] = field(
         default_factory=lambda: [
-            "os", "sys", "subprocess", "socket", "shutil",
-            "pathlib", "glob", "importlib", "ctypes", "signal",
+            "os",
+            "sys",
+            "subprocess",
+            "socket",
+            "shutil",
+            "pathlib",
+            "glob",
+            "importlib",
+            "ctypes",
+            "signal",
         ]
     )
     """Imports that trigger escalation from Tier-1 to Tier-2 (Docker) sandbox."""

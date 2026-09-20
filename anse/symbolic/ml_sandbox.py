@@ -18,10 +18,9 @@ import textwrap
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
-from anse.symbolic.sandbox import ExecutionResult, scan_dangerous_imports
 from anse.config import SandboxConfig, get_config
+from anse.symbolic.sandbox import ExecutionResult, scan_dangerous_imports
 
 
 @dataclass
@@ -145,7 +144,47 @@ sys.exit(0)
 """).strip()
 
 
-def _tier1_ml_execute(code: str, timeout: float, task_type: str = "classification") -> MLExecutionResult:
+def _parse_ml_stats(
+    stats_path: Path, returncode: int, stderr: str, elapsed_ms: float
+) -> tuple[int, float, float, float, float, bool, bool]:
+    params = 0
+    acc = 0.0
+    val_loss = float("inf")
+    train_loss = float("inf")
+    shape_mismatch = False
+    oom = False
+
+    if returncode != 0:
+        stderr_lower = stderr.lower()
+        if (
+            "size mismatch" in stderr_lower
+            or "mat1 and mat2 shapes cannot be multiplied" in stderr_lower
+            or "shape" in stderr_lower
+        ):
+            shape_mismatch = True
+        if "out of memory" in stderr_lower:
+            oom = True
+
+    if stats_path.exists():
+        try:
+            with open(stats_path) as f:
+                stats = json.load(f)
+            params = stats.get("parameters", params)
+            acc = stats.get("accuracy", acc)
+            val_loss = stats.get("val_loss", val_loss)
+            train_loss = stats.get("train_loss", train_loss)
+            elapsed_ms = stats.get("duration_ms", elapsed_ms)
+            shape_mismatch = stats.get("is_shape_mismatch", shape_mismatch)
+            oom = stats.get("is_oom", oom)
+        except Exception:
+            pass
+
+    return params, acc, val_loss, train_loss, elapsed_ms, shape_mismatch, oom
+
+
+def _tier1_ml_execute(
+    code: str, timeout: float, task_type: str = "classification"
+) -> MLExecutionResult:
     """Run ML architecture code in a subprocess wrapper."""
     with tempfile.TemporaryDirectory(prefix="anse_t1_ml_") as tmpdir:
         script_path = Path(tmpdir) / "solution.py"
@@ -156,45 +195,33 @@ def _tier1_ml_execute(code: str, timeout: float, task_type: str = "classificatio
 
         start = time.perf_counter()
         try:
+            sub_env = {"PATH": os.environ.get("PATH", ""), "HOME": tmpdir}
+            if sys.platform == "win32":
+                for k in (
+                    "SYSTEMROOT",
+                    "WINDIR",
+                    "TEMP",
+                    "TMP",
+                    "SYSTEMDRIVE",
+                    "COMSPEC",
+                    "PATHEXT",
+                ):
+                    if k in os.environ:
+                        sub_env[k] = os.environ[k]
+
             proc = subprocess.run(
                 [sys.executable, str(runner_path), str(script_path), str(stats_path), task_type],
                 capture_output=True,
                 text=True,
                 timeout=timeout,
                 cwd=tmpdir,
-                env={"PATH": os.environ.get("PATH", ""), "HOME": tmpdir},
+                env=sub_env,
             )
             elapsed_ms = (time.perf_counter() - start) * 1000.0
-            
-            # Default values
-            params = 0
-            acc = 0.0
-            val_loss = float("inf")
-            train_loss = float("inf")
-            shape_mismatch = False
-            oom = False
-            
-            # Check stderr for specific runtime errors if stats not dumped
-            if proc.returncode != 0:
-                stderr_lower = proc.stderr.lower()
-                if "size mismatch" in stderr_lower or "mat1 and mat2 shapes cannot be multiplied" in stderr_lower or "shape" in stderr_lower:
-                    shape_mismatch = True
-                if "out of memory" in stderr_lower:
-                    oom = True
-            
-            if stats_path.exists():
-                try:
-                    with open(stats_path, "r") as f:
-                        stats = json.load(f)
-                    params = stats.get("parameters", 0)
-                    acc = stats.get("accuracy", 0.0)
-                    val_loss = stats.get("val_loss", float("inf"))
-                    train_loss = stats.get("train_loss", float("inf"))
-                    elapsed_ms = stats.get("duration_ms", elapsed_ms)
-                    shape_mismatch = stats.get("is_shape_mismatch", shape_mismatch)
-                    oom = stats.get("is_oom", oom)
-                except Exception:
-                    pass
+
+            (params, acc, val_loss, train_loss, elapsed_ms, shape_mismatch, oom) = _parse_ml_stats(
+                stats_path, proc.returncode, proc.stderr, elapsed_ms
+            )
 
             return MLExecutionResult(
                 stdout=proc.stdout,
@@ -228,7 +255,8 @@ class MLSandboxExecutor:
     """
     Executes PyTorch architecture proposals.
     """
-    def __init__(self, cfg: Optional[SandboxConfig] = None) -> None:
+
+    def __init__(self, cfg: SandboxConfig | None = None) -> None:
         self._cfg = cfg or get_config().sandbox
 
     def execute(self, code: str, task_type: str = "classification") -> MLExecutionResult:

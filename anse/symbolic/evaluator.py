@@ -22,12 +22,11 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 from anse.symbolic.sandbox import ExecutionResult
 
-
 # ─── Categories ──────────────────────────────────────────────────────────────
+
 
 class EnergyCategory(str, Enum):
     PERFECT = "perfect"
@@ -67,11 +66,12 @@ class EnergyResult:
     execution: ExecutionResult
     """The underlying execution result."""
 
-    expected_output: Optional[str] = None
+    expected_output: str | None = None
     """If an expected output was provided, stored here for reference."""
 
 
 # ─── Evaluator ───────────────────────────────────────────────────────────────
+
 
 class EnergyEvaluator:
     """
@@ -85,7 +85,7 @@ class EnergyEvaluator:
 
     def __init__(
         self,
-        energy_levels: Optional[dict[EnergyCategory, float]] = None,
+        energy_levels: dict[EnergyCategory, float] | None = None,
     ) -> None:
         self._levels = {**_DEFAULT_ENERGY, **(energy_levels or {})}
 
@@ -94,8 +94,8 @@ class EnergyEvaluator:
     def evaluate(
         self,
         result: ExecutionResult,
-        code: Optional[str] = None,
-        expected_output: Optional[str] = None,
+        code: str | None = None,
+        expected_output: str | None = None,
     ) -> EnergyResult:
         """
         Classify *result* and return an :class:`EnergyResult`.
@@ -138,57 +138,60 @@ class EnergyEvaluator:
 
     # ── Internal ──────────────────────────────────────────────────────────────
 
+    def _check_test_presence(self, stdout: str, code: str | None) -> bool:
+        if _matches(stdout, r"(passed|ok|\.{3,}|test_)"):
+            return True
+        if _matches(stdout, r"\d+ passed"):
+            return True
+        if code is not None and ("assert " in code or "assert(" in code):
+            return True
+        return False
+
+    def _check_error_categories(
+        self, result: ExecutionResult, stdout: str, stderr: str
+    ) -> tuple[EnergyCategory, str] | None:
+        if result.timed_out:
+            return (
+                EnergyCategory.TIMEOUT,
+                f"Your code timed out after the allowed execution window.\nStderr:\n{stderr}",
+            )
+        if _matches(stderr, r"SyntaxError"):
+            return (
+                EnergyCategory.SYNTAX_ERROR,
+                f"Your code has a syntax error and could not be parsed.\nError:\n{stderr}",
+            )
+        if _matches(stderr, r"(ModuleNotFoundError|ImportError)"):
+            return (
+                EnergyCategory.IMPORT_ERROR,
+                f"Your code tried to import a module that is not available.\nError:\n{stderr}",
+            )
+        if _matches(stderr, r"AssertionError") or _matches(stdout, r"FAILED|FAIL"):
+            return (
+                EnergyCategory.TEST_FAILURE,
+                f"One or more tests failed.\nStderr:\n{stderr}\nStdout:\n{stdout}",
+            )
+        if result.returncode != 0 and stderr:
+            return (
+                EnergyCategory.RUNTIME_ERROR,
+                f"Your code raised a runtime exception.\nTraceback:\n{stderr}",
+            )
+        return None
+
     def _categorise(
         self,
         result: ExecutionResult,
-        code: Optional[str] = None,
+        code: str | None = None,
     ) -> tuple[EnergyCategory, str]:
         """Return (category, pain_signal) for *result*."""
         stderr = result.stderr or ""
         stdout = result.stdout or ""
 
-        if result.timed_out:
-            return (
-                EnergyCategory.TIMEOUT,
-                f"Your code timed out after the allowed execution window.\n"
-                f"Stderr:\n{stderr}",
-            )
-
-        if _matches(stderr, r"SyntaxError"):
-            return (
-                EnergyCategory.SYNTAX_ERROR,
-                f"Your code has a syntax error and could not be parsed.\n"
-                f"Error:\n{stderr}",
-            )
-
-        if _matches(stderr, r"(ModuleNotFoundError|ImportError)"):
-            return (
-                EnergyCategory.IMPORT_ERROR,
-                f"Your code tried to import a module that is not available.\n"
-                f"Error:\n{stderr}",
-            )
-
-        if _matches(stderr, r"AssertionError") or _matches(stdout, r"FAILED|FAIL"):
-            return (
-                EnergyCategory.TEST_FAILURE,
-                f"One or more tests failed.\n"
-                f"Stderr:\n{stderr}\nStdout:\n{stdout}",
-            )
-
-        if result.returncode != 0 and stderr:
-            return (
-                EnergyCategory.RUNTIME_ERROR,
-                f"Your code raised a runtime exception.\n"
-                f"Traceback:\n{stderr}",
-            )
+        err_cat = self._check_error_categories(result, stdout, stderr)
+        if err_cat is not None:
+            return err_cat
 
         # Code ran cleanly — check if there were tests
-        has_tests = (
-            _matches(stdout, r"(passed|ok|\.{3,}|test_)")
-            or _matches(stdout, r"\d+ passed")
-            or (code is not None and ("assert " in code or "assert(" in code))
-        )
-        if has_tests:
+        if self._check_test_presence(stdout, code):
             return (
                 EnergyCategory.PERFECT,
                 "All tests passed. Energy = 0.",
@@ -202,6 +205,7 @@ class EnergyEvaluator:
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
+
 def _matches(text: str, pattern: str) -> bool:
     return bool(re.search(pattern, text, re.IGNORECASE))
 
@@ -212,8 +216,8 @@ _default_evaluator: EnergyEvaluator | None = None
 
 def evaluate_energy(
     result: ExecutionResult,
-    code: Optional[str] = None,
-    expected_output: Optional[str] = None,
+    code: str | None = None,
+    expected_output: str | None = None,
 ) -> EnergyResult:
     """Module-level convenience function using the default :class:`EnergyEvaluator`."""
     global _default_evaluator

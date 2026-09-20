@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 import torch
 
@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 # ─── Record Dataclass ────────────────────────────────────────────────────────
 
+
 @dataclass
 class HiddenStateRecord:
     """
@@ -35,6 +36,7 @@ class HiddenStateRecord:
 
     Corresponds to Lean 4: `ANSE.JEPA.HiddenState (d : ℕ)` where `d = 4096`.
     """
+
     hidden_state: torch.Tensor
     """Tensor of shape [1, hidden_dim] representing the last generated token's top hidden state."""
 
@@ -61,6 +63,7 @@ class HiddenStateRecord:
 
 # ─── Extractor ───────────────────────────────────────────────────────────────
 
+
 class HiddenStateExtractor:
     """
     Extracts code text and residual hidden states from the causal language model.
@@ -76,8 +79,8 @@ class HiddenStateExtractor:
     ) -> None:
         self.config = config or get_config().model
         self.mock_mode = mock_mode
-        self._model = None
-        self._tokenizer = None
+        self._model: Any = None
+        self._tokenizer: Any = None
         self._device = self._resolve_device()
 
     def _resolve_device(self) -> str:
@@ -105,40 +108,73 @@ class HiddenStateExtractor:
             ) from err
 
         logger.info("Loading tokenizer for %s ...", self.config.model_id)
-        self._tokenizer = AutoTokenizer.from_pretrained(
+        self._tokenizer = AutoTokenizer.from_pretrained(  # nosec B615  # type: ignore
             self.config.model_id,
-            trust_remote_code=True,
+            trust_remote_code=True, revision="main",
         )
 
         logger.info(
             "Loading model %s on %s (4bit=%s) ...",
             self.config.model_id,
-            self._device,
+            self.config.device,
             self.config.load_in_4bit,
         )
 
         load_kwargs: dict[str, Any] = {
+            "device_map": self.config.device,
             "trust_remote_code": True,
         }
-
         if self.config.load_in_4bit:
             load_kwargs["load_in_4bit"] = True
-            load_kwargs["device_map"] = "auto"
-        elif self._device == "cuda":
-            load_kwargs["torch_dtype"] = torch.bfloat16
-            load_kwargs["device_map"] = "auto"
         else:
             load_kwargs["torch_dtype"] = torch.float32
 
-        self._model = AutoModelForCausalLM.from_pretrained(
+        self._model = AutoModelForCausalLM.from_pretrained(  # nosec B615  # type: ignore
             self.config.model_id,
-            **load_kwargs,
+            **load_kwargs, revision="main",
         )
 
         if not self.config.load_in_4bit and self.config.device != "auto":
-            self._model.to(self._device)
+            self._model.to(self._device)  # type: ignore
 
-        self._model.eval()
+        self._model.eval()  # type: ignore
+
+    def _format_prompt(self, prompt: str, system_prompt: str | None) -> str:
+        if hasattr(self._tokenizer, "apply_chat_template") and self._tokenizer.chat_template:  # type: ignore
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": prompt})
+            return self._tokenizer.apply_chat_template(  # type: ignore
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+        if system_prompt:
+            return f"System: {system_prompt}\n\nUser: {prompt}\n\nAssistant:"
+        return f"User: {prompt}\n\nAssistant:"
+
+    def _build_gen_kwargs(
+        self,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor | None,
+        max_tokens: int,
+        temp: float,
+    ) -> dict[str, Any]:
+        gen_kwargs: dict[str, Any] = {
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
+            "max_new_tokens": max_tokens,
+            "output_hidden_states": True,
+            "return_dict_in_generate": True,
+            "pad_token_id": self._tokenizer.eos_token_id or self._tokenizer.pad_token_id,  # type: ignore
+        }
+        if temp > 0.0:
+            gen_kwargs["do_sample"] = True
+            gen_kwargs["temperature"] = temp
+        else:
+            gen_kwargs["do_sample"] = False
+        return gen_kwargs
 
     def extract(
         self,
@@ -162,51 +198,21 @@ class HiddenStateExtractor:
 
         self._load_model_if_needed()
 
-        messages = []
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-        messages.append({"role": "user", "content": prompt})
-
-        if hasattr(self._tokenizer, "apply_chat_template") and self._tokenizer.chat_template:
-            formatted_prompt = self._tokenizer.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True,
-            )
-        else:
-            formatted_prompt = (
-                f"System: {system_prompt}\n\nUser: {prompt}\n\nAssistant:"
-                if system_prompt
-                else f"User: {prompt}\n\nAssistant:"
-            )
-
-        inputs = self._tokenizer(formatted_prompt, return_tensors="pt")
-        input_ids = inputs["input_ids"].to(self._model.device)
+        formatted_prompt = self._format_prompt(prompt, system_prompt)
+        inputs = self._tokenizer(formatted_prompt, return_tensors="pt")  # type: ignore
+        input_ids = inputs["input_ids"].to(self._model.device)  # type: ignore
         attention_mask = inputs.get("attention_mask")
         if attention_mask is not None:
-            attention_mask = attention_mask.to(self._model.device)
+            attention_mask = attention_mask.to(self._model.device)  # type: ignore
 
-        gen_kwargs: dict[str, Any] = {
-            "input_ids": input_ids,
-            "attention_mask": attention_mask,
-            "max_new_tokens": max_tokens,
-            "output_hidden_states": True,
-            "return_dict_in_generate": True,
-            "pad_token_id": self._tokenizer.eos_token_id or self._tokenizer.pad_token_id,
-        }
-
-        if temp > 0.0:
-            gen_kwargs["do_sample"] = True
-            gen_kwargs["temperature"] = temp
-        else:
-            gen_kwargs["do_sample"] = False
+        gen_kwargs = self._build_gen_kwargs(input_ids, attention_mask, max_tokens, temp)
 
         with torch.no_grad():
-            outputs = self._model.generate(**gen_kwargs)
+            outputs = self._model.generate(**gen_kwargs)  # type: ignore
 
         # Decode generated text (omitting prompt prefix)
-        gen_tokens = outputs.sequences[0, input_ids.shape[-1]:]
-        response_text = self._tokenizer.decode(gen_tokens, skip_special_tokens=True)
+        gen_tokens = outputs.sequences[0, input_ids.shape[-1] :]
+        response_text = self._tokenizer.decode(gen_tokens, skip_special_tokens=True)  # type: ignore
 
         # Extract hidden state: outputs.hidden_states is a tuple of generation steps
         # outputs.hidden_states[-1] is the tuple of layer hidden states at the last generated token
@@ -219,7 +225,7 @@ class HiddenStateExtractor:
             layer_indices=[-1],
             token_count=len(gen_tokens),
             model_id=self.config.model_id,
-            device=str(self._model.device),
+            device=str(self._model.device),  # type: ignore
             metadata={"prompt_length": len(prompt)},
         )
 

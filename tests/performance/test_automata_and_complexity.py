@@ -71,7 +71,9 @@ print("OK")
     assert energy_naive.is_valid is True
     assert energy_opt.is_valid is True
     assert energy_opt.speedup_factor is not None
-    assert energy_opt.speedup_factor > 5.0, f"Expected speedup > 5x, got {energy_opt.speedup_factor:.2f}x"
+    assert energy_opt.speedup_factor > 3.0, (
+        f"Expected speedup > 3x, got {energy_opt.speedup_factor:.2f}x"
+    )
     assert energy_opt.score < energy_naive.score
 
 

@@ -190,4 +190,4 @@ def test_encoder_transformers_lazy_load_4bit(monkeypatch):
 
     kwargs = mock_transformers.AutoModelForCausalLM.from_pretrained.call_args[1]
     assert kwargs.get("load_in_4bit") is True
-    assert kwargs.get("device_map") == "auto"
+    assert kwargs.get("device_map") == "cuda"

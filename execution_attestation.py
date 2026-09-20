@@ -26,7 +26,7 @@ if callable(reconf_out):
         reconf_err = getattr(sys.stderr, "reconfigure", None)
         if callable(reconf_err):
             reconf_err(encoding="utf-8")
-    except Exception:
+    except (OSError, ValueError, AttributeError):  # Encoding reconfig
         pass
 
 SUSPICIOUS_DATA_PREFIXES = ("mock_", "dummy_", "fake_", "sample_", "test_data_")

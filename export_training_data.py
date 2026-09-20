@@ -85,7 +85,7 @@ def _process_single_stream_event(item: Any) -> dict[str, Any] | None:
     try:
         req = json.loads(str(data["request_json"]))
         resp = json.loads(str(data["response_json"]))
-    except Exception:
+    except (json.JSONDecodeError, KeyError):
         return None
 
     if "generatecontent" not in str(data.get("endpoint", "")).lower():

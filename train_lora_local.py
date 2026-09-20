@@ -98,7 +98,7 @@ def get_4bit_quantization_config() -> Any:
             bnb_4bit_use_double_quant=True,
             bnb_4bit_compute_dtype=torch.float16,  # type: ignore[union-attr]
         )
-    except Exception:
+    except (OSError, RuntimeError):
         return None
 
 

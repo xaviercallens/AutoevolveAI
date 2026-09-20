@@ -112,8 +112,12 @@ class Harvester:
                 persist_dir,
                 self.collection_name,
             )
-        except Exception as e:
+        except (ImportError, ValueError, OSError) as e:
             logger.warning("Failed to initialize ChromaDB (%s). Running with JSONL only.", e)
+            self._chroma_client = None
+            self._chroma_collection = None
+        except Exception as e:
+            logger.exception("Unexpected error initializing ChromaDB: %s", e)
             self._chroma_client = None
             self._chroma_collection = None
 
@@ -157,8 +161,32 @@ class Harvester:
                 documents=[trace.code],
                 metadatas=[metadata],
             )
-        except Exception as e:
+        except (ValueError, OSError, RuntimeError) as e:
             logger.warning("Failed to upsert trace %s to ChromaDB: %s", trace.trace_id, e)
+        except Exception as e:
+            logger.exception("Unexpected error upserting trace %s to ChromaDB: %s", trace.trace_id, e)
+
+    def _build_hits(self, results: dict[str, Any]) -> list[dict[str, Any]]:
+        """Build hit list from ChromaDB query results."""
+        hits: list[dict[str, Any]] = []
+        if not results or not results.get("ids") or not results["ids"][0]:
+            return hits
+        for i in range(len(results["ids"][0])):
+            hits.append(
+                {
+                    "id": results["ids"][0][i],
+                    "document": results["documents"][0][i]
+                    if results.get("documents")
+                    else "",
+                    "metadata": results["metadatas"][0][i]
+                    if results.get("metadatas")
+                    else {},
+                    "distance": results["distances"][0][i]
+                    if results.get("distances")
+                    else 0.0,
+                }
+            )
+        return hits
 
     def query_similar(
         self,
@@ -178,25 +206,8 @@ class Harvester:
                 n_results=n_results,
                 where=where,
             )
-            hits = []
-            if results and results.get("ids") and results["ids"][0]:
-                for i in range(len(results["ids"][0])):
-                    hits.append(
-                        {
-                            "id": results["ids"][0][i],
-                            "document": results["documents"][0][i]
-                            if results.get("documents")
-                            else "",
-                            "metadata": results["metadatas"][0][i]
-                            if results.get("metadatas")
-                            else {},
-                            "distance": results["distances"][0][i]
-                            if results.get("distances")
-                            else 0.0,
-                        }
-                    )
-            return hits
-        except Exception as e:
+            return self._build_hits(results)
+        except (ValueError, RuntimeError) as e:
             logger.warning("ChromaDB query failed: %s", e)
             return []
 
@@ -223,6 +234,8 @@ class Harvester:
                     try:
                         data = json.loads(line)
                         traces.append(LoopTrace(**data))
+                    except json.JSONDecodeError as e:
+                        logger.warning("Failed to parse trace line JSON: %s", e)
                     except Exception as e:
-                        logger.warning("Failed to parse trace line: %s", e)
+                        logger.exception("Unexpected error parsing trace line: %s", e)
         return traces

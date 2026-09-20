@@ -80,7 +80,7 @@ def get_bnb_quantization_config() -> Any:
             bnb_4bit_compute_dtype=dtype,
             bnb_4bit_use_double_quant=True,
         )
-    except Exception:
+    except (OSError, RuntimeError):
         return None
 
 

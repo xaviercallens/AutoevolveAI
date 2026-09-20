@@ -15,13 +15,13 @@ reconf_out = getattr(sys.stdout, "reconfigure", None)
 if callable(reconf_out):
     try:
         reconf_out(encoding="utf-8")
-    except Exception:
+    except (OSError, ValueError, AttributeError):  # Encoding reconfig
         pass
 reconf_err = getattr(sys.stderr, "reconfigure", None)
 if callable(reconf_err):
     try:
         reconf_err(encoding="utf-8")
-    except Exception:
+    except (OSError, ValueError, AttributeError):  # Encoding reconfig
         pass
 
 

@@ -168,7 +168,7 @@ def test_harvester_chroma_query_exception(temp_memory, monkeypatch):
     import chromadb
 
     mock_collection = MagicMock()
-    mock_collection.query.side_effect = Exception("Mock Query Error")
+    mock_collection.query.side_effect = RuntimeError("Mock Query Error")
 
     mock_client = MagicMock()
     mock_client.get_or_create_collection.return_value = mock_collection

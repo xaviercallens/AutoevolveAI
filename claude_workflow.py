@@ -277,7 +277,7 @@ def run_verification_phase(
     }
     try:
         _send_gateway_phase_request(endpoint, headers, payload, timeout, client)
-    except Exception:
+    except (httpx.HTTPError, OSError):
         pass
 
     return passed, message

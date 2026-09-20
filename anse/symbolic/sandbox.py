@@ -115,7 +115,7 @@ try:
     runpy.run_path(target, run_name="__main__")
 except SystemExit as e:
     exit_code = e.code if isinstance(e.code, int) else (0 if e.code is None else 1)
-except Exception:
+except (OSError, subprocess.SubprocessError) as exc:
     traceback.print_exc()
     exit_code = 1
 finally:
@@ -135,7 +135,7 @@ finally:
         if time_out:
             with open(time_out, "w", encoding="utf-8") as f:
                 f.write(f"{duration_ms:.4f}")
-    except Exception:
+    except (OSError, subprocess.SubprocessError) as exc:
         pass
 
 sys.exit(exit_code)
@@ -184,14 +184,14 @@ def _tier1_execute(code: str, timeout: float) -> ExecutionResult:
             if time_path.exists():
                 try:
                     elapsed_ms = float(time_path.read_text(encoding="utf-8").strip())
-                except Exception:
+                except (ValueError, TypeError):
                     pass
 
             peak_ram = 0.0
             if mem_path.exists():
                 try:
                     peak_ram = float(mem_path.read_text(encoding="utf-8").strip())
-                except Exception:
+                except (ValueError, TypeError):
                     peak_ram = 0.0
 
             return ExecutionResult(
@@ -233,7 +233,7 @@ def _tier2_execute(
         import docker  # type: ignore[import-untyped]
 
         client = docker.from_env()
-    except Exception:
+    except (ImportError, OSError, subprocess.SubprocessError):
         # Docker not available — fall back to Tier 1 with a warning in stderr
         result = _tier1_execute(code, timeout)
         result.tier_used = 2

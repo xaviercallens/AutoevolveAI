@@ -66,7 +66,7 @@ def _parse_json_field(val: Any) -> Any:
     if isinstance(val, (bytes, str)):
         try:
             return json.loads(val)
-        except Exception:
+        except (json.JSONDecodeError, KeyError):
             return {}
     return val if isinstance(val, dict) else {}
 
@@ -123,7 +123,7 @@ def _load_trace_payloads(trace_id: str, r: Any) -> tuple[dict[str, Any], dict[st
     raw_str = raw.decode("utf-8") if isinstance(raw, bytes) else str(raw)
     try:
         record = json.loads(raw_str)
-    except Exception:
+    except (json.JSONDecodeError, KeyError, OSError):
         return None
     req = _parse_json_field(record.get("request_json"))
     resp = _parse_json_field(record.get("response_json"))

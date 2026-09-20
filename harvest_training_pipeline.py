@@ -69,7 +69,7 @@ def parse_trace_message(
     try:
         req = json.loads(req_raw) if isinstance(req_raw, (str, bytes)) else req_raw
         resp = json.loads(resp_raw) if isinstance(resp_raw, (str, bytes)) else resp_raw
-    except Exception:
+    except (json.JSONDecodeError, KeyError):
         return None, None
 
     if not isinstance(req, dict) or not isinstance(resp, dict):
@@ -124,7 +124,7 @@ def _harvest_sft_from_passed(
         raw_str = raw.decode("utf-8") if isinstance(raw, bytes) else str(raw)
         try:
             record = json.loads(raw_str)
-        except Exception:
+        except (json.JSONDecodeError, KeyError):
             continue
 
         msgs, comp = parse_trace_message(record.get("request_json"), record.get("response_json"))

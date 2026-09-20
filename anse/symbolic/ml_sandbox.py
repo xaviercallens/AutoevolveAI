@@ -73,7 +73,7 @@ try:
         raise ValueError("Could not find an nn.Module subclass in the generated code.")
     
     model = model_class()
-except Exception:
+except (OSError, subprocess.SubprocessError) as exc:
     traceback.print_exc()
     sys.exit(1)
 
@@ -106,7 +106,7 @@ except RuntimeError as e:
         oom = True
     traceback.print_exc()
     sys.exit(1)
-except Exception:
+except (OSError, subprocess.SubprocessError) as exc:
     traceback.print_exc()
     sys.exit(1)
 
@@ -121,7 +121,7 @@ try:
         preds = torch.argmax(outputs, dim=1)
         correct = (preds == y_val).sum().item()
         accuracy = correct / len(y_val)
-except Exception:
+except (ValueError, TypeError) as exc:
     traceback.print_exc()
     sys.exit(1)
 
@@ -176,7 +176,7 @@ def _parse_ml_stats(
             elapsed_ms = stats.get("duration_ms", elapsed_ms)
             shape_mismatch = stats.get("is_shape_mismatch", shape_mismatch)
             oom = stats.get("is_oom", oom)
-        except Exception:
+        except (ValueError, TypeError):
             pass
 
     return params, acc, val_loss, train_loss, elapsed_ms, shape_mismatch, oom

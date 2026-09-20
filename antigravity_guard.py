@@ -8,23 +8,30 @@ from __future__ import annotations
 
 import ast
 import importlib.metadata
+import logging
 import subprocess
 import sys
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # Ensure UTF-8 output even in Windows cmd/powershell cp1252 environments
 reconf_out = getattr(sys.stdout, "reconfigure", None)
 if callable(reconf_out):
     try:
         reconf_out(encoding="utf-8")
-    except Exception:
-        pass
+    except (OSError, ValueError) as exc:
+        logger.debug("Could not reconfigure stdout to utf-8: %s", exc)
+    except Exception as exc:
+        logger.exception("Unexpected error reconfiguring stdout: %s", exc)
 reconf_err = getattr(sys.stderr, "reconfigure", None)
 if callable(reconf_err):
     try:
         reconf_err(encoding="utf-8")
-    except Exception:
-        pass
+    except (OSError, ValueError) as exc:
+        logger.debug("Could not reconfigure stderr to utf-8: %s", exc)
+    except Exception as exc:
+        logger.exception("Unexpected error reconfiguring stderr: %s", exc)
 
 
 def get_installed_packages() -> set[str]:

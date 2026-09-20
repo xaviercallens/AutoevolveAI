@@ -66,7 +66,7 @@ def parse_trace(req_json: Any, resp_json: Any) -> tuple[list[dict[str, str]], st
     try:
         req = json.loads(req_json) if isinstance(req_json, (str, bytes)) else req_json
         resp = json.loads(resp_json) if isinstance(resp_json, (str, bytes)) else resp_json
-    except Exception:
+    except (json.JSONDecodeError, KeyError):
         return [], ""
 
     if not isinstance(req, dict) or not isinstance(resp, dict):

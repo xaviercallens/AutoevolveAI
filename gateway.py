@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import re
 import time
@@ -24,6 +25,9 @@ import httpx
 import redis.asyncio as aioredis
 from fastapi import FastAPI, Header, Request, Response
 from fastapi.responses import StreamingResponse
+
+logger = logging.getLogger(__name__)
+
 
 # Upstream Frontier Models
 MODEL_PLANNING = os.getenv("MODEL_PLANNING", "gemini-3.1-pro")
@@ -69,7 +73,11 @@ def _safe_decode_payload(payload: bytes) -> Any:
     """Safely decode JSON payload or fall back to unicode string."""
     try:
         return json.loads(payload.decode("utf-8"))
-    except Exception:
+    except json.JSONDecodeError as exc:
+        logger.warning("JSON decode failed: %s", exc)
+        return payload.decode("utf-8", errors="replace")
+    except Exception as exc:
+        logger.exception("Unexpected error: %s", exc)
         return payload.decode("utf-8", errors="replace")
 
 
@@ -159,7 +167,11 @@ def _extract_tool_calls_from_text(content_text: str) -> list[dict[str, Any]]:
     try:
         fn_call = json.loads(raw_tool)
         return [{"functionCall": fn_call}]
-    except Exception:
+    except json.JSONDecodeError as exc:
+        logger.warning("JSON decode failed: %s", exc)
+        return [{"text": content_text}]
+    except Exception as exc:
+        logger.exception("Unexpected error: %s", exc)
         return [{"text": content_text}]
 
 
@@ -180,7 +192,11 @@ def openai_to_gemini_response(openai_resp: dict[str, Any]) -> dict[str, Any]:
         fn_args_raw = fn.get("arguments", "{}")
         try:
             fn_args = json.loads(fn_args_raw) if isinstance(fn_args_raw, str) else fn_args_raw
-        except Exception:
+        except json.JSONDecodeError as exc:
+            logger.warning("JSON decode failed: %s", exc)
+            fn_args = {"raw": fn_args_raw}
+        except Exception as exc:
+            logger.exception("Unexpected error: %s", exc)
             fn_args = {"raw": fn_args_raw}
         parts.append({"functionCall": {"name": fn_name, "args": fn_args}})
 
@@ -248,8 +264,10 @@ async def log_interaction_to_redis(
 
         pipe.set(f"antigravity:trace:{event_id}", json.dumps(record))
         await pipe.execute()
-    except Exception as err:
-        print(f"Warning: Failed to log interaction to Redis: {err}")
+    except aioredis.RedisError as exc:
+        logger.warning("Redis operation failed: %s", exc)
+    except Exception as exc:
+        logger.exception("Unexpected error: %s", exc)
 
 
 async def handle_local_inference(
@@ -307,8 +325,14 @@ async def handle_local_inference(
             "x-backend-routed": "local-lora",
         }
         return Response(content=resp_bytes, status_code=200, headers=resp_headers)
-    except Exception as err:
-        print(f"Warning: Local inference failed ({err}). Falling back.")
+    except httpx.HTTPError as exc:
+        logger.warning("Local inference failed due to HTTP error: %s", exc)
+        return None
+    except json.JSONDecodeError as exc:
+        logger.warning("Local inference failed due to JSON error: %s", exc)
+        return None
+    except Exception as exc:
+        logger.exception("Unexpected error: %s", exc)
         return None
 
 

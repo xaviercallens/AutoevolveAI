@@ -28,6 +28,7 @@ usage() {
     echo "  test-fast    Run fast algorithmic & complexity tests only"
     echo "  lean         Build formal Lean 4 specification & verification proofs"
     echo "  run          Launch the ANSE main execution agent loop"
+    echo "  web          Start the interactive Phase 1 & Phase 2 demonstration web server"
     echo "  clean        Clean temporary caches and sandbox artifacts"
     echo "  help         Display this help message"
     echo ""
@@ -84,6 +85,12 @@ cmd_run() {
     uv run python main.py "$@"
 }
 
+cmd_web() {
+    check_prerequisites
+    echo -e "${YELLOW}>>> Launching ANSE Interactive Web Server...${NC}"
+    uv run python web/server.py "$@"
+}
+
 cmd_clean() {
     echo -e "${YELLOW}>>> Cleaning cache files and sandbox artifacts...${NC}"
     find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
@@ -128,6 +135,11 @@ case "$ACTION" in
         print_header
         shift || true
         cmd_run "$@"
+        ;;
+    web)
+        print_header
+        shift || true
+        cmd_web "$@"
         ;;
     clean)
         cmd_clean

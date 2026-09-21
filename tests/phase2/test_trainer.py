@@ -214,3 +214,17 @@ class TestJEPATrainer:
         assert abs(summary1.final_train_loss - summary2.final_train_loss) < 1e-3, (
             f"Reproducibility failed: {summary1.final_train_loss} vs {summary2.final_train_loss}"
         )
+
+
+def test_trailing_single_sample_batch_does_not_poison_weights():
+    """Regression: found by the live Qwen3 Phase 2 run.
+
+    17 training rows at batch_size=16 leave a trailing batch of one; its variance is
+    undefined, VICReg returned NaN and one backward pass turned every weight into NaN.
+    (18 rows: the split always holds out at least one for validation.)
+    """
+    trainer, _ = _create_trainer()
+    ds = _create_dataset(18)
+    summary = trainer.train(ds, epochs=2, batch_size=16, val_fraction=0.0)
+    assert summary.final_train_loss == summary.final_train_loss  # not NaN
+    assert all(torch.isfinite(p).all() for p in trainer.model.parameters())

@@ -201,6 +201,9 @@ class JEPATrainer:
             batch_size=batch_size,
             shuffle=True,
             generator=torch.Generator().manual_seed(seed),
+            # A trailing batch of one sample has undefined variance: VICReg returns NaN
+            # and a single backward pass poisons every weight.
+            drop_last=len(train_ds) > batch_size and len(train_ds) % batch_size == 1,
         )
         val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False)
 

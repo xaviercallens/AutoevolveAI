@@ -50,6 +50,9 @@ SYSTEM = (
 def harvest(args: argparse.Namespace, out_dir: Path) -> Path:
     """Sample the LLM across temperatures and record real (latent, energy) pairs."""
     extractor = OllamaExtractor(OllamaConfig(gen_model=args.model))
+    # Harvester appends: a stale log from an earlier run would duplicate the deterministic
+    # T=0.0 samples and leak them across the train/held-out split.
+    (out_dir / "interactions.jsonl").unlink(missing_ok=True)
     sandbox = SandboxExecutor()
     evaluator = EnergyEvaluator()
     harvester = Harvester(
@@ -144,7 +147,9 @@ def evaluate_predictions(model: JEPAWorldModel, loader: DataLoader) -> dict:
         "mae": round(mae, 4),
         "mae_mean_baseline": round(mae_baseline, 4),
         "beats_baseline": mae < mae_baseline,
-        "skill_score_vs_baseline_pct": round(100.0 * (1 - mae / max(mae_baseline, 1e-9)), 1),
+        "skill_score_vs_baseline_pct": (
+            round(100.0 * (1 - mae / mae_baseline), 1) if mae_baseline > 0 else None
+        ),
         "pred_std": round(float(torch.tensor(scaled).std()), 4),
         "actual_std": round(float(torch.tensor(actuals).std()), 4),
     }

@@ -16,6 +16,7 @@ When working in the AutoevolveAI / ANSE codebase, you are not generating text fo
 - **First, once per machine:** `uv sync --all-extras` (installs web, gateway, guard, sandbox and training extras plus the dev group; `antigravity_guard.py` needs them all to resolve imports).
 - **Run Complete Tests:** `uv run pytest tests/`
 - **Run Fast Performance Benchmarks:** `uv run pytest tests/performance/`
+- **Run Antigravity Harness:** `uv run python -m antigravity_harness {audit,verify,test,dpo,qa}` (see skill `antigravity-harness`)
 - **Compile Lean 4 Proofs:** `cd formal && lake build`
 - **Check Repository Health:** `./restart.sh status`
 - **Run the Evolution Lab:** `uv run python run_phase{1,2,3}_evolution.py` (see skill `anse-evolution-lab`)

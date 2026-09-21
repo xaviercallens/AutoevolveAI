@@ -59,7 +59,23 @@ def run_pipeline(target_files: list[str]) -> bool:
     python_exe = sys.executable
     print(f"==> Running Hardened Gate across {len(target_files)} target file(s)...")
 
-    # 1. AST & Complexity Checks
+    # 1. AntiStubGuard, AST & Complexity Checks
+    print(" [1/6] Auditing anti-stub, anti-mock and cyclomatic complexity invariants...")
+    try:
+        from antigravity_harness.core.anti_stub_guard import AntiStubGuard
+        guard = AntiStubGuard()
+        for f in target_files:
+            p = Path(f)
+            if p.is_file() and p.suffix == ".py" and "test" not in p.parts:
+                audit = guard.audit_file(p)
+                if not audit.is_clean:
+                    print(f"❌ [AntiStubGuard] Violations in {p}:")
+                    for v in audit.violations:
+                        print(f"   - Line {v.lineno} in '{v.symbol_name}': {v.message}")
+                    return False
+    except ImportError:
+        pass
+
     for f in target_files:
         p = Path(f)
         if p.is_file() and p.suffix == ".py":

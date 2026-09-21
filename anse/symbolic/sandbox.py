@@ -204,7 +204,7 @@ def _tier1_execute(code: str, timeout: float, mem_limit_mb: int | None = None) -
                 try:
                     elapsed_ms = float(time_path.read_text(encoding="utf-8").strip())
                 except (ValueError, TypeError):
-                    pass
+                    elapsed_ms = (time.perf_counter() - start) * 1000.0
 
             peak_ram = 0.0
             if mem_path.exists():

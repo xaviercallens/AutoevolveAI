@@ -407,7 +407,7 @@ def record_rl_trace(
             "reasons": json.dumps(reasons or []),
             "timestamp": str(time.time()),
         }
-        r.hset(f"antigravity:attestation:{trace_id}", mapping=att_payload)
+        r.hset(f"antigravity:attestation:{trace_id}", mapping={k: str(v) for k, v in att_payload.items()})
 
         if human_patch:
             r.set(f"antigravity:subtask:{subtask_id}:human_patch", human_patch)
@@ -420,6 +420,99 @@ def record_rl_trace(
         }
     except Exception as exc:
         return {"success": False, "error": str(exc)}
+
+
+@mcp.tool()
+def audit_anti_stub(code: str, filename: str = "candidate.py") -> dict[str, Any]:
+    """
+    Audits Python code with AntiStubGuard against stubs, ellipsis (...), fake mock data,
+    and simulation shortcuts under the ANSE computational physics model (E = 10^6 on violation).
+    """
+    from antigravity_harness.core.anti_stub_guard import AntiStubGuard
+
+    guard = AntiStubGuard()
+    result = guard.audit_code(code, filename=filename)
+    return {
+        "is_clean": result.is_clean,
+        "violations_count": len(result.violations),
+        "violations": [
+            {
+                "rule": v.rule,
+                "lineno": v.lineno,
+                "symbol": v.symbol_name,
+                "message": v.message,
+            }
+            for v in result.violations
+        ],
+        "penalty_energy": result.penalty_energy,
+        "summary": result.summary,
+    }
+
+
+@mcp.tool()
+def verify_lean4_soundness(formal_dir: str = "formal") -> dict[str, Any]:
+    """
+    Audits Lean 4 formal specifications in formal/ for proof soundness, inventorying
+    theorems/lemmas/axioms and catching ungrounded 'sorry' tokens.
+    """
+    from antigravity_harness.core.lean4_verifier import Lean4Verifier
+
+    verifier = Lean4Verifier(formal_dir=formal_dir)
+    inventory = verifier.extract_proof_inventory()
+    sound, msg = verifier.check_soundness()
+    return {
+        "sound": sound,
+        "message": msg,
+        "inventory": {k: len(v) for k, v in inventory.items()},
+        "theorems": inventory.get("theorems", []),
+        "lake_available": verifier.is_available,
+    }
+
+
+@mcp.tool()
+def generate_adversarial_qa_suite(
+    module_import: str, function_code: str
+) -> dict[str, Any]:
+    """
+    Generates an adversarial Pytest and Hypothesis property test suite targeting the given function.
+    """
+    from antigravity_harness.agents.qa_agent import QAAgent
+
+    agent = QAAgent()
+    report = agent.generate_adversarial_suite(module_import, function_code)
+    prop_test = agent.generate_property_tests(module_import, function_code)
+    return {
+        "target_name": report.target_name,
+        "num_tests": report.num_tests_generated,
+        "edge_cases": report.edge_cases_covered,
+        "pytest_code": report.test_code,
+        "property_test_code": prop_test,
+    }
+
+
+@mcp.tool()
+def build_dpo_preference_dataset(
+    output_path: str = "results/dpo_dataset.jsonl",
+) -> dict[str, Any]:
+    """
+    Extracts recorded sessions from RedisBus and exports a Hugging Face TRL-compatible DPO dataset.
+    """
+    from antigravity_harness.rl_pipeline.dpo_dataset_builder import DPODatasetBuilder
+    from antigravity_harness.rl_pipeline.trace_extractor import TraceExtractor
+    from antigravity_harness.storage.redis_bus import RedisBus
+
+    bus = RedisBus()
+    extractor = TraceExtractor(bus)
+    sessions = extractor.extract_from_bus()
+    builder = DPODatasetBuilder()
+    pairs = builder.build_pairs_from_sessions(sessions)
+    exported_path = builder.export_to_jsonl(pairs, output_path)
+    metrics = extractor.compute_dataset_metrics(sessions)
+    return {
+        "pairs_generated": len(pairs),
+        "exported_path": str(exported_path),
+        "metrics": metrics,
+    }
 
 
 if __name__ == "__main__":

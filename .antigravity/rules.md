@@ -2,9 +2,9 @@
 
 ## 1. Core Engineering Invariants
 1. **Dependency Invariant:** Never import third-party libraries without first checking `pyproject.toml` or the active virtual environment. If a library is needed, instruct the user to install it rather than inventing package names.
-2. **Verification First:** Always run `python antigravity_guard.py` and `python test_rigor_guard.py` before marking any coding task as complete.
+2. **Verification First:** Always run `python -m antigravity_harness audit <path>` and `python antigravity_guard.py` before marking any coding task as complete.
 3. **Type Safety:** All function signatures must include Python type annotations compatible with `mypy --strict` or `--ignore-missing-imports`.
-4. **Self-Correction Protocol:** If `antigravity_guard.py`, `test_rigor_guard.py`, or unit tests fail, read the exact stdout traceback, isolate the AST/import/type error, and fix the implementation before responding.
+4. **Self-Correction Protocol:** If `antigravity_guard.py`, `test_rigor_guard.py`, `antigravity_harness`, or unit tests fail, read the exact stdout traceback, isolate the AST/import/type error, and fix the implementation before responding.
 5. **Physical Energy Invariant ($E$):** When proposing optimizations, evaluate against latency and peak memory ($E = \text{Duration (ms)} + \text{Peak RAM (MB)}$) in the deterministic sandbox (`anse/symbolic/sandbox.py`), rejecting any solution where $E \ge 10^6$ (Maximum Pain).
 
 ---

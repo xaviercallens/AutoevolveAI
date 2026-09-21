@@ -560,3 +560,99 @@ def test_dpo_dataset_builder_split_and_chat():
     assert chat_data[0]["prompt"][1]["content"] == "prompt 0"
     assert chat_data[0]["chosen"][0]["content"] == "chosen 0"
     assert chat_data[0]["rejected"][0]["content"] == "rejected 0"
+
+
+# ─── 11. CLI Entry Point Tests ────────────────────────────────────────────────
+
+
+def test_cli_audit_command(tmp_path):
+    import argparse
+
+    from antigravity_harness.__main__ import cmd_audit
+
+    clean_file = tmp_path / "clean.py"
+    clean_file.write_text("def run():\n    return 1 + 1\n")
+
+    args = argparse.Namespace(target=str(clean_file), include_tests=False)
+    ret = cmd_audit(args)
+    assert ret == 0
+
+    stub_file = tmp_path / "stub.py"
+    stub_file.write_text("def run():\n    pass\n")
+
+    args_stub = argparse.Namespace(target=str(stub_file), include_tests=False)
+    ret_stub = cmd_audit(args_stub)
+    assert ret_stub == 1
+
+
+def test_cli_qa_command(tmp_path, capsys):
+    import argparse
+
+    from antigravity_harness.__main__ import cmd_qa
+
+    code_file = tmp_path / "sample_fn.py"
+    code_file.write_text("def multiply(a: int, b: int) -> int:\n    return a * b\n")
+
+    args = argparse.Namespace(file=str(code_file), module="sample_mod")
+    ret = cmd_qa(args)
+    assert ret == 0
+    captured = capsys.readouterr().out
+    assert "test_multiply" in captured
+
+
+def test_cli_dpo_command(tmp_path):
+    import argparse
+
+    from antigravity_harness.__main__ import cmd_dpo
+
+    out_file = tmp_path / "out_dpo.jsonl"
+    args = argparse.Namespace(output=str(out_file))
+    ret = cmd_dpo(args)
+    assert ret == 0
+    assert out_file.exists()
+
+
+# ─── 12. MCP Guard Server Tools Tests ─────────────────────────────────────────
+
+
+def test_mcp_audit_anti_stub():
+    from mcp_guard_server import audit_anti_stub
+
+    res_clean = audit_anti_stub("def compute():\n    return 40 + 2\n")
+    assert res_clean["is_clean"]
+    assert res_clean["penalty_energy"] == 0.0
+
+    res_stub = audit_anti_stub("def compute():\n    pass\n")
+    assert not res_stub["is_clean"]
+    assert res_stub["violations_count"] == 1
+    assert res_stub["penalty_energy"] == 1_000_000.0
+
+
+def test_mcp_verify_lean4_soundness(tmp_path):
+    from mcp_guard_server import verify_lean4_soundness
+
+    lean_file = tmp_path / "Spec.lean"
+    lean_file.write_text("theorem sound_thm : True := by trivial\n")
+
+    res = verify_lean4_soundness(formal_dir=str(tmp_path))
+    assert res["sound"]
+    assert "theorems" in res["inventory"]
+
+
+def test_mcp_generate_adversarial_qa():
+    from mcp_guard_server import generate_adversarial_qa_suite
+
+    code = "def parse_port(val: str) -> int:\n    return int(val)\n"
+    res = generate_adversarial_qa_suite("my_service", code)
+    assert res["target_name"] == "parse_port"
+    assert "test_parse_port" in res["pytest_code"]
+    assert "hypothesis" in res["property_test_code"]
+
+
+def test_mcp_build_dpo_preference_dataset(tmp_path):
+    from mcp_guard_server import build_dpo_preference_dataset
+
+    out_file = tmp_path / "mcp_dpo.jsonl"
+    res = build_dpo_preference_dataset(output_path=str(out_file))
+    assert "pairs_generated" in res
+    assert out_file.exists()

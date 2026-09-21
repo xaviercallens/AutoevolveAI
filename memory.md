@@ -87,3 +87,19 @@ Gotchas learned:
 - `tests/phase3/test_neuro_surgeon.py` rewrites the tracked file `.antigravity_attestation` on every run.
 - The loop returns the last attempt although energy often rises on retries; returning the best attempt is the next cheap win.
 - Next focus: remote GPU pod (7B model, true hidden states instead of reply-text embeddings, LoRA/GRPO training).
+
+---
+
+## 6. Antigravity Harness Architecture (2026-09-21)
+
+Fully implemented, documented (`docs/ANTIGRAVITY_HARNESS.md`), and tested (`tests/test_antigravity_harness.py`, 43 tests passing):
+- **Package:** `antigravity-harness/` (aliased as `antigravity_harness`).
+- **Sub-packages:**
+  - `core`: `ContextOrchestrator` (Gemini 1M-2M context, AST skeletonizer, sliding window), `AntiStubGuard` (AST stubs, mock data, trivial constant returns, silent try-pass), `Lean4Verifier` (proof inventory, sorry auditor, lake runner).
+  - `storage`: `RedisBus` (Streams, JSON traces, k-NN vector search with transparent in-memory mock fallback).
+  - `agents`: `QAAgent` (adversarial edge cases & Hypothesis property testing), `OptimizerAgent` (computational physics $E$, vectorization opportunities, $\Delta E < 0$).
+  - `tests_runner`: `UnitIntegrationRunner` (Pytest, JUnit XML), `VisualRegressionRunner` (Playwright & Pixelmatch HTML diff).
+  - `rl_pipeline`: `TraceExtractor` (session reconstruction, time/energy filters), `DPODatasetBuilder` (chosen/rejected pair generation, TRL Chat DPO formatting).
+- **CLI Commands:** `uv run python -m antigravity_harness {audit,verify,test,dpo,qa}`.
+- **MCP Integration:** Native tools registered in `mcp_guard_server.py` (`audit_anti_stub`, `verify_lean4_soundness`, `generate_adversarial_qa_suite`, `build_dpo_preference_dataset`).
+- **Quality Gate:** Hooked into `.antigravity/hooks/hardened_gate.py` and documented in `.agents/skills/antigravity-harness/SKILL.md`.

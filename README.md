@@ -157,15 +157,21 @@ python web/server.py --port 5000
 ```
 Open your browser to `http://localhost:5000` to interact with the live Phase 1 & Phase 2 simulator!
 
-### 3. Run the Hardened Quality Gate & Full Test Suite
+### 3. Run the Antigravity Harness & Full Test Suite
 
 ```bash
-# Run the 5-Gate Quality Pipeline (Radon CC ≤ 10, Ruff, Bandit, Vulture, MyPy)
+# Run the Antigravity Harness CLI (Audit, Verify, Test, QA, DPO)
+uv run python -m antigravity_harness audit anse/
+uv run python -m antigravity_harness verify --formal-dir formal
+uv run python -m antigravity_harness test tests/test_antigravity_harness.py
+
+# Run the 6-Gate Quality Pipeline (AntiStubGuard, Radon, Ruff, Bandit, Vulture, MyPy)
 uv run python .antigravity/hooks/hardened_gate.py
 
-# Run all 308+ tests (symbolic, JEPA, Phase 3 neuro-surgeon, symbiotic, latent dreaming)
+# Run complete test suite
 uv run pytest tests/ -q
 ```
+*See [Antigravity Harness Documentation](docs/ANTIGRAVITY_HARNESS.md) for full architecture and command reference.*
 
 ---
 

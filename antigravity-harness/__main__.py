@@ -11,11 +11,9 @@ Provides a unified command-line tool for the Antigravity Harness:
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
-from antigravity_harness.agents.optimizer_agent import OptimizerAgent
 from antigravity_harness.agents.qa_agent import QAAgent
 from antigravity_harness.core.anti_stub_guard import AntiStubGuard
 from antigravity_harness.core.lean4_verifier import Lean4Verifier
@@ -45,7 +43,9 @@ def cmd_verify(args: argparse.Namespace) -> int:
     verifier = Lean4Verifier(formal_dir=formal_dir)
 
     inv = verifier.extract_proof_inventory(formal_dir)
-    print(f"Formal Inventory: {len(inv['theorems'])} theorems, {len(inv['lemmas'])} lemmas, {len(inv['axioms'])} axioms, {len(inv['definitions'])} definitions.")
+    print(
+        f"Formal Inventory: {len(inv['theorems'])} theorems, {len(inv['lemmas'])} lemmas, {len(inv['axioms'])} axioms, {len(inv['definitions'])} definitions."
+    )
 
     sound, msg = verifier.check_soundness(formal_dir)
     if not sound:
@@ -97,7 +97,9 @@ def cmd_qa(args: argparse.Namespace) -> int:
 
     code = target.read_text(encoding="utf-8")
     report = agent.generate_adversarial_suite(args.module, code)
-    print(f"==> Generated {report.num_tests_generated} adversarial tests for '{report.target_name}':")
+    print(
+        f"==> Generated {report.num_tests_generated} adversarial tests for '{report.target_name}':"
+    )
     print(report.test_code)
     return 0
 
@@ -110,12 +112,16 @@ def main() -> int:
     subparsers = parser.add_subparsers(dest="command", help="Harness command to run")
 
     # audit
-    p_audit = subparsers.add_parser("audit", help="Audit code against stubs, mock data, and simulations")
+    p_audit = subparsers.add_parser(
+        "audit", help="Audit code against stubs, mock data, and simulations"
+    )
     p_audit.add_argument("target", help="File or directory path to audit")
     p_audit.add_argument("--include-tests", action="store_true", help="Include test files in audit")
 
     # verify
-    p_verify = subparsers.add_parser("verify", help="Verify Lean 4 formal specifications and proof soundness")
+    p_verify = subparsers.add_parser(
+        "verify", help="Verify Lean 4 formal specifications and proof soundness"
+    )
     p_verify.add_argument("--formal-dir", default="formal", help="Directory containing Lean files")
     p_verify.add_argument("--build", action="store_true", help="Execute 'lake build' if available")
 

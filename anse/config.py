@@ -11,6 +11,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Literal
 
 from dotenv import load_dotenv
 
@@ -144,7 +145,7 @@ class SandboxConfig:
     """Address-space cap (RLIMIT_AS, POSIX) for Tier-1 subprocesses."""
 
     docker_image: str = "anse-sandbox:latest"
-    tier1_fallback: __import__("typing").Literal["deny", "allow_with_warning"] = "deny"
+    tier1_fallback: Literal["deny", "allow_with_warning"] = "deny"
     untrusted_requires_container: bool = True
     """Docker image used for Tier-2 isolated execution."""
 

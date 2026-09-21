@@ -1,9 +1,8 @@
+"""Tests for CLI entry point main.py."""
+
 import shutil
 
 import pytest
-
-"""Tests for CLI entry point main.py."""
-
 import yaml
 
 from anse.core.agent_loop import AgentLoop

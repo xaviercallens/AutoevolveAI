@@ -1,6 +1,6 @@
-import shutil
-
 """Tests for SandboxExecutor and AST safety scanner."""
+
+import shutil
 
 import pytest
 

@@ -119,8 +119,7 @@ roughly 18% at 95% confidence.
 ## Known limitations
 
 
-- Tier 1 sandbox has no filesystem or network isolation; Tier 2 (Docker) is untested
-  here because the `docker` package is not installed.
+- Sandbox execution defaults to fail-closed (`deny`) and strictly enforces a Tier 2 (Docker) environment for untrusted LLM-generated code. Tier 1 fallback is no longer allowed.
 - Running `tests/phase3/test_neuro_surgeon.py` rewrites the tracked file
   `.antigravity_attestation`.
 - Sample sizes are small (20 tasks, 2 seeds). Treat differences of one or two tasks as noise.

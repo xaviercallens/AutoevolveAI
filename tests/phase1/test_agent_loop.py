@@ -1,10 +1,9 @@
-import shutil
-
-import pytest
-
 """Tests for AgentLoop and pain-signal injection."""
 
+import shutil
 from unittest.mock import MagicMock
+
+import pytest
 
 from anse.core.agent_loop import AgentLoop
 from anse.core.encoder import HiddenStateRecord

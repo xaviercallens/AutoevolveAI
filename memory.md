@@ -83,6 +83,7 @@ Gotchas learned:
 - Ollama 0.1.44 ignores `seed` and `temperature` on `/v1/chat/completions`; use `APIExtractor(ollama_native=True)`.
 - Retries leak their label (a retry exists only because the previous attempt failed); score first attempts only.
 - In-process test harnesses can be forged by code that reads its own source file; Phase 1 and 3 now use an out-of-process trusted driver (WP1 completed).
+- Sandbox policy is now explicitly fail-closed (deny), enforcing a Docker container execution (Tier 2) for untrusted LLM-generated code (WP2 completed).
 - `tests/phase3/test_neuro_surgeon.py` rewrites the tracked file `.antigravity_attestation` on every run.
 - The loop returns the last attempt although energy often rises on retries; returning the best attempt is the next cheap win.
 - Next focus: remote GPU pod (7B model, true hidden states instead of reply-text embeddings, LoRA/GRPO training).

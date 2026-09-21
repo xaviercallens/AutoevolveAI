@@ -36,7 +36,6 @@ class ExecutionResult:
     duration_ms: float
     tier_used: int  # 1 or 2
     isolation: str = "none"
-    isolation: str = "none"
     dangerous_imports: list[str] = field(default_factory=list)
     """AST-detected dangerous imports that triggered tier escalation."""
     peak_ram_mb: float = 0.0

@@ -85,6 +85,7 @@ def scan_dangerous_imports(code: str, blocklist: list[str]) -> list[str]:
 _RUNNER_SCRIPT = textwrap.dedent("""
 import sys
 import runpy
+import subprocess
 try:
     import resource
 except ImportError:
@@ -233,7 +234,7 @@ def _tier2_execute(
         import docker  # type: ignore[import-untyped]
 
         client = docker.from_env()
-    except (ImportError, OSError, subprocess.SubprocessError):
+    except Exception:  # docker.errors.DockerException is not an OSError
         # Docker not available — fall back to Tier 1 with a warning in stderr
         result = _tier1_execute(code, timeout)
         result.tier_used = 2

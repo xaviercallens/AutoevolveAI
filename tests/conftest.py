@@ -92,3 +92,14 @@ def prevent_overmocking(monkeypatch: pytest.MonkeyPatch) -> None:
         return original_patch(target, *args, **kwargs)
 
     monkeypatch.setattr("unittest.mock.patch", guarded_patch)
+
+
+@pytest.fixture(autouse=True)
+def isolate_attestation_receipt(
+    monkeypatch: pytest.MonkeyPatch, tmp_path_factory: pytest.TempPathFactory
+) -> None:
+    """Redirect the attestation receipt so test runs never rewrite the tracked repo file."""
+    import execution_attestation
+
+    receipt = tmp_path_factory.mktemp("attestation") / ".antigravity_attestation"
+    monkeypatch.setattr(execution_attestation, "ATTESTATION_FILE", receipt)

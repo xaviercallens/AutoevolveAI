@@ -141,8 +141,6 @@ class EnergyEvaluator:
     def _check_test_presence(self, stdout: str, code: str | None) -> bool:
         if _matches(stdout, r"(passed|ok|\.{3,}|test_)"):
             return True
-        if _matches(stdout, r"\d+ passed"):
-            return True
         if code is not None and ("assert " in code or "assert(" in code):
             return True
         return False

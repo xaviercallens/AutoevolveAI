@@ -42,12 +42,9 @@ def ema_update(
             "Lean 4 ref: TargetEncoder.hmom : 0 < momentum ∧ momentum ≤ 1"
         )
 
-    with_no_grad = True  # Target encoder never accumulates gradients
+    # Target encoder never accumulates gradients: update raw ``.data`` in-place.
     for p_tgt, p_src in zip(target.parameters(), source.parameters()):
-        if with_no_grad:
-            p_tgt.data.mul_(tau).add_(p_src.data, alpha=1.0 - tau)
-        else:
-            p_tgt.data.copy_(tau * p_tgt.data + (1.0 - tau) * p_src.data)
+        p_tgt.data.mul_(tau).add_(p_src.data, alpha=1.0 - tau)
 
 
 def cosine_ema_schedule(

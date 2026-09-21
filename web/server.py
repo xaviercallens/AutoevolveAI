@@ -19,7 +19,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # Ensure project root is in sys.path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -78,7 +78,7 @@ class CodeAuditRequest(BaseModel):
 
 class JEPAPredictRequest(BaseModel):
     code: str
-    latent_dim: int = 16
+    latent_dim: int = Field(default=16, ge=4, le=32)  # hash yields 32 coords; cov term needs 4
     gamma_margin: float = 1.0
     cov_weight: float = 0.01
 

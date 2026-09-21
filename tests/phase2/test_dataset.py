@@ -76,8 +76,13 @@ class TestJEPADataset:
         """
         path = _create_jsonl(20, 64)
         dataset = JEPADataset(path, hidden_dim=64)
-        # Each trace forms a valid pair
-        assert len(dataset) == 20, f"Expected 20 pairs, got {len(dataset)}"
+        # Each trace is one state sample; consecutive attempts (iteration t → t+1)
+        # of the same task additionally form real transition pairs.
+        assert len(dataset.states) == 20, f"Expected 20 states, got {len(dataset.states)}"
+        assert len(dataset) == 20 + len(dataset.transitions)
+        for ctx, tgt in dataset.transitions:
+            assert dataset.states[ctx].task == dataset.states[tgt].task
+            assert dataset.states[tgt].iteration == dataset.states[ctx].iteration + 1
 
     def test_dataset_empty_jsonl(self):
         """Empty JSONL should produce an empty dataset gracefully."""

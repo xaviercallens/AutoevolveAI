@@ -23,6 +23,7 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 
+from anse.symbolic.hidden_tests import TestReport
 from anse.symbolic.sandbox import ExecutionResult
 
 # ─── Categories ──────────────────────────────────────────────────────────────
@@ -134,6 +135,49 @@ class EnergyEvaluator:
             pain_signal=pain,
             execution=result,
             expected_output=expected_output,
+        )
+
+    def evaluate_hidden_tests(
+        self,
+        result: ExecutionResult,
+        report: TestReport | None,
+    ) -> EnergyResult:
+        """
+        Graded energy from independently run hidden tests.
+
+        Crashes before the harness keep their categorical energy. Otherwise
+        E = E_test_failure * failed / total, so partial progress lowers energy.
+        *result.stdout* must already have the harness report line stripped.
+        """
+        err = self._check_error_categories(result, result.stdout or "", result.stderr or "")
+        if err is not None and (report is None or err[0] is not EnergyCategory.TEST_FAILURE):
+            return EnergyResult(
+                score=self._levels[err[0]], category=err[0], pain_signal=err[1], execution=result
+            )
+
+        ceiling = self._levels[EnergyCategory.TEST_FAILURE]
+        if report is None or report.total == 0:
+            return EnergyResult(
+                score=ceiling,
+                category=EnergyCategory.TEST_FAILURE,
+                pain_signal="The hidden tests never ran. Your code must not exit or block at import time.",
+                execution=result,
+            )
+        if report.all_passed:
+            return EnergyResult(
+                score=self._levels[EnergyCategory.PERFECT],
+                category=EnergyCategory.PERFECT,
+                pain_signal=f"All {report.total} hidden tests passed. Energy = 0.",
+                execution=result,
+            )
+        failures = "\n".join(f"  - {f}" for f in report.failures)
+        return EnergyResult(
+            score=ceiling * report.failed / report.total,
+            category=EnergyCategory.TEST_FAILURE,
+            pain_signal=(
+                f"{report.failed} of {report.total} hidden tests failed. First failures:\n{failures}"
+            ),
+            execution=result,
         )
 
     # ── Internal ──────────────────────────────────────────────────────────────

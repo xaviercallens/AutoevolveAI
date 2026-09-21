@@ -18,6 +18,7 @@ import sys
 import tempfile
 import textwrap
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -115,7 +116,7 @@ try:
     runpy.run_path(target, run_name="__main__")
 except SystemExit as e:
     exit_code = e.code if isinstance(e.code, int) else (0 if e.code is None else 1)
-except (OSError, subprocess.SubprocessError) as exc:
+except OSError:
     traceback.print_exc()
     exit_code = 1
 finally:
@@ -135,18 +136,36 @@ finally:
         if time_out:
             with open(time_out, "w", encoding="utf-8") as f:
                 f.write(f"{duration_ms:.4f}")
-    except (OSError, subprocess.SubprocessError) as exc:
+    except OSError:
         pass
 
 sys.exit(exit_code)
 """).strip()
 
 
-def _tier1_execute(code: str, timeout: float) -> ExecutionResult:
+def _make_rlimit_setter(timeout: float, mem_limit_mb: int | None) -> Callable[[], None] | None:
+    """Return a preexec_fn applying CPU / address-space limits (POSIX only)."""
+    if sys.platform == "win32":
+        return None
+    import resource
+
+    def _apply() -> None:
+        resource.setrlimit(resource.RLIMIT_CPU, (int(timeout) + 1, int(timeout) + 2))
+        if mem_limit_mb:
+            cap = mem_limit_mb * 1024 * 1024
+            resource.setrlimit(resource.RLIMIT_AS, (cap, cap))
+
+    return _apply
+
+
+def _tier1_execute(
+    code: str, timeout: float, mem_limit_mb: int | None = None
+) -> ExecutionResult:
     """
     Run *code* in a temporary directory via subprocess.
-    Inherits no environment variables (clean env).
-    Measures duration (ms) and peak RAM (MB).
+    Inherits no environment variables (clean env), applies CPU and address-space
+    rlimits on POSIX, and measures duration (ms) and peak RAM (MB).
+    Note: this tier does not isolate the filesystem or network; that is Tier 2's job.
     """
     with tempfile.TemporaryDirectory(prefix="anse_t1_") as tmpdir:
         script_path = Path(tmpdir) / "solution.py"
@@ -179,6 +198,7 @@ def _tier1_execute(code: str, timeout: float) -> ExecutionResult:
                 timeout=timeout,
                 cwd=tmpdir,
                 env=sub_env,
+                preexec_fn=_make_rlimit_setter(timeout, mem_limit_mb),
             )
             elapsed_ms = (time.perf_counter() - start) * 1000.0
             if time_path.exists():
@@ -235,7 +255,7 @@ def _tier2_execute(
         client = docker.from_env()
     except (ImportError, OSError, subprocess.SubprocessError):
         # Docker not available — fall back to Tier 1 with a warning in stderr
-        result = _tier1_execute(code, timeout)
+        result = _tier1_execute(code, timeout, cfg.tier1_mem_limit_mb)
         result.tier_used = 2
         result.stderr = "[WARN] Docker unavailable, fell back to Tier-1 sandbox.\n" + result.stderr
         result.dangerous_imports = dangerous_imports
@@ -326,7 +346,7 @@ class SandboxExecutor:
         dangerous = scan_dangerous_imports(code, self._cfg.dangerous_modules)
 
         if force_tier == 1 or (force_tier is None and not dangerous):
-            result = _tier1_execute(code, self._cfg.timeout_seconds)
+            result = _tier1_execute(code, self._cfg.timeout_seconds, self._cfg.tier1_mem_limit_mb)
             result.dangerous_imports = dangerous
             return result
 

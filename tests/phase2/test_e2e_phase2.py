@@ -716,6 +716,8 @@ class TestE2E09ComponentWiring:
         loss, _ = model.compute_training_loss(h_ctx, h_tgt, energy_actual)
         loss.backward()
 
+        assert torch.isfinite(loss) and loss.item() > 0.0
+        assert any(p.grad is not None and p.grad.abs().sum() > 0 for p in model.ctx_encoder.parameters())
         self._assert_has_gradients(model.ctx_encoder, "ctx_encoder")
         self._assert_has_gradients(model.predictor, "predictor")
         self._assert_has_gradients(model.energy_head, "energy_head")

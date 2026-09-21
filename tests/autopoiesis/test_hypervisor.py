@@ -1,20 +1,20 @@
 import pytest
 
-from anse.autopoiesis.hypervisor import AutopoiesisHypervisor, BaselineMetrics
+from anse.autopoiesis.hypervisor import BaselineMetrics, legacy_single_sample_rule
 from anse.symbolic.performance_evaluator import PerformanceCategory, PerformanceEnergyResult
 from anse.symbolic.sandbox import ExecutionResult
 
 
 @pytest.fixture
-def hypervisor():
+def baseline():
     # Parent has 5.0 energy
-    return AutopoiesisHypervisor(
-        parent_baseline=BaselineMetrics(energy=5.0, duration_ms=400.0, peak_ram_mb=100.0)
-    )
+    return BaselineMetrics(energy=5.0, duration_ms=400.0, peak_ram_mb=100.0)
 
 
-class TestAutopoiesisHypervisor:
-    def test_hot_swap_authorized(self, hypervisor):
+class TestLegacySingleSampleRule:
+    """The pre-evolution swap condition, kept as a pure function for comparison in Phase 3 UC2/UC3."""
+
+    def test_hot_swap_authorized(self, baseline):
         # Child has 3.0 energy (better)
         child_result = PerformanceEnergyResult(
             score=3.0,
@@ -29,9 +29,9 @@ class TestAutopoiesisHypervisor:
             energy_delta=2.0,
             relative_energy=0.6,
         )
-        assert hypervisor.attempt_hot_swap(child_result, "print('child')")
+        assert legacy_single_sample_rule(child_result, baseline)
 
-    def test_hot_swap_rejected_worse_energy(self, hypervisor):
+    def test_hot_swap_rejected_worse_energy(self, baseline):
         # Child has 6.0 energy (worse)
         child_result = PerformanceEnergyResult(
             score=6.0,
@@ -46,9 +46,9 @@ class TestAutopoiesisHypervisor:
             energy_delta=-1.0,
             relative_energy=1.2,
         )
-        assert not hypervisor.attempt_hot_swap(child_result, "print('child')")
+        assert not legacy_single_sample_rule(child_result, baseline)
 
-    def test_hot_swap_rejected_invalid(self, hypervisor):
+    def test_hot_swap_rejected_invalid(self, baseline):
         # Child is invalid
         child_result = PerformanceEnergyResult(
             score=1000.0,
@@ -63,4 +63,4 @@ class TestAutopoiesisHypervisor:
             energy_delta=-995.0,
             relative_energy=200.0,
         )
-        assert not hypervisor.attempt_hot_swap(child_result, "print('child')")
+        assert not legacy_single_sample_rule(child_result, baseline)

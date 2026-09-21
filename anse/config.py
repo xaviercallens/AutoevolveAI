@@ -140,6 +140,9 @@ class SandboxConfig:
     timeout_seconds: float = 10.0
     """Wall-clock time limit for code execution before timeout penalty."""
 
+    tier1_mem_limit_mb: int = 2048
+    """Address-space cap (RLIMIT_AS, POSIX) for Tier-1 subprocesses."""
+
     docker_image: str = "anse-sandbox:latest"
     """Docker image used for Tier-2 isolated execution."""
 

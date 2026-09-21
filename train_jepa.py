@@ -6,6 +6,12 @@ Usage:
     python train_jepa.py --data data/interactions.jsonl --epochs 100
     python train_jepa.py --validate --checkpoint checkpoints/jepa_best.pt
     python train_jepa.py --data data/interactions.jsonl --device cuda --epochs 200
+    python train_jepa.py --data results/phase1_evolution/traces_uc2_verified.jsonl \
+        --verified-only --latent-dim 16 --model-hidden-dim 64 --dropout 0.2
+
+The input dimension follows the data: it is inferred from the first valid trace
+unless --hidden-dim is given, and a trace of any other dimension is an error
+(hidden states are never zero-padded or truncated). Validation is split by task.
 """
 
 from __future__ import annotations
@@ -41,8 +47,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--data",
         type=Path,
+        nargs="+",
         required=True,
-        help="Path to interactions.jsonl from Phase 1 Harvester.",
+        help="One or more harvester JSONL logs (interactions.jsonl, traces_*.jsonl).",
+    )
+    parser.add_argument(
+        "--verified-only",
+        action="store_true",
+        help="Keep only traces graded by hidden tests (metadata.tests_total > 0).",
+    )
+    parser.add_argument(
+        "--pair-mode",
+        choices=["mixed", "self", "transition"],
+        default="mixed",
+        help="mixed = state items + real attempt t -> t+1 transitions; self = legacy self-pairs.",
     )
 
     # Training
@@ -56,8 +74,16 @@ def parse_args() -> argparse.Namespace:
 
     # Model
     parser.add_argument(
-        "--hidden-dim", type=int, default=4096, help="Input hidden state dimension."
-    )  # noqa: E501
+        "--hidden-dim",
+        type=int,
+        default=None,
+        help="Input hidden state dimension. Default: inferred from the data.",
+    )
+    parser.add_argument(
+        "--model-hidden-dim", type=int, default=None, help="JEPA MLP width (default: config)."
+    )
+    parser.add_argument("--dropout", type=float, default=0.0, help="Input dropout (training only).")
+    parser.add_argument("--weight-decay", type=float, default=0.01, help="AdamW weight decay.")
     parser.add_argument("--latent-dim", type=int, default=512, help="JEPA latent dimension.")
     parser.add_argument("--device", type=str, default="cpu", help="Device: cpu, cuda, auto.")
 
@@ -101,8 +127,17 @@ def main() -> int:
     dataset = JEPADataset(
         jsonl_path=args.data,
         hidden_dim=args.hidden_dim,
+        pair_mode=args.pair_mode,
+        verified_only=args.verified_only,
     )
-    logger.info("Dataset size: %d samples", len(dataset))
+    logger.info(
+        "Dataset: %d items (%d states, %d transitions), hidden_dim=%d, skipped=%s",
+        len(dataset),
+        len(dataset.states),
+        len(dataset.transitions),
+        dataset.hidden_dim,
+        dataset.skipped,
+    )
 
     if len(dataset) == 0:
         logger.error("Dataset is empty — nothing to train on.")
@@ -110,9 +145,10 @@ def main() -> int:
 
     # Create model
     model = JEPAWorldModel(
-        d_input=args.hidden_dim,
-        d_hidden=config.jepa.hidden_dim,
+        d_input=dataset.hidden_dim,
+        d_hidden=args.model_hidden_dim or config.jepa.hidden_dim,
         d_latent=args.latent_dim,
+        dropout=args.dropout,
     )
 
     # Load checkpoint if specified
@@ -125,6 +161,7 @@ def main() -> int:
         model=model,
         config=config.jepa,
         lr=args.lr,
+        weight_decay=args.weight_decay,
         checkpoint_dir=args.checkpoint_dir,
         device=device,
     )

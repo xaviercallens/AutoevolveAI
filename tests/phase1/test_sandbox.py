@@ -115,3 +115,17 @@ def test_sandbox_tier2_execution_timeout(sandbox, monkeypatch):
     assert result.tier_used == 2
     assert result.timed_out is True
     assert result.returncode == -1
+
+
+def test_tier1_reports_user_oserror_traceback_not_runner_nameerror():
+    result = SandboxExecutor().execute("raise OSError('disk on fire')", force_tier=1)
+    assert result.returncode == 1
+    assert "disk on fire" in result.stderr
+    assert "NameError" not in result.stderr
+
+
+def test_tier1_memory_limit_blocks_oversized_allocation():
+    cfg = SandboxConfig(tier1_mem_limit_mb=512)
+    result = SandboxExecutor(config=cfg).execute("x = bytearray(2 * 1024**3)", force_tier=1)
+    assert result.returncode != 0
+    assert "MemoryError" in result.stderr

@@ -22,7 +22,7 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 from anse.config import JEPAConfig
 from anse.jepa.dataset import JEPADataset, train_val_split
@@ -184,7 +184,9 @@ class JEPATrainer:
             logger.warning("Dataset is empty — skipping training")
             return TrainingSummary()
 
-        # Split into train / validation
+        # Split into train / validation (by task: see train_val_split)
+        train_ds: Dataset
+        val_ds: Dataset
         if len(dataset) < 3:
             # Too few samples for a meaningful split — use all for both
             logger.warning(
@@ -194,7 +196,51 @@ class JEPATrainer:
             train_ds = dataset
             val_ds = dataset
         else:
-            train_ds, val_ds = train_val_split(dataset, val_fraction, seed)  # type: ignore
+            train_ds, val_ds = train_val_split(dataset, val_fraction, seed)
+
+        return self.fit(
+            train_ds,
+            val_ds,
+            epochs=epochs,
+            batch_size=batch_size,
+            seed=seed,
+            energy_accuracy_threshold=energy_accuracy_threshold,
+        )
+
+    def fit(
+        self,
+        train_ds: Dataset,
+        val_ds: Dataset,
+        epochs: int = 100,
+        batch_size: int = 32,
+        seed: int = 42,
+        energy_accuracy_threshold: float = 0.1,
+        select_best_on_val: bool = True,
+        validate_every: int = 1,
+    ) -> TrainingSummary:
+        """Train on an explicit (train, validation) pair of datasets.
+
+        Args:
+            train_ds: Items to optimise on.
+            val_ds: Items to monitor.
+            epochs: Number of training epochs.
+            batch_size: Mini-batch size.
+            seed: Seed of the shuffling order.
+            energy_accuracy_threshold: Threshold for energy prediction accuracy.
+            select_best_on_val: Checkpoint the epoch with the lowest validation loss.
+                Pass False when ``val_ds`` is the held-out set of an experiment:
+                selecting an epoch on it would leak the test labels into the model.
+            validate_every: Validate every N epochs (the last epoch is always
+                validated). Skipped epochs repeat the previous validation metrics.
+
+        Returns:
+            TrainingSummary with metrics and checkpoint path.
+        """
+        if len(train_ds) == 0:  # type: ignore[arg-type]
+            logger.warning("Training split is empty — skipping training")
+            return TrainingSummary()
+        if validate_every < 1:
+            raise ValueError(f"validate_every must be >= 1, got {validate_every}")
 
         train_loader = DataLoader(
             train_ds,
@@ -217,8 +263,8 @@ class JEPATrainer:
         logger.info(
             "Starting JEPA training: %d epochs, %d train / %d val samples, %d total steps",
             epochs,
-            len(train_ds),
-            len(val_ds),
+            len(train_ds),  # type: ignore[arg-type]
+            len(val_ds),  # type: ignore[arg-type]
             total_steps,
         )
 
@@ -226,7 +272,8 @@ class JEPATrainer:
             epoch_metrics, global_step = self._train_epoch(train_loader, global_step, total_steps)
 
             # ── Validation phase ────────────────────────────────────
-            val_metrics = self.validate(val_loader, energy_accuracy_threshold)
+            if epoch == 1 or epoch == epochs or epoch % validate_every == 0:
+                val_metrics = self.validate(val_loader, energy_accuracy_threshold)
 
             epoch_record = {
                 "epoch": epoch,
@@ -238,8 +285,10 @@ class JEPATrainer:
             summary.history.append(epoch_record)
 
             # Checkpoint best model
-            if val_metrics.val_loss < best_val_loss:
+            improved = val_metrics.val_loss < best_val_loss
+            if improved:
                 best_val_loss = val_metrics.val_loss
+            if improved and select_best_on_val:
                 ckpt_path = self.checkpoint_dir / "jepa_best.pt"
                 self.model.save(ckpt_path)
                 summary.checkpoint_path = str(ckpt_path)
@@ -309,7 +358,7 @@ class JEPATrainer:
             n_batches += 1
 
             # Energy prediction accuracy
-            z_ctx = self.model.ctx_encoder(h_ctx)  # type: ignore
+            z_ctx = self.model.ctx_encoder(self.model.prepare_input(h_ctx, "h_context"))  # type: ignore
             energy_pred = self.model.energy_head(z_ctx)  # type: ignore
             diff = (energy_pred - energy_actual).abs()
             n_correct += (diff < energy_accuracy_threshold).sum().item()

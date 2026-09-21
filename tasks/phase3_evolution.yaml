@@ -1,0 +1,213 @@
+# Phase 3 evolution suite: components the system may replace with a better version of itself.
+#
+# parent       deliberately naive but CORRECT implementation (registered as v0001)
+# tests        hidden tests = the behavioural contract (equivalence gate)
+# workload     benchmark run against the component in the sandbox and timed by the trusted driver; it must assign
+#              BENCH_RESULT (compared between parent and child) and keep the parent in the
+#              tens-to-hundreds of ms so it rises above interpreter noise
+# child_fast   hand-written, correct and asymptotically faster
+# child_wrong  hand-written, faster but WRONG (a realistic optimisation bug)
+# probe_*      one call used to show which version is live after a swap / rollback
+# fuzz         held-out oracle: a Python expression over a seeded `rng` (random.Random) giving a list
+#              of argument lists. It is NEVER passed to the hypervisor's gates nor shown to the model;
+#              run_phase3_evolution.py uses it to audit promotions by differential testing against
+#              the v0001 parent (AutopoiesisHypervisor.differential_test).
+#
+# tests/phase3/test_evolution_phase3_suite.py checks that every parent and child_fast passes
+# its tests and that every child_wrong fails at least one.
+
+components:
+  - name: find_duplicates
+    entry: find_duplicates
+    description: "find_duplicates(items: list[int]) -> list[int]: the values that occur more than once, each reported once, in order of first appearance."
+    parent: |
+      def find_duplicates(items):
+          result = []
+          for i in range(len(items)):
+              for j in range(i + 1, len(items)):
+                  if items[i] == items[j] and items[i] not in result:
+                      result.append(items[i])
+          return result
+    child_fast: |
+      def find_duplicates(items):
+          counts = {}
+          for item in items:
+              counts[item] = counts.get(item, 0) + 1
+          return [item for item, count in counts.items() if count > 1]
+    child_wrong: |
+      def find_duplicates(items):
+          seen = set()
+          duplicates = set()
+          for item in items:
+              if item in seen:
+                  duplicates.add(item)
+              seen.add(item)
+          return sorted(duplicates)
+    tests:
+      - "assert find_duplicates([1, 2, 3, 2, 1]) == [1, 2]"
+      - "assert find_duplicates([5, 1, 5, 3, 1, 5]) == [5, 1]"
+      - "assert find_duplicates([9, 8, 7]) == []"
+      - "assert find_duplicates([]) == []"
+      - "assert find_duplicates([4, 4, 4, 4]) == [4]"
+      - "assert find_duplicates([3, -1, 3, -1, 0]) == [3, -1]"
+    workload: |
+      _items = [(i * 7919) % 1000 for i in range(1100)]
+      BENCH_RESULT = find_duplicates(_items)[:50]
+    probe_args: [[5, 1, 5, 3, 1]]
+    probe_expected: [5, 1]
+    fuzz: '[[[rng.randint(-6, 6) for _ in range(rng.randint(0, 14))]] for _ in range(300)]'
+
+  - name: fibonacci
+    entry: fib
+    description: "fib(n: int) -> int: the n-th Fibonacci number with fib(0) == 0 and fib(1) == 1, for n >= 0."
+    parent: |
+      def fib(n):
+          if n < 2:
+              return n
+          return fib(n - 1) + fib(n - 2)
+    child_fast: |
+      def fib(n):
+          a, b = 0, 1
+          for _ in range(n):
+              a, b = b, a + b
+          return a
+    child_wrong: |
+      def fib(n):
+          # closed form; forgets to round, so it truncates just below the true value
+          phi = (1 + 5 ** 0.5) / 2
+          return int(phi ** n / 5 ** 0.5)
+    tests:
+      - "assert fib(0) == 0"
+      - "assert fib(1) == 1"
+      - "assert fib(2) == 1"
+      - "assert fib(10) == 55"
+      - "assert fib(15) == 610"
+      - "assert [fib(i) for i in range(8)] == [0, 1, 1, 2, 3, 5, 8, 13]"
+    workload: |
+      BENCH_RESULT = [fib(n) for n in (22, 24, 25)]
+    probe_args: [12]
+    probe_expected: 144
+    fuzz: '[[n] for n in range(0, 21)] + [[rng.randint(0, 20)] for _ in range(60)]'
+
+  - name: primes_up_to
+    entry: primes_up_to
+    description: "primes_up_to(n: int) -> list[int]: all primes p with 2 <= p <= n in increasing order (n itself included when prime; empty for n < 2)."
+    parent: |
+      def primes_up_to(n):
+          primes = []
+          for candidate in range(2, n + 1):
+              is_prime = True
+              for divisor in range(2, candidate):
+                  if candidate % divisor == 0:
+                      is_prime = False
+                      break
+              if is_prime:
+                  primes.append(candidate)
+          return primes
+    child_fast: |
+      def primes_up_to(n):
+          if n < 2:
+              return []
+          sieve = bytearray([1]) * (n + 1)
+          sieve[0] = sieve[1] = 0
+          for p in range(2, int(n ** 0.5) + 1):
+              if sieve[p]:
+                  sieve[p * p::p] = bytearray(len(range(p * p, n + 1, p)))
+          return [i for i in range(n + 1) if sieve[i]]
+    child_wrong: |
+      def primes_up_to(n):
+          # sieve sized n instead of n + 1: the upper bound is silently excluded
+          if n < 2:
+              return []
+          sieve = bytearray([1]) * n
+          sieve[0] = sieve[1] = 0
+          for p in range(2, int(n ** 0.5) + 1):
+              if sieve[p]:
+                  sieve[p * p::p] = bytearray(len(range(p * p, n, p)))
+          return [i for i in range(n) if sieve[i]]
+    tests:
+      - "assert primes_up_to(10) == [2, 3, 5, 7]"
+      - "assert primes_up_to(13) == [2, 3, 5, 7, 11, 13]"
+      - "assert primes_up_to(2) == [2]"
+      - "assert primes_up_to(1) == []"
+      - "assert primes_up_to(0) == []"
+      - "assert len(primes_up_to(100)) == 25"
+    workload: |
+      _primes = primes_up_to(3000)
+      BENCH_RESULT = (len(_primes), sum(_primes), _primes[-1])
+    probe_args: [13]
+    probe_expected: [2, 3, 5, 7, 11, 13]
+    fuzz: '[[n] for n in range(-2, 60)] + [[rng.randint(60, 600)] for _ in range(240)]'
+
+  - name: join_words
+    entry: join_words
+    description: "join_words(words: list[str], sep: str) -> str: all words joined by sep, exactly like sep.join(words); empty strings are kept as words."
+    parent: |
+      def join_words(words, sep):
+          result = ""
+          first = True
+          for word in words:
+              if first:
+                  result = word
+                  first = False
+              else:
+                  result = result + sep + word
+          return result
+    child_fast: |
+      def join_words(words, sep):
+          return sep.join(words)
+    child_wrong: |
+      def join_words(words, sep):
+          # "skip blanks" shortcut changes the contract: empty words must be kept
+          return sep.join(word for word in words if word)
+    tests:
+      - "assert join_words(['a', 'b', 'c'], '-') == 'a-b-c'"
+      - "assert join_words([], ',') == ''"
+      - "assert join_words(['solo'], ', ') == 'solo'"
+      - "assert join_words(['a', '', 'b'], ',') == 'a,,b'"
+      - "assert join_words(['', ''], '+') == '+'"
+      - "assert join_words(['x', 'y'], '') == 'xy'"
+    workload: |
+      _words = ["w%d" % (i % 97) for i in range(15000)]
+      _joined = join_words(_words, ", ")
+      BENCH_RESULT = (len(_joined), _joined[:24], _joined[-24:])
+    probe_args: [["a", "", "b"], ","]
+    probe_expected: "a,,b"
+    fuzz: '[[[rng.choice(["", "a", "bc", " ", "x-y"]) for _ in range(rng.randint(0, 8))], rng.choice(["", ",", ", ", "--"])] for _ in range(300)]'
+
+  - name: has_pair_with_sum
+    entry: has_pair_with_sum
+    description: "has_pair_with_sum(nums: list[int], target: int) -> bool: True iff two elements at DIFFERENT positions add up to target."
+    parent: |
+      def has_pair_with_sum(nums, target):
+          for i in range(len(nums)):
+              for j in range(i + 1, len(nums)):
+                  if nums[i] + nums[j] == target:
+                      return True
+          return False
+    child_fast: |
+      def has_pair_with_sum(nums, target):
+          seen = set()
+          for value in nums:
+              if target - value in seen:
+                  return True
+              seen.add(value)
+          return False
+    child_wrong: |
+      def has_pair_with_sum(nums, target):
+          # membership test against the whole set lets an element pair with itself
+          values = set(nums)
+          return any(target - value in values for value in values)
+    tests:
+      - "assert has_pair_with_sum([1, 4, 6, 9], 10) is True"
+      - "assert has_pair_with_sum([1, 4, 6, 9], 8) is False"
+      - "assert has_pair_with_sum([5], 10) is False"
+      - "assert has_pair_with_sum([5, 5], 10) is True"
+      - "assert has_pair_with_sum([], 0) is False"
+      - "assert has_pair_with_sum([-3, 7, 2], 4) is True"
+    workload: |
+      _nums = [3 * i + 1 for i in range(650)]
+      BENCH_RESULT = [has_pair_with_sum(_nums, t) for t in (0, 3, 1802, 3894)]
+    probe_args: [[1, 4, 6, 9], 10]
+    probe_expected: true
+    fuzz: '[[[rng.randint(-8, 8) for _ in range(rng.randint(0, 7))], rng.randint(-16, 16)] for _ in range(300)]'

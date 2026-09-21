@@ -56,6 +56,8 @@ def test_gemini_to_openai_payload_translation() -> None:
     }
 
     payload = gemini_to_openai_payload(gemini_req, model_name="antigravity-local")
+    assert [m["role"] for m in payload["messages"]] == ["system", "user", "assistant"]
+    assert payload["messages"][1]["content"] == "Implement calculate_risk."
     _verify_openai_payload_metadata(payload)
     _verify_openai_payload_messages(payload["messages"])
 

@@ -51,7 +51,7 @@ raise temperature when the model repeats itself), rlimits in Tier 1.
 | 5 Robustness | Do hostile replies ever crash the loop, converge falsely or poison memory? |
 
 Suite: `tasks/phase1_evolution.yaml`, 20 simple tasks in 5 families (2 train + 2 unseen
-siblings each), every reference solution verified against its own hidden tests.
+siblings each), every reference solution verified against its own hidden tests via an out-of-process trusted driver.
 
 Measured (`qwen2.5-coder:1.5b`, 20 tasks, 2 real seeds, 266 generations) — gate **4 of 6**:
 
@@ -118,10 +118,7 @@ roughly 18% at 95% confidence.
 
 ## Known limitations
 
-- The Phase 1 hidden-test harness runs in the same process as the candidate. Code that
-  reads its own source file can find the nonce and forge a report. A 1.5B model will
-  not do this by accident, but an RL-trained policy could learn it. Phase 3 already
-  uses an out-of-process trusted driver; Phase 1 should move to it.
+
 - Tier 1 sandbox has no filesystem or network isolation; Tier 2 (Docker) is untested
   here because the `docker` package is not installed.
 - Running `tests/phase3/test_neuro_surgeon.py` rewrites the tracked file

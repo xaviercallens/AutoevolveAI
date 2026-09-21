@@ -1,3 +1,4 @@
+import shutil
 """
 Phase 1 End-to-End Integration Tests
 =====================================
@@ -457,12 +458,14 @@ class TestDatasetPersistence:
 class TestSafetyEscalation:
     """Verify the AST scanner detects dangerous imports and triggers tier escalation."""
 
+    @pytest.mark.skipif(shutil.which('docker') is None, reason='Docker not installed')
     def test_import_os_triggers_tier2(self, sandbox):
         code = "import os\nprint(os.getcwd())"
         result = sandbox.execute(code)
         assert "os" in result.dangerous_imports
         assert result.tier_used == 2  # escalated to Docker (or Docker fallback)
 
+    @pytest.mark.skipif(shutil.which('docker') is None, reason='Docker not installed')
     def test_from_subprocess_triggers_tier2(self, sandbox):
         code = "from subprocess import run\nprint('test')"
         result = sandbox.execute(code)

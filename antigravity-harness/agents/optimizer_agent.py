@@ -115,6 +115,48 @@ class OptimizerAgent:
 
         return bottlenecks
 
+    def detect_vectorization_opportunities(self, source_code: str) -> list[str]:
+        """
+        Detects scalar operations across collections that could benefit from SIMD / NumPy / Torch vectorization.
+        """
+        suggestions: list[str] = []
+        try:
+            tree = ast.parse(source_code)
+        except Exception:
+            return suggestions
+
+        for node in ast.walk(tree):
+            # Check for list comprehension with binary operators (e.g. [x * 2 for x in data])
+            if isinstance(node, ast.ListComp):
+                if isinstance(node.elt, ast.BinOp):
+                    suggestions.append(
+                        f"Line {node.lineno}: List comprehension with arithmetic operations can be vectorized via NumPy/PyTorch."
+                    )
+            # Check for manual accumulators in for-loops
+            if isinstance(node, ast.For):
+                for sub in node.body:
+                    if isinstance(sub, ast.AugAssign) and isinstance(sub.op, (ast.Add, ast.Mult)):
+                        suggestions.append(
+                            f"Line {node.lineno}: Loop accumulator can be replaced by vectorized .sum() or .prod()."
+                        )
+                        break
+
+        return suggestions
+
+    def estimate_theoretical_speedup(self, bottlenecks: list[str]) -> float:
+        """
+        Estimates the theoretical speedup multiplier achievable by resolving flagged bottlenecks.
+        """
+        multiplier = 1.0
+        for b in bottlenecks:
+            if "Nested loop" in b:
+                multiplier *= 8.0  # O(N^2) to O(N)
+            elif "'in' membership" in b:
+                multiplier *= 4.0  # Linear scan to hash set lookup
+            elif "vectorized" in b or "accumulator" in b:
+                multiplier *= 3.0  # Python bytecode loop to C SIMD
+        return multiplier
+
     def compare_and_evaluate(
         self,
         baseline_fn: Callable[..., Any],

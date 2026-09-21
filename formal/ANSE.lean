@@ -16,3 +16,4 @@ import ANSE.Performance
 import ANSE.MicroML
 import ANSE.Autopoiesis
 import ANSE.StrongGravity
+import ANSE.Ecosystem

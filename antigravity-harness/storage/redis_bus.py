@@ -243,3 +243,35 @@ class RedisBus:
 
         scored.sort(key=lambda x: x[1], reverse=True)
         return scored[:top_k]
+
+    def batch_search_vectors(
+        self, queries: list[list[float]], top_k: int = 5
+    ) -> list[list[tuple[str, float, dict[str, Any]]]]:
+        """Executes vector searches for multiple query vectors in batch."""
+        return [self.search_vectors(q, top_k=top_k) for q in queries]
+
+    def trim_stream(self, stream: str, max_len: int = 1000) -> int:
+        """Trims a stream to at most max_len entries to prevent memory flooding."""
+        if self.is_mock:
+            if stream in self._client.streams:
+                original_len = len(self._client.streams[stream])
+                if original_len > max_len:
+                    self._client.streams[stream] = self._client.streams[stream][-max_len:]
+                    return original_len - max_len
+            return 0
+
+        try:
+            return int(self._client.xtrim(stream, maxlen=max_len))
+        except Exception:
+            return 0
+
+    def set_with_ttl(self, key: str, value: str, ttl_seconds: int = 3600) -> bool:
+        """Stores a key with time-to-live expiration."""
+        if self.is_mock:
+            self._client.set(key, value)
+            return True
+
+        try:
+            return bool(self._client.setex(key, ttl_seconds, value))
+        except Exception:
+            return False

@@ -135,6 +135,34 @@ class ASTStubVisitor(ast.NodeVisitor):
                             message=f"Function raises ungrounded '{exc_id}'.",
                         )
                     )
+            elif isinstance(stmt, ast.Return) and isinstance(stmt.value, ast.Constant):
+                # Flag functions with parameters whose entire body is returning a static constant
+                if len(node.args.args) > 0 and stmt.value.value in (True, False, 0, "", None, []):
+                    self.violations.append(
+                        Violation(
+                            filename=self.filename,
+                            lineno=node.lineno,
+                            rule="TRIVIAL_CONSTANT_RETURN",
+                            symbol_name=node.name,
+                            message=f"Function takes {len(node.args.args)} parameter(s) but returns constant {stmt.value.value!r} without computation.",
+                        )
+                    )
+
+    def visit_Try(self, node: ast.Try) -> None:
+        if "test" not in self.filename.lower():
+            for handler in node.handlers:
+                real_hbody = self._strip_docstring(handler.body)
+                if len(real_hbody) == 1 and isinstance(real_hbody[0], ast.Pass):
+                    self.violations.append(
+                        Violation(
+                            filename=self.filename,
+                            lineno=handler.lineno,
+                            rule="SILENT_EXCEPTION_SWALLOW",
+                            symbol_name=f"except {getattr(handler.type, 'id', 'Exception')}",
+                            message="Exception block silently swallows errors with 'pass'.",
+                        )
+                    )
+        self.generic_visit(node)
 
     def _check_assignment(self, node: ast.Assign) -> None:
         # Check variable naming for mock/synthetic data in non-test code
@@ -157,7 +185,7 @@ class ASTStubVisitor(ast.NodeVisitor):
                         )
 
     def _check_suspicious_calls(self, node: ast.Call) -> None:
-        # Detect time.sleep simulation in non-test logic
+        # Detect time.sleep or mock instantiation in non-test logic
         if "test" in self.filename.lower():
             return
 
@@ -173,6 +201,17 @@ class ASTStubVisitor(ast.NodeVisitor):
                         message="Detected time.sleep simulation in production logic.",
                     )
                 )
+
+        if isinstance(func, ast.Name) and func.id in ("Mock", "MagicMock", "PropertyMock"):
+            self.violations.append(
+                Violation(
+                    filename=self.filename,
+                    lineno=node.lineno,
+                    rule="MOCK_INSTANTIATION",
+                    symbol_name=func.id,
+                    message=f"Instantiating unit test mock '{func.id}' in production logic.",
+                )
+            )
 
 
 class AntiStubGuard:

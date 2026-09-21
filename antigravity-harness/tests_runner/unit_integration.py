@@ -168,3 +168,29 @@ class UnitIntegrationRunner:
             failures.append("\n".join(current_failure[:10]))
 
         return failures
+
+    def run_with_junit_xml(
+        self,
+        test_path: str | Path,
+        xml_output_path: str | Path,
+        extra_args: list[str] | None = None,
+    ) -> TestRunSummary:
+        """Runs pytest and generates a standardized JUnit XML artifact."""
+        xml_p = Path(xml_output_path)
+        xml_p.parent.mkdir(parents=True, exist_ok=True)
+        args = ["--junitxml", str(xml_p)]
+        if extra_args:
+            args.extend(extra_args)
+        return self.run_pytest(test_path, extra_args=args)
+
+    def group_failures_by_exception(self, failures: list[str]) -> dict[str, list[str]]:
+        """Categorizes failure messages by their top-level exception class."""
+        grouped: dict[str, list[str]] = {}
+        exc_pattern = re.compile(r"([A-Za-z0-9_]+Error|[A-Za-z0-9_]+Exception):")
+
+        for failure in failures:
+            match = exc_pattern.search(failure)
+            category = match.group(1) if match else "AssertionOrGeneralFailure"
+            grouped.setdefault(category, []).append(failure)
+
+        return grouped

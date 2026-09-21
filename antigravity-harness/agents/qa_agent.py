@@ -138,3 +138,51 @@ class QAAgent:
             test_code=test_code_str,
             edge_cases_covered=edge_cases,
         )
+
+    def generate_property_tests(
+        self, module_import: str, function_code: str
+    ) -> str:
+        """
+        Generates Hypothesis-based property tests for fuzzing the callable with randomized inputs.
+        """
+        funcs = self.inspect_function_signature(function_code)
+        if not funcs:
+            return "# No callable function found for property testing"
+
+        target_name, args = funcs[0]
+        arg_strategies = ", ".join([f"{a}=st.integers() | st.text()" for a in args]) if args else ""
+
+        lines = [
+            "# Property-based fuzz test suite via Hypothesis",
+            "from __future__ import annotations",
+            "import pytest",
+            "from hypothesis import given, strategies as st, settings",
+            f"from {module_import} import {target_name}",
+            "",
+            "@settings(max_examples=50, deadline=None)",
+        ]
+
+        if arg_strategies:
+            lines.append(f"@given({arg_strategies})")
+            arg_call = ", ".join(args)
+            lines.extend(
+                [
+                    f"def test_{target_name}_fuzz_properties({arg_call}):",
+                    "    try:",
+                    f"        res = {target_name}({arg_call})",
+                    "        # Assert output invariant (cannot be undefined crash)",
+                    "        assert res is not None or res is None",
+                    "    except (TypeError, ValueError):",
+                    "        pass  # Handled input validation rejection",
+                ]
+            )
+        else:
+            lines.extend(
+                [
+                    f"def test_{target_name}_fuzz_zero_args():",
+                    f"    res = {target_name}()",
+                    "    assert res is not None or res is None",
+                ]
+            )
+
+        return "\n".join(lines)

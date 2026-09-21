@@ -94,6 +94,57 @@ class Lean4Verifier:
 
         return theorems
 
+    def extract_proof_inventory(
+        self, lean_files_dir: Path | None = None
+    ) -> dict[str, list[str]]:
+        """
+        Extracts formal declarations categorized by kind (theorems, lemmas, axioms, defs).
+        """
+        target_dir = lean_files_dir or self.formal_dir
+        inventory: dict[str, list[str]] = {
+            "theorems": [],
+            "lemmas": [],
+            "axioms": [],
+            "definitions": [],
+        }
+        if not target_dir.exists():
+            return inventory
+
+        patterns = {
+            "theorems": re.compile(r"^\s*theorem\s+([a-zA-Z0-9_'.]+)"),
+            "lemmas": re.compile(r"^\s*lemma\s+([a-zA-Z0-9_'.]+)"),
+            "axioms": re.compile(r"^\s*axiom\s+([a-zA-Z0-9_'.]+)"),
+            "definitions": re.compile(r"^\s*(?:def|inductive|structure)\s+([a-zA-Z0-9_'.]+)"),
+        }
+
+        for lean_file in target_dir.rglob("*.lean"):
+            try:
+                content = lean_file.read_text(encoding="utf-8", errors="replace")
+                for line in content.splitlines():
+                    clean_line = line.split("--")[0]
+                    for kind, pat in patterns.items():
+                        match = pat.match(clean_line)
+                        if match:
+                            inventory[kind].append(match.group(1))
+            except Exception:
+                continue
+
+        return inventory
+
+    def check_soundness(self, lean_files_dir: Path | None = None) -> tuple[bool, str]:
+        """
+        Verifies mathematical soundness: zero 'sorry' tokens and zero ungrounded axioms.
+        """
+        sorry_count, sorry_occurrences = self.scan_for_sorry(lean_files_dir)
+        inventory = self.extract_proof_inventory(lean_files_dir)
+        axioms = inventory.get("axioms", [])
+
+        if sorry_count > 0:
+            return False, f"Soundness violation: {sorry_count} unproven 'sorry' found ({sorry_occurrences[:3]})"
+        if axioms:
+            return False, f"Soundness violation: {len(axioms)} unverified axiom(s) declared ({axioms[:3]})"
+        return True, "Soundness verified: 0 sorry, 0 axioms."
+
     def verify(self, extra_args: list[str] | None = None) -> LeanVerificationResult:
         """Runs 'lake build' in formal directory and inspects proofs."""
         if not self.is_available:

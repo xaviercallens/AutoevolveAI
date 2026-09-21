@@ -204,3 +204,95 @@ class ContextOrchestrator:
                 "parts": [{"text": combined_prompt}],
             }
         ]
+
+    def slide_conversation_window(
+        self,
+        messages: list[dict[str, Any]],
+        max_turn_tokens: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """
+        Sliding window for multi-turn conversations:
+        Preserves the first message (often system context/initial task) and recent turns
+        such that total estimated tokens <= max_turn_tokens.
+        """
+        limit = max_turn_tokens or self.budget.active_turn_reserve
+        if not messages:
+            return []
+        if len(messages) <= 2:
+            return list(messages)
+
+        # Estimate tokens per message
+        def msg_tokens(m: dict[str, Any]) -> int:
+            text = ""
+            for p in m.get("parts", []):
+                if isinstance(p, dict) and "text" in p:
+                    text += p["text"]
+                elif isinstance(p, str):
+                    text += p
+            return self.estimate_tokens(text)
+
+        first_msg = messages[0]
+        first_tokens = msg_tokens(first_msg)
+
+        selected: list[dict[str, Any]] = []
+        current_tokens = first_tokens
+
+        # Iterate backwards through remaining messages
+        for msg in reversed(messages[1:]):
+            cost = msg_tokens(msg)
+            if current_tokens + cost <= limit or not selected:
+                selected.append(msg)
+                current_tokens += cost
+            else:
+                break
+
+        selected.reverse()
+        return [first_msg] + selected
+
+    def compact_unified_diff(
+        self,
+        diff_text: str,
+        max_lines_per_hunk: int = 15,
+    ) -> str:
+        """
+        Compacts large unified diffs by truncating long continuous change blocks
+        while preserving file headers (--- / +++) and hunk headers (@@).
+        """
+        lines = diff_text.splitlines()
+        compacted: list[str] = []
+        hunk_lines = 0
+
+        for line in lines:
+            if line.startswith(("--- ", "+++ ", "diff --git ", "index ")):
+                compacted.append(line)
+                hunk_lines = 0
+            elif line.startswith("@@"):
+                compacted.append(line)
+                hunk_lines = 0
+            else:
+                hunk_lines += 1
+                if hunk_lines <= max_lines_per_hunk:
+                    compacted.append(line)
+                elif hunk_lines == max_lines_per_hunk + 1:
+                    compacted.append("... [diff hunk truncated] ...")
+
+        return "\n".join(compacted)
+
+    def format_gemini_tool_declaration(
+        self,
+        tool_name: str,
+        description: str,
+        parameters: dict[str, Any],
+    ) -> dict[str, Any]:
+        """
+        Formats a tool definition following Gemini's FunctionDeclaration schema.
+        """
+        return {
+            "name": tool_name,
+            "description": description,
+            "parameters": {
+                "type": "OBJECT",
+                "properties": parameters.get("properties", {}),
+                "required": parameters.get("required", []),
+            },
+        }

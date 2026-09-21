@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from ..storage.redis_bus import RedisBus, TraceRecord
 
@@ -131,3 +132,51 @@ class TraceExtractor:
             )
 
         return sessions
+
+    def filter_by_time_window(
+        self, sessions: list[ExtractedSession], start_ts: float, end_ts: float
+    ) -> list[ExtractedSession]:
+        """Filters sessions having traces recorded within the [start_ts, end_ts] epoch window."""
+        filtered = []
+        for s in sessions:
+            valid_traces = [t for t in s.traces if start_ts <= t.timestamp <= end_ts]
+            if valid_traces:
+                filtered.append(
+                    ExtractedSession(
+                        subtask_id=s.subtask_id,
+                        prompt=s.prompt,
+                        traces=valid_traces,
+                        human_patch=s.human_patch,
+                    )
+                )
+        return filtered
+
+    def filter_by_energy_threshold(
+        self, sessions: list[ExtractedSession], max_energy: float
+    ) -> list[ExtractedSession]:
+        """Returns sessions that have at least one passing trace below max_energy threshold."""
+        return [
+            s
+            for s in sessions
+            if any(t.verdict == "PASSED" and t.energy <= max_energy for t in s.traces)
+        ]
+
+    def compute_dataset_metrics(self, sessions: list[ExtractedSession]) -> dict[str, Any]:
+        """Calculates dataset quality and coverage metrics."""
+        total_sessions = len(sessions)
+        total_traces = sum(len(s.traces) for s in sessions)
+        passed_traces = sum(sum(1 for t in s.traces if t.verdict == "PASSED") for s in sessions)
+        dpo_ready = sum(1 for s in sessions if s.is_dpo_ready)
+
+        energies = [t.energy for s in sessions for t in s.traces if t.verdict == "PASSED"]
+        mean_energy = sum(energies) / max(1, len(energies)) if energies else 0.0
+
+        return {
+            "total_sessions": total_sessions,
+            "total_traces": total_traces,
+            "passed_traces": passed_traces,
+            "pass_rate": passed_traces / max(1, total_traces),
+            "dpo_ready_sessions": dpo_ready,
+            "dpo_ready_ratio": dpo_ready / max(1, total_sessions),
+            "mean_passed_energy": mean_energy,
+        }

@@ -95,3 +95,52 @@ class DPODatasetBuilder:
         lines = [json.dumps(p.to_dict()) for p in pairs]
         path.write_text("\n".join(lines) + "\n", encoding="utf-8")
         return path
+
+    def split_train_val(
+        self,
+        pairs: list[DPOPreferencePair],
+        val_ratio: float = 0.2,
+        seed: int = 42,
+    ) -> tuple[list[DPOPreferencePair], list[DPOPreferencePair]]:
+        """Splits pairs deterministically into train and validation sets."""
+        import random
+
+        if not pairs:
+            return [], []
+
+        shuffled = list(pairs)
+        rng = random.Random(seed)
+        rng.shuffle(shuffled)
+
+        val_size = max(1, int(len(shuffled) * val_ratio)) if len(shuffled) > 1 else 0
+        val_set = shuffled[:val_size]
+        train_set = shuffled[val_size:]
+        return train_set, val_set
+
+    def format_for_chat_dpo(
+        self,
+        pairs: list[DPOPreferencePair],
+        system_prompt: str = "You are a neuro-symbolic coding agent.",
+    ) -> list[dict[str, Any]]:
+        """
+        Formats pairs following the standard TRL Chat DPO schema:
+        prompt: [{'role': 'system', ...}, {'role': 'user', ...}]
+        chosen: [{'role': 'assistant', 'content': chosen_text}]
+        rejected: [{'role': 'assistant', 'content': rejected_text}]
+        """
+        chat_samples: list[dict[str, Any]] = []
+        for p in pairs:
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": p.prompt})
+
+            chat_samples.append(
+                {
+                    "prompt": messages,
+                    "chosen": [{"role": "assistant", "content": p.chosen}],
+                    "rejected": [{"role": "assistant", "content": p.rejected}],
+                    "energy_delta": p.energy_delta,
+                }
+            )
+        return chat_samples

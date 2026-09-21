@@ -202,3 +202,61 @@ class VisualRegressionRunner:
             return True
         except Exception:
             return False
+
+    def generate_html_report(
+        self,
+        result: VisualRegressionResult,
+        baseline_path: str | Path,
+        candidate_path: str | Path,
+        output_html: str | Path,
+    ) -> Path:
+        """Generates a self-contained HTML visual diff report."""
+        out_p = Path(output_html)
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+
+        status_color = "#28a745" if result.passed else "#dc3545"
+        status_text = "PASSED" if result.passed else "FAILED"
+
+        diff_img_tag = (
+            f'<img src="{result.diff_image_path}" style="max-width:100%;border:1px solid #ccc;"/>'
+            if result.diff_image_path
+            else "<p>No diff mask generated</p>"
+        )
+
+        html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Visual Regression Report: {status_text}</title>
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; background: #f8f9fa; }}
+        .card {{ background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }}
+        .status {{ font-weight: bold; color: {status_color}; font-size: 1.3em; }}
+        .grid {{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }}
+        img {{ max-width: 100%; border: 1px solid #ddd; border-radius: 4px; }}
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Visual Regression Summary</h2>
+        <p class="status">Verdict: {status_text}</p>
+        <p>Mismatched Pixels: <strong>{result.mismatched_pixels}</strong> / {result.total_pixels} ({result.mismatch_ratio * 100:.3f}%)</p>
+    </div>
+    <div class="grid">
+        <div class="card">
+            <h3>Baseline</h3>
+            <img src="{baseline_path}" />
+        </div>
+        <div class="card">
+            <h3>Candidate</h3>
+            <img src="{candidate_path}" />
+        </div>
+        <div class="card">
+            <h3>Difference Mask (Red)</h3>
+            {diff_img_tag}
+        </div>
+    </div>
+</body>
+</html>"""
+        out_p.write_text(html_content, encoding="utf-8")
+        return out_p

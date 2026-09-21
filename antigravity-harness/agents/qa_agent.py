@@ -139,9 +139,7 @@ class QAAgent:
             edge_cases_covered=edge_cases,
         )
 
-    def generate_property_tests(
-        self, module_import: str, function_code: str
-    ) -> str:
+    def generate_property_tests(self, module_import: str, function_code: str) -> str:
         """
         Generates Hypothesis-based property tests for fuzzing the callable with randomized inputs.
         """

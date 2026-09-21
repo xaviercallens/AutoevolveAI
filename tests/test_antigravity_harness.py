@@ -17,7 +17,10 @@ from antigravity_harness.core.context_orchestrator import (
     ContextTier,
 )
 from antigravity_harness.core.lean4_verifier import Lean4Verifier
-from antigravity_harness.rl_pipeline.dpo_dataset_builder import DPODatasetBuilder
+from antigravity_harness.rl_pipeline.dpo_dataset_builder import (
+    DPODatasetBuilder,
+    DPOPreferencePair,
+)
 from antigravity_harness.rl_pipeline.trace_extractor import TraceExtractor
 from antigravity_harness.storage.redis_bus import RedisBus, TraceRecord
 from antigravity_harness.tests_runner.unit_integration import UnitIntegrationRunner
@@ -330,3 +333,230 @@ def test_dpo_pipeline_flow(tmp_path):
     assert out_file.exists()
     data = json.loads(out_file.read_text().splitlines()[0])
     assert data["chosen"] == pair.chosen
+
+
+# ─── 10. Additional Feature Tests ─────────────────────────────────────────────
+
+
+def test_context_orchestrator_sliding_window():
+    orchestrator = ContextOrchestrator()
+    messages = [
+        {"role": "user", "parts": [{"text": "system task definition"}]},
+        {"role": "model", "parts": [{"text": "turn 1 response " * 50}]},
+        {"role": "user", "parts": [{"text": "turn 2 question " * 50}]},
+        {"role": "model", "parts": [{"text": "turn 3 answer " * 50}]},
+        {"role": "user", "parts": [{"text": "latest active request"}]},
+    ]
+    # Set limit to keep only first message and last message
+    window = orchestrator.slide_conversation_window(messages, max_turn_tokens=50)
+    assert len(window) < len(messages)
+    assert window[0]["parts"][0]["text"] == "system task definition"
+    assert window[-1]["parts"][0]["text"] == "latest active request"
+
+
+def test_context_orchestrator_diff_compaction():
+    orchestrator = ContextOrchestrator()
+    huge_diff = "diff --git a/file.py b/file.py\n--- a/file.py\n+++ b/file.py\n@@ -1,10 +1,50 @@\n"
+    huge_diff += "\n".join(f"+ added line {i}" for i in range(50))
+    compacted = orchestrator.compact_unified_diff(huge_diff, max_lines_per_hunk=10)
+    assert "... [diff hunk truncated] ..." in compacted
+    assert "diff --git a/file.py" in compacted
+
+
+def test_context_orchestrator_tool_declaration():
+    orchestrator = ContextOrchestrator()
+    decl = orchestrator.format_gemini_tool_declaration(
+        tool_name="execute_python",
+        description="Executes python code in sandbox",
+        parameters={"properties": {"code": {"type": "string"}}, "required": ["code"]},
+    )
+    assert decl["name"] == "execute_python"
+    assert decl["parameters"]["type"] == "OBJECT"
+    assert "code" in decl["parameters"]["properties"]
+
+
+def test_anti_stub_guard_trivial_constant_return():
+    guard = AntiStubGuard()
+    code = "def check_validity(user_id: int, token: str) -> bool:\n    return True\n"
+    audit = guard.audit_code(code)
+    assert not audit.is_clean
+    assert any(v.rule == "TRIVIAL_CONSTANT_RETURN" for v in audit.violations)
+
+
+def test_anti_stub_guard_silent_try_pass():
+    guard = AntiStubGuard()
+    code = (
+        "def safe_execute(action: str) -> None:\n"
+        "    try:\n"
+        "        do_work(action)\n"
+        "    except Exception:\n"
+        "        pass\n"
+    )
+    audit = guard.audit_code(code, filename="service.py")
+    assert not audit.is_clean
+    assert any(v.rule == "SILENT_EXCEPTION_SWALLOW" for v in audit.violations)
+
+
+def test_anti_stub_guard_mock_instantiation():
+    guard = AntiStubGuard()
+    code = "def get_database():\n    db = MagicMock()\n    return db\n"
+    audit = guard.audit_code(code, filename="database/connection.py")
+    assert not audit.is_clean
+    assert any(v.rule == "MOCK_INSTANTIATION" for v in audit.violations)
+
+
+def test_lean4_verifier_proof_inventory_and_soundness(tmp_path):
+    lean_file = tmp_path / "Model.lean"
+    lean_file.write_text(
+        "theorem t1 : True := by trivial\n"
+        "lemma l1 : True := by trivial\n"
+        "def identity (x : Nat) : Nat := x\n"
+    )
+    verifier = Lean4Verifier(formal_dir=tmp_path)
+    inv = verifier.extract_proof_inventory(tmp_path)
+    assert "t1" in inv["theorems"]
+    assert "l1" in inv["lemmas"]
+    assert "identity" in inv["definitions"]
+
+    sound, msg = verifier.check_soundness(tmp_path)
+    assert sound
+    assert "Soundness verified" in msg
+
+
+def test_redis_bus_batch_and_ttl():
+    bus = RedisBus(use_mock=True)
+    bus.store_vector("v1", [1.0, 0.0], {"id": 1})
+    bus.store_vector("v2", [0.0, 1.0], {"id": 2})
+
+    batch_results = bus.batch_search_vectors([[1.0, 0.0], [0.0, 1.0]], top_k=1)
+    assert len(batch_results) == 2
+    assert batch_results[0][0][0] == "v1"
+    assert batch_results[1][0][0] == "v2"
+
+    ttl_ok = bus.set_with_ttl("temp_key", "temporary_value", ttl_seconds=60)
+    assert ttl_ok
+
+
+def test_redis_bus_trim_stream():
+    bus = RedisBus(use_mock=True)
+    for i in range(10):
+        bus.publish_event("large_stream", {"idx": str(i)})
+    trimmed = bus.trim_stream("large_stream", max_len=3)
+    assert trimmed == 7
+    remaining = bus.consume_events("large_stream", last_id="0", count=10)
+    assert len(remaining) == 3
+
+
+def test_qa_agent_property_test_generation():
+    agent = QAAgent()
+    code = "def calculate_ratio(numerator: int, denominator: int) -> float:\n    return numerator / denominator\n"
+    prop_test = agent.generate_property_tests("math_engine", code)
+    assert "from hypothesis import given" in prop_test
+    assert "st.integers()" in prop_test
+    assert "test_calculate_ratio_fuzz_properties" in prop_test
+
+
+def test_optimizer_agent_vectorization_and_speedup():
+    agent = OptimizerAgent()
+    source = (
+        "def scale_values(items: list[float]) -> list[float]:\n"
+        "    res = [x * 2.5 for x in items]\n"
+        "    total = 0\n"
+        "    for v in res:\n"
+        "        total += v\n"
+        "    return res\n"
+    )
+    suggestions = agent.detect_vectorization_opportunities(source)
+    assert len(suggestions) >= 2
+    assert any("vectorized via NumPy/PyTorch" in s for s in suggestions)
+    assert any("accumulator" in s for s in suggestions)
+
+    speedup = agent.estimate_theoretical_speedup(["Nested loop detected", "vectorized"])
+    assert speedup >= 20.0
+
+
+def test_unit_integration_failure_grouping():
+    runner = UnitIntegrationRunner()
+    sample_failures = [
+        "FAILED tests/test_a.py::test_fn - ValueError: invalid literal",
+        "FAILED tests/test_b.py::test_fn - TypeError: unsupported operand",
+        "FAILED tests/test_c.py::test_fn - ValueError: out of bounds",
+    ]
+    grouped = runner.group_failures_by_exception(sample_failures)
+    assert len(grouped["ValueError"]) == 2
+    assert len(grouped["TypeError"]) == 1
+
+
+def test_visual_regression_html_report(tmp_path):
+    runner = VisualRegressionRunner()
+    baseline = tmp_path / "base.png"
+    cand = tmp_path / "cand.png"
+
+    from PIL import Image
+
+    img1 = Image.new("RGBA", (2, 2), (255, 0, 0, 255))
+    img2 = Image.new("RGBA", (2, 2), (0, 255, 0, 255))
+    img1.save(baseline)
+    img2.save(cand)
+
+    diff_path = tmp_path / "diff.png"
+    result = runner.compare_images(baseline, cand, diff_output_path=diff_path)
+    assert not result.passed
+
+    report_html = tmp_path / "report.html"
+    report_file = runner.generate_html_report(result, baseline, cand, report_html)
+    assert report_file.exists()
+    html_text = report_file.read_text(encoding="utf-8")
+    assert "Visual Regression Summary" in html_text
+    assert "FAILED" in html_text
+
+
+def test_trace_extractor_filters_and_metrics():
+    bus = RedisBus(use_mock=True)
+    t1 = TraceRecord("tr1", "sub1", "task 1", "code 1", "PASSED", 15.0, timestamp=100.0)
+    t2 = TraceRecord("tr2", "sub1", "task 1", "code 2", "FAILED", 1000.0, timestamp=150.0)
+    t3 = TraceRecord("tr3", "sub2", "task 2", "code 3", "PASSED", 200.0, timestamp=300.0)
+    bus.record_trace(t1)
+    bus.record_trace(t2)
+    bus.record_trace(t3)
+
+    extractor = TraceExtractor(bus)
+    sessions = extractor.extract_from_bus()
+    assert len(sessions) == 2
+
+    # Test time window filter
+    windowed = extractor.filter_by_time_window(sessions, start_ts=50.0, end_ts=200.0)
+    assert len(windowed) == 1
+    assert windowed[0].subtask_id == "sub1"
+
+    # Test energy filter
+    energy_filtered = extractor.filter_by_energy_threshold(sessions, max_energy=50.0)
+    assert len(energy_filtered) == 1
+    assert energy_filtered[0].subtask_id == "sub1"
+
+    # Test metrics
+    metrics = extractor.compute_dataset_metrics(sessions)
+    assert metrics["total_sessions"] == 2
+    assert metrics["total_traces"] == 3
+    assert metrics["passed_traces"] == 2
+    assert metrics["pass_rate"] == 2 / 3
+    assert metrics["dpo_ready_sessions"] == 1
+
+
+def test_dpo_dataset_builder_split_and_chat():
+    builder = DPODatasetBuilder()
+    pairs = [
+        DPOPreferencePair(f"prompt {i}", f"chosen {i}", f"rejected {i}", f"sub_{i}", -10.0)
+        for i in range(10)
+    ]
+
+    train_set, val_set = builder.split_train_val(pairs, val_ratio=0.3, seed=42)
+    assert len(train_set) == 7
+    assert len(val_set) == 3
+
+    chat_data = builder.format_for_chat_dpo(pairs[:2], system_prompt="Coding agent")
+    assert len(chat_data) == 2
+    assert chat_data[0]["prompt"][0]["role"] == "system"
+    assert chat_data[0]["prompt"][1]["content"] == "prompt 0"
+    assert chat_data[0]["chosen"][0]["content"] == "chosen 0"
+    assert chat_data[0]["rejected"][0]["content"] == "rejected 0"

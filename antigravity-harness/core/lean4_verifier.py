@@ -94,9 +94,7 @@ class Lean4Verifier:
 
         return theorems
 
-    def extract_proof_inventory(
-        self, lean_files_dir: Path | None = None
-    ) -> dict[str, list[str]]:
+    def extract_proof_inventory(self, lean_files_dir: Path | None = None) -> dict[str, list[str]]:
         """
         Extracts formal declarations categorized by kind (theorems, lemmas, axioms, defs).
         """
@@ -140,9 +138,15 @@ class Lean4Verifier:
         axioms = inventory.get("axioms", [])
 
         if sorry_count > 0:
-            return False, f"Soundness violation: {sorry_count} unproven 'sorry' found ({sorry_occurrences[:3]})"
+            return (
+                False,
+                f"Soundness violation: {sorry_count} unproven 'sorry' found ({sorry_occurrences[:3]})",
+            )
         if axioms:
-            return False, f"Soundness violation: {len(axioms)} unverified axiom(s) declared ({axioms[:3]})"
+            return (
+                False,
+                f"Soundness violation: {len(axioms)} unverified axiom(s) declared ({axioms[:3]})",
+            )
         return True, "Soundness verified: 0 sorry, 0 axioms."
 
     def verify(self, extra_args: list[str] | None = None) -> LeanVerificationResult:

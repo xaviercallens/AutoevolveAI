@@ -1,7 +1,7 @@
 # ANSE Repository Memory & State Ledger
-**Version:** 0.2.0  
+**Version:** 0.3.0 + Evolution Lab (branch `antigravity`)  
 **Repository:** `xaviercallens/AutoevolveAI`  
-**Last Updated:** 2026-09-20  
+**Last Updated:** 2026-09-21  
 
 ---
 
@@ -38,6 +38,7 @@ The **Autopoietic Neuro-Symbolic Energy-based model (ANSE)** rejects ungrounded 
 ## 3. Engineering Guidelines & Known Gotchas
 
 1. **Python Environment Management**:
+   - `pyproject.toml` is PEP 621 since 2026-09-21. Run `uv sync --all-extras` once. (Before that date it was Poetry-only, and `uv sync` / `uv run` would have uninstalled all 115 packages including torch.)
    - Always run Python commands through `uv`:
      - `uv run pytest tests/`
      - `uv sync`
@@ -65,3 +66,23 @@ The **Autopoietic Neuro-Symbolic Energy-based model (ANSE)** rejects ungrounded 
   - `tests/phase2/test_ml_sandbox.py` & `test_ml_evaluator.py`: PyTorch module dimension & parameter limits.
   - `tests/autopoiesis/test_hypervisor.py`: Process hot-swapping and energy dominance gating.
   - `tests/phase1/` & `tests/phase2/`: End-to-end loops, JEPA world models, encoders, and harvesters.
+
+---
+
+## 5. Evolution Lab State (2026-09-21)
+
+Measured with `qwen2.5-coder:1.5b` on CPU through Ollama. Details: `docs/EVOLUTION_LAB.md`, skill `anse-evolution-lab`.
+
+| Phase | Gate | What the numbers say |
+|---|---|---|
+| 1 | 4 of 6 | Legacy self-graded loop: 4 of 11 claimed convergences were false. Verified pass@1 42.5% -> pass@3 52.5%. Adaptive retry and lesson memory did not help; both are opt-in and off. |
+| 2 | 2 of 5 | JEPA does not beat a constant on MAE; AUC 0.606 vs 0.669 for a linear probe; candidate selection below random. |
+| 3 | 5 of 5 | 5/5 correct children promoted, 5/5 wrong children rejected, 0/15 A/A false promotions, rollback exact, 2 of 4 LLM proposals promoted. |
+
+Gotchas learned:
+- Ollama 0.1.44 ignores `seed` and `temperature` on `/v1/chat/completions`; use `APIExtractor(ollama_native=True)`.
+- Retries leak their label (a retry exists only because the previous attempt failed); score first attempts only.
+- In-process test harnesses can be forged by code that reads its own source file; Phase 3 uses an out-of-process driver, Phase 1 does not yet.
+- `tests/phase3/test_neuro_surgeon.py` rewrites the tracked file `.antigravity_attestation` on every run.
+- The loop returns the last attempt although energy often rises on retries; returning the best attempt is the next cheap win.
+- Next focus: remote GPU pod (7B model, true hidden states instead of reply-text embeddings, LoRA/GRPO training).

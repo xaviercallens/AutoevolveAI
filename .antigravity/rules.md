@@ -77,3 +77,14 @@ Do not attempt direct multi-file implementation in a single turn. Follow:
 - Never dump full 500+ line files into conversation history. Read specific ranges or reference scratchpad files (`.scratchpad/`).
 - Large tool outputs (> 60 lines) must be offloaded to `.scratchpad/` via `context_manager.truncate_and_offload_context`.
 - Never declare "I'm done" in prose while subtasks remain in `PENDING` or `IN_PROGRESS` in `.workflow_state.json`. Completion is determined exclusively by the verification tool and attestation gate token.
+
+---
+
+## 8. Measured Evolution Contract
+1. **Runner or it did not happen:** An improvement to Phase 1, 2 or 3 is claimed only through `run_phase{N}_evolution.py`: five use cases, one boolean gate per goal, raw evidence rows in `results/phase{N}_evolution/results.json`.
+2. **Failing gates are results:** Report a FAIL with its numbers and its implication. Never move a threshold after seeing the outcome, never hand-edit a results file, never choose seeds to force a pass.
+3. **Independent verification:** Energy for generated code comes from hidden tests the model never sees (`anse/symbolic/hidden_tests.py`), not from the model's own asserts. Hot-swap candidates are judged by the out-of-process trusted driver in `anse/autopoiesis/hypervisor.py`; correctness is checked before energy.
+4. **Honest statistics:** Split by task, not by trace. Compare with the strongest trivial baseline. Count independent samples, and confirm the LLM backend honours `seed` before calling two runs two samples.
+5. **Verified data only:** Only hidden-test-verified solutions may enter lesson memory, DPO pairs or any fine-tuning set.
+6. **Environment:** Run `uv sync --all-extras` before the guards. Never run `uv sync` against a `pyproject.toml` that lacks a `[project]` table; it uninstalls the environment.
+

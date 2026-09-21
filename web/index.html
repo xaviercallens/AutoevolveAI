@@ -80,6 +80,9 @@
       <button onclick="switchTab('symbiotic')" id="tab-symbiotic" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
         <span>🤝</span> Symbiotic Co-Pilot & Accelerators
       </button>
+      <button onclick="switchTab('evolution')" id="tab-evolution" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+        <span>🧪</span> Evolution Lab
+      </button>
     </div>
   </nav>
 
@@ -760,6 +763,51 @@
           </div>
         </div>
       </div>
+
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- TAB: EVOLUTION LAB (read-only view of results/<phaseN>_evolution/results.json) -->
+    <!-- ================================================================= -->
+    <section id="section-evolution" class="hidden space-y-8">
+
+      <!-- Hero Card -->
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div class="space-y-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">
+                Evolution Lab • Measured, not claimed
+              </span>
+              <span class="text-xs text-slate-400">Every number below is read from a results file written by a real run.</span>
+            </div>
+            <h2 class="text-2xl font-bold bg-gradient-to-r from-emerald-400 via-cyan-400 to-indigo-400 bg-clip-text text-transparent">
+              Goals, five use cases per phase, and what the runs actually measured
+            </h2>
+            <p class="text-sm text-slate-300 leading-relaxed max-w-4xl">
+              This page only reads results. It cannot start a run. A gate line that says FAIL is a real result and stays visible.
+            </p>
+          </div>
+          <div class="flex items-center gap-2 self-start">
+            <span id="evo-refresh-note" class="text-[11px] font-mono text-slate-500"></span>
+            <button onclick="loadEvolution()" id="evo-refresh-btn" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-xs border border-slate-700 transition whitespace-nowrap">
+              Refresh
+            </button>
+          </div>
+        </div>
+        <div id="evo-phase-selector" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <div id="evo-error" class="hidden p-4 rounded-xl border border-red-900 bg-red-950/40 text-sm text-red-300 font-mono"></div>
+
+      <!-- Goal + workflow strip -->
+      <div id="evo-goal" class="p-6 rounded-2xl border border-slate-800 bg-slate-900/40 space-y-4"></div>
+
+      <!-- Run status + gate checklist -->
+      <div id="evo-gate" class="p-6 rounded-2xl border border-slate-800 bg-slate-900/40 space-y-4"></div>
+
+      <!-- Use case cards -->
+      <div id="evo-use-cases" class="space-y-6"></div>
 
     </section>
 
@@ -1518,6 +1566,422 @@ print(f"SHA-256 Digest: {digest[:16]}...")
       drawVideoLoop();
       initLatentPoints();
     });
+  </script>
+
+  <!-- ================================================================= -->
+  <!-- EVOLUTION LAB (separate script block; builds DOM with textContent only) -->
+  <!-- ================================================================= -->
+  <script>
+    (function () {
+      const EVO_REFRESH_MS = 15000;
+      const state = { data: null, phase: 1, timer: null, open: new Set(), loading: false };
+
+      const STATUS_STYLE = {
+        missing:  { label: 'not run yet', cls: 'bg-slate-800 text-slate-300 border-slate-700', dot: 'bg-slate-500' },
+        running:  { label: 'in progress (no finished timestamp)', cls: 'bg-amber-950 text-amber-300 border-amber-800', dot: 'bg-amber-400 animate-pulse' },
+        invalid:  { label: 'results file unreadable', cls: 'bg-red-950 text-red-300 border-red-800', dot: 'bg-red-500' },
+        finished: { label: 'finished', cls: 'bg-emerald-950 text-emerald-300 border-emerald-800', dot: 'bg-emerald-400' }
+      };
+
+      // Element factory: text always goes through textContent, never innerHTML.
+      function el(tag, cls, text) {
+        const node = document.createElement(tag);
+        if (cls) node.className = cls;
+        if (text !== undefined && text !== null) node.textContent = String(text);
+        return node;
+      }
+
+      function clear(node) {
+        while (node.firstChild) node.removeChild(node.firstChild);
+        return node;
+      }
+
+      function fmt(value) {
+        if (value === null || value === undefined) return '—';
+        if (typeof value === 'number') {
+          if (Number.isInteger(value)) return String(value);
+          const abs = Math.abs(value);
+          if (abs !== 0 && (abs < 0.0001 || abs >= 1e6)) return value.toExponential(3);
+          return String(parseFloat(value.toFixed(4)));
+        }
+        return String(value);
+      }
+
+      function valueNode(value) {
+        if (typeof value === 'boolean') {
+          return el('span', 'font-mono text-xs ' + (value ? 'text-emerald-400' : 'text-red-400'), value ? 'true' : 'false');
+        }
+        if (typeof value === 'string' && (value.length > 80 || value.indexOf('\n') !== -1)) {
+          return el('div', 'font-mono text-[11px] text-slate-300 whitespace-pre-wrap break-words max-h-32 overflow-auto max-w-md', value);
+        }
+        const numeric = typeof value === 'number';
+        return el('span', 'font-mono text-xs ' + (numeric ? 'text-cyan-300' : 'text-slate-300'), fmt(value));
+      }
+
+      function badge(passed) {
+        return el('span',
+          'px-2 py-0.5 rounded-md text-[11px] font-bold font-mono border ' +
+          (passed ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : 'bg-red-950 text-red-300 border-red-800'),
+          passed ? 'PASS' : 'FAIL');
+      }
+
+      function age(seconds) {
+        if (seconds === null || seconds === undefined) return '';
+        if (seconds < 90) return seconds + ' s ago';
+        if (seconds < 5400) return Math.round(seconds / 60) + ' min ago';
+        return Math.round(seconds / 3600) + ' h ago';
+      }
+
+      // ── Phase selector ────────────────────────────────────────────────
+      function renderSelector() {
+        const box = clear(document.getElementById('evo-phase-selector'));
+        [1, 2, 3].forEach(function (p) {
+          const ph = state.data.phases[String(p)];
+          const st = STATUS_STYLE[ph.status] || STATUS_STYLE.missing;
+          const active = p === state.phase;
+          const btn = el('button',
+            'px-4 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-2 ' +
+            (active ? 'bg-emerald-600 border-emerald-500 text-black' : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800'));
+          btn.appendChild(el('span', 'w-2 h-2 rounded-full ' + st.dot));
+          btn.appendChild(el('span', '', 'Phase ' + p));
+          if (ph.gate_total > 0) {
+            btn.appendChild(el('span', 'font-mono font-normal ' + (active ? 'text-black/70' : 'text-slate-500'),
+              ph.gate_passed + '/' + ph.gate_total + ' goals'));
+          } else {
+            btn.appendChild(el('span', 'font-normal ' + (active ? 'text-black/70' : 'text-slate-500'), st.label.split(' (')[0]));
+          }
+          btn.addEventListener('click', function () { state.phase = p; render(); });
+          box.appendChild(btn);
+        });
+      }
+
+      // ── Goal + workflow strip ─────────────────────────────────────────
+      function renderGoal() {
+        const box = clear(document.getElementById('evo-goal'));
+        const goal = state.data.goals[String(state.phase)];
+        if (!goal) return;
+        box.appendChild(el('h3', 'font-bold text-lg text-slate-100', goal.name));
+        box.appendChild(el('p', 'text-sm text-slate-300 leading-relaxed max-w-5xl', goal.goal));
+        const strip = el('div', 'grid grid-cols-1 sm:grid-cols-5 gap-2');
+        (goal.workflow || []).forEach(function (step, i) {
+          const card = el('div', 'p-3 rounded-xl border border-slate-800 bg-slate-950 space-y-1');
+          const head = el('div', 'flex items-center gap-2');
+          head.appendChild(el('span', 'w-5 h-5 rounded-full bg-cyan-950 border border-cyan-800 text-cyan-300 text-[10px] font-mono flex items-center justify-center', i + 1));
+          head.appendChild(el('span', 'text-xs font-bold text-slate-100', step.step));
+          card.appendChild(head);
+          card.appendChild(el('p', 'text-[11px] text-slate-400 leading-snug', step.detail));
+          strip.appendChild(card);
+        });
+        box.appendChild(strip);
+        const runner = el('p', 'text-[11px] text-slate-500');
+        runner.appendChild(document.createTextNode('Runner: '));
+        runner.appendChild(el('code', 'text-cyan-300 font-mono', goal.runner));
+        runner.appendChild(document.createTextNode(' (started from a terminal; this page is read-only)'));
+        box.appendChild(runner);
+      }
+
+      // ── Status + gate ─────────────────────────────────────────────────
+      function renderGate() {
+        const box = clear(document.getElementById('evo-gate'));
+        const ph = state.data.phases[String(state.phase)];
+        const st = STATUS_STYLE[ph.status] || STATUS_STYLE.missing;
+
+        const head = el('div', 'flex flex-wrap items-center gap-2');
+        head.appendChild(el('h3', 'font-bold text-lg text-slate-100 mr-2', 'Run status and gate'));
+        head.appendChild(el('span', 'px-2.5 py-1 rounded-md text-xs font-bold border ' + st.cls, st.label));
+        box.appendChild(head);
+
+        if (ph.status === 'missing') {
+          box.appendChild(el('p', 'text-sm text-slate-400',
+            'No results file exists for this phase yet. Nothing is shown because nothing has been measured.'));
+          return;
+        }
+        if (ph.status === 'invalid') {
+          box.appendChild(el('p', 'text-sm text-red-300 font-mono break-words', ph.error || 'unreadable results file'));
+          box.appendChild(el('p', 'text-xs text-slate-500', 'This can happen for a moment while a runner rewrites the file. It is retried automatically.'));
+          return;
+        }
+
+        const facts = el('div', 'grid grid-cols-2 md:grid-cols-4 gap-3');
+        [
+          [ph.backend_kind === 'backend' ? 'Backend' : 'Model', ph.backend],
+          ['Started', ph.started],
+          ['Finished', ph.finished],
+          ['File updated', ph.updated ? ph.updated + ' (' + age(ph.age_seconds) + ')' : null]
+        ].forEach(function (pair) {
+          const card = el('div', 'p-3 rounded-xl border border-slate-800 bg-slate-950');
+          card.appendChild(el('div', 'text-[10px] uppercase tracking-wider text-slate-500', pair[0]));
+          card.appendChild(el('div', 'font-mono text-xs text-slate-200 break-words mt-1', fmt(pair[1])));
+          facts.appendChild(card);
+        });
+        box.appendChild(facts);
+
+        const params = Object.keys(ph.params || {});
+        if (params.length) {
+          const line = el('div', 'flex flex-wrap gap-2');
+          params.forEach(function (k) {
+            const chip = el('span', 'px-2 py-1 rounded-md bg-slate-950 border border-slate-800 text-[11px] font-mono text-slate-400');
+            chip.appendChild(document.createTextNode(k + ' = '));
+            chip.appendChild(el('span', 'text-cyan-300', fmt(ph.params[k])));
+            line.appendChild(chip);
+          });
+          box.appendChild(line);
+        }
+
+        if (!ph.gate.length) {
+          box.appendChild(el('p', 'text-sm text-slate-400',
+            ph.status === 'running'
+              ? 'The gate is computed after the last use case. It has not been written yet.'
+              : 'This results file has no gate section.'));
+        } else {
+          box.appendChild(el('div', 'text-xs text-slate-400 font-mono', ph.gate_passed + ' of ' + ph.gate_total + ' goals passed'));
+          const list = el('ul', 'space-y-2');
+          ph.gate.forEach(function (g) {
+            const li = el('li', 'flex items-start gap-3 p-3 rounded-xl border border-slate-800 bg-slate-950');
+            li.appendChild(badge(g.passed));
+            li.appendChild(el('span', 'text-sm text-slate-200', g.goal));
+            list.appendChild(li);
+          });
+          box.appendChild(list);
+        }
+
+        if (ph.use_cases_pending.length && ph.status === 'running') {
+          box.appendChild(el('p', 'text-xs text-amber-300/80 font-mono',
+            'Waiting for: ' + ph.use_cases_pending.map(function (k) { return k.toUpperCase(); }).join(', ')));
+        }
+      }
+
+      // ── Use case pieces ───────────────────────────────────────────────
+      function metricsTable(metrics) {
+        const wrap = el('div', 'space-y-3');
+        const scalarKeys = [], dictKeys = [];
+        Object.keys(metrics).forEach(function (k) {
+          const v = metrics[k];
+          (v !== null && typeof v === 'object' ? dictKeys : scalarKeys).push(k);
+        });
+
+        if (scalarKeys.length) {
+          const table = el('table', 'w-full text-left');
+          const body = el('tbody', 'divide-y divide-slate-800/70');
+          scalarKeys.forEach(function (k) {
+            const tr = el('tr');
+            tr.appendChild(el('td', 'py-1.5 pr-4 text-xs text-slate-400 font-mono align-top', k));
+            const td = el('td', 'py-1.5 text-right align-top');
+            td.appendChild(valueNode(metrics[k]));
+            tr.appendChild(td);
+            body.appendChild(tr);
+          });
+          table.appendChild(body);
+          wrap.appendChild(table);
+        }
+
+        if (dictKeys.length) {
+          const cols = [];
+          dictKeys.forEach(function (k) {
+            Object.keys(metrics[k]).forEach(function (c) { if (cols.indexOf(c) === -1) cols.push(c); });
+          });
+          const scroller = el('div', 'overflow-x-auto rounded-xl border border-slate-800');
+          const table = el('table', 'w-full text-left');
+          const thead = el('thead', 'bg-slate-950');
+          const hr = el('tr');
+          hr.appendChild(el('th', 'px-3 py-2 text-[10px] uppercase tracking-wider text-slate-500', 'variant'));
+          cols.forEach(function (c) { hr.appendChild(el('th', 'px-3 py-2 text-[10px] uppercase tracking-wider text-slate-500 text-right', c)); });
+          thead.appendChild(hr);
+          table.appendChild(thead);
+          const body = el('tbody', 'divide-y divide-slate-800/70');
+          dictKeys.forEach(function (k) {
+            const tr = el('tr');
+            tr.appendChild(el('td', 'px-3 py-1.5 text-xs text-slate-300 font-mono', k));
+            cols.forEach(function (c) {
+              const td = el('td', 'px-3 py-1.5 text-right');
+              td.appendChild(valueNode(Object.prototype.hasOwnProperty.call(metrics[k], c) ? metrics[k][c] : null));
+              tr.appendChild(td);
+            });
+            body.appendChild(tr);
+          });
+          table.appendChild(body);
+          scroller.appendChild(table);
+          wrap.appendChild(scroller);
+        }
+
+        if (!scalarKeys.length && !dictKeys.length) {
+          wrap.appendChild(el('p', 'text-xs text-slate-500', 'No summary metrics recorded.'));
+        }
+        return wrap;
+      }
+
+      function comparisonBars(comparisons) {
+        const wrap = el('div', 'space-y-4');
+        comparisons.forEach(function (cmp) {
+          const values = cmp.bars.map(function (b) { return Math.max(0, Number(b.value) || 0); });
+          const unit = cmp.bars.every(function (b) { return b.value >= 0 && b.value <= 1; });
+          const scale = unit ? 1 : Math.max.apply(null, values.concat([1e-12]));
+          const block = el('div', 'space-y-1.5');
+          block.appendChild(el('div', 'text-[11px] text-slate-400 font-mono', cmp.label + (unit ? '  (scale 0 to 1)' : '')));
+          cmp.bars.forEach(function (b, i) {
+            const row = el('div', 'flex items-center gap-2');
+            row.appendChild(el('span', 'w-28 shrink-0 text-[11px] font-mono text-slate-400 truncate', b.name));
+            const track = el('div', 'flex-1 h-3 rounded bg-slate-800 overflow-hidden');
+            const fill = el('div', 'h-3 rounded ' + (i === 0 ? 'bg-slate-500' : 'bg-emerald-500'));
+            fill.style.width = (Math.min(1, values[i] / scale) * 100).toFixed(1) + '%';
+            track.appendChild(fill);
+            row.appendChild(track);
+            row.appendChild(el('span', 'w-20 shrink-0 text-right text-xs font-mono text-cyan-300', fmt(b.value)));
+            row.title = b.name + ' = ' + fmt(b.value);
+            block.appendChild(row);
+          });
+          wrap.appendChild(block);
+        });
+        return wrap;
+      }
+
+      function rowsTable(rows) {
+        const cols = [];
+        rows.forEach(function (r) { Object.keys(r).forEach(function (c) { if (cols.indexOf(c) === -1) cols.push(c); }); });
+        const scroller = el('div', 'overflow-auto max-h-[32rem] rounded-xl border border-slate-800');
+        const table = el('table', 'w-full text-left');
+        const thead = el('thead', 'bg-slate-950 sticky top-0');
+        const hr = el('tr');
+        hr.appendChild(el('th', 'px-3 py-2 text-[10px] uppercase tracking-wider text-slate-500', '#'));
+        cols.forEach(function (c) { hr.appendChild(el('th', 'px-3 py-2 text-[10px] uppercase tracking-wider text-slate-500 whitespace-nowrap', c)); });
+        thead.appendChild(hr);
+        table.appendChild(thead);
+        const body = el('tbody', 'divide-y divide-slate-800/70');
+        rows.forEach(function (r, i) {
+          const tr = el('tr', 'align-top');
+          tr.appendChild(el('td', 'px-3 py-1.5 text-[11px] font-mono text-slate-600', i + 1));
+          cols.forEach(function (c) {
+            const td = el('td', 'px-3 py-1.5');
+            td.appendChild(valueNode(Object.prototype.hasOwnProperty.call(r, c) ? r[c] : null));
+            tr.appendChild(td);
+          });
+          body.appendChild(tr);
+        });
+        table.appendChild(body);
+        scroller.appendChild(table);
+        return scroller;
+      }
+
+      function useCaseCard(uc) {
+        const key = state.phase + '-' + uc.id;
+        const card = el('div', 'p-6 rounded-2xl border border-slate-800 bg-slate-900/40 space-y-5');
+        const head = el('div', 'border-b border-slate-800 pb-4 space-y-1');
+        const titleRow = el('div', 'flex items-center gap-2 flex-wrap');
+        titleRow.appendChild(el('span', 'px-2 py-0.5 rounded-md text-[11px] font-bold font-mono bg-cyan-950 text-cyan-300 border border-cyan-800', uc.id.toUpperCase()));
+        titleRow.appendChild(el('h3', 'font-bold text-lg text-slate-100', uc.title));
+        head.appendChild(titleRow);
+        if (uc.question) head.appendChild(el('p', 'text-sm text-slate-400', uc.question));
+        card.appendChild(head);
+
+        const grid = el('div', uc.comparisons.length ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : '');
+        const left = el('div', 'space-y-2');
+        left.appendChild(el('div', 'text-[10px] uppercase tracking-wider text-slate-500', 'Measured metrics'));
+        left.appendChild(metricsTable(uc.metrics));
+        grid.appendChild(left);
+        if (uc.comparisons.length) {
+          const right = el('div', 'space-y-2');
+          right.appendChild(el('div', 'text-[10px] uppercase tracking-wider text-slate-500', 'Side by side'));
+          right.appendChild(comparisonBars(uc.comparisons));
+          grid.appendChild(right);
+        }
+        card.appendChild(grid);
+
+        const details = el('details', 'rounded-xl border border-slate-800 bg-slate-950');
+        const label = uc.rows_truncated
+          ? 'Evidence rows (showing ' + uc.rows.length + ' of ' + uc.rows_total + ')'
+          : 'Evidence rows (' + uc.rows_total + ')';
+        details.appendChild(el('summary', 'px-4 py-2.5 cursor-pointer text-xs font-bold text-slate-300 hover:text-slate-100 select-none', label));
+        const holder = el('div', 'p-3');
+        details.appendChild(holder);
+        const fill = function () {
+          if (holder.firstChild) return;
+          holder.appendChild(uc.rows.length ? rowsTable(uc.rows) : el('p', 'text-xs text-slate-500', 'No rows recorded.'));
+        };
+        details.addEventListener('toggle', function () {
+          if (details.open) { state.open.add(key); fill(); } else { state.open.delete(key); }
+        });
+        if (state.open.has(key)) { details.open = true; fill(); }
+        card.appendChild(details);
+        return card;
+      }
+
+      function renderUseCases() {
+        const box = clear(document.getElementById('evo-use-cases'));
+        const ph = state.data.phases[String(state.phase)];
+        ph.use_cases.forEach(function (uc) { box.appendChild(useCaseCard(uc)); });
+        if (ph.status === 'running' || ph.status === 'finished') {
+          ph.use_cases_pending.forEach(function (k) {
+            const card = el('div', 'p-4 rounded-2xl border border-dashed border-slate-800 bg-slate-900/20 flex items-center gap-3');
+            card.appendChild(el('span', 'px-2 py-0.5 rounded-md text-[11px] font-bold font-mono bg-slate-900 text-slate-500 border border-slate-800', k.toUpperCase()));
+            card.appendChild(el('span', 'text-xs text-slate-500', ph.status === 'running' ? 'not measured yet' : 'not present in the results file'));
+            box.appendChild(card);
+          });
+        }
+      }
+
+      function render() {
+        if (!state.data) return;
+        renderSelector();
+        renderGoal();
+        renderGate();
+        renderUseCases();
+      }
+
+      function showError(message) {
+        const box = document.getElementById('evo-error');
+        if (message) { box.textContent = message; box.classList.remove('hidden'); }
+        else { box.textContent = ''; box.classList.add('hidden'); }
+      }
+
+      function schedule() {
+        const running = !!(state.data && state.data.any_running);
+        if (running && !state.timer) {
+          state.timer = setInterval(function () {
+            const visible = !document.getElementById('section-evolution').classList.contains('hidden');
+            if (visible && !document.hidden) loadEvolution();
+          }, EVO_REFRESH_MS);
+        } else if (!running && state.timer) {
+          clearInterval(state.timer);
+          state.timer = null;
+        }
+        const note = document.getElementById('evo-refresh-note');
+        const stamp = state.data ? 'loaded ' + state.data.generated.split(' ')[1] : '';
+        note.textContent = running ? stamp + ' • auto-refresh 15 s' : stamp;
+      }
+
+      async function loadEvolution() {
+        if (state.loading) return;
+        state.loading = true;
+        const btn = document.getElementById('evo-refresh-btn');
+        btn.disabled = true;
+        try {
+          const resp = await fetch('/api/evolution', { cache: 'no-store' });
+          if (!resp.ok) throw new Error('GET /api/evolution returned HTTP ' + resp.status);
+          state.data = await resp.json();
+          showError(null);
+          render();
+        } catch (err) {
+          showError('Could not load evolution results: ' + err.message);
+        } finally {
+          state.loading = false;
+          btn.disabled = false;
+          schedule();
+        }
+      }
+
+      // Hook the existing tab switcher without editing it.
+      const baseSwitchTab = window.switchTab;
+      window.switchTab = function (tabId) {
+        baseSwitchTab(tabId);
+        if (tabId === 'evolution') loadEvolution();
+      };
+      window.loadEvolution = loadEvolution;
+
+      // Deep link: /#evolution opens this tab directly.
+      if (window.location.hash === '#evolution') {
+        window.addEventListener('DOMContentLoaded', function () { window.switchTab('evolution'); });
+      }
+    })();
   </script>
 </body>
 </html>

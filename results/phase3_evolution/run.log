@@ -1,0 +1,57 @@
+
+=== UC1 ===
+  UC1 find_duplicates    promoted=True speedup=54.67 E 100.48 -> 29.45 oracle_mismatches=0/300 (median paired gain 71.30 > threshold 5.02, child won 12/12 pairs)
+  UC1 fibonacci          promoted=True speedup=115.14 E 91.66 -> 28.64 oracle_mismatches=0/81 (median paired gain 63.00 > threshold 4.58, child won 12/12 pairs)
+  UC1 primes_up_to       promoted=True speedup=110.74 E 202.9 -> 29.7 oracle_mismatches=0/302 (median paired gain 173.18 > threshold 10.15, child won 12/12 pairs)
+  UC1 join_words         promoted=True speedup=10.41 E 208.74 -> 45.47 oracle_mismatches=0/300 (median paired gain 163.10 > threshold 10.44, child won 12/12 pairs)
+  UC1 has_pair_with_sum  promoted=True speedup=75.03 E 129.11 -> 29.38 oracle_mismatches=0/300 (median paired gain 99.82 > threshold 6.46, child won 12/12 pairs)
+=== UC1 done in 96s ===
+
+=== UC2 ===
+  UC2 find_duplicates    new=rejected@equivalence tests=4/6 E 178.33 -> 29.71 legacy_would_swap=True
+  UC2 fibonacci          new=rejected@equivalence tests=3/6 E 153.67 -> 28.76 legacy_would_swap=True
+  UC2 primes_up_to       new=rejected@equivalence tests=4/6 E 109.99 -> 29.07 legacy_would_swap=True
+  UC2 join_words         new=rejected@equivalence tests=4/6 E 169.44 -> 39.6 legacy_would_swap=True
+  UC2 has_pair_with_sum  new=rejected@equivalence tests=4/6 E 256.04 -> 30.55 legacy_would_swap=True
+=== UC2 done in 100s ===
+
+=== UC3 ===
+  UC3 find_duplicates    #1 new_rule_promoted=False wins=4/12 legacy_first_sample_swap=False legacy_all=4/12
+  UC3 fibonacci          #1 new_rule_promoted=False wins=6/12 legacy_first_sample_swap=True legacy_all=6/12
+  UC3 primes_up_to       #1 new_rule_promoted=False wins=6/12 legacy_first_sample_swap=True legacy_all=6/12
+  UC3 join_words         #1 new_rule_promoted=False wins=3/12 legacy_first_sample_swap=False legacy_all=3/12
+  UC3 has_pair_with_sum  #1 new_rule_promoted=False wins=5/12 legacy_first_sample_swap=False legacy_all=5/12
+  UC3 find_duplicates    #2 new_rule_promoted=False wins=4/12 legacy_first_sample_swap=False legacy_all=4/12
+  UC3 fibonacci          #2 new_rule_promoted=False wins=8/12 legacy_first_sample_swap=False legacy_all=8/12
+  UC3 primes_up_to       #2 new_rule_promoted=False wins=6/12 legacy_first_sample_swap=True legacy_all=6/12
+  UC3 join_words         #2 new_rule_promoted=False wins=5/12 legacy_first_sample_swap=False legacy_all=5/12
+  UC3 has_pair_with_sum  #2 new_rule_promoted=False wins=7/12 legacy_first_sample_swap=True legacy_all=7/12
+  UC3 find_duplicates    #3 new_rule_promoted=False wins=6/12 legacy_first_sample_swap=False legacy_all=6/12
+  UC3 fibonacci          #3 new_rule_promoted=False wins=4/12 legacy_first_sample_swap=False legacy_all=4/12
+  UC3 primes_up_to       #3 new_rule_promoted=False wins=4/12 legacy_first_sample_swap=True legacy_all=4/12
+  UC3 join_words         #3 new_rule_promoted=False wins=5/12 legacy_first_sample_swap=False legacy_all=5/12
+  UC3 has_pair_with_sum  #3 new_rule_promoted=False wins=2/12 legacy_first_sample_swap=False legacy_all=2/12
+=== UC3 done in 290s ===
+
+=== UC4 ===
+  UC4 find_duplicates    promoted=True restored=True lineage=register > promote > rollback
+  UC4 fibonacci          promoted=True restored=True lineage=register > promote > rollback
+  UC4 primes_up_to       promoted=True restored=True lineage=register > promote > rollback
+  UC4 join_words         promoted=True restored=True lineage=register > promote > rollback
+  UC4 has_pair_with_sum  promoted=True restored=True lineage=register > promote > rollback
+=== UC4 done in 91s ===
+
+=== UC5 ===
+  UC5 find_duplicates    proposal 1: tests=3/6 promoted=False speedup=None oracle_mismatches=105/300 (equivalence: child passes 3/6 hidden tests (parent 6/6))
+  UC5 find_duplicates    proposal 2: tests=3/6 promoted=False speedup=None oracle_mismatches=105/300 (equivalence: child passes 3/6 hidden tests (parent 6/6))
+  UC5 fibonacci          proposal 1: tests=6/6 promoted=True speedup=183.99 oracle_mismatches=0/81 (domination: median paired gain 125.84 > threshold 7.73, child won 12/12 pairs)
+  UC5 primes_up_to       proposal 1: tests=6/6 promoted=True speedup=90.27 oracle_mismatches=0/302 (domination: median paired gain 171.89 > threshold 10.10, child won 12/12 pairs)
+=== UC5 done in 415s ===
+
+GATE
+  [PASS] G1 every correct faster child is promoted, becomes the active version, and agrees with the parent on the held-out oracle
+  [PASS] G2 every fast-but-wrong child is rejected at the equivalence gate, while the legacy rule would swap at least one in
+  [PASS] G3 zero false promotions of identical code over >= 10 A/A trials under the new rule
+  [PASS] G4 rollback restores the parent's version, hash and behaviour and is logged, for every component
+  [PASS] G5 the LLM lands at least one promoted improvement, and the held-out differential oracle finds no promoted version that differs from the original parent
+exit=0

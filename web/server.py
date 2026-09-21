@@ -42,6 +42,7 @@ from execution_attestation import ImplementationAuditor, generate_attestation_pr
 from harness_hook import (  # noqa: E402
     active_inference_copilot,
 )
+from web import evolution_data  # noqa: E402
 
 logger = logging.getLogger("anse.web")
 logging.basicConfig(level=logging.INFO)
@@ -426,6 +427,19 @@ async def run_frontier_cyber(req: CyberEngagementRequest) -> dict[str, Any]:
     except Exception as e:
         logger.exception("Error in frontier cyber")
         return {"status": "error", "error": str(e)}
+
+
+# ── Evolution Lab (read-only views over results/<phaseN>_evolution/results.json) ──
+@app.get("/api/evolution")
+async def evolution_all(max_rows: int = evolution_data.DEFAULT_MAX_ROWS) -> dict[str, Any]:
+    return evolution_data.load_all(max_rows=max_rows)
+
+
+@app.get("/api/evolution/{phase}")
+async def evolution_phase(phase: int, max_rows: int = evolution_data.DEFAULT_MAX_ROWS) -> dict[str, Any]:
+    if phase not in evolution_data.PHASES:
+        raise HTTPException(status_code=404, detail=f"unknown phase {phase}; expected one of {list(evolution_data.PHASES)}")
+    return {"goal": evolution_data.GOALS[phase], **evolution_data.load_phase(phase, max_rows=max_rows)}
 
 
 def main() -> None:

@@ -1,0 +1,1833 @@
+{
+  "phase": 1,
+  "model": "qwen2.5-coder:1.5b",
+  "seeds": [
+    1,
+    2
+  ],
+  "max_retries": 3,
+  "n_tasks": 20,
+  "started": "2026-09-21 09:28:47",
+  "seeds_honoured_by_backend": true,
+  "uc5": {
+    "title": "Robustness",
+    "question": "Do degenerate or adversarial replies ever crash the loop, converge falsely or poison memory?",
+    "scenarios": 8,
+    "crashes": 0,
+    "false_convergences": 0,
+    "missed_controls": 0,
+    "poisoned_memories": 0,
+    "rows": [
+      {
+        "scenario": "prose_only",
+        "expected_converged": false,
+        "converged": false,
+        "crashed": false,
+        "final_category": "runtime_error",
+        "lessons_stored": 0
+      },
+      {
+        "scenario": "assert_true_cheat",
+        "expected_converged": false,
+        "converged": false,
+        "crashed": false,
+        "final_category": "test_failure",
+        "lessons_stored": 0
+      },
+      {
+        "scenario": "forged_report",
+        "expected_converged": false,
+        "converged": false,
+        "crashed": false,
+        "final_category": "test_failure",
+        "lessons_stored": 0
+      },
+      {
+        "scenario": "early_exit",
+        "expected_converged": false,
+        "converged": false,
+        "crashed": false,
+        "final_category": "test_failure",
+        "lessons_stored": 0
+      },
+      {
+        "scenario": "infinite_loop",
+        "expected_converged": false,
+        "converged": false,
+        "crashed": false,
+        "final_category": "timeout",
+        "lessons_stored": 0
+      },
+      {
+        "scenario": "memory_bomb",
+        "expected_converged": false,
+        "converged": false,
+        "crashed": false,
+        "final_category": "runtime_error",
+        "lessons_stored": 0
+      },
+      {
+        "scenario": "control_correct",
+        "expected_converged": true,
+        "converged": true,
+        "crashed": false,
+        "final_category": "perfect",
+        "lessons_stored": 1
+      },
+      {
+        "scenario": "control_wrong_then_fixed",
+        "expected_converged": true,
+        "converged": true,
+        "crashed": false,
+        "final_category": "perfect",
+        "lessons_stored": 1
+      }
+    ]
+  },
+  "generations": 266,
+  "uc2": {
+    "title": "Learning from pain",
+    "question": "Does the retry loop turn verified failures into verified passes, and does energy fall?",
+    "runs": 40,
+    "pass_at_1": 0.425,
+    "pass_at_n": 0.525,
+    "retried_runs": 23,
+    "rescued_by_retry": 4,
+    "rescued_by_adaptive_retry": 2,
+    "plain_retries_that_changed_the_code": 16,
+    "adaptive_retries_that_changed_the_code": 21,
+    "mean_final_energy_plain": 23.98,
+    "mean_final_energy_adaptive": 26.95,
+    "mean_energy_by_iteration": [
+      22.47,
+      23.98,
+      29.02
+    ],
+    "energy_never_increased": 21,
+    "rows": [
+      {
+        "task": "rotate_list",
+        "split": "train",
+        "seed": 1,
+        "converged": true,
+        "iterations": 1,
+        "energies": [
+          0.0
+        ],
+        "codes": [
+          "def rotate_list(lst: list, k: int) -> list:\n    if not lst:\n        return []\n\n    # Normalize k to avoid unnecessary rotations\n    k %= len(lst)\n\n    # Perform the rotation\n    rotated = lst[-k:] + lst[:-k]\n\n    return rotated"
+        ],
+        "first_prompt_feedback": ""
+      },
+      {
+        "task": "chunk_list",
+        "split": "train",
+        "seed": 1,
+        "converged": true,
+        "iterations": 1,
+        "energies": [
+          0.0
+        ],
+        "codes": [
+          "def chunk_list(lst: list, size: int) -> list[list]:\n    if size <= 0:\n        raise ValueError(\"Size must be greater than 0\")\n\n    return [lst[i:i+size] for i in range(0, len(lst), size)]"
+        ],
+        "first_prompt_feedback": ""
+      },
+      {
+        "task": "rotate_string",
+        "split": "test",
+        "seed": 1,
+        "converged": true,
+        "iterations": 2,
+        "energies": [
+          10.0,
+          0.0
+        ],
+        "codes": [
+          "def rotate_string(s: str, k: int) -> str:\n    return s[k:] + s[:k]",
+          "def rotate_string(s: str, k: int) -> str:\n    if not s:\n        return s  # Return the string as is if it's empty\n\n    k %= len(s)  # Ensure k is within the range of the string length\n    return s[k:] + s[:k]"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `rotate_string(s: str, k: int) -> str` that returns s rotated to the left by k positions. k may be larger than the string length or zero, and the string may be empty.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 10.0 (test_failure).\nYour previous code:\n```python\ndef rotate_string(s: str, k: int) -> str:\n    return s[k:] + s[:k]\n```\nExecution feedback:\n---\n1 of 5 hidden tests failed. First failures:\n  - assert rotate_string('abc', 4) == 'bca' -> AssertionError: \nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": true,
+          "energies": [
+            10.0,
+            0.0
+          ],
+          "distinct_codes": 2,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 2
+      },
+      {
+        "task": "sliding_windows",
+        "split": "test",
+        "seed": 1,
+        "converged": true,
+        "iterations": 1,
+        "energies": [
+          0.0
+        ],
+        "codes": [
+          "def sliding_windows(lst: list, size: int) -> list[list]:\n    if size <= 0:\n        raise ValueError(\"Size must be greater than 0\")\n\n    if size > len(lst):\n        return []\n\n    windows = []\n    for i in range(len(lst) - size + 1):\n        windows.append(lst[i:i+size])\n\n    return windows"
+        ],
+        "first_prompt_feedback": ""
+      },
+      {
+        "task": "validate_ipv4",
+        "split": "train",
+        "seed": 1,
+        "converged": true,
+        "iterations": 2,
+        "energies": [
+          7.142857142857143,
+          0.0
+        ],
+        "codes": [
+          "def validate_ipv4(s: str) -> bool:\n    parts = s.split('.')\n\n    if len(parts) != 4:\n        return False\n\n    for part in parts:\n        if not part.isdigit() or int(part) < 0 or int(part) > 255:\n            return False\n\n    return True",
+          "def validate_ipv4(s: str) -> bool:\n    parts = s.split('.')\n\n    if len(parts) != 4:\n        return False\n\n    for part in parts:\n        if not part.isdigit() or int(part) < 0 or int(part) > 255:\n            return False\n\n    # Check for leading zeros\n    for part in parts:\n        if part[0] == '0' and len(part) > 1:\n            return False\n\n    return True"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `validate_ipv4(s: str) -> bool` that returns True only if s is a valid dotted IPv4 address: exactly four decimal parts separated by '.', each between 0 and 255, digits only, and no leading zeros (so '01' is invalid but '0' is valid).\n\nPAIN SIGNAL: Your previous attempt failed with Energy 7.1 (test_failure).\nYour previous code:\n```python\ndef validate_ipv4(s: str) -> bool:\n    parts = s.split('.')\n\n    if len(parts) != 4:\n        return False\n\n    for part in parts:\n        if not part.isdigit() or int(part) < 0 or int(part) > 255:\n            return False\n\n    return True\n```\nExecution feedback:\n---\n1 of 7 hidden tests failed. First failures:\n  - assert validate_ipv4('01.2.3.4') is False -> AssertionError: \nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": true,
+          "energies": [
+            7.142857142857143,
+            0.0
+          ],
+          "distinct_codes": 2,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 2
+      },
+      {
+        "task": "parse_duration",
+        "split": "train",
+        "seed": 1,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          28.571428571428573,
+          28.571428571428573,
+          28.571428571428573
+        ],
+        "codes": [
+          "def parse_duration(s: str) -> int:\n    if not s:\n        raise ValueError(\"Empty string\")\n\n    parts = s.split()\n    if len(parts) != 3:\n        raise ValueError(\"Invalid number of parts\")\n\n    units = {'h': 3600, 'm': 60, 's': 1}\n    total_seconds = 0\n\n    for part in parts:\n        try:\n            value = int(part)\n            if value < 0:\n                raise ValueError(\"Negative duration not allowed\")\n            total_seconds += value * units[part]\n        except ValueError:\n            raise ValueError(f\"Invalid number: {part}\")\n\n    return total_seconds",
+          "def parse_duration(s: str) -> int:\n    if not s:\n        raise ValueError(\"Empty string\")\n\n    parts = s.split()\n    if len(parts) != 3:\n        raise ValueError(\"Invalid number of parts\")\n\n    units = {'h': 3600, 'm': 60, 's': 1}\n    total_seconds = 0\n\n    for part in parts:\n        try:\n            value = int(part)\n            if value < 0:\n                raise ValueError(\"Negative duration not allowed\")\n            total_seconds += value * units[part]\n        except ValueError:\n            raise ValueError(f\"Invalid number: {part}\")\n\n    return total_seconds",
+          "def parse_duration(s: str) -> int:\n    if not s:\n        raise ValueError(\"Empty string\")\n\n    parts = s.split()\n    if len(parts) != 3:\n        raise ValueError(\"Invalid number of parts\")\n\n    units = {'h': 3600, 'm': 60, 's': 1}\n    total_seconds = 0\n\n    for part in parts:\n        try:\n            value = int(part)\n            if value < 0:\n                raise ValueError(\"Negative duration not allowed\")\n            total_seconds += value * units[part]\n        except ValueError:\n            raise ValueError(f\"Invalid number: {part}\")\n\n    return total_seconds"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `parse_duration(s: str) -> int` that converts a duration like '1h30m15s' into total seconds. Units are h, m and s; each is optional but they must appear in that order, e.g. '45m', '2h', '10s', '1h5s'. Raise ValueError for an empty string or any malformed input such as '5x', 'abc' or '1m1h'.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 28.6 (test_failure).\nYour previous code:\n```python\ndef parse_duration(s: str) -> int:\n    if not s:\n        raise ValueError(\"Empty string\")\n\n    parts = s.split()\n    if len(parts) != 3:\n        raise ValueError(\"Invalid number of parts\")\n\n    units = {'h': 3600, 'm': 60, 's': 1}\n    total_seconds = 0\n\n    for part in parts:\n        try:\n            value = int(part)\n            if value < 0:\n                raise ValueError(\"Negative duration not allowed\")\n            total_seconds += value * units[part]\n        except ValueError:\n            raise ValueError(f\"Invalid number: {part}\")\n\n    return total_seconds\n```\nExecution feedback:\n---\n4 of 7 hidden tests failed. First failures:\n  - assert parse_duration('1h30m15s') == 5415 -> ValueError: Invalid number of parts\n  - assert parse_duration('45m') == 2700 -> ValueError: Invalid number of parts\n  - assert parse_duration('2h') == 7200 -> ValueError: Invalid number of parts\nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            28.571428571428573,
+            28.571428571428573,
+            28.571428571428573
+          ],
+          "distinct_codes": 2,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 1
+      },
+      {
+        "task": "validate_hex_color",
+        "split": "test",
+        "seed": 1,
+        "converged": true,
+        "iterations": 2,
+        "energies": [
+          7.142857142857143,
+          0.0
+        ],
+        "codes": [
+          "def validate_hex_color(s: str) -> bool:\n    if len(s) != 7 and len(s) != 4:\n        return False\n    if s[0] != '#':\n        return False\n    for char in s[1:]:\n        if not (char.isdigit() or char.isalpha()):\n            return False\n    return True",
+          "def validate_hex_color(s: str) -> bool:\n    if len(s) != 7 and len(s) != 4:\n        return False\n    if s[0] != '#':\n        return False\n    for char in s[1:]:\n        if not (char.isdigit() or char.lower() in 'abcdef'):\n            return False\n    return True"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `validate_hex_color(s: str) -> bool` that returns True only if s is a valid CSS hex color: a '#' followed by exactly 3 or exactly 6 hexadecimal digits (upper or lower case). Anything else, including a missing '#', other lengths or surrounding spaces, is invalid.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 7.1 (test_failure).\nYour previous code:\n```python\ndef validate_hex_color(s: str) -> bool:\n    if len(s) != 7 and len(s) != 4:\n        return False\n    if s[0] != '#':\n        return False\n    for char in s[1:]:\n        if not (char.isdigit() or char.isalpha()):\n            return False\n    return True\n```\nExecution feedback:\n---\n1 of 7 hidden tests failed. First failures:\n  - assert validate_hex_color('#ggg') is False -> AssertionError: \nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            7.142857142857143,
+            21.428571428571427,
+            14.285714285714286
+          ],
+          "distinct_codes": 3,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 2
+      },
+      {
+        "task": "parse_size",
+        "split": "test",
+        "seed": 1,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          7.142857142857143,
+          60.0,
+          60.0
+        ],
+        "codes": [
+          "def parse_size(s: str) -> int:\n    if not s:\n        raise ValueError('Empty string')\n\n    units = {'B': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3}\n    unit = s[-2:].upper()\n    if unit not in units:\n        raise ValueError(f'Malformed input: {s}')\n\n    number = float(s[:-2])\n    return int(number * units[unit])",
+          "def parse_size(s: str) -> int:\n    if not s:\n        raise ValueError('Empty string')\n\n    units = {'B': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3}\n    unit = s[-2:].upper()\n    if unit not in units:\n        raise ValueError(f'Malformed input: {s}')\n\n    number = float(s[:-2])\n    return int(number * units[unit])\n\n# Test cases\nprint(parse_size('7B'))       # Output: 7\nprint(parse_size('1.5KB'))   # Output: 1536\nprint(parse_size('5MB'))      # Output: 5242880\nprint(parse_size('1GB'))      # Output: 1073741824",
+          "def parse_size(s: str) -> int:\n    if not s:\n        raise ValueError('Empty string')\n\n    units = {'B': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3}\n    unit = s[-2:].upper()\n    if unit not in units:\n        raise ValueError(f'Malformed input: {s}')\n\n    number = float(s[:-2])\n    return int(round(number * units[unit]))\n\n# Test cases\nprint(parse_size('7B'))       # Output: 7\nprint(parse_size('1.5KB'))   # Output: 1536\nprint(parse_size('5MB'))      # Output: 5242880\nprint(parse_size('1GB'))      # Output: 1073741824"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `parse_size(s: str) -> int` that converts a size like '10KB' into bytes as an int. Units are B, KB, MB and GB using powers of 1024, the unit is case-insensitive and required, and the number may be a decimal such as '1.5KB' (round down to an int). Raise ValueError for an empty string or any malformed input such as '10', 'KB' or '5TBX'.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 7.1 (test_failure).\nYour previous code:\n```python\ndef parse_size(s: str) -> int:\n    if not s:\n        raise ValueError('Empty string')\n\n    units = {'B': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3}\n    unit = s[-2:].upper()\n    if unit not in units:\n        raise ValueError(f'Malformed input: {s}')\n\n    number = float(s[:-2])\n    return int(number * units[unit])\n```\nExecution feedback:\n---\n1 of 7 hidden tests failed. First failures:\n  - assert parse_size('7B') == 7 -> ValueError: Malformed input: 7B\nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            7.142857142857143,
+            35.714285714285715,
+            35.714285714285715
+          ],
+          "distinct_codes": 3,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 3
+      },
+      {
+        "task": "factorial",
+        "split": "train",
+        "seed": 1,
+        "converged": true,
+        "iterations": 1,
+        "energies": [
+          0.0
+        ],
+        "codes": [
+          "def factorial(n: int) -> int:\n    if not isinstance(n, int):\n        raise TypeError(\"n must be an integer\")\n    if n < 0:\n        raise ValueError(\"n cannot be negative\")\n    return 1 if n == 0 else n * factorial(n - 1)"
+        ],
+        "first_prompt_feedback": ""
+      },
+      {
+        "task": "median",
+        "split": "train",
+        "seed": 1,
+        "converged": true,
+        "iterations": 1,
+        "energies": [
+          0.0
+        ],
+        "codes": [
+          "def median(values: list[float]) -> float:\n    if len(values) == 0:\n        raise ValueError(\"List is empty\")\n\n    sorted_values = sorted(values)\n    n = len(sorted_values)\n\n    if n % 2 == 1:\n        return sorted_values[n // 2]\n    else:\n        return (sorted_values[n // 2 - 1] + sorted_values[n // 2]) / 2"
+        ],
+        "first_prompt_feedback": ""
+      },
+      {
+        "task": "nth_fibonacci",
+        "split": "test",
+        "seed": 1,
+        "converged": true,
+        "iterations": 1,
+        "energies": [
+          0.0
+        ],
+        "codes": [
+          "def nth_fibonacci(n: int) -> int:\n    if not isinstance(n, int):\n        raise TypeError(\"Input must be an integer\")\n    if n < 0:\n        raise ValueError(\"Input must be a non-negative integer\")\n\n    if n == 0:\n        return 0\n    elif n == 1:\n        return 1\n\n    a, b = 0, 1\n    for _ in range(2, n + 1):\n        a, b = b, a + b\n\n    return b"
+        ],
+        "first_prompt_feedback": ""
+      },
+      {
+        "task": "second_largest",
+        "split": "test",
+        "seed": 1,
+        "converged": true,
+        "iterations": 1,
+        "energies": [
+          0.0
+        ],
+        "codes": [
+          "def second_largest(values: list[int]) -> int:\n    # Remove duplicates and sort the list in descending order\n    unique_values = sorted(set(values), reverse=True)\n\n    # Check if there are at least two distinct values\n    if len(unique_values) < 2:\n        raise ValueError(\"There are fewer than two distinct values\")\n\n    # Return the second largest value\n    return unique_values[1]"
+        ],
+        "first_prompt_feedback": ""
+      },
+      {
+        "task": "camel_to_snake",
+        "split": "train",
+        "seed": 1,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          28.571428571428573,
+          28.571428571428573,
+          28.571428571428573
+        ],
+        "codes": [
+          "def camel_to_snake(name: str) -> str:\n    if not name or name.islower():\n        return name\n\n    parts = []\n    for char in name:\n        if char.isupper():\n            parts.append('_' + char.lower())\n        else:\n            parts.append(char)\n\n    return ''.join(parts)",
+          "def camel_to_snake(name: str) -> str:\n    if not name or name.islower():\n        return name\n\n    parts = []\n    in_acronym = False\n    for char in name:\n        if char.isupper() and not in_acronym:\n            in_acronym = True\n            parts.append('_' + char.lower())\n        elif char.isupper() and in_acronym:\n            parts.append(char)\n        else:\n            parts.append(char)\n\n    return ''.join(parts).lstrip('_')",
+          "def camel_to_snake(name: str) -> str:\n    if not name or name.islower():\n        return name\n\n    parts = []\n    in_acronym = False\n    for char in name:\n        if char.isupper() and not in_acronym:\n            in_acronym = True\n            parts.append('_' + char.lower())\n        elif char.isupper() and in_acronym:\n            parts.append(char)\n        else:\n            parts.append(char)\n\n    return ''.join(parts).lstrip('_')"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `camel_to_snake(name: str) -> str` that converts camelCase or PascalCase to snake_case. A run of capitals is one acronym word: 'HTTPServer' -> 'http_server', 'parseURL' -> 'parse_url', 'userID2Name' -> 'user_id2_name'. An empty string stays empty and an already snake_case name is unchanged.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 28.6 (test_failure).\nYour previous code:\n```python\ndef camel_to_snake(name: str) -> str:\n    if not name or name.islower():\n        return name\n\n    parts = []\n    for char in name:\n        if char.isupper():\n            parts.append('_' + char.lower())\n        else:\n            parts.append(char)\n\n    return ''.join(parts)\n```\nExecution feedback:\n---\n4 of 7 hidden tests failed. First failures:\n  - assert camel_to_snake('PascalCase') == 'pascal_case' -> AssertionError: \n  - assert camel_to_snake('HTTPServer') == 'http_server' -> AssertionError: \n  - assert camel_to_snake('parseURL') == 'parse_url' -> AssertionError: \nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            28.571428571428573,
+            28.571428571428573,
+            28.571428571428573
+          ],
+          "distinct_codes": 2,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 2
+      },
+      {
+        "task": "run_length_encode",
+        "split": "train",
+        "seed": 1,
+        "converged": true,
+        "iterations": 1,
+        "energies": [
+          0.0
+        ],
+        "codes": [
+          "def run_length_encode(s: str) -> str:\n    if not s: return ''\n\n    encoded = []\n    count = 1\n\n    for i in range(1, len(s)):\n        if s[i] == s[i-1]:\n            count += 1\n        else:\n            encoded.append(str(count))\n            encoded.append(s[i-1])\n            count = 1\n\n    # Append the last character and its count\n    encoded.append(str(count))\n    encoded.append(s[-1])\n\n    return ''.join(encoded)"
+        ],
+        "first_prompt_feedback": ""
+      },
+      {
+        "task": "snake_to_camel",
+        "split": "test",
+        "seed": 1,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          41.666666666666664,
+          41.666666666666664,
+          41.666666666666664
+        ],
+        "codes": [
+          "def snake_to_camel(name: str) -> str:\n    # Remove leading underscores\n    name = name.lstrip('_')\n\n    # Split the name by underscore, capitalize each part except the first one, and join them together\n    return ''.join(word.capitalize() for word in name.split('_'))",
+          "def snake_to_camel(name: str) -> str:\n    # Remove leading underscores\n    name = name.lstrip('_')\n\n    # Split the name by underscore, capitalize each part except the first one, and join them together\n    words = name.split('_')\n    if len(words) > 1:\n        words[0] = words[0].capitalize()\n    return ''.join(word.capitalize() for word in words)",
+          "def snake_to_camel(name: str) -> str:\n    # Remove leading underscores\n    name = name.lstrip('_')\n\n    # Split the name by underscore, capitalize each part except the first one, and join them together\n    words = name.split('_')\n    if len(words) > 1:\n        words[0] = words[0].capitalize()\n    return ''.join(word.capitalize() for word in words)"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `snake_to_camel(name: str) -> str` that converts snake_case to camelCase: 'user_id' -> 'userId'. The first word stays lower case, repeated or trailing underscores are ignored ('a__b_' -> 'aB'), leading underscores are kept ('_private_var' -> '_privateVar'), and an empty string stays empty.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 41.7 (test_failure).\nYour previous code:\n```python\ndef snake_to_camel(name: str) -> str:\n    # Remove leading underscores\n    name = name.lstrip('_')\n\n    # Split the name by underscore, capitalize each part except the first one, and join them together\n    return ''.join(word.capitalize() for word in name.split('_'))\n```\nExecution feedback:\n---\n5 of 6 hidden tests failed. First failures:\n  - assert snake_to_camel('user_id') == 'userId' -> AssertionError: \n  - assert snake_to_camel('simple') == 'simple' -> AssertionError: \n  - assert snake_to_camel('http_server_port') == 'httpServerPort' -> AssertionError: \nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            41.666666666666664,
+            41.666666666666664,
+            41.666666666666664
+          ],
+          "distinct_codes": 3,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 2
+      },
+      {
+        "task": "run_length_decode",
+        "split": "test",
+        "seed": 1,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          8.333333333333334,
+          8.333333333333334,
+          8.333333333333334
+        ],
+        "codes": [
+          "def run_length_decode(s: str) -> str:\n    if not s:\n        return \"\"\n\n    decoded = []\n    i = 0\n    while i < len(s):\n        count = ''\n        while i < len(s) and s[i].isdigit():\n            count += s[i]\n            i += 1\n\n        if not count:\n            raise ValueError(\"Malformed input\")\n\n        char = s[i]\n        decoded.extend([char] * int(count))\n        i += 1\n\n    return ''.join(decoded)",
+          "def run_length_decode(s: str) -> str:\n    if not s:\n        return \"\"\n\n    decoded = []\n    i = 0\n\n    while i < len(s):\n        count = ''\n        while i < len(s) and s[i].isdigit():\n            count += s[i]\n            i += 1\n\n        if not count:\n            raise ValueError(\"Malformed input\")\n\n        char = s[i]\n        decoded.extend([char] * int(count))\n        i += 1\n\n    return ''.join(decoded)",
+          "def run_length_decode(s: str) -> str:\n    if not s:\n        return \"\"\n\n    decoded = []\n    i = 0\n\n    while i < len(s):\n        count = ''\n        while i < len(s) and s[i].isdigit():\n            count += s[i]\n            i += 1\n\n        if not count:\n            raise ValueError(\"Malformed input\")\n\n        char = s[i]\n        decoded.extend([char] * int(count))\n        i += 1\n\n    return ''.join(decoded)"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `run_length_decode(s: str) -> str` that reverses run-length encoding where each run is a count followed by a character: '3a1b2c' -> 'aaabcc'. Counts may have several digits ('12z'). An empty string gives an empty string. Raise ValueError for malformed input such as 'a3', '3' or 'ab'.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 8.3 (test_failure).\nYour previous code:\n```python\ndef run_length_decode(s: str) -> str:\n    if not s:\n        return \"\"\n\n    decoded = []\n    i = 0\n    while i < len(s):\n        count = ''\n        while i < len(s) and s[i].isdigit():\n            count += s[i]\n            i += 1\n\n        if not count:\n            raise ValueError(\"Malformed input\")\n\n        char = s[i]\n        decoded.extend([char] * int(count))\n        i += 1\n\n    return ''.join(decoded)\n```\nExecution feedback:\n---\n1 of 6 hidden tests failed. First failures:\n  - try:\n    run_length_decode('3')\n    raise AssertionError(\"expected ValueError for '3'\")\nexcept ValueError:\n    pass -> IndexError: string index out of range\nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            8.333333333333334,
+            8.333333333333334,
+            8.333333333333334
+          ],
+          "distinct_codes": 2,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 1
+      },
+      {
+        "task": "merge_intervals",
+        "split": "train",
+        "seed": 1,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          8.333333333333334,
+          8.333333333333334,
+          8.333333333333334
+        ],
+        "codes": [
+          "def merge_intervals(intervals: list[list[int]]) -> list[list[int]]:\n    if not intervals:\n        return []\n\n    # Sort intervals by their start time\n    intervals.sort(key=lambda x: x[0])\n\n    merged = [intervals[0]]\n    for interval in intervals[1:]:\n        if interval[0] <= merged[-1][1]:\n            # Merge overlapping intervals\n            merged[-1][1] = max(merged[-1][1], interval[1])\n        else:\n            # Add non-overlapping interval to the result\n            merged.append(interval)\n\n    return merged",
+          "def merge_intervals(intervals: list[list[int]]) -> list[list[int]]:\n    if not intervals:\n        return []\n\n    # Sort intervals by their start time\n    intervals.sort(key=lambda x: x[0])\n\n    merged = [intervals[0]]\n    for interval in intervals[1:]:\n        if interval[0] <= merged[-1][1]:\n            # Merge overlapping intervals\n            merged[-1][1] = max(merged[-1][1], interval[1])\n        else:\n            # Add non-overlapping interval to the result\n            merged.append(interval)\n\n    return merged",
+          "def merge_intervals(intervals: list[list[int]]) -> list[list[int]]:\n    if not intervals:\n        return []\n\n    # Sort intervals by their start time\n    intervals.sort(key=lambda x: x[0])\n\n    merged = [intervals[0]]\n    for interval in intervals[1:]:\n        if interval[0] <= merged[-1][1]:\n            # Merge overlapping intervals\n            merged[-1][1] = max(merged[-1][1], interval[1])\n        else:\n            # Add non-overlapping interval to the result\n            merged.append(interval)\n\n    return merged"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `merge_intervals(intervals: list[list[int]]) -> list[list[int]]` that merges overlapping closed intervals and returns them sorted by start. The input may be unsorted, intervals that merely touch are merged ([1,2] and [2,3] -> [1,3]), and the input list must not be modified. An empty list gives an empty list.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 8.3 (test_failure).\nYour previous code:\n```python\ndef merge_intervals(intervals: list[list[int]]) -> list[list[int]]:\n    if not intervals:\n        return []\n\n    # Sort intervals by their start time\n    intervals.sort(key=lambda x: x[0])\n\n    merged = [intervals[0]]\n    for interval in intervals[1:]:\n        if interval[0] <= merged[-1][1]:\n            # Merge overlapping intervals\n            merged[-1][1] = max(merged[-1][1], interval[1])\n        else:\n            # Add non-overlapping interval to the result\n            merged.append(interval)\n\n    return merged\n```\nExecution feedback:\n---\n1 of 6 hidden tests failed. First failures:\n  - data = [[5, 6], [1, 2]]\nmerge_intervals(data)\nassert data == [[5, 6], [1, 2]], \"input list was modified\" -> AssertionError: input list was modified\nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            8.333333333333334,
+            8.333333333333334,
+            8.333333333333334
+          ],
+          "distinct_codes": 1,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 1
+      },
+      {
+        "task": "compress_ranges",
+        "split": "train",
+        "seed": 1,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          40.0,
+          40.0,
+          40.0
+        ],
+        "codes": [
+          "from typing import List\n\ndef compress_ranges(nums: List[int]) -> str:\n    if not nums:\n        return ''\n\n    nums.sort()\n    compressed = []\n    start = nums[0]\n\n    for i in range(1, len(nums)):\n        if nums[i] == nums[i - 1] + 1:\n            continue\n        elif nums[i] != start:\n            compressed.append(f\"{start}-{nums[i-1]}\")\n        else:\n            compressed.append(str(start))\n        start = nums[i]\n\n    if start != nums[-1]:\n        compressed.append(f\"{start}-{nums[-1]}\")\n\n    return ', '.join(compressed)",
+          "from typing import List\n\ndef compress_ranges(nums: List[int]) -> str:\n    if not nums:\n        return ''\n\n    nums.sort()\n    compressed = []\n    start = nums[0]\n\n    for i in range(1, len(nums)):\n        if nums[i] == nums[i - 1]:\n            continue\n        elif nums[i] != start:\n            if start == nums[i - 2]:  # Check if it's the first number of a run\n                compressed.append(f\"{start}\")\n            else:\n                compressed.append(f\"{start}-{nums[i-1]}\")\n        else:\n            compressed.append(str(start))\n        start = nums[i]\n\n    if start != nums[-1]:\n        if start == nums[-2]:  # Check if it's the first number of a run\n            compressed.append(f\"{start}\")\n        else:\n            compressed.append(f\"{start}-{nums[-1]}\")\n\n    return ', '.join(compressed)",
+          "from typing import List\n\ndef compress_ranges(nums: List[int]) -> str:\n    if not nums:\n        return ''\n\n    nums.sort()\n    compressed = []\n    start = nums[0]\n\n    for i in range(1, len(nums)):\n        if nums[i] == nums[i - 1]:\n            continue\n        elif nums[i] != start:\n            if start == nums[i - 2]:  # Check if it's the first number of a run\n                compressed.append(f\"{start}\")\n            else:\n                compressed.append(f\"{start}-{nums[i-1]}\")\n        else:\n            compressed.append(str(start))\n        start = nums[i]\n\n    if start != nums[-1]:\n        if start == nums[-2]:  # Check if it's the first number of a run\n            compressed.append(f\"{start}\")\n        else:\n            compressed.append(f\"{start}-{nums[-1]}\")\n\n    return ', '.join(compressed)"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `compress_ranges(nums: list[int]) -> str` that turns a list of integers into a compact range string: [1,2,3,5,7,8] -> '1-3,5,7-8'. The input may be unsorted and contain duplicates. A run of two consecutive numbers is also written as a range ('7-8'). An empty list gives an empty string.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 40.0 (test_failure).\nYour previous code:\n```python\nfrom typing import List\n\ndef compress_ranges(nums: List[int]) -> str:\n    if not nums:\n        return ''\n\n    nums.sort()\n    compressed = []\n    start = nums[0]\n\n    for i in range(1, len(nums)):\n        if nums[i] == nums[i - 1] + 1:\n            continue\n        elif nums[i] != start:\n            compressed.append(f\"{start}-{nums[i-1]}\")\n        else:\n            compressed.append(str(start))\n        start = nums[i]\n\n    if start != nums[-1]:\n        compressed.append(f\"{start}-{nums[-1]}\")\n\n    return ', '.join(compressed)\n```\nExecution feedback:\n---\n4 of 5 hidden tests failed. First failures:\n  - assert compress_ranges([1, 2, 3, 5, 7, 8]) == '1-3,5,7-8' -> AssertionError: \n  - assert compress_ranges([5]) == '5' -> AssertionError: \n  - assert compress_ranges([3, 1, 2, 2, 10]) == '1-3,10' -> AssertionError: \nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            40.0,
+            40.0,
+            40.0
+          ],
+          "distinct_codes": 2,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 2
+      },
+      {
+        "task": "expand_ranges",
+        "split": "test",
+        "seed": 1,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          41.666666666666664,
+          41.666666666666664,
+          41.666666666666664
+        ],
+        "codes": [
+          "def expand_ranges(s: str) -> list[int]:\n    if not s:\n        return []\n\n    def parse_range(part):\n        start, end = part.split('-')\n        if not start.isdigit() or not end.isdigit():\n            raise ValueError(f\"Invalid range part: {part}\")\n        start, end = int(start), int(end)\n        if start > end:\n            raise ValueError(f\"Descending range detected: {part}\")\n        return list(range(start, end + 1))\n\n    parts = s.split(',')\n    expanded = []\n    for part in parts:\n        try:\n            expanded.extend(parse_range(part))\n        except ValueError as e:\n            print(e)\n            continue\n\n    return sorted(expanded)",
+          "def expand_ranges(s: str) -> list[int]:\n    if not s:\n        return []\n\n    def parse_range(part):\n        start, end = part.split('-')\n        if not start.isdigit() or not end.isdigit():\n            raise ValueError(f\"Invalid range part: {part}\")\n        start, end = int(start), int(end)\n        if start > end:\n            raise ValueError(f\"Descending range detected: {part}\")\n        return list(range(start, end + 1))\n\n    parts = s.split(',')\n    expanded = []\n    for part in parts:\n        try:\n            expanded.extend(parse_range(part))\n        except ValueError as e:\n            print(e)\n            continue\n\n    return sorted(expanded)",
+          "def expand_ranges(s: str) -> list[int]:\n    if not s:\n        return []\n\n    def parse_range(part):\n        start, end = part.split('-')\n        if not start.isdigit() or not end.isdigit():\n            raise ValueError(f\"Invalid range part: {part}\")\n        start, end = int(start), int(end)\n        if start > end:\n            raise ValueError(f\"Descending range detected: {part}\")\n        return list(range(start, end + 1))\n\n    parts = s.split(',')\n    expanded = []\n    for part in parts:\n        try:\n            expanded.extend(parse_range(part))\n        except ValueError as e:\n            print(e)\n            continue\n\n    return sorted(expanded)"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `expand_ranges(s: str) -> list[int]` that expands a compact range string into a sorted list of distinct integers: '1-3,5,7-8' -> [1,2,3,5,7,8]. Parts may be in any order and may overlap. An empty string gives an empty list. Raise ValueError for malformed parts such as 'a', '3-' or a descending range like '5-2'.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 41.7 (test_failure).\nYour previous code:\n```python\ndef expand_ranges(s: str) -> list[int]:\n    if not s:\n        return []\n\n    def parse_range(part):\n        start, end = part.split('-')\n        if not start.isdigit() or not end.isdigit():\n            raise ValueError(f\"Invalid range part: {part}\")\n        start, end = int(start), int(end)\n        if start > end:\n            raise ValueError(f\"Descending range detected: {part}\")\n        return list(range(start, end + 1))\n\n    parts = s.split(',')\n    expanded = []\n    for part in parts:\n        try:\n            expanded.extend(parse_range(part))\n        except ValueError as e:\n            print(e)\n            continue\n\n    return sorted(expanded)\n```\nExecution feedback:\n---\n5 of 6 hidden tests failed. First failures:\n  - assert expand_ranges('1-3,5,7-8') == [1, 2, 3, 5, 7, 8] -> AssertionError: \n  - assert expand_ranges('5') == [5] -> AssertionError: \n  - assert expand_ranges('7-8,1-3,2-4') == [1, 2, 3, 4, 7, 8] -> AssertionError: \nReturn code: 0\nStderr:\n(empty)\nStdout:\nnot enough values to unpack (expected 2, got 1)\nnot enough values to unpack (expected 2, got 1)\nDescending range detected: 5-2\nnot enough values to unpack (expected 2, got 1)\nnot enough values to unpack (expected 2, got 1)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            41.666666666666664,
+            25.0,
+            25.0
+          ],
+          "distinct_codes": 2,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 1
+      },
+      {
+        "task": "missing_ranges",
+        "split": "test",
+        "seed": 1,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          40.0,
+          40.0,
+          40.0
+        ],
+        "codes": [
+          "def missing_ranges(nums: list[int], lo: int, hi: int) -> list[list[int]]:\n    result = []\n    for i in range(len(nums)):\n        if nums[i] > lo:\n            result.append([lo, nums[i] - 1])\n        lo = nums[i]\n    if lo <= hi:\n        result.append([lo, hi])\n    return result",
+          "def missing_ranges(nums: list[int], lo: int, hi: int) -> list[list[int]]:\n    result = []\n    nums.sort()  # Sort the array to make it easier to find gaps\n    for i in range(len(nums)):\n        if nums[i] > lo:\n            result.append([lo, nums[i] - 1])\n        lo = nums[i]\n    if lo <= hi:\n        result.append([lo, hi])\n    return result\n\n# Test the function with provided data points\nprint(missing_ranges([0, 1, 3, 50, 75], 0, 99))  # Output: [[2, 2], [4, 49], [51, 74], [76, 99]]\nprint(missing_ranges([1, 2, 3], 1, 3))  # Output: []\nprint(missing_ranges([3, 1, 1, 9, -4], 1, 5))  # Output: [[2, 2], [4, 5]]",
+          "def missing_ranges(nums: list[int], lo: int, hi: int) -> list[list[int]]:\n    result = []\n    nums.sort()  # Sort the array to make it easier to find gaps\n    for i in range(len(nums)):\n        if nums[i] > lo:\n            result.append([lo, nums[i] - 1])\n        lo = nums[i]\n    if lo <= hi:\n        result.append([lo, hi])\n    return result\n\n# Test the function with provided data points\nprint(missing_ranges([0, 1, 3, 50, 75], 0, 99))  # Output: [[2, 2], [4, 49], [51, 74], [76, 99]]\nprint(missing_ranges([1, 2, 3], 1, 3))  # Output: []\nprint(missing_ranges([3, 1, 1, 9, -4], 1, 5))  # Output: [[2, 2], [4, 5]]"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `missing_ranges(nums: list[int], lo: int, hi: int) -> list[list[int]]` that returns the closed intervals of integers in [lo, hi] that do not appear in nums, sorted by start. nums may be unsorted, contain duplicates and contain values outside [lo, hi]. missing_ranges([0, 1, 3, 50, 75], 0, 99) is [[2, 2], [4, 49], [51, 74], [76, 99]]. If nothing is missing return an empty list.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 40.0 (test_failure).\nYour previous code:\n```python\ndef missing_ranges(nums: list[int], lo: int, hi: int) -> list[list[int]]:\n    result = []\n    for i in range(len(nums)):\n        if nums[i] > lo:\n            result.append([lo, nums[i] - 1])\n        lo = nums[i]\n    if lo <= hi:\n        result.append([lo, hi])\n    return result\n```\nExecution feedback:\n---\n4 of 5 hidden tests failed. First failures:\n  - assert missing_ranges([0, 1, 3, 50, 75], 0, 99) == [[2, 2], [4, 49], [51, 74], [76, 99]] -> AssertionError: \n  - assert missing_ranges([1, 2, 3], 1, 3) == [] -> AssertionError: \n  - assert missing_ranges([3, 1, 1, 9, -4], 1, 5) == [[2, 2], [4, 5]] -> AssertionError: \nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            40.0,
+            20.0,
+            20.0
+          ],
+          "distinct_codes": 3,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 2
+      },
+      {
+        "task": "rotate_list",
+        "split": "train",
+        "seed": 2,
+        "converged": true,
+        "iterations": 1,
+        "energies": [
+          0.0
+        ],
+        "codes": [
+          "def rotate_list(lst: list, k: int) -> list:\n    if not lst:\n        return []\n\n    # Normalize k to avoid unnecessary rotations\n    k %= len(lst)\n\n    # Perform the rotation\n    rotated = lst[-k:] + lst[:-k]\n\n    return rotated"
+        ],
+        "first_prompt_feedback": ""
+      },
+      {
+        "task": "chunk_list",
+        "split": "train",
+        "seed": 2,
+        "converged": true,
+        "iterations": 1,
+        "energies": [
+          0.0
+        ],
+        "codes": [
+          "def chunk_list(lst: list, size: int) -> list[list]:\n    if size <= 0:\n        raise ValueError(\"size must be greater than 0\")\n\n    return [lst[i:i+size] for i in range(0, len(lst), size)]"
+        ],
+        "first_prompt_feedback": ""
+      },
+      {
+        "task": "rotate_string",
+        "split": "test",
+        "seed": 2,
+        "converged": true,
+        "iterations": 1,
+        "energies": [
+          0.0
+        ],
+        "codes": [
+          "def rotate_string(s: str, k: int) -> str:\n    if not s or k == 0:\n        return s\n    k %= len(s)\n    return s[k:] + s[:k]"
+        ],
+        "first_prompt_feedback": ""
+      },
+      {
+        "task": "sliding_windows",
+        "split": "test",
+        "seed": 2,
+        "converged": true,
+        "iterations": 1,
+        "energies": [
+          0.0
+        ],
+        "codes": [
+          "def sliding_windows(lst: list, size: int) -> list[list]:\n    if size <= 0:\n        raise ValueError(\"size must be greater than 0\")\n\n    if len(lst) < size:\n        return []\n\n    windows = []\n    for i in range(len(lst) - size + 1):\n        window = lst[i:i+size]\n        windows.append(window)\n\n    return windows"
+        ],
+        "first_prompt_feedback": ""
+      },
+      {
+        "task": "validate_ipv4",
+        "split": "train",
+        "seed": 2,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          7.142857142857143,
+          7.142857142857143,
+          7.142857142857143
+        ],
+        "codes": [
+          "def validate_ipv4(s: str) -> bool:\n    # Split the input string into four parts based on '.'\n    parts = s.split('.')\n\n    # Check if there are exactly four parts\n    if len(parts) != 4:\n        return False\n\n    # Iterate through each part to check its validity\n    for part in parts:\n        # Ensure the part is a digit and within the range 0-255\n        if not part.isdigit() or int(part) < 0 or int(part) > 255:\n            return False\n\n    # If all checks pass, the string is a valid dotted IPv4 address\n    return True",
+          "def validate_ipv4(s: str) -> bool:\n    # Split the input string into four parts based on '.'\n    parts = s.split('.')\n\n    # Check if there are exactly four parts\n    if len(parts) != 4:\n        return False\n\n    # Iterate through each part to check its validity\n    for i, part in enumerate(parts):\n        # Ensure the part is a digit and within the range 0-255\n        if not part.isdigit() or int(part) < 0 or int(part) > 255:\n            return False\n\n        # Check if the first character of the part is '0' and it's not the only part\n        if i == 0 and part[0] == '0':\n            return False\n\n    # If all checks pass, the string is a valid dotted IPv4 address\n    return True",
+          "def validate_ipv4(s: str) -> bool:\n    # Split the input string into four parts based on '.'\n    parts = s.split('.')\n\n    # Check if there are exactly four parts\n    if len(parts) != 4:\n        return False\n\n    # Iterate through each part to check its validity\n    for i, part in enumerate(parts):\n        # Ensure the part is a digit and within the range 0-255\n        if not part.isdigit() or int(part) < 0 or int(part) > 255:\n            return False\n\n        # Check if the first character of the part is '0' and it's not the only part\n        if i == 0 and (part != '' and part[0] == '0'):\n            return False\n\n    # If all checks pass, the string is a valid dotted IPv4 address\n    return True"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `validate_ipv4(s: str) -> bool` that returns True only if s is a valid dotted IPv4 address: exactly four decimal parts separated by '.', each between 0 and 255, digits only, and no leading zeros (so '01' is invalid but '0' is valid).\n\nPAIN SIGNAL: Your previous attempt failed with Energy 7.1 (test_failure).\nYour previous code:\n```python\ndef validate_ipv4(s: str) -> bool:\n    # Split the input string into four parts based on '.'\n    parts = s.split('.')\n\n    # Check if there are exactly four parts\n    if len(parts) != 4:\n        return False\n\n    # Iterate through each part to check its validity\n    for part in parts:\n        # Ensure the part is a digit and within the range 0-255\n        if not part.isdigit() or int(part) < 0 or int(part) > 255:\n            return False\n\n    # If all checks pass, the string is a valid dotted IPv4 address\n    return True\n```\nExecution feedback:\n---\n1 of 7 hidden tests failed. First failures:\n  - assert validate_ipv4('01.2.3.4') is False -> AssertionError: \nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            7.142857142857143,
+            14.285714285714286,
+            14.285714285714286
+          ],
+          "distinct_codes": 2,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 3
+      },
+      {
+        "task": "parse_duration",
+        "split": "train",
+        "seed": 2,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          28.571428571428573,
+          28.571428571428573,
+          28.571428571428573
+        ],
+        "codes": [
+          "def parse_duration(s: str) -> int:\n    if not s:\n        raise ValueError(\"Empty string\")\n\n    parts = s.split()\n    if len(parts) != 3:\n        raise ValueError(\"Invalid number of parts\")\n\n    units = {'h': 3600, 'm': 60, 's': 1}\n    total_seconds = 0\n\n    for part in parts:\n        try:\n            value = int(part)\n        except ValueError:\n            raise ValueError(f\"Invalid value: {part}\")\n\n        if part[-1] not in units:\n            raise ValueError(f\"Invalid unit: {part[-1]}\")\n\n        total_seconds += value * units[part[-1]]\n\n    return total_seconds",
+          "def parse_duration(s: str) -> int:\n    if not s:\n        raise ValueError(\"Empty string\")\n\n    parts = s.split()\n    if len(parts) != 3:\n        raise ValueError(\"Invalid number of parts\")\n\n    units = {'h': 3600, 'm': 60, 's': 1}\n    total_seconds = 0\n\n    for i in range(3):\n        try:\n            value = int(parts[i])\n        except ValueError:\n            raise ValueError(f\"Invalid value: {parts[i]}\")\n\n        if parts[i][-1] not in units:\n            raise ValueError(f\"Invalid unit: {parts[i][-1]}\")\n\n        total_seconds += value * units[parts[i][-1]]\n\n    return total_seconds",
+          "def parse_duration(s: str) -> int:\n    if not s:\n        raise ValueError(\"Empty string\")\n\n    parts = s.split()\n    if len(parts) != 3:\n        raise ValueError(\"Invalid number of parts\")\n\n    units = {'h': 3600, 'm': 60, 's': 1}\n    total_seconds = 0\n\n    for i in range(3):\n        try:\n            value = int(parts[i])\n        except ValueError:\n            raise ValueError(f\"Invalid value: {parts[i]}\")\n\n        if parts[i][-1] not in units:\n            raise ValueError(f\"Invalid unit: {parts[i][-1]}\")\n\n        total_seconds += value * units[parts[i][-1]]\n\n    return total_seconds"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `parse_duration(s: str) -> int` that converts a duration like '1h30m15s' into total seconds. Units are h, m and s; each is optional but they must appear in that order, e.g. '45m', '2h', '10s', '1h5s'. Raise ValueError for an empty string or any malformed input such as '5x', 'abc' or '1m1h'.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 28.6 (test_failure).\nYour previous code:\n```python\ndef parse_duration(s: str) -> int:\n    if not s:\n        raise ValueError(\"Empty string\")\n\n    parts = s.split()\n    if len(parts) != 3:\n        raise ValueError(\"Invalid number of parts\")\n\n    units = {'h': 3600, 'm': 60, 's': 1}\n    total_seconds = 0\n\n    for part in parts:\n        try:\n            value = int(part)\n        except ValueError:\n            raise ValueError(f\"Invalid value: {part}\")\n\n        if part[-1] not in units:\n            raise ValueError(f\"Invalid unit: {part[-1]}\")\n\n        total_seconds += value * units[part[-1]]\n\n    return total_seconds\n```\nExecution feedback:\n---\n4 of 7 hidden tests failed. First failures:\n  - assert parse_duration('1h30m15s') == 5415 -> ValueError: Invalid number of parts\n  - assert parse_duration('45m') == 2700 -> ValueError: Invalid number of parts\n  - assert parse_duration('2h') == 7200 -> ValueError: Invalid number of parts\nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            28.571428571428573,
+            28.571428571428573,
+            28.571428571428573
+          ],
+          "distinct_codes": 1,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 2
+      },
+      {
+        "task": "validate_hex_color",
+        "split": "test",
+        "seed": 2,
+        "converged": true,
+        "iterations": 1,
+        "energies": [
+          0.0
+        ],
+        "codes": [
+          "def validate_hex_color(s: str) -> bool:\n    return s.startswith('#') and len(s[1:]) in [3, 6] and all(c in '0123456789ABCDEFabcdef' for c in s[1:])"
+        ],
+        "first_prompt_feedback": ""
+      },
+      {
+        "task": "parse_size",
+        "split": "test",
+        "seed": 2,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          35.714285714285715,
+          35.714285714285715,
+          35.714285714285715
+        ],
+        "codes": [
+          "def parse_size(s: str) -> int:\n    if not s:\n        raise ValueError(\"Empty string\")\n\n    units = {'B': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3}\n    for unit in units:\n        if s.lower().endswith(unit):\n            return int(float(s[:-len(unit)].strip()) * units[unit])\n\n    raise ValueError(\"Malformed input\")",
+          "def parse_size(s: str) -> int:\n    if not s:\n        raise ValueError(\"Empty string\")\n\n    units = {'B': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3}\n    for unit in units:\n        if s.lower().endswith(unit):\n            return int(float(s[:-len(unit)].strip()) * units[unit])\n\n    raise ValueError(\"Malformed input\")",
+          "def parse_size(s: str) -> int:\n    if not s:\n        raise ValueError(\"Empty string\")\n\n    units = {'B': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3}\n    for unit in units:\n        if s.lower().endswith(unit):\n            return int(float(s[:-len(unit)].strip()) * units[unit])\n\n    raise ValueError(\"Malformed input\")"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `parse_size(s: str) -> int` that converts a size like '10KB' into bytes as an int. Units are B, KB, MB and GB using powers of 1024, the unit is case-insensitive and required, and the number may be a decimal such as '1.5KB' (round down to an int). Raise ValueError for an empty string or any malformed input such as '10', 'KB' or '5TBX'.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 35.7 (test_failure).\nYour previous code:\n```python\ndef parse_size(s: str) -> int:\n    if not s:\n        raise ValueError(\"Empty string\")\n\n    units = {'B': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3}\n    for unit in units:\n        if s.lower().endswith(unit):\n            return int(float(s[:-len(unit)].strip()) * units[unit])\n\n    raise ValueError(\"Malformed input\")\n```\nExecution feedback:\n---\n5 of 7 hidden tests failed. First failures:\n  - assert parse_size('10KB') == 10240 -> ValueError: Malformed input\n  - assert parse_size('1.5KB') == 1536 -> ValueError: Malformed input\n  - assert parse_size('3mb') == 3145728 -> ValueError: Malformed input\nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            35.714285714285715,
+            35.714285714285715,
+            35.714285714285715
+          ],
+          "distinct_codes": 2,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 1
+      },
+      {
+        "task": "factorial",
+        "split": "train",
+        "seed": 2,
+        "converged": true,
+        "iterations": 1,
+        "energies": [
+          0.0
+        ],
+        "codes": [
+          "def factorial(n: int) -> int:\n    if not isinstance(n, int):\n        raise TypeError(\"n must be an integer\")\n    if n < 0:\n        raise ValueError(\"n must be non-negative\")\n    return 1 if n == 0 else n * factorial(n - 1)"
+        ],
+        "first_prompt_feedback": ""
+      },
+      {
+        "task": "median",
+        "split": "train",
+        "seed": 2,
+        "converged": true,
+        "iterations": 1,
+        "energies": [
+          0.0
+        ],
+        "codes": [
+          "def median(values: list[float]) -> float:\n    if not values:\n        raise ValueError(\"List is empty\")\n\n    sorted_values = sorted(values)\n    n = len(sorted_values)\n\n    if n % 2 == 1:\n        return sorted_values[n // 2]\n    else:\n        return (sorted_values[n // 2 - 1] + sorted_values[n // 2]) / 2"
+        ],
+        "first_prompt_feedback": ""
+      },
+      {
+        "task": "nth_fibonacci",
+        "split": "test",
+        "seed": 2,
+        "converged": true,
+        "iterations": 2,
+        "energies": [
+          8.333333333333334,
+          0.0
+        ],
+        "codes": [
+          "def nth_fibonacci(n: int) -> int:\n    if not isinstance(n, int):\n        raise TypeError(\"n must be an integer\")\n    if n < 0:\n        raise ValueError(\"n cannot be negative\")\n\n    a, b = 0, 1\n    for _ in range(2, n + 1):\n        a, b = b, a + b\n\n    return b",
+          "def nth_fibonacci(n: int) -> int:\n    if not isinstance(n, int):\n        raise TypeError(\"n must be an integer\")\n    if n < 0:\n        raise ValueError(\"n cannot be negative\")\n\n    if n == 0:\n        return 0\n    elif n == 1:\n        return 1\n\n    a, b = 0, 1\n    for _ in range(2, n + 1):\n        a, b = b, a + b\n\n    return b"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `nth_fibonacci(n: int) -> int` with nth_fibonacci(0) == 0 and nth_fibonacci(1) == 1. It must be fast enough for n = 300. Raise ValueError if n is negative and TypeError if n is not an int (a bool or float is not accepted).\n\nPAIN SIGNAL: Your previous attempt failed with Energy 8.3 (test_failure).\nYour previous code:\n```python\ndef nth_fibonacci(n: int) -> int:\n    if not isinstance(n, int):\n        raise TypeError(\"n must be an integer\")\n    if n < 0:\n        raise ValueError(\"n cannot be negative\")\n\n    a, b = 0, 1\n    for _ in range(2, n + 1):\n        a, b = b, a + b\n\n    return b\n```\nExecution feedback:\n---\n1 of 6 hidden tests failed. First failures:\n  - assert nth_fibonacci(0) == 0 -> AssertionError: \nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            8.333333333333334,
+            25.0,
+            25.0
+          ],
+          "distinct_codes": 2,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 2
+      },
+      {
+        "task": "second_largest",
+        "split": "test",
+        "seed": 2,
+        "converged": true,
+        "iterations": 1,
+        "energies": [
+          0.0
+        ],
+        "codes": [
+          "def second_largest(values: list[int]) -> int:\n    # Remove duplicates by converting the list to a set\n    unique_values = set(values)\n\n    # Check if there are at least two distinct values\n    if len(unique_values) < 2:\n        raise ValueError(\"There must be at least two distinct values.\")\n\n    # Convert the set back to a list and sort it in descending order\n    sorted_unique_values = sorted(unique_values, reverse=True)\n\n    # Return the second largest value\n    return sorted_unique_values[1]"
+        ],
+        "first_prompt_feedback": ""
+      },
+      {
+        "task": "camel_to_snake",
+        "split": "train",
+        "seed": 2,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          28.571428571428573,
+          42.857142857142854,
+          42.857142857142854
+        ],
+        "codes": [
+          "def camel_to_snake(name: str) -> str:\n    if not name:\n        return name\n\n    parts = []\n    for char in name:\n        if char.isupper():\n            parts.append('_' + char.lower())\n        else:\n            parts.append(char)\n\n    return ''.join(parts)",
+          "def camel_to_snake(name: str) -> str:\n    if not name:\n        return name\n\n    parts = []\n    for i, char in enumerate(name):\n        if i == 0 or char.islower() and name[i-1].isupper():\n            parts.append(char.lower())\n        else:\n            parts.append('_' + char)\n\n    return ''.join(parts)",
+          "def camel_to_snake(name: str) -> str:\n    if not name:\n        return name\n\n    parts = []\n    for i, char in enumerate(name):\n        if i == 0 or char.islower() and name[i-1].isupper():\n            parts.append(char.lower())\n        else:\n            parts.append('_' + char)\n\n    return ''.join(parts)"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `camel_to_snake(name: str) -> str` that converts camelCase or PascalCase to snake_case. A run of capitals is one acronym word: 'HTTPServer' -> 'http_server', 'parseURL' -> 'parse_url', 'userID2Name' -> 'user_id2_name'. An empty string stays empty and an already snake_case name is unchanged.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 28.6 (test_failure).\nYour previous code:\n```python\ndef camel_to_snake(name: str) -> str:\n    if not name:\n        return name\n\n    parts = []\n    for char in name:\n        if char.isupper():\n            parts.append('_' + char.lower())\n        else:\n            parts.append(char)\n\n    return ''.join(parts)\n```\nExecution feedback:\n---\n4 of 7 hidden tests failed. First failures:\n  - assert camel_to_snake('PascalCase') == 'pascal_case' -> AssertionError: \n  - assert camel_to_snake('HTTPServer') == 'http_server' -> AssertionError: \n  - assert camel_to_snake('parseURL') == 'parse_url' -> AssertionError: \nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            28.571428571428573,
+            35.714285714285715,
+            35.714285714285715
+          ],
+          "distinct_codes": 2,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 2
+      },
+      {
+        "task": "run_length_encode",
+        "split": "train",
+        "seed": 2,
+        "converged": true,
+        "iterations": 1,
+        "energies": [
+          0.0
+        ],
+        "codes": [
+          "def run_length_encode(s: str) -> str:\n    if not s:\n        return \"\"\n\n    encoded = []\n    count = 1\n\n    for i in range(1, len(s)):\n        if s[i] == s[i-1]:\n            count += 1\n        else:\n            encoded.append(str(count))\n            encoded.append(s[i-1])\n            count = 1\n\n    # Append the last run\n    encoded.append(str(count))\n    encoded.append(s[-1])\n\n    return ''.join(encoded)"
+        ],
+        "first_prompt_feedback": ""
+      },
+      {
+        "task": "snake_to_camel",
+        "split": "test",
+        "seed": 2,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          41.666666666666664,
+          41.666666666666664,
+          41.666666666666664
+        ],
+        "codes": [
+          "def snake_to_camel(name: str) -> str:\n    if not name:\n        return \"\"\n\n    words = name.split('_')\n    camel_case_words = [word.capitalize() for word in words]\n    return ''.join(camel_case_words)",
+          "def snake_to_camel(name: str) -> str:\n    if not name:\n        return \"\"\n\n    words = name.split('_')\n    camel_case_words = [word.capitalize() for word in words]\n    # Handle leading underscores and repeated underscores\n    if len(camel_case_words) > 1 and camel_case_words[0] == '':\n        camel_case_words.pop(0)\n    elif len(camel_case_words) > 1 and '_' in camel_case_words[1]:\n        camel_case_words[1] = camel_case_words[1].capitalize()\n\n    return ''.join(camel_case_words)",
+          "def snake_to_camel(name: str) -> str:\n    if not name:\n        return \"\"\n\n    words = name.split('_')\n    camel_case_words = [word.capitalize() for word in words]\n    # Handle leading underscores and repeated underscores\n    if len(camel_case_words) > 1 and camel_case_words[0] == '':\n        camel_case_words.pop(0)\n    elif len(camel_case_words) > 1 and '_' in camel_case_words[1]:\n        camel_case_words[1] = camel_case_words[1].capitalize()\n\n    # Handle leading underscores\n    if name.startswith('_'):\n        camel_case_words.insert(0, '_')\n\n    return ''.join(camel_case_words)"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `snake_to_camel(name: str) -> str` that converts snake_case to camelCase: 'user_id' -> 'userId'. The first word stays lower case, repeated or trailing underscores are ignored ('a__b_' -> 'aB'), leading underscores are kept ('_private_var' -> '_privateVar'), and an empty string stays empty.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 41.7 (test_failure).\nYour previous code:\n```python\ndef snake_to_camel(name: str) -> str:\n    if not name:\n        return \"\"\n\n    words = name.split('_')\n    camel_case_words = [word.capitalize() for word in words]\n    return ''.join(camel_case_words)\n```\nExecution feedback:\n---\n5 of 6 hidden tests failed. First failures:\n  - assert snake_to_camel('user_id') == 'userId' -> AssertionError: \n  - assert snake_to_camel('simple') == 'simple' -> AssertionError: \n  - assert snake_to_camel('http_server_port') == 'httpServerPort' -> AssertionError: \nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            41.666666666666664,
+            41.666666666666664,
+            41.666666666666664
+          ],
+          "distinct_codes": 2,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 3
+      },
+      {
+        "task": "run_length_decode",
+        "split": "test",
+        "seed": 2,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          8.333333333333334,
+          8.333333333333334,
+          8.333333333333334
+        ],
+        "codes": [
+          "def run_length_decode(s: str) -> str:\n    if not s:\n        return \"\"\n\n    decoded = []\n    i = 0\n\n    while i < len(s):\n        count = ''\n        while i < len(s) and s[i].isdigit():\n            count += s[i]\n            i += 1\n\n        if not count:\n            raise ValueError(\"Invalid run-length encoding\")\n\n        char = s[i]\n        decoded.extend([char] * int(count))\n        i += 1\n\n    return ''.join(decoded)",
+          "def run_length_decode(s: str) -> str:\n    if not s:\n        return \"\"\n\n    decoded = []\n    i = 0\n\n    while i < len(s):\n        count = ''\n        while i < len(s) and s[i].isdigit():\n            count += s[i]\n            i += 1\n\n        if not count:\n            raise ValueError(\"Invalid run-length encoding\")\n\n        char = s[i]\n        decoded.extend([char] * int(count))\n        i += 1\n\n    return ''.join(decoded)",
+          "def run_length_decode(s: str) -> str:\n    if not s:\n        return \"\"\n\n    decoded = []\n    i = 0\n\n    while i < len(s):\n        count = ''\n        while i < len(s) and s[i].isdigit():\n            count += s[i]\n            i += 1\n\n        if not count:\n            raise ValueError(\"Invalid run-length encoding\")\n\n        char = s[i]\n        decoded.extend([char] * int(count))\n        i += 1\n\n    return ''.join(decoded)"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `run_length_decode(s: str) -> str` that reverses run-length encoding where each run is a count followed by a character: '3a1b2c' -> 'aaabcc'. Counts may have several digits ('12z'). An empty string gives an empty string. Raise ValueError for malformed input such as 'a3', '3' or 'ab'.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 8.3 (test_failure).\nYour previous code:\n```python\ndef run_length_decode(s: str) -> str:\n    if not s:\n        return \"\"\n\n    decoded = []\n    i = 0\n\n    while i < len(s):\n        count = ''\n        while i < len(s) and s[i].isdigit():\n            count += s[i]\n            i += 1\n\n        if not count:\n            raise ValueError(\"Invalid run-length encoding\")\n\n        char = s[i]\n        decoded.extend([char] * int(count))\n        i += 1\n\n    return ''.join(decoded)\n```\nExecution feedback:\n---\n1 of 6 hidden tests failed. First failures:\n  - try:\n    run_length_decode('3')\n    raise AssertionError(\"expected ValueError for '3'\")\nexcept ValueError:\n    pass -> IndexError: string index out of range\nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            8.333333333333334,
+            8.333333333333334,
+            33.333333333333336
+          ],
+          "distinct_codes": 2,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 1
+      },
+      {
+        "task": "merge_intervals",
+        "split": "train",
+        "seed": 2,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          8.333333333333334,
+          8.333333333333334,
+          8.333333333333334
+        ],
+        "codes": [
+          "def merge_intervals(intervals: list[list[int]]) -> list[list[int]]:\n    if not intervals:\n        return []\n\n    # Sort intervals by their start time\n    intervals.sort(key=lambda x: x[0])\n\n    merged = [intervals[0]]\n    for interval in intervals[1:]:\n        if interval[0] <= merged[-1][1]:\n            # Merge overlapping intervals\n            merged[-1][1] = max(merged[-1][1], interval[1])\n        else:\n            # Add non-overlapping interval to the result\n            merged.append(interval)\n\n    return merged",
+          "def merge_intervals(intervals: list[list[int]]) -> list[list[int]]:\n    if not intervals:\n        return []\n\n    # Sort intervals by their start time\n    intervals.sort(key=lambda x: x[0])\n\n    merged = [intervals[0]]\n    for interval in intervals[1:]:\n        if interval[0] > merged[-1][1]:\n            # Add non-overlapping interval to the result\n            merged.append(interval)\n        else:\n            # Merge overlapping intervals\n            merged[-1][1] = max(merged[-1][1], interval[1])\n\n    return merged",
+          "def merge_intervals(intervals: list[list[int]]) -> list[list[int]]:\n    if not intervals:\n        return []\n\n    # Sort intervals by their start time\n    intervals.sort(key=lambda x: x[0])\n\n    merged = [intervals[0]]\n    for interval in intervals[1:]:\n        if interval[0] > merged[-1][1]:\n            # Add non-overlapping interval to the result\n            merged.append(interval)\n        else:\n            # Merge overlapping intervals\n            start = min(merged[-1][0], interval[0])\n            end = max(merged[-1][1], interval[1])\n            merged[-1] = [start, end]\n\n    return merged"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `merge_intervals(intervals: list[list[int]]) -> list[list[int]]` that merges overlapping closed intervals and returns them sorted by start. The input may be unsorted, intervals that merely touch are merged ([1,2] and [2,3] -> [1,3]), and the input list must not be modified. An empty list gives an empty list.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 8.3 (test_failure).\nYour previous code:\n```python\ndef merge_intervals(intervals: list[list[int]]) -> list[list[int]]:\n    if not intervals:\n        return []\n\n    # Sort intervals by their start time\n    intervals.sort(key=lambda x: x[0])\n\n    merged = [intervals[0]]\n    for interval in intervals[1:]:\n        if interval[0] <= merged[-1][1]:\n            # Merge overlapping intervals\n            merged[-1][1] = max(merged[-1][1], interval[1])\n        else:\n            # Add non-overlapping interval to the result\n            merged.append(interval)\n\n    return merged\n```\nExecution feedback:\n---\n1 of 6 hidden tests failed. First failures:\n  - data = [[5, 6], [1, 2]]\nmerge_intervals(data)\nassert data == [[5, 6], [1, 2]], \"input list was modified\" -> AssertionError: input list was modified\nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            8.333333333333334,
+            8.333333333333334,
+            33.333333333333336
+          ],
+          "distinct_codes": 3,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 3
+      },
+      {
+        "task": "compress_ranges",
+        "split": "train",
+        "seed": 2,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          30.0,
+          30.0,
+          30.0
+        ],
+        "codes": [
+          "def compress_ranges(nums: list[int]) -> str:\n    if not nums:\n        return \"\"\n\n    nums.sort()\n    compressed = []\n    start = nums[0]\n\n    for i in range(1, len(nums)):\n        if nums[i] == nums[i - 1] + 1:\n            continue\n        elif nums[i] != start:\n            compressed.append(f\"{start}-{nums[i-1]}\")\n        else:\n            compressed.append(str(start))\n\n        start = nums[i]\n\n    if start != nums[-1]:\n        compressed.append(f\"{start}-{nums[-1]}\")\n    else:\n        compressed.append(str(start))\n\n    return \",\".join(compressed)",
+          "def compress_ranges(nums: list[int]) -> str:\n    if not nums:\n        return \"\"\n\n    nums.sort()\n    compressed = []\n    start = nums[0]\n\n    for i in range(1, len(nums)):\n        if nums[i] == nums[i - 1] + 1:\n            continue\n        elif nums[i] != start:\n            if compressed and compressed[-1].endswith('-'):\n                compressed[-1] += f\",{nums[i-1]}\"\n            else:\n                compressed.append(f\"{start}-{nums[i-1]}\")\n        else:\n            compressed.append(str(start))\n\n        start = nums[i]\n\n    if start != nums[-1]:\n        if compressed and compressed[-1].endswith('-'):\n            compressed[-1] += f\",{nums[-1]}\"\n        else:\n            compressed.append(f\"{start}-{nums[-1]}\")\n    else:\n        compressed.append(str(start))\n\n    return \",\".join(compressed)",
+          "def compress_ranges(nums: list[int]) -> str:\n    if not nums:\n        return \"\"\n\n    nums.sort()\n    compressed = []\n    start = nums[0]\n\n    for i in range(1, len(nums)):\n        if nums[i] == nums[i - 1] + 1:\n            continue\n        elif nums[i] != start:\n            if compressed and compressed[-1].endswith('-'):\n                compressed[-1] += f\",{nums[i-1]}\"\n            else:\n                compressed.append(f\"{start}-{nums[i-1]}\")\n        else:\n            compressed.append(str(start))\n\n        start = nums[i]\n\n    if start != nums[-1]:\n        if compressed and compressed[-1].endswith('-'):\n            compressed[-1] += f\",{nums[-1]}\"\n        else:\n            compressed.append(f\"{start}-{nums[-1]}\")\n    else:\n        compressed.append(str(start))\n\n    return \",\".join(compressed)"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `compress_ranges(nums: list[int]) -> str` that turns a list of integers into a compact range string: [1,2,3,5,7,8] -> '1-3,5,7-8'. The input may be unsorted and contain duplicates. A run of two consecutive numbers is also written as a range ('7-8'). An empty list gives an empty string.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 30.0 (test_failure).\nYour previous code:\n```python\ndef compress_ranges(nums: list[int]) -> str:\n    if not nums:\n        return \"\"\n\n    nums.sort()\n    compressed = []\n    start = nums[0]\n\n    for i in range(1, len(nums)):\n        if nums[i] == nums[i - 1] + 1:\n            continue\n        elif nums[i] != start:\n            compressed.append(f\"{start}-{nums[i-1]}\")\n        else:\n            compressed.append(str(start))\n\n        start = nums[i]\n\n    if start != nums[-1]:\n        compressed.append(f\"{start}-{nums[-1]}\")\n    else:\n        compressed.append(str(start))\n\n    return \",\".join(compressed)\n```\nExecution feedback:\n---\n3 of 5 hidden tests failed. First failures:\n  - assert compress_ranges([1, 2, 3, 5, 7, 8]) == '1-3,5,7-8' -> AssertionError: \n  - assert compress_ranges([3, 1, 2, 2, 10]) == '1-3,10' -> AssertionError: \n  - assert compress_ranges([1, 3, 5]) == '1,3,5' -> AssertionError: \nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            30.0,
+            30.0,
+            40.0
+          ],
+          "distinct_codes": 2,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 2
+      },
+      {
+        "task": "expand_ranges",
+        "split": "test",
+        "seed": 2,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          41.666666666666664,
+          41.666666666666664,
+          41.666666666666664
+        ],
+        "codes": [
+          "def expand_ranges(s: str) -> list[int]:\n    if not s:\n        return []\n\n    def parse_range(part):\n        start, end = part.split('-')\n        if not start.isdigit() or not end.isdigit():\n            raise ValueError(f\"Invalid range part: {part}\")\n\n        start, end = int(start), int(end)\n        if start > end:\n            raise ValueError(f\"Descending range detected: {part}\")\n\n        return list(range(start, end + 1))\n\n    parts = s.split(',')\n    expanded = []\n\n    for part in parts:\n        try:\n            expanded.extend(parse_range(part))\n        except ValueError as e:\n            print(f\"Skipping invalid range part: {part} - {e}\")\n\n    return sorted(expanded)",
+          "def expand_ranges(s: str) -> list[int]:\n    if not s:\n        return []\n\n    def parse_range(part):\n        start, end = part.split('-')\n        if not start.isdigit() or not end.isdigit():\n            raise ValueError(f\"Invalid range part: {part}\")\n\n        start, end = int(start), int(end)\n        if start > end:\n            raise ValueError(f\"Descending range detected: {part}\")\n\n        return list(range(start, end + 1))\n\n    parts = s.split(',')\n    expanded = []\n\n    for part in parts:\n        try:\n            expanded.extend(parse_range(part))\n        except ValueError as e:\n            print(f\"Skipping invalid range part: {part} - {e}\")\n            continue\n\n    return sorted(expanded)",
+          "def expand_ranges(s: str) -> list[int]:\n    if not s:\n        return []\n\n    def parse_range(part):\n        start, end = part.split('-')\n        if not start.isdigit() or not end.isdigit():\n            raise ValueError(f\"Invalid range part: {part}\")\n\n        start, end = int(start), int(end)\n        if start > end:\n            raise ValueError(f\"Descending range detected: {part}\")\n\n        return list(range(start, end + 1))\n\n    parts = s.split(',')\n    expanded = []\n\n    for part in parts:\n        try:\n            parsed_range = parse_range(part)\n            # Check for overlapping ranges\n            if expanded and parsed_range[0] <= expanded[-1]:\n                expanded[-1] = max(expanded[-1], parsed_range[-1])\n            else:\n                expanded.extend(parsed_range)\n        except ValueError as e:\n            print(f\"Skipping invalid range part: {part} - {e}\")\n            continue\n\n    return sorted(expanded)"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `expand_ranges(s: str) -> list[int]` that expands a compact range string into a sorted list of distinct integers: '1-3,5,7-8' -> [1,2,3,5,7,8]. Parts may be in any order and may overlap. An empty string gives an empty list. Raise ValueError for malformed parts such as 'a', '3-' or a descending range like '5-2'.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 41.7 (test_failure).\nYour previous code:\n```python\ndef expand_ranges(s: str) -> list[int]:\n    if not s:\n        return []\n\n    def parse_range(part):\n        start, end = part.split('-')\n        if not start.isdigit() or not end.isdigit():\n            raise ValueError(f\"Invalid range part: {part}\")\n\n        start, end = int(start), int(end)\n        if start > end:\n            raise ValueError(f\"Descending range detected: {part}\")\n\n        return list(range(start, end + 1))\n\n    parts = s.split(',')\n    expanded = []\n\n    for part in parts:\n        try:\n            expanded.extend(parse_range(part))\n        except ValueError as e:\n            print(f\"Skipping invalid range part: {part} - {e}\")\n\n    return sorted(expanded)\n```\nExecution feedback:\n---\n5 of 6 hidden tests failed. First failures:\n  - assert expand_ranges('1-3,5,7-8') == [1, 2, 3, 5, 7, 8] -> AssertionError: \n  - assert expand_ranges('5') == [5] -> AssertionError: \n  - assert expand_ranges('7-8,1-3,2-4') == [1, 2, 3, 4, 7, 8] -> AssertionError: \nReturn code: 0\nStderr:\n(empty)\nStdout:\nSkipping invalid range part: 5 - not enough values to unpack (expected 2, got 1)\nSkipping invalid range part: 5 - not enough values to unpack (expected 2, got 1)\nSkipping invalid range part: 5-2 - Descending range detected: 5-2\nSkipping invalid range part: 1 - not enough values to unpack (expected 2, got 1)\nSkipping invalid range part: a - not enough values to unpack (expected 2, got 1)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            41.666666666666664,
+            41.666666666666664,
+            41.666666666666664
+          ],
+          "distinct_codes": 3,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 3
+      },
+      {
+        "task": "missing_ranges",
+        "split": "test",
+        "seed": 2,
+        "converged": false,
+        "iterations": 3,
+        "energies": [
+          10.0,
+          10.0,
+          10.0
+        ],
+        "codes": [
+          "def missing_ranges(nums: list[int], lo: int, hi: int) -> list[list[int]]:\n    result = []\n    if not nums:\n        return [[lo, hi]] if lo <= hi else []\n\n    nums.append(hi + 1)\n    start = lo\n\n    for num in nums:\n        if num > start:\n            result.append([start, num - 1])\n        start = num + 1\n\n    return result",
+          "def missing_ranges(nums: list[int], lo: int, hi: int) -> list[list[int]]:\n    result = []\n    if not nums:\n        return [[lo, hi]] if lo <= hi else []\n\n    nums.append(hi + 1)\n    start = lo\n\n    for num in nums:\n        if num > start:\n            result.append([start, num - 1])\n        start = num + 1\n\n    return result",
+          "def missing_ranges(nums: list[int], lo: int, hi: int) -> list[list[int]]:\n    result = []\n    if not nums:\n        return [[lo, hi]] if lo <= hi else []\n\n    nums.append(hi + 1)\n    start = lo\n\n    for num in nums:\n        if num > start:\n            result.append([start, num - 1])\n        start = num + 1\n\n    return result"
+        ],
+        "first_prompt_feedback": "TASK: Write a function `missing_ranges(nums: list[int], lo: int, hi: int) -> list[list[int]]` that returns the closed intervals of integers in [lo, hi] that do not appear in nums, sorted by start. nums may be unsorted, contain duplicates and contain values outside [lo, hi]. missing_ranges([0, 1, 3, 50, 75], 0, 99) is [[2, 2], [4, 49], [51, 74], [76, 99]]. If nothing is missing return an empty list.\n\nPAIN SIGNAL: Your previous attempt failed with Energy 10.0 (test_failure).\nYour previous code:\n```python\ndef missing_ranges(nums: list[int], lo: int, hi: int) -> list[list[int]]:\n    result = []\n    if not nums:\n        return [[lo, hi]] if lo <= hi else []\n\n    nums.append(hi + 1)\n    start = lo\n\n    for num in nums:\n        if num > start:\n            result.append([start, num - 1])\n        start = num + 1\n\n    return result\n```\nExecution feedback:\n---\n1 of 5 hidden tests failed. First failures:\n  - assert missing_ranges([3, 1, 1, 9, -4], 1, 5) == [[2, 2], [4, 5]] -> AssertionError: \nReturn code: 0\nStderr:\n(empty)\nStdout:\n(empty)\n---\nAnalyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block.",
+        "adaptive": {
+          "converged": false,
+          "energies": [
+            10.0,
+            10.0,
+            40.0
+          ],
+          "distinct_codes": 2,
+          "same_first_attempt": true
+        },
+        "distinct_codes": 1
+      }
+    ]
+  },
+  "uc3": {
+    "title": "Pain prompt ablation",
+    "question": "Does showing the model its own failing code raise the retry fix rate?",
+    "failed_first_attempts": 8,
+    "without_code": {
+      "retries": 16,
+      "fixed": 2,
+      "fix_rate": 0.125,
+      "mean_energy_after": 12.797619047619047
+    },
+    "with_code": {
+      "retries": 16,
+      "fixed": 4,
+      "fix_rate": 0.25,
+      "mean_energy_after": 15.625
+    },
+    "rows": [
+      {
+        "task": "rotate_string",
+        "origin_seed": 1,
+        "variant": "without_code",
+        "seed": 1,
+        "energy_before": 10.0,
+        "energy_after": 0.0,
+        "fixed": true
+      },
+      {
+        "task": "rotate_string",
+        "origin_seed": 1,
+        "variant": "without_code",
+        "seed": 2,
+        "energy_before": 10.0,
+        "energy_after": 0.0,
+        "fixed": true
+      },
+      {
+        "task": "rotate_string",
+        "origin_seed": 1,
+        "variant": "with_code",
+        "seed": 1,
+        "energy_before": 10.0,
+        "energy_after": 0.0,
+        "fixed": true
+      },
+      {
+        "task": "rotate_string",
+        "origin_seed": 1,
+        "variant": "with_code",
+        "seed": 2,
+        "energy_before": 10.0,
+        "energy_after": 0.0,
+        "fixed": true
+      },
+      {
+        "task": "validate_ipv4",
+        "origin_seed": 1,
+        "variant": "without_code",
+        "seed": 1,
+        "energy_before": 7.142857142857143,
+        "energy_after": 7.142857142857143,
+        "fixed": false
+      },
+      {
+        "task": "validate_ipv4",
+        "origin_seed": 1,
+        "variant": "without_code",
+        "seed": 2,
+        "energy_before": 7.142857142857143,
+        "energy_after": 7.142857142857143,
+        "fixed": false
+      },
+      {
+        "task": "validate_ipv4",
+        "origin_seed": 1,
+        "variant": "with_code",
+        "seed": 1,
+        "energy_before": 7.142857142857143,
+        "energy_after": 0.0,
+        "fixed": true
+      },
+      {
+        "task": "validate_ipv4",
+        "origin_seed": 1,
+        "variant": "with_code",
+        "seed": 2,
+        "energy_before": 7.142857142857143,
+        "energy_after": 0.0,
+        "fixed": true
+      },
+      {
+        "task": "parse_duration",
+        "origin_seed": 1,
+        "variant": "without_code",
+        "seed": 1,
+        "energy_before": 28.571428571428573,
+        "energy_after": 28.571428571428573,
+        "fixed": false
+      },
+      {
+        "task": "parse_duration",
+        "origin_seed": 1,
+        "variant": "without_code",
+        "seed": 2,
+        "energy_before": 28.571428571428573,
+        "energy_after": 28.571428571428573,
+        "fixed": false
+      },
+      {
+        "task": "parse_duration",
+        "origin_seed": 1,
+        "variant": "with_code",
+        "seed": 1,
+        "energy_before": 28.571428571428573,
+        "energy_after": 28.571428571428573,
+        "fixed": false
+      },
+      {
+        "task": "parse_duration",
+        "origin_seed": 1,
+        "variant": "with_code",
+        "seed": 2,
+        "energy_before": 28.571428571428573,
+        "energy_after": 28.571428571428573,
+        "fixed": false
+      },
+      {
+        "task": "validate_hex_color",
+        "origin_seed": 1,
+        "variant": "without_code",
+        "seed": 1,
+        "energy_before": 7.142857142857143,
+        "energy_after": 7.142857142857143,
+        "fixed": false
+      },
+      {
+        "task": "validate_hex_color",
+        "origin_seed": 1,
+        "variant": "without_code",
+        "seed": 2,
+        "energy_before": 7.142857142857143,
+        "energy_after": 7.142857142857143,
+        "fixed": false
+      },
+      {
+        "task": "validate_hex_color",
+        "origin_seed": 1,
+        "variant": "with_code",
+        "seed": 1,
+        "energy_before": 7.142857142857143,
+        "energy_after": 7.142857142857143,
+        "fixed": false
+      },
+      {
+        "task": "validate_hex_color",
+        "origin_seed": 1,
+        "variant": "with_code",
+        "seed": 2,
+        "energy_before": 7.142857142857143,
+        "energy_after": 7.142857142857143,
+        "fixed": false
+      },
+      {
+        "task": "parse_size",
+        "origin_seed": 1,
+        "variant": "without_code",
+        "seed": 1,
+        "energy_before": 7.142857142857143,
+        "energy_after": 7.142857142857143,
+        "fixed": false
+      },
+      {
+        "task": "parse_size",
+        "origin_seed": 1,
+        "variant": "without_code",
+        "seed": 2,
+        "energy_before": 7.142857142857143,
+        "energy_after": 35.714285714285715,
+        "fixed": false
+      },
+      {
+        "task": "parse_size",
+        "origin_seed": 1,
+        "variant": "with_code",
+        "seed": 1,
+        "energy_before": 7.142857142857143,
+        "energy_after": 7.142857142857143,
+        "fixed": false
+      },
+      {
+        "task": "parse_size",
+        "origin_seed": 1,
+        "variant": "with_code",
+        "seed": 2,
+        "energy_before": 7.142857142857143,
+        "energy_after": 7.142857142857143,
+        "fixed": false
+      },
+      {
+        "task": "camel_to_snake",
+        "origin_seed": 1,
+        "variant": "without_code",
+        "seed": 1,
+        "energy_before": 28.571428571428573,
+        "energy_after": 21.428571428571427,
+        "fixed": false
+      },
+      {
+        "task": "camel_to_snake",
+        "origin_seed": 1,
+        "variant": "without_code",
+        "seed": 2,
+        "energy_before": 28.571428571428573,
+        "energy_after": 21.428571428571427,
+        "fixed": false
+      },
+      {
+        "task": "camel_to_snake",
+        "origin_seed": 1,
+        "variant": "with_code",
+        "seed": 1,
+        "energy_before": 28.571428571428573,
+        "energy_after": 35.714285714285715,
+        "fixed": false
+      },
+      {
+        "task": "camel_to_snake",
+        "origin_seed": 1,
+        "variant": "with_code",
+        "seed": 2,
+        "energy_before": 28.571428571428573,
+        "energy_after": 28.571428571428573,
+        "fixed": false
+      },
+      {
+        "task": "snake_to_camel",
+        "origin_seed": 1,
+        "variant": "without_code",
+        "seed": 1,
+        "energy_before": 41.666666666666664,
+        "energy_after": 8.333333333333334,
+        "fixed": false
+      },
+      {
+        "task": "snake_to_camel",
+        "origin_seed": 1,
+        "variant": "without_code",
+        "seed": 2,
+        "energy_before": 41.666666666666664,
+        "energy_after": 8.333333333333334,
+        "fixed": false
+      },
+      {
+        "task": "snake_to_camel",
+        "origin_seed": 1,
+        "variant": "with_code",
+        "seed": 1,
+        "energy_before": 41.666666666666664,
+        "energy_after": 41.666666666666664,
+        "fixed": false
+      },
+      {
+        "task": "snake_to_camel",
+        "origin_seed": 1,
+        "variant": "with_code",
+        "seed": 2,
+        "energy_before": 41.666666666666664,
+        "energy_after": 41.666666666666664,
+        "fixed": false
+      },
+      {
+        "task": "run_length_decode",
+        "origin_seed": 1,
+        "variant": "without_code",
+        "seed": 1,
+        "energy_before": 8.333333333333334,
+        "energy_after": 8.333333333333334,
+        "fixed": false
+      },
+      {
+        "task": "run_length_decode",
+        "origin_seed": 1,
+        "variant": "without_code",
+        "seed": 2,
+        "energy_before": 8.333333333333334,
+        "energy_after": 8.333333333333334,
+        "fixed": false
+      },
+      {
+        "task": "run_length_decode",
+        "origin_seed": 1,
+        "variant": "with_code",
+        "seed": 1,
+        "energy_before": 8.333333333333334,
+        "energy_after": 8.333333333333334,
+        "fixed": false
+      },
+      {
+        "task": "run_length_decode",
+        "origin_seed": 1,
+        "variant": "with_code",
+        "seed": 2,
+        "energy_before": 8.333333333333334,
+        "energy_after": 8.333333333333334,
+        "fixed": false
+      }
+    ]
+  },
+  "uc4": {
+    "title": "Memory transfer",
+    "question": "Do verified lessons from train tasks help on unseen sibling tasks?",
+    "runs": 20,
+    "memory_off": {
+      "pass_at_1": 0.35,
+      "pass_at_n": 0.5,
+      "mean_first_energy": 15.083333333333334,
+      "mean_iterations": 2.15
+    },
+    "memory_on": {
+      "pass_at_1": 0.35,
+      "pass_at_n": 0.4,
+      "mean_first_energy": 13.261904761904763,
+      "mean_iterations": 2.25
+    },
+    "regressions": 3,
+    "gains": 1,
+    "rows": [
+      {
+        "task": "rotate_string",
+        "seed": 1,
+        "lessons_in_memory": 6,
+        "lessons_used": 2,
+        "off": {
+          "converged": true,
+          "iterations": 2,
+          "e1": 10.0
+        },
+        "on": {
+          "converged": true,
+          "iterations": 1,
+          "e1": 0.0
+        }
+      },
+      {
+        "task": "sliding_windows",
+        "seed": 1,
+        "lessons_in_memory": 6,
+        "lessons_used": 2,
+        "off": {
+          "converged": true,
+          "iterations": 1,
+          "e1": 0.0
+        },
+        "on": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 20.0
+        }
+      },
+      {
+        "task": "validate_hex_color",
+        "seed": 1,
+        "lessons_in_memory": 6,
+        "lessons_used": 1,
+        "off": {
+          "converged": true,
+          "iterations": 2,
+          "e1": 7.142857142857143
+        },
+        "on": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 7.142857142857143
+        }
+      },
+      {
+        "task": "parse_size",
+        "seed": 1,
+        "lessons_in_memory": 6,
+        "lessons_used": 1,
+        "off": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 7.142857142857143
+        },
+        "on": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 14.285714285714286
+        }
+      },
+      {
+        "task": "nth_fibonacci",
+        "seed": 1,
+        "lessons_in_memory": 6,
+        "lessons_used": 2,
+        "off": {
+          "converged": true,
+          "iterations": 1,
+          "e1": 0.0
+        },
+        "on": {
+          "converged": true,
+          "iterations": 1,
+          "e1": 0.0
+        }
+      },
+      {
+        "task": "second_largest",
+        "seed": 1,
+        "lessons_in_memory": 6,
+        "lessons_used": 2,
+        "off": {
+          "converged": true,
+          "iterations": 1,
+          "e1": 0.0
+        },
+        "on": {
+          "converged": true,
+          "iterations": 1,
+          "e1": 0.0
+        }
+      },
+      {
+        "task": "snake_to_camel",
+        "seed": 1,
+        "lessons_in_memory": 6,
+        "lessons_used": 0,
+        "off": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 41.666666666666664
+        },
+        "on": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 41.666666666666664
+        }
+      },
+      {
+        "task": "run_length_decode",
+        "seed": 1,
+        "lessons_in_memory": 6,
+        "lessons_used": 2,
+        "off": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 8.333333333333334
+        },
+        "on": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 8.333333333333334
+        }
+      },
+      {
+        "task": "expand_ranges",
+        "seed": 1,
+        "lessons_in_memory": 6,
+        "lessons_used": 2,
+        "off": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 41.666666666666664
+        },
+        "on": {
+          "converged": true,
+          "iterations": 2,
+          "e1": 16.666666666666668
+        }
+      },
+      {
+        "task": "missing_ranges",
+        "seed": 1,
+        "lessons_in_memory": 6,
+        "lessons_used": 0,
+        "off": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 40.0
+        },
+        "on": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 40.0
+        }
+      },
+      {
+        "task": "rotate_string",
+        "seed": 2,
+        "lessons_in_memory": 5,
+        "lessons_used": 2,
+        "off": {
+          "converged": true,
+          "iterations": 1,
+          "e1": 0.0
+        },
+        "on": {
+          "converged": true,
+          "iterations": 1,
+          "e1": 0.0
+        }
+      },
+      {
+        "task": "sliding_windows",
+        "seed": 2,
+        "lessons_in_memory": 5,
+        "lessons_used": 2,
+        "off": {
+          "converged": true,
+          "iterations": 1,
+          "e1": 0.0
+        },
+        "on": {
+          "converged": true,
+          "iterations": 1,
+          "e1": 0.0
+        }
+      },
+      {
+        "task": "validate_hex_color",
+        "seed": 2,
+        "lessons_in_memory": 5,
+        "lessons_used": 0,
+        "off": {
+          "converged": true,
+          "iterations": 1,
+          "e1": 0.0
+        },
+        "on": {
+          "converged": true,
+          "iterations": 1,
+          "e1": 0.0
+        }
+      },
+      {
+        "task": "parse_size",
+        "seed": 2,
+        "lessons_in_memory": 5,
+        "lessons_used": 1,
+        "off": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 35.714285714285715
+        },
+        "on": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 7.142857142857143
+        }
+      },
+      {
+        "task": "nth_fibonacci",
+        "seed": 2,
+        "lessons_in_memory": 5,
+        "lessons_used": 2,
+        "off": {
+          "converged": true,
+          "iterations": 2,
+          "e1": 8.333333333333334
+        },
+        "on": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 8.333333333333334
+        }
+      },
+      {
+        "task": "second_largest",
+        "seed": 2,
+        "lessons_in_memory": 5,
+        "lessons_used": 2,
+        "off": {
+          "converged": true,
+          "iterations": 1,
+          "e1": 0.0
+        },
+        "on": {
+          "converged": true,
+          "iterations": 1,
+          "e1": 0.0
+        }
+      },
+      {
+        "task": "snake_to_camel",
+        "seed": 2,
+        "lessons_in_memory": 5,
+        "lessons_used": 0,
+        "off": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 41.666666666666664
+        },
+        "on": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 41.666666666666664
+        }
+      },
+      {
+        "task": "run_length_decode",
+        "seed": 2,
+        "lessons_in_memory": 5,
+        "lessons_used": 2,
+        "off": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 8.333333333333334
+        },
+        "on": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 41.666666666666664
+        }
+      },
+      {
+        "task": "expand_ranges",
+        "seed": 2,
+        "lessons_in_memory": 5,
+        "lessons_used": 2,
+        "off": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 41.666666666666664
+        },
+        "on": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 8.333333333333334
+        }
+      },
+      {
+        "task": "missing_ranges",
+        "seed": 2,
+        "lessons_in_memory": 5,
+        "lessons_used": 0,
+        "off": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 10.0
+        },
+        "on": {
+          "converged": false,
+          "iterations": 3,
+          "e1": 10.0
+        }
+      }
+    ]
+  },
+  "uc1": {
+    "title": "Honest energy",
+    "question": "How often does the legacy self-graded loop claim convergence on code that fails hidden tests?",
+    "runs": 20,
+    "claimed_converged": 11,
+    "verified_pass": 7,
+    "false_convergences": 4,
+    "false_convergence_rate": 0.36363636363636365,
+    "rows": [
+      {
+        "task": "rotate_list",
+        "seed": 1,
+        "claimed_converged": true,
+        "claimed_energy": 0.0,
+        "verified_pass": true,
+        "verified_energy": 0.0
+      },
+      {
+        "task": "chunk_list",
+        "seed": 1,
+        "claimed_converged": true,
+        "claimed_energy": 0.0,
+        "verified_pass": true,
+        "verified_energy": 0.0
+      },
+      {
+        "task": "rotate_string",
+        "seed": 1,
+        "claimed_converged": false,
+        "claimed_energy": 50.0,
+        "verified_pass": false,
+        "verified_energy": 50.0
+      },
+      {
+        "task": "sliding_windows",
+        "seed": 1,
+        "claimed_converged": true,
+        "claimed_energy": 5.0,
+        "verified_pass": true,
+        "verified_energy": 0.0
+      },
+      {
+        "task": "validate_ipv4",
+        "seed": 1,
+        "claimed_converged": false,
+        "claimed_energy": 50.0,
+        "verified_pass": false,
+        "verified_energy": 50.0
+      },
+      {
+        "task": "parse_duration",
+        "seed": 1,
+        "claimed_converged": true,
+        "claimed_energy": 5.0,
+        "verified_pass": false,
+        "verified_energy": 28.571428571428573
+      },
+      {
+        "task": "validate_hex_color",
+        "seed": 1,
+        "claimed_converged": true,
+        "claimed_energy": 0.0,
+        "verified_pass": true,
+        "verified_energy": 0.0
+      },
+      {
+        "task": "parse_size",
+        "seed": 1,
+        "claimed_converged": false,
+        "claimed_energy": 60.0,
+        "verified_pass": false,
+        "verified_energy": 60.0
+      },
+      {
+        "task": "factorial",
+        "seed": 1,
+        "claimed_converged": true,
+        "claimed_energy": 0.0,
+        "verified_pass": true,
+        "verified_energy": 0.0
+      },
+      {
+        "task": "median",
+        "seed": 1,
+        "claimed_converged": true,
+        "claimed_energy": 5.0,
+        "verified_pass": true,
+        "verified_energy": 0.0
+      },
+      {
+        "task": "nth_fibonacci",
+        "seed": 1,
+        "claimed_converged": false,
+        "claimed_energy": 50.0,
+        "verified_pass": false,
+        "verified_energy": 50.0
+      },
+      {
+        "task": "second_largest",
+        "seed": 1,
+        "claimed_converged": true,
+        "claimed_energy": 5.0,
+        "verified_pass": true,
+        "verified_energy": 0.0
+      },
+      {
+        "task": "camel_to_snake",
+        "seed": 1,
+        "claimed_converged": true,
+        "claimed_energy": 5.0,
+        "verified_pass": false,
+        "verified_energy": 21.428571428571427
+      },
+      {
+        "task": "run_length_encode",
+        "seed": 1,
+        "claimed_converged": false,
+        "claimed_energy": 50.0,
+        "verified_pass": false,
+        "verified_energy": 50.0
+      },
+      {
+        "task": "snake_to_camel",
+        "seed": 1,
+        "claimed_converged": false,
+        "claimed_energy": 50.0,
+        "verified_pass": false,
+        "verified_energy": 50.0
+      },
+      {
+        "task": "run_length_decode",
+        "seed": 1,
+        "claimed_converged": false,
+        "claimed_energy": 50.0,
+        "verified_pass": false,
+        "verified_energy": 50.0
+      },
+      {
+        "task": "merge_intervals",
+        "seed": 1,
+        "claimed_converged": false,
+        "claimed_energy": 50.0,
+        "verified_pass": false,
+        "verified_energy": 50.0
+      },
+      {
+        "task": "compress_ranges",
+        "seed": 1,
+        "claimed_converged": false,
+        "claimed_energy": 50.0,
+        "verified_pass": false,
+        "verified_energy": 50.0
+      },
+      {
+        "task": "expand_ranges",
+        "seed": 1,
+        "claimed_converged": true,
+        "claimed_energy": 5.0,
+        "verified_pass": false,
+        "verified_energy": 41.666666666666664
+      },
+      {
+        "task": "missing_ranges",
+        "seed": 1,
+        "claimed_converged": true,
+        "claimed_energy": 5.0,
+        "verified_pass": false,
+        "verified_energy": 10.0
+      }
+    ]
+  },
+  "gate": {
+    "G1 legacy false convergences are exposed (measured, informational)": true,
+    "G2 plain retry rescues at least one failed first attempt": true,
+    "G2b adaptive retry rescues more failed first attempts than plain retry": false,
+    "G3 fix rate with code >= without code": true,
+    "G4 memory on: pass@1 >= memory off and no net regression": false,
+    "G5 zero crashes, false convergences, missed controls, poisoned memories": true
+  },
+  "finished": "2026-09-21 17:27:21"
+}

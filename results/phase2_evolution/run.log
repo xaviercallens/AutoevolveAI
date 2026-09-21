@@ -1,0 +1,32 @@
+WARNING:anse.jepa.dataset:JSONL file not found: /home/xavkal/xdev/AutoevolveAI/results/phase1_evolution/traces_uc4_memory.jsonl — contributes no samples
+Phase 2 evolution: 42 verified states, 20 tasks, 22 transitions, fail/pass=33/9, 25 duplicate traces dropped, first attempts=20 (fail/pass=11/9), d=1536
+  trained seed=1: 12 models, 37.6s CPU
+  trained seed=2: 12 models, 33.6s CPU
+  trained seed=3: 12 models, 37.8s CPU
+  trained seed=4: 12 models, 38.1s CPU
+  trained seed=5: 12 models, 37.4s CPU
+  UC1 seed=1 first-attempt MAE jepa=7.8222 first_mean=10.2937 first_median=11.131 ridge=10.9056 spearman=0.5359 | all states (leaky) jepa=12.3948 mean=12.204
+  UC1 seed=2 first-attempt MAE jepa=11.7121 first_mean=9.7778 first_median=9.2262 ridge=10.4044 spearman=0.0396 | all states (leaky) jepa=13.9524 mean=11.0227
+  UC1 seed=3 first-attempt MAE jepa=10.0712 first_mean=9.8333 first_median=10.2976 ridge=10.502 spearman=0.0016 | all states (leaky) jepa=11.3105 mean=10.8451
+  UC1 seed=4 first-attempt MAE jepa=11.1127 first_mean=10.1032 first_median=10.3571 ridge=10.962 spearman=0.0166 | all states (leaky) jepa=12.5138 mean=11.0687
+  UC1 seed=5 first-attempt MAE jepa=10.0143 first_mean=9.8333 first_median=11.131 ridge=10.6309 spearman=-0.0792 | all states (leaky) jepa=12.8772 mean=11.6667
+  UC2 seed=1 first-attempt AUC jepa=0.7778 ridge=0.6566 | all states (leaky) jepa=0.8519 iteration-number=0.8333
+  UC2 seed=2 first-attempt AUC jepa=0.5354 ridge=0.7475 | all states (leaky) jepa=0.6296 iteration-number=0.8333
+  UC2 seed=3 first-attempt AUC jepa=0.5859 ridge=0.5657 | all states (leaky) jepa=0.7306 iteration-number=0.8333
+  UC2 seed=4 first-attempt AUC jepa=0.4848 ridge=0.3535 | all states (leaky) jepa=0.6162 iteration-number=0.8333
+  UC2 seed=5 first-attempt AUC jepa=0.3838 ridge=0.7576 | all states (leaky) jepa=0.6094 iteration-number=0.8333
+  UC3 22 transitions, 18 of them with byte-identical code (identity error is exactly 0 there, so 'nothing changes' is unbeatable on them). Relative error (predictor / identity, < 1 beats 'nothing changes'): self-pairs 1.2696, mixed 1.0316, transition-only 1.2272.
+  UC4 all={'picks': 20, 'intuition_pass_rate': 0.0, 'random_pass_rate': 0.0, 'oracle_pass_rate': 0.0, 'ridge_pass_rate': 0.0} decidable={'picks': 0}
+WARNING:anse.jepa.dataset:Skipping malformed JSON at /home/xavkal/xdev/AutoevolveAI/results/phase2_evolution/uc5_nan_empty.jsonl:4
+  UC5 no_representation_collapse                   passed=True
+  UC5 dimension_mismatch_raises                    passed=True
+  UC5 nan_and_empty_states_skipped                 passed=True
+  UC5 predictions_within_0_100                     passed=True
+  UC5 raw_embedding_predicts_like_training_input   passed=True
+
+GATE
+  [FAIL] G1 held-out first-attempt MAE below the train-mean baseline (mean over seeds)
+  [FAIL] G2 held-out first-attempt ROC-AUC mean >= 0.60 and worst seed above chance
+  [FAIL] G3 with >= 10 transitions, transition-aware training beats identity and self-pairs
+  [FAIL] G4 intuition pick passes more often than random on decidable tasks
+  [PASS] G5 all robustness checks pass

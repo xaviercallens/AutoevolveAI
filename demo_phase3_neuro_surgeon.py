@@ -45,8 +45,12 @@ def run_demo_part1_active_inference() -> None:
     print("\n" + "=" * 78)
     print(f"{CYAN}{BOLD} 🔬 PART 1: The Micro-ML Reality Engine & Active Inference Loop{RESET}")
     print("=" * 78)
-    print(f"{DIM}Prompt: 'Write a PyTorch class CustomNet: [Batch, 3, 64, 64] -> [Batch, 10].{RESET}")
-    print(f"{DIM}Do not use standard Convolutional layers; invent a mathematical transformation.'{RESET}\n")
+    print(
+        f"{DIM}Prompt: 'Write a PyTorch class CustomNet: [Batch, 3, 64, 64] -> [Batch, 10].{RESET}"
+    )
+    print(
+        f"{DIM}Do not use standard Convolutional layers; invent a mathematical transformation.'{RESET}\n"
+    )
 
     loop = ActiveInferenceLoop()
     steps = loop.run_simulation()
@@ -54,19 +58,27 @@ def run_demo_part1_active_inference() -> None:
     # Turn 1
     t1 = steps[0]
     print(f"{BOLD}[TURN 1: Initial Attempt with Tensor Dimension Collapse]{RESET}")
-    print(f" • Reality Engine Verdict: {RED}{BOLD}ENERGY: {int(t1.energy)} (FAILED LAWS OF PHYSICS){RESET}")
+    print(
+        f" • Reality Engine Verdict: {RED}{BOLD}ENERGY: {int(t1.energy)} (FAILED LAWS OF PHYSICS){RESET}"
+    )
     print(f" • Intercepted Error:     {RED}{t1.error_trace}{RESET}")
     print(" • Active Inference Feedback to LLM:")
-    print(f"   ↳ {YELLOW}\"{t1.feedback_prompt}\"{RESET}\n")
+    print(f'   ↳ {YELLOW}"{t1.feedback_prompt}"{RESET}\n')
 
     # Turn 2
     t2 = steps[1]
     print(f"{BOLD}[TURN 2: Autonomous Self-Healing & Dimension Alignment]{RESET}")
-    print(" • Synthesized Architecture: Invented Spatial Orthogonal + Chebyshev Polynomial Harmonic")
-    print(f" • Reality Engine Verdict: {GREEN}{BOLD}ENERGY: {int(t2.energy)} (PHYSICALLY GROUNDED){RESET}")
+    print(
+        " • Synthesized Architecture: Invented Spatial Orthogonal + Chebyshev Polynomial Harmonic"
+    )
+    print(
+        f" • Reality Engine Verdict: {GREEN}{BOLD}ENERGY: {int(t2.energy)} (PHYSICALLY GROUNDED){RESET}"
+    )
     print(f" • Output Shape:          {GREEN}(16, 10) Verified{RESET}")
     print(f" • Proof Token Minted:    {CYAN}{t2.proof_token}{RESET}")
-    print(f" • Status:                {GREEN}{BOLD}CONVERGED IN 2 TURNS — ZERO HUMAN INTERVENTION{RESET}\n")
+    print(
+        f" • Status:                {GREEN}{BOLD}CONVERGED IN 2 TURNS — ZERO HUMAN INTERVENTION{RESET}\n"
+    )
 
 
 def run_demo_part2_neuro_surgeon() -> None:
@@ -75,7 +87,9 @@ def run_demo_part2_neuro_surgeon() -> None:
     print(f"{MAGENTA}{BOLD} 🧠 PART 2: The Autopoietic Bootstrap — The AI Neuro-Surgeon{RESET}")
     print("=" * 78)
     print(f"{DIM}Task: Feed the AI its own System 2 Continuous Learning Attention Engine{RESET}")
-    print(f"{DIM}Objective: Replace O(S²) Quadratic Attention with Memory-Efficient FlashAttention{RESET}\n")
+    print(
+        f"{DIM}Objective: Replace O(S²) Quadratic Attention with Memory-Efficient FlashAttention{RESET}\n"
+    )
 
     surgeon = AutopoieticNeuroSurgeon()
     print(f"{BOLD}[Active Parent Neural Architecture]{RESET}")
@@ -85,16 +99,24 @@ def run_demo_part2_neuro_surgeon() -> None:
     print(f"{BOLD}[Executing AI Neuro-Surgery Benchmark]{RESET}...")
     report = surgeon.execute_neuro_surgery()
 
-    print(f" • Parent Energy (E_parent): {RED}{report.parent_energy:.3f}{RESET} (Latency: {report.parent_latency_ms}ms, VRAM: {report.parent_vram_mb}MB)")
-    print(f" • Child Energy  (E_child):  {GREEN}{report.child_energy:.3f}{RESET} (Latency: {report.child_latency_ms}ms, VRAM: {report.child_vram_mb}MB)")
-    print(f" • Thermodynamic Delta:     {GREEN}{BOLD}ΔE = {report.delta_energy:.3f}{RESET} ({report.speedup_factor}x Speedup)")
+    print(
+        f" • Parent Energy (E_parent): {RED}{report.parent_energy:.3f}{RESET} (Latency: {report.parent_latency_ms}ms, VRAM: {report.parent_vram_mb}MB)"
+    )
+    print(
+        f" • Child Energy  (E_child):  {GREEN}{report.child_energy:.3f}{RESET} (Latency: {report.child_latency_ms}ms, VRAM: {report.child_vram_mb}MB)"
+    )
+    print(
+        f" • Thermodynamic Delta:     {GREEN}{BOLD}ΔE = {report.delta_energy:.3f}{RESET} ({report.speedup_factor}x Speedup)"
+    )
     print(f" • Formal Lean 4 Contract:  {CYAN}ANSE.Autopoiesis.autopoiesis_exists{RESET}")
     print(f" • Zero-Trust Proof Token:  {CYAN}{report.proof_token}{RESET}")
 
     print(f"\n{BOLD}[Live Process Hot-Swap Verdict]{RESET}")
     print(f" • Hot-Swap Status:         {GREEN}{BOLD}HOT-SWAP COMMITTED (ZERO DOWNTIME){RESET}")
     print(f" • Active Model Post-Swap:  {GREEN}{report.active_version_post_swap}{RESET}")
-    print(f" • Result:                  {GREEN}Child process took over neural weights and execution graph.{RESET}")
+    print(
+        f" • Result:                  {GREEN}Child process took over neural weights and execution graph.{RESET}"
+    )
     print("=" * 78 + "\n")
 
 

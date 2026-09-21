@@ -44,7 +44,9 @@ def l2_normalise(h: torch.Tensor) -> torch.Tensor:
     scale = h.abs().amax(dim=-1, keepdim=True).clamp_min(torch.finfo(h.dtype).tiny)
     scaled = h / scale
     norm = scaled.norm(p=2, dim=-1, keepdim=True)
-    return torch.where(norm > 0, scaled / norm.clamp_min(torch.finfo(h.dtype).tiny), torch.zeros_like(scaled))
+    return torch.where(
+        norm > 0, scaled / norm.clamp_min(torch.finfo(h.dtype).tiny), torch.zeros_like(scaled)
+    )
 
 
 # ──────────────────────────────────────────────────────────────────────────────

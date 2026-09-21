@@ -144,6 +144,8 @@ class SandboxConfig:
     """Address-space cap (RLIMIT_AS, POSIX) for Tier-1 subprocesses."""
 
     docker_image: str = "anse-sandbox:latest"
+    tier1_fallback: __import__("typing").Literal["deny", "allow_with_warning"] = "deny"
+    untrusted_requires_container: bool = True
     """Docker image used for Tier-2 isolated execution."""
 
     docker_mem_limit: str = "512m"
@@ -256,6 +258,32 @@ class PerformanceConfig:
 
 
 @dataclass
+class CriticConfig:
+    """Local Code Critic SLM settings (Ollama inference on CPU/RAM)."""
+
+    enabled: bool = False
+    """Whether the local SLM critic pre-check is active."""
+
+    ollama_base_url: str = os.getenv("ANSE_CRITIC_URL", "http://localhost:11434")
+    """URL of local Ollama instance."""
+
+    model_name: str = os.getenv("ANSE_CRITIC_MODEL", "ag-critic")
+    """Model name in Ollama (created via Modelfile.ag-critic)."""
+
+    timeout_seconds: float = 15.0
+    """HTTP timeout waiting for SLM evaluation."""
+
+    temperature: float = 0.1
+    """Deterministic sampling temperature."""
+
+    rejection_penalty: float = 1e6
+    """Energy penalty assigned when critic rejects code (Maximum Pain proxy)."""
+
+    fallback_policy: str = "allow_with_warning"
+    """Behavior when critic service is offline: 'allow_with_warning' (fail-open) or 'deny' (fail-closed)."""
+
+
+@dataclass
 class ANSEConfig:
     """Top-level configuration — compose all sub-configs here."""
 
@@ -265,6 +293,7 @@ class ANSEConfig:
     plasticity: PlasticityConfig = field(default_factory=PlasticityConfig)
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     performance: PerformanceConfig = field(default_factory=PerformanceConfig)
+    critic: CriticConfig = field(default_factory=CriticConfig)
     memory: MemoryConfig = field(default_factory=MemoryConfig)
     sleep: SleepConfig = field(default_factory=SleepConfig)
     autopoiesis: AutopoiesisConfig = field(default_factory=AutopoiesisConfig)

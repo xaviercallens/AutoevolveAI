@@ -15,7 +15,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-ATTESTATION_FILE = Path(".antigravity_attestation")
+ATTESTATION_FILE = Path(os.environ.get("ANSE_ATTESTATION_PATH", ".antigravity_attestation"))
 
 
 # Ensure UTF-8 output across Windows and POSIX
@@ -242,7 +242,8 @@ def generate_attestation_proof(target_module: str = "") -> str:
         "status": "ATTESTED",
         "verifier": "Antigravity-Execution-Attestation-Gate/1.0",
     }
-    ATTESTATION_FILE.write_text(json.dumps(receipt, indent=2), encoding="utf-8")
+    attestation_file = Path(os.environ.get("ANSE_ATTESTATION_PATH", ".antigravity_attestation"))
+    attestation_file.write_text(json.dumps(receipt, indent=2), encoding="utf-8")
     return token
 
 

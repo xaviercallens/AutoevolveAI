@@ -72,10 +72,14 @@ class TestTransitionPairs:
         ds = JEPADataset(_two_run_file(tmp_path), pair_mode="transition")
 
         h_ctx, h_tgt, energy = ds[0]
-        assert not torch.equal(h_ctx, h_tgt), "context must differ from target (old bug: ctx == tgt)"
+        assert not torch.equal(h_ctx, h_tgt), (
+            "context must differ from target (old bug: ctx == tgt)"
+        )
         assert torch.equal(h_ctx, ds.states[0].hidden)
         assert torch.equal(h_tgt, ds.states[1].hidden)
-        assert energy.item() == pytest.approx(0.20)  # energy of attempt t+1, not of attempt t (0.60)
+        assert energy.item() == pytest.approx(
+            0.20
+        )  # energy of attempt t+1, not of attempt t (0.60)
 
     def test_different_seeds_of_a_task_are_never_chained(self, tmp_path: Path) -> None:
         ds = JEPADataset(_two_run_file(tmp_path))
@@ -88,7 +92,11 @@ class TestTransitionPairs:
     def test_skipped_attempt_breaks_the_chain(self, tmp_path: Path) -> None:
         path = _write(
             tmp_path / "hole.jsonl",
-            [_trace("A", 1, 60.0, 1.0), _trace("A", 2, 40.0, 2.0, hidden_state=[]), _trace("A", 3, 0.0, 3.0)],
+            [
+                _trace("A", 1, 60.0, 1.0),
+                _trace("A", 2, 40.0, 2.0, hidden_state=[]),
+                _trace("A", 3, 0.0, 3.0),
+            ],
         )
         ds = JEPADataset(path)
 
@@ -120,7 +128,9 @@ class TestTransitionPairs:
         with pytest.raises(ValueError, match="pair_mode must be one of"):
             ds.set_pair_mode("")
 
-    def test_multiple_files_are_concatenated_without_cross_file_chains(self, tmp_path: Path) -> None:
+    def test_multiple_files_are_concatenated_without_cross_file_chains(
+        self, tmp_path: Path
+    ) -> None:
         first = _write(tmp_path / "a.jsonl", [_trace("A", 1, 50.0, 1.0)])
         second = _write(tmp_path / "b.jsonl", [_trace("A", 1, 0.0, 2.0), _trace("C", 1, 0.0, 3.0)])
         ds = JEPADataset([first, second, tmp_path / "missing.jsonl"])
@@ -138,7 +148,9 @@ class TestInputDimension:
 
     def test_wrong_declared_dimension_raises_instead_of_padding(self, tmp_path: Path) -> None:
         path = _two_run_file(tmp_path)
-        with pytest.raises(HiddenDimMismatchError, match=f"dimension {DIM} but the dataset expects 4096"):
+        with pytest.raises(
+            HiddenDimMismatchError, match=f"dimension {DIM} but the dataset expects 4096"
+        ):
             JEPADataset(path, hidden_dim=4096)
         with pytest.raises(HiddenDimMismatchError, match="refusing to pad or truncate"):
             JEPADataset(path, hidden_dim=DIM - 1)
@@ -182,13 +194,23 @@ class TestUnusableTraces:
         ds = JEPADataset(path)
 
         assert [s.task for s in ds.states] == ["A", "C"]
-        assert ds.skipped == {"malformed_json": 1, "empty_hidden_state": 2, "non_finite": 3, "unverified": 0, "duplicate": 0}
+        assert ds.skipped == {
+            "malformed_json": 1,
+            "empty_hidden_state": 2,
+            "non_finite": 3,
+            "unverified": 0,
+            "duplicate": 0,
+        }
         assert all(bool(torch.isfinite(s.hidden).all()) for s in ds.states)
 
     def test_verified_only_drops_self_graded_traces(self, tmp_path: Path) -> None:
         path = _write(
             tmp_path / "legacy.jsonl",
-            [_trace("A", 1, 0.0, 1.0), _trace("A", 1, 0.0, 2.0, metadata={"timed_out": False}), _trace("B", 1, 0.0, 3.0, metadata=None)],
+            [
+                _trace("A", 1, 0.0, 1.0),
+                _trace("A", 1, 0.0, 2.0, metadata={"timed_out": False}),
+                _trace("B", 1, 0.0, 3.0, metadata=None),
+            ],
         )
         verified = JEPADataset(path, verified_only=True)
         everything = JEPADataset(path, verified_only=False)
@@ -253,7 +275,9 @@ class TestTaskLevelSplit:
             assert len(val) > 0
 
     def test_single_task_falls_back_to_item_split(self, tmp_path: Path) -> None:
-        path = _write(tmp_path / "one.jsonl", [_trace("only", 1, float(i), float(i)) for i in range(10)])
+        path = _write(
+            tmp_path / "one.jsonl", [_trace("only", 1, float(i), float(i)) for i in range(10)]
+        )
         ds = JEPADataset(path)
         train, val = train_val_split(ds, val_fraction=0.2, seed=3)
 
@@ -274,7 +298,9 @@ class TestTaskKFold:
     def test_folds_ignore_trace_order_and_depend_on_seed(self) -> None:
         tasks = [f"t{i}" for i in range(12)]
         assert task_kfold(tasks, 3, seed=5) == task_kfold(list(reversed(tasks)) * 2, 3, seed=5)
-        assert any(task_kfold(tasks, 3, seed=5) != task_kfold(tasks, 3, seed=s) for s in range(6, 10))
+        assert any(
+            task_kfold(tasks, 3, seed=5) != task_kfold(tasks, 3, seed=s) for s in range(6, 10)
+        )
 
     def test_invalid_k_is_rejected(self) -> None:
         with pytest.raises(ValueError, match="k must be >= 2"):
@@ -304,19 +330,27 @@ class TestDuplicateTraces:
         assert [s.task for s in ds.states] == ["A", "B", "C"]
         assert ds.skipped["duplicate"] == 1
 
-    def test_same_embedding_at_a_later_iteration_is_kept_as_a_transition(self, tmp_path: Path) -> None:
+    def test_same_embedding_at_a_later_iteration_is_kept_as_a_transition(
+        self, tmp_path: Path
+    ) -> None:
         """The LLM repeating itself on a retry is a real (unchanged) transition, not a replayed trace."""
-        ds = JEPADataset(_write(tmp_path / "t.jsonl", [_trace("A", 1, 60.0, 1.0), _trace("A", 2, 60.0, 1.0)]))
+        ds = JEPADataset(
+            _write(tmp_path / "t.jsonl", [_trace("A", 1, 60.0, 1.0), _trace("A", 2, 60.0, 1.0)])
+        )
 
         assert len(ds.states) == 2
         assert ds.transitions == [(0, 1)]
         assert ds.skipped["duplicate"] == 0
         assert ds.distinct_embedding_count() == 1
 
-    def test_replay_that_diverges_links_the_new_attempt_to_the_existing_state(self, tmp_path: Path) -> None:
+    def test_replay_that_diverges_links_the_new_attempt_to_the_existing_state(
+        self, tmp_path: Path
+    ) -> None:
         traces = [
-            _trace("A", 1, 60.0, 1.0), _trace("A", 2, 60.0, 2.0),
-            _trace("A", 1, 60.0, 1.0), _trace("A", 2, 0.0, 9.0),  # same first attempt, different retry
+            _trace("A", 1, 60.0, 1.0),
+            _trace("A", 2, 60.0, 2.0),
+            _trace("A", 1, 60.0, 1.0),
+            _trace("A", 2, 0.0, 9.0),  # same first attempt, different retry
         ]
         ds = JEPADataset(_write(tmp_path / "t.jsonl", traces))
 
@@ -346,7 +380,11 @@ class TestFirstAttempts:
         """A retry whose first attempt was unusable opens a run but still carries the retry cue."""
         nan_state = _state(1.0)
         nan_state[0] = float("nan")
-        traces = [_trace("A", 1, 60.0, 1.0, hidden_state=nan_state), _trace("A", 2, 60.0, 2.0), _trace("B", 1, 0.0, 3.0)]
+        traces = [
+            _trace("A", 1, 60.0, 1.0, hidden_state=nan_state),
+            _trace("A", 2, 60.0, 2.0),
+            _trace("B", 1, 0.0, 3.0),
+        ]
         ds = JEPADataset(_write(tmp_path / "t.jsonl", traces))
 
         assert [s.iteration for s in ds.states] == [2, 1]

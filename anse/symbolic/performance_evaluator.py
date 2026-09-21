@@ -26,7 +26,7 @@ from anse.symbolic.sandbox import ExecutionResult
 # ─── Categories ──────────────────────────────────────────────────────────────
 
 
-class PerformanceCategory(str, Enum):
+class PerformanceCategory(str, Enum):  # noqa: UP042
     SYNTAX_ERROR = "syntax_error"
     CRASH = "crash"
     TIMEOUT = "timeout"

@@ -124,7 +124,7 @@ def run_static_analyzers(target_paths: list[str]) -> bool:
 
 def _collect_target_files() -> list[Path]:
     """Identify python files to check if none specified in CLI."""
-    excluded = {"build", "dist", "__pycache__", "vendor", ".venv", ".git", ".agents"}
+    excluded = {"build", "dist", "__pycache__", "vendor", ".venv", ".git", ".agents", "results"}
     return [
         f
         for f in Path(".").rglob("*.py")

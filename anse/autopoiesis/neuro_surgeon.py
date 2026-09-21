@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 # 1. Micro-ML Reality Engine (The Invisible Sandbox)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @dataclass
 class MicroMLResult:
     energy: float
@@ -186,7 +187,11 @@ except Exception as e:
 
         # Failure / ENERGY: 100
         err_match = re.search(r"ERROR:\s*(.+)", stdout)
-        error_msg = err_match.group(1).strip() if err_match else (stderr.strip() or "Unknown Execution Error")
+        error_msg = (
+            err_match.group(1).strip()
+            if err_match
+            else (stderr.strip() or "Unknown Execution Error")
+        )
 
         return MicroMLResult(
             energy=100.0,
@@ -203,6 +208,7 @@ except Exception as e:
 # ─────────────────────────────────────────────────────────────────────────────
 # 2. The Active Inference Loop
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class ActiveInferenceStep:
@@ -256,16 +262,18 @@ class CustomNet(nn.Module):
             f"Your architecture failed the laws of physics. Here is the error trace: [{res1.error_trace}]. "
             f"Ponder step-by-step why the matrix dimensions collapsed, and rewrite the code to reach Energy 0."
         )
-        history.append(ActiveInferenceStep(
-            iteration=1,
-            candidate_code=code_turn_1.strip(),
-            energy=res1.energy,
-            is_valid=res1.is_valid,
-            error_trace=res1.error_trace,
-            feedback_prompt=feedback1,
-            duration_ms=res1.duration_ms,
-            proof_token=res1.proof_token,
-        ))
+        history.append(
+            ActiveInferenceStep(
+                iteration=1,
+                candidate_code=code_turn_1.strip(),
+                energy=res1.energy,
+                is_valid=res1.is_valid,
+                error_trace=res1.error_trace,
+                feedback_prompt=feedback1,
+                duration_ms=res1.duration_ms,
+                proof_token=res1.proof_token,
+            )
+        )
 
         # Turn 2: Solved Mathematical Transformation with Perfect Dimensions
         code_turn_2 = textwrap.dedent("""
@@ -293,16 +301,18 @@ class CustomNet(nn.Module):
 """)
 
         res2 = self.engine.evaluate_code(code_turn_2)
-        history.append(ActiveInferenceStep(
-            iteration=2,
-            candidate_code=code_turn_2.strip(),
-            energy=res2.energy,
-            is_valid=res2.is_valid,
-            error_trace=res2.error_trace,
-            feedback_prompt=None,
-            duration_ms=res2.duration_ms,
-            proof_token=res2.proof_token,
-        ))
+        history.append(
+            ActiveInferenceStep(
+                iteration=2,
+                candidate_code=code_turn_2.strip(),
+                energy=res2.energy,
+                is_valid=res2.is_valid,
+                error_trace=res2.error_trace,
+                feedback_prompt=None,
+                duration_ms=res2.duration_ms,
+                proof_token=res2.proof_token,
+            )
+        )
 
         return history
 
@@ -310,6 +320,7 @@ class CustomNet(nn.Module):
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. The AI Neuro-Surgeon (Autopoietic Hot-Swap of Neural Engine)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class BaselineAttentionEngine(nn.Module):
     """Parent continuous learning attention mechanism (Quadratic O(S^2) memory)."""
@@ -331,7 +342,7 @@ class BaselineAttentionEngine(nn.Module):
         k = self.k_proj(x)
         v = self.v_proj(x)
 
-        scores = torch.bmm(q, k.transpose(1, 2)) / (d ** 0.5)
+        scores = torch.bmm(q, k.transpose(1, 2)) / (d**0.5)
         attn = torch.softmax(scores, dim=-1)
         out = torch.bmm(attn, v)
         return self.out_proj(out)
@@ -386,7 +397,9 @@ class AutopoieticNeuroSurgeon:
     def __init__(self) -> None:
         self.live_engine = BaselineAttentionEngine()
 
-    def benchmark_module(self, module: nn.Module, batch_size: int = 32, seq_len: int = 256) -> tuple[float, float, float]:
+    def benchmark_module(
+        self, module: nn.Module, batch_size: int = 32, seq_len: int = 256
+    ) -> tuple[float, float, float]:
         """Measure latency (ms), peak memory (MB), and compute physical energy E."""
         device = "cuda" if torch.cuda.is_available() else "cpu"
         mod = module.to(device)

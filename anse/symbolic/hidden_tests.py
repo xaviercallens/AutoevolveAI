@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 
 _MAX_REPORTED_FAILURES = 3
 
-_HARNESS_TEMPLATE = '''
+_HARNESS_TEMPLATE = """
 
 def __anse_run_hidden_tests():
     import json as _json
@@ -32,7 +32,7 @@ def __anse_run_hidden_tests():
 
 
 __anse_run_hidden_tests()
-'''
+"""
 
 
 @dataclass(frozen=True)

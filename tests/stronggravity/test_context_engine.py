@@ -48,9 +48,7 @@ class TestContextEngine:
         assert middle_line not in result
 
     def test_scratchpad_file_created(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            context_manager, "SCRATCHPAD_DIR", tmp_path
-        )
+        monkeypatch.setattr(context_manager, "SCRATCHPAD_DIR", tmp_path)
         lines = [f"line {i}" for i in range(MAX_INLINE_LINES + 50)]
         output = "\n".join(lines)
         truncate_and_offload_context("task_1", output)
@@ -63,9 +61,7 @@ class TestWorkflowStateMachine:
 
     def test_save_load_roundtrip(self, tmp_path, monkeypatch):
         state_file = tmp_path / ".workflow_state.json"
-        monkeypatch.setattr(
-            claude_workflow.WorkflowState, "STATE_FILE", state_file
-        )
+        monkeypatch.setattr(claude_workflow.WorkflowState, "STATE_FILE", state_file)
         state = WorkflowState()
         state.subtasks.append(
             Subtask(
@@ -81,13 +77,9 @@ class TestWorkflowStateMachine:
         assert len(new_state.subtasks) == 1
         assert new_state.subtasks[0].id == "1"
 
-    def test_get_active_subtask_returns_pending(
-        self, tmp_path, monkeypatch
-    ):
+    def test_get_active_subtask_returns_pending(self, tmp_path, monkeypatch):
         state_file = tmp_path / ".workflow_state.json"
-        monkeypatch.setattr(
-            claude_workflow.WorkflowState, "STATE_FILE", state_file
-        )
+        monkeypatch.setattr(claude_workflow.WorkflowState, "STATE_FILE", state_file)
         state = WorkflowState()
         state.subtasks.append(
             Subtask(
@@ -104,9 +96,7 @@ class TestWorkflowStateMachine:
 
     def test_completed_task_skipped(self, tmp_path, monkeypatch):
         state_file = tmp_path / ".workflow_state.json"
-        monkeypatch.setattr(
-            claude_workflow.WorkflowState, "STATE_FILE", state_file
-        )
+        monkeypatch.setattr(claude_workflow.WorkflowState, "STATE_FILE", state_file)
         state = WorkflowState()
         state.subtasks.append(
             Subtask(

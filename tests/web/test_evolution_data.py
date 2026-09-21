@@ -66,7 +66,16 @@ def test_json_that_is_not_an_object_is_invalid_not_a_crash(tmp_path):
 
 
 def test_partial_file_without_finished_is_running_and_lists_pending_use_cases(tmp_path):
-    write_results(tmp_path, 2, {"phase": 2, "backend": "jepa-cpu", "started": "2026-09-21 08:00:00", "uc1": {"n": 4, "rows": []}})
+    write_results(
+        tmp_path,
+        2,
+        {
+            "phase": 2,
+            "backend": "jepa-cpu",
+            "started": "2026-09-21 08:00:00",
+            "uc1": {"n": 4, "rows": []},
+        },
+    )
     phase = load_phase(2, tmp_path)
     assert phase["status"] == "running"
     assert phase["finished"] is None
@@ -114,7 +123,10 @@ def test_rows_are_capped_and_total_is_reported(tmp_path):
 
 def test_nested_row_values_and_long_strings_become_bounded_text(tmp_path):
     payload = finished_phase2()
-    payload["uc1"]["rows"] = [{"energies": [1.0, 0.0], "off": {"converged": True}, "code": "x" * (MAX_CELL_CHARS + 500)}, "bare"]
+    payload["uc1"]["rows"] = [
+        {"energies": [1.0, 0.0], "off": {"converged": True}, "code": "x" * (MAX_CELL_CHARS + 500)},
+        "bare",
+    ]
     payload["uc1"]["deep"] = {"inner": {"too": "deep"}}
     write_results(tmp_path, 2, payload)
     uc1 = load_phase(2, tmp_path)["use_cases"][0]
@@ -127,7 +139,16 @@ def test_nested_row_values_and_long_strings_become_bounded_text(tmp_path):
 
 
 def test_phase1_titles_fall_back_to_defaults_but_file_titles_win(tmp_path):
-    write_results(tmp_path, 1, {"phase": 1, "model": "qwen2.5-coder:1.5b", "uc1": {"runs": 2, "rows": []}, "uc5": {"title": "Custom", "question": "Q?", "rows": []}})
+    write_results(
+        tmp_path,
+        1,
+        {
+            "phase": 1,
+            "model": "qwen2.5-coder:1.5b",
+            "uc1": {"runs": 2, "rows": []},
+            "uc5": {"title": "Custom", "question": "Q?", "rows": []},
+        },
+    )
     phase = load_phase(1, tmp_path)
     by_id = {uc["id"]: uc for uc in phase["use_cases"]}
     assert by_id["uc1"]["title"] == "Honest energy"

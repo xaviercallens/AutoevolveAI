@@ -70,11 +70,26 @@ DEAD_DIM_STD = 0.01  # sqrt of the 1e-4 epsilon inside VICReg's std: invisible t
 MIN_MEAN_STD = 0.1  # 10% of the VICReg variance margin (gamma = 1.0)
 
 UC_META = {
-    "uc1": ("Intuition beats a constant", "On tasks never seen in training, is predicted energy closer to the verified energy than always predicting the training mean?"),
-    "uc2": ("Pass/fail discrimination", "Does predicted energy rank verified failures above verified passes on held-out tasks?"),
-    "uc3": ("Predictive pairs ablation", "Does training on real attempt t -> t+1 pairs predict the next latent better than self-pairs and than assuming nothing changes?"),
-    "uc4": ("Intuition-guided selection", "If the agent runs only the candidate with the lowest predicted energy, does it pass more often than a random pick?"),
-    "uc5": ("Robustness", "Does the world model avoid collapse, refuse wrong dimensions, skip NaN/empty states, keep predictions in [0, 100] and treat raw embeddings like its training input?"),
+    "uc1": (
+        "Intuition beats a constant",
+        "On tasks never seen in training, is predicted energy closer to the verified energy than always predicting the training mean?",
+    ),
+    "uc2": (
+        "Pass/fail discrimination",
+        "Does predicted energy rank verified failures above verified passes on held-out tasks?",
+    ),
+    "uc3": (
+        "Predictive pairs ablation",
+        "Does training on real attempt t -> t+1 pairs predict the next latent better than self-pairs and than assuming nothing changes?",
+    ),
+    "uc4": (
+        "Intuition-guided selection",
+        "If the agent runs only the candidate with the lowest predicted energy, does it pass more often than a random pick?",
+    ),
+    "uc5": (
+        "Robustness",
+        "Does the world model avoid collapse, refuse wrong dimensions, skip NaN/empty states, keep predictions in [0, 100] and treat raw embeddings like its training input?",
+    ),
 }
 
 
@@ -100,7 +115,9 @@ class FoldRun:
     ctx_std_min: float
     ctx_dead_fraction: float
     pred_std_mean: float
-    transition_errors: list[tuple[bool, float, float]] = field(default_factory=list)  # (code changed, predictor, identity)
+    transition_errors: list[tuple[bool, float, float]] = field(
+        default_factory=list
+    )  # (code changed, predictor, identity)
     cpu_seconds: float = 0.0
 
 
@@ -117,7 +134,9 @@ class Bench:
         self.args = args
         self.out = Path(args.out)
         self.trace_files = [Path(p) for p in args.traces]
-        self.ds = JEPADataset(self.trace_files, hidden_dim=None, pair_mode="mixed", verified_only=True)
+        self.ds = JEPADataset(
+            self.trace_files, hidden_dim=None, pair_mode="mixed", verified_only=True
+        )
         n_states = len(self.ds.states)
         tasks = sorted({s.task for s in self.ds.states})
         if n_states < args.min_traces or len(tasks) < args.folds:
@@ -165,9 +184,15 @@ class Bench:
             "hidden_dim": self.ds.hidden_dim,
             "skipped_traces": dict(self.ds.skipped),
             "hyperparameters": {
-                "d_hidden": args.d_hidden, "d_latent": args.d_latent, "dropout": args.dropout,
-                "weight_decay": args.weight_decay, "lr": args.lr, "epochs": args.epochs,
-                "batch_size": args.batch_size, "energy_weight": args.energy_weight, "ridge_alpha": args.ridge_alpha,
+                "d_hidden": args.d_hidden,
+                "d_latent": args.d_latent,
+                "dropout": args.dropout,
+                "weight_decay": args.weight_decay,
+                "lr": args.lr,
+                "epochs": args.epochs,
+                "batch_size": args.batch_size,
+                "energy_weight": args.energy_weight,
+                "ridge_alpha": args.ridge_alpha,
             },
             "started": time.strftime("%Y-%m-%d %H:%M:%S"),
         }
@@ -183,8 +208,11 @@ class Bench:
     def new_model(self, seed: int) -> JEPAWorldModel:
         torch.manual_seed(seed)
         return JEPAWorldModel(
-            d_input=self.ds.hidden_dim, d_hidden=self.args.d_hidden, d_latent=self.args.d_latent,
-            dropout=self.args.dropout, energy_weight=self.args.energy_weight,
+            d_input=self.ds.hidden_dim,
+            d_hidden=self.args.d_hidden,
+            d_latent=self.args.d_latent,
+            dropout=self.args.dropout,
+            energy_weight=self.args.energy_weight,
         )
 
     def train_one(self, seed: int, fold: int, arm: str, val_tasks: set[str]) -> FoldRun | None:
@@ -197,9 +225,18 @@ class Bench:
         if len(train_idx) < 2:
             return None  # e.g. the transition arm when the training tasks have < 2 transitions
         model = self.new_model(1000 * seed + fold)
-        trainer = JEPATrainer(model, lr=a.lr, weight_decay=a.weight_decay, checkpoint_dir=self.out / "checkpoints")
-        trainer.fit(Subset(self.ds, train_idx), Subset(self.ds, val_idx or train_idx[:1]), epochs=a.epochs,
-                    batch_size=a.batch_size, seed=seed, select_best_on_val=False, validate_every=a.epochs)
+        trainer = JEPATrainer(
+            model, lr=a.lr, weight_decay=a.weight_decay, checkpoint_dir=self.out / "checkpoints"
+        )
+        trainer.fit(
+            Subset(self.ds, train_idx),
+            Subset(self.ds, val_idx or train_idx[:1]),
+            epochs=a.epochs,
+            batch_size=a.batch_size,
+            seed=seed,
+            select_best_on_val=False,
+            validate_every=a.epochs,
+        )
         model.eval()
 
         val_states = [i for i, s in enumerate(self.ds.states) if s.task in val_tasks]
@@ -219,23 +256,36 @@ class Bench:
                     z_next = model.tgt_encoder(model.prepare_input(h_next))  # type: ignore[misc]
                     z_t = model.encode_context(h_t)
                     predicted = model.predictor(z_t, z_t)  # type: ignore[misc]
-                    errors.append((
-                        self.ds.states[ctx].code.strip() != self.ds.states[tgt].code.strip(),
-                        float((predicted - z_next).pow(2).sum()),
-                        float((model.tgt_encoder(model.prepare_input(h_t)) - z_next).pow(2).sum()),  # type: ignore[misc]
-                    ))
-        ridge = ridge_fit_predict(self.hidden[train_states], y_train, h_val, alpha=a.ridge_alpha).clamp(0.0, 100.0)
+                    errors.append(
+                        (
+                            self.ds.states[ctx].code.strip() != self.ds.states[tgt].code.strip(),
+                            float((predicted - z_next).pow(2).sum()),
+                            float(
+                                (model.tgt_encoder(model.prepare_input(h_t)) - z_next).pow(2).sum()
+                            ),  # type: ignore[misc]
+                        )
+                    )
+        ridge = ridge_fit_predict(
+            self.hidden[train_states], y_train, h_val, alpha=a.ridge_alpha
+        ).clamp(0.0, 100.0)
         self.last_model = model
         return FoldRun(
-            seed=seed, fold=fold, arm=arm, val_states=val_states,
+            seed=seed,
+            fold=fold,
+            arm=arm,
+            val_states=val_states,
             predictions=model.predict_energy_batch(h_val).tolist(),
             ridge_predictions=ridge.tolist(),
-            train_mean=float(y_train.mean()), train_median=float(y_train.median()),
-            train_first_mean=float(y_first.mean()), train_first_median=float(y_first.median()),
-            ctx_std_mean=float(ctx_std.mean()), ctx_std_min=float(ctx_std.min()),
+            train_mean=float(y_train.mean()),
+            train_median=float(y_train.median()),
+            train_first_mean=float(y_first.mean()),
+            train_first_median=float(y_first.median()),
+            ctx_std_mean=float(ctx_std.mean()),
+            ctx_std_min=float(ctx_std.min()),
             ctx_dead_fraction=float((ctx_std < DEAD_DIM_STD).float().mean()),
             pred_std_mean=float(latent_std(z_pred).mean()),
-            transition_errors=errors, cpu_seconds=time.process_time() - started,
+            transition_errors=errors,
+            cpu_seconds=time.process_time() - started,
         )
 
     def train_all(self) -> None:
@@ -248,7 +298,10 @@ class Bench:
                     if run is not None:
                         self.runs.append(run)
             done = [r for r in self.runs if r.seed == seed]
-            print(f"  trained seed={seed}: {len(done)} models, {sum(r.cpu_seconds for r in done):.1f}s CPU", flush=True)
+            print(
+                f"  trained seed={seed}: {len(done)} models, {sum(r.cpu_seconds for r in done):.1f}s CPU",
+                flush=True,
+            )
         self.ds.set_pair_mode("mixed")
 
     def oof(self, seed: int, arm: str = "mixed") -> dict[int, dict[str, float]]:
@@ -257,9 +310,15 @@ class Bench:
         for run in self.runs:
             if run.seed == seed and run.arm == arm:
                 for i, p, rp in zip(run.val_states, run.predictions, run.ridge_predictions):
-                    table[i] = {"jepa": p, "ridge": rp, "mean": run.train_mean, "median": run.train_median,
-                                "first_mean": run.train_first_mean, "first_median": run.train_first_median,
-                                "iteration": float(self.ds.states[i].iteration)}
+                    table[i] = {
+                        "jepa": p,
+                        "ridge": rp,
+                        "mean": run.train_mean,
+                        "median": run.train_median,
+                        "first_mean": run.train_first_mean,
+                        "first_median": run.train_first_median,
+                        "iteration": float(self.ds.states[i].iteration),
+                    }
         return table
 
     # ── UC1 ──────────────────────────────────────────────────────────────────
@@ -270,20 +329,34 @@ class Bench:
             every = sorted(table)
             idx = [i for i in every if i in self.first_set]
             actual = [self.energy[i] for i in idx]
-            row: dict[str, Any] = {"seed": seed, "first_attempt_states": len(idx),
-                                   "independent_tasks": len({self.ds.states[i].task for i in idx})}
+            row: dict[str, Any] = {
+                "seed": seed,
+                "first_attempt_states": len(idx),
+                "independent_tasks": len({self.ds.states[i].task for i in idx}),
+            }
             for key in ("jepa", "first_mean", "first_median", "mean", "ridge"):
                 row[f"mae_{key}"] = r4(mean_absolute_error([table[i][key] for i in idx], actual))
             row["spearman_jepa"] = r4(spearman([table[i]["jepa"] for i in idx], actual))
             row["spearman_ridge"] = r4(spearman([table[i]["ridge"] for i in idx], actual))
             row["beats_mean_baseline"] = row["mae_jepa"] < row["mae_first_mean"]
             row["all_states_leaky"] = len(every)
-            row["mae_jepa_all_states_leaky"] = r4(mean_absolute_error([table[i]["jepa"] for i in every], [self.energy[i] for i in every]))
-            row["mae_mean_all_states_leaky"] = r4(mean_absolute_error([table[i]["mean"] for i in every], [self.energy[i] for i in every]))
+            row["mae_jepa_all_states_leaky"] = r4(
+                mean_absolute_error(
+                    [table[i]["jepa"] for i in every], [self.energy[i] for i in every]
+                )
+            )
+            row["mae_mean_all_states_leaky"] = r4(
+                mean_absolute_error(
+                    [table[i]["mean"] for i in every], [self.energy[i] for i in every]
+                )
+            )
             rows.append(row)
-            print(f"  UC1 seed={seed} first-attempt MAE jepa={row['mae_jepa']} first_mean={row['mae_first_mean']} "
-                  f"first_median={row['mae_first_median']} ridge={row['mae_ridge']} spearman={row['spearman_jepa']} "
-                  f"| all states (leaky) jepa={row['mae_jepa_all_states_leaky']} mean={row['mae_mean_all_states_leaky']}", flush=True)
+            print(
+                f"  UC1 seed={seed} first-attempt MAE jepa={row['mae_jepa']} first_mean={row['mae_first_mean']} "
+                f"first_median={row['mae_first_median']} ridge={row['mae_ridge']} spearman={row['spearman_jepa']} "
+                f"| all states (leaky) jepa={row['mae_jepa_all_states_leaky']} mean={row['mae_mean_all_states_leaky']}",
+                flush=True,
+            )
         defined = [r["spearman_jepa"] for r in rows if r["spearman_jepa"] is not None]
         self.results["uc1"] = {
             "seeds": len(rows),
@@ -296,14 +369,20 @@ class Bench:
             "mae_all_states_train_mean": mean_or_none([r["mae_mean"] for r in rows]),
             "mae_ridge_on_raw_embedding": mean_or_none([r["mae_ridge"] for r in rows]),
             "spearman_jepa": mean_or_none(defined),
-            "spearman_ridge": mean_or_none([r["spearman_ridge"] for r in rows if r["spearman_ridge"] is not None]),
+            "spearman_ridge": mean_or_none(
+                [r["spearman_ridge"] for r in rows if r["spearman_ridge"] is not None]
+            ),
             "seeds_beating_mean_baseline": sum(r["beats_mean_baseline"] for r in rows),
-            "mae_jepa_all_states_leaky": mean_or_none([r["mae_jepa_all_states_leaky"] for r in rows]),
-            "mae_mean_all_states_leaky": mean_or_none([r["mae_mean_all_states_leaky"] for r in rows]),
+            "mae_jepa_all_states_leaky": mean_or_none(
+                [r["mae_jepa_all_states_leaky"] for r in rows]
+            ),
+            "mae_mean_all_states_leaky": mean_or_none(
+                [r["mae_mean_all_states_leaky"] for r in rows]
+            ),
             "note": "The mean baseline is the mean energy of the first-attempt TRAINING states, the strongest mean constant for this "
-                    "evaluation set (the all-states training mean is inflated by retries of failing tasks). MSE-trained regressors target "
-                    "the mean; with many zero energies the median constant can have a lower MAE and is reported for honesty. "
-                    "*_all_states_leaky include retries, whose embeddings leak their label; they are not evidence of intuition.",
+            "evaluation set (the all-states training mean is inflated by retries of failing tasks). MSE-trained regressors target "
+            "the mean; with many zero energies the median constant can have a lower MAE and is reported for honesty. "
+            "*_all_states_leaky include retries, whose embeddings leak their label; they are not evidence of intuition.",
             "rows": rows,
         }
         self.checkpoint()
@@ -317,19 +396,43 @@ class Bench:
             idx = [i for i in every if i in self.first_set]
             failed = [self.energy[i] > 0 for i in idx]
             failed_all = [self.energy[i] > 0 for i in every]
-            rows.append({
-                "seed": seed, "first_attempt_fail": sum(failed), "first_attempt_pass": len(failed) - sum(failed),
-                "auc_jepa": r4(roc_auc([table[i]["jepa"] for i in idx], failed)),
-                "auc_ridge": r4(roc_auc([table[i]["ridge"] for i in idx], failed)),
-                "all_states_fail": sum(failed_all), "all_states_pass": len(failed_all) - sum(failed_all),
-                "auc_jepa_all_states_leaky": r4(roc_auc([table[i]["jepa"] for i in every], failed_all)),
-                "auc_iteration_number_all_states": r4(roc_auc([table[i]["iteration"] for i in every], failed_all)),
-            })
-            print(f"  UC2 seed={seed} first-attempt AUC jepa={rows[-1]['auc_jepa']} ridge={rows[-1]['auc_ridge']} | all states (leaky) "
-                  f"jepa={rows[-1]['auc_jepa_all_states_leaky']} iteration-number={rows[-1]['auc_iteration_number_all_states']}", flush=True)
+            rows.append(
+                {
+                    "seed": seed,
+                    "first_attempt_fail": sum(failed),
+                    "first_attempt_pass": len(failed) - sum(failed),
+                    "auc_jepa": r4(roc_auc([table[i]["jepa"] for i in idx], failed)),
+                    "auc_ridge": r4(roc_auc([table[i]["ridge"] for i in idx], failed)),
+                    "all_states_fail": sum(failed_all),
+                    "all_states_pass": len(failed_all) - sum(failed_all),
+                    "auc_jepa_all_states_leaky": r4(
+                        roc_auc([table[i]["jepa"] for i in every], failed_all)
+                    ),
+                    "auc_iteration_number_all_states": r4(
+                        roc_auc([table[i]["iteration"] for i in every], failed_all)
+                    ),
+                }
+            )
+            print(
+                f"  UC2 seed={seed} first-attempt AUC jepa={rows[-1]['auc_jepa']} ridge={rows[-1]['auc_ridge']} | all states (leaky) "
+                f"jepa={rows[-1]['auc_jepa_all_states_leaky']} iteration-number={rows[-1]['auc_iteration_number_all_states']}",
+                flush=True,
+            )
         aucs = [r["auc_jepa"] for r in rows if r["auc_jepa"] is not None]
-        leaky = mean_or_none([r["auc_jepa_all_states_leaky"] for r in rows if r["auc_jepa_all_states_leaky"] is not None])
-        iteration = mean_or_none([r["auc_iteration_number_all_states"] for r in rows if r["auc_iteration_number_all_states"] is not None])
+        leaky = mean_or_none(
+            [
+                r["auc_jepa_all_states_leaky"]
+                for r in rows
+                if r["auc_jepa_all_states_leaky"] is not None
+            ]
+        )
+        iteration = mean_or_none(
+            [
+                r["auc_iteration_number_all_states"]
+                for r in rows
+                if r["auc_iteration_number_all_states"] is not None
+            ]
+        )
         self.results["uc2"] = {
             "seeds": len(rows),
             "scored_on": "first attempts only (one state per task run)",
@@ -338,15 +441,17 @@ class Bench:
             "verified_pass": rows[0]["first_attempt_pass"],
             "auc_mean": mean_or_none(aucs),
             "auc_min": r4(min(aucs)) if aucs else None,
-            "auc_ridge_mean": mean_or_none([r["auc_ridge"] for r in rows if r["auc_ridge"] is not None]),
+            "auc_ridge_mean": mean_or_none(
+                [r["auc_ridge"] for r in rows if r["auc_ridge"] is not None]
+            ),
             "chance_level": 0.5,
             "all_states_fail": rows[0]["all_states_fail"],
             "all_states_pass": rows[0]["all_states_pass"],
             "auc_jepa_all_states_leaky": leaky,
             "auc_iteration_number_all_states": iteration,
             "note": "A retry exists only because the previous attempt failed, so on all states the iteration number alone is a "
-                    "pass/fail classifier needing no model (auc_iteration_number_all_states). Any all-states AUC at or below it "
-                    "shows no intuition; only the first-attempt AUC, where that cue is absent, is gated.",
+            "pass/fail classifier needing no model (auc_iteration_number_all_states). Any all-states AUC at or below it "
+            "shows no intuition; only the first-attempt AUC, where that cue is absent, is gated.",
             "rows": rows,
         }
         self.checkpoint()
@@ -354,45 +459,77 @@ class Bench:
     # ── UC3 ──────────────────────────────────────────────────────────────────
     def uc3_pairs_ablation(self) -> None:
         n_transitions = len(self.ds.transitions)
-        unchanged = sum(self.ds.states[a].code.strip() == self.ds.states[b].code.strip() for a, b in self.ds.transitions)
+        unchanged = sum(
+            self.ds.states[a].code.strip() == self.ds.states[b].code.strip()
+            for a, b in self.ds.transitions
+        )
         rows = []
         for seed in self.args.seeds:
             for arm in ARMS:
-                errors = [e for run in self.runs if run.seed == seed and run.arm == arm for e in run.transition_errors]
+                errors = [
+                    e
+                    for run in self.runs
+                    if run.seed == seed and run.arm == arm
+                    for e in run.transition_errors
+                ]
                 if not errors:
                     continue
                 predictor = statistics.fmean(e[1] for e in errors)
                 identity = statistics.fmean(e[2] for e in errors)
                 changed = [e for e in errors if e[0]]
                 changed_identity = statistics.fmean(e[2] for e in changed) if changed else 0.0
-                rows.append({
-                    "seed": seed, "arm": arm, "held_out_transitions": len(errors),
-                    "predictor_error": r4(predictor), "identity_error": r4(identity),
-                    "relative_error": r4(predictor / identity) if identity > 0 else None,
-                    "changed_code_transitions": len(changed),
-                    "relative_error_changed_code": r4(statistics.fmean(e[1] for e in changed) / changed_identity) if changed_identity > 0 else None,
-                })
+                rows.append(
+                    {
+                        "seed": seed,
+                        "arm": arm,
+                        "held_out_transitions": len(errors),
+                        "predictor_error": r4(predictor),
+                        "identity_error": r4(identity),
+                        "relative_error": r4(predictor / identity) if identity > 0 else None,
+                        "changed_code_transitions": len(changed),
+                        "relative_error_changed_code": r4(
+                            statistics.fmean(e[1] for e in changed) / changed_identity
+                        )
+                        if changed_identity > 0
+                        else None,
+                    }
+                )
 
         def arm_stats(arm: str) -> dict[str, float]:
             sel = [r for r in rows if r["arm"] == arm and r["relative_error"] is not None]
             if not sel:
                 return {"seeds": 0}
             rel = [r["relative_error"] for r in sel]
-            changed = [r["relative_error_changed_code"] for r in sel if r["relative_error_changed_code"] is not None]
-            return {"seeds": len(sel), "relative_error_mean": r4(statistics.fmean(rel)),  # type: ignore[dict-item]
-                    "relative_error_max": r4(max(rel)), "seeds_beating_identity": sum(x < 1.0 for x in rel),  # type: ignore[dict-item]
-                    "relative_error_changed_code_mean": mean_or_none(changed)}  # type: ignore[dict-item]
+            changed = [
+                r["relative_error_changed_code"]
+                for r in sel
+                if r["relative_error_changed_code"] is not None
+            ]
+            return {
+                "seeds": len(sel),
+                "relative_error_mean": r4(statistics.fmean(rel)),  # type: ignore[dict-item]
+                "relative_error_max": r4(max(rel)),
+                "seeds_beating_identity": sum(x < 1.0 for x in rel),  # type: ignore[dict-item]
+                "relative_error_changed_code_mean": mean_or_none(changed),
+            }  # type: ignore[dict-item]
 
         enough = n_transitions >= MIN_TRANSITIONS
         stats = {arm: arm_stats(arm) for arm in ARMS}
         if not enough:
-            conclusion = (f"INSUFFICIENT DATA: only {n_transitions} transition pairs exist (need >= {MIN_TRANSITIONS}); "
-                          "the numbers below are reported but no conclusion is drawn.")
+            conclusion = (
+                f"INSUFFICIENT DATA: only {n_transitions} transition pairs exist (need >= {MIN_TRANSITIONS}); "
+                "the numbers below are reported but no conclusion is drawn."
+            )
         else:
-            mixed, old = stats["mixed"].get("relative_error_mean"), stats["self"].get("relative_error_mean")
-            conclusion = (f"{n_transitions} transitions, {unchanged} of them with byte-identical code (identity error is exactly 0 there, "
-                          f"so 'nothing changes' is unbeatable on them). Relative error (predictor / identity, < 1 beats 'nothing changes'): "
-                          f"self-pairs {old}, mixed {mixed}, transition-only {stats['transition'].get('relative_error_mean')}.")
+            mixed, old = (
+                stats["mixed"].get("relative_error_mean"),
+                stats["self"].get("relative_error_mean"),
+            )
+            conclusion = (
+                f"{n_transitions} transitions, {unchanged} of them with byte-identical code (identity error is exactly 0 there, "
+                f"so 'nothing changes' is unbeatable on them). Relative error (predictor / identity, < 1 beats 'nothing changes'): "
+                f"self-pairs {old}, mixed {mixed}, transition-only {stats['transition'].get('relative_error_mean')}."
+            )
         self.results["uc3"] = {
             "transition_pairs": n_transitions,
             "transitions_with_unchanged_code": unchanged,
@@ -425,30 +562,42 @@ class Bench:
                 passes = [self.energy[i] == 0.0 for i in cand]
                 order = sorted(range(len(cand)), key=lambda j: (table[cand[j]]["jepa"], j))
                 ridge_order = sorted(range(len(cand)), key=lambda j: (table[cand[j]]["ridge"], j))
-                rows.append({
-                    "seed": seed, "task": self.short[task], "candidates": len(cand), "passing": sum(passes),
-                    "decidable": 0 < sum(passes) < len(cand),
-                    "picked_pass": passes[order[0]], "ridge_picked_pass": passes[ridge_order[0]],
-                    "random_expected_pass": r4(sum(passes) / len(passes)), "oracle_pass": any(passes),
-                    "picked_predicted_energy": r4(table[cand[order[0]]]["jepa"]),
-                    "picked_verified_energy": self.energy[cand[order[0]]],
-                })
+                rows.append(
+                    {
+                        "seed": seed,
+                        "task": self.short[task],
+                        "candidates": len(cand),
+                        "passing": sum(passes),
+                        "decidable": 0 < sum(passes) < len(cand),
+                        "picked_pass": passes[order[0]],
+                        "ridge_picked_pass": passes[ridge_order[0]],
+                        "random_expected_pass": r4(sum(passes) / len(passes)),
+                        "oracle_pass": any(passes),
+                        "picked_predicted_energy": r4(table[cand[order[0]]]["jepa"]),
+                        "picked_verified_energy": self.energy[cand[order[0]]],
+                    }
+                )
 
         def rates(sel: list[dict[str, Any]]) -> dict[str, float]:
             if not sel:
                 return {"picks": 0}
             n = len(sel)
-            return {"picks": n, "intuition_pass_rate": r4(sum(r["picked_pass"] for r in sel) / n),  # type: ignore[dict-item]
-                    "random_pass_rate": r4(sum(r["random_expected_pass"] for r in sel) / n),  # type: ignore[dict-item]
-                    "oracle_pass_rate": r4(sum(r["oracle_pass"] for r in sel) / n),  # type: ignore[dict-item]
-                    "ridge_pass_rate": r4(sum(r["ridge_picked_pass"] for r in sel) / n)}  # type: ignore[dict-item]
+            return {
+                "picks": n,
+                "intuition_pass_rate": r4(sum(r["picked_pass"] for r in sel) / n),  # type: ignore[dict-item]
+                "random_pass_rate": r4(sum(r["random_expected_pass"] for r in sel) / n),  # type: ignore[dict-item]
+                "oracle_pass_rate": r4(sum(r["oracle_pass"] for r in sel) / n),  # type: ignore[dict-item]
+                "ridge_pass_rate": r4(sum(r["ridge_picked_pass"] for r in sel) / n),
+            }  # type: ignore[dict-item]
 
         decidable = [r for r in rows if r["decidable"]]
         if not rows:
             conclusion = "NO DATA: no task has two distinct candidate attempts."
         elif not decidable:
-            conclusion = (f"NOT DECIDABLE: {len(eligible)} tasks have >= 2 distinct candidates, but in every one of them all candidates "
-                          "pass or all fail, so no selector can beat or lose to random. More seeds per task are needed.")
+            conclusion = (
+                f"NOT DECIDABLE: {len(eligible)} tasks have >= 2 distinct candidates, but in every one of them all candidates "
+                "pass or all fail, so no selector can beat or lose to random. More seeds per task are needed."
+            )
         else:
             conclusion = f"{len({r['task'] for r in decidable})} decidable tasks, {len(decidable)} picks over {len(self.args.seeds)} model seeds."
         self.results["uc4"] = {
@@ -457,12 +606,17 @@ class Bench:
             "all_eligible": rates(rows),
             "decidable_only": rates(decidable),
             "conclusion": conclusion,
-            "sandbox_runs_saved_per_pick": r4(statistics.fmean(r["candidates"] - 1 for r in rows)) if rows else None,
+            "sandbox_runs_saved_per_pick": r4(statistics.fmean(r["candidates"] - 1 for r in rows))
+            if rows
+            else None,
             "note": "decidable = the candidates of the task include both a verified pass and a verified fail; only there can any selector differ from random. "
-                    "Candidates from retries carry the 'previous attempt failed' cue in their embedding, so a future decidable result must be read next to UC2's iteration-number baseline.",
+            "Candidates from retries carry the 'previous attempt failed' cue in their embedding, so a future decidable result must be read next to UC2's iteration-number baseline.",
             "rows": rows,
         }
-        print(f"  UC4 all={self.results['uc4']['all_eligible']} decidable={self.results['uc4']['decidable_only']}", flush=True)
+        print(
+            f"  UC4 all={self.results['uc4']['all_eligible']} decidable={self.results['uc4']['decidable_only']}",
+            flush=True,
+        )
         self.checkpoint()
 
     # ── UC5 ──────────────────────────────────────────────────────────────────
@@ -479,7 +633,9 @@ class Bench:
                     trace = json.loads(line)
                 except json.JSONDecodeError:
                     continue
-                if len(trace.get("hidden_state") or []) == self.ds.hidden_dim and (trace.get("metadata") or {}).get("tests_total"):
+                if len(trace.get("hidden_state") or []) == self.ds.hidden_dim and (
+                    trace.get("metadata") or {}
+                ).get("tests_total"):
                     found.append(trace)
         if len(found) < n:
             raise InsufficientDataError(f"UC5 needs {n} real traces to corrupt, found {len(found)}")
@@ -490,9 +646,18 @@ class Bench:
         mixed = [r for r in self.runs if r.arm == "mixed"]
         worst_mean = min(r.ctx_std_mean for r in mixed)
         worst_dead = max(r.ctx_dead_fraction for r in mixed)
-        rows.append({"check": "no_representation_collapse", "passed": worst_mean >= MIN_MEAN_STD and worst_dead == 0.0,
-                     "models": len(mixed), "worst_mean_latent_std": r4(worst_mean), "worst_min_latent_std": r4(min(r.ctx_std_min for r in mixed)),
-                     "worst_dead_dim_fraction": r4(worst_dead), "threshold_mean_std": MIN_MEAN_STD, "threshold_dead_std": DEAD_DIM_STD})
+        rows.append(
+            {
+                "check": "no_representation_collapse",
+                "passed": worst_mean >= MIN_MEAN_STD and worst_dead == 0.0,
+                "models": len(mixed),
+                "worst_mean_latent_std": r4(worst_mean),
+                "worst_min_latent_std": r4(min(r.ctx_std_min for r in mixed)),
+                "worst_dead_dim_fraction": r4(worst_dead),
+                "threshold_mean_std": MIN_MEAN_STD,
+                "threshold_dead_std": DEAD_DIM_STD,
+            }
+        )
 
         real_dim = self.ds.hidden_dim
         raw = self.real_raw_traces(3)
@@ -517,21 +682,48 @@ class Bench:
             model.predict_energy_scalar(torch.zeros(real_dim + 1))
         except HiddenDimMismatchError as exc:
             model_message = str(exc)
-        rows.append({"check": "dimension_mismatch_raises", "passed": bool(message and legacy_message and model_message),
-                     "dataset_error": message[:120], "legacy_4096_error": legacy_message[:120], "model_error": model_message[:120]})
+        rows.append(
+            {
+                "check": "dimension_mismatch_raises",
+                "passed": bool(message and legacy_message and model_message),
+                "dataset_error": message[:120],
+                "legacy_4096_error": legacy_message[:120],
+                "model_error": model_message[:120],
+            }
+        )
 
         nan_state = list(raw[0]["hidden_state"])
         nan_state[7] = float("nan")
         path = self.out / "uc5_nan_empty.jsonl"
-        path.write_text("\n".join([json.dumps(raw[0]), json.dumps(dict(raw[1], hidden_state=nan_state)),
-                                   json.dumps(dict(raw[1], hidden_state=[])), "{not json", json.dumps(raw[2])]) + "\n")
+        path.write_text(
+            "\n".join(
+                [
+                    json.dumps(raw[0]),
+                    json.dumps(dict(raw[1], hidden_state=nan_state)),
+                    json.dumps(dict(raw[1], hidden_state=[])),
+                    "{not json",
+                    json.dumps(raw[2]),
+                ]
+            )
+            + "\n"
+        )
         dirty = JEPADataset(path, hidden_dim=real_dim)
         finite = all(bool(torch.isfinite(s.hidden).all()) for s in dirty.states)
-        rows.append({"check": "nan_and_empty_states_skipped",
-                     "passed": len(dirty.states) == 2 and finite and dirty.skipped["non_finite"] == 1
-                     and dirty.skipped["empty_hidden_state"] == 1 and dirty.skipped["malformed_json"] == 1,
-                     "lines_written": 5, "states_kept": len(dirty.states), "skipped_non_finite": dirty.skipped["non_finite"],
-                     "skipped_empty": dirty.skipped["empty_hidden_state"], "skipped_malformed": dirty.skipped["malformed_json"]})
+        rows.append(
+            {
+                "check": "nan_and_empty_states_skipped",
+                "passed": len(dirty.states) == 2
+                and finite
+                and dirty.skipped["non_finite"] == 1
+                and dirty.skipped["empty_hidden_state"] == 1
+                and dirty.skipped["malformed_json"] == 1,
+                "lines_written": 5,
+                "states_kept": len(dirty.states),
+                "skipped_non_finite": dirty.skipped["non_finite"],
+                "skipped_empty": dirty.skipped["empty_hidden_state"],
+                "skipped_malformed": dirty.skipped["malformed_json"],
+            }
+        )
 
         oof_preds = [p for r in self.runs for p in r.predictions]
         h = self.hidden[:8]
@@ -548,17 +740,37 @@ class Bench:
         except ValueError:
             overflow = "rejected"
         every = oof_preds + stress_preds
-        rows.append({"check": "predictions_within_0_100", "passed": all(0.0 <= p <= 100.0 for p in every) and nan_rejected,
-                     "held_out_predictions": len(oof_preds), "stress_inputs": len(stress_preds), "min_prediction": r4(min(every)),
-                     "max_prediction": r4(max(every)), "nan_input_rejected": nan_rejected, "float32_overflow_input": overflow})
+        rows.append(
+            {
+                "check": "predictions_within_0_100",
+                "passed": all(0.0 <= p <= 100.0 for p in every) and nan_rejected,
+                "held_out_predictions": len(oof_preds),
+                "stress_inputs": len(stress_preds),
+                "min_prediction": r4(min(every)),
+                "max_prediction": r4(max(every)),
+                "nan_input_rejected": nan_rejected,
+                "float32_overflow_input": overflow,
+            }
+        )
 
         raw_h = torch.tensor([t["hidden_state"] for t in raw], dtype=torch.float32)
         unit_h = raw_h / raw_h.norm(dim=-1, keepdim=True)
-        raw_preds, unit_preds = model.predict_energy_batch(raw_h), model.predict_energy_batch(unit_h)
+        raw_preds, unit_preds = (
+            model.predict_energy_batch(raw_h),
+            model.predict_energy_batch(unit_h),
+        )
         gap = float((raw_preds - unit_preds).abs().max())
-        rows.append({"check": "raw_embedding_predicts_like_training_input", "passed": gap < 1e-3, "real_raw_embeddings": len(raw),
-                     "raw_norm_min": r4(float(raw_h.norm(dim=-1).min())), "raw_norm_max": r4(float(raw_h.norm(dim=-1).max())),
-                     "max_prediction_gap": r4(gap), "tolerance": 1e-3})
+        rows.append(
+            {
+                "check": "raw_embedding_predicts_like_training_input",
+                "passed": gap < 1e-3,
+                "real_raw_embeddings": len(raw),
+                "raw_norm_min": r4(float(raw_h.norm(dim=-1).min())),
+                "raw_norm_max": r4(float(raw_h.norm(dim=-1).max())),
+                "max_prediction_gap": r4(gap),
+                "tolerance": 1e-3,
+            }
+        )
 
         for row in rows:
             print(f"  UC5 {row['check']:<44} passed={row['passed']}", flush=True)
@@ -575,20 +787,30 @@ class Bench:
         r = self.results
         checks: dict[str, bool] = {}
         if "uc1" in r:
-            checks["G1 held-out first-attempt MAE below the train-mean baseline (mean over seeds)"] = r["uc1"]["mae_jepa"] < r["uc1"]["mae_mean_baseline"]
+            checks[
+                "G1 held-out first-attempt MAE below the train-mean baseline (mean over seeds)"
+            ] = r["uc1"]["mae_jepa"] < r["uc1"]["mae_mean_baseline"]
         if "uc2" in r:
             u = r["uc2"]
             checks["G2 held-out first-attempt ROC-AUC mean >= 0.60 and worst seed above chance"] = (
-                u["auc_mean"] is not None and u["auc_mean"] >= 0.60 and u["auc_min"] > 0.5)
+                u["auc_mean"] is not None and u["auc_mean"] >= 0.60 and u["auc_min"] > 0.5
+            )
         if "uc3" in r:
             u = r["uc3"]
-            new, old = u["mixed_new_default"].get("relative_error_mean"), u["self_pairs_old"].get("relative_error_mean")
-            checks[f"G3 with >= {MIN_TRANSITIONS} transitions, transition-aware training beats identity and self-pairs"] = bool(
-                u["enough_data"] and new is not None and old is not None and new < 1.0 and new < old)
+            new, old = (
+                u["mixed_new_default"].get("relative_error_mean"),
+                u["self_pairs_old"].get("relative_error_mean"),
+            )
+            checks[
+                f"G3 with >= {MIN_TRANSITIONS} transitions, transition-aware training beats identity and self-pairs"
+            ] = bool(
+                u["enough_data"] and new is not None and old is not None and new < 1.0 and new < old
+            )
         if "uc4" in r:
             d = r["uc4"]["decidable_only"]
             checks["G4 intuition pick passes more often than random on decidable tasks"] = bool(
-                d["picks"] > 0 and d["intuition_pass_rate"] > d["random_pass_rate"])
+                d["picks"] > 0 and d["intuition_pass_rate"] > d["random_pass_rate"]
+            )
         if "uc5" in r:
             checks["G5 all robustness checks pass"] = r["uc5"]["failures"] == 0
         r["gate"] = checks
@@ -601,13 +823,20 @@ class Bench:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--traces", nargs="+", default=[str(p) for p in DEFAULT_TRACES])
     parser.add_argument("--seeds", type=int, nargs="+", default=[1, 2, 3, 4, 5])
     parser.add_argument("--folds", type=int, default=4)
     parser.add_argument("--min-traces", type=int, default=30)
     parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--batch-size", type=int, default=256, help="full batch: spectral-norm overhead dominates a step, and VICReg statistics want the whole set")
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=256,
+        help="full batch: spectral-norm overhead dominates a step, and VICReg statistics want the whole set",
+    )
     parser.add_argument("--lr", type=float, default=3e-3)
     parser.add_argument("--weight-decay", type=float, default=0.05)
     parser.add_argument("--dropout", type=float, default=0.2)
@@ -615,8 +844,15 @@ def main() -> int:
     parser.add_argument("--d-latent", type=int, default=16)
     parser.add_argument("--energy-weight", type=float, default=10.0)
     parser.add_argument("--ridge-alpha", type=float, default=1.0)
-    parser.add_argument("--threads", type=int, default=1, help="torch CPU threads (1 is fastest for this tiny model on a shared machine)")
-    parser.add_argument("--uc", nargs="+", default=["1", "2", "3", "4", "5"], help="Use cases to run, in order")
+    parser.add_argument(
+        "--threads",
+        type=int,
+        default=1,
+        help="torch CPU threads (1 is fastest for this tiny model on a shared machine)",
+    )
+    parser.add_argument(
+        "--uc", nargs="+", default=["1", "2", "3", "4", "5"], help="Use cases to run, in order"
+    )
     parser.add_argument("--out", default=str(ROOT / "results" / "phase2_evolution"))
     args = parser.parse_args()
 
@@ -628,14 +864,22 @@ def main() -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
 
-    print(f"Phase 2 evolution: {bench.results['n_states']} verified states, {bench.results['n_tasks']} tasks, "
-          f"{bench.results['n_transitions']} transitions, fail/pass={bench.results['n_verified_fail']}/{bench.results['n_verified_pass']}, "
-          f"{bench.results['n_duplicate_traces_dropped']} duplicate traces dropped, first attempts={bench.results['n_first_attempt_states']} "
-          f"(fail/pass={bench.results['n_first_attempt_fail']}/{bench.results['n_first_attempt_pass']}), "
-          f"d={bench.ds.hidden_dim}", flush=True)
+    print(
+        f"Phase 2 evolution: {bench.results['n_states']} verified states, {bench.results['n_tasks']} tasks, "
+        f"{bench.results['n_transitions']} transitions, fail/pass={bench.results['n_verified_fail']}/{bench.results['n_verified_pass']}, "
+        f"{bench.results['n_duplicate_traces_dropped']} duplicate traces dropped, first attempts={bench.results['n_first_attempt_states']} "
+        f"(fail/pass={bench.results['n_first_attempt_fail']}/{bench.results['n_first_attempt_pass']}), "
+        f"d={bench.ds.hidden_dim}",
+        flush=True,
+    )
     bench.train_all()
-    steps = {"1": bench.uc1_beats_constant, "2": bench.uc2_discrimination, "3": bench.uc3_pairs_ablation,
-             "4": bench.uc4_selection, "5": bench.uc5_robustness}
+    steps = {
+        "1": bench.uc1_beats_constant,
+        "2": bench.uc2_discrimination,
+        "3": bench.uc3_pairs_ablation,
+        "4": bench.uc4_selection,
+        "5": bench.uc5_robustness,
+    }
     for key in args.uc:
         steps[key]()
     return 0 if bench.gate() else 1

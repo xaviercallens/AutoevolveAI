@@ -45,7 +45,7 @@ def test_active_inference_copilot_flow(tmp_path: Path) -> None:
     target = tmp_path / "solution.py"
     prompt = "Write solve(nums) that handles empty lists and sums first and last element."
     # Harness test script asserts that empty list returns 0 and [1, 2] returns 3
-    test_cmd = f'python -c "import sys; from pathlib import Path; import importlib.util; spec = importlib.util.spec_from_file_location(\'mod\', r\'{target}\'); m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m); assert m.solve([]) == 0; assert m.solve([1, 2]) == 3"'
+    test_cmd = f"python -c \"import sys; from pathlib import Path; import importlib.util; spec = importlib.util.spec_from_file_location('mod', r'{target}'); m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m); assert m.solve([]) == 0; assert m.solve([1, 2]) == 3\""
 
     summary = active_inference_copilot(
         prompt=prompt,

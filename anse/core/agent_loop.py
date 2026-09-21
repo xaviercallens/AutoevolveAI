@@ -29,7 +29,7 @@ from anse.core.encoder import HiddenStateExtractor, HiddenStateRecord
 from anse.memory.harvester import Harvester, LoopTrace
 from anse.memory.lessons import Lesson, LessonMemory, format_lessons
 from anse.symbolic.evaluator import EnergyCategory, EnergyEvaluator, EnergyResult
-from anse.symbolic.hidden_tests import TestReport, attach_harness, parse_report, strip_report
+from anse.symbolic.hidden_tests import TestReport, parse_report
 from anse.symbolic.parser import NoCodeFoundError, extract_code
 from anse.symbolic.sandbox import ExecutionResult, SandboxExecutor
 
@@ -312,10 +312,15 @@ class AgentLoop:
     ) -> tuple[ExecutionResult, TestReport | None]:
         if not hidden_tests:
             return self.sandbox.execute(code), None
+        from anse.symbolic.trusted_driver import build_driver, trusted_payload
+
         nonce = "ANSE-" + secrets.token_hex(8)
-        exec_res = self.sandbox.execute(attach_harness(code, hidden_tests, nonce))
-        report = parse_report(exec_res.stdout, nonce)
-        exec_res.stdout = strip_report(exec_res.stdout, nonce)
+        budget = max(1.0, 0.8 * self.sandbox._cfg.timeout_seconds)
+        driver_script = build_driver(nonce, code, budget, tests=hidden_tests)
+        exec_res = self.sandbox.execute(driver_script, force_tier=1)
+        payload = trusted_payload(exec_res, nonce)
+        report = parse_report(payload, nonce) if payload is not None else None
+        exec_res.stdout = ""
         return exec_res, report
 
     def _is_converged(

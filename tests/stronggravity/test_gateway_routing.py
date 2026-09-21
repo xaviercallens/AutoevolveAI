@@ -33,9 +33,7 @@ class TestGatewayRouting:
             "contents": [
                 {
                     "role": "user",
-                    "parts": [
-                        {"text": "decompose subtask architecture"}
-                    ],
+                    "parts": [{"text": "decompose subtask architecture"}],
                 }
             ]
         }
@@ -48,9 +46,7 @@ class TestGatewayRouting:
             "contents": [
                 {
                     "role": "user",
-                    "parts": [
-                        {"text": "verify audit inspect the code"}
-                    ],
+                    "parts": [{"text": "verify audit inspect the code"}],
                 }
             ]
         }
@@ -85,9 +81,7 @@ class TestGatewayRouting:
 
     def test_gemini_to_openai_translation(self):
         gemini_req = {
-            "contents": [
-                {"role": "user", "parts": [{"text": "Hello"}]}
-            ],
+            "contents": [{"role": "user", "parts": [{"text": "Hello"}]}],
         }
         res = gemini_to_openai_payload(gemini_req, "gpt-4")
         assert res["model"] == "gpt-4"
@@ -95,11 +89,7 @@ class TestGatewayRouting:
         assert any(m["content"] == "Hello" for m in res["messages"])
 
     def test_tool_call_extraction_with_tags(self):
-        text = (
-            '<tool_call>'
-            '{"name": "func", "arguments": {}}'
-            '</tool_call>'
-        )
+        text = '<tool_call>{"name": "func", "arguments": {}}</tool_call>'
         res = _extract_tool_calls_from_text(text)
         assert len(res) == 1
         assert "functionCall" in res[0]

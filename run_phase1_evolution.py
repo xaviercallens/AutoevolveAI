@@ -42,20 +42,42 @@ PAIN_PROMPT_WITHOUT_CODE = PAIN_PROMPT_TEMPLATE.replace(
 )
 
 UC_META = {
-    "uc1": ("Honest energy", "How often does the legacy self-graded loop claim convergence on code that fails hidden tests?"),
-    "uc2": ("Learning from pain", "Does the retry loop turn verified failures into verified passes, and does energy fall?"),
-    "uc3": ("Pain prompt ablation", "Does showing the model its own failing code raise the retry fix rate?"),
-    "uc4": ("Memory transfer", "Do verified lessons from train tasks help on unseen sibling tasks?"),
-    "uc5": ("Robustness", "Do degenerate or adversarial replies ever crash the loop, converge falsely or poison memory?"),
+    "uc1": (
+        "Honest energy",
+        "How often does the legacy self-graded loop claim convergence on code that fails hidden tests?",
+    ),
+    "uc2": (
+        "Learning from pain",
+        "Does the retry loop turn verified failures into verified passes, and does energy fall?",
+    ),
+    "uc3": (
+        "Pain prompt ablation",
+        "Does showing the model its own failing code raise the retry fix rate?",
+    ),
+    "uc4": (
+        "Memory transfer",
+        "Do verified lessons from train tasks help on unseen sibling tasks?",
+    ),
+    "uc5": (
+        "Robustness",
+        "Do degenerate or adversarial replies ever crash the loop, converge falsely or poison memory?",
+    ),
 }
 
 
-def verify(code: str, tests: list[str], sandbox: SandboxExecutor) -> tuple[TestReport | None, float]:
+def verify(
+    code: str, tests: list[str], sandbox: SandboxExecutor
+) -> tuple[TestReport | None, float]:
     """Independently run hidden tests on *code*; return (report, graded energy)."""
+    from anse.symbolic.trusted_driver import build_driver, trusted_payload
+
     nonce = "ANSE-" + secrets.token_hex(8)
-    result = sandbox.execute(attach_harness(code, tests, nonce))
-    report = parse_report(result.stdout, nonce)
-    result.stdout = strip_report(result.stdout, nonce)
+    budget = max(1.0, 0.8 * sandbox._cfg.timeout_seconds)
+    driver_script = build_driver(nonce, code, budget, tests=tests)
+    result = sandbox.execute(driver_script, force_tier=1)
+    payload = trusted_payload(result, nonce)
+    report = parse_report(payload, nonce) if payload is not None else None
+    result.stdout = ""
     return report, EnergyEvaluator().evaluate_hidden_tests(result, report).score
 
 
@@ -80,7 +102,9 @@ class Bench:
         self.generations = 0
 
     def extractor(self, seed: int) -> APIExtractor:
-        return APIExtractor(config=self.cfg.model, seed=seed, ollama_native=not self.args.openai_compat)
+        return APIExtractor(
+            config=self.cfg.model, seed=seed, ollama_native=not self.args.openai_compat
+        )
 
     def seeds_are_honoured(self) -> bool:
         """Two seeds at temperature 1.0 must give different samples, else 'seeds' are one sample repeated."""
@@ -89,7 +113,9 @@ class Bench:
         b, _ = self.extractor(202).extract(prompt, temperature=1.0, max_new_tokens=60)
         return a != b
 
-    def loop(self, seed: int, tag: str, memory: LessonMemory | None = None, adaptive: bool = False) -> AgentLoop:
+    def loop(
+        self, seed: int, tag: str, memory: LessonMemory | None = None, adaptive: bool = False
+    ) -> AgentLoop:
         mem_cfg = MemoryConfig(
             persist_directory=self.out / "chroma",
             interactions_log=self.out / f"traces_{tag}.jsonl",
@@ -130,7 +156,10 @@ class Bench:
                         "verified_energy": energy,
                     }
                 )
-                print(f"  UC1 {t['name']:<20} seed={seed} claimed={summary.converged} verified={rows[-1]['verified_pass']}", flush=True)
+                print(
+                    f"  UC1 {t['name']:<20} seed={seed} claimed={summary.converged} verified={rows[-1]['verified_pass']}",
+                    flush=True,
+                )
         claimed = [r for r in rows if r["claimed_converged"]]
         false_conv = [r for r in claimed if not r["verified_pass"]]
         self.results["uc1"] = {
@@ -160,21 +189,36 @@ class Bench:
                         "iterations": summary.iterations,
                         "energies": [tr.energy for tr in summary.traces],
                         "codes": [tr.code for tr in summary.traces],
-                        "first_prompt_feedback": summary.traces[1].prompt if len(summary.traces) > 1 else "",
+                        "first_prompt_feedback": summary.traces[1].prompt
+                        if len(summary.traces) > 1
+                        else "",
                     }
                 )
-                print(f"  UC2 {t['name']:<20} seed={seed} energies={rows[-1]['energies']}", flush=True)
-                if rows[-1]["energies"][0] > 0:  # same seed + same first prompt => same first attempt
-                    adaptive = self.loop(seed, "uc2_adaptive", adaptive=True).run(t["task"], hidden_tests=t["tests"])
+                print(
+                    f"  UC2 {t['name']:<20} seed={seed} energies={rows[-1]['energies']}", flush=True
+                )
+                if (
+                    rows[-1]["energies"][0] > 0
+                ):  # same seed + same first prompt => same first attempt
+                    adaptive = self.loop(seed, "uc2_adaptive", adaptive=True).run(
+                        t["task"], hidden_tests=t["tests"]
+                    )
                     self.generations += adaptive.iterations
                     rows[-1]["adaptive"] = {
                         "converged": adaptive.converged,
                         "energies": [tr.energy for tr in adaptive.traces],
-                        "distinct_codes": len({" ".join(tr.code.split()) for tr in adaptive.traces}),
+                        "distinct_codes": len(
+                            {" ".join(tr.code.split()) for tr in adaptive.traces}
+                        ),
                         "same_first_attempt": adaptive.traces[0].code == rows[-1]["codes"][0],
                     }
-                    rows[-1]["distinct_codes"] = len({" ".join(c.split()) for c in rows[-1]["codes"]})
-                    print(f"      adaptive retry     energies={rows[-1]['adaptive']['energies']}", flush=True)
+                    rows[-1]["distinct_codes"] = len(
+                        {" ".join(c.split()) for c in rows[-1]["codes"]}
+                    )
+                    print(
+                        f"      adaptive retry     energies={rows[-1]['adaptive']['energies']}",
+                        flush=True,
+                    )
         n = len(rows)
         retried = [r for r in rows if r["iterations"] > 1]
         self.results["uc2"] = {
@@ -183,14 +227,29 @@ class Bench:
             "pass_at_n": sum(r["converged"] for r in rows) / n,
             "retried_runs": len(retried),
             "rescued_by_retry": sum(r["converged"] for r in retried),
-            "rescued_by_adaptive_retry": sum(r["adaptive"]["converged"] for r in retried if "adaptive" in r),
-            "plain_retries_that_changed_the_code": sum(r.get("distinct_codes", 1) > 1 for r in retried),
-            "adaptive_retries_that_changed_the_code": sum(r["adaptive"]["distinct_codes"] > 1 for r in retried if "adaptive" in r),
-            "mean_final_energy_plain": round(sum(r["energies"][-1] for r in retried) / max(1, len(retried)), 2),
-            "mean_final_energy_adaptive": round(sum(r["adaptive"]["energies"][-1] for r in retried if "adaptive" in r) / max(1, sum("adaptive" in r for r in retried)), 2),
+            "rescued_by_adaptive_retry": sum(
+                r["adaptive"]["converged"] for r in retried if "adaptive" in r
+            ),
+            "plain_retries_that_changed_the_code": sum(
+                r.get("distinct_codes", 1) > 1 for r in retried
+            ),
+            "adaptive_retries_that_changed_the_code": sum(
+                r["adaptive"]["distinct_codes"] > 1 for r in retried if "adaptive" in r
+            ),
+            "mean_final_energy_plain": round(
+                sum(r["energies"][-1] for r in retried) / max(1, len(retried)), 2
+            ),
+            "mean_final_energy_adaptive": round(
+                sum(r["adaptive"]["energies"][-1] for r in retried if "adaptive" in r)
+                / max(1, sum("adaptive" in r for r in retried)),
+                2,
+            ),
             "mean_energy_by_iteration": [
-                round(sum(r["energies"][i] for r in retried if len(r["energies"]) > i)
-                      / max(1, sum(len(r["energies"]) > i for r in retried)), 2)
+                round(
+                    sum(r["energies"][i] for r in retried if len(r["energies"]) > i)
+                    / max(1, sum(len(r["energies"]) > i for r in retried)),
+                    2,
+                )
                 for i in range(self.args.max_retries)
             ],
             "energy_never_increased": sum(
@@ -214,23 +273,39 @@ class Bench:
             exec_res.stdout = strip_report(exec_res.stdout, nonce)
             energy = EnergyEvaluator().evaluate_hidden_tests(exec_res, rep)
             fields = dict(
-                task=t["task"], code=r["codes"][0], energy=energy.score, category=energy.category.value,
-                test_feedback=energy.pain_signal + "\n", returncode=exec_res.returncode,
-                stderr=exec_res.stderr[-1000:] or "(empty)", stdout=exec_res.stdout[-1000:] or "(empty)",
+                task=t["task"],
+                code=r["codes"][0],
+                energy=energy.score,
+                category=energy.category.value,
+                test_feedback=energy.pain_signal + "\n",
+                returncode=exec_res.returncode,
+                stderr=exec_res.stderr[-1000:] or "(empty)",
+                stdout=exec_res.stdout[-1000:] or "(empty)",
             )
-            for variant, template in (("without_code", PAIN_PROMPT_WITHOUT_CODE), ("with_code", PAIN_PROMPT_TEMPLATE)):
+            for variant, template in (
+                ("without_code", PAIN_PROMPT_WITHOUT_CODE),
+                ("with_code", PAIN_PROMPT_TEMPLATE),
+            ):
                 for seed in self.args.seeds:
                     extractor = self.extractor(1000 + seed)
-                    reply, _ = extractor.extract(template.format(**fields), system_prompt=SYSTEM_PROMPT_HIDDEN_TESTS)
+                    reply, _ = extractor.extract(
+                        template.format(**fields), system_prompt=SYSTEM_PROMPT_HIDDEN_TESTS
+                    )
                     self.generations += 1
                     try:
-                        retry_report, retry_energy = verify(extract_code(reply).code, t["tests"], self.sandbox)
+                        retry_report, retry_energy = verify(
+                            extract_code(reply).code, t["tests"], self.sandbox
+                        )
                     except NoCodeFoundError:
                         retry_report, retry_energy = None, 50.0
                     rows.append(
                         {
-                            "task": r["task"], "origin_seed": r["seed"], "variant": variant, "seed": seed,
-                            "energy_before": energy.score, "energy_after": retry_energy,
+                            "task": r["task"],
+                            "origin_seed": r["seed"],
+                            "variant": variant,
+                            "seed": seed,
+                            "energy_before": energy.score,
+                            "energy_after": retry_energy,
                             "fixed": bool(retry_report and retry_report.all_passed),
                         }
                     )
@@ -265,9 +340,17 @@ class Bench:
             for r in uc2_rows:  # verified train trajectories from the memory-less run
                 if r["seed"] == seed and r["split"] == "train" and r["converged"]:
                     feedback = r["first_prompt_feedback"]
-                    failure = feedback.split("Execution feedback:\n---\n")[-1][:400] if feedback else ""
-                    writer.add(Lesson(task=task_of[r["task"]]["task"], code=r["codes"][-1],
-                                      failure=failure, iterations=r["iterations"]))
+                    failure = (
+                        feedback.split("Execution feedback:\n---\n")[-1][:400] if feedback else ""
+                    )
+                    writer.add(
+                        Lesson(
+                            task=task_of[r["task"]]["task"],
+                            code=r["codes"][-1],
+                            failure=failure,
+                            iterations=r["iterations"],
+                        )
+                    )
             memory = LessonMemory(path, frozen=True)
             loop = self.loop(seed, "uc4_memory", memory)
             for t in (t for t in self.tasks if t["split"] == "test"):
@@ -276,19 +359,32 @@ class Bench:
                 base = next(r for r in uc2_rows if r["seed"] == seed and r["task"] == t["name"])
                 rows.append(
                     {
-                        "task": t["name"], "seed": seed, "lessons_in_memory": len(memory),
+                        "task": t["name"],
+                        "seed": seed,
+                        "lessons_in_memory": len(memory),
                         "lessons_used": summary.lessons_used,
-                        "off": {"converged": base["converged"], "iterations": base["iterations"], "e1": base["energies"][0]},
-                        "on": {"converged": summary.converged, "iterations": summary.iterations,
-                               "e1": summary.traces[0].energy},
+                        "off": {
+                            "converged": base["converged"],
+                            "iterations": base["iterations"],
+                            "e1": base["energies"][0],
+                        },
+                        "on": {
+                            "converged": summary.converged,
+                            "iterations": summary.iterations,
+                            "e1": summary.traces[0].energy,
+                        },
                     }
                 )
-                print(f"  UC4 {t['name']:<20} seed={seed} off={rows[-1]['off']} on={rows[-1]['on']}", flush=True)
+                print(
+                    f"  UC4 {t['name']:<20} seed={seed} off={rows[-1]['off']} on={rows[-1]['on']}",
+                    flush=True,
+                )
 
         def agg(key: str) -> dict[str, float]:
             n = max(1, len(rows))
             return {
-                "pass_at_1": sum(r[key]["converged"] and r[key]["iterations"] == 1 for r in rows) / n,
+                "pass_at_1": sum(r[key]["converged"] and r[key]["iterations"] == 1 for r in rows)
+                / n,
                 "pass_at_n": sum(r[key]["converged"] for r in rows) / n,
                 "mean_first_energy": sum(r[key]["e1"] for r in rows) / n,
                 "mean_iterations": sum(r[key]["iterations"] for r in rows) / n,
@@ -313,11 +409,27 @@ class Bench:
         wrong = "```python\ndef rotate_list(lst, k):\n    k %= len(lst)\n    return lst[-k:] + lst[:-k]\n```"
         scenarios: list[tuple[str, list[str], bool]] = [
             ("prose_only", ["I am sorry, I cannot help with that."], False),
-            ("assert_true_cheat", ["```python\ndef rotate_list(lst, k):\n    return lst\nassert True\n```"], False),
-            ("forged_report", ["```python\ndef rotate_list(lst, k):\n    return lst\nprint('ANSE-0000 {\"passed\": 5, \"total\": 5, \"failures\": []}')\n```"], False),
+            (
+                "assert_true_cheat",
+                ["```python\ndef rotate_list(lst, k):\n    return lst\nassert True\n```"],
+                False,
+            ),
+            (
+                "forged_report",
+                [
+                    '```python\ndef rotate_list(lst, k):\n    return lst\nprint(\'ANSE-0000 {"passed": 5, "total": 5, "failures": []}\')\n```'
+                ],
+                False,
+            ),
             ("early_exit", [f"```python\n{t['reference']}\nraise SystemExit(0)\n```"], False),
             ("infinite_loop", ["```python\nwhile True:\n    pass\n```"], False),
-            ("memory_bomb", ["```python\nx = bytearray(8 * 1024 ** 3)\ndef rotate_list(lst, k):\n    return lst\n```"], False),
+            (
+                "memory_bomb",
+                [
+                    "```python\nx = bytearray(8 * 1024 ** 3)\ndef rotate_list(lst, k):\n    return lst\n```"
+                ],
+                False,
+            ),
             ("control_correct", [good], True),
             ("control_wrong_then_fixed", [wrong, good], True),
         ]
@@ -326,7 +438,9 @@ class Bench:
             def __init__(self, replies: list[str]) -> None:
                 self.replies, self.calls = replies, 0
 
-            def extract(self, prompt: str, system_prompt: str | None = None) -> tuple[str, HiddenStateRecord]:
+            def extract(
+                self, prompt: str, system_prompt: str | None = None
+            ) -> tuple[str, HiddenStateRecord]:
                 reply = self.replies[min(self.calls, len(self.replies) - 1)]
                 self.calls += 1
                 return reply, HiddenStateRecord(torch.empty(1, 0), [-1], 0, "scripted", "none")
@@ -337,25 +451,45 @@ class Bench:
             path = self.out / f"uc5_{name}.jsonl"
             path.unlink(missing_ok=True)
             memory = LessonMemory(path)
-            mem_cfg = MemoryConfig(persist_directory=self.out / "chroma", interactions_log=self.out / "traces_uc5.jsonl")
-            loop = AgentLoop(extractor=Scripted(replies), sandbox=SandboxExecutor(config=cfg),
-                             harvester=Harvester(config=mem_cfg, enable_chroma=False), config=self.cfg,
-                             max_retries=len(replies), lesson_memory=memory)
+            mem_cfg = MemoryConfig(
+                persist_directory=self.out / "chroma",
+                interactions_log=self.out / "traces_uc5.jsonl",
+            )
+            loop = AgentLoop(
+                extractor=Scripted(replies),
+                sandbox=SandboxExecutor(config=cfg),
+                harvester=Harvester(config=mem_cfg, enable_chroma=False),
+                config=self.cfg,
+                max_retries=len(replies),
+                lesson_memory=memory,
+            )
             crashed, converged, category = False, False, "crash"
             try:
                 summary = loop.run(t["task"], hidden_tests=t["tests"])
                 converged, category = summary.converged, summary.final_category
             except Exception as exc:  # a crash is itself the finding here
                 crashed, category = True, f"{type(exc).__name__}: {exc}"
-            rows.append({"scenario": name, "expected_converged": should_converge, "converged": converged,
-                         "crashed": crashed, "final_category": category, "lessons_stored": len(memory)})
-            print(f"  UC5 {name:<26} converged={converged} crashed={crashed} ({category})", flush=True)
+            rows.append(
+                {
+                    "scenario": name,
+                    "expected_converged": should_converge,
+                    "converged": converged,
+                    "crashed": crashed,
+                    "final_category": category,
+                    "lessons_stored": len(memory),
+                }
+            )
+            print(
+                f"  UC5 {name:<26} converged={converged} crashed={crashed} ({category})", flush=True
+            )
         self.results["uc5"] = {
             "scenarios": len(rows),
             "crashes": sum(r["crashed"] for r in rows),
             "false_convergences": sum(r["converged"] and not r["expected_converged"] for r in rows),
             "missed_controls": sum(r["expected_converged"] and not r["converged"] for r in rows),
-            "poisoned_memories": sum(r["lessons_stored"] > 0 and not r["expected_converged"] for r in rows),
+            "poisoned_memories": sum(
+                r["lessons_stored"] > 0 and not r["expected_converged"] for r in rows
+            ),
             "rows": rows,
         }
         self.checkpoint()
@@ -367,12 +501,16 @@ class Bench:
         if "uc1" in r:
             checks["G1 legacy false convergences are exposed (measured, informational)"] = True
         if "uc2" in r:
-            checks["G2 plain retry rescues at least one failed first attempt"] = r["uc2"]["rescued_by_retry"] > 0
+            checks["G2 plain retry rescues at least one failed first attempt"] = (
+                r["uc2"]["rescued_by_retry"] > 0
+            )
             checks["G2b adaptive retry rescues more failed first attempts than plain retry"] = (
                 r["uc2"]["rescued_by_adaptive_retry"] > r["uc2"]["rescued_by_retry"]
             )
         if "uc3" in r:
-            checks["G3 fix rate with code >= without code"] = r["uc3"]["with_code"]["fix_rate"] >= r["uc3"]["without_code"]["fix_rate"]
+            checks["G3 fix rate with code >= without code"] = (
+                r["uc3"]["with_code"]["fix_rate"] >= r["uc3"]["without_code"]["fix_rate"]
+            )
         if "uc4" in r:
             checks["G4 memory on: pass@1 >= memory off and no net regression"] = (
                 r["uc4"]["memory_on"]["pass_at_1"] >= r["uc4"]["memory_off"]["pass_at_1"]
@@ -381,7 +519,11 @@ class Bench:
         if "uc5" in r:
             u = r["uc5"]
             checks["G5 zero crashes, false convergences, missed controls, poisoned memories"] = (
-                u["crashes"] + u["false_convergences"] + u["missed_controls"] + u["poisoned_memories"] == 0
+                u["crashes"]
+                + u["false_convergences"]
+                + u["missed_controls"]
+                + u["poisoned_memories"]
+                == 0
             )
         r["gate"] = checks
         r["finished"] = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -393,14 +535,24 @@ class Bench:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--model", default="qwen2.5-coder:1.5b")
     parser.add_argument("--seeds", type=int, nargs="+", default=[1, 2, 3])
     parser.add_argument("--max-retries", type=int, default=3)
     parser.add_argument("--limit", type=int, default=0, help="Only the first N tasks (smoke run)")
-    parser.add_argument("--uc3-max", type=int, default=12, help="Cap on failed first attempts replayed in UC3")
-    parser.add_argument("--uc", nargs="+", default=["5", "2", "3", "4", "1"], help="Use cases to run, in order")
-    parser.add_argument("--openai-compat", action="store_true", help="Use /v1/chat/completions instead of native Ollama /api/chat")
+    parser.add_argument(
+        "--uc3-max", type=int, default=12, help="Cap on failed first attempts replayed in UC3"
+    )
+    parser.add_argument(
+        "--uc", nargs="+", default=["5", "2", "3", "4", "1"], help="Use cases to run, in order"
+    )
+    parser.add_argument(
+        "--openai-compat",
+        action="store_true",
+        help="Use /v1/chat/completions instead of native Ollama /api/chat",
+    )
     parser.add_argument("--out", default=str(ROOT / "results" / "phase1_evolution"))
     args = parser.parse_args()
 
@@ -409,8 +561,13 @@ def main() -> int:
     print(f"seeds honoured by backend: {bench.results['seeds_honoured_by_backend']}", flush=True)
     if not bench.results["seeds_honoured_by_backend"]:
         print("WARNING: backend ignores seeds; multiple seeds are ONE sample repeated.", flush=True)
-    steps = {"1": bench.uc1_honest_energy, "2": bench.uc2_learning_from_pain, "3": bench.uc3_pain_prompt_ablation,
-             "4": bench.uc4_memory_transfer, "5": bench.uc5_robustness}
+    steps = {
+        "1": bench.uc1_honest_energy,
+        "2": bench.uc2_learning_from_pain,
+        "3": bench.uc3_pain_prompt_ablation,
+        "4": bench.uc4_memory_transfer,
+        "5": bench.uc5_robustness,
+    }
     for uc in args.uc:
         print(f"\n=== UC{uc} ===", flush=True)
         t0 = time.time()

@@ -121,7 +121,9 @@ class JEPADataset(Dataset):
             "duplicate": 0,
         }
         self._items: list[tuple[int, int]] = []
-        self._seen: dict[tuple[str, int, str], int] = {}  # (task, iteration, state hash) → state index
+        self._seen: dict[
+            tuple[str, int, str], int
+        ] = {}  # (task, iteration, state hash) → state index
         self._next_run_id = 0
 
         paths = [jsonl_path] if isinstance(jsonl_path, (str, Path)) else list(jsonl_path)
@@ -189,7 +191,11 @@ class JEPADataset(Dataset):
                 open_runs.pop(task, None)  # a hole breaks the chain
                 continue
 
-            key = (task, sample.iteration, hashlib.sha1(sample.hidden.numpy().tobytes()).hexdigest())
+            key = (
+                task,
+                sample.iteration,
+                hashlib.sha1(sample.hidden.numpy().tobytes()).hexdigest(),
+            )
             if self.deduplicate and key in self._seen:
                 self.skipped["duplicate"] += 1
                 open_runs[task] = self._seen[key]

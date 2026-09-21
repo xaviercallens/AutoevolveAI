@@ -77,6 +77,7 @@ class CoPilotSummary:
 # 1. Harness Evaluation Engine
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def evaluate_in_harness(
     generated_code: str,
     target_file: str | Path,
@@ -170,6 +171,7 @@ def evaluate_in_harness(
 # 2. Active Co-Pilot (Energy Minimizer / TDD on Steroids)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class FallbackMockAgent:
     """Deterministic agent providing realistic multi-turn code synthesis for offline mode."""
 
@@ -236,7 +238,9 @@ def active_inference_copilot(
     and drives the AI agent to self-heal until E = 0.
     """
     target_path = Path(target_file).resolve()
-    orig_content: str | None = target_path.read_text(encoding="utf-8") if target_path.exists() else None
+    orig_content: str | None = (
+        target_path.read_text(encoding="utf-8") if target_path.exists() else None
+    )
 
     ai_agent = agent or FallbackMockAgent()
     current_prompt = prompt
@@ -250,14 +254,16 @@ def active_inference_copilot(
         _, candidate_code = ai_agent.think(current_prompt)
         harness_res = evaluate_in_harness(candidate_code, target_path, test_command)
 
-        steps.append(CoPilotStep(
-            attempt=attempt,
-            candidate_code=candidate_code,
-            energy=harness_res.energy,
-            is_valid=harness_res.is_valid,
-            feedback=harness_res.feedback,
-            duration_ms=harness_res.duration_ms,
-        ))
+        steps.append(
+            CoPilotStep(
+                attempt=attempt,
+                candidate_code=candidate_code,
+                energy=harness_res.energy,
+                is_valid=harness_res.is_valid,
+                feedback=harness_res.feedback,
+                duration_ms=harness_res.duration_ms,
+            )
+        )
 
         if harness_res.energy == 0.0:
             converged, final_code, proof_token = True, candidate_code, harness_res.proof_token
@@ -298,6 +304,7 @@ def active_inference_copilot(
 # 3. Golden Signal DPO Harvester (Learning from Human Correction)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def record_golden_signal_dpo(
     prompt: str,
     chosen_code: str,
@@ -335,6 +342,7 @@ def record_golden_signal_dpo(
 # 4. Shadow Mode (Apprenticeship Observer)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def shadow_mode_observe(
     predicted_code: str,
     human_written_code: str,
@@ -348,13 +356,15 @@ def shadow_mode_observe(
     import difflib
 
     is_exact_match = predicted_code.strip() == human_written_code.strip()
-    diff_lines = list(difflib.unified_diff(
-        predicted_code.splitlines(),
-        human_written_code.splitlines(),
-        fromfile="ai_prediction.py",
-        tofile="human_solution.py",
-        lineterm="",
-    ))
+    diff_lines = list(
+        difflib.unified_diff(
+            predicted_code.splitlines(),
+            human_written_code.splitlines(),
+            fromfile="ai_prediction.py",
+            tofile="human_solution.py",
+            lineterm="",
+        )
+    )
 
     surprise_energy = 0.0 if is_exact_match else min(100.0, float(len(diff_lines)) * 10.0)
     dpo_logged = False

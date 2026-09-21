@@ -176,7 +176,9 @@ class ComponentRegistry:
             raise RegistryCorruptionError(
                 f"{component}: lineage says v{version:04d} is active but its file is missing or altered"
             )
-        raise RegistryCorruptionError(f"{component}: no usable pointer and no lineage to rebuild it from")
+        raise RegistryCorruptionError(
+            f"{component}: no usable pointer and no lineage to rebuild it from"
+        )
 
     def active(self, component: str) -> ActivePointer:
         """
@@ -189,15 +191,20 @@ class ComponentRegistry:
         pointer = self._read_pointer(component)
         if pointer is not None and pointer == self._pointer_from_lineage(component):
             return pointer
-        with self._locked(component):  # re-check under the lock: a writer may have been mid-promotion
+        with self._locked(
+            component
+        ):  # re-check under the lock: a writer may have been mid-promotion
             pointer = self._read_pointer(component)
             expected = self._pointer_from_lineage(component)
             if pointer != expected:
                 self._write_pointer(component, expected)
                 self._append_lineage(
                     component,
-                    {"event": "repair", "restored_version": expected.version,
-                     "reason": "active pointer missing, corrupted or stale; rebuilt from lineage"},
+                    {
+                        "event": "repair",
+                        "restored_version": expected.version,
+                        "reason": "active pointer missing, corrupted or stale; rebuilt from lineage",
+                    },
                 )
         return expected
 
@@ -221,7 +228,9 @@ class ComponentRegistry:
         """
         pointer = self.active(component)
         path = self.version_path(component, pointer.version)
-        spec = importlib.util.spec_from_file_location(f"anse_registry_{component}_v{pointer.version:04d}", path)
+        spec = importlib.util.spec_from_file_location(
+            f"anse_registry_{component}_v{pointer.version:04d}", path
+        )
         if spec is None or spec.loader is None:
             raise RegistryError(f"{component}: cannot build an import spec for {path}")
         module = importlib.util.module_from_spec(spec)
@@ -238,7 +247,12 @@ class ComponentRegistry:
                     sha = code_sha256(code)
                     self._append_lineage(
                         component,
-                        {"event": "register", "active_version": version, "active_sha256": sha, "note": note},
+                        {
+                            "event": "register",
+                            "active_version": version,
+                            "active_sha256": sha,
+                            "note": note,
+                        },
                     )
                     self._write_pointer(component, ActivePointer(version, sha))
                     return version
@@ -257,24 +271,39 @@ class ComponentRegistry:
             sha = code_sha256(child_code)
             self._append_lineage(
                 component,
-                {**record, "event": "promote", "decision": "promoted",
-                 "parent_version": parent.version, "parent_sha256": parent.sha256,
-                 "child_version": version, "child_sha256": sha,
-                 "active_version": version, "active_sha256": sha},
+                {
+                    **record,
+                    "event": "promote",
+                    "decision": "promoted",
+                    "parent_version": parent.version,
+                    "parent_sha256": parent.sha256,
+                    "child_version": version,
+                    "child_sha256": sha,
+                    "active_version": version,
+                    "active_sha256": sha,
+                },
             )
             self._write_pointer(component, ActivePointer(version, sha))
             return version
 
-    def record_rejection(self, component: str, child_code: str, record: dict[str, Any]) -> dict[str, Any]:
+    def record_rejection(
+        self, component: str, child_code: str, record: dict[str, Any]
+    ) -> dict[str, Any]:
         """Audit a rejected child. Its code is not stored as a version; only its hash is kept."""
         self.active(component)  # repairs the pointer first if needed
         with self._locked(component):
             parent = self._pointer_from_lineage(component)
             return self._append_lineage(
                 component,
-                {**record, "event": "evaluate", "decision": "rejected",
-                 "parent_version": parent.version, "parent_sha256": parent.sha256,
-                 "child_version": None, "child_sha256": code_sha256(child_code)},
+                {
+                    **record,
+                    "event": "evaluate",
+                    "decision": "rejected",
+                    "parent_version": parent.version,
+                    "parent_sha256": parent.sha256,
+                    "child_version": None,
+                    "child_sha256": code_sha256(child_code),
+                },
             )
 
     def rollback(self, component: str, reason: str = "manual rollback") -> int:
@@ -284,11 +313,16 @@ class ComponentRegistry:
             current = self._pointer_from_lineage(component)
             promotion: dict[str, Any] | None = None
             for entry in reversed(self.lineage(component)):
-                if entry.get("event") == "promote" and entry.get("child_version") == current.version:
+                if (
+                    entry.get("event") == "promote"
+                    and entry.get("child_version") == current.version
+                ):
                     promotion = entry
                     break
             if promotion is None:
-                raise RegistryError(f"{component}: v{current.version:04d} has no parent to roll back to")
+                raise RegistryError(
+                    f"{component}: v{current.version:04d} has no parent to roll back to"
+                )
             parent_version = int(promotion["parent_version"])
             sha = code_sha256(self.code(component, parent_version))
             if sha != promotion.get("parent_sha256"):
@@ -297,8 +331,14 @@ class ComponentRegistry:
                 )
             self._append_lineage(
                 component,
-                {"event": "rollback", "from_version": current.version, "to_version": parent_version,
-                 "active_version": parent_version, "active_sha256": sha, "reason": reason},
+                {
+                    "event": "rollback",
+                    "from_version": current.version,
+                    "to_version": parent_version,
+                    "active_version": parent_version,
+                    "active_sha256": sha,
+                    "reason": reason,
+                },
             )
             self._write_pointer(component, ActivePointer(parent_version, sha))
             return parent_version

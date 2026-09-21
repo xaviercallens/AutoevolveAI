@@ -1,0 +1,257 @@
+......FFFFF............................................................. [ 16%]
+F.F..................................................................... [ 32%]
+........................................................................ [ 48%]
+........................................................................ [ 64%]
+........................................................................ [ 80%]
+........................................................................ [ 96%]
+..................                                                       [100%]
+=================================== FAILURES ===================================
+_ test_hidden_tests_grade_partial_failure_then_verified_fix_is_stored_as_lesson _
+
+tmp_path = PosixPath('/tmp/pytest-of-xavkal/pytest-78/test_hidden_tests_grade_partia0')
+
+    def test_hidden_tests_grade_partial_failure_then_verified_fix_is_stored_as_lesson(tmp_path):
+        from anse.memory.lessons import LessonMemory
+    
+        memory = LessonMemory(tmp_path / "lessons.jsonl")
+>       summary = _loop(tmp_path, [ROTATE_BAD, ROTATE_GOOD], memory).run(ROTATE_TASK, hidden_tests=ROTATE_TESTS)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase1/test_agent_loop.py:175: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+anse/core/agent_loop.py:208: in run
+    exec_res, report = self._execute(code, hidden_tests)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <anse.core.agent_loop.AgentLoop object at 0x737f13f4d670>
+code = 'def rotate_list(lst, k):\n    k %= len(lst)\n    return lst[-k:] + lst[:-k]'
+hidden_tests = ['assert rotate_list([1, 2, 3], 1) == [3, 1, 2]', 'assert rotate_list([], 4) == []']
+
+    def _execute(
+        self, code: str, hidden_tests: list[str] | None
+    ) -> tuple[ExecutionResult, TestReport | None]:
+        if not hidden_tests:
+            return self.sandbox.execute(code), None
+        from anse.symbolic.trusted_driver import build_driver, trusted_payload
+        nonce = "ANSE-" + secrets.token_hex(8)
+>       budget = max(1.0, 0.8 * self.sandbox.config.timeout_seconds)
+                                ^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SandboxExecutor' object has no attribute 'config'
+
+anse/core/agent_loop.py:317: AttributeError
+______ test_self_asserting_cheat_never_converges_and_never_enters_memory _______
+
+tmp_path = PosixPath('/tmp/pytest-of-xavkal/pytest-78/test_self_asserting_cheat_neve0')
+
+    def test_self_asserting_cheat_never_converges_and_never_enters_memory(tmp_path):
+        from anse.memory.lessons import LessonMemory
+    
+        memory = LessonMemory(tmp_path / "lessons.jsonl")
+        cheat = "```python\ndef rotate_list(lst, k):\n    return lst\n\nassert True\n```"
+>       summary = _loop(tmp_path, [cheat], memory).run(ROTATE_TASK, hidden_tests=ROTATE_TESTS)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase1/test_agent_loop.py:189: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+anse/core/agent_loop.py:208: in run
+    exec_res, report = self._execute(code, hidden_tests)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <anse.core.agent_loop.AgentLoop object at 0x737f13f4f020>
+code = 'def rotate_list(lst, k):\n    return lst\n\nassert True'
+hidden_tests = ['assert rotate_list([1, 2, 3], 1) == [3, 1, 2]', 'assert rotate_list([], 4) == []']
+
+    def _execute(
+        self, code: str, hidden_tests: list[str] | None
+    ) -> tuple[ExecutionResult, TestReport | None]:
+        if not hidden_tests:
+            return self.sandbox.execute(code), None
+        from anse.symbolic.trusted_driver import build_driver, trusted_payload
+        nonce = "ANSE-" + secrets.token_hex(8)
+>       budget = max(1.0, 0.8 * self.sandbox.config.timeout_seconds)
+                                ^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SandboxExecutor' object has no attribute 'config'
+
+anse/core/agent_loop.py:317: AttributeError
+____ test_retrieved_lesson_is_injected_into_first_prompt_of_a_sibling_task _____
+
+tmp_path = PosixPath('/tmp/pytest-of-xavkal/pytest-78/test_retrieved_lesson_is_injec0')
+
+    def test_retrieved_lesson_is_injected_into_first_prompt_of_a_sibling_task(tmp_path):
+        from anse.memory.lessons import Lesson, LessonMemory
+    
+        memory = LessonMemory(tmp_path / "lessons.jsonl", frozen=True)
+        LessonMemory(tmp_path / "lessons.jsonl").add(Lesson(task=ROTATE_TASK, code="def rotate_list(lst, k): ...", failure="ZeroDivisionError on []"))
+        memory = LessonMemory(tmp_path / "lessons.jsonl", frozen=True)
+        sibling = "Write a function `rotate_string(s, k)` that rotates a string to the left by k positions."
+        good = "```python\ndef rotate_string(s, k):\n    return s[k % len(s):] + s[:k % len(s)] if s else ''\n```"
+    
+>       summary = _loop(tmp_path, [good], memory).run(sibling, hidden_tests=["assert rotate_string('abc', 1) == 'bca'", "assert rotate_string('', 2) == ''"])
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase1/test_agent_loop.py:205: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+anse/core/agent_loop.py:208: in run
+    exec_res, report = self._execute(code, hidden_tests)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <anse.core.agent_loop.AgentLoop object at 0x737f13f4d460>
+code = "def rotate_string(s, k):\n    return s[k % len(s):] + s[:k % len(s)] if s else ''"
+hidden_tests = ["assert rotate_string('abc', 1) == 'bca'", "assert rotate_string('', 2) == ''"]
+
+    def _execute(
+        self, code: str, hidden_tests: list[str] | None
+    ) -> tuple[ExecutionResult, TestReport | None]:
+        if not hidden_tests:
+            return self.sandbox.execute(code), None
+        from anse.symbolic.trusted_driver import build_driver, trusted_payload
+        nonce = "ANSE-" + secrets.token_hex(8)
+>       budget = max(1.0, 0.8 * self.sandbox.config.timeout_seconds)
+                                ^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SandboxExecutor' object has no attribute 'config'
+
+anse/core/agent_loop.py:317: AttributeError
+__ test_adaptive_retry_detects_repeated_code_escalates_temperature_and_warns ___
+
+tmp_path = PosixPath('/tmp/pytest-of-xavkal/pytest-78/test_adaptive_retry_detects_re0')
+
+    def test_adaptive_retry_detects_repeated_code_escalates_temperature_and_warns(tmp_path):
+        calls: list[dict] = []
+    
+        class Recording(MockExtractorSequential):
+            def extract(self, prompt, system_prompt=None, temperature=None):
+                calls.append({"prompt": prompt, "system": system_prompt, "temperature": temperature})
+                return super().extract(prompt, system_prompt)
+    
+        harvester = Harvester(enable_chroma=False)
+        harvester.log_path = tmp_path / "interactions.jsonl"
+        reworded = ROTATE_BAD.replace("    k %= len(lst)", "    k  %=  len(lst)")
+        loop = AgentLoop(extractor=Recording([ROTATE_BAD, reworded, ROTATE_GOOD]), harvester=harvester,
+                         max_retries=3, adaptive_retry=True)
+    
+>       summary = loop.run(ROTATE_TASK, hidden_tests=ROTATE_TESTS)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase1/test_agent_loop.py:226: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+anse/core/agent_loop.py:208: in run
+    exec_res, report = self._execute(code, hidden_tests)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <anse.core.agent_loop.AgentLoop object at 0x737f13f4e3f0>
+code = 'def rotate_list(lst, k):\n    k %= len(lst)\n    return lst[-k:] + lst[:-k]'
+hidden_tests = ['assert rotate_list([1, 2, 3], 1) == [3, 1, 2]', 'assert rotate_list([], 4) == []']
+
+    def _execute(
+        self, code: str, hidden_tests: list[str] | None
+    ) -> tuple[ExecutionResult, TestReport | None]:
+        if not hidden_tests:
+            return self.sandbox.execute(code), None
+        from anse.symbolic.trusted_driver import build_driver, trusted_payload
+        nonce = "ANSE-" + secrets.token_hex(8)
+>       budget = max(1.0, 0.8 * self.sandbox.config.timeout_seconds)
+                                ^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SandboxExecutor' object has no attribute 'config'
+
+anse/core/agent_loop.py:317: AttributeError
+_________ test_plain_retry_never_passes_temperature_or_stagnation_note _________
+
+tmp_path = PosixPath('/tmp/pytest-of-xavkal/pytest-78/test_plain_retry_never_passes_0')
+
+    def test_plain_retry_never_passes_temperature_or_stagnation_note(tmp_path):
+        prompts: list[str] = []
+    
+        class Recording(MockExtractorSequential):
+            def extract(self, prompt, system_prompt=None):
+                prompts.append(prompt)
+                return super().extract(prompt, system_prompt)
+    
+        harvester = Harvester(enable_chroma=False)
+        harvester.log_path = tmp_path / "interactions.jsonl"
+        loop = AgentLoop(extractor=Recording([ROTATE_BAD, ROTATE_BAD, ROTATE_BAD]), harvester=harvester, max_retries=3)
+    
+>       summary = loop.run(ROTATE_TASK, hidden_tests=ROTATE_TESTS)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase1/test_agent_loop.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+anse/core/agent_loop.py:208: in run
+    exec_res, report = self._execute(code, hidden_tests)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <anse.core.agent_loop.AgentLoop object at 0x737f14127dd0>
+code = 'def rotate_list(lst, k):\n    k %= len(lst)\n    return lst[-k:] + lst[:-k]'
+hidden_tests = ['assert rotate_list([1, 2, 3], 1) == [3, 1, 2]', 'assert rotate_list([], 4) == []']
+
+    def _execute(
+        self, code: str, hidden_tests: list[str] | None
+    ) -> tuple[ExecutionResult, TestReport | None]:
+        if not hidden_tests:
+            return self.sandbox.execute(code), None
+        from anse.symbolic.trusted_driver import build_driver, trusted_payload
+        nonce = "ANSE-" + secrets.token_hex(8)
+>       budget = max(1.0, 0.8 * self.sandbox.config.timeout_seconds)
+                                ^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SandboxExecutor' object has no attribute 'config'
+
+anse/core/agent_loop.py:317: AttributeError
+___________ test_reference_solution_passes_every_hidden_test[median] ___________
+
+task = {'name': 'median', 'family': 'numeric', 'split': 'train', 'task': 'Write a function `median(values: list[float]) -> fl...e input list. For an even count return the mean of the two middle values. Raise ValueError if the list is empty.', ...}
+
+    @pytest.mark.parametrize("task", SUITE, ids=[t["name"] for t in SUITE])
+    def test_reference_solution_passes_every_hidden_test(task):
+        from anse.symbolic.trusted_driver import build_driver, trusted_payload
+        nonce = "ANSE-suitecheck"
+        sandbox = SandboxExecutor()
+        budget = max(1.0, 0.8 * sandbox._cfg.timeout_seconds)
+        driver_script = build_driver(nonce, task["reference"], budget, tests=task["tests"])
+        result = sandbox.execute(driver_script, force_tier=1)
+        payload = trusted_payload(result, nonce)
+        report = parse_report(payload, nonce) if payload is not None else None
+        result.stdout = ""
+        assert report is not None, result.stderr
+>       assert report.failures == []
+E       assert ["{'call': 'm...(type float)"] == []
+E         
+E         Left contains one more item: "{'call': 'median', 'args': [[7]], 'expect': 7} -> AssertionError: Expected 7 (type int), got 7.0 (type float)"
+E         Use -v to get more diff
+
+tests/phase1/test_evolution_suite.py:29: AssertionError
+_______ test_reference_solution_passes_every_hidden_test[second_largest] _______
+
+task = {'name': 'second_largest', 'family': 'numeric', 'split': 'test', 'task': 'Write a function `second_largest(values: lis...largest([5, 5, 3]) is 3. Raise ValueError if there are fewer than two distinct values (including an empty list).', ...}
+
+    @pytest.mark.parametrize("task", SUITE, ids=[t["name"] for t in SUITE])
+    def test_reference_solution_passes_every_hidden_test(task):
+        from anse.symbolic.trusted_driver import build_driver, trusted_payload
+        nonce = "ANSE-suitecheck"
+        sandbox = SandboxExecutor()
+        budget = max(1.0, 0.8 * sandbox._cfg.timeout_seconds)
+        driver_script = build_driver(nonce, task["reference"], budget, tests=task["tests"])
+        result = sandbox.execute(driver_script, force_tier=1)
+        payload = trusted_payload(result, nonce)
+        report = parse_report(payload, nonce) if payload is not None else None
+        result.stdout = ""
+        assert report is not None, result.stderr
+>       assert report.failures == []
+E       assert ["{'call': 's...2 (type int)"] == []
+E         
+E         Left contains one more item: "{'call': 'second_largest', 'args': [[1, 2, 3]], 'expect': 2.0} -> AssertionError: Expected 2.0 (type float), got 2 (type int)"
+E         Use -v to get more diff
+
+tests/phase1/test_evolution_suite.py:29: AssertionError
+=========================== short test summary info ============================
+FAILED tests/phase1/test_agent_loop.py::test_hidden_tests_grade_partial_failure_then_verified_fix_is_stored_as_lesson
+FAILED tests/phase1/test_agent_loop.py::test_self_asserting_cheat_never_converges_and_never_enters_memory
+FAILED tests/phase1/test_agent_loop.py::test_retrieved_lesson_is_injected_into_first_prompt_of_a_sibling_task
+FAILED tests/phase1/test_agent_loop.py::test_adaptive_retry_detects_repeated_code_escalates_temperature_and_warns
+FAILED tests/phase1/test_agent_loop.py::test_plain_retry_never_passes_temperature_or_stagnation_note
+FAILED tests/phase1/test_evolution_suite.py::test_reference_solution_passes_every_hidden_test[median]
+FAILED tests/phase1/test_evolution_suite.py::test_reference_solution_passes_every_hidden_test[second_largest]
+7 failed, 443 passed in 423.81s (0:07:03)

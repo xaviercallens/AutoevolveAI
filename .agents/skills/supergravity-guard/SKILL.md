@@ -63,3 +63,27 @@ Ensures:
 - Zero Bandit security vulnerabilities.
 - Zero dead code reported by Vulture.
 - Strict MyPy type invariant compliance.
+
+---
+
+### Step 5: ASW Swarm Disciplines & AI Slop Elimination (vendor/antigravity-swarm)
+Adopt the evidence-driven ASW swarm lifecycle (`asw-plan` -> `start-work` -> `asw` -> `asw-review`):
+1. **Binding Success Contract**:
+   - Define exact observable criteria (happy path, edge case, regression) before modifying code.
+   - Lock current behavior with regression or characterization tests first.
+2. **AI Slop & Boilerplate Elimination**:
+   - Strip redundant comments restating the code.
+   - Remove hollow docstrings on self-explanatory functions.
+   - Prevent over-defensive boilerplate that obscures core algorithms.
+3. **Local SLM Pre-Flight Critic Review**:
+   - Run the candidate implementation through the local Critic Model:
+     ```python
+     from anse.guard.critic import CodeCritic
+
+     result = CodeCritic().evaluate(code, prompt_context="Task context")
+     assert result.is_accepted, f"Critic Rejected: {result.reason}"
+     ```
+   - Rejects code immediately with an energy penalty ($E = 10^6$) if stubs or fake data are found.
+4. **Final Swarm Review**:
+   - Verify that test output is real, non-synthetic, and produces zero diff leakage in public packages.
+

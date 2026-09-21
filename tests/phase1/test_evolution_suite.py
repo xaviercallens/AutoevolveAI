@@ -8,18 +8,26 @@ import yaml
 
 from anse.memory.lessons import Lesson, LessonMemory
 from anse.symbolic.evaluator import EnergyEvaluator
-from anse.symbolic.hidden_tests import attach_harness, parse_report, strip_report
+from anse.symbolic.hidden_tests import parse_report
 from anse.symbolic.sandbox import SandboxExecutor
 
-SUITE = yaml.safe_load((Path(__file__).parents[2] / "tasks" / "phase1_evolution.yaml").read_text())["tasks"]
+SUITE = yaml.safe_load((Path(__file__).parents[2] / "tasks" / "phase1_evolution.yaml").read_text())[
+    "tasks"
+]
 
 
 @pytest.mark.parametrize("task", SUITE, ids=[t["name"] for t in SUITE])
 def test_reference_solution_passes_every_hidden_test(task):
+    from anse.symbolic.trusted_driver import build_driver, trusted_payload
+
     nonce = "ANSE-suitecheck"
-    result = SandboxExecutor().execute(attach_harness(task["reference"], task["tests"], nonce), force_tier=1)
-    report = parse_report(result.stdout, nonce)
-    result.stdout = strip_report(result.stdout, nonce)
+    sandbox = SandboxExecutor()
+    budget = max(1.0, 0.8 * sandbox._cfg.timeout_seconds)
+    driver_script = build_driver(nonce, task["reference"], budget, tests=task["tests"])
+    result = sandbox.execute(driver_script, force_tier=1)
+    payload = trusted_payload(result, nonce)
+    report = parse_report(payload, nonce) if payload is not None else None
+    result.stdout = ""
     assert report is not None, result.stderr
     assert report.failures == []
     assert report.passed == report.total == len(task["tests"])

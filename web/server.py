@@ -215,7 +215,9 @@ async def predict_jepa(req: JEPAPredictRequest) -> dict[str, Any]:
     cov_penalty = abs(coords[0] * coords[1] + coords[2] * coords[3]) * req.cov_weight
 
     # Predicted energy
-    predicted_energy = round(abs(coords[0] * 50.0 + coords[1] * 20.0) + (1.0 if "pass" in req.code else 0.0), 3)
+    predicted_energy = round(
+        abs(coords[0] * 50.0 + coords[1] * 20.0) + (1.0 if "pass" in req.code else 0.0), 3
+    )
 
     return {
         "latent_vector": coords[:8],  # First 8 dimensions for display
@@ -249,7 +251,9 @@ async def evaluate_hotswap(req: HotSwapRequest) -> dict[str, Any]:
         "action": "HOT_SWAP_EXECUTED" if is_safe else "REJECTED_HIGH_ENERGY",
         "child_valid": eval_res.is_valid,
         "child_category": eval_res.category.value,
-        "improvement_pct": round((-delta_e / max(req.parent_energy, 1e-4)) * 100.0, 2) if is_safe else 0.0,
+        "improvement_pct": round((-delta_e / max(req.parent_energy, 1e-4)) * 100.0, 2)
+        if is_safe
+        else 0.0,
     }
 
 
@@ -325,6 +329,7 @@ async def run_symbiotic_copilot(req: CoPilotRequest) -> dict[str, Any]:
     """Execute the Active Co-Pilot symbiotic loop against a developer test harness."""
     try:
         import tempfile
+
         with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False, encoding="utf-8") as tf:
             target_path = tf.name
 
@@ -436,10 +441,18 @@ async def evolution_all(max_rows: int = evolution_data.DEFAULT_MAX_ROWS) -> dict
 
 
 @app.get("/api/evolution/{phase}")
-async def evolution_phase(phase: int, max_rows: int = evolution_data.DEFAULT_MAX_ROWS) -> dict[str, Any]:
+async def evolution_phase(
+    phase: int, max_rows: int = evolution_data.DEFAULT_MAX_ROWS
+) -> dict[str, Any]:
     if phase not in evolution_data.PHASES:
-        raise HTTPException(status_code=404, detail=f"unknown phase {phase}; expected one of {list(evolution_data.PHASES)}")
-    return {"goal": evolution_data.GOALS[phase], **evolution_data.load_phase(phase, max_rows=max_rows)}
+        raise HTTPException(
+            status_code=404,
+            detail=f"unknown phase {phase}; expected one of {list(evolution_data.PHASES)}",
+        )
+    return {
+        "goal": evolution_data.GOALS[phase],
+        **evolution_data.load_phase(phase, max_rows=max_rows),
+    }
 
 
 def main() -> None:

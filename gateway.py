@@ -43,6 +43,19 @@ ROUTE_TO_LOCAL = os.getenv("ROUTE_TO_LOCAL", "true").lower() == "true"
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 UPSTREAM_GEMINI = os.getenv("UPSTREAM_GEMINI_URL", "https://generativelanguage.googleapis.com")
+GATEWAY_CRITIC_ENABLED = os.getenv("ANSE_GATEWAY_CRITIC_ENABLED", "false").lower() == "true"
+
+from anse.guard.critic import CodeCritic  # noqa: E402
+
+_critic_instance: CodeCritic | None = None
+
+
+def get_gateway_critic() -> CodeCritic:
+    global _critic_instance
+    if _critic_instance is None:
+        _critic_instance = CodeCritic()
+    return _critic_instance
+
 
 client_pool = httpx.AsyncClient(
     timeout=httpx.Timeout(connect=8.0, read=180.0, write=30.0, pool=50.0),
@@ -380,6 +393,24 @@ async def _dispatch_upstream(
     resp_headers["x-trace-id"] = trace_id
     resp_headers["x-served-by"] = target_model
     resp_headers["x-backend-routed"] = "upstream-gemini"
+
+    # Optional local Critic Model pre-flight verification
+    want_critic = GATEWAY_CRITIC_ENABLED or headers.get("x-critic-guard", "").lower() == "true"
+    if want_critic and upstream_resp.status_code == 200:
+        try:
+            resp_data = upstream_resp.json()
+            candidates = resp_data.get("candidates", [])
+            if candidates:
+                parts = candidates[0].get("content", {}).get("parts", [])
+                code_text = "\n".join(p.get("text", "") for p in parts if "text" in p)
+                critic = get_gateway_critic()
+                critic_res = critic.evaluate(code_text, prompt_context=path)
+                resp_headers["x-critic-verdict"] = critic_res.decision.value
+                if not critic_res.is_accepted:
+                    resp_headers["x-critic-reason"] = critic_res.reason[:250]
+        except Exception as critic_err:
+            logger.debug("Gateway critic evaluation skipped: %s", critic_err)
+
     return Response(
         content=upstream_resp.content, status_code=upstream_resp.status_code, headers=resp_headers
     )

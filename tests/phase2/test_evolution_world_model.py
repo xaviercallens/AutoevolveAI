@@ -45,7 +45,9 @@ class TestPredictionBounds:
 
         assert predictions.shape == (9,)
         assert bool(((predictions >= 0.0) & (predictions <= 100.0)).all())
-        assert predictions[4].item() == pytest.approx(model.predict_energy_scalar(batch[4]), abs=1e-4)
+        assert predictions[4].item() == pytest.approx(
+            model.predict_energy_scalar(batch[4]), abs=1e-4
+        )
 
     def test_saturated_energy_head_cannot_leave_the_interval(self) -> None:
         model = _model()
@@ -73,7 +75,10 @@ class TestPredictionBounds:
 class TestDimensionCheck:
     def test_prediction_with_wrong_dimension_raises(self) -> None:
         model = _model()
-        with pytest.raises(HiddenDimMismatchError, match=f"dimension {D_IN + 1} but this world model was built for d_input={D_IN}"):
+        with pytest.raises(
+            HiddenDimMismatchError,
+            match=f"dimension {D_IN + 1} but this world model was built for d_input={D_IN}",
+        ):
             model.predict_energy_scalar(torch.zeros(D_IN + 1))
         with pytest.raises(HiddenDimMismatchError, match=f"dimension {D_IN - 1}"):
             model.predict_energy_batch(torch.zeros(3, D_IN - 1))
@@ -108,12 +113,17 @@ class TestEnergyLabelAlignment:
 
     def test_energy_weight_scales_only_the_energy_term(self) -> None:
         h, energy = torch.randn(6, D_IN, generator=torch.Generator().manual_seed(4)), torch.rand(6)
-        light, heavy = _model(seed=5, energy_weight=1.0).eval(), _model(seed=5, energy_weight=11.0).eval()
+        light, heavy = (
+            _model(seed=5, energy_weight=1.0).eval(),
+            _model(seed=5, energy_weight=11.0).eval(),
+        )
         loss_light, m_light = light.compute_training_loss(h, h.clone(), energy)
         loss_heavy, m_heavy = heavy.compute_training_loss(h, h.clone(), energy)
 
         assert m_light["energy_head_loss"] == pytest.approx(m_heavy["energy_head_loss"], rel=1e-6)
-        assert (loss_heavy - loss_light).item() == pytest.approx(10.0 * m_light["energy_head_loss"], rel=1e-4)
+        assert (loss_heavy - loss_light).item() == pytest.approx(
+            10.0 * m_light["energy_head_loss"], rel=1e-4
+        )
 
 
 class TestRegularisation:
@@ -164,8 +174,17 @@ def _separable_traces(path: Path, n_tasks: int = 8) -> Path:
         for iteration, energy in ((1, 80.0), (2, 0.0)):
             h = torch.randn(D_IN, generator=generator) * 0.2
             h[0] = 2.0 if energy > 0 else -2.0
-            lines.append(json.dumps({"task": f"task-{t}", "iteration": iteration, "energy": energy,
-                                     "code": f"v{t}-{iteration}", "hidden_state": h.tolist()}))
+            lines.append(
+                json.dumps(
+                    {
+                        "task": f"task-{t}",
+                        "iteration": iteration,
+                        "energy": energy,
+                        "code": f"v{t}-{iteration}",
+                        "hidden_state": h.tolist(),
+                    }
+                )
+            )
     path.write_text("\n".join(lines) + "\n")
     return path
 
@@ -188,22 +207,34 @@ class TestRankCandidates:
         with pytest.raises(ValueError, match="non-empty"):
             model.rank_candidates(torch.zeros(0, D_IN))
 
-    def test_trained_model_ranks_the_passing_candidate_of_unseen_tasks_first(self, tmp_path: Path) -> None:
+    def test_trained_model_ranks_the_passing_candidate_of_unseen_tasks_first(
+        self, tmp_path: Path
+    ) -> None:
         ds = JEPADataset(_separable_traces(tmp_path / "sep.jsonl"))
         held_out = {"task-6", "task-7"}
         train_idx = ds.indices_for_tasks({s.task for s in ds.states} - held_out)
         val_idx = ds.indices_for_tasks(held_out)
         model = _model(seed=9, energy_weight=10.0)
         trainer = JEPATrainer(model, lr=5e-3, checkpoint_dir=tmp_path / "ckpt")
-        summary = trainer.fit(Subset(ds, train_idx), Subset(ds, val_idx), epochs=40, batch_size=8,
-                              select_best_on_val=False, validate_every=40)
+        summary = trainer.fit(
+            Subset(ds, train_idx),
+            Subset(ds, val_idx),
+            epochs=40,
+            batch_size=8,
+            select_best_on_val=False,
+            validate_every=40,
+        )
 
         assert summary.epochs_completed == 40
-        assert not (tmp_path / "ckpt").exists(), "select_best_on_val=False must not write checkpoints"
+        assert not (tmp_path / "ckpt").exists(), (
+            "select_best_on_val=False must not write checkpoints"
+        )
         for task in held_out:
             states = [s for s in ds.states if s.task == task]
             order = model.rank_candidates(torch.stack([s.hidden for s in states]))
-            assert states[order[0]].energy == 0.0, f"intuition should run the passing attempt of {task} first"
+            assert states[order[0]].energy == 0.0, (
+                f"intuition should run the passing attempt of {task} first"
+            )
 
 
 class TestFitCheckpointing:
@@ -239,7 +270,9 @@ class TestInputNormalisationSkew:
 
         assert torch.allclose(unit.norm(dim=-1), torch.ones(5), atol=1e-5)
         assert torch.allclose(l2_normalise(unit), unit, atol=1e-6)
-        assert bool(torch.isfinite(huge).all()) and huge.norm().item() == pytest.approx(1.0, abs=1e-5)
+        assert bool(torch.isfinite(huge).all()) and huge.norm().item() == pytest.approx(
+            1.0, abs=1e-5
+        )
         assert torch.equal(l2_normalise(torch.zeros(D_IN)), torch.zeros(D_IN))
 
     def test_raw_embedding_predicts_exactly_like_its_normalised_form(self) -> None:
@@ -248,8 +281,12 @@ class TestInputNormalisationSkew:
         raw = torch.randn(7, D_IN) * 125.0
         unit = raw / raw.norm(dim=-1, keepdim=True)
 
-        assert torch.allclose(model.predict_energy_batch(raw), model.predict_energy_batch(unit), atol=1e-4)
-        assert model.predict_energy_scalar(raw[0]) == pytest.approx(model.predict_energy_scalar(unit[0]), abs=1e-4)
+        assert torch.allclose(
+            model.predict_energy_batch(raw), model.predict_energy_batch(unit), atol=1e-4
+        )
+        assert model.predict_energy_scalar(raw[0]) == pytest.approx(
+            model.predict_energy_scalar(unit[0]), abs=1e-4
+        )
         assert torch.allclose(model.jepa_energy(raw, raw), model.jepa_energy(unit, unit), atol=1e-4)
         assert torch.allclose(model.encode_context(raw), model.encode_context(unit), atol=1e-5)
 
@@ -259,21 +296,30 @@ class TestInputNormalisationSkew:
         torch.manual_seed(5)
         raw = torch.randn(7, D_IN) * 125.0
         unit = raw / raw.norm(dim=-1, keepdim=True)
-        gap = (model.predict_energy_batch(raw) - model.predict_energy_batch(unit)).abs().max().item()
+        gap = (
+            (model.predict_energy_batch(raw) - model.predict_energy_batch(unit)).abs().max().item()
+        )
 
         assert model.normalise_input is False
         assert gap > 1e-2
 
-    def test_model_trained_on_dataset_states_ranks_raw_scale_candidates_identically(self, tmp_path: Path) -> None:
+    def test_model_trained_on_dataset_states_ranks_raw_scale_candidates_identically(
+        self, tmp_path: Path
+    ) -> None:
         ds = JEPADataset(_separable_traces(tmp_path / "sep.jsonl"))
         model = _model(seed=9, energy_weight=10.0)
         JEPATrainer(model, lr=5e-3, checkpoint_dir=tmp_path / "ckpt").fit(
-            ds, ds, epochs=10, batch_size=8, select_best_on_val=False, validate_every=10)
+            ds, ds, epochs=10, batch_size=8, select_best_on_val=False, validate_every=10
+        )
         unit = torch.stack([s.hidden for s in ds.states])
         raw = unit * 125.0
 
-        assert torch.allclose(unit.norm(dim=-1), torch.ones(len(ds.states)), atol=1e-5), "dataset states are unit vectors"
-        assert torch.allclose(model.predict_energy_batch(raw), model.predict_energy_batch(unit), atol=1e-3)
+        assert torch.allclose(unit.norm(dim=-1), torch.ones(len(ds.states)), atol=1e-5), (
+            "dataset states are unit vectors"
+        )
+        assert torch.allclose(
+            model.predict_energy_batch(raw), model.predict_energy_batch(unit), atol=1e-3
+        )
         assert model.rank_candidates(raw) == model.rank_candidates(unit)
 
     def test_training_loss_is_scale_invariant(self) -> None:

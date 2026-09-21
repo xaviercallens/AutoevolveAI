@@ -1,4 +1,3 @@
-import shutil
 """
 Phase 1 End-to-End Integration Tests
 =====================================
@@ -24,6 +23,7 @@ Each test docstring references the corresponding Lean 4 theorem or structure.
 from __future__ import annotations
 
 import json
+import shutil
 from unittest.mock import MagicMock
 
 import pytest
@@ -87,6 +87,7 @@ def agent_loop(mock_extractor, sandbox, evaluator, harvester):
 # ──────────────────────────────────────────────────────────────────────────────
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 class TestE2EPipelineCorrectCode:
     """Verifies that correct code flows cleanly through the entire pipeline."""
 
@@ -159,6 +160,7 @@ class TestE2EPipelineCorrectCode:
 # ──────────────────────────────────────────────────────────────────────────────
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 class TestE2EPipelineBuggyCode:
     """Verifies that buggy code produces the correct energy category."""
 
@@ -252,6 +254,7 @@ class TestE2EPipelineBuggyCode:
 # ──────────────────────────────────────────────────────────────────────────────
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 class TestEnergyInvariants:
     """Verify energy scale invariants matching the Lean 4 specification."""
 
@@ -316,6 +319,7 @@ class TestEnergyInvariants:
 # ──────────────────────────────────────────────────────────────────────────────
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 class TestHiddenStateInvariants:
     """Verify hidden state extraction matches the Lean 4 HiddenState(d) specification."""
 
@@ -364,6 +368,7 @@ class TestHiddenStateInvariants:
 # ──────────────────────────────────────────────────────────────────────────────
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 class TestDatasetPersistence:
     """Verify JSONL persistence matches the Lean 4 Dataset structure."""
 
@@ -455,17 +460,18 @@ class TestDatasetPersistence:
 # ──────────────────────────────────────────────────────────────────────────────
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 class TestSafetyEscalation:
     """Verify the AST scanner detects dangerous imports and triggers tier escalation."""
 
-    @pytest.mark.skipif(shutil.which('docker') is None, reason='Docker not installed')
+    @pytest.mark.skipif(shutil.which("docker") is None, reason="Docker not installed")
     def test_import_os_triggers_tier2(self, sandbox):
         code = "import os\nprint(os.getcwd())"
         result = sandbox.execute(code)
         assert "os" in result.dangerous_imports
         assert result.tier_used == 2  # escalated to Docker (or Docker fallback)
 
-    @pytest.mark.skipif(shutil.which('docker') is None, reason='Docker not installed')
+    @pytest.mark.skipif(shutil.which("docker") is None, reason="Docker not installed")
     def test_from_subprocess_triggers_tier2(self, sandbox):
         code = "from subprocess import run\nprint('test')"
         result = sandbox.execute(code)
@@ -508,6 +514,7 @@ class MockExtractorForE2E:
         return resp, record
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 class TestAgentLoopE2E:
     """End-to-end agent loop tests with real sandbox and evaluator."""
 
@@ -620,6 +627,7 @@ class TestAgentLoopE2E:
 # ──────────────────────────────────────────────────────────────────────────────
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 class TestBenchmarkSmoke:
     """Verify the benchmark runner works end-to-end with mock LLM."""
 

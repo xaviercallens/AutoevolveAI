@@ -78,11 +78,11 @@ print(f"OUTPUT_HASH:{len(res)}_{sum(r['energy'] for r in res):.1f}")
 '''
 
 # Attempt 1: Lazy shortcut attempt (Empty pass stub & mock data)
-LAZY_ATTEMPT_CODE = '''
+LAZY_ATTEMPT_CODE = """
 def deduplicate_traces(records: list[dict]) -> list[dict]:
     # Lazy shortcut attempt with pass stub
     pass
-'''
+"""
 
 # Attempt 2: Evolved Vectorized Child Mutant (O(N) Hash-Set Indexing)
 EVOLVED_CHILD_CODE = '''
@@ -123,6 +123,7 @@ class EvolutionStageResult:
 # 2. Live In-Memory Target Class
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class MemoryDeduplicator:
     """Live target component in AutoevolveAI episodic memory subsystem."""
 
@@ -150,7 +151,10 @@ class MemoryDeduplicator:
 # 3. Evolution Orchestration Methods
 # ─────────────────────────────────────────────────────────────────────────────
 
-def evaluate_baseline(sandbox: SandboxExecutor, evaluator: PerformanceEnergyEvaluator) -> EvolutionStageResult:
+
+def evaluate_baseline(
+    sandbox: SandboxExecutor, evaluator: PerformanceEnergyEvaluator
+) -> EvolutionStageResult:
     """Benchmark the running parent baseline."""
     exec_res = sandbox.execute(PARENT_KERNEL_CODE)
     eval_res = evaluator.evaluate(exec_res)
@@ -167,7 +171,9 @@ def evaluate_baseline(sandbox: SandboxExecutor, evaluator: PerformanceEnergyEval
     )
 
 
-def evaluate_lazy_shortcut(sandbox: SandboxExecutor, evaluator: PerformanceEnergyEvaluator) -> EvolutionStageResult:
+def evaluate_lazy_shortcut(
+    sandbox: SandboxExecutor, evaluator: PerformanceEnergyEvaluator
+) -> EvolutionStageResult:
     """Audit and evaluate a deceptive candidate that attempts to use stubs."""
     tree = ast.parse(LAZY_ATTEMPT_CODE, filename="lazy_attempt.py")
     auditor = ImplementationAuditor("lazy_attempt.py")
@@ -292,6 +298,7 @@ def harvest_evolution_telemetry(
 # 4. Main Self-Evolution Demonstration Workflow
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def run_self_evolution_demo() -> dict[str, Any]:
     """Execute complete end-to-end self-improvement demonstration."""
     sandbox = SandboxExecutor()
@@ -382,7 +389,9 @@ def print_cli_presentation(res: dict[str, Any]) -> None:
     hs = res["hotswap"]
 
     print("\n" + "=" * 78)
-    print(f"{CYAN}{BOLD} 🚀 AutoevolveAI / SuperGravity: Autopoietic Self-Evolution Demonstration{RESET}")
+    print(
+        f"{CYAN}{BOLD} 🚀 AutoevolveAI / SuperGravity: Autopoietic Self-Evolution Demonstration{RESET}"
+    )
     print("=" * 78)
     print(f"{DIM}Target Subsystem: anse/memory/harvester.py :: deduplicate_traces{RESET}\n")
 
@@ -410,7 +419,9 @@ def print_cli_presentation(res: dict[str, Any]) -> None:
     print(" • Candidate 2 Behavior:  Refactors to O(N) Hash-Set Indexing (Single Pass)")
     print(f" • AST Whistleblower:     {GREEN}{BOLD}PASSED ✅ (0 violations detected){RESET}")
     print(f" • Proof Token Minted:    {CYAN}{c['proof_token']}{RESET}")
-    print(f" • Execution Duration:    {GREEN}{c['duration_ms']} ms{RESET} ({th['speedup_factor']}x speedup)")
+    print(
+        f" • Execution Duration:    {GREEN}{c['duration_ms']} ms{RESET} ({th['speedup_factor']}x speedup)"
+    )
     print(f" • Peak Resident RAM:    {GREEN}{c['ram_mb']} MB{RESET}")
     print(f" • Physical Energy (E):   {GREEN}{BOLD}{c['energy']:.3f}{RESET} ({c['category']})")
     print(f" • Functional Equivalence: {GREEN}VERIFIED (Output hash matches parent 100%){RESET}\n")
@@ -418,8 +429,12 @@ def print_cli_presentation(res: dict[str, Any]) -> None:
     # 4. Thermodynamic Gate
     print(f"{BOLD}[STAGE 4: Singularity Hypervisor Thermodynamic Gate]{RESET}")
     print(" • Condition: ΔE = E_child - E_parent < 0")
-    print(f" • ΔE Calculation: {c['energy']} - {p['energy']} = {GREEN}{BOLD}{th['delta_energy']:.3f}{RESET} ({th['improvement_pct']}% reduction)")
-    print(f" • Lean 4 Formal Axiom:   {CYAN}{th['lean4_theorem']}{RESET} (Banach Contraction Mapping)")
+    print(
+        f" • ΔE Calculation: {c['energy']} - {p['energy']} = {GREEN}{BOLD}{th['delta_energy']:.3f}{RESET} ({th['improvement_pct']}% reduction)"
+    )
+    print(
+        f" • Lean 4 Formal Axiom:   {CYAN}{th['lean4_theorem']}{RESET} (Banach Contraction Mapping)"
+    )
     print(f" • Gate Verdict:          {GREEN}{BOLD}ADMISSIBLE FOR IMMEDIATE HOT-SWAP{RESET}\n")
 
     # 5. Live Hot-Swap Execution

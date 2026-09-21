@@ -110,7 +110,8 @@ class HiddenStateExtractor:
         logger.info("Loading tokenizer for %s ...", self.config.model_id)
         self._tokenizer = AutoTokenizer.from_pretrained(  # nosec B615  # type: ignore
             self.config.model_id,
-            trust_remote_code=True, revision="main",
+            trust_remote_code=True,
+            revision="main",
         )
 
         logger.info(
@@ -131,7 +132,8 @@ class HiddenStateExtractor:
 
         self._model = AutoModelForCausalLM.from_pretrained(  # nosec B615  # type: ignore
             self.config.model_id,
-            **load_kwargs, revision="main",
+            **load_kwargs,
+            revision="main",
         )
 
         if not self.config.load_in_4bit and self.config.device != "auto":

@@ -14,7 +14,13 @@ def evaluator() -> MLEnergyEvaluator:
 
 def test_evaluate_timeout(evaluator: MLEnergyEvaluator) -> None:
     result = MLExecutionResult(
-        stdout="", stderr="", returncode=-1, timed_out=True, duration_ms=100.0, tier_used=1, peak_ram_mb=0.0
+        stdout="",
+        stderr="",
+        returncode=-1,
+        timed_out=True,
+        duration_ms=100.0,
+        tier_used=1,
+        peak_ram_mb=0.0,
     )
     energy = evaluator.evaluate(result)
     assert energy.is_valid is False
@@ -30,7 +36,7 @@ def test_evaluate_syntax_error(evaluator: MLEnergyEvaluator) -> None:
         timed_out=False,
         duration_ms=10.0,
         tier_used=1,
-        peak_ram_mb=0.0
+        peak_ram_mb=0.0,
     )
     energy = evaluator.evaluate(result)
     assert energy.is_valid is False
@@ -47,7 +53,7 @@ def test_evaluate_shape_mismatch(evaluator: MLEnergyEvaluator) -> None:
         duration_ms=20.0,
         tier_used=1,
         peak_ram_mb=0.0,
-        is_shape_mismatch=True
+        is_shape_mismatch=True,
     )
     energy = evaluator.evaluate(result)
     assert energy.is_valid is False
@@ -64,7 +70,7 @@ def test_evaluate_oom(evaluator: MLEnergyEvaluator) -> None:
         duration_ms=20.0,
         tier_used=1,
         peak_ram_mb=0.0,
-        is_oom=True
+        is_oom=True,
     )
     energy = evaluator.evaluate(result)
     assert energy.is_valid is False
@@ -80,7 +86,7 @@ def test_evaluate_runtime_exception(evaluator: MLEnergyEvaluator) -> None:
         timed_out=False,
         duration_ms=20.0,
         tier_used=1,
-        peak_ram_mb=0.0
+        peak_ram_mb=0.0,
     )
     energy = evaluator.evaluate(result)
     assert energy.is_valid is False
@@ -98,7 +104,7 @@ def test_evaluate_exceeds_max_params(evaluator: MLEnergyEvaluator) -> None:
         duration_ms=50.0,
         tier_used=1,
         peak_ram_mb=0.0,
-        parameters=150
+        parameters=150,
     )
     energy = evaluator.evaluate(result)
     assert energy.is_valid is False
@@ -119,7 +125,7 @@ def test_evaluate_low_accuracy(evaluator: MLEnergyEvaluator) -> None:
         peak_ram_mb=0.0,
         parameters=50,
         accuracy=0.8,
-        val_loss=0.5
+        val_loss=0.5,
     )
     energy = evaluator.evaluate(result)
     assert energy.is_valid is True
@@ -140,7 +146,7 @@ def test_evaluate_optimized(evaluator: MLEnergyEvaluator) -> None:
         peak_ram_mb=0.0,
         parameters=50,
         accuracy=0.96,
-        val_loss=0.1
+        val_loss=0.1,
     )
     energy = evaluator.evaluate(result)
     assert energy.is_valid is True

@@ -9,8 +9,13 @@ from pathlib import Path
 
 def is_stub_body(body: list[ast.stmt]) -> bool:
     stmts = [
-        s for s in body
-        if not (isinstance(s, ast.Expr) and isinstance(s.value, ast.Constant) and isinstance(s.value.value, str))
+        s
+        for s in body
+        if not (
+            isinstance(s, ast.Expr)
+            and isinstance(s.value, ast.Constant)
+            and isinstance(s.value.value, str)
+        )
     ]
     if not stmts:
         return True
@@ -35,7 +40,9 @@ def check(path: Path) -> list[str]:
     problems = []
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and is_stub_body(node.body):
-            problems.append(f"{path}:{node.lineno}: stub function '{node.name}' (see .antigravity/rules.md section 6)")
+            problems.append(
+                f"{path}:{node.lineno}: stub function '{node.name}' (see .antigravity/rules.md section 6)"
+            )
     return problems
 
 

@@ -37,6 +37,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 # 1. Dataclasses
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @dataclass
 class LatentThoughtNode:
     thought_id: int
@@ -64,6 +65,7 @@ class GRPOTreeSearchResult:
 # 2. Fast JEPA Latent World Model Predictor
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class FastJEPALatentPredictor(nn.Module):
     """
     Evaluates abstract logic in latent space Z in ~2ms via matrix operations.
@@ -88,6 +90,7 @@ class FastJEPALatentPredictor(nn.Module):
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. Latent Dreamer & GRPO MCTS Engine
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class LatentDreamer:
     """
@@ -133,12 +136,14 @@ class LatentDreamer:
 
         nodes: list[LatentThoughtNode] = []
         for i in range(k):
-            nodes.append(LatentThoughtNode(
-                thought_id=i,
-                latent_vector=latent_batch[i].tolist(),
-                code_proposal=candidates[i],
-                predicted_energy=round(energies[i], 4),
-            ))
+            nodes.append(
+                LatentThoughtNode(
+                    thought_id=i,
+                    latent_vector=latent_batch[i].tolist(),
+                    code_proposal=candidates[i],
+                    predicted_energy=round(energies[i], 4),
+                )
+            )
 
         # 3. Compute GRPO Group Relative Advantages
         mean_e = sum(energies) / k
@@ -175,6 +180,7 @@ class LatentDreamer:
 # 4. Hippocampal Replay ("Sleep" Consolidation Cycle)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @dataclass
 class HippocampalTrace:
     trace_id: str
@@ -206,6 +212,7 @@ class HippocampalReplayEngine:
     ) -> str:
         """Wake Phase: Rapidly append episode to episodic hippocampus buffer."""
         import uuid
+
         trace_id = f"hip_{uuid.uuid4().hex[:8]}"
         trace = {
             "trace_id": trace_id,

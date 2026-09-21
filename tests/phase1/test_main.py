@@ -1,3 +1,7 @@
+import shutil
+
+import pytest
+
 """Tests for CLI entry point main.py."""
 
 import yaml
@@ -8,6 +12,7 @@ from anse.memory.harvester import Harvester
 from main import load_tasks, run_benchmark
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 def test_load_tasks(tmp_path):
     tasks_file = tmp_path / "test_tasks.yaml"
     data = {
@@ -24,6 +29,7 @@ def test_load_tasks(tmp_path):
     assert loaded[0]["name"] == "Task A"
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 def test_run_benchmark_mock(tmp_path):
     extractor = HiddenStateExtractor(mock_mode=True)
     harvester = Harvester(enable_chroma=False)
@@ -46,12 +52,14 @@ def test_run_benchmark_mock(tmp_path):
     assert rate == 100.0
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 def test_load_tasks_missing_file(tmp_path):
     missing = tmp_path / "does_not_exist.yaml"
     loaded = load_tasks(missing)
     assert loaded == []
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 def test_main_cli_single_task(monkeypatch, tmp_path):
     import sys
 

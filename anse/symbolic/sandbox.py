@@ -35,6 +35,8 @@ class ExecutionResult:
     timed_out: bool
     duration_ms: float
     tier_used: int  # 1 or 2
+    isolation: str = "none"
+    isolation: str = "none"
     dangerous_imports: list[str] = field(default_factory=list)
     """AST-detected dangerous imports that triggered tier escalation."""
     peak_ram_mb: float = 0.0
@@ -158,9 +160,7 @@ def _make_rlimit_setter(timeout: float, mem_limit_mb: int | None) -> Callable[[]
     return _apply
 
 
-def _tier1_execute(
-    code: str, timeout: float, mem_limit_mb: int | None = None
-) -> ExecutionResult:
+def _tier1_execute(code: str, timeout: float, mem_limit_mb: int | None = None) -> ExecutionResult:
     """
     Run *code* in a temporary directory via subprocess.
     Inherits no environment variables (clean env), applies CPU and address-space
@@ -247,19 +247,37 @@ def _tier2_execute(
 ) -> ExecutionResult:
     """
     Run *code* inside a Docker container for stronger isolation.
-    Falls back gracefully to Tier 1 if Docker is unavailable.
     """
     try:
         import docker  # type: ignore[import-untyped]
 
         client = docker.from_env()
-    except (ImportError, OSError, subprocess.SubprocessError):
-        # Docker not available — fall back to Tier 1 with a warning in stderr
-        result = _tier1_execute(code, timeout, cfg.tier1_mem_limit_mb)
-        result.tier_used = 2
-        result.stderr = "[WARN] Docker unavailable, fell back to Tier-1 sandbox.\n" + result.stderr
-        result.dangerous_imports = dangerous_imports
-        return result
+    except (ImportError, OSError, subprocess.SubprocessError, Exception) as exc:
+        is_docker_exc = type(exc).__name__ == "DockerException" or isinstance(
+            exc, (ImportError, OSError, subprocess.SubprocessError)
+        )
+        if not is_docker_exc:
+            raise
+
+        if getattr(cfg, "tier1_fallback", "deny") == "deny":
+            return ExecutionResult(
+                stdout="",
+                stderr="SANDBOX_UNAVAILABLE: Docker is required but not running.",
+                returncode=-1,
+                timed_out=False,
+                duration_ms=0.0,
+                tier_used=2,
+                isolation="none",
+                dangerous_imports=dangerous_imports,
+            )
+        else:
+            result = _tier1_execute(code, timeout, cfg.tier1_mem_limit_mb)
+            result.tier_used = 2
+            result.stderr = (
+                "[WARN] Docker unavailable, fell back to Tier-1 sandbox.\n" + result.stderr
+            )
+            result.dangerous_imports = dangerous_imports
+            return result
 
     with tempfile.TemporaryDirectory(prefix="anse_t2_") as tmpdir:
         script_path = Path(tmpdir) / "solution.py"
@@ -327,7 +345,9 @@ class SandboxExecutor:
     ) -> None:
         self._cfg = config or cfg or get_config().sandbox
 
-    def execute(self, code: str, force_tier: int | None = None) -> ExecutionResult:
+    def execute(
+        self, code: str, trusted: bool = False, force_tier: int | None = None
+    ) -> ExecutionResult:
         """
         Execute *code* in the appropriate sandbox tier.
 
@@ -335,6 +355,8 @@ class SandboxExecutor:
         ----------
         code:
             Raw Python source string to execute.
+        trusted:
+            If False, code is considered untrusted and will run in a container if configured.
         force_tier:
             If 1 or 2, skip the AST scan and use that tier directly.
             Useful for testing.
@@ -345,10 +367,15 @@ class SandboxExecutor:
         """
         dangerous = scan_dangerous_imports(code, self._cfg.dangerous_modules)
 
-        if force_tier == 1 or (force_tier is None and not dangerous):
+        requires_tier2 = not trusted and getattr(self._cfg, "untrusted_requires_container", True)
+
+        if dangerous:
+            requires_tier2 = True
+
+        if force_tier == 1 or (force_tier is None and not requires_tier2):
             result = _tier1_execute(code, self._cfg.timeout_seconds, self._cfg.tier1_mem_limit_mb)
             result.dangerous_imports = dangerous
             return result
 
-        # Tier 2 — dangerous import detected (or force_tier == 2)
+        # Tier 2 — required or forced
         return _tier2_execute(code, self._cfg.timeout_seconds, self._cfg, dangerous)

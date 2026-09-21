@@ -1,4 +1,5 @@
 import shutil
+
 """Tests for SandboxExecutor and AST safety scanner."""
 
 import pytest
@@ -15,7 +16,7 @@ def sandbox():
 
 def test_sandbox_clean_execution(sandbox):
     code = "print('Hello, ANSE!')"
-    result = sandbox.execute(code)
+    result = sandbox.execute(code, trusted=True)
     assert result.returncode == 0
     assert "Hello, ANSE!" in result.stdout
     assert not result.timed_out
@@ -24,40 +25,44 @@ def test_sandbox_clean_execution(sandbox):
 
 def test_sandbox_syntax_error(sandbox):
     code = "def bad_syntax(:"
-    result = sandbox.execute(code)
+    result = sandbox.execute(code, trusted=True)
     assert result.returncode != 0
     assert "SyntaxError" in result.stderr
 
 
 def test_sandbox_runtime_error(sandbox):
     code = "x = 1 / 0"
-    result = sandbox.execute(code)
+    result = sandbox.execute(code, trusted=True)
     assert result.returncode != 0
     assert "ZeroDivisionError" in result.stderr
 
 
 def test_sandbox_timeout(sandbox):
     code = "import time\ntime.sleep(5)"
-    result = sandbox.execute(code)
+    result = sandbox.execute(code, trusted=True)
     assert result.timed_out is True
     assert result.returncode != 0
 
 
-@pytest.mark.skipif(shutil.which('docker') is None, reason='Docker not installed')
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Docker not installed")
 def test_sandbox_ast_safety_detection(sandbox):
-    sandbox._execute_tier2 = lambda c, b=None: __import__('anse.symbolic.sandbox', fromlist=['']).ExecutionResult(0, '', '', 2, False)
+    sandbox._execute_tier2 = lambda c, b=None: __import__(
+        "anse.symbolic.sandbox", fromlist=[""]
+    ).ExecutionResult(0, "", "", 2, False)
     code = "import os\nimport sys\nprint('danger')"
-    result = sandbox.execute(code)
+    result = sandbox.execute(code, trusted=True)
     # Detected dangerous imports: 'os', 'sys'
     assert "os" in result.dangerous_imports
     assert "sys" in result.dangerous_imports
 
 
-@pytest.mark.skipif(shutil.which('docker') is None, reason='Docker not installed')
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Docker not installed")
 def test_sandbox_ast_safety_import_from(sandbox):
-    sandbox._execute_tier2 = lambda c, b=None: __import__('anse.symbolic.sandbox', fromlist=['']).ExecutionResult(0, '', '', 2, False)
+    sandbox._execute_tier2 = lambda c, b=None: __import__(
+        "anse.symbolic.sandbox", fromlist=[""]
+    ).ExecutionResult(0, "", "", 2, False)
     code = "from os import system\nprint('danger')"
-    result = sandbox.execute(code)
+    result = sandbox.execute(code, trusted=True)
     assert "os" in result.dangerous_imports
     assert result.tier_used == 2  # Tier 2 fallback because of dangerous import
 
@@ -70,8 +75,9 @@ def test_sandbox_tier2_docker_missing(sandbox, monkeypatch):
     # Force tier 2
     code = "import os\nprint('danger')"
     result = sandbox.execute(code, force_tier=2)
-    assert result.returncode == 0
-    assert "Docker unavailable, fell back to Tier-1" in result.stderr
+    assert result.returncode == -1
+    assert "SANDBOX_UNAVAILABLE" in result.stderr
+    assert result.isolation == "none"
 
 
 def test_sandbox_tier2_execution_success(sandbox, monkeypatch):

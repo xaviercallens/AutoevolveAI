@@ -28,11 +28,26 @@ UC_KEYS: tuple[str, ...] = ("uc1", "uc2", "uc3", "uc4", "uc5")
 Scalar = str | int | float | bool | None
 
 WORKFLOW_STEPS: list[dict[str, str]] = [
-    {"step": "Baseline", "detail": "Measure the existing behaviour on a real model before changing anything."},
-    {"step": "Evolve behind a parameter", "detail": "Add the improvement as an opt-in parameter so the old path stays intact and comparable."},
-    {"step": "Run 5 use cases", "detail": "Each use case asks one question and records raw per-item evidence rows, not just an average."},
-    {"step": "Gate", "detail": "Every goal is a boolean computed from the measured numbers. PASS or FAIL, nothing in between."},
-    {"step": "Promote or report failure", "detail": "A passing gate promotes the change. A failing gate is kept and shown as an honest result."},
+    {
+        "step": "Baseline",
+        "detail": "Measure the existing behaviour on a real model before changing anything.",
+    },
+    {
+        "step": "Evolve behind a parameter",
+        "detail": "Add the improvement as an opt-in parameter so the old path stays intact and comparable.",
+    },
+    {
+        "step": "Run 5 use cases",
+        "detail": "Each use case asks one question and records raw per-item evidence rows, not just an average.",
+    },
+    {
+        "step": "Gate",
+        "detail": "Every goal is a boolean computed from the measured numbers. PASS or FAIL, nothing in between.",
+    },
+    {
+        "step": "Promote or report failure",
+        "detail": "A passing gate promotes the change. A failing gate is kept and shown as an honest result.",
+    },
 ]
 
 GOALS: dict[int, dict[str, Any]] = {
@@ -76,11 +91,26 @@ GOALS: dict[int, dict[str, Any]] = {
 # Phase 1 results written before titles were added to the checkpoint lack them.
 DEFAULT_UC_META: dict[int, dict[str, tuple[str, str]]] = {
     1: {
-        "uc1": ("Honest energy", "How often does the self-graded loop claim convergence that hidden tests refute?"),
-        "uc2": ("Learning from pain", "How much do pain-driven retries raise the hidden-test pass rate over the first attempt?"),
-        "uc3": ("Pain prompt ablation", "Does showing the model its own failing code fix more failures than the error alone?"),
-        "uc4": ("Memory transfer", "Do lessons stored from earlier failures improve results on the same tasks later?"),
-        "uc5": ("Robustness", "Does the loop survive hostile or malformed model output without crashing or lying?"),
+        "uc1": (
+            "Honest energy",
+            "How often does the self-graded loop claim convergence that hidden tests refute?",
+        ),
+        "uc2": (
+            "Learning from pain",
+            "How much do pain-driven retries raise the hidden-test pass rate over the first attempt?",
+        ),
+        "uc3": (
+            "Pain prompt ablation",
+            "Does showing the model its own failing code fix more failures than the error alone?",
+        ),
+        "uc4": (
+            "Memory transfer",
+            "Do lessons stored from earlier failures improve results on the same tasks later?",
+        ),
+        "uc5": (
+            "Robustness",
+            "Does the loop survive hostile or malformed model output without crashing or lying?",
+        ),
     },
 }
 
@@ -103,7 +133,9 @@ PAIR_TOKENS: tuple[tuple[str, str], ...] = (
     ("train", "test"),
 )
 
-_RESERVED_TOP: frozenset[str] = frozenset({"phase", "model", "backend", "started", "finished", "gate", *UC_KEYS})
+_RESERVED_TOP: frozenset[str] = frozenset(
+    {"phase", "model", "backend", "started", "finished", "gate", *UC_KEYS}
+)
 
 
 def results_path(phase: int, results_root: Path | None = None) -> Path:
@@ -178,7 +210,11 @@ def find_comparisons(metrics: dict[str, Any]) -> list[dict[str, Any]]:
                 if _is_number(val_a) and _is_number(val_b):
                     pairs = [(key_a, val_a, val_b)]
                 elif isinstance(val_a, dict) and isinstance(val_b, dict):
-                    pairs = [(k, val_a[k], val_b[k]) for k in val_a if _is_number(val_a[k]) and _is_number(val_b.get(k))]
+                    pairs = [
+                        (k, val_a[k], val_b[k])
+                        for k in val_a
+                        if _is_number(val_a[k]) and _is_number(val_b.get(k))
+                    ]
                 else:
                     pairs = []
                 for label, num_a, num_b in pairs:
@@ -189,7 +225,10 @@ def find_comparisons(metrics: dict[str, Any]) -> list[dict[str, Any]]:
                     comparisons.append(
                         {
                             "label": label if label != key_a else f"{key_a} vs {key_b}",
-                            "bars": [{"name": key_a, "value": num_a}, {"name": key_b, "value": num_b}],
+                            "bars": [
+                                {"name": key_a, "value": num_a},
+                                {"name": key_b, "value": num_b},
+                            ],
                         }
                     )
     return comparisons
@@ -198,9 +237,21 @@ def find_comparisons(metrics: dict[str, Any]) -> list[dict[str, Any]]:
 def _normalise_use_case(phase: int, uc_id: str, raw: Any, max_rows: int) -> dict[str, Any]:
     default_title, default_question = DEFAULT_UC_META.get(phase, {}).get(uc_id, (uc_id.upper(), ""))
     body: dict[str, Any] = raw if isinstance(raw, dict) else {}
-    title = body.get("title") if isinstance(body.get("title"), str) and body.get("title") else default_title
-    question = body.get("question") if isinstance(body.get("question"), str) and body.get("question") else default_question
-    metrics = {str(k): _normalise_metric(v) for k, v in body.items() if k not in ("title", "question", "rows")}
+    title = (
+        body.get("title")
+        if isinstance(body.get("title"), str) and body.get("title")
+        else default_title
+    )
+    question = (
+        body.get("question")
+        if isinstance(body.get("question"), str) and body.get("question")
+        else default_question
+    )
+    metrics = {
+        str(k): _normalise_metric(v)
+        for k, v in body.items()
+        if k not in ("title", "question", "rows")
+    }
     rows, total = _normalise_rows(body.get("rows"), max_rows)
     return {
         "id": uc_id,
@@ -234,7 +285,9 @@ def _empty_phase(phase: int, status: str, error: str | None = None) -> dict[str,
     }
 
 
-def load_phase(phase: int, results_root: Path | None = None, max_rows: int = DEFAULT_MAX_ROWS) -> dict[str, Any]:
+def load_phase(
+    phase: int, results_root: Path | None = None, max_rows: int = DEFAULT_MAX_ROWS
+) -> dict[str, Any]:
     """
     Read and normalise one phase's results file.
 
@@ -258,7 +311,9 @@ def load_phase(phase: int, results_root: Path | None = None, max_rows: int = DEF
     except json.JSONDecodeError as exc:
         return _empty_phase(phase, "invalid", f"{path.name} is not valid JSON: {exc}")
     if not isinstance(data, dict):
-        return _empty_phase(phase, "invalid", f"{path.name} holds a JSON {type(data).__name__}, expected an object")
+        return _empty_phase(
+            phase, "invalid", f"{path.name} holds a JSON {type(data).__name__}, expected an object"
+        )
 
     out = _empty_phase(phase, "finished" if data.get("finished") else "running")
     for kind in ("model", "backend"):
@@ -274,11 +329,17 @@ def load_phase(phase: int, results_root: Path | None = None, max_rows: int = DEF
 
     gate_raw = data.get("gate")
     if isinstance(gate_raw, dict):
-        out["gate"] = [{"goal": str(goal), "passed": value is True} for goal, value in gate_raw.items()]
+        out["gate"] = [
+            {"goal": str(goal), "passed": value is True} for goal, value in gate_raw.items()
+        ]
     out["gate_total"] = len(out["gate"])
     out["gate_passed"] = sum(1 for g in out["gate"] if g["passed"])
 
-    out["use_cases"] = [_normalise_use_case(phase, key, data[key], max_rows) for key in UC_KEYS if isinstance(data.get(key), dict)]
+    out["use_cases"] = [
+        _normalise_use_case(phase, key, data[key], max_rows)
+        for key in UC_KEYS
+        if isinstance(data.get(key), dict)
+    ]
     done = {uc["id"] for uc in out["use_cases"]}
     out["use_cases_pending"] = [key for key in UC_KEYS if key not in done]
     return out

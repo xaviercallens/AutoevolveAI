@@ -64,6 +64,38 @@ def test_record_attestation_verdict(fake_sync_redis: Any) -> None:
     assert b"subtask_energy_calc" in completed
 
 
+def test_compute_edit_distance_and_trajectory_reward() -> None:
+    """Test normalized Levenshtein ratio and physical Mini-RL scalar reward."""
+    from extract_dpo_pairs import compute_edit_distance_ratio, compute_trajectory_reward
+
+    # Identical strings -> distance 0.0
+    assert compute_edit_distance_ratio("abc", "abc") == 0.0
+    # Completely different strings
+    assert compute_edit_distance_ratio("", "abc") == 1.0
+    # Partial change
+    ratio = compute_edit_distance_ratio("def foo(): return 1", "def foo(): return 2")
+    assert 0.0 < ratio < 0.2
+
+    # Reward: Perfect passing Lean & tests, 0 distance -> high positive
+    r_win = compute_trajectory_reward(
+        lean_valid=True,
+        tests_pass=True,
+        anti_stub_failed=False,
+        edit_distance_human=0.0,
+    )
+    assert r_win == 3.0  # W1(2.0) + W2(1.0)
+
+    # Reward: Stub failed, wrong tests, high human edit distance -> negative
+    r_lose = compute_trajectory_reward(
+        lean_valid=False,
+        tests_pass=False,
+        anti_stub_failed=True,
+        edit_distance_human=0.8,
+    )
+    assert r_lose == -2.3  # -W3(1.5) - W4(1.0 * 0.8)
+    assert r_win > r_lose
+
+
 def _setup_failed_trace(r: Any, subtask_id: str, req_payload: dict[str, Any]) -> str:
     trace_rej_id = "trace_rej_101"
     resp_rejected = {

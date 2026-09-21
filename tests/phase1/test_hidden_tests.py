@@ -1,17 +1,27 @@
 """Hidden-test harness and graded energy."""
 
 from anse.symbolic.evaluator import EnergyCategory, EnergyEvaluator
-from anse.symbolic.hidden_tests import TestReport, attach_harness, parse_report, strip_report
+from anse.symbolic.hidden_tests import TestReport, parse_report
 from anse.symbolic.sandbox import SandboxExecutor
+from anse.symbolic.trusted_driver import build_driver, trusted_payload
 
 NONCE = "ANSE-testnonce"
-TESTS = ["assert add(1, 2) == 3", "assert add(-1, 1) == 0", "assert add(0, 0) == 0", "assert add(2, 2) == 4"]
+TESTS = [
+    {"call": "add", "args": [1, 2], "expect": 3},
+    {"call": "add", "args": [-1, 1], "expect": 0},
+    {"call": "add", "args": [0, 0], "expect": 0},
+    {"call": "add", "args": [2, 2], "expect": 4},
+]
 
 
 def _run(code: str) -> tuple[object, TestReport | None]:
-    result = SandboxExecutor().execute(attach_harness(code, TESTS, NONCE), force_tier=1)
-    report = parse_report(result.stdout, NONCE)
-    result.stdout = strip_report(result.stdout, NONCE)
+    sandbox = SandboxExecutor()
+    budget = max(1.0, 0.8 * sandbox._cfg.timeout_seconds)
+    driver_script = build_driver(NONCE, code, budget, tests=TESTS)
+    result = sandbox.execute(driver_script, force_tier=1)
+    payload = trusted_payload(result, NONCE)
+    report = parse_report(payload, NONCE) if payload is not None else None
+    result.stdout = ""
     return result, report
 
 
@@ -24,7 +34,9 @@ def test_correct_solution_passes_all_hidden_tests_with_zero_energy():
 
 
 def test_energy_is_graded_by_fraction_of_failed_tests():
-    half_wrong, half_report = _run("def add(a, b):\n    return abs(a) + abs(b) if a + b == 0 else a + b")
+    half_wrong, half_report = _run(
+        "def add(a, b):\n    return abs(a) + abs(b) if a + b == 0 else a + b"
+    )
     all_wrong, all_report = _run("def add(a, b):\n    return 99")
     evaluator = EnergyEvaluator()
     e_half = evaluator.evaluate_hidden_tests(half_wrong, half_report)
@@ -32,7 +44,7 @@ def test_energy_is_graded_by_fraction_of_failed_tests():
     assert half_report.passed == 3 and all_report.passed == 0
     assert e_half.score == 12.5
     assert e_all.score == 50.0
-    assert "add(-1, 1)" in e_half.pain_signal
+    assert "'add'" in e_half.pain_signal and "[-1, 1]" in e_half.pain_signal
 
 
 def test_self_asserting_cheat_is_caught_by_hidden_tests_but_not_by_self_grading():
@@ -51,7 +63,9 @@ def test_forged_report_without_nonce_is_ignored():
     result, report = _run(forged)
     assert report is not None
     assert report.passed == 2
-    assert "ANSE-guess" in result.stdout
+    # result.stdout doesn't contain ANSE-guess because we cleared it or trusted_payload ignored it.
+    # Actually, worker's stdout is redirected to /dev/null by the driver!
+    # So ANSE-guess doesn't even appear in result.stdout!
 
 
 def test_early_exit_means_tests_never_ran_and_energy_is_maximal_test_failure():

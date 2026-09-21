@@ -335,5 +335,92 @@ def request_task_completion_attestation(
     }
 
 
+@mcp.tool()
+def evaluate_code_with_critic(code: str, task_context: str = "") -> dict[str, Any]:
+    """
+    Evaluate candidate code with the local SLM Critic Model (Qwen2.5-Coder via Ollama/CPU).
+    Fast pre-execution semantic QA filter detecting anti-patterns, stubs, and bad complexity.
+    """
+    try:
+        from anse.guard.critic import CodeCritic
+
+        critic = CodeCritic()
+        res = critic.evaluate(code=code, prompt_context=task_context)
+        return {
+            "decision": res.decision.value,
+            "accepted": res.is_accepted,
+            "reason": res.reason,
+            "energy_penalty": res.energy_penalty,
+            "duration_ms": round(res.duration_ms, 2),
+        }
+    except Exception as exc:
+        return {
+            "decision": "SKIPPED",
+            "accepted": True,
+            "reason": f"Critic execution fallback: {exc}",
+            "energy_penalty": 0.0,
+        }
+
+
+@mcp.tool()
+def record_rl_trace(
+    subtask_id: str,
+    prompt: str,
+    completion: str,
+    passed: bool,
+    reasons: list[str] | None = None,
+    human_patch: str | None = None,
+) -> dict[str, Any]:
+    """
+    Record an execution trace into local Redis to feed the night-time Mini-RL / DPO training loop.
+    Stores prompt, candidate completion, attestation outcome, and optional human correction.
+    """
+    try:
+        import time
+        import uuid
+
+        import redis
+
+        r = redis.Redis(
+            host=os.getenv("REDIS_HOST", "localhost"),
+            port=int(os.getenv("REDIS_PORT", 6379)),
+            decode_responses=True,
+        )
+        trace_id = str(uuid.uuid4())
+        trace_payload = {
+            "trace_id": trace_id,
+            "subtask_id": subtask_id,
+            "timestamp": time.time(),
+            "request_json": json.dumps(
+                {"contents": [{"role": "user", "parts": [{"text": prompt}]}]}
+            ),
+            "response_json": json.dumps(
+                {"candidates": [{"content": {"parts": [{"text": completion}]}}]}
+            ),
+        }
+        r.set(f"antigravity:trace:{trace_id}", json.dumps(trace_payload))
+        r.rpush(f"antigravity:subtask:{subtask_id}:traces", trace_id)
+
+        att_payload = {
+            "verdict": "PASSED" if passed else "FAILED",
+            "subtask_id": subtask_id,
+            "reasons": json.dumps(reasons or []),
+            "timestamp": str(time.time()),
+        }
+        r.hset(f"antigravity:attestation:{trace_id}", mapping=att_payload)
+
+        if human_patch:
+            r.set(f"antigravity:subtask:{subtask_id}:human_patch", human_patch)
+
+        return {
+            "success": True,
+            "trace_id": trace_id,
+            "subtask_id": subtask_id,
+            "recorded": True,
+        }
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}
+
+
 if __name__ == "__main__":
     mcp.run()

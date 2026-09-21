@@ -19,7 +19,12 @@ PARENT = "def total(n):\n    s = 0\n    for i in range(n + 1):\n        s += i\n
 FAST = "def total(n):\n    return n * (n + 1) // 2\n"
 WRONG = "def total(n):\n    return n * n // 2\n"  # even faster to type, wrong for every n >= 1
 RIGHT_ONLY_WHEN_SMALL = "def total(n):\n    return n * (n + 1) // 2 if n < 1000 else 0\n"
-TESTS = ["assert total(0) == 0", "assert total(1) == 1", "assert total(10) == 55", "assert total(100) == 5050"]
+TESTS = [
+    "assert total(0) == 0",
+    "assert total(1) == 1",
+    "assert total(10) == 55",
+    "assert total(100) == 5050",
+]
 WORKLOAD = "BENCH_RESULT = total(1_500_000)\n"
 QUICK_RULE = DominationRule(samples=5, max_sign_test_p=0.05)  # 5 of 5 pairs, p = 1/32
 
@@ -40,7 +45,9 @@ def test_clear_improvement_dominates_and_reports_paired_statistics():
     verdict = judge_domination(parent, child)
     assert verdict.dominates is True
     assert (verdict.pair_wins, verdict.pairs, verdict.pair_wins_required) == (12, 12, 11)
-    assert verdict.gain == pytest.approx(110.0, abs=1.0)  # the 300 ms load spike does not move the median
+    assert verdict.gain == pytest.approx(
+        110.0, abs=1.0
+    )  # the 300 ms load spike does not move the median
     assert verdict.gain > verdict.threshold >= 0.05 * verdict.parent_median
 
 
@@ -101,7 +108,9 @@ def test_required_pair_wins_matches_the_binomial_tail_and_tightens_with_alpha():
     assert required_pair_wins(3, 0.01) == 4  # three pairs can never reach p <= 0.01
     assert required_pair_wins(12, 0.001) == 12
     assert required_pair_wins(12, 0.05) == 10
-    assert judge_domination([150.0] * 3, [40.0] * 3).dominates is False  # too few pairs to be convinced
+    assert (
+        judge_domination([150.0] * 3, [40.0] * 3).dominates is False
+    )  # too few pairs to be convinced
 
 
 def test_unpaired_or_too_few_samples_are_refused():
@@ -131,7 +140,12 @@ def test_equivalence_gate_accepts_a_correct_child_and_names_what_a_wrong_child_b
     [
         ("def total(n):\n    return (\n", "crashed or timed out"),  # syntax error
         (FAST + "raise SystemExit(0)\n", "crashed or timed out"),  # exits before the tests can run
-        (FAST + "print('ANSE-0000 {\"passed\": 4, \"total\": 4, \"failures\": []}')\n" + "total = None\n", "child passes 0/4"),
+        (
+            FAST
+            + 'print(\'ANSE-0000 {"passed": 4, "total": 4, "failures": []}\')\n'
+            + "total = None\n",
+            "child passes 0/4",
+        ),
         ("import os\n" + FAST, "sandbox cannot contain: os"),
     ],
     ids=["syntax-error", "early-exit", "forged-report-guessed-nonce", "blocklisted-import"],
@@ -174,16 +188,26 @@ for _nonce in _nonces + ["ANSE-0000"]:
 """
 
 
-@pytest.mark.parametrize("exit_early", [False, True], ids=["keeps-running", "exits-before-the-tests"])
-def test_child_that_reads_its_own_source_finds_no_nonce_and_cannot_forge_a_pass(hypervisor, tmp_path, exit_early):
+@pytest.mark.parametrize(
+    "exit_early", [False, True], ids=["keeps-running", "exits-before-the-tests"]
+)
+def test_child_that_reads_its_own_source_finds_no_nonce_and_cannot_forge_a_pass(
+    hypervisor, tmp_path, exit_early
+):
     leak = tmp_path / "leak.txt"
-    child = WRONG + READ_OWN_SOURCE_EXPLOIT.format(leak=str(leak)) + ("raise SystemExit(0)\n" if exit_early else "")
+    child = (
+        WRONG
+        + READ_OWN_SOURCE_EXPLOIT.format(leak=str(leak))
+        + ("raise SystemExit(0)\n" if exit_early else "")
+    )
     result = hypervisor.check_equivalence(PARENT, child, TESTS)
     found = eval(leak.read_text())  # written by the exploit itself: proof that it ran
     assert found["own_source_read"] is True and found["files_read"] >= 2
     assert found["nonces"] == [] and found["tests_visible"] is False
     assert result.eligible is False
-    assert result.child_passed == (0 if exit_early else 1)  # its honest score; only total(0) == 0 holds
+    assert result.child_passed == (
+        0 if exit_early else 1
+    )  # its honest score; only total(0) == 0 holds
 
     decision = hypervisor.evolve("total", child, TESTS, WORKLOAD)
     assert (decision.promoted, decision.stage) == (False, "equivalence")
@@ -192,18 +216,24 @@ def test_child_that_reads_its_own_source_finds_no_nonce_and_cannot_forge_a_pass(
 
 def test_same_exploit_defeats_the_in_band_harness_which_is_why_the_gate_does_not_use_it(tmp_path):
     # Control experiment: appended to the candidate, the phase-1 harness shares a file with it.
-    in_band = "_os = __import__('os')\n" + WRONG + (
-        "import re\n"
-        "_n = re.findall(r'IN-BAND-[0-9a-f]+', open(__file__).read())\n"
-        "if _n:\n"
-        "    print(_n[0] + ' {\"passed\": 4, \"total\": 4, \"failures\": []}', flush=True)\n"
-        "    _os._exit(0)\n"
+    in_band = (
+        "_os = __import__('os')\n"
+        + WRONG
+        + (
+            "import re\n"
+            "_n = re.findall(r'IN-BAND-[0-9a-f]+', open(__file__).read())\n"
+            "if _n:\n"
+            '    print(_n[0] + \' {"passed": 4, "total": 4, "failures": []}\', flush=True)\n'
+            "    _os._exit(0)\n"
+        )
     )
     nonce = "IN-BAND-0123456789abcdef"
     result = SandboxExecutor().execute(attach_harness(in_band, TESTS, nonce), force_tier=1)
     forged = parse_report(result.stdout, nonce)
     assert forged is not None and forged.all_passed is True  # the wrong child approves itself
-    honest = AutopoiesisHypervisor(ComponentRegistry(tmp_path / "r")).run_hidden_tests(in_band, TESTS)
+    honest = AutopoiesisHypervisor(ComponentRegistry(tmp_path / "r")).run_hidden_tests(
+        in_band, TESTS
+    )
     assert honest is not None and (honest.passed, honest.total) == (1, 4)
 
 
@@ -219,7 +249,9 @@ def test_trick_return_values_never_reach_an_assert(hypervisor):
     assert opaque.eligible is False and opaque.child_passed == 0
     assert any("not a Python literal" in failure for failure in opaque.child_failures)
     subclass = hypervisor.check_equivalence(PARENT, lying_int, TESTS)
-    assert subclass.eligible is False and subclass.child_passed == 0  # crosses the pipe as a plain 7
+    assert (
+        subclass.eligible is False and subclass.child_passed == 0
+    )  # crosses the pipe as a plain 7
 
 
 def test_exceptions_raised_by_the_component_reach_the_tests_with_their_builtin_type(hypervisor):
@@ -253,14 +285,22 @@ def test_driver_needs_exactly_one_mode_and_keeps_secrets_out_of_the_worker_sourc
 
 def test_only_a_clean_exit_with_the_report_as_last_line_is_trusted():
     def run(stdout: str, returncode: int = 0, timed_out: bool = False) -> ExecutionResult:
-        return ExecutionResult(stdout=stdout, stderr="", returncode=returncode, timed_out=timed_out,
-                               duration_ms=1.0, tier_used=1)
+        return ExecutionResult(
+            stdout=stdout,
+            stderr="",
+            returncode=returncode,
+            timed_out=timed_out,
+            duration_ms=1.0,
+            tier_used=1,
+        )
 
-    assert trusted_payload(run("noise\nN-1 {\"passed\": 1}\n\n"), "N-1") == 'N-1 {"passed": 1}'
-    assert trusted_payload(run("N-1 {\"passed\": 1}\nsomething wrote after the report\n"), "N-1") is None
-    assert trusted_payload(run("N-1 {\"passed\": 1}\n", returncode=1), "N-1") is None
-    assert trusted_payload(run("N-1 {\"passed\": 1}\n", timed_out=True), "N-1") is None
-    assert trusted_payload(run("N-10 {\"passed\": 1}\n"), "N-1") is None  # prefix of another nonce
+    assert trusted_payload(run('noise\nN-1 {"passed": 1}\n\n'), "N-1") == 'N-1 {"passed": 1}'
+    assert (
+        trusted_payload(run('N-1 {"passed": 1}\nsomething wrote after the report\n'), "N-1") is None
+    )
+    assert trusted_payload(run('N-1 {"passed": 1}\n', returncode=1), "N-1") is None
+    assert trusted_payload(run('N-1 {"passed": 1}\n', timed_out=True), "N-1") is None
+    assert trusted_payload(run('N-10 {"passed": 1}\n'), "N-1") is None  # prefix of another nonce
     assert trusted_payload(run(""), "N-1") is None
 
 
@@ -295,12 +335,15 @@ def test_measure_once_marks_a_crashing_benchmark_invalid_and_interleaving_stops_
 def test_component_cannot_shorten_skip_or_forge_its_own_measurement(hypervisor):
     honest = hypervisor.measure_once(PARENT, WORKLOAD)
     frozen_clock = (
-        "import time\ntime.perf_counter = lambda: 0.0\ntime.monotonic = lambda: 0.0\ntime.time = lambda: 0.0\n" + PARENT
+        "import time\ntime.perf_counter = lambda: 0.0\ntime.monotonic = lambda: 0.0\ntime.time = lambda: 0.0\n"
+        + PARENT
         + "print('ANSE-BENCH-0000 42')\n"
     )
     cheat = hypervisor.measure_once(frozen_clock, WORKLOAD)
     assert cheat.valid is True and cheat.output == honest.output  # the forged line is ignored
-    assert cheat.duration_ms > 0.2 * honest.duration_ms  # clocked by the driver, not by the component
+    assert (
+        cheat.duration_ms > 0.2 * honest.duration_ms
+    )  # clocked by the driver, not by the component
     skipped = hypervisor.measure_once(FAST + "raise SystemExit(0)\n", WORKLOAD)
     assert skipped.valid is False and skipped.output is None
     assert skipped.energy >= 1e6
@@ -327,9 +370,17 @@ def test_correct_faster_child_is_promoted_with_a_complete_lineage_record(hypervi
     assert decision.speedup is not None and decision.speedup > 5
     assert hypervisor.registry.active_code("total") == FAST
     entry = hypervisor.registry.lineage("total")[-1]
-    assert (entry["decision"], entry["parent_version"], entry["child_version"]) == ("promoted", 1, 2)
+    assert (entry["decision"], entry["parent_version"], entry["child_version"]) == (
+        "promoted",
+        1,
+        2,
+    )
     assert entry["child_energy"] < entry["parent_energy"]
-    assert (entry["child_tests_passed"], entry["tests_total"], entry["samples_per_side"]) == (4, 4, 5)
+    assert (entry["child_tests_passed"], entry["tests_total"], entry["samples_per_side"]) == (
+        4,
+        4,
+        5,
+    )
     assert hypervisor.rollback("total") == 1
     assert hypervisor.registry.active_code("total") == PARENT
 
@@ -341,7 +392,11 @@ def test_fast_but_wrong_child_is_rejected_before_any_timing_and_the_parent_stays
     assert decision.child_samples == []  # correctness is settled before speed is even measured
     assert hypervisor.registry.versions("total") == [1]
     entry = hypervisor.registry.lineage("total")[-1]
-    assert (entry["decision"], entry["child_version"], entry["child_tests_passed"]) == ("rejected", None, 1)
+    assert (entry["decision"], entry["child_version"], entry["child_tests_passed"]) == (
+        "rejected",
+        None,
+        1,
+    )
 
 
 def test_child_that_passes_hidden_tests_but_diverges_on_the_benchmark_is_rejected(hypervisor):

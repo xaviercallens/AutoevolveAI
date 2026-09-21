@@ -27,7 +27,9 @@ def _random_values(seed: int, n: int = 25) -> list[float]:
 
 class TestMeanAbsoluteError:
     def test_known_value_and_zero_on_identity(self) -> None:
-        assert mean_absolute_error([0.0, 10.0, 30.0], [10.0, 10.0, 0.0]) == pytest.approx(40.0 / 3.0)
+        assert mean_absolute_error([0.0, 10.0, 30.0], [10.0, 10.0, 0.0]) == pytest.approx(
+            40.0 / 3.0
+        )
         values = _random_values(1)
         assert mean_absolute_error(values, values) == 0.0
 
@@ -37,7 +39,9 @@ class TestMeanAbsoluteError:
         base = mean_absolute_error(a, b)
 
         assert mean_absolute_error(b, a) == pytest.approx(base)
-        assert mean_absolute_error([x + 7.5 for x in a], [y + 7.5 for y in b]) == pytest.approx(base)
+        assert mean_absolute_error([x + 7.5 for x in a], [y + 7.5 for y in b]) == pytest.approx(
+            base
+        )
 
     def test_invalid_input_is_rejected(self) -> None:
         with pytest.raises(ValueError, match="length mismatch: 2 predictions vs 1 labels"):
@@ -57,7 +61,9 @@ class TestAverageRanks:
         ranks = average_ranks(values)
 
         assert sum(ranks) == pytest.approx(30 * 31 / 2)
-        assert all((values[i] < values[j]) == (ranks[i] < ranks[j]) for i in range(30) for j in range(30))
+        assert all(
+            (values[i] < values[j]) == (ranks[i] < ranks[j]) for i in range(30) for j in range(30)
+        )
 
 
 class TestSpearman:
@@ -89,8 +95,12 @@ class TestRocAuc:
 
     def test_boundary_one_pair_swapped(self) -> None:
         # 2 positives x 3 negatives = 6 pairs, exactly one is ordered wrongly
-        assert roc_auc([90.0, 15.0, 10.0, 20.0, 5.0], [True, True, False, False, False]) == pytest.approx(5.0 / 6.0)
-        assert roc_auc([90.0, 20.0, 10.0, 20.0, 5.0], [True, True, False, False, False]) == pytest.approx(5.5 / 6.0)
+        assert roc_auc(
+            [90.0, 15.0, 10.0, 20.0, 5.0], [True, True, False, False, False]
+        ) == pytest.approx(5.0 / 6.0)
+        assert roc_auc(
+            [90.0, 20.0, 10.0, 20.0, 5.0], [True, True, False, False, False]
+        ) == pytest.approx(5.5 / 6.0)
 
     @pytest.mark.parametrize("seed", range(5))
     def test_negating_scores_complements_the_auc(self, seed: int) -> None:
@@ -135,7 +145,9 @@ class TestRidge:
     def test_row_mismatch_is_rejected(self) -> None:
         with pytest.raises(ValueError, match="same number of rows"):
             ridge_fit_predict(torch.zeros(3, 2), torch.zeros(4), torch.zeros(1, 2))
-        assert ridge_fit_predict(torch.eye(3), torch.tensor([1.0, 2.0, 3.0]), torch.eye(3)).shape == (3,)
+        assert ridge_fit_predict(
+            torch.eye(3), torch.tensor([1.0, 2.0, 3.0]), torch.eye(3)
+        ).shape == (3,)
 
 
 class TestLatentStd:

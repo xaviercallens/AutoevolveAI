@@ -9,7 +9,9 @@ import yaml
 from anse.autopoiesis.hypervisor import AutopoiesisHypervisor
 from anse.autopoiesis.registry import ComponentRegistry
 
-SUITE = yaml.safe_load((Path(__file__).parents[2] / "tasks" / "phase3_evolution.yaml").read_text())["components"]
+SUITE = yaml.safe_load((Path(__file__).parents[2] / "tasks" / "phase3_evolution.yaml").read_text())[
+    "components"
+]
 IDS = [c["name"] for c in SUITE]
 
 
@@ -21,8 +23,19 @@ def hypervisor(tmp_path):
 def test_suite_has_four_to_five_uniquely_named_components_with_every_field():
     assert 4 <= len(SUITE) <= 5
     assert len(set(IDS)) == len(SUITE)
-    required = {"name", "entry", "description", "parent", "child_fast", "child_wrong", "tests", "workload",
-                "probe_args", "probe_expected", "fuzz"}
+    required = {
+        "name",
+        "entry",
+        "description",
+        "parent",
+        "child_fast",
+        "child_wrong",
+        "tests",
+        "workload",
+        "probe_args",
+        "probe_expected",
+        "fuzz",
+    }
     for component in SUITE:
         assert required <= set(component), component["name"]
         assert len(component["tests"]) >= 5, component["name"]
@@ -30,7 +43,9 @@ def test_suite_has_four_to_five_uniquely_named_components_with_every_field():
 
 
 @pytest.mark.parametrize("component", SUITE, ids=IDS)
-def test_parent_and_fast_child_pass_every_hidden_test_and_wrong_child_does_not(component, hypervisor):
+def test_parent_and_fast_child_pass_every_hidden_test_and_wrong_child_does_not(
+    component, hypervisor
+):
     total = len(component["tests"])
     parent = hypervisor.run_hidden_tests(component["parent"], component["tests"])
     fast = hypervisor.run_hidden_tests(component["child_fast"], component["tests"])
@@ -43,7 +58,9 @@ def test_parent_and_fast_child_pass_every_hidden_test_and_wrong_child_does_not(c
 
 
 @pytest.mark.parametrize("component", SUITE, ids=IDS)
-def test_workload_is_deterministic_heavy_for_the_parent_and_agrees_with_the_fast_child(component, hypervisor):
+def test_workload_is_deterministic_heavy_for_the_parent_and_agrees_with_the_fast_child(
+    component, hypervisor
+):
     parent = hypervisor.measure_once(component["parent"], component["workload"])
     again = hypervisor.measure_once(component["parent"], component["workload"])
     fast = hypervisor.measure_once(component["child_fast"], component["workload"])
@@ -66,14 +83,24 @@ def test_probe_call_gives_the_expected_answer_on_parent_and_fast_child(component
 
 
 @pytest.mark.parametrize("component", SUITE, ids=IDS)
-def test_held_out_fuzz_oracle_clears_the_fast_child_and_convicts_the_wrong_child(component, hypervisor):
+def test_held_out_fuzz_oracle_clears_the_fast_child_and_convicts_the_wrong_child(
+    component, hypervisor
+):
     inputs = eval(component["fuzz"], {"rng": random.Random(20260921)})
     assert len(inputs) >= 80
-    assert inputs == eval(component["fuzz"], {"rng": random.Random(20260921)})  # seeded: reproducible evidence
-    fast = hypervisor.differential_test(component["parent"], component["child_fast"], component["entry"], inputs)
-    wrong = hypervisor.differential_test(component["parent"], component["child_wrong"], component["entry"], inputs)
+    assert inputs == eval(
+        component["fuzz"], {"rng": random.Random(20260921)}
+    )  # seeded: reproducible evidence
+    fast = hypervisor.differential_test(
+        component["parent"], component["child_fast"], component["entry"], inputs
+    )
+    wrong = hypervisor.differential_test(
+        component["parent"], component["child_wrong"], component["entry"], inputs
+    )
     assert (fast.completed, fast.total, fast.mismatches) == (True, len(inputs), 0)
-    assert wrong.completed is True and wrong.mismatches > 0  # the oracle has the power to see a wrong child
+    assert (
+        wrong.completed is True and wrong.mismatches > 0
+    )  # the oracle has the power to see a wrong child
     assert component["entry"] in wrong.examples[0]
 
 
@@ -96,11 +123,18 @@ def test_self_approving_wrong_child_is_scored_honestly_and_never_promoted(tmp_pa
     registry.register(component["name"], component["parent"])
     hypervisor = AutopoiesisHypervisor(registry)
     attacker = component["child_wrong"] + SELF_APPROVAL
-    decision = hypervisor.evolve(component["name"], attacker, component["tests"], component["workload"])
+    decision = hypervisor.evolve(
+        component["name"], attacker, component["tests"], component["workload"]
+    )
     assert (decision.promoted, decision.stage) == (False, "equivalence")
-    assert (decision.equivalence.child_passed, decision.equivalence.total) == (4, 6)  # its honest score
+    assert (decision.equivalence.child_passed, decision.equivalence.total) == (
+        4,
+        6,
+    )  # its honest score
     assert registry.active_version(component["name"]) == 1
     assert registry.lineage(component["name"])[-1]["decision"] == "rejected"
     sample = hypervisor.measure_once(attacker, component["workload"])
     assert sample.valid is True
-    assert sample.duration_ms != 0.01 and sample.peak_ram_mb > 5.0  # the driver's numbers, not the forged 0.01 ms / 1 MB
+    assert (
+        sample.duration_ms != 0.01 and sample.peak_ram_mb > 5.0
+    )  # the driver's numbers, not the forged 0.01 ms / 1 MB

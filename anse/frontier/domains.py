@@ -72,7 +72,9 @@ class AutonomousMathematician:
             )
 
         # Extract tactics used
-        tactics = re.findall(r"\b(intro|rfl|simp|omega|linarith|exact|apply|cases|induction|rw)\b", proof_code)
+        tactics = re.findall(
+            r"\b(intro|rfl|simp|omega|linarith|exact|apply|cases|induction|rw)\b", proof_code
+        )
         dur = (time.perf_counter() - start_t) * 1000.0
 
         return MathProofResult(
@@ -88,7 +90,9 @@ class AutonomousMathematician:
 def _evaluate_exploit_vector(red_payload: str, blue_defense_code: str) -> tuple[bool, str]:
     """Determine whether the blue defense patch mitigates the red exploit."""
     has_bounds_check = any(k in blue_defense_code for k in ("len(", "range", "validate"))
-    has_sql_param = "?" in blue_defense_code or ("execute(" in blue_defense_code and "%" not in blue_defense_code)
+    has_sql_param = "?" in blue_defense_code or (
+        "execute(" in blue_defense_code and "%" not in blue_defense_code
+    )
 
     payload_lower = red_payload.lower()
     if "overflow" in payload_lower or "0x" in payload_lower:
@@ -104,7 +108,9 @@ class CyberImmuneSwarm:
     def run_engagement(self, red_payload: str, blue_defense_code: str) -> CyberAdversarialResult:
         blocked, cve = _evaluate_exploit_vector(red_payload, blue_defense_code)
         energy = 1000.0 if blocked else 0.0
-        status = "DEFENSE_SECURE (Patch Blocked Exploit)" if blocked else "BREACH_DETECTED (Red Won)"
+        status = (
+            "DEFENSE_SECURE (Patch Blocked Exploit)" if blocked else "BREACH_DETECTED (Red Won)"
+        )
 
         return CyberAdversarialResult(
             scenario="Adversarial Buffer / Injection Defense",

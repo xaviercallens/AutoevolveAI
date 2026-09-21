@@ -130,13 +130,69 @@ def _load_trace_payloads(trace_id: str, r: Any) -> tuple[dict[str, Any], dict[st
     return req, resp
 
 
+def compute_edit_distance_ratio(s1: str, s2: str) -> float:
+    """Computes normalized Levenshtein edit distance between 0.0 (identical) and 1.0."""
+    if not s1 and not s2:
+        return 0.0
+    if not s1 or not s2:
+        return 1.0
+
+    len1, len2 = len(s1), len(s2)
+    # Dynamic programming with single previous row for O(min(len1, len2)) memory
+    prev_row = list(range(len2 + 1))
+    for i, c1 in enumerate(s1):
+        curr_row = [i + 1] * (len2 + 1)
+        for j, c2 in enumerate(s2):
+            insertions = prev_row[j + 1] + 1
+            deletions = curr_row[j] + 1
+            substitutions = prev_row[j] + (c1 != c2)
+            curr_row[j + 1] = min(insertions, deletions, substitutions)
+        prev_row = curr_row
+
+    dist = prev_row[len2]
+    return min(1.0, dist / max(len1, len2))
+
+
+def compute_trajectory_reward(
+    lean_valid: bool = False,
+    tests_pass: bool = False,
+    anti_stub_failed: bool = False,
+    edit_distance_human: float = 0.0,
+    w1: float = 2.0,
+    w2: float = 1.0,
+    w3: float = 1.5,
+    w4: float = 1.0,
+) -> float:
+    """
+    Evaluates the physical Mini-RL scalar reward:
+    R = (W1 * LeanValid) + (W2 * TestsPass) - (W3 * AntiStubFailed) - (W4 * EditDistanceHuman)
+    """
+    reward = (
+        (w1 if lean_valid else 0.0)
+        + (w2 if tests_pass else 0.0)
+        - (w3 if anti_stub_failed else 0.0)
+        - (w4 * edit_distance_human)
+    )
+    return round(reward, 4)
+
+
+def _load_human_ground_truth(subtask_id: str, r: Any) -> str | None:
+    """Retrieves human patch or developer-verified final implementation from Redis."""
+    raw = r.get(f"antigravity:subtask:{subtask_id}:human_patch")
+    if not raw:
+        raw = r.get(f"antigravity:telemetry:{subtask_id}:chosen")
+    if not raw:
+        return None
+    return raw.decode("utf-8") if isinstance(raw, bytes) else str(raw)
+
+
 def _build_pairs_for_subtask(
     subtask_id: str,
     chosen_trace_id: str,
     failed_traces: list[tuple[str, str]],
     r: Any,
 ) -> list[dict[str, Any]]:
-    """Build DPO training pairs from chosen trace and list of failed traces."""
+    """Build DPO training pairs from chosen trace, failed traces, and human telemetry."""
     chosen_payloads = _load_trace_payloads(chosen_trace_id, r)
     if not chosen_payloads:
         return []
@@ -146,6 +202,10 @@ def _build_pairs_for_subtask(
     if not chosen_text:
         return []
 
+    # If human telemetry exists in Redis, use the human final code as gold standard
+    human_patch = _load_human_ground_truth(subtask_id, r)
+    reference_winner = human_patch if human_patch else chosen_text
+
     prompt_messages: list[dict[str, str]] = []
     sys_prompt = _extract_dpo_system_prompt(req)
     if sys_prompt:
@@ -153,6 +213,14 @@ def _build_pairs_for_subtask(
     prompt_messages.extend(_extract_dpo_history(req))
     if not prompt_messages:
         return []
+
+    # Calculate reward for chosen completion
+    chosen_dist = compute_edit_distance_ratio(chosen_text, human_patch) if human_patch else 0.0
+    chosen_reward = compute_trajectory_reward(
+        tests_pass=True,
+        anti_stub_failed=False,
+        edit_distance_human=chosen_dist,
+    )
 
     pairs: list[dict[str, Any]] = []
     for rej_trace_id, reasons_str in failed_traces:
@@ -166,17 +234,33 @@ def _build_pairs_for_subtask(
 
         reasons = _parse_json_field(reasons_str)
         failure_reasons = reasons if isinstance(reasons, list) else [str(reasons)]
+        is_stub_fail = any("stub" in str(reason).lower() for reason in failure_reasons)
+
+        rej_dist = (
+            compute_edit_distance_ratio(rej_text, human_patch)
+            if human_patch
+            else compute_edit_distance_ratio(rej_text, chosen_text)
+        )
+        rej_reward = compute_trajectory_reward(
+            tests_pass=False,
+            anti_stub_failed=is_stub_fail,
+            edit_distance_human=rej_dist,
+        )
 
         pairs.append(
             {
                 "prompt": prompt_messages,
-                "chosen": chosen_text,
+                "chosen": reference_winner,
                 "rejected": rej_text,
                 "metadata": {
                     "subtask_id": subtask_id,
                     "chosen_trace_id": chosen_trace_id,
                     "rejected_trace_id": rej_trace_id,
                     "failure_reasons": failure_reasons,
+                    "reward_chosen": chosen_reward,
+                    "reward_rejected": rej_reward,
+                    "reward_delta": round(chosen_reward - rej_reward, 4),
+                    "human_ground_truth_applied": bool(human_patch),
                 },
             }
         )

@@ -164,7 +164,9 @@ class Harvester:
         except (ValueError, OSError, RuntimeError) as e:
             logger.warning("Failed to upsert trace %s to ChromaDB: %s", trace.trace_id, e)
         except Exception as e:
-            logger.exception("Unexpected error upserting trace %s to ChromaDB: %s", trace.trace_id, e)
+            logger.exception(
+                "Unexpected error upserting trace %s to ChromaDB: %s", trace.trace_id, e
+            )
 
     def _build_hits(self, results: dict[str, Any]) -> list[dict[str, Any]]:
         """Build hit list from ChromaDB query results."""
@@ -175,15 +177,9 @@ class Harvester:
             hits.append(
                 {
                     "id": results["ids"][0][i],
-                    "document": results["documents"][0][i]
-                    if results.get("documents")
-                    else "",
-                    "metadata": results["metadatas"][0][i]
-                    if results.get("metadatas")
-                    else {},
-                    "distance": results["distances"][0][i]
-                    if results.get("distances")
-                    else 0.0,
+                    "document": results["documents"][0][i] if results.get("documents") else "",
+                    "metadata": results["metadatas"][0][i] if results.get("metadatas") else {},
+                    "distance": results["distances"][0][i] if results.get("distances") else 0.0,
                 }
             )
         return hits

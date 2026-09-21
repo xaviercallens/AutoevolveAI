@@ -20,11 +20,19 @@ def test_extract_sends_messages_and_returns_text_with_embedding():
         body = json.loads(request.content)
         seen.append({"path": request.url.path, "body": body})
         if request.url.path == "/v1/chat/completions":
-            return httpx.Response(200, json={"choices": [{"message": {"content": "```python\nx = 1\n```"}}], "usage": {"completion_tokens": 7}})
+            return httpx.Response(
+                200,
+                json={
+                    "choices": [{"message": {"content": "```python\nx = 1\n```"}}],
+                    "usage": {"completion_tokens": 7},
+                },
+            )
         return httpx.Response(200, json={"embedding": [0.5, -1.0, 2.0]})
 
     cfg = ModelConfig(api_base_url="http://llm.test/v1", api_model_name="tiny", temperature=0.3)
-    text, record = APIExtractor(config=cfg, client=_client(handler), seed=11).extract("do it", system_prompt="sys")
+    text, record = APIExtractor(config=cfg, client=_client(handler), seed=11).extract(
+        "do it", system_prompt="sys"
+    )
 
     assert text == "```python\nx = 1\n```"
     assert record.to_embedding() == [0.5, -1.0, 2.0]
@@ -61,7 +69,9 @@ def test_native_ollama_mode_sends_seed_and_temperature_in_options():
     def handler(request: httpx.Request) -> httpx.Response:
         seen.append({"path": request.url.path, "body": json.loads(request.content)})
         if request.url.path == "/api/chat":
-            return httpx.Response(200, json={"message": {"content": "native reply"}, "eval_count": 9})
+            return httpx.Response(
+                200, json={"message": {"content": "native reply"}, "eval_count": 9}
+            )
         return httpx.Response(200, json={"embedding": [1.0]})
 
     cfg = ModelConfig(api_base_url="http://llm.test/v1", api_model_name="tiny")
@@ -70,5 +80,9 @@ def test_native_ollama_mode_sends_seed_and_temperature_in_options():
 
     assert text == "native reply" and record.token_count == 9
     assert seen[0]["path"] == "/api/chat"
-    assert seen[0]["body"]["options"] == {"temperature": 0.9, "num_predict": cfg.max_new_tokens, "seed": 5}
+    assert seen[0]["body"]["options"] == {
+        "temperature": 0.9,
+        "num_predict": cfg.max_new_tokens,
+        "seed": 5,
+    }
     assert seen[0]["body"]["stream"] is False

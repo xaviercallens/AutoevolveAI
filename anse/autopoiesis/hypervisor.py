@@ -64,267 +64,12 @@ from anse.config import SandboxConfig, get_config
 from anse.symbolic.hidden_tests import TestReport, parse_report
 from anse.symbolic.performance_evaluator import PerformanceEnergyEvaluator, PerformanceEnergyResult
 from anse.symbolic.sandbox import ExecutionResult, SandboxExecutor, scan_dangerous_imports
-
-RESULT_VARIABLE = "BENCH_RESULT"
-_MAX_RESULT_CHARS = 2000
-_MAX_REPORTED_FAILURES = 3
-_DRIVER_BUDGET_FRACTION = 0.8
-"""Share of the sandbox timeout the driver grants the worker, so the driver always reports first."""
-
-# ─── Out-of-band verification: trusted driver + isolated worker ──────────────
-
-# Runs the untrusted component. Holds no secret: no nonce, no tests, no expected values.
-_WORKER_SOURCE = r'''
-import ast, json, os, sys, traceback
-
-_in = os.fdopen(os.dup(0), "r", encoding="utf-8")
-_out = os.fdopen(os.dup(1), "w", encoding="utf-8")
-_null = os.open(os.devnull, os.O_RDWR)
-os.dup2(_null, 0)
-os.dup2(_null, 1)
-
-
-def _send(message):
-    _out.write(json.dumps(message) + "\n")
-    _out.flush()
-
-
-def _problem(exc):
-    return {"error": type(exc).__name__, "message": str(exc)[:300]}
-
-
-_path = sys.argv[1]
-_ns = {"__name__": "anse_component", "__file__": _path}
-try:
-    with open(_path, encoding="utf-8") as _handle:
-        exec(compile(_handle.read(), _path, "exec"), _ns)
-except BaseException as _exc:
-    traceback.print_exc()
-    _send({"fatal": type(_exc).__name__ + ": " + str(_exc)[:300]})
-    sys.exit(1)
-_send({"ready": sorted(k for k, v in _ns.items() if callable(v) and not k.startswith("_"))})
-
-for _line in _in:
-    _request = json.loads(_line)
-    try:
-        if _request["op"] == "call":
-            _value = _ns[_request["name"]](*ast.literal_eval(_request["args"]), **ast.literal_eval(_request["kwargs"]))
-        else:
-            exec(_request["code"], _ns)
-            _value = _ns[_request["var"]]
-        _reply = {"ok": repr(_value)}
-    except BaseException as _exc:
-        traceback.print_exc()
-        _reply = _problem(_exc)
-    _reply["id"] = _request.get("id")
-    _send(_reply)
-'''
-
-# Trusted side. The header (nonce, component source, tests / workload / calls) is prepended by
-# build_driver(); this body never changes. It is the only writer to the sandbox's stdout.
-_DRIVER_BODY = r'''
-import ast, builtins, json, os, select, subprocess, sys, time
-
-_self = globals().get("__file__", "")
-try:
-    os.unlink(_self)
-except OSError:
-    pass
-if not _self or os.path.exists(_self):
-    sys.exit("anse driver: own source could not be removed; refusing to run the component")
-try:
-    import ctypes
-    ctypes.CDLL(None).prctl(4, 0, 0, 0, 0)  # PR_SET_DUMPABLE=0: /proc/<driver>/{mem,fd} closed to the worker
-except (OSError, AttributeError):
-    pass
-
-
-class _WorkerFailure(Exception):
-    pass
-
-
-_deadline = time.monotonic() + _BUDGET_SECONDS
-with open("component.py", "w", encoding="utf-8") as _handle:
-    _handle.write(_COMPONENT)
-_stderr_file = open("_worker_stderr.txt", "wb")
-_worker = subprocess.Popen([sys.executable, "-c", _WORKER, "component.py"],
-                           stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=_stderr_file)
-_fd = _worker.stdout.fileno()
-_pending = b""
-
-
-def _recv():
-    global _pending
-    while b"\n" not in _pending:
-        remaining = _deadline - time.monotonic()
-        if remaining <= 0 or not select.select([_fd], [], [], remaining)[0]:
-            raise _WorkerFailure("component timed out")
-        chunk = os.read(_fd, 1 << 16)
-        if not chunk:
-            raise _WorkerFailure("component process exited")
-        _pending += chunk
-        if len(_pending) > (8 << 20):
-            raise _WorkerFailure("component reply too large")
-    line, _, _pending = _pending.partition(b"\n")
-    try:
-        message = json.loads(line)
-    except ValueError:
-        raise _WorkerFailure("malformed reply from the component process")
-    if not isinstance(message, dict):
-        raise _WorkerFailure("malformed reply from the component process")
-    return message
-
-
-def _request(message):
-    """One round trip. The reply must echo a fresh random id, so a reply queued in advance is useless."""
-    message["id"] = os.urandom(8).hex()
-    _send(message)
-    reply = _recv()
-    if reply.get("id") != message["id"]:
-        raise _WorkerFailure("reply out of sequence from the component process")
-    return reply
-
-
-def _send(message):
-    try:
-        _worker.stdin.write((json.dumps(message) + "\n").encode("utf-8"))
-        _worker.stdin.flush()
-    except OSError:
-        raise _WorkerFailure("component process exited")
-
-
-def _raise_remote(reply):
-    kind = getattr(builtins, str(reply.get("error")), None)
-    if not (isinstance(kind, type) and issubclass(kind, Exception)):
-        kind = RuntimeError
-    raise kind(str(reply.get("message", "")))
-
-
-def _proxy(name):
-    def call(*args, **kwargs):
-        reply = _request({"op": "call", "name": name, "args": repr(args), "kwargs": repr(kwargs)})
-        if "ok" not in reply:
-            _raise_remote(reply)
-        try:
-            return ast.literal_eval(reply["ok"])  # plain data only: no child-defined object reaches an assert
-        except (ValueError, SyntaxError, TypeError):
-            raise TypeError(name + " returned a value that is not a Python literal: " + str(reply["ok"])[:80])
-    call.__name__ = name
-    return call
-
-
-def _finish(payload, code):
-    try:
-        _worker.stdin.close()
-    except OSError:
-        pass
-    try:
-        _worker.wait(timeout=0.5)
-    except subprocess.TimeoutExpired:
-        _worker.kill()
-        _worker.wait()
-    _stderr_file.close()
-    if payload is None:
-        with open("_worker_stderr.txt", "rb") as handle:
-            sys.stderr.write(handle.read()[-2000:].decode("utf-8", "replace"))
-    else:
-        if "peak_ram_mb" in payload:
-            import resource
-            rss = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
-            payload["peak_ram_mb"] = rss / (1024.0 * 1024.0) if sys.platform == "darwin" else rss / 1024.0
-        sys.stdout.write("\n" + _NONCE + " " + json.dumps(payload) + "\n")
-        sys.stdout.flush()
-    sys.exit(code)
-
-
-try:
-    _hello = _recv()
-    if "ready" not in _hello:
-        raise _WorkerFailure("component failed to load: " + str(_hello.get("fatal")))
-    _names = [str(n) for n in _hello["ready"]]
-except (_WorkerFailure, TypeError) as _exc:
-    sys.stderr.write("anse driver: " + str(_exc) + "\n")
-    _finish(None, 1)
-
-if _MODE == "tests":
-    _scope = {name: _proxy(name) for name in _names}
-    _failures = []
-    for _test in _TESTS:
-        try:
-            exec(_test, _scope)
-        except Exception as _exc:
-            _failures.append((_test.strip() + " -> " + type(_exc).__name__ + ": " + str(_exc))[:300])
-    _finish({"passed": len(_TESTS) - len(_failures), "total": len(_TESTS),
-             "failures": _failures[:_MAX_FAILURES]}, 0)
-
-if _MODE == "calls":
-    _outcomes = []
-    for _name, _args in _CALLS:
-        try:
-            _reply = _request({"op": "call", "name": _name, "args": repr(tuple(_args)), "kwargs": "{}"})
-            _outcomes.append("ok " + str(_reply["ok"])[:_MAX_CHARS] if "ok" in _reply
-                             else "raised " + str(_reply.get("error")))
-        except _WorkerFailure as _exc:
-            _outcomes.append("failed " + str(_exc))
-    _finish({"outcomes": _outcomes}, 0)
-
-try:
-    _started = time.perf_counter()
-    _reply = _request({"op": "exec", "code": _WORKLOAD, "var": _RESULT_VARIABLE})
-    _elapsed_ms = (time.perf_counter() - _started) * 1000.0
-    if "ok" not in _reply:
-        raise _WorkerFailure("benchmark raised " + str(_reply.get("error")) + ": " + str(_reply.get("message")))
-except _WorkerFailure as _exc:
-    sys.stderr.write("anse driver: " + str(_exc) + "\n")
-    _finish(None, 1)
-_finish({"output": str(_reply["ok"])[:_MAX_CHARS], "duration_ms": _elapsed_ms, "peak_ram_mb": 0.0}, 0)
-'''
-
-
-def build_driver(
-    nonce: str,
-    component: str,
-    budget_seconds: float,
-    *,
-    tests: list[str] | None = None,
-    workload: str | None = None,
-    calls: list[tuple[str, list[Any]]] | None = None,
-) -> str:
-    """
-    The sandbox script for one verification run: exactly one of *tests* (hidden tests),
-    *workload* (timed benchmark) or *calls* (``(function, args)`` pairs to evaluate) is given.
-    See the module docstring for why the component is not simply appended to the checks.
-    """
-    given = [name for name, value in (("tests", tests), ("workload", workload), ("calls", calls)) if value is not None]
-    if len(given) != 1:
-        raise ValueError(f"exactly one of tests/workload/calls is required, got {given or 'none'}")
-    header = {
-        "_NONCE": nonce,
-        "_COMPONENT": component,
-        "_WORKER": _WORKER_SOURCE,
-        "_BUDGET_SECONDS": float(budget_seconds),
-        "_MODE": given[0],
-        "_TESTS": list(tests or []),
-        "_WORKLOAD": workload or "",
-        "_CALLS": [(name, list(args)) for name, args in (calls or [])],
-        "_RESULT_VARIABLE": RESULT_VARIABLE,
-        "_MAX_CHARS": _MAX_RESULT_CHARS,
-        "_MAX_FAILURES": _MAX_REPORTED_FAILURES,
-    }
-    return "".join(f"{name} = {value!r}\n" for name, value in header.items()) + _DRIVER_BODY
-
-
-def trusted_payload(result: ExecutionResult, nonce: str) -> str | None:
-    """
-    The driver's report line, or None when the run cannot be trusted: it timed out, did not exit 0,
-    or the nonce-tagged report is not the LAST line on stdout (something else wrote after it).
-    """
-    if result.timed_out or result.returncode != 0:
-        return None
-    lines = [line for line in result.stdout.splitlines() if line.strip()]
-    if not lines or not lines[-1].startswith(nonce + " "):
-        return None
-    return lines[-1]
+from anse.symbolic.trusted_driver import (
+    _DRIVER_BUDGET_FRACTION,
+    _MAX_REPORTED_FAILURES,
+    build_driver,
+    trusted_payload,
+)
 
 
 @dataclass
@@ -437,11 +182,18 @@ def judge_domination(
     if wins < wins_required:
         ok, reason = False, f"child won {wins}/{n} interleaved pairs, {wins_required} required"
     elif gain <= threshold:
-        ok, reason = False, f"median paired gain {gain:.2f} does not exceed noise threshold {threshold:.2f}"
+        ok, reason = (
+            False,
+            f"median paired gain {gain:.2f} does not exceed noise threshold {threshold:.2f}",
+        )
     else:
-        ok, reason = True, f"median paired gain {gain:.2f} > threshold {threshold:.2f}, child won {wins}/{n} pairs"
-    return DominationVerdict(ok, reason, parent_median, child_median, gain, noise, threshold,
-                             wins, n, wins_required)
+        ok, reason = (
+            True,
+            f"median paired gain {gain:.2f} > threshold {threshold:.2f}, child won {wins}/{n} pairs",
+        )
+    return DominationVerdict(
+        ok, reason, parent_median, child_median, gain, noise, threshold, wins, n, wins_required
+    )
 
 
 # ─── Measurement and decision records ────────────────────────────────────────
@@ -572,25 +324,45 @@ class AutopoiesisHypervisor:
             return None
         return parse_report("report " + payload, "report")
 
-    def check_equivalence(self, parent_code: str, child_code: str, tests: list[str]) -> EquivalenceResult:
+    def check_equivalence(
+        self, parent_code: str, child_code: str, tests: list[str]
+    ) -> EquivalenceResult:
         """The child must pass every hidden test; what the parent passes is recorded alongside."""
         if not tests:
-            return EquivalenceResult(False, "no hidden tests: equivalence cannot be established", 0, 0, 0, [])
+            return EquivalenceResult(
+                False, "no hidden tests: equivalence cannot be established", 0, 0, 0, []
+            )
         blocked = self.blocked_imports(child_code)
         if blocked:
-            reason = "child imports modules the sandbox cannot contain: " + ", ".join(sorted(set(blocked)))
+            reason = "child imports modules the sandbox cannot contain: " + ", ".join(
+                sorted(set(blocked))
+            )
             return EquivalenceResult(False, reason, 0, 0, len(tests), [])
         parent = self.run_hidden_tests(parent_code, tests)
         child = self.run_hidden_tests(child_code, tests)
         parent_passed = parent.passed if parent else 0
         if child is None:
-            return EquivalenceResult(False, "child crashed or timed out before the hidden tests reported",
-                                     parent_passed, 0, len(tests), [])
+            return EquivalenceResult(
+                False,
+                "child crashed or timed out before the hidden tests reported",
+                parent_passed,
+                0,
+                len(tests),
+                [],
+            )
         if not child.all_passed or child.total != len(tests):
             reason = f"child passes {child.passed}/{len(tests)} hidden tests (parent {parent_passed}/{len(tests)})"
-            return EquivalenceResult(False, reason, parent_passed, child.passed, len(tests), child.failures)
-        return EquivalenceResult(True, f"child passes all {len(tests)} hidden tests",
-                                 parent_passed, child.passed, len(tests), [])
+            return EquivalenceResult(
+                False, reason, parent_passed, child.passed, len(tests), child.failures
+            )
+        return EquivalenceResult(
+            True,
+            f"child passes all {len(tests)} hidden tests",
+            parent_passed,
+            child.passed,
+            len(tests),
+            [],
+        )
 
     def differential_test(
         self, reference_code: str, candidate_code: str, entry: str, inputs: list[list[Any]]
@@ -609,17 +381,30 @@ class AutopoiesisHypervisor:
                 found = json.loads(payload)["outcomes"] if payload is not None else None
             except (ValueError, KeyError, TypeError):
                 found = None
-            outcomes.append([str(o) for o in found] if isinstance(found, list) and len(found) == len(calls) else None)
+            outcomes.append(
+                [str(o) for o in found]
+                if isinstance(found, list) and len(found) == len(calls)
+                else None
+            )
         reference, candidate = outcomes
         if reference is None or candidate is None:
             side = "reference" if reference is None else "candidate"
-            return DifferentialResult(False, len(calls), len(calls), [f"{side} run produced no trusted report"])
+            return DifferentialResult(
+                False, len(calls), len(calls), [f"{side} run produced no trusted report"]
+            )
         unusable = sum(not o.startswith(("ok ", "raised ")) for o in reference)
         if unusable:
-            return DifferentialResult(False, len(calls), len(calls), [f"reference failed on {unusable} inputs"])
-        examples = [f"{entry}{tuple(args)!r}: reference {ref} | candidate {cand}"[:300]
-                    for args, ref, cand in zip(inputs, reference, candidate) if ref != cand]
-        return DifferentialResult(True, len(calls), len(examples), examples[:_MAX_REPORTED_FAILURES])
+            return DifferentialResult(
+                False, len(calls), len(calls), [f"reference failed on {unusable} inputs"]
+            )
+        examples = [
+            f"{entry}{tuple(args)!r}: reference {ref} | candidate {cand}"[:300]
+            for args, ref, cand in zip(inputs, reference, candidate)
+            if ref != cand
+        ]
+        return DifferentialResult(
+            True, len(calls), len(examples), examples[:_MAX_REPORTED_FAILURES]
+        )
 
     # ── gate 2: measurement ──────────────────────────────────────────────────
     def measure_once(self, code: str, workload: str) -> BenchmarkSample:
@@ -661,15 +446,23 @@ class AutopoiesisHypervisor:
         parent_samples: list[BenchmarkSample] = []
         child_samples: list[BenchmarkSample] = []
         for i in range(samples or self.rule.samples):
-            order = (("p", parent_code), ("c", child_code)) if i % 2 == 0 else (("c", child_code), ("p", parent_code))
+            order = (
+                (("p", parent_code), ("c", child_code))
+                if i % 2 == 0
+                else (("c", child_code), ("p", parent_code))
+            )
             for side, code in order:
-                (parent_samples if side == "p" else child_samples).append(self.measure_once(code, workload))
+                (parent_samples if side == "p" else child_samples).append(
+                    self.measure_once(code, workload)
+                )
             if not (parent_samples[-1].valid and child_samples[-1].valid):
                 break
         return parent_samples, child_samples
 
     @staticmethod
-    def _benchmark_failure(parents: list[BenchmarkSample], children: list[BenchmarkSample]) -> str | None:
+    def _benchmark_failure(
+        parents: list[BenchmarkSample], children: list[BenchmarkSample]
+    ) -> str | None:
         if not all(s.valid for s in parents):
             return "parent failed its own benchmark: " + parents[-1].evaluation.category.value
         if not all(s.valid for s in children):
@@ -682,7 +475,9 @@ class AutopoiesisHypervisor:
         return None
 
     # ── full pipeline ────────────────────────────────────────────────────────
-    def evolve(self, component: str, child_code: str, tests: list[str], workload: str) -> EvolutionDecision:
+    def evolve(
+        self, component: str, child_code: str, tests: list[str], workload: str
+    ) -> EvolutionDecision:
         """Equivalence -> interleaved measurement -> domination -> promote (or audited rejection)."""
         parent_version = self.registry.active_version(component)
         parent_code = self.registry.code(component, parent_version)
@@ -699,18 +494,40 @@ class AutopoiesisHypervisor:
             if failure is not None:
                 stage, reason = "benchmark", failure
             else:
-                verdict = judge_domination([s.energy for s in parents], [s.energy for s in children], self.rule)
+                verdict = judge_domination(
+                    [s.energy for s in parents], [s.energy for s in children], self.rule
+                )
                 stage, reason = "domination", verdict.reason
 
         promoted = verdict is not None and verdict.dominates
-        decision = EvolutionDecision(component, promoted, stage, reason, parent_version, None,
-                                     equivalence, verdict, parents, children)
+        decision = EvolutionDecision(
+            component,
+            promoted,
+            stage,
+            reason,
+            parent_version,
+            None,
+            equivalence,
+            verdict,
+            parents,
+            children,
+        )
         if not promoted:
             self.registry.record_rejection(component, child_code, decision.to_record())
             return decision
         child_version = self.registry.promote(component, child_code, decision.to_record())
-        return EvolutionDecision(component, True, stage, reason, parent_version, child_version,
-                                 equivalence, verdict, parents, children)
+        return EvolutionDecision(
+            component,
+            True,
+            stage,
+            reason,
+            parent_version,
+            child_version,
+            equivalence,
+            verdict,
+            parents,
+            children,
+        )
 
     def rollback(self, component: str, reason: str = "manual rollback") -> int:
         return self.registry.rollback(component, reason)

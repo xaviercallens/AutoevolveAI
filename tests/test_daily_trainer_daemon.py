@@ -112,7 +112,10 @@ def test_vllm_reloader_adapter_swap() -> None:
     mock_load_resp = MagicMock(spec=httpx.Response)
     mock_load_resp.status_code = 200
     mock_client.post.return_value = mock_load_resp
-    assert load_vllm_adapter(mock_client, "antigravity-local", Path(tempfile.gettempdir()) / "adapter") is True
+    assert (
+        load_vllm_adapter(mock_client, "antigravity-local", Path(tempfile.gettempdir()) / "adapter")
+        is True
+    )
 
     # 3. Test hot reload combined
     success = hot_reload_vllm_adapter(

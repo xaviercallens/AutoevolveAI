@@ -15,7 +15,13 @@ from anse.autopoiesis.registry import (
 PARENT = "TAG = 'parent'\n\ndef double(x):\n    return x + x\n"
 CHILD = "TAG = 'child'\n\ndef double(x):\n    return 2 * x\n"
 GRANDCHILD = "TAG = 'grandchild'\n\ndef double(x):\n    return x << 1\n"
-RECORD = {"parent_energy": 150.0, "child_energy": 40.0, "tests_total": 6, "child_tests_passed": 6, "reason": "gain"}
+RECORD = {
+    "parent_energy": 150.0,
+    "child_energy": 40.0,
+    "tests_total": 6,
+    "child_tests_passed": 6,
+    "reason": "gain",
+}
 
 
 @pytest.fixture
@@ -42,7 +48,10 @@ def test_promote_adds_a_version_moves_the_pointer_and_records_the_decision(regis
     assert (entry["event"], entry["decision"]) == ("promote", "promoted")
     assert (entry["parent_version"], entry["child_version"]) == (1, 2)
     assert (entry["parent_energy"], entry["child_energy"]) == (150.0, 40.0)
-    assert (entry["parent_sha256"], entry["child_sha256"]) == (code_sha256(PARENT), code_sha256(CHILD))
+    assert (entry["parent_sha256"], entry["child_sha256"]) == (
+        code_sha256(PARENT),
+        code_sha256(CHILD),
+    )
     assert entry["tests_total"] == entry["child_tests_passed"] == 6
 
 
@@ -93,7 +102,9 @@ def test_load_active_executes_whichever_version_the_pointer_names(registry):
     assert parent.__file__.endswith("v0001.py")
 
 
-def test_pointer_update_is_atomic_a_failed_replace_leaves_the_old_pointer_intact(registry, monkeypatch):
+def test_pointer_update_is_atomic_a_failed_replace_leaves_the_old_pointer_intact(
+    registry, monkeypatch
+):
     before = registry.pointer_path("double").read_text()
     real_replace = os.replace
 
@@ -117,14 +128,24 @@ def test_pointer_update_is_atomic_a_failed_replace_leaves_the_old_pointer_intact
 
 @pytest.mark.parametrize(
     "garbage",
-    ["", "{not json", '{"version": "two"}', '{"version": 9, "sha256": "abc"}', '{"version": 1, "sha256": "wrong"}', "[1, 2]"],
+    [
+        "",
+        "{not json",
+        '{"version": "two"}',
+        '{"version": 9, "sha256": "abc"}',
+        '{"version": 1, "sha256": "wrong"}',
+        "[1, 2]",
+    ],
     ids=["empty", "truncated", "wrong-type", "missing-version", "hash-mismatch", "not-an-object"],
 )
 def test_corrupted_pointer_is_rebuilt_from_lineage_and_the_repair_is_logged(registry, garbage):
     registry.promote("double", CHILD, RECORD)
     registry.pointer_path("double").write_text(garbage)
     assert registry.active_version("double") == 2
-    assert json.loads(registry.pointer_path("double").read_text()) == {"version": 2, "sha256": code_sha256(CHILD)}
+    assert json.loads(registry.pointer_path("double").read_text()) == {
+        "version": 2,
+        "sha256": code_sha256(CHILD),
+    }
     repair = registry.lineage("double")[-1]
     assert (repair["event"], repair["restored_version"]) == ("repair", 2)
 
@@ -135,7 +156,9 @@ def test_deleted_pointer_is_rebuilt_and_a_valid_but_stale_pointer_is_not_trusted
     registry.pointer_path("double").unlink()
     assert registry.active_version("double") == 1  # honours the rollback, not "highest version"
     # pointer naming a real version that the lineage says is no longer active
-    registry.pointer_path("double").write_text(json.dumps({"version": 2, "sha256": code_sha256(CHILD)}))
+    registry.pointer_path("double").write_text(
+        json.dumps({"version": 2, "sha256": code_sha256(CHILD)})
+    )
     assert registry.active_version("double") == 1
     assert [e["event"] for e in registry.lineage("double")][-2:] == ["repair", "repair"]
 

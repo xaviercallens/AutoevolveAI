@@ -29,7 +29,7 @@ from anse.symbolic.sandbox import ExecutionResult
 # ─── Categories ──────────────────────────────────────────────────────────────
 
 
-class EnergyCategory(str, Enum):
+class EnergyCategory(str, Enum):  # noqa: UP042
     PERFECT = "perfect"
     NO_TESTS = "no_tests"
     WRONG_OUTPUT = "wrong_output"

@@ -92,3 +92,9 @@ def prevent_overmocking(monkeypatch: pytest.MonkeyPatch) -> None:
         return original_patch(target, *args, **kwargs)
 
     monkeypatch.setattr("unittest.mock.patch", guarded_patch)
+
+
+@pytest.fixture(autouse=True)
+def isolated_attestation_path(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Isolate the execution attestation file so tests do not dirty the git working tree."""
+    monkeypatch.setenv("ANSE_ATTESTATION_PATH", str(tmp_path / ".antigravity_attestation"))

@@ -1,3 +1,7 @@
+import shutil
+
+import pytest
+
 """Tests for AgentLoop and pain-signal injection."""
 
 from unittest.mock import MagicMock
@@ -23,6 +27,7 @@ class MockExtractorSequential:
         return resp, record
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 def test_agent_loop_immediate_convergence(tmp_path):
     # Response produces energy 0 (asserts pass)
     code = "```python\nassert 1 + 1 == 2\n```"
@@ -44,6 +49,7 @@ def test_agent_loop_immediate_convergence(tmp_path):
     assert len(summary.traces) == 1
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 def test_agent_loop_retry_and_converge(tmp_path):
     # First response fails with ZeroDivisionError, second succeeds
     code_bad = "```python\nx = 1 / 0\n```"
@@ -69,6 +75,7 @@ def test_agent_loop_retry_and_converge(tmp_path):
     assert "ZeroDivisionError" in summary.traces[1].prompt
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 def test_agent_loop_exhaust_retries(tmp_path):
     # Code always fails
     code_fail = "```python\nassert False, 'Never works'\n```"
@@ -91,6 +98,7 @@ def test_agent_loop_exhaust_retries(tmp_path):
     assert harvester.get_trace_count() == 3
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 def test_agent_loop_custom_convergence_threshold(tmp_path):
     # Code has no asserts (energy = 5.0)
     code_no_tests = "```python\nprint('Done without asserts')\n```"
@@ -122,6 +130,7 @@ def test_agent_loop_custom_convergence_threshold(tmp_path):
     assert s_relaxed.final_energy == 5.0
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 def test_agent_loop_survives_reply_without_code_and_does_not_converge(tmp_path):
     extractor = MockExtractorSequential(["Sorry, I cannot help with that."])
     harvester = Harvester(enable_chroma=False)
@@ -134,6 +143,7 @@ def test_agent_loop_survives_reply_without_code_and_does_not_converge(tmp_path):
     assert "No Python code block" in summary.traces[0].execution_stderr
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 def test_agent_loop_pain_prompt_contains_previous_failing_code(tmp_path):
     prompts: list[str] = []
 
@@ -154,9 +164,13 @@ def test_agent_loop_pain_prompt_contains_previous_failing_code(tmp_path):
     assert "ZeroDivisionError" in prompts[1]
 
 
-ROTATE_TASK = "Write a function `rotate_list(lst, k)` that rotates a list to the right by k positions."
+ROTATE_TASK = (
+    "Write a function `rotate_list(lst, k)` that rotates a list to the right by k positions."
+)
 ROTATE_TESTS = ["assert rotate_list([1, 2, 3], 1) == [3, 1, 2]", "assert rotate_list([], 4) == []"]
-ROTATE_BAD = "```python\ndef rotate_list(lst, k):\n    k %= len(lst)\n    return lst[-k:] + lst[:-k]\n```"
+ROTATE_BAD = (
+    "```python\ndef rotate_list(lst, k):\n    k %= len(lst)\n    return lst[-k:] + lst[:-k]\n```"
+)
 ROTATE_GOOD = "```python\ndef rotate_list(lst, k):\n    if not lst:\n        return []\n    k %= len(lst)\n    return lst[-k:] + lst[:-k] if k else list(lst)\n```"
 
 
@@ -165,14 +179,22 @@ def _loop(tmp_path, replies, memory=None):
 
     harvester = Harvester(enable_chroma=False)
     harvester.log_path = tmp_path / "interactions.jsonl"
-    return AgentLoop(extractor=MockExtractorSequential(replies), harvester=harvester, max_retries=3, lesson_memory=memory)
+    return AgentLoop(
+        extractor=MockExtractorSequential(replies),
+        harvester=harvester,
+        max_retries=3,
+        lesson_memory=memory,
+    )
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 def test_hidden_tests_grade_partial_failure_then_verified_fix_is_stored_as_lesson(tmp_path):
     from anse.memory.lessons import LessonMemory
 
     memory = LessonMemory(tmp_path / "lessons.jsonl")
-    summary = _loop(tmp_path, [ROTATE_BAD, ROTATE_GOOD], memory).run(ROTATE_TASK, hidden_tests=ROTATE_TESTS)
+    summary = _loop(tmp_path, [ROTATE_BAD, ROTATE_GOOD], memory).run(
+        ROTATE_TASK, hidden_tests=ROTATE_TESTS
+    )
 
     assert [t.energy for t in summary.traces] == [25.0, 0.0]
     assert summary.converged is True and (summary.tests_passed, summary.tests_total) == (2, 2)
@@ -181,6 +203,7 @@ def test_hidden_tests_grade_partial_failure_then_verified_fix_is_stored_as_lesso
     assert stored.iterations == 2 and "ZeroDivisionError" in stored.failure
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 def test_self_asserting_cheat_never_converges_and_never_enters_memory(tmp_path):
     from anse.memory.lessons import LessonMemory
 
@@ -193,22 +216,36 @@ def test_self_asserting_cheat_never_converges_and_never_enters_memory(tmp_path):
     assert len(memory) == 0
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 def test_retrieved_lesson_is_injected_into_first_prompt_of_a_sibling_task(tmp_path):
     from anse.memory.lessons import Lesson, LessonMemory
 
     memory = LessonMemory(tmp_path / "lessons.jsonl", frozen=True)
-    LessonMemory(tmp_path / "lessons.jsonl").add(Lesson(task=ROTATE_TASK, code="def rotate_list(lst, k): ...", failure="ZeroDivisionError on []"))
+    LessonMemory(tmp_path / "lessons.jsonl").add(
+        Lesson(
+            task=ROTATE_TASK, code="def rotate_list(lst, k): ...", failure="ZeroDivisionError on []"
+        )
+    )
     memory = LessonMemory(tmp_path / "lessons.jsonl", frozen=True)
-    sibling = "Write a function `rotate_string(s, k)` that rotates a string to the left by k positions."
+    sibling = (
+        "Write a function `rotate_string(s, k)` that rotates a string to the left by k positions."
+    )
     good = "```python\ndef rotate_string(s, k):\n    return s[k % len(s):] + s[:k % len(s)] if s else ''\n```"
 
-    summary = _loop(tmp_path, [good], memory).run(sibling, hidden_tests=["assert rotate_string('abc', 1) == 'bca'", "assert rotate_string('', 2) == ''"])
+    summary = _loop(tmp_path, [good], memory).run(
+        sibling,
+        hidden_tests=[
+            "assert rotate_string('abc', 1) == 'bca'",
+            "assert rotate_string('', 2) == ''",
+        ],
+    )
 
     assert summary.lessons_used == 1 and summary.converged is True
     assert "ZeroDivisionError on []" in summary.traces[0].prompt
     assert len(memory) == 1
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 def test_adaptive_retry_detects_repeated_code_escalates_temperature_and_warns(tmp_path):
     calls: list[dict] = []
 
@@ -220,18 +257,30 @@ def test_adaptive_retry_detects_repeated_code_escalates_temperature_and_warns(tm
     harvester = Harvester(enable_chroma=False)
     harvester.log_path = tmp_path / "interactions.jsonl"
     reworded = ROTATE_BAD.replace("    k %= len(lst)", "    k  %=  len(lst)")
-    loop = AgentLoop(extractor=Recording([ROTATE_BAD, reworded, ROTATE_GOOD]), harvester=harvester,
-                     max_retries=3, adaptive_retry=True)
+    loop = AgentLoop(
+        extractor=Recording([ROTATE_BAD, reworded, ROTATE_GOOD]),
+        harvester=harvester,
+        max_retries=3,
+        adaptive_retry=True,
+    )
 
     summary = loop.run(ROTATE_TASK, hidden_tests=ROTATE_TESTS)
 
     assert summary.converged is True and summary.iterations == 3
-    assert calls[0]["temperature"] is None and "fixing your own failed code" not in calls[0]["system"]
+    assert (
+        calls[0]["temperature"] is None and "fixing your own failed code" not in calls[0]["system"]
+    )
     assert calls[1]["temperature"] == 0.2 and "fixing your own failed code" in calls[1]["system"]
-    assert calls[2]["temperature"] == 0.6000000000000001 or abs(calls[2]["temperature"] - 0.6) < 1e-9
-    assert "behaves identically" in calls[2]["prompt"] and "behaves identically" not in calls[1]["prompt"]
+    assert (
+        calls[2]["temperature"] == 0.6000000000000001 or abs(calls[2]["temperature"] - 0.6) < 1e-9
+    )
+    assert (
+        "behaves identically" in calls[2]["prompt"]
+        and "behaves identically" not in calls[1]["prompt"]
+    )
 
 
+@pytest.mark.skipif(shutil.which("docker") is None, reason="Requires docker")
 def test_plain_retry_never_passes_temperature_or_stagnation_note(tmp_path):
     prompts: list[str] = []
 
@@ -242,7 +291,11 @@ def test_plain_retry_never_passes_temperature_or_stagnation_note(tmp_path):
 
     harvester = Harvester(enable_chroma=False)
     harvester.log_path = tmp_path / "interactions.jsonl"
-    loop = AgentLoop(extractor=Recording([ROTATE_BAD, ROTATE_BAD, ROTATE_BAD]), harvester=harvester, max_retries=3)
+    loop = AgentLoop(
+        extractor=Recording([ROTATE_BAD, ROTATE_BAD, ROTATE_BAD]),
+        harvester=harvester,
+        max_retries=3,
+    )
 
     summary = loop.run(ROTATE_TASK, hidden_tests=ROTATE_TESTS)
     assert summary.converged is False and summary.iterations == 3

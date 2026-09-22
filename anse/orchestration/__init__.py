@@ -30,6 +30,7 @@ from anse.orchestration.dspy_bridge import (
 )
 from anse.orchestration.repo_map import RepoMapGenerator, SymbolTag, apply_unified_diff
 from anse.orchestration.stateful_graph import DichotomyGraphState, StatefulDichotomyGraph
+from anse.orchestration.tree_of_thoughts import ThoughtState, TreeOfThoughtsEngine
 
 __all__ = [
     # Core Dichotomy
@@ -57,4 +58,8 @@ __all__ = [
     # LangGraph State Engine
     "DichotomyGraphState",
     "StatefulDichotomyGraph",
+    # Tree of Thoughts (Yao et al., 2023)
+    "ThoughtState",
+    "TreeOfThoughtsEngine",
 ]
+

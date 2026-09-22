@@ -62,12 +62,22 @@ class Lean4Verifier:
         for lean_file in target_dir.rglob("*.lean"):
             try:
                 content = lean_file.read_text(encoding="utf-8", errors="replace")
-                for lineno, line in enumerate(content.splitlines(), start=1):
+                clean_content = re.sub(
+                    r"/-(?:[^-]|-(?!/))*-(?:/)?",
+                    lambda m: "\n" * m.group(0).count("\n"),
+                    content,
+                    flags=re.DOTALL,
+                )
+                lines = content.splitlines()
+                for lineno, line in enumerate(clean_content.splitlines(), start=1):
                     # Strip comments
                     code_part = line.split("--")[0]
+                    # Strip string literals
+                    code_part = re.sub(r'"[^"]*"', "", code_part)
                     if sorry_pattern.search(code_part):
                         sorry_count += 1
-                        occurrences.append(f"{lean_file}:{lineno}: '{line.strip()}'")
+                        orig_line = lines[lineno - 1] if lineno - 1 < len(lines) else line
+                        occurrences.append(f"{lean_file}:{lineno}: '{orig_line.strip()}'")
             except Exception:
                 continue
 

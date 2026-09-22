@@ -129,7 +129,7 @@ def evaluate_in_harness(
     try:
         proc = subprocess.run(
             test_command,
-            shell=True,
+            shell=True,  # nosec B602
             capture_output=True,
             text=True,
             timeout=timeout_sec,
@@ -386,11 +386,30 @@ def shadow_mode_observe(
 
 
 def main() -> None:
+    import argparse
+    parser = argparse.ArgumentParser(description="ANSE Symbiotic Teacher-Student Reality Engine: Harness Hook")
+    parser.add_argument("--prompt", type=str, required=True, help="The task prompt for the AI Co-Pilot")
+    parser.add_argument("--target-file", type=str, required=True, help="The file the AI should modify")
+    parser.add_argument("--command", type=str, required=True, help="The test harness command to run (e.g., 'pytest')")
+    parser.add_argument("--max-attempts", type=int, default=5, help="Maximum number of self-correction attempts")
+    
+    args = parser.parse_args()
+    
     print("=" * 70)
     print("  ANSE Symbiotic Teacher-Student Reality Engine: Harness Hook")
     print("=" * 70)
-    print("Run `active_inference_copilot` or attach this hook to your IDE watcher.\n")
-
+    
+    summary = active_inference_copilot(
+        prompt=args.prompt,
+        target_file=args.target_file,
+        test_command=args.command,
+        max_attempts=args.max_attempts
+    )
+    
+    if summary.converged:
+        print("\n✅ Symbiotic Hook: Success! AI code passed the reality engine.")
+    else:
+        print("\n❌ Symbiotic Hook: AI failed to converge within max attempts.")
 
 if __name__ == "__main__":
     main()

@@ -174,7 +174,7 @@ def check_cyclomatic_complexity(code: str, max_complexity: int = 10) -> dict[str
             "type": type(block).__name__,
             "line": block.lineno,
             "complexity": block.complexity,
-            "rank": cc.letter_grade(block.complexity),
+            "rank": cc.cc_rank(block.complexity),
         }
         block_reports.append(report)
 

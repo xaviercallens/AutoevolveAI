@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 from dataclasses import asdict, dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -140,8 +141,14 @@ def verify_subtask(subtask: Subtask) -> tuple[bool, str]:
 
     # 2. Run deterministic acceptance test command
     env = dict(os.environ)
+    cmd = subtask.acceptance_command
+    if cmd.startswith("python "):
+        cmd = f'"{sys.executable}" ' + cmd[7:]
+    elif cmd.startswith("python\t"):
+        cmd = f'"{sys.executable}" ' + cmd[7:]
+
     res = subprocess.run(  # nosec B602
-        subtask.acceptance_command,
+        cmd,
         shell=True,
         capture_output=True,
         text=True,

@@ -11,6 +11,9 @@ from __future__ import annotations
 import argparse
 import ast
 from pathlib import Path
+from typing import TypeVar
+
+TCallable = TypeVar("TCallable", ast.FunctionDef, ast.AsyncFunctionDef)
 
 
 class CodeSkeletonVisitor(ast.NodeTransformer):
@@ -28,9 +31,7 @@ class CodeSkeletonVisitor(ast.NodeTransformer):
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.AsyncFunctionDef:
         return self._skeletonize_callable(node)
 
-    def _skeletonize_callable(
-        self, node: ast.FunctionDef | ast.AsyncFunctionDef
-    ) -> ast.FunctionDef | ast.AsyncFunctionDef:
+    def _skeletonize_callable(self, node: TCallable) -> TCallable:
         # Extract docstring if present
         docstring_node = None
         if (

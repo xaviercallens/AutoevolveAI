@@ -144,7 +144,7 @@ def safeProposal
     [NormedAddCommGroup Θ_fast] [InnerProductSpace ℝ Θ_fast]
     [NormedAddCommGroup W_jepa] [InnerProductSpace ℝ W_jepa]
     (ε : ℝ)         -- minimum required improvement
-    (hε : 0 < ε)
+    (_hε : 0 < ε)
     (energy : ArchitectureState Θ_fast W_jepa A Config → ℝ)
     (current : ArchitectureState Θ_fast W_jepa A Config)
     (proposal : ArchitectureState Θ_fast W_jepa A Config) : Prop :=
@@ -178,11 +178,11 @@ theorem self_improvement_terminates
     {Θ_fast W_jepa A Config : Type*}
     [NormedAddCommGroup Θ_fast] [InnerProductSpace ℝ Θ_fast]
     [NormedAddCommGroup W_jepa] [InnerProductSpace ℝ W_jepa]
-    (ε : ℝ) (hε : 0 < ε)
+    (ε : ℝ) (_hε : 0 < ε)
     (energy : ArchitectureState Θ_fast W_jepa A Config → ℝ)
-    (energy_lb : ∀ s, 0 ≤ energy s)
-    (s₀ : ArchitectureState Θ_fast W_jepa A Config) :
-    ∃ T : ℕ, True := by  -- ⚠ PROOF OBLIGATION: termination bound
+    (_energy_lb : ∀ s, 0 ≤ energy s)
+    (_s₀ : ArchitectureState Θ_fast W_jepa A Config) :
+    ∃ _T : ℕ, True := by  -- ⚠ PROOF OBLIGATION: termination bound
   exact ⟨0, trivial⟩
 
 

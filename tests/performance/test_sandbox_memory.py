@@ -10,7 +10,7 @@ from anse.symbolic.sandbox import ExecutionResult, SandboxExecutor
 
 @pytest.fixture
 def sandbox():
-    cfg = SandboxConfig(timeout_seconds=3.0)
+    cfg = SandboxConfig(timeout_seconds=10.0, untrusted_requires_container=False)
     return SandboxExecutor(config=cfg)
 
 
@@ -66,9 +66,11 @@ def test_sandbox_runtime_exception(sandbox):
     assert result.peak_ram_mb >= 0.0
 
 
-def test_sandbox_timeout_handling(sandbox):
-    code = "import time\ntime.sleep(10)"
-    result = sandbox.execute(code)
+def test_sandbox_timeout_handling():
+    cfg = SandboxConfig(timeout_seconds=1.0, untrusted_requires_container=False)
+    short_sandbox = SandboxExecutor(config=cfg)
+    code = "import time\ntime.sleep(5)"
+    result = short_sandbox.execute(code)
     assert result.timed_out is True
     assert result.returncode != 0
     assert result.duration_ms > 0

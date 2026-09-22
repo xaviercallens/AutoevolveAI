@@ -176,8 +176,8 @@ def _parse_ml_stats(
             elapsed_ms = stats.get("duration_ms", elapsed_ms)
             shape_mismatch = stats.get("is_shape_mismatch", shape_mismatch)
             oom = stats.get("is_oom", oom)
-        except (ValueError, TypeError):
-            pass
+        except (ValueError, TypeError, OSError):
+            val_loss = float("inf")
 
     return params, acc, val_loss, train_loss, elapsed_ms, shape_mismatch, oom
 

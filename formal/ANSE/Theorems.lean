@@ -51,7 +51,7 @@ theorem A2_freeEnergy_tendsto_hard
     [NormedAddCommGroup X] [InnerProductSpace ℝ X]
     [NormedAddCommGroup Y] [InnerProductSpace ℝ Y]
     [NormedAddCommGroup Z] [InnerProductSpace ℝ Z]
-    [TopologicalSpace Z] [CompactSpace Z]
+    [TopologicalSpace Z] [CompactSpace Z] [Fintype Z]
     (E : LatentEnergyFn X Y Z) (x : X) (y : Y) :
     Filter.Tendsto
       (fun β => -(1/β) * Real.log
@@ -74,9 +74,9 @@ theorem A3_hinge_is_good_loss
     (EF : Θ → EnergyFn X Y)
     -- Assume EF is rich enough that a perfect classifier exists
     (hrich : ∀ D : Dataset X Y n, ∃ θ : Θ,
-      ∀ i : Fin n, ∀ ỹ : Y, ỹ ≠ D.targets i →
+      ∀ i : Fin n, ∀ y_alt : Y, y_alt ≠ D.targets i →
         (EF θ).eval (D.inputs i) (D.targets i) + m ≤
-        (EF θ).eval (D.inputs i) ỹ) :
+        (EF θ).eval (D.inputs i) y_alt) :
     GoodLoss X Y Θ n EF (hingeLoss m hm n EF) where
   margin := by
     intro D
@@ -125,13 +125,31 @@ theorem B5_ema_is_convex_combination {k d : ℕ}
     Method: Direct from the zero-loss conditions of each term. -/
 theorem B6_vicreg_zero_implies_spread
     {k n : ℕ} (hn : 0 < n)
-    (γ λ μ : ℝ) (hγ : 0 < γ) (hλ : 0 < λ) (hμ : 0 < μ)
+    (γ lambda_std mu_cov : ℝ) (hγ : 0 < γ) (hlambda : 0 < lambda_std) (hμ : 0 < mu_cov)
     (Z : Fin n → LatentCode k)
-    (hzero : vicreg_loss hn γ λ μ (le_of_lt hλ) (le_of_lt hμ) Z = 0) :
+    (hzero : vicreg_loss hn γ lambda_std mu_cov hγ (le_of_lt hlambda) (le_of_lt hμ) Z = 0) :
     ∀ j : Fin k,
       γ ≤ Real.sqrt ((1 / (n : ℝ)) * ∑ i : Fin n,
         (Z i j - (1 / (n : ℝ)) * ∑ i' : Fin n, Z i' j) ^ 2) := by
-  sorry -- ⚠ B6: from non-negativity of both VICReg terms + their sum = 0
+  by_cases hk : 0 < k
+  · unfold vicreg_loss at hzero
+    have hvar_nonneg := vicreg_variance_nonneg hn γ hγ Z
+    have hcov_nonneg := vicreg_covariance_nonneg hn Z
+    have h1 : lambda_std * vicreg_variance hn γ hγ Z = 0 := by
+      have : lambda_std * vicreg_variance hn γ hγ Z ≤ lambda_std * vicreg_variance hn γ hγ Z + mu_cov * vicreg_covariance hn Z := by
+        have : 0 ≤ mu_cov * vicreg_covariance hn Z := mul_nonneg (le_of_lt hμ) hcov_nonneg
+        linarith
+      have hpos : 0 ≤ lambda_std * vicreg_variance hn γ hγ Z := mul_nonneg (le_of_lt hlambda) hvar_nonneg
+      linarith
+    have hvar_zero : vicreg_variance hn γ hγ Z = 0 := by
+      cases mul_eq_zero.mp h1 with
+      | inl h_lam => linarith
+      | inr h_v => exact h_v
+    exact vicreg_prevents_collapse hn hk γ hγ Z hvar_zero
+  · intro j
+    have hk_zero : k = 0 := by omega
+    subst hk_zero
+    exact Fin.elim0 j
 
 -- ============================================================
 -- GROUP C  System 2 / pondering theorems
@@ -165,7 +183,7 @@ theorem B6_vicreg_zero_implies_spread
     Priority: P2 (nice-to-have for Phase 3+) -/
 theorem C4_langevin_ergodicity
     {k d : ℕ}
-    (E : System2Energy k d) : True := trivial -- ⚠ PROOF OBLIGATION P2
+    (_E : System2Energy k d) : True := trivial -- ⚠ PROOF OBLIGATION P2
 
 -- ============================================================
 -- GROUP D  Plasticity / active inference theorems
@@ -189,9 +207,9 @@ theorem C4_langevin_ergodicity
     Method: Same as A2 — quadratic loss + Lipschitz gradient. -/
 theorem D4_surprise_decreases
     {Θ_fast : Type*} [NormedAddCommGroup Θ_fast] [InnerProductSpace ℝ Θ_fast]
-    (rule : SurpriseUpdateRule Θ_fast)
-    (fish : FisherInfo Θ_fast)
-    (θ : FastWeights Θ_fast)
+    (_rule : SurpriseUpdateRule Θ_fast)
+    (_fish : FisherInfo Θ_fast)
+    (_θ : FastWeights Θ_fast)
     (Ep Ea : ℝ) :
     surprise Ep Ea ≥ 0 := surprise_nonneg Ep Ea  -- trivial consequence
 
@@ -224,10 +242,10 @@ theorem E3_termination
     {Θ_fast W_jepa A Config : Type*}
     [NormedAddCommGroup Θ_fast] [InnerProductSpace ℝ Θ_fast]
     [NormedAddCommGroup W_jepa] [InnerProductSpace ℝ W_jepa]
-    (ε : ℝ) (hε : 0 < ε)
+    (ε : ℝ) (_hε : 0 < ε)
     (energy : ArchitectureState Θ_fast W_jepa A Config → ℝ)
-    (energy_lb : ∀ s, 0 ≤ energy s)
-    (s₀ : ArchitectureState Θ_fast W_jepa A Config) :
+    (_energy_lb : ∀ s, 0 ≤ energy s)
+    (_s₀ : ArchitectureState Θ_fast W_jepa A Config) :
     True := trivial -- ⚠ PROOF OBLIGATION P0
 
 -- ============================================================

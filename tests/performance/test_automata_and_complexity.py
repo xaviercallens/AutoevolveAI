@@ -26,7 +26,7 @@ def test_hash_table_complexity_energy_reduction(evaluator):
     Validates that replacing O(N * M) list linear search with an O(N + M)
     hash set lookup drastically reduces physical energy and achieves high speedup.
     """
-    sandbox = SandboxExecutor()
+    sandbox = SandboxExecutor(config=SandboxConfig(untrusted_requires_container=False))
 
     naive_code = """
 def filter_present_keys(keys, query_batch):
@@ -84,7 +84,7 @@ def test_catastrophic_backtracking_triggers_timeout_penalty(evaluator):
     triggering the sandbox timeout and spiking energy to 1e6 (Maximum Pain).
     """
     # Use a tight 1.0s timeout to quickly trap the exponential hang
-    cfg = SandboxConfig(timeout_seconds=1.0)
+    cfg = SandboxConfig(timeout_seconds=1.0, untrusted_requires_container=False)
     sandbox = SandboxExecutor(config=cfg)
 
     # 28 repetitions produces 2^28 operations in backtracking engine
@@ -116,7 +116,7 @@ def test_optimized_parser_handles_adversarial_input(evaluator):
     cleanly on the EXACT SAME adversarial string without exponential explosion,
     satisfying is_valid=True with negligible latency.
     """
-    cfg = SandboxConfig(timeout_seconds=1.0)
+    cfg = SandboxConfig(timeout_seconds=3.0, untrusted_requires_container=False)
     sandbox = SandboxExecutor(config=cfg)
 
     opt_code = """

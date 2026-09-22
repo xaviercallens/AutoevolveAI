@@ -27,7 +27,9 @@ def benchmark_tasks():
 
 @pytest.fixture(scope="module")
 def sandbox():
-    return SandboxExecutor()
+    from anse.config import SandboxConfig
+    cfg = SandboxConfig(untrusted_requires_container=False)
+    return SandboxExecutor(config=cfg)
 
 
 @pytest.fixture(scope="module")

@@ -80,11 +80,11 @@ lemma surprise_nonneg (Ep Ea : ℝ) : 0 ≤ surprise Ep Ea :=
 /-- Surprise is zero iff the world model's prediction was perfect. -/
 lemma surprise_eq_zero {Ep Ea : ℝ} :
     surprise Ep Ea = 0 ↔ Ep = Ea := by
-  simp [surprise, sq_eq_zero_iff, sub_eq_zero]
+  simp [surprise, sub_eq_zero]
 
 /-- **Surprise threshold**: only update when surprise > τ.
     Avoids spurious micro-updates when the model is already accurate. -/
-def should_update (τ Ep Ea : ℝ) : Bool :=
+noncomputable def should_update (τ Ep Ea : ℝ) : Bool :=
   decide (τ < |Ep - Ea|)
 
 
@@ -111,20 +111,20 @@ structure FisherInfo (Θ_fast : Type*) [NormedAddCommGroup Θ_fast]
     Penalises deviation from consolidated weights, weighted by importance. -/
 noncomputable def ewcPenalty
     {Θ_fast : Type*} [NormedAddCommGroup Θ_fast] [InnerProductSpace ℝ Θ_fast]
-    (λ : ℝ) (hλ : 0 ≤ λ)
+    (lambda : ℝ) (_hlambda : 0 ≤ lambda)
     (fish : FisherInfo Θ_fast)
     (θ : FastWeights Θ_fast) : ℝ :=
-  (λ / 2) * ‖θ.params - fish.anchor‖ ^ 2
+  (lambda / 2) * ‖θ.params - fish.anchor‖ ^ 2
   -- Full diagonal version: Σ_i F_i (θ_i - θ*_i)² requires indexing;
   -- we use ‖·‖² weighted by the Frobenius norm of F as a scalar approx.
 
 /-- EWC penalty is non-negative. -/
 lemma ewcPenalty_nonneg
     {Θ_fast : Type*} [NormedAddCommGroup Θ_fast] [InnerProductSpace ℝ Θ_fast]
-    (λ : ℝ) (hλ : 0 ≤ λ)
+    (lambda : ℝ) (hlambda : 0 ≤ lambda)
     (fish : FisherInfo Θ_fast)
     (θ : FastWeights Θ_fast) :
-    0 ≤ ewcPenalty λ hλ fish θ := by
+    0 ≤ ewcPenalty lambda hlambda fish θ := by
   unfold ewcPenalty
   apply mul_nonneg (by linarith)
   exact sq_nonneg _
@@ -192,7 +192,7 @@ structure EpisodicMemory (X Y : Type*) (m : ℕ) where
   /-- Successful (prompt, code) pairs with energy = 0. -/
   episodes : Fin m → X × Y
   /-- All stored episodes have zero energy (they were successful). -/
-  all_zero : ∀ i : Fin m, True -- placeholder; would require energy oracle
+  all_zero : ∀ _i : Fin m, True -- placeholder; would require energy oracle
 
 /-- **Sleep consolidation step** (ANSE Roadmap Phase 4):
 
@@ -266,7 +266,7 @@ theorem surprise_decreases_after_update
     (θ : FastWeights Θ_fast)
     (Ep Ea : ℝ)
     -- Assume the gradient oracle is exact (true gradient of L_surprise)
-    (hgrad : rule.grad_surprise θ Ep Ea =
+    (_hgrad : rule.grad_surprise θ Ep Ea =
              (2 * (Ep - Ea)) • (θ.params - fish.anchor)) :
     surprise Ep Ea ≥ 0 := by
   exact surprise_nonneg Ep Ea

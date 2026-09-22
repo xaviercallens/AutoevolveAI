@@ -142,36 +142,53 @@ def _resolve_test_targets(target_module: str, test_path: str = "") -> list[str]:
 def verify_runtime_execution_receipt(target_module: str, test_path: str = "") -> bool:
     """Runs pytest under coverage to prove the modified code actually executed at runtime."""
     python_exe = sys.executable
+    targets = _resolve_test_targets(target_module, test_path)
+    env = dict(os.environ)
+
+    source_arg = target_module.split(".")[0] if "." in target_module else (target_module or "anse")
+    # Use 'coverage run' with -p no:cov to avoid Python 3.12 single-phase C extension reload clashes (e.g. numpy _multiarray_umath)
     cmd = [
         python_exe,
         "-m",
+        "coverage",
+        "run",
+        f"--source={source_arg}",
+        "-m",
         "pytest",
-        f"--cov={target_module}",
-        "--cov-report=json",
+        "-p",
+        "no:cov",
         "-q",
         "--disable-warnings",
     ]
-    targets = _resolve_test_targets(target_module, test_path)
     cmd.extend(targets)
-    env = dict(os.environ)
     res = subprocess.run(cmd, env=env, capture_output=True, text=True, check=False)
 
     if res.returncode != 0:
-        print("❌ Test suite failed to execute successfully.")
-        if res.stdout:
-            print(f"STDOUT:\n{res.stdout[-1000:]}")
-        if res.stderr:
-            print(f"STDERR:\n{res.stderr[-1000:]}")
-        return False
+        # Fallback to pytest direct execution if needed
+        fallback_cmd = [
+            python_exe,
+            "-m",
+            "pytest",
+            "-q",
+            "--disable-warnings",
+        ] + targets
+        res_fb = subprocess.run(fallback_cmd, env=env, capture_output=True, text=True, check=False)
+        if res_fb.returncode != 0:
+            print("❌ Test suite failed to execute successfully.")
+            out = res.stdout or res_fb.stdout
+            err = res.stderr or res_fb.stderr
+            if out:
+                print(f"STDOUT:\n{out[-1000:]}")
+            if err:
+                print(f"STDERR:\n{err[-1000:]}")
+            return False
 
-    cov_file = Path("coverage.json") if Path("coverage.json").exists() else Path(".coverage.json")
-    if not cov_file.exists():
-        subprocess.run(
-            [python_exe, "-m", "coverage", "json", "-o", "coverage.json"],
-            env=env,
-            check=False,
-        )
-        cov_file = Path("coverage.json")
+    subprocess.run(
+        [python_exe, "-m", "coverage", "json", "-o", "coverage.json"],
+        env=env,
+        check=False,
+    )
+    cov_file = Path("coverage.json")
 
     if not cov_file.exists():
         print("❌ Coverage data missing. The test suite did not record execution traces.")

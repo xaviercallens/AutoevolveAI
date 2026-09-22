@@ -46,8 +46,11 @@ UPSTREAM_GEMINI = os.getenv("UPSTREAM_GEMINI_URL", "https://generativelanguage.g
 GATEWAY_CRITIC_ENABLED = os.getenv("ANSE_GATEWAY_CRITIC_ENABLED", "false").lower() == "true"
 
 from anse.guard.critic import CodeCritic  # noqa: E402
+from anse.guard.mcp_router import MCPRouter  # noqa: E402
 
 _critic_instance: CodeCritic | None = None
+_mcp_router_instance: MCPRouter | None = None
+MCP_CONFIG_PATH = os.getenv("MCP_CONFIG_PATH", ".antigravity/mcp_config.json")
 
 
 def get_gateway_critic() -> CodeCritic:
@@ -55,6 +58,13 @@ def get_gateway_critic() -> CodeCritic:
     if _critic_instance is None:
         _critic_instance = CodeCritic()
     return _critic_instance
+
+
+def get_mcp_router() -> MCPRouter:
+    global _mcp_router_instance
+    if _mcp_router_instance is None:
+        _mcp_router_instance = MCPRouter(MCP_CONFIG_PATH)
+    return _mcp_router_instance
 
 
 client_pool = httpx.AsyncClient(
@@ -73,6 +83,12 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         port=REDIS_PORT,
         decode_responses=False,
     )
+    if os.path.exists(MCP_CONFIG_PATH):
+        try:
+            router = get_mcp_router()
+            logger.info("Gateway MCP Router initialized with %d servers", len(router.servers))
+        except Exception as exc:
+            logger.warning("Failed to initialize MCP Router in lifespan: %s", exc)
     yield
     await client_pool.aclose()
     if redis_client is not None:
@@ -558,6 +574,63 @@ def _should_force_local(x_force_local: str, x_route_target: str) -> bool:
     return x_force_local.lower() == "true" or x_route_target.lower() == "local"
 
 
+# =============================================================================
+# MCP COGNITIVE ROUTER ENDPOINTS
+# =============================================================================
+
+
+@app.get("/mcp/servers")
+async def list_mcp_servers() -> dict[str, Any]:
+    """List all configured MCP servers and their transport status."""
+    router = get_mcp_router()
+    return {"servers": router.list_servers()}
+
+
+@app.get("/mcp/tools")
+async def list_mcp_tools(refresh: bool = False) -> dict[str, Any]:
+    """Catalog of all tools available across the active MCP cluster."""
+    router = get_mcp_router()
+    tools = await router.list_tools(force_refresh=refresh)
+    return {"tools": tools, "count": len(tools)}
+
+
+@app.post("/mcp/tools/{server_name}/{tool_name}")
+async def call_mcp_tool_by_server(
+    server_name: str,
+    tool_name: str,
+    request: Request,
+) -> dict[str, Any]:
+    """Invoke a specific tool on a target MCP server."""
+    args_dict: dict[str, Any] = {}
+    if request.headers.get("content-type", "").startswith("application/json"):
+        raw_payload = await request.body()
+        if raw_payload:
+            args_dict = json.loads(raw_payload.decode("utf-8"))
+    router = get_mcp_router()
+    return await router.call_tool(server_name, tool_name, args_dict)
+
+
+@app.post("/mcp/call")
+async def call_mcp_tool_auto_route(request: Request) -> dict[str, Any]:
+    """Auto-route a tool call to the server providing it."""
+    raw_payload = await request.body()
+    body_dict = json.loads(raw_payload.decode("utf-8")) if raw_payload else {}
+    target_tool = body_dict.get("name") or body_dict.get("tool") or ""
+    args_dict = body_dict.get("arguments", {})
+    target_server = body_dict.get("server", "auto")
+    router = get_mcp_router()
+    return await router.call_tool(target_server, target_tool, args_dict)
+
+
+@app.post("/mcp/rpc/{server_name}")
+async def mcp_json_rpc_endpoint(server_name: str, request: Request) -> dict[str, Any]:
+    """Proxy JSON-RPC 2.0 requests directly to target MCP server."""
+    raw_payload = await request.body()
+    body_dict = json.loads(raw_payload.decode("utf-8")) if raw_payload else {}
+    router = get_mcp_router()
+    return await router.handle_json_rpc(server_name, body_dict)
+
+
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def reverse_proxy(
     request: Request,
@@ -634,8 +707,33 @@ async def reverse_proxy(
 
 
 if __name__ == "__main__":
+    import argparse
     import uvicorn
 
-    bind_host = os.getenv("GATEWAY_HOST", "127.0.0.1")
-    bind_port = int(os.getenv("GATEWAY_PORT", "8080"))
-    uvicorn.run(app, host=bind_host, port=bind_port)  # nosec B104
+    cli_parser = argparse.ArgumentParser(
+        description="Antigravity Multi-Tier Gateway & MCP Cognitive Router"
+    )
+    cli_parser.add_argument(
+        "--mcp-config",
+        default=os.getenv("MCP_CONFIG_PATH", ".antigravity/mcp_config.json"),
+        help="Path to MCP servers configuration JSON file",
+    )
+    cli_parser.add_argument(
+        "--host",
+        default=os.getenv("GATEWAY_HOST", "127.0.0.1"),
+        help="Host interface to bind",
+    )
+    cli_parser.add_argument(
+        "--port",
+        type=int,
+        default=int(os.getenv("GATEWAY_PORT", "8080")),
+        help="Port to bind",
+    )
+    cli_args = cli_parser.parse_args()
+
+    if cli_args.mcp_config:
+        os.environ["MCP_CONFIG_PATH"] = cli_args.mcp_config
+        MCP_CONFIG_PATH = cli_args.mcp_config
+        get_mcp_router().load_config(cli_args.mcp_config)
+
+    uvicorn.run(app, host=cli_args.host, port=cli_args.port)  # nosec B104

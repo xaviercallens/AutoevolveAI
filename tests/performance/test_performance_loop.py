@@ -28,6 +28,7 @@ def perf_loop(tmp_path, mock_extractor):
     cfg.memory.persist_directory = tmp_path / "chroma"
     cfg.memory.interactions_log = tmp_path / "interactions.jsonl"
     cfg.sandbox.timeout_seconds = 5.0
+    cfg.sandbox.untrusted_requires_container = False
 
     sandbox = SandboxExecutor(config=cfg.sandbox)
     evaluator = PerformanceEnergyEvaluator(config=cfg.performance)
@@ -113,7 +114,7 @@ def pairwise_diff(A):
     return float(np.sum(np.abs(arr[:, None] - arr[None, :])))
 ```"""
     test_harness = """
-A = [float(i) for i in range(500)]
+A = [float(i) for i in range(1200)]
 res = pairwise_diff(A)
 assert res > 0
 print("OK")
@@ -159,6 +160,7 @@ def test_performance_loop_jepa_integration(tmp_path, mock_extractor):
     cfg = ANSEConfig()
     cfg.memory.persist_directory = tmp_path / "chroma"
     cfg.memory.interactions_log = tmp_path / "interactions.jsonl"
+    cfg.sandbox.untrusted_requires_container = False
 
     mock_world_model = MagicMock()
     mock_world_model.predict_energy_scalar.return_value = 55.0

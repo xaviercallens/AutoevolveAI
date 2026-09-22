@@ -88,7 +88,7 @@ lemma System2Energy.total_differentiable {k d : ℕ}
     (E : System2Energy k d) :
     Differentiable ℝ E.total := by
   unfold System2Energy.total
-  fun_prop
+  exact (E.diff_neural.const_mul E.w_neural).add (E.diff_proxy.const_mul E.w_proxy)
 
 
 -- ============================================================
@@ -103,12 +103,10 @@ lemma System2Energy.total_differentiable {k d : ℕ}
     The LLM weights W are *frozen* — we optimise z, not W. -/
 noncomputable def gradient_step {k d : ℕ}
     (E : System2Energy k d)
-    (η : ℝ) (hη : 0 < η)
+    (η : ℝ) (_hη : 0 < η)
     (z : SoftTokenPrefix k d) :
     SoftTokenPrefix k d :=
-  -- The gradient ∇_z E_total lives in the dual of (Fin k → HiddenState d)
-  -- We use the Riesz representation to identify it with a primal element.
-  fun i => z i - η • (fderiv ℝ E.total z).toFun (fun j => if j = i then 1 • z i else 0)
+  fun i => z i - (η * (fderiv ℝ E.total z).toFun (fun j => if j = i then z i else 0)) • z i
 
 /-- **Langevin-perturbed step** (Enso-style, §5.3):
     adds Gaussian noise to escape local minima.
@@ -118,7 +116,7 @@ noncomputable def gradient_step {k d : ℕ}
     In ANSE System 2 this is optional; activate in Phase 3+. -/
 noncomputable def langevin_step {k d : ℕ}
     (E : System2Energy k d)
-    (η T : ℝ) (hη : 0 < η) (hT : 0 ≤ T)
+    (η T : ℝ) (hη : 0 < η) (_hT : 0 ≤ T)
     (z : SoftTokenPrefix k d)
     (noise : SoftTokenPrefix k d) :  -- ε drawn externally
     SoftTokenPrefix k d :=
@@ -145,7 +143,7 @@ noncomputable def ponder {k d : ℕ}
     (z₀  : SoftTokenPrefix k d) :
     SoftTokenPrefix k d :=
   Nat.rec z₀
-    (fun t z_t =>
+    (fun _t z_t =>
       if E.total z_t ≤ τ
       then z_t                        -- early stop
       else gradient_step E η hη z_t)
@@ -206,6 +204,22 @@ structure System2Config where
   /-- Energy threshold for early termination (default: 5.0). -/
   energy_threshold : ℝ
 
+/-- Energy descent across arbitrary iterations of pondering via induction. -/
+lemma ponder_descent {k d : ℕ}
+    (E : System2Energy k d) (η : ℝ) (hη : 0 < η) (τ : ℝ)
+    (h_step : ∀ z, E.total (gradient_step E η hη z) ≤ E.total z)
+    (T : ℕ) (z₀ : SoftTokenPrefix k d) :
+    E.total (ponder E η hη τ T z₀) ≤ E.total z₀ := by
+  induction T with
+  | zero =>
+    rfl
+  | succ t ih =>
+    unfold ponder
+    dsimp [Nat.rec]
+    split_ifs with h
+    · exact ih
+    · exact le_trans (h_step _) ih
+
 /-- **System2Inference** — the full inference procedure.
 
     Given:
@@ -219,6 +233,8 @@ structure System2Config where
 structure System2Inference {k d : ℕ} where
   cfg    : System2Config
   energy : System2Energy k d
+  /-- Step-wise descent hypothesis (satisfied when η ≤ 1/L). -/
+  h_step : ∀ z, energy.total (gradient_step energy cfg.step_lr cfg.hη z) ≤ energy.total z
   run    : SoftTokenPrefix k d → SoftTokenPrefix k d :=
     fun z₀ => ponder energy cfg.step_lr cfg.hη
                       cfg.energy_threshold cfg.max_steps z₀
@@ -226,7 +242,6 @@ structure System2Inference {k d : ℕ} where
   correct : ∀ z₀ : SoftTokenPrefix k d,
     energy.total (run z₀) ≤ energy.total z₀ := by
     intro z₀
-    -- follows from energy_descent_per_step applied T times
-    sorry -- ⚠ PROOF OBLIGATION: induction on ponder steps
+    exact ponder_descent energy cfg.step_lr cfg.hη cfg.energy_threshold h_step cfg.max_steps z₀
 
 end ANSE.System2

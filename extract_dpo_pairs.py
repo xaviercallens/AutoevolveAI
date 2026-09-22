@@ -134,11 +134,14 @@ def compute_edit_distance_ratio(s1: str, s2: str) -> float:
     """Computes normalized Levenshtein edit distance between 0.0 (identical) and 1.0."""
     if not s1 and not s2:
         return 0.0
+    if s1 == s2:
+        return 0.0
     if not s1 or not s2:
         return 1.0
 
+    # Cap comparison length to 300 chars for thermodynamic algorithmic efficiency
+    s1, s2 = s1[:300], s2[:300]
     len1, len2 = len(s1), len(s2)
-    # Dynamic programming with single previous row for O(min(len1, len2)) memory
     prev_row = list(range(len2 + 1))
     for i, c1 in enumerate(s1):
         curr_row = [i + 1] * (len2 + 1)
@@ -186,6 +189,65 @@ def _load_human_ground_truth(subtask_id: str, r: Any) -> str | None:
     return raw.decode("utf-8") if isinstance(raw, bytes) else str(raw)
 
 
+def _build_prompt_messages(req: dict[str, Any]) -> list[dict[str, str]]:
+    """Build prompt history list from request payload."""
+    prompt_messages: list[dict[str, str]] = []
+    sys_prompt = _extract_dpo_system_prompt(req)
+    if sys_prompt:
+        prompt_messages.append(sys_prompt)
+    prompt_messages.extend(_extract_dpo_history(req))
+    return prompt_messages
+
+
+def _create_single_rejected_pair(
+    rej_trace_id: str,
+    reasons_str: str,
+    r: Any,
+    subtask_id: str,
+    chosen_trace_id: str,
+    reference_winner: str,
+    human_patch: str | None,
+    chosen_reward: float,
+    prompt_messages: list[dict[str, str]],
+) -> dict[str, Any] | None:
+    """Creates a single DPO pair for a failed trace."""
+    rej_payloads = _load_trace_payloads(rej_trace_id, r)
+    if not rej_payloads:
+        return None
+    _, rej_resp = rej_payloads
+    rej_text = _extract_dpo_completion(rej_resp)
+    if not rej_text:
+        return None
+
+    reasons = _parse_json_field(reasons_str)
+    failure_reasons = reasons if isinstance(reasons, list) else [str(reasons)]
+    is_stub_fail = any("stub" in str(reason).lower() for reason in failure_reasons)
+
+    ref_for_dist = human_patch if human_patch else reference_winner
+    rej_dist = compute_edit_distance_ratio(rej_text, ref_for_dist)
+    rej_reward = compute_trajectory_reward(
+        tests_pass=False,
+        anti_stub_failed=is_stub_fail,
+        edit_distance_human=rej_dist,
+    )
+
+    return {
+        "prompt": prompt_messages,
+        "chosen": reference_winner,
+        "rejected": rej_text,
+        "metadata": {
+            "subtask_id": subtask_id,
+            "chosen_trace_id": chosen_trace_id,
+            "rejected_trace_id": rej_trace_id,
+            "failure_reasons": failure_reasons,
+            "reward_chosen": chosen_reward,
+            "reward_rejected": rej_reward,
+            "reward_delta": round(chosen_reward - rej_reward, 4),
+            "human_ground_truth_applied": bool(human_patch),
+        },
+    }
+
+
 def _build_pairs_for_subtask(
     subtask_id: str,
     chosen_trace_id: str,
@@ -202,19 +264,13 @@ def _build_pairs_for_subtask(
     if not chosen_text:
         return []
 
-    # If human telemetry exists in Redis, use the human final code as gold standard
     human_patch = _load_human_ground_truth(subtask_id, r)
     reference_winner = human_patch if human_patch else chosen_text
 
-    prompt_messages: list[dict[str, str]] = []
-    sys_prompt = _extract_dpo_system_prompt(req)
-    if sys_prompt:
-        prompt_messages.append(sys_prompt)
-    prompt_messages.extend(_extract_dpo_history(req))
+    prompt_messages = _build_prompt_messages(req)
     if not prompt_messages:
         return []
 
-    # Calculate reward for chosen completion
     chosen_dist = compute_edit_distance_ratio(chosen_text, human_patch) if human_patch else 0.0
     chosen_reward = compute_trajectory_reward(
         tests_pass=True,
@@ -224,46 +280,19 @@ def _build_pairs_for_subtask(
 
     pairs: list[dict[str, Any]] = []
     for rej_trace_id, reasons_str in failed_traces:
-        rej_payloads = _load_trace_payloads(rej_trace_id, r)
-        if not rej_payloads:
-            continue
-        _, rej_resp = rej_payloads
-        rej_text = _extract_dpo_completion(rej_resp)
-        if not rej_text:
-            continue
-
-        reasons = _parse_json_field(reasons_str)
-        failure_reasons = reasons if isinstance(reasons, list) else [str(reasons)]
-        is_stub_fail = any("stub" in str(reason).lower() for reason in failure_reasons)
-
-        rej_dist = (
-            compute_edit_distance_ratio(rej_text, human_patch)
-            if human_patch
-            else compute_edit_distance_ratio(rej_text, chosen_text)
+        pair = _create_single_rejected_pair(
+            rej_trace_id=rej_trace_id,
+            reasons_str=reasons_str,
+            r=r,
+            subtask_id=subtask_id,
+            chosen_trace_id=chosen_trace_id,
+            reference_winner=reference_winner,
+            human_patch=human_patch,
+            chosen_reward=chosen_reward,
+            prompt_messages=prompt_messages,
         )
-        rej_reward = compute_trajectory_reward(
-            tests_pass=False,
-            anti_stub_failed=is_stub_fail,
-            edit_distance_human=rej_dist,
-        )
-
-        pairs.append(
-            {
-                "prompt": prompt_messages,
-                "chosen": reference_winner,
-                "rejected": rej_text,
-                "metadata": {
-                    "subtask_id": subtask_id,
-                    "chosen_trace_id": chosen_trace_id,
-                    "rejected_trace_id": rej_trace_id,
-                    "failure_reasons": failure_reasons,
-                    "reward_chosen": chosen_reward,
-                    "reward_rejected": rej_reward,
-                    "reward_delta": round(chosen_reward - rej_reward, 4),
-                    "human_ground_truth_applied": bool(human_patch),
-                },
-            }
-        )
+        if pair:
+            pairs.append(pair)
 
     return pairs
 

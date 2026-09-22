@@ -1,5 +1,4 @@
-# Makefile
-.PHONY: verify-all test-lean test-qa test-sec test-ui
+.PHONY: verify-all test-lean test-qa test-sec test-ui test-factory
 
 verify-all: test-lean test-qa test-sec test-ui
 
@@ -20,3 +19,8 @@ test-ui:
 	# 4. None Regression Tests (UI) : Non-régression visuelle au pixel près
 	# npx playwright test
 	echo "Playwright skipped locally, enable in CI if UI exists"
+
+test-factory:
+	# 5. PR Factory : API tests & dispatch script validation
+	uv run pytest tests/web/ -v
+	bash -n nightly_dispatch.sh

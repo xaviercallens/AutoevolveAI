@@ -53,12 +53,15 @@ from a lean process (``run_phase3_evolution.py`` keeps torch out of the measurin
 from __future__ import annotations
 
 import json
+import logging
 import math
 import secrets
 import statistics
 import threading
 from dataclasses import dataclass, field
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 from anse.autopoiesis.registry import ComponentRegistry
 from anse.config import SandboxConfig, get_config
@@ -559,8 +562,8 @@ class AutopoiesisHypervisor:
             exec(code, ns)
             if component in ns and callable(ns[component]):
                 self._proxies[component].swap(ns[component], version)
-        except Exception:
-            pass
+        except Exception as err:
+            logger.warning("Failed to swap RCU proxy for component %s (v%d): %s", component, version, err)
 
 
 class RCUComponentProxy:

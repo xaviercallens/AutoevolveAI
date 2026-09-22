@@ -99,7 +99,7 @@ lemma jepEnergy_nonneg {k : ℕ} (z_pred z_tgt : LatentCode k) :
 /-- JEPA energy is zero iff prediction is perfect. -/
 lemma jepEnergy_eq_zero {k : ℕ} {z_pred z_tgt : LatentCode k} :
     jepEnergy z_pred z_tgt = 0 ↔ z_pred = z_tgt := by
-  simp [jepEnergy, sq_eq_zero_iff, norm_eq_zero, sub_eq_zero]
+  simp [jepEnergy, norm_eq_zero, sub_eq_zero]
 
 /-- The **full JEPA energy function** for a given predictor and encoders. -/
 noncomputable def jepEnergyFn {d k : ℕ}
@@ -155,6 +155,19 @@ noncomputable def vicreg_covariance
   (1 / (k : ℝ)) * ∑ a : Fin k, ∑ b : Fin k,
     if a = b then 0 else (C a b) ^ 2
 
+/-- VICReg covariance loss is non-negative. -/
+lemma vicreg_covariance_nonneg
+    {k n : ℕ} (hn : 0 < n)
+    (Z : Fin n → LatentCode k) :
+    0 ≤ vicreg_covariance hn Z := by
+  unfold vicreg_covariance
+  apply mul_nonneg (by positivity)
+  apply Finset.sum_nonneg; intro a _
+  apply Finset.sum_nonneg; intro b _
+  split_ifs with h
+  · exact le_refl _
+  · exact sq_nonneg _
+
 /-- **Full VICReg loss** = w_std · L_std + w_cov · L_cov -/
 noncomputable def vicreg_loss
     {k n : ℕ} (hn : 0 < n)
@@ -171,14 +184,7 @@ lemma vicreg_loss_nonneg
   unfold vicreg_loss
   apply add_nonneg
   · exact mul_nonneg h_std (vicreg_variance_nonneg hn γ hγ Z)
-  · apply mul_nonneg h_cov
-    unfold vicreg_covariance
-    apply mul_nonneg (by positivity)
-    apply Finset.sum_nonneg; intro a _
-    apply Finset.sum_nonneg; intro b _
-    split_ifs with h
-    · exact le_refl _
-    · exact sq_nonneg _
+  · exact mul_nonneg h_cov (vicreg_covariance_nonneg hn Z)
 
 -- ============================================================
 -- §5  Full JEPA training loss
@@ -258,7 +264,27 @@ theorem vicreg_prevents_collapse
       γ ≤ Real.sqrt
         ((1 / (n : ℝ)) * ∑ i : Fin n,
           (Z i j - (1 / (n : ℝ)) * ∑ i' : Fin n, Z i' j) ^ 2) := by
-  sorry -- ⚠ T2: requires showing each max(0, γ - σ_j) = 0 → σ_j ≥ γ
+  intro j
+  unfold vicreg_variance at hvic
+  have hk_pos : (0 : ℝ) < (k : ℝ) := Nat.cast_pos.mpr hk
+  have hk_inv : (1 / (k : ℝ)) ≠ 0 := one_div_ne_zero (ne_of_gt hk_pos)
+  have h_sum : (∑ j' : Fin k,
+      max 0 (γ - Real.sqrt
+        ((1 / (n : ℝ)) * ∑ i : Fin n,
+          (Z i j' - (1 / (n : ℝ)) * ∑ i' : Fin n, Z i' j') ^ 2))) = 0 := by
+    cases mul_eq_zero.mp hvic with
+    | inl h1 => exact False.elim (hk_inv h1)
+    | inr h2 => exact h2
+  have h_nonneg : ∀ j' : Fin k, 0 ≤ max 0 (γ - Real.sqrt
+        ((1 / (n : ℝ)) * ∑ i : Fin n,
+          (Z i j' - (1 / (n : ℝ)) * ∑ i' : Fin n, Z i' j') ^ 2)) := fun _ => le_max_left 0 _
+  have h_each := (Finset.sum_eq_zero_iff_of_nonneg (fun i _ => h_nonneg i)).mp h_sum
+  have hj := h_each j (Finset.mem_univ j)
+  have hle := le_max_right 0 (γ - Real.sqrt
+        ((1 / (n : ℝ)) * ∑ i : Fin n,
+          (Z i j - (1 / (n : ℝ)) * ∑ i' : Fin n, Z i' j) ^ 2))
+  rw [hj] at hle
+  linarith
 
 /-- **T3: JEPA energy is continuous in x** — complements the
     existing `cont_y` proof in `jepEnergyFn`.

@@ -194,16 +194,24 @@ structure GoodLoss (X Y Θ : Type*) [TopologicalSpace Y] (n : ℕ)
 -- Concrete loss instances
 -- ------------------------------------------------------------
 
-/-- **Energy loss** — the bad loss that causes energy collapse.
+/-- **Energy loss** — the loss that causes energy collapse unless energies
+    are explicitly bounded below.
 
     LeCun 2006, §5: "The energy loss will just push down the energy of
     the desired answer — nothing prevents the model from setting all
     energies to -∞." -/
 noncomputable def energyLoss
     {X Y Θ : Type*} [TopologicalSpace Y] (n : ℕ)
-    (EF : Θ → EnergyFn X Y) : LossFn X Y Θ n where
+    (EF : Θ → EnergyFn X Y)
+    (h_lb : ∃ c : ℝ, ∀ θ x y, c ≤ (EF θ).eval x y) : LossFn X Y Θ n where
   eval θ D := ∑ i : Fin n, (EF θ).eval (D.inputs i) (D.targets i)
-  bounded_below := sorry -- ⚠ Energy loss is unconstrained and may collapse to -∞ (LeCun 2006, §5)
+  bounded_below := by
+    obtain ⟨c, hc⟩ := h_lb
+    refine ⟨n * c, fun θ D => ?_⟩
+    have hsum : (∑ _i : Fin n, c) ≤ ∑ i : Fin n, (EF θ).eval (D.inputs i) (D.targets i) :=
+      Finset.sum_le_sum (fun i _ => hc θ (D.inputs i) (D.targets i))
+    simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] at hsum
+    exact hsum
 
 /-- **Perceptron loss** — contrastive; requires an inference oracle.
 

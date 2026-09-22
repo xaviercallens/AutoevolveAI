@@ -133,6 +133,41 @@ class TraceExtractor:
 
         return sessions
 
+    def extract_from_loop_traces(self, loop_traces: list[Any]) -> list[ExtractedSession]:
+        """Convert Phase 1 LoopTrace objects directly into ExtractedSession objects (Directive D6)."""
+        grouped: dict[str, list[TraceRecord]] = {}
+        for lt in loop_traces:
+            task = getattr(lt, "task", None) or (lt.get("task", "") if isinstance(lt, dict) else "")
+            code = getattr(lt, "code", None) or (lt.get("code", "") if isinstance(lt, dict) else "")
+            prompt = getattr(lt, "prompt", None) or (lt.get("prompt", "") if isinstance(lt, dict) else task)
+            energy = float(getattr(lt, "energy", 0.0) if not isinstance(lt, dict) else lt.get("energy", 0.0))
+            converged = bool(getattr(lt, "converged", False) if not isinstance(lt, dict) else lt.get("converged", False))
+            iteration = int(getattr(lt, "iteration", 1) if not isinstance(lt, dict) else lt.get("iteration", 1))
+
+            trace = TraceRecord(
+                trace_id=f"phase1_{iteration}",
+                subtask_id=task or "phase1_task",
+                prompt=prompt or task,
+                completion=code,
+                verdict="PASSED" if converged else "FAILED",
+                energy=energy,
+                reasons=[],
+            )
+            grouped.setdefault(trace.subtask_id, []).append(trace)
+
+        sessions: list[ExtractedSession] = []
+        for subtask_id, trace_list in grouped.items():
+            prompt = trace_list[0].prompt if trace_list else ""
+            sessions.append(
+                ExtractedSession(
+                    subtask_id=subtask_id,
+                    prompt=prompt,
+                    traces=trace_list,
+                )
+            )
+        return sessions
+
+
     def filter_by_time_window(
         self, sessions: list[ExtractedSession], start_ts: float, end_ts: float
     ) -> list[ExtractedSession]:

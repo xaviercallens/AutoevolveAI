@@ -114,3 +114,8 @@ For each group of generated solutions $\{y_1, y_2, \dots, y_G\}$:
 3. **Code Quality Gate:** 100% pytest pass on `tests/algorithms/test_symplectic.py` and zero lint/AST violations.
 4. **Data Pipeline Gate:** `results/dpo_multitask_dataset.jsonl` contains all 6 core neuro-symbolic tasks (UC1 through UC6), successfully evaluated by `scripts/run_multitask_rl_eval.py`.
 5. **Web Gateway Gate:** UI renders telemetry HUD, agent statuses, and physics metrics with zero console errors.
+6. **Low-Tier Pass@1 Gate (G6):** For models $\le 3\text{B}$ parameters, unassisted first-attempt pass rate $\text{pass@1} \ge 0.30$ across Phase 1 benchmarks.
+7. **Low-Tier False Convergence Gate (G7):** For models $\le 3\text{B}$ parameters, legacy ungrounded convergence exposes false claims with $\text{false\_convergence\_rate} < 0.50$.
+8. **Low-Tier Rescue Efficiency Gate (G8):** For models $\le 3\text{B}$ parameters, retry loop converts verified failures to passes with efficiency $\text{rescued} / \text{retried} \ge 0.10$.
+9. **Energy Monotonicity Gate (G9):** Physical execution energy non-increasing across retries in $\ge 30\%$ of multi-attempt runs ($\text{energy\_never\_increased} / \text{retried} \ge 0.30$).
+

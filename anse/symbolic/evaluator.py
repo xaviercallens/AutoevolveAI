@@ -70,6 +70,20 @@ class EnergyResult:
     expected_output: str | None = None
     """If an expected output was provided, stored here for reference."""
 
+    def difficulty_tier(self) -> str:
+        """Classify task difficulty based on energy and failure category (Directive D5).
+
+        Returns:
+            'trivial': Solved or near-perfect on first try (E <= 0 or PERFECT)
+            'fixable': Minor error or assertion failure (0 < E <= 30)
+            'hard': Structural error, runtime exception, timeout, syntax error (E > 30)
+        """
+        if self.score <= 0.0 or self.category == EnergyCategory.PERFECT:
+            return "trivial"
+        if self.score <= 30.0:
+            return "fixable"
+        return "hard"
+
 
 # ─── Evaluator ───────────────────────────────────────────────────────────────
 

@@ -24,10 +24,16 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-from anse.config import ANSEConfig, get_config
+from anse.config import ANSEConfig, PromptBudgetPolicy, get_config, get_model_tier, is_small_model
 from anse.core.encoder import HiddenStateExtractor, HiddenStateRecord
 from anse.memory.harvester import Harvester, LoopTrace
-from anse.memory.lessons import Lesson, LessonMemory, format_lessons
+from anse.memory.lessons import (
+    Lesson,
+    LessonMemory,
+    extract_skeleton,
+    format_lessons,
+    format_lessons_skeleton,
+)
 from anse.symbolic.evaluator import EnergyCategory, EnergyEvaluator, EnergyResult
 from anse.symbolic.hidden_tests import TestReport, parse_report
 from anse.symbolic.parser import NoCodeFoundError, extract_code
@@ -105,6 +111,28 @@ Stdout:
 ---
 Analyze the failure, correct the bug, and provide the complete fixed Python code in a ```python ... ``` block."""
 
+PAIN_PROMPT_TEMPLATE_COMPRESSED = """TASK: {task}
+
+PAIN SIGNAL: Your previous attempt failed with Energy {energy:.1f} ({category}).
+Failing code summary:
+```python
+{code}
+```
+Execution feedback:
+---
+{test_feedback}Return code: {returncode}
+Stderr:
+{stderr}
+---
+Analyze the failure and provide the complete fixed Python code in a ```python ... ``` block."""
+
+
+def compress_failing_code(code: str, max_chars: int = 200) -> str:
+    """Extract function signature and error context within budget (Directive D1)."""
+    if not code:
+        return "(no code block was found in your reply)"
+    return extract_skeleton(code, max_chars=max_chars) or code[:max_chars]
+
 
 # ─── Agent Loop ──────────────────────────────────────────────────────────────
 
@@ -126,6 +154,8 @@ class AgentLoop:
         world_model: Any | None = None,
         lesson_memory: LessonMemory | None = None,
         adaptive_retry: bool = False,
+        prompt_budget: PromptBudgetPolicy | None = None,
+        force_adaptive: bool = False,
     ) -> None:
         self.config = config or get_config()
         self.extractor = extractor or HiddenStateExtractor(config=self.config.model)
@@ -136,7 +166,46 @@ class AgentLoop:
         self.convergence_threshold = convergence_threshold
         self.world_model = world_model  # Phase 2: optional JEPA energy predictor
         self.lesson_memory = lesson_memory
-        self.adaptive_retry = adaptive_retry
+
+        # Model tier detection (Directive D1, D2)
+        model_name = self.config.model.api_model_name or self.config.model.model_id
+        self.model_name = model_name
+        self.is_small = is_small_model(model_name)
+        self.model_tier = get_model_tier(model_name)
+
+        # Directive D2: Disable adaptive retry for sub-3B models unless explicitly forced
+        if adaptive_retry and self.is_small and not force_adaptive:
+            logger.info("Adaptive retry disabled for <=3B model '%s' (Directive D2)", model_name)
+            self.adaptive_retry = False
+        else:
+            self.adaptive_retry = adaptive_retry
+
+        # Directive D1: Prompt budget policy
+        if prompt_budget is not None:
+            self.prompt_budget = prompt_budget
+        elif hasattr(self.config, "prompt_budget") and self.config.prompt_budget is not None:
+            self.prompt_budget = (
+                PromptBudgetPolicy.for_model(model_name)
+                if self.is_small
+                else self.config.prompt_budget
+            )
+        else:
+            self.prompt_budget = PromptBudgetPolicy.for_model(model_name)
+
+        # Directive D8: Swappable prompt strategy from registry
+        self.prompt_strategy = None
+        if hasattr(self.config, "autopoiesis") and self.config.autopoiesis.enabled:
+            try:
+                from anse.autopoiesis.registry import ComponentRegistry
+
+                reg = ComponentRegistry(self.config.autopoiesis.workspace / "registry")
+                if "prompt_strategy" in reg.components():
+                    mod = reg.load_active("prompt_strategy")
+                    if hasattr(mod, "format_pain_prompt"):
+                        self.prompt_strategy = mod.format_pain_prompt
+                        logger.info("Loaded active prompt_strategy from ComponentRegistry (Directive D8)")
+            except Exception as e:
+                logger.debug("Prompt strategy registry check: %s", e)
 
     def run(
         self,
@@ -159,8 +228,12 @@ class AgentLoop:
         traces: list[LoopTrace] = []
         start_time = time.time()
 
+        # Directive D4: Skeleton-only lesson injection for small models
         lessons = self.lesson_memory.retrieve(task) if self.lesson_memory is not None else []
-        lesson_block = format_lessons(lessons)
+        if self.is_small:
+            lesson_block = format_lessons_skeleton(lessons)
+        else:
+            lesson_block = format_lessons(lessons)
         system_prompt = SYSTEM_PROMPT_HIDDEN_TESTS if hidden_tests else SYSTEM_PROMPT
 
         prompt = f"{lesson_block}TASK:\n{task}"
@@ -170,6 +243,7 @@ class AgentLoop:
         first_failure = ""
         seen_codes: set[str] = set()
         stagnation = 0
+        energy_history: list[float] = []
         # Best-of-N tracking: keep the lowest-energy verified candidate
         best_energy_score = float("inf")
         best_code = ""
@@ -223,6 +297,25 @@ class AgentLoop:
                     expected_output=expected_output,
                 )
             last_energy = energy_res
+            energy_history.append(energy_res.score)
+
+            # Directive D5: Task Difficulty Estimator (Pre-Retry Triage)
+            diff_tier = energy_res.difficulty_tier()
+            if (
+                iteration == 1
+                and self.is_small
+                and self.prompt_budget.difficulty_triage
+                and diff_tier == "hard"
+                and retries_limit > 2
+            ):
+                logger.info(
+                    "Task difficulty classified as 'hard' (E=%.1f) for <=3B model; capping retries_limit to 2 (Directive D5)",
+                    energy_res.score,
+                )
+                retries_limit = 2
+
+            converged = self._is_converged(energy_res, report, hidden_tests)
+
             # Update best-of-N: prefer verified passes with lowest energy
             is_verified = bool(report and report.all_passed) if hidden_tests else converged
             was_verified = bool(best_report and best_report.all_passed) if hidden_tests else best_energy_score < float("inf")
@@ -237,7 +330,6 @@ class AgentLoop:
                 best_iteration = iteration
 
             iter_duration_ms = (time.time() - iter_start) * 1000.0
-            converged = self._is_converged(energy_res, report, hidden_tests)
             if not converged and not first_failure:
                 first_failure = energy_res.pain_signal
 
@@ -249,6 +341,27 @@ class AgentLoop:
                 converged,
                 iter_duration_ms,
             )
+
+            # Directive D3: Energy-monotonic early stop checks
+            early_stop_reason = ""
+            if not converged and self.is_small and self.prompt_budget.energy_monotonic_pruning:
+                if iteration == 1 and energy_res.score > 60.0:
+                    early_stop_reason = "E1_catastrophic_failure"
+                    logger.info(
+                        "Early stopping on iteration 1: E_1=%.1f > 60.0 for <=3B model (Directive D3)",
+                        energy_res.score,
+                    )
+                elif (
+                    iteration == 2
+                    and energy_res.score > energy_history[0]
+                    and energy_res.score > 40.0
+                ):
+                    early_stop_reason = "E2_diverging_energy"
+                    logger.info(
+                        "Early stopping on iteration 2: E_2=%.1f > E_1=%.1f and > 40.0 for <=3B model (Directive D3)",
+                        energy_res.score,
+                        energy_history[0],
+                    )
 
             normalised = " ".join(code.split())
             if normalised and normalised in seen_codes:
@@ -274,6 +387,9 @@ class AgentLoop:
             )
             trace.metadata["lessons_used"] = len(lessons)
             trace.metadata["stagnation"] = stagnation
+            trace.metadata["difficulty_tier"] = diff_tier
+            if early_stop_reason:
+                trace.metadata["early_stop_reason"] = early_stop_reason
             if report is not None:
                 trace.metadata["tests_passed"] = report.passed
                 trace.metadata["tests_total"] = report.total
@@ -284,18 +400,69 @@ class AgentLoop:
                 logger.info("Task converged on iteration %d!", iteration)
                 break
 
+            if early_stop_reason:
+                break
+
             # 6. Inject Pain Signal for next iteration if retries remain
             if iteration < retries_limit:
-                prompt = lesson_block + PAIN_PROMPT_TEMPLATE.format(
-                    task=task,
-                    test_feedback=f"{energy_res.pain_signal}\n" if hidden_tests else "",
-                    code=code[-4000:] if code else "(no code block was found in your reply)",
-                    energy=energy_res.score,
-                    category=energy_res.category.value,
-                    returncode=exec_res.returncode,
-                    stderr=exec_res.stderr[-1000:] if exec_res.stderr else "(empty)",
-                    stdout=exec_res.stdout[-1000:] if exec_res.stdout else "(empty)",
-                )
+                test_feedback = f"{energy_res.pain_signal}\n" if hidden_tests else ""
+                if self.prompt_strategy is not None:
+                    prompt = lesson_block + self.prompt_strategy(
+                        task=task,
+                        code=code,
+                        energy=energy_res.score,
+                        category=energy_res.category.value,
+                        returncode=exec_res.returncode,
+                        stderr=exec_res.stderr,
+                        stdout=exec_res.stdout,
+                        model_tier=self.model_tier,
+                        test_feedback=energy_res.pain_signal if hidden_tests else "",
+                    )
+                elif self.is_small and self.prompt_budget.compress_code:
+                    # Directive D1: compressed pain prompt
+                    compressed_code = compress_failing_code(
+                        code, max_chars=self.prompt_budget.max_code_chars
+                    )
+                    stderr_snip = (
+                        exec_res.stderr[-self.prompt_budget.max_stderr_chars :]
+                        if exec_res.stderr
+                        else "(empty)"
+                    )
+                    prompt = lesson_block + PAIN_PROMPT_TEMPLATE_COMPRESSED.format(
+                        task=task,
+                        test_feedback=test_feedback,
+                        code=compressed_code,
+                        energy=energy_res.score,
+                        category=energy_res.category.value,
+                        returncode=exec_res.returncode,
+                        stderr=stderr_snip,
+                    )
+                else:
+                    code_snip = (
+                        code[-self.prompt_budget.max_code_chars :]
+                        if code
+                        else "(no code block was found in your reply)"
+                    )
+                    stderr_snip = (
+                        exec_res.stderr[-self.prompt_budget.max_stderr_chars :]
+                        if exec_res.stderr
+                        else "(empty)"
+                    )
+                    stdout_snip = (
+                        exec_res.stdout[-self.prompt_budget.max_stdout_chars :]
+                        if exec_res.stdout
+                        else "(empty)"
+                    )
+                    prompt = lesson_block + PAIN_PROMPT_TEMPLATE.format(
+                        task=task,
+                        test_feedback=test_feedback,
+                        code=code_snip,
+                        energy=energy_res.score,
+                        category=energy_res.category.value,
+                        returncode=exec_res.returncode,
+                        stderr=stderr_snip,
+                        stdout=stdout_snip if not self.prompt_budget.omit_stdout else "(omitted)",
+                    )
                 if self.adaptive_retry and stagnation:
                     prompt += STAGNATION_NOTE
 

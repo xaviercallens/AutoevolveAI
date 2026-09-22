@@ -7,6 +7,7 @@ wrong) code never enters memory. Retrieval is lexical and deterministic.
 
 from __future__ import annotations
 
+import ast
 import json
 import re
 import time
@@ -90,3 +91,67 @@ def format_lessons(lessons: list[tuple[float, Lesson]], max_code_chars: int = 12
         parts.append(f"Verified solution:\n```python\n{lesson.code[:max_code_chars]}\n```")
     parts.append("--- End of lessons. Apply what is relevant; now solve the new task. ---\n")
     return "\n".join(parts)
+
+
+def extract_skeleton(code: str, max_chars: int = 400) -> str:
+    """Extract signatures and docstrings from code, omitting implementation details."""
+    if not code:
+        return ""
+    try:
+        tree = ast.parse(code)
+        skeleton_parts: list[str] = []
+        for node in tree.body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                args_list = []
+                for a in node.args.args:
+                    arg_str = a.arg
+                    if a.annotation:
+                        arg_str += f": {ast.unparse(a.annotation)}"
+                    args_list.append(arg_str)
+                prefix = "async def " if isinstance(node, ast.AsyncFunctionDef) else "def "
+                sig = f"{prefix}{node.name}({', '.join(args_list)})"
+                if node.returns:
+                    sig += f" -> {ast.unparse(node.returns)}"
+                sig += ":"
+
+                docstring = ast.get_docstring(node)
+                if docstring:
+                    body = f'    """{docstring.strip()}"""\n    ...'
+                else:
+                    body = "    ..."
+                skeleton_parts.append(f"{sig}\n{body}")
+            elif isinstance(node, ast.ClassDef):
+                skeleton_parts.append(f"class {node.name}:\n    ...")
+        if skeleton_parts:
+            return "\n\n".join(skeleton_parts)[:max_chars]
+    except Exception:
+        pass
+
+    sig_lines = []
+    for line in code.splitlines():
+        trimmed = line.strip()
+        if trimmed.startswith(("def ", "async def ", "class ")):
+            sig_lines.append(line)
+            sig_lines.append("    ...")
+    if sig_lines:
+        return "\n".join(sig_lines)[:max_chars]
+    return code[:max_chars]
+
+
+def format_lessons_skeleton(
+    lessons: list[tuple[float, Lesson]], max_skeleton_chars: int = 400
+) -> str:
+    """Render retrieved lessons as compact structural skeletons for smaller models (Directive D4)."""
+    if not lessons:
+        return ""
+    parts = ["LESSONS FROM SIMILAR TASKS (pattern and signature reference only):"]
+    for i, (_, lesson) in enumerate(lessons, 1):
+        parts.append(f"--- Lesson {i} ---")
+        parts.append(f"Task: {lesson.task.strip()}")
+        if lesson.failure:
+            parts.append(f"Avoid previous mistake: {lesson.failure.strip()[:200]}")
+        skeleton = extract_skeleton(lesson.code, max_chars=max_skeleton_chars)
+        parts.append(f"Pattern reference:\n```python\n{skeleton}\n```")
+    parts.append("--- End of lessons. Write your own complete code for the new task. ---\n")
+    return "\n".join(parts)
+

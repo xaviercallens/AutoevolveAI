@@ -1,0 +1,193 @@
+# Evolution Directives: Low-Tier Model Hardness (DIRECTIVE-LTM-001)
+# 
+# Status: APPROVED — awaiting self-evolution execution
+# Target model tier: ≤ 3B parameters (qwen2.5-coder:1.5b)
+# Created: 2026-09-22
+# Source: Closed Loop v2 hardness audit (conversation b642533c)
+#
+# Contract: Each directive MUST be validated by the Phase 1 evolution runner:
+#   uv run python run_phase1_evolution.py --model qwen2.5-coder:1.5b --seeds 1 2 3
+# A failing gate is a result, never hidden or tuned away (AGENTS.md §4).
+
+directives:
+  - id: D1
+    title: "Context-Budget-Aware Prompt Compression"
+    priority: P0
+    phase: [1]
+    rationale: |
+      Pain prompt template injects full failing code + stderr + stdout into the
+      retry prompt. For 1.5B models with ~4096 token context, this consumes 50%+
+      of available attention. UC3 measured: fix rate WITH code = 2.8% vs
+      WITHOUT code = 22.2%. The model copies errors instead of fixing them.
+    targets:
+      - file: anse/core/agent_loop.py
+        what: "New PromptBudgetPolicy dataclass; PAIN_PROMPT_TEMPLATE selection based on model tier"
+      - file: anse/config.py
+        what: "Add prompt_budget field to ANSEConfig"
+    gate:
+      metric: "uc3.with_compressed_code.fix_rate"
+      condition: "> uc3.without_code.fix_rate"
+      baseline: 0.222
+    model_tier_gate: "<=3B"
+    reversible: true
+
+  - id: D2
+    title: "Disable Adaptive Retry for Sub-3B Models"
+    priority: P0
+    phase: [1]
+    rationale: |
+      Adaptive retry (diagnose-before-fix system prompt) overwhelms 1.5B capacity.
+      Measured: adaptive rescued 5 tasks, plain rescued 6. G2b FAIL.
+    targets:
+      - file: anse/core/agent_loop.py
+        what: "Capacity check in AgentLoop.__init__: if model_name matches <=3B, force adaptive_retry=False"
+      - file: run_phase1_evolution.py
+        what: "Pass model name to loop constructor for capacity gating"
+    gate:
+      metric: "uc2.rescued_by_plain"
+      condition: ">= uc2.rescued_by_adaptive"
+      baseline: "plain=6, adaptive=5"
+    model_tier_gate: "<=3B"
+    reversible: true
+
+  - id: D3
+    title: "Energy-Monotonic Retry Budget Pruning"
+    priority: P1
+    phase: [1]
+    depends_on: [D2]
+    rationale: |
+      Mean energy RISES across retries: 22.5 -> 24.0 -> 29.0. Best-of-N mitigates
+      but wasted iterations burn tokens. A 1.5B model that fails at E>60 cannot
+      self-correct catastrophic failures.
+    targets:
+      - file: anse/core/agent_loop.py
+        what: |
+          Early stop in iteration loop:
+          - If E_1 > 60 and model <=3B: skip remaining retries
+          - If E_2 > E_1 and E_2 > 40 and model <=3B: stop retrying
+          Log early-stop reason in trace metadata.
+    gate:
+      metric: "uc2.pass_at_n"
+      condition: ">= baseline AND total_generations decrease >= 15%"
+      baseline: "pass_at_n=0.52, generations=415"
+    model_tier_gate: "<=3B"
+    reversible: true
+
+  - id: D4
+    title: "Skeleton-Only Lesson Injection for Small Models"
+    priority: P1
+    phase: [1]
+    depends_on: [D1]
+    rationale: |
+      UC4 shows marginal gains (36.7% vs 33.3%) with 2 gains / 1 regression.
+      Full-solution lessons cause 1.5B models to copy verbatim with wrong
+      function names. Skeleton hints (signature + algorithm name) are cheaper
+      and less prone to hallucinated copying.
+    targets:
+      - file: anse/memory/lessons.py
+        what: "New format_lessons_skeleton() that emits only function signature + pattern hint"
+      - file: anse/core/agent_loop.py
+        what: "Select formatter based on model capacity tier"
+    gate:
+      metric: "uc4.gains"
+      condition: "> uc4.regressions AND uc4.memory_on.pass_at_1 >= uc4.memory_off.pass_at_1"
+      baseline: "gains=2, regressions=1"
+    model_tier_gate: "<=3B"
+    reversible: true
+
+  - id: D5
+    title: "Task Difficulty Estimator (Pre-Retry Triage)"
+    priority: P2
+    phase: [1]
+    depends_on: [D3]
+    rationale: |
+      Same 3-retry budget for trivial and hard tasks. For 1.5B models, retrying
+      hard tasks (E_1 > 30) wastes generations. Classification uses EnergyCategory
+      from first attempt — no extra model call needed.
+    targets:
+      - file: anse/symbolic/evaluator.py
+        what: "Add difficulty_tier() method to EnergyResult: trivial/fixable/hard"
+      - file: anse/core/agent_loop.py
+        what: "Adjust retries_limit after first evaluation based on difficulty tier and model capacity"
+    gate:
+      metric: "uc2.pass_at_n AND uc2.mean_generations_per_task"
+      condition: "pass_at_n maintained, generations decreased"
+    model_tier_gate: "<=3B"
+    reversible: true
+
+  - id: D6
+    title: "DPO Preference Signal from Live Phase 1 Traces"
+    priority: P2
+    phase: [1, 4]
+    depends_on: [D3, D4]
+    rationale: |
+      DPO pairs currently from synthetic orchestration scripts. Phase 1 runner
+      produces real traces with natural preference ordering but doesn't export them.
+    targets:
+      - file: run_phase1_evolution.py
+        what: "New export_dpo_pairs() method on Bench class: chosen=best-of-N, rejected=first-failed, delta_E>10"
+      - file: antigravity_harness/rl_pipeline/trace_extractor.py
+        what: "Accept Phase 1 LoopTrace objects directly"
+    gate:
+      metric: "len(dpo_phase1_live.jsonl)"
+      condition: ">= 20 pairs after 20 tasks x 3 seeds"
+    model_tier_gate: "all"
+    reversible: true
+
+  - id: D7
+    title: "Tier-Specific Success Gates"
+    priority: P2
+    phase: [1]
+    depends_on: [D1, D2, D3]
+    rationale: |
+      Closed Loop v2 spec gates are model-agnostic. The actual model-dependent
+      signal is in Evolution Lab gates, which expose low-tier failures.
+    targets:
+      - file: run_phase1_evolution.py
+        what: |
+          Add gates G6-G9 to gate() method:
+          G6: pass_at_1 >= 0.30 for <=3B
+          G7: false_convergence_rate < 0.50 for <=3B
+          G8: rescue_efficiency >= 0.10 for <=3B
+          G9: energy_never_increased_fraction >= 0.30 for all
+      - file: "specs/CLose loop v2.md"
+        what: "Add section 6.6-6.9 tier-specific gate definitions"
+    gate:
+      metric: "self-validating"
+      condition: "New gates do not create false failures on latest results"
+    model_tier_gate: "<=3B"
+    reversible: true
+
+  - id: D8
+    title: "Autopoietic Prompt Strategy Registry"
+    priority: P3
+    phase: [3]
+    depends_on: [D7]
+    rationale: |
+      Prompt strategy is hard-coded. Phase 3 autopoiesis swaps algorithms but
+      cannot swap prompt strategies. Register prompts as swappable components
+      so the system can evolve its own retry behaviour.
+    targets:
+      - file: anse/autopoiesis/registry.py
+        what: "Register prompt_strategy component type with interface format_pain_prompt()"
+      - file: anse/core/agent_loop.py
+        what: "Load strategy from registry at init, fallback to built-in templates"
+      - file: run_phase3_evolution.py
+        what: "Add prompt strategy swap as UC6 evaluation target"
+    gate:
+      metric: "uc2.pass_at_n with swapped strategy"
+      condition: ">= baseline_pass_at_n"
+    model_tier_gate: "all"
+    reversible: true
+
+# Execution order (respecting depends_on):
+# Phase 1: D2 -> D1 -> D4
+# Phase 2: D3 -> D5
+# Phase 3: D6
+# Phase 4: D7 -> D8
+#
+# Validation after all directives:
+#   uv run pytest tests/ -q
+#   uv run python test_rigor_guard.py
+#   uv run python run_phase1_evolution.py --model qwen2.5-coder:1.5b --seeds 1 2 3
+#   Gate target: all_gates_passed: true (including new G6-G9)

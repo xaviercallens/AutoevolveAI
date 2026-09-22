@@ -559,6 +559,46 @@ class Bench:
         }
         self.checkpoint()
 
+    # ── UC6 ──────────────────────────────────────────────────────────────────
+    def uc6_prompt_strategy_swap(self) -> None:
+        """UC6: Autopoietic prompt strategy swap (Directive D8)."""
+        hv = self.hypervisor("uc6")
+        reg = hv.registry
+        v1 = reg.ensure_default_prompt_strategy()
+        parent_code = reg.active_code("prompt_strategy")
+
+        child_prompt_strategy = (
+            parent_code
+            + "\n# v0002 evolved prompt strategy variant with concise execution framing\n"
+        )
+        v2 = reg.promote(
+            "prompt_strategy",
+            child_prompt_strategy,
+            record={"reason": "evolved concise framing", "active_version": v1 + 1},
+        )
+        active_v = reg.active_version("prompt_strategy")
+        loaded_mod = reg.load_active("prompt_strategy")
+        has_formatter = hasattr(loaded_mod, "format_pain_prompt")
+
+        rb_v = reg.rollback("prompt_strategy", reason="revert test swap")
+        restored_v = reg.active_version("prompt_strategy")
+
+        self.results["uc6"] = {
+            "title": "Autopoietic prompt strategy registry swap",
+            "component": "prompt_strategy",
+            "initial_version": v1,
+            "promoted_version": v2,
+            "active_version_after_promotion": active_v,
+            "formatter_present": has_formatter,
+            "restored_version_after_rollback": restored_v,
+            "success": active_v == v2 and has_formatter and restored_v == v1,
+        }
+        self.checkpoint()
+        print(
+            f"  UC6 prompt_strategy promoted={v2} active={active_v} restored={restored_v} success={self.results['uc6']['success']}",
+            flush=True,
+        )
+
     def checkpoint_partial(self, key: str, rows: list[dict[str, Any]]) -> None:
         """LLM calls are slow: keep finished proposals on disk even if the run is interrupted."""
         (self.out / f"{key}_partial_rows.json").write_text(json.dumps(rows, indent=2))
@@ -602,6 +642,10 @@ class Bench:
             checks[
                 "G5 the LLM lands at least one promoted improvement, and the held-out differential oracle finds no promoted version that differs from the original parent"
             ] = u["promoted"] >= 1 and u["incorrect_promoted"] == 0
+        if "uc6" in r:
+            checks["G6 prompt strategy registry component supports swap and rollback (Directive D8)"] = (
+                r["uc6"]["success"]
+            )
         r["gate"] = checks
         n_passed = sum(checks.values())
         n_total = len(checks)
@@ -661,6 +705,7 @@ def main() -> int:
         "3": bench.uc3_aa_noise,
         "4": bench.uc4_rollback,
         "5": bench.uc5_llm_evolution,
+        "6": bench.uc6_prompt_strategy_swap,
     }
     for uc in args.uc:
         print(f"\n=== UC{uc} ===", flush=True)

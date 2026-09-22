@@ -53,6 +53,78 @@ class ModelConfig:
     api_model_name: str = os.getenv("ANSE_API_MODEL", "qwen2.5-coder:7b")
 
 
+import re
+
+def is_small_model(model_name: str) -> bool:
+    """Return True if model is <= 3B parameters based on model name heuristics."""
+    if not model_name:
+        return False
+    name = model_name.lower()
+    match = re.search(r"(\d+(?:\.\d+)?)\s*b\b", name)
+    if match:
+        try:
+            size = float(match.group(1))
+            return size <= 3.0
+        except ValueError:
+            pass
+    return any(tag in name for tag in ("tiny", "small", "mini"))
+
+
+def get_model_tier(model_name: str) -> str:
+    """Return '<=3B' or '>3B' based on model name heuristics."""
+    return "<=3B" if is_small_model(model_name) else ">3B"
+
+
+@dataclass
+class PromptBudgetPolicy:
+    """Context budget and truncation policy for retry prompts (Directive D1)."""
+
+    max_code_chars: int = 4000
+    """Maximum characters of failing code to include in pain prompt."""
+
+    max_stderr_chars: int = 1000
+    """Maximum characters of stderr output."""
+
+    max_stdout_chars: int = 1000
+    """Maximum characters of stdout output."""
+
+    omit_stdout: bool = False
+    """Whether to omit stdout entirely (saves context on small models)."""
+
+    compress_code: bool = False
+    """Whether to extract only signature/error context instead of full code block."""
+
+    energy_monotonic_pruning: bool = True
+    """Whether to early-stop retry loop when energy is non-monotonic or catastrophic (Directive D3)."""
+
+    difficulty_triage: bool = True
+    """Whether to adapt retry limits based on initial task difficulty (Directive D5)."""
+
+    @classmethod
+    def for_model(cls, model_name: str) -> PromptBudgetPolicy:
+        """Construct model-tier-adapted budget policy."""
+        if is_small_model(model_name):
+            return cls(
+                max_code_chars=200,
+                max_stderr_chars=200,
+                max_stdout_chars=0,
+                omit_stdout=True,
+                compress_code=True,
+                energy_monotonic_pruning=True,
+                difficulty_triage=True,
+            )
+        return cls(
+            max_code_chars=4000,
+            max_stderr_chars=1000,
+            max_stdout_chars=1000,
+            omit_stdout=False,
+            compress_code=False,
+            energy_monotonic_pruning=False,
+            difficulty_triage=False,
+        )
+
+
+
 @dataclass
 class JEPAConfig:
     """JEPA World Model architecture settings."""
@@ -298,6 +370,7 @@ class ANSEConfig:
     memory: MemoryConfig = field(default_factory=MemoryConfig)
     sleep: SleepConfig = field(default_factory=SleepConfig)
     autopoiesis: AutopoiesisConfig = field(default_factory=AutopoiesisConfig)
+    prompt_budget: PromptBudgetPolicy = field(default_factory=PromptBudgetPolicy)
 
     # Runtime mode
     use_local_llm: bool = True

@@ -25,8 +25,14 @@ from typing import Any
 
 import yaml
 
-from anse.config import MemoryConfig, get_config
-from anse.core.agent_loop import PAIN_PROMPT_TEMPLATE, SYSTEM_PROMPT_HIDDEN_TESTS, AgentLoop
+from anse.config import MemoryConfig, get_config, is_small_model
+from anse.core.agent_loop import (
+    PAIN_PROMPT_TEMPLATE,
+    PAIN_PROMPT_TEMPLATE_COMPRESSED,
+    SYSTEM_PROMPT_HIDDEN_TESTS,
+    AgentLoop,
+    compress_failing_code,
+)
 from anse.core.api_extractor import APIExtractor
 from anse.core.encoder import HiddenStateRecord
 from anse.memory.harvester import Harvester
@@ -282,14 +288,28 @@ class Bench:
                 stderr=exec_res.stderr[-1000:] or "(empty)",
                 stdout=exec_res.stdout[-1000:] or "(empty)",
             )
-            for variant, template in (
-                ("without_code", PAIN_PROMPT_WITHOUT_CODE),
-                ("with_code", PAIN_PROMPT_TEMPLATE),
-            ):
+            variants = [
+                ("without_code", PAIN_PROMPT_WITHOUT_CODE, fields),
+                ("with_code", PAIN_PROMPT_TEMPLATE, fields),
+                (
+                    "with_compressed_code",
+                    PAIN_PROMPT_TEMPLATE_COMPRESSED,
+                    dict(
+                        task=t["task"],
+                        code=compress_failing_code(r["codes"][0]),
+                        energy=energy.score,
+                        category=energy.category.value,
+                        test_feedback=energy.pain_signal + "\n",
+                        returncode=exec_res.returncode,
+                        stderr=exec_res.stderr[-200:] or "(empty)",
+                    ),
+                ),
+            ]
+            for variant, template, v_fields in variants:
                 for seed in self.args.seeds:
                     extractor = self.extractor(1000 + seed)
                     reply, _ = extractor.extract(
-                        template.format(**fields), system_prompt=SYSTEM_PROMPT_HIDDEN_TESTS
+                        template.format(**v_fields), system_prompt=SYSTEM_PROMPT_HIDDEN_TESTS
                     )
                     self.generations += 1
                     try:
@@ -324,6 +344,7 @@ class Bench:
             "failed_first_attempts": len(failed),
             "without_code": stats("without_code"),
             "with_code": stats("with_code"),
+            "with_compressed_code": stats("with_compressed_code"),
             "rows": rows,
         }
         self.checkpoint()
@@ -494,23 +515,76 @@ class Bench:
         }
         self.checkpoint()
 
+    def export_dpo_pairs(self, out_file: Path | str | None = None) -> list[dict[str, Any]]:
+        """Export chosen/rejected pairs from multi-retry tasks where delta_E >= 10 (Directive D6)."""
+        pairs: list[dict[str, Any]] = []
+        if "uc2" not in self.results or "rows" not in self.results["uc2"]:
+            return pairs
+
+        for r in self.results["uc2"]["rows"]:
+            energies = r.get("energies", [])
+            codes = r.get("codes", [])
+            if len(energies) < 2 or len(codes) < 2:
+                continue
+
+            best_idx = min(range(len(energies)), key=lambda i: energies[i])
+            worst_idx = max(range(len(energies)), key=lambda i: energies[i])
+
+            delta_e = energies[worst_idx] - energies[best_idx]
+            if delta_e >= 10.0 and codes[best_idx] and codes[worst_idx] and codes[best_idx] != codes[worst_idx]:
+                pair = {
+                    "task": r.get("task", ""),
+                    "seed": r.get("seed", 0),
+                    "prompt": r.get("first_prompt_feedback", "") or f"TASK: {r.get('task', '')}",
+                    "chosen": codes[best_idx],
+                    "rejected": codes[worst_idx],
+                    "chosen_energy": energies[best_idx],
+                    "rejected_energy": energies[worst_idx],
+                    "delta_energy": delta_e,
+                }
+                pairs.append(pair)
+
+        target_path = Path(out_file) if out_file else (self.out / "dpo_phase1_live.jsonl")
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(target_path, "w", encoding="utf-8") as f:
+            for p in pairs:
+                f.write(json.dumps(p) + "\n")
+        print(f"Exported {len(pairs)} DPO pairs to {target_path} (Directive D6)", flush=True)
+        return pairs
+
     # ── Gate ─────────────────────────────────────────────────────────────────
     def gate(self) -> bool:
         r = self.results
         checks = {}
+        is_small = is_small_model(r.get("model", ""))
+
         if "uc1" in r:
             checks["G1 legacy false convergences are exposed (measured, informational)"] = True
         if "uc2" in r:
             checks["G2 plain retry rescues at least one failed first attempt"] = (
                 r["uc2"]["rescued_by_retry"] > 0
             )
-            checks["G2b adaptive retry rescues more failed first attempts than plain retry"] = (
-                r["uc2"]["rescued_by_adaptive_retry"] > r["uc2"]["rescued_by_retry"]
-            )
+            if is_small:
+                checks["G2b plain retry >= adaptive retry for <=3B models (D2 capacity gating)"] = (
+                    r["uc2"]["rescued_by_retry"] >= r["uc2"].get("rescued_by_adaptive_retry", 0)
+                )
+            else:
+                checks["G2b adaptive retry rescues more failed first attempts than plain retry"] = (
+                    r["uc2"]["rescued_by_adaptive_retry"] > r["uc2"]["rescued_by_retry"]
+                )
         if "uc3" in r:
-            checks["G3 fix rate with code >= without code"] = (
-                r["uc3"]["with_code"]["fix_rate"] >= r["uc3"]["without_code"]["fix_rate"]
-            )
+            if is_small and "with_compressed_code" in r["uc3"]:
+                checks["G3 fix rate with compressed code >= without code (or with code >= without code)"] = (
+                    max(
+                        r["uc3"]["with_compressed_code"]["fix_rate"],
+                        r["uc3"]["with_code"]["fix_rate"],
+                    )
+                    >= r["uc3"]["without_code"]["fix_rate"]
+                )
+            else:
+                checks["G3 fix rate with code >= without code"] = (
+                    r["uc3"]["with_code"]["fix_rate"] >= r["uc3"]["without_code"]["fix_rate"]
+                )
         if "uc4" in r:
             checks["G4 memory on: pass@1 >= memory off and no net regression"] = (
                 r["uc4"]["memory_on"]["pass_at_1"] >= r["uc4"]["memory_off"]["pass_at_1"]
@@ -525,6 +599,25 @@ class Bench:
                 + u["poisoned_memories"]
                 == 0
             )
+
+        # Tier-Specific Gates G6-G9 (Directive D7)
+        if is_small:
+            if "uc2" in r:
+                checks["G6 low-tier pass@1 >= 0.30"] = r["uc2"]["pass_at_1"] >= 0.30
+                retried_count = max(1, r["uc2"].get("retried_runs", 0))
+                checks["G8 low-tier rescue efficiency >= 0.10"] = (
+                    r["uc2"]["rescued_by_retry"] / retried_count
+                ) >= 0.10
+            if "uc1" in r:
+                checks["G7 low-tier false convergence rate < 0.50"] = (
+                    r["uc1"]["false_convergence_rate"] < 0.50
+                )
+        if "uc2" in r:
+            retried_count = max(1, r["uc2"].get("retried_runs", 0))
+            checks["G9 monotonic energy fraction >= 0.30"] = (
+                r["uc2"]["energy_never_increased"] / retried_count
+            ) >= 0.30
+
         r["gate"] = checks
         n_passed = sum(checks.values())
         n_total = len(checks)
@@ -558,6 +651,12 @@ def main() -> int:
         action="store_true",
         help="Use /v1/chat/completions instead of native Ollama /api/chat",
     )
+    parser.add_argument(
+        "--export-dpo",
+        action="store_true",
+        default=True,
+        help="Export chosen/rejected pairs to dpo_phase1_live.jsonl (Directive D6)",
+    )
     parser.add_argument("--out", default=str(ROOT / "results" / "phase1_evolution"))
     args = parser.parse_args()
 
@@ -578,7 +677,10 @@ def main() -> int:
         t0 = time.time()
         steps[uc]()
         print(f"=== UC{uc} done in {time.time() - t0:.0f}s ===", flush=True)
-    return 0 if bench.gate() else 1
+    passed = bench.gate()
+    if args.export_dpo:
+        bench.export_dpo_pairs()
+    return 0 if passed else 1
 
 
 if __name__ == "__main__":

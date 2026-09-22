@@ -18,6 +18,13 @@ from anse.algorithms.fixed_point import (
     solve_banach_fixed_point,
 )
 from anse.algorithms.kdtree import KDNeighbor, KDTree
+from anse.algorithms.symplectic import (
+    SymplecticResult,
+    compute_poincare_section,
+    estimate_lyapunov_exponent,
+    explicit_euler_integrate,
+    solve_symplectic_orbit,
+)
 from anse.algorithms.tarjan_scc import SCCResult, find_strongly_connected_components
 from anse.algorithms.vicreg import VICRegLossResult, compute_vicreg_loss
 
@@ -28,11 +35,16 @@ __all__ = [
     "KDTree",
     "SCCResult",
     "ShortestPathResult",
+    "SymplecticResult",
     "VICRegLossResult",
     "astar_search",
+    "compute_poincare_section",
     "compute_vicreg_loss",
     "dijkstra_shortest_paths",
     "estimate_lipschitz_constant",
+    "estimate_lyapunov_exponent",
+    "explicit_euler_integrate",
     "find_strongly_connected_components",
     "solve_banach_fixed_point",
+    "solve_symplectic_orbit",
 ]

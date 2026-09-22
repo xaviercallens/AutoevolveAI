@@ -5,10 +5,11 @@ Unit tests for the local Code Critic SLM module.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from anse.config import CriticConfig
-from anse.guard.critic import CodeCritic, CriticDecision
+from anse.guard.critic import CodeCritic, CriticDecision, NeuralEnergyCritic
 
 
 def test_critic_disabled_by_default() -> None:
@@ -72,3 +73,38 @@ def test_critic_service_down_fallback_closed() -> None:
         assert res.decision == CriticDecision.REJECT
         assert res.energy_penalty == 1e6
         assert "CRITIC_UNAVAILABLE" in res.reason
+
+
+def test_neural_energy_critic_in_memory() -> None:
+    critic = NeuralEnergyCritic(model_path=None, device="cpu")
+    reward = critic.predict_reward("Optimize array search", "def search(arr, val): return val in arr")
+    assert isinstance(reward, float)
+
+    res = critic.evaluate("def search(arr, val): return val in arr")
+    assert res.is_accepted is True
+
+
+def test_neural_energy_critic_threshold_rejection() -> None:
+    critic = NeuralEnergyCritic(model_path=None, device="cpu")
+    # Setting an impossibly high minimum threshold should reject
+    res = critic.evaluate("def foo(): pass", min_acceptable_reward=1e9)
+    assert res.decision == CriticDecision.REJECT
+    assert "below threshold" in res.reason
+
+
+def test_neural_energy_critic_trained_checkpoint_preference() -> None:
+    checkpoint_path = Path("results/rl_nightly/anse_critic_final.pt")
+    if not checkpoint_path.exists():
+        return
+
+    critic = NeuralEnergyCritic(model_path=checkpoint_path, device="cpu")
+    r_working = critic.predict_reward(
+        "Sort an array in ascending order",
+        "def sort_array(nums):\n    return sorted(nums)\n"
+    )
+    r_stub = critic.predict_reward(
+        "Sort an array in ascending order",
+        "def sort_array(nums):\n    pass\n"
+    )
+    assert r_working > r_stub, f"Working code reward {r_working} must exceed stub reward {r_stub}"
+

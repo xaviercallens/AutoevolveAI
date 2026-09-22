@@ -10,9 +10,19 @@ import logging
 import re
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 from typing import Any
 
 import httpx
+
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+
+    HAS_TORCH = True
+except ImportError:
+    HAS_TORCH = False
 
 from anse.config import CriticConfig, get_config
 
@@ -168,3 +178,141 @@ class CodeCritic:
                 raw_response=raw_text,
                 duration_ms=duration_ms,
             )
+
+
+if HAS_TORCH:
+
+    class LightweightCodeEncoder(nn.Module):
+        """
+        Lightweight, fast character/subword encoder for code critic policy.
+        Maps code strings to dense latent representations without external tokenizers.
+        """
+
+        def __init__(self, vocab_size: int = 256, d_model: int = 128) -> None:
+            super().__init__()
+            self.embedding = nn.Embedding(vocab_size, d_model, padding_idx=0)
+            self.conv1 = nn.Conv1d(d_model, d_model, kernel_size=3, padding=1)
+            self.conv2 = nn.Conv1d(d_model, d_model, kernel_size=5, padding=2)
+            self.norm = nn.LayerNorm(d_model)
+
+        def forward(self, token_ids: torch.Tensor) -> torch.Tensor:
+            x = self.embedding(token_ids)  # [B, L, D]
+            x_conv = x.transpose(1, 2)  # [B, D, L]
+            c1 = F.relu(self.conv1(x_conv))
+            c2 = F.relu(self.conv2(x_conv))
+            out = (c1 + c2).transpose(1, 2)  # [B, L, D]
+            pooled = out.mean(dim=1)  # Mean pooling -> [B, D]
+            return self.norm(pooled)
+
+    class EnergyCriticPolicy(nn.Module):
+        """
+        ANSE Thermodynamic Critic:
+        Predicts scalar reward r(x, y) = - Energy(x, y) for candidate code y given prompt x.
+        Higher reward implies lower computational physics energy (clean execution, zero stubs).
+        """
+
+        def __init__(self, d_model: int = 128, d_hidden: int = 256) -> None:
+            super().__init__()
+            self.encoder = LightweightCodeEncoder(vocab_size=256, d_model=d_model)
+            self.head = nn.Sequential(
+                nn.Linear(d_model * 2, d_hidden),
+                nn.GELU(),
+                nn.Dropout(0.1),
+                nn.Linear(d_hidden, d_hidden // 2),
+                nn.GELU(),
+                nn.Linear(d_hidden // 2, 1),
+            )
+
+        def forward(self, prompt_tokens: torch.Tensor, code_tokens: torch.Tensor) -> torch.Tensor:
+            prompt_feat = self.encoder(prompt_tokens)  # [B, D]
+            code_feat = self.encoder(code_tokens)  # [B, D]
+            joint = torch.cat([prompt_feat, code_feat], dim=-1)  # [B, 2*D]
+            scalar_reward = self.head(joint).squeeze(-1)  # [B]
+            return scalar_reward
+
+    def tokenize_string(text: str, max_len: int = 512) -> torch.Tensor:
+        """UTF-8 byte-level tokenizer with padding/truncation."""
+        raw_bytes = list(text.encode("utf-8", errors="replace"))[:max_len]
+        if len(raw_bytes) < max_len:
+            raw_bytes = raw_bytes + [0] * (max_len - len(raw_bytes))
+        return torch.tensor(raw_bytes, dtype=torch.long)
+
+else:
+
+    class LightweightCodeEncoder:  # type: ignore[no-redef]
+        pass
+
+    class EnergyCriticPolicy:  # type: ignore[no-redef]
+        pass
+
+    def tokenize_string(text: str, max_len: int = 512) -> Any:  # type: ignore[no-redef]
+        raise RuntimeError("PyTorch is required for tokenize_string")
+
+
+class NeuralEnergyCritic:
+    """
+    Evaluates candidate code using a local PyTorch EnergyCriticPolicy model.
+    Runs fast (<1 ms) inference on CPU/GPU to filter candidate code before sandbox execution.
+    """
+
+    def __init__(
+        self,
+        model_path: str | Path | None = None,
+        device: str = "auto",
+        d_model: int = 128,
+        d_hidden: int = 256,
+    ) -> None:
+        if not HAS_TORCH:
+            raise RuntimeError("PyTorch is required for NeuralEnergyCritic.")
+
+        if device == "auto":
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        else:
+            self.device = device
+
+        self.model = EnergyCriticPolicy(d_model=d_model, d_hidden=d_hidden).to(self.device)
+        self.model_path = Path(model_path) if model_path is not None else None
+
+        if self.model_path is not None and self.model_path.exists():
+            state = torch.load(self.model_path, map_location=self.device)
+            self.model.load_state_dict(state)
+            logger.info("Loaded NeuralEnergyCritic weights from %s", self.model_path)
+        self.model.eval()
+
+    def predict_reward(self, prompt: str, code: str) -> float:
+        """Predict scalar reward for code candidate (higher is better, lower energy)."""
+        prompt_t = tokenize_string(prompt).unsqueeze(0).to(self.device)
+        code_t = tokenize_string(code).unsqueeze(0).to(self.device)
+        with torch.no_grad():
+            reward = self.model(prompt_t, code_t).item()
+        return float(reward)
+
+    def evaluate(
+        self,
+        code: str,
+        prompt_context: str = "",
+        min_acceptable_reward: float | None = None,
+    ) -> CriticResult:
+        import time
+
+        start_t = time.perf_counter()
+        reward = self.predict_reward(prompt_context, code)
+        duration_ms = (time.perf_counter() - start_t) * 1000.0
+
+        if min_acceptable_reward is not None and reward < min_acceptable_reward:
+            return CriticResult(
+                decision=CriticDecision.REJECT,
+                reason=f"Neural critic reward {reward:.2f} below threshold {min_acceptable_reward:.2f}",
+                energy_penalty=max(0.0, -reward),
+                raw_response=f'{{"reward": {reward:.4f}}}',
+                duration_ms=duration_ms,
+            )
+
+        return CriticResult(
+            decision=CriticDecision.ACCEPT,
+            reason=f"Neural critic approved (reward: {reward:.2f})",
+            energy_penalty=0.0,
+            raw_response=f'{{"reward": {reward:.4f}}}',
+            duration_ms=duration_ms,
+        )
+

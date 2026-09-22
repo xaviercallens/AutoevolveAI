@@ -59,8 +59,10 @@ LLM_PROMPT = (
     "exactly the same results, including for empty and edge-case inputs."
 )
 LLM_RETRY_SUFFIX = (
-    "\n\nYour previous attempt was rejected.\n```python\n{code}\n```\nReason: {reason}\n{failures}"
-    "Fix the problem and reply with the corrected, fast function only."
+    "\n\nYour previous attempt was rejected by the equivalence gate.\n"
+    "Reason: {reason}\n{failures}"
+    "Important: Do NOT repeat the previous flawed pattern. Ensure contract requirements (element ordering, edge cases, types) are strictly preserved.\n"
+    "Fix the problem and reply with the corrected, fast function only in a ```python ... ``` block."
 )
 
 
@@ -123,6 +125,19 @@ class Bench:
             self.results.update(kept)
             self.results["started"] = old.get("started", self.results["started"])
             self.generations = int(old.get("generations", 0)) if "uc5" in kept else 0
+
+        self.critic = None
+        critic_model_arg = getattr(args, "critic_model", None)
+        if critic_model_arg:
+            try:
+                from anse.guard.critic import NeuralEnergyCritic
+
+                c_path = Path(critic_model_arg)
+                if c_path.exists():
+                    self.critic = NeuralEnergyCritic(c_path)
+            except Exception as exc:
+                print(f"Warning: could not load NeuralEnergyCritic: {exc}", flush=True)
+
 
     def hypervisor(self, uc: str) -> AutopoiesisHypervisor:
         """A fresh registry per use case, seeded with every naive parent as v0001."""
@@ -473,9 +488,18 @@ class Bench:
                     )
                     rows.append(row)
                     retry_suffix = LLM_RETRY_SUFFIX.format(
-                        code="", reason=row["reason"], failures=""
+                        reason=row["reason"], failures=""
                     )
                     continue
+
+                critic_reward: float | None = None
+                if self.critic is not None:
+                    try:
+                        critic_reward = round(self.critic.predict_reward(c["prompt"], code), 3)
+                    except Exception:
+                        pass
+                row["critic_reward"] = critic_reward
+
                 d = hv.evolve(c["name"], code, c["tests"], c["workload"])
                 row.update(self.decision_row(d))
                 row.update(
@@ -493,8 +517,9 @@ class Bench:
                 row["audited_live_version"] = d.promoted and audited == code
                 row.update(self.oracle(hv, c, audited))
                 rows.append(row)
+                crit_str = f"critic={critic_reward:+.2f} " if critic_reward is not None else ""
                 print(
-                    f"  UC5 {c['name']:<18} proposal {proposal}: tests={row['tests_passed']} promoted={d.promoted} "
+                    f"  UC5 {c['name']:<18} proposal {proposal}: {crit_str}tests={row['tests_passed']} promoted={d.promoted} "
                     f"speedup={row['speedup']} oracle_mismatches={row['oracle_mismatches']}/{row['oracle_inputs']} "
                     f"({d.stage}: {d.reason})",
                     flush=True,
@@ -504,7 +529,7 @@ class Bench:
                     break
                 failures = "".join(f"- {f}\n" for f in d.equivalence.child_failures)
                 retry_suffix = LLM_RETRY_SUFFIX.format(
-                    code=code, reason=d.reason, failures=failures
+                    reason=d.reason, failures=failures
                 )
         llm.shutdown()
         promoted = [r for r in rows if r["promoted"]]
@@ -613,6 +638,13 @@ def main() -> int:
         "--resume",
         action="store_true",
         help="Keep finished use cases from an interrupted run's results.json",
+    )
+    parser.add_argument(
+        "--critic-model",
+        default=str(ROOT / "results" / "rl_nightly" / "anse_critic_final.pt")
+        if (ROOT / "results" / "rl_nightly" / "anse_critic_final.pt").exists()
+        else None,
+        help="Path to neural critic model weights (.pt) for pre-evaluating candidate code",
     )
     parser.add_argument("--out", default=str(ROOT / "results" / "phase3_evolution"))
     args = parser.parse_args()

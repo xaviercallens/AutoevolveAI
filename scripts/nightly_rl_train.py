@@ -21,7 +21,6 @@ from pathlib import Path
 from typing import Any
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 
@@ -30,6 +29,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from anse.guard.critic import EnergyCriticPolicy, tokenize_string  # noqa: E402
 
 # ─── Dataset ─────────────────────────────────────────────────────────────────
 
@@ -54,71 +54,6 @@ class DPOPreferenceDataset(Dataset):
 
     def __getitem__(self, idx: int) -> dict[str, Any]:
         return self.pairs[idx]
-
-
-# ─── Text Character / Subword Tokenizer & Embedder ───────────────────────────
-
-
-class LightweightCodeEncoder(nn.Module):
-    """
-    Lightweight, fast AST-aware character/subword encoder for code critic policy.
-    Maps code strings to dense latent representations without external tokenizers.
-    """
-
-    def __init__(self, vocab_size: int = 256, d_model: int = 128) -> None:
-        super().__init__()
-        self.embedding = nn.Embedding(vocab_size, d_model, padding_idx=0)
-        self.conv1 = nn.Conv1d(d_model, d_model, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv1d(d_model, d_model, kernel_size=5, padding=2)
-        self.norm = nn.LayerNorm(d_model)
-
-    def forward(self, token_ids: torch.Tensor) -> torch.Tensor:
-        # token_ids: [B, L]
-        x = self.embedding(token_ids)  # [B, L, D]
-        x_conv = x.transpose(1, 2)  # [B, D, L]
-        c1 = F.relu(self.conv1(x_conv))
-        c2 = F.relu(self.conv2(x_conv))
-        out = (c1 + c2).transpose(1, 2)  # [B, L, D]
-        pooled = out.mean(dim=1)  # Mean pooling across sequence length -> [B, D]
-        return self.norm(pooled)
-
-
-# ─── Neural Critic / Reward Model ────────────────────────────────────────────
-
-
-class EnergyCriticPolicy(nn.Module):
-    """
-    ANSE Thermodynamic Critic:
-    Predicts scalar reward r(x, y) = - Energy(x, y) for candidate code y given prompt x.
-    Higher reward implies lower computational physics energy (clean execution, zero stubs).
-    """
-
-    def __init__(self, d_model: int = 128, d_hidden: int = 256) -> None:
-        super().__init__()
-        self.encoder = LightweightCodeEncoder(vocab_size=256, d_model=d_model)
-        self.head = nn.Sequential(
-            nn.Linear(d_model * 2, d_hidden),
-            nn.GELU(),
-            nn.Dropout(0.1),
-            nn.Linear(d_hidden, d_hidden // 2),
-            nn.GELU(),
-            nn.Linear(d_hidden // 2, 1),
-        )
-
-    def forward(self, prompt_tokens: torch.Tensor, code_tokens: torch.Tensor) -> torch.Tensor:
-        prompt_feat = self.encoder(prompt_tokens)  # [B, D]
-        code_feat = self.encoder(code_tokens)  # [B, D]
-        joint = torch.cat([prompt_feat, code_feat], dim=-1)  # [B, 2*D]
-        scalar_reward = self.head(joint).squeeze(-1)  # [B]
-        return scalar_reward
-
-
-def tokenize_string(text: str, max_len: int = 512) -> torch.Tensor:
-    """UTF-8 byte-level tokenizer with padding/truncation."""
-    raw_bytes = list(text.encode("utf-8", errors="replace"))[:max_len]
-    if len(raw_bytes) < max_len:
-        raw_bytes = raw_bytes + [0] * (max_len - len(raw_bytes))
-    return torch.tensor(raw_bytes, dtype=torch.long)
 
 
 # ─── DPO Loss ────────────────────────────────────────────────────────────────

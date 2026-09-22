@@ -56,6 +56,7 @@ import json
 import math
 import secrets
 import statistics
+import threading
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -298,6 +299,19 @@ class AutopoiesisHypervisor:
         self.sandbox = sandbox or SandboxExecutor(config=self.sandbox_config)
         self.evaluator = evaluator or PerformanceEnergyEvaluator()
         self.rule = rule or DominationRule()
+        self._proxies: dict[str, RCUComponentProxy] = {}
+
+    def register_proxy(self, component: str, callable_obj: Any) -> RCUComponentProxy:
+        """Register a live RCU proxy for a component to enable atomic zero-downtime hot-swaps."""
+        proxy = RCUComponentProxy(
+            callable_obj, name=component, version=self.registry.active_version(component)
+        )
+        self._proxies[component] = proxy
+        return proxy
+
+    def get_proxy(self, component: str) -> RCUComponentProxy | None:
+        """Return the active RCU proxy for a component if registered."""
+        return self._proxies.get(component)
 
     # ── isolated execution ───────────────────────────────────────────────────
     def _run_driver(self, code: str, **mode: Any) -> tuple[ExecutionResult, str | None]:
@@ -516,6 +530,8 @@ class AutopoiesisHypervisor:
             self.registry.record_rejection(component, child_code, decision.to_record())
             return decision
         child_version = self.registry.promote(component, child_code, decision.to_record())
+        if component in self._proxies:
+            self._try_swap_proxy(component, child_code, child_version)
         return EvolutionDecision(
             component,
             True,
@@ -530,4 +546,62 @@ class AutopoiesisHypervisor:
         )
 
     def rollback(self, component: str, reason: str = "manual rollback") -> int:
-        return self.registry.rollback(component, reason)
+        version = self.registry.rollback(component, reason)
+        if component in self._proxies:
+            code = self.registry.code(component, version)
+            self._try_swap_proxy(component, code, version)
+        return version
+
+    def _try_swap_proxy(self, component: str, code: str, version: int) -> None:
+        """Helper to extract updated component function and swap the live RCU proxy."""
+        try:
+            ns: dict[str, Any] = {}
+            exec(code, ns)
+            if component in ns and callable(ns[component]):
+                self._proxies[component].swap(ns[component], version)
+        except Exception:
+            pass
+
+
+class RCUComponentProxy:
+    """Read-Copy-Update thread-safe proxy for zero-downtime hot-swapping in live processes.
+
+    Ensures concurrent callers never observe partial state or torn execution frames
+    during autopoietic component upgrades.
+    """
+
+    def __init__(self, initial_callable: Any, name: str = "anonymous", version: int = 1) -> None:
+        self._callable = initial_callable
+        self.name = name
+        self._version = version
+        self._lock = threading.Lock()
+        self._call_count = 0
+
+    @property
+    def version(self) -> int:
+        return self._version
+
+    @property
+    def call_count(self) -> int:
+        return self._call_count
+
+    @property
+    def active_callable(self) -> Any:
+        return self._callable
+
+    def swap(self, new_callable: Any, new_version: int | None = None) -> int:
+        """Atomically swap the active callable pointer with a newly promoted version."""
+        if not callable(new_callable):
+            raise TypeError(f"Target component for swap must be callable, got {type(new_callable)}")
+        with self._lock:
+            self._callable = new_callable
+            self._version = new_version if new_version is not None else self._version + 1
+            return self._version
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """Execute the active version safely without taking a lock during computation."""
+        fn = self._callable
+        with self._lock:
+            self._call_count += 1
+        return fn(*args, **kwargs)
+

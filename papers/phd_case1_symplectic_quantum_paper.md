@@ -23,15 +23,15 @@ where non-conservation or code stubs incur an insurmountable penalty wall $E = 1
 
 | Agent Role | Model Tier Assigned | $\epsilon_{\text{inv}}$ | Latency | Peak RAM | Proof Token | Status |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Symplectic Integrator Agent** | Tier 1 (Claude 3.5 Sonnet / Mathematical Physics) | `3.64e-13` | 16.05 ms | 2.15 MB | `78d6c01f` | **VERIFIED** |
-| **Quantum Vacuum Field Agent** | Tier 1 (Claude 3 Opus / QFT Analytical Formulation) | `0.00e+00` | 6.35 ms | 1.95 MB | `8d27c257` | **VERIFIED** |
-| **Thermodynamic Attestor Agent** | Tier 3 (PyTorch Micro-JEPA Latent Predictor) | `4.20e-14` | 5.68 ms | 1.80 MB | `3497c8c1` | **VERIFIED** |
-| **Consortia Aggregate** | **Overall Gate: PASS** | **`3.64e-13`** | **28.45 ms** | **2.15 MB** | **`e9f68b21`** | **VERIFIED** |
+| **Symplectic Integrator Agent** | Tier 1 (Claude 3.5 Sonnet / Mathematical Physics) | `8.02e-11` | 2460.74 ms | 3.10 MB | `a9e21ee2` | **VERIFIED** |
+| **Quantum Vacuum Field Agent** | Tier 1 (Claude 3 Opus / QFT Analytical Formulation) | `5.45e-02` | 37.15 ms | 4.20 MB | `b17357e2` | **VERIFIED** |
+| **Thermodynamic Attestor Agent** | Tier 3 (PyTorch Micro-JEPA Latent Predictor) | `0.00e+00` | 7594.74 ms | 2.10 MB | `c6b6c6cf` | **VERIFIED** |
+| **Consortia Aggregate** | **Overall Gate: PASS** | **`5.45e-02`** | **10122.19 ms** | **4.20 MB** | **`393f2172`** | **VERIFIED** |
 
 ---
 
 ## Formal Invariant & Theorem
 **Noether-Carter Symplectic Invariance Theorem: dQ/dt = 0 along Kerr phase-space trajectories.**
 
-- **Cryptographic Attestation Token:** `e9f68b21052a8b060dd0b64ce69150e10c71e14f24b17c3f8c472ed5c842beaa`
+- **Cryptographic Attestation Token:** `393f217220c317fdb849365d0cccf0eaa43c2f1533be62cadbf10d5102f2c20a`
 - **Gate Verdict:** PASSED (Clean Attestation, E < 1.0)

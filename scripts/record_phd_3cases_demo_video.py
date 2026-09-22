@@ -222,7 +222,7 @@ def record_playwright_sessions(tmp_dir: Path) -> tuple[Path, Path, Path, Path]:
         except Exception as exc:
             import logging
             logging.getLogger("VideoRecorder").debug("Mobile deck proving skipped: %s", exc)
-        page2.wait_for_timeout(2500)
+        page3.wait_for_timeout(2500)
 
         # Scroll down mobile Deck 2
         page3.evaluate("window.scrollBy({ top: 300, behavior: 'smooth' });")

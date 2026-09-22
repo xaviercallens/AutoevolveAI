@@ -788,6 +788,49 @@ async def ascd_closed_loop_v2() -> dict[str, Any]:
     }
 
 
+class DichotomyRequest(BaseModel):
+    goal: str = Field(max_length=5000)
+    budget: int = Field(default=16000, ge=1000, le=128000)
+    depth: int = Field(default=2, ge=1, le=4)
+
+
+@app.get("/api/dichotomic_tree")
+async def get_dichotomic_tree() -> dict[str, Any]:
+    """Retrieve the active dichotomic subtask tree and token budget telemetry."""
+    tree_path = PROJECT_ROOT / "results" / "dichotomic_tree.json"
+    if tree_path.exists():
+        try:
+            return json.loads(tree_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            logger.warning("Failed to parse dichotomic tree JSON: %s", exc)
+
+    from anse.orchestration.dichotomic_decomposer import DichotomyEngine
+    engine = DichotomyEngine(project_root=PROJECT_ROOT)
+    root = engine.decompose(
+        goal="Formal Banach Fixed-Point Contraction Theorem in Lean 4 and 8D Kerr Geodesic Symplectic Phase-Space Integrator",
+        total_budget=16000,
+        max_depth=2,
+    )
+    return root.to_dict()
+
+
+@app.post("/api/dichotomic_decompose")
+async def post_dichotomic_decompose(req: DichotomyRequest) -> dict[str, Any]:
+    """Dynamically decompose a goal into a binary subtask tree with token budgets and Lines of Thought."""
+    from anse.orchestration.dichotomic_decomposer import DichotomyEngine
+    engine = DichotomyEngine(project_root=PROJECT_ROOT)
+    root = engine.decompose(
+        goal=req.goal,
+        total_budget=req.budget,
+        max_depth=req.depth,
+    )
+    tree_dict = root.to_dict()
+    tree_path = PROJECT_ROOT / "results" / "dichotomic_tree.json"
+    tree_path.parent.mkdir(parents=True, exist_ok=True)
+    tree_path.write_text(json.dumps(tree_dict, indent=2), encoding="utf-8")
+    return tree_dict
+
+
 @app.websocket("/ws/ascd")
 async def websocket_ascd_telemetry(websocket: WebSocket) -> None:
     """High-frequency telemetry stream for ASCD."""

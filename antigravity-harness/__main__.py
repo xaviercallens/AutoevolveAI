@@ -138,6 +138,16 @@ def main() -> int:
     p_qa.add_argument("file", help="Python source file to target")
     p_qa.add_argument("--module", default="anse.core", help="Module import path for target")
 
+    # dichotomy
+    p_dichotomy = subparsers.add_parser(
+        "dichotomy", help="Split complex goals into dichotomic binary tree with bounded token budgets"
+    )
+    p_dichotomy.add_argument("--goal", required=True, help="High-level goal to decompose")
+    p_dichotomy.add_argument("--budget", type=int, default=16000, help="Total token budget")
+    p_dichotomy.add_argument("--depth", type=int, default=2, help="Max recursion depth")
+    p_dichotomy.add_argument("--output", default="results/dichotomic_tree.json", help="Path to save JSON tree")
+    p_dichotomy.add_argument("--execute", action="store_true", help="Execute and verify leaf tasks")
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
@@ -153,6 +163,16 @@ def main() -> int:
         return cmd_dpo(args)
     elif args.command == "qa":
         return cmd_qa(args)
+    elif args.command == "dichotomy":
+        from antigravity_harness.core.dichotomic_harness import run_dichotomy_cli
+        out_path = Path(args.output) if args.output else None
+        return run_dichotomy_cli(
+            goal=args.goal,
+            total_budget=args.budget,
+            max_depth=args.depth,
+            output_json=out_path,
+            execute=args.execute,
+        )
     return 0
 
 

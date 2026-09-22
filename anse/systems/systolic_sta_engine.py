@@ -116,3 +116,10 @@ class SystolicSTAEngine:
             timing_met=timing_met,
             elapsed_ms=elapsed_ms,
         )
+
+
+class SystolicArraySTA(SystolicSTAEngine):
+    """Convenience alias for static timing analysis on systolic arrays."""
+    def analyze_critical_path(self) -> STAReport:
+        return self.analyze_timing()
+

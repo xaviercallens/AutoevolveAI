@@ -26,6 +26,10 @@ class KerrGeodesicResult:
     elapsed_ms: float
     trajectory_variance: float
 
+    @property
+    def carter_drift_error(self) -> float:
+        return self.relative_carter_error
+
 
 class NumericalKerrIntegrator:
     def __init__(self, M: float = 1.0, a: float = 0.9, mu: float = 1.0):
@@ -178,3 +182,10 @@ class NumericalKerrIntegrator:
             elapsed_ms=elapsed_ms,
             trajectory_variance=var_r,
         )
+
+
+def integrate_kerr_geodesic(steps: int = 1000, dt: float = 0.01) -> KerrGeodesicResult:
+    """Convenience entrypoint for Kerr geodesic RK4 numerical integration."""
+    integrator = NumericalKerrIntegrator()
+    return integrator.integrate(steps=steps, dt=dt)
+

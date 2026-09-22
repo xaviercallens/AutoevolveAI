@@ -362,10 +362,10 @@ class DichotomyEngine:
             return "uv run python -c \"from anse.physics.kerr_geodesic_numerical import integrate_kerr_geodesic; sol = integrate_kerr_geodesic(steps=1000); assert sol.carter_drift_error < 1e-6\""
         if "lattice" in lower or "instanton" in lower:
             return "uv run python -c \"from anse.physics.lattice_instanton_numerical import LatticeInstantonSimulator; s = LatticeInstantonSimulator(grid_size=10); res = s.compute_topological_charge(); assert 0.8 <= res.q_top <= 1.2\""
+        if "socket" in lower or "scm_rights" in lower or "migration" in lower:
+            return "uv run python -c \"from anse.systems.real_scm_rights_ipc import run_atomic_socket_migration; res = run_atomic_socket_migration(); assert res['socket_continuity_verified']\""
         if "sta" in lower or "timing" in lower or "systolic" in lower:
             return "uv run python -c \"from anse.systems.systolic_sta_engine import SystolicArraySTA; sta = SystolicArraySTA(); res = sta.analyze_critical_path(); assert res.timing_met\""
-        if "socket" in lower or "hot-swap" in lower or "scm_rights" in lower:
-            return "uv run python -c \"from anse.systems.real_scm_rights_ipc import run_atomic_socket_migration; res = run_atomic_socket_migration(); assert res['socket_continuity_verified']\""
         return "uv run pytest tests/ -q --maxfail=1"
 
     def execute_leaf(

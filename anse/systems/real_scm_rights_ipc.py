@@ -173,3 +173,16 @@ class RealSCMHotSwapper:
             bytes_transferred_post_migration=res.get("bytes_sent", 0),
             socket_continuity_verified=continuity_verified,
         )
+
+
+def run_atomic_socket_migration() -> dict:
+    """Convenience helper executing and verifying real SCM_RIGHTS file descriptor migration."""
+    swapper = RealSCMHotSwapper()
+    res = swapper.execute_hot_swap()
+    return {
+        "success": res.success,
+        "socket_continuity_verified": res.socket_continuity_verified,
+        "migration_duration_us": res.migration_duration_us,
+        "memory_delta_kb": res.memory_delta_kb,
+    }
+

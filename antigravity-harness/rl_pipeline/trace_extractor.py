@@ -167,6 +167,49 @@ class TraceExtractor:
             )
         return sessions
 
+    def extract_claude_opus_sessions(
+        self, stream_name: str = "antigravity:stream:claude_opus"
+    ) -> list[ExtractedSession]:
+        """Harvests Claude and Opus interactions from Redis stream into ExtractedSessions for RL and LoRA."""
+        events = self.bus.consume_events(stream_name, last_id="0", count=5000)
+        grouped: dict[str, list[TraceRecord]] = {}
+
+        for entry_id, fields in events:
+            model = str(fields.get("model_used", "claude"))
+            prompt = str(fields.get("prompt", ""))
+            completion = str(fields.get("completion", ""))
+            status = str(fields.get("status_code", "200"))
+            try:
+                latency_ms = float(fields.get("latency_ms", 100.0))
+            except (ValueError, TypeError):
+                latency_ms = 100.0
+            subtask_id = str(fields.get("subtask_id") or fields.get("session_id") or f"claude_{entry_id}")
+
+            energy = max(1.0, latency_ms * 0.05)
+            verdict = "PASSED" if status in ("200", "0") and len(completion.strip()) > 0 else "FAILED"
+
+            trace = TraceRecord(
+                trace_id=str(fields.get("event_id", entry_id)),
+                subtask_id=subtask_id,
+                prompt=prompt,
+                completion=completion,
+                verdict=verdict,
+                energy=energy,
+                reasons=[f"model={model}", f"latency={latency_ms:.2f}ms", f"status={status}"],
+            )
+            grouped.setdefault(subtask_id, []).append(trace)
+
+        sessions: list[ExtractedSession] = []
+        for subtask_id, trace_list in grouped.items():
+            prompt = trace_list[0].prompt if trace_list else ""
+            sessions.append(
+                ExtractedSession(
+                    subtask_id=subtask_id,
+                    prompt=prompt,
+                    traces=trace_list,
+                )
+            )
+        return sessions
 
     def filter_by_time_window(
         self, sessions: list[ExtractedSession], start_ts: float, end_ts: float

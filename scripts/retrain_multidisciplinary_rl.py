@@ -67,12 +67,17 @@ def compute_dpo_loss(
 
 
 def retrain_rl_on_multidisciplinary_cases(
-    dpo_dataset_path: str | Path = "results/dpo_60_phd_multidisciplinary_dataset.jsonl",
+    dpo_dataset_path: str | Path | None = None,
     epochs: int = 25,
     lr: float = 1e-3,
     output_model_path: str | Path = "results/rl_multidisciplinary_critic.pt",
 ) -> RLTrainingMetrics:
-    """Retrains the EnergyCriticPolicy on 60 multi-domain use cases with 70/15/15 split."""
+    """Retrains the EnergyCriticPolicy on 120 multi-domain use cases with 70/15/15 split."""
+    if dpo_dataset_path is None:
+        if Path("results/dpo_120_phd_multidisciplinary_dataset.jsonl").exists():
+            dpo_dataset_path = "results/dpo_120_phd_multidisciplinary_dataset.jsonl"
+        else:
+            dpo_dataset_path = "results/dpo_60_phd_multidisciplinary_dataset.jsonl"
     dataset_file = Path(dpo_dataset_path)
     if not dataset_file.exists():
         raise FileNotFoundError(f"DPO dataset not found: {dataset_file}")

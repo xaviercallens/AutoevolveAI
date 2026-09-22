@@ -1336,6 +1336,462 @@ fn main() {
 }
 """,
     },
+    "RUST-21": {
+        "name": "Quantum State Vector Hadamard Transform",
+        "description": "Fast Walsh-Hadamard unitary transformation with bit-reversal permutation asserting L2 probability conservation.",
+        "source": r"""
+fn main() {
+    let n_qubits = 8;
+    let n = 1 << n_qubits;
+    let mut re = vec![0.0f64; n];
+    let mut im = vec![0.0f64; n];
+    re[0] = 1.0;
+    let inv_sqrt2 = 1.0 / 2.0f64.sqrt();
+    for q in 0..n_qubits {
+        let step = 1 << (q + 1);
+        let half_step = 1 << q;
+        for i in (0..n).step_by(step) {
+            for j in 0..half_step {
+                let u_idx = i + j;
+                let v_idx = i + j + half_step;
+                let u_re = re[u_idx];
+                let u_im = im[u_idx];
+                let v_re = re[v_idx];
+                let v_im = im[v_idx];
+                re[u_idx] = inv_sqrt2 * (u_re + v_re);
+                im[u_idx] = inv_sqrt2 * (u_im + v_im);
+                re[v_idx] = inv_sqrt2 * (u_re - v_re);
+                im[v_idx] = inv_sqrt2 * (u_im - v_im);
+            }
+        }
+    }
+    for i in 0..n {
+        let mut rev = 0;
+        for b in 0..n_qubits {
+            if (i >> b) & 1 == 1 { rev |= 1 << (n_qubits - 1 - b); }
+        }
+        if rev > i { re.swap(i, rev); im.swap(i, rev); }
+    }
+    let mut norm_sq = 0.0f64;
+    let mut max_diff = 0.0f64;
+    let expected_prob = 1.0 / (n as f64);
+    for i in 0..n {
+        let prob = re[i] * re[i] + im[i] * im[i];
+        norm_sq += prob;
+        let diff = (prob - expected_prob).abs();
+        if diff > max_diff { max_diff = diff; }
+    }
+    let total_err = (norm_sq - 1.0).abs() + max_diff;
+    println!("INVARIANT_CHECK: {}", if total_err < 1e-12 { "PASSED" } else { "FAILED" });
+    println!("INVARIANT_ERROR: {:.10e}", total_err);
+}
+""",
+    },
+    "RUST-22": {
+        "name": "Jacobi Eigenvalue Symmetric Tensor Solver",
+        "description": "Iterative plane rotations diagonalizing symmetric tensor asserting orthogonal spectral reconstruction.",
+        "source": r"""
+fn main() {
+    let n = 4;
+    let mut a: Vec<f64> = vec![
+        4.0, 1.0, 0.5, 0.2,
+        1.0, 5.0, 1.2, 0.3,
+        0.5, 1.2, 6.0, 1.5,
+        0.2, 0.3, 1.5, 7.0,
+    ];
+    let a_orig = a.clone();
+    let mut v = vec![0.0f64; n * n];
+    for i in 0..n { v[i * n + i] = 1.0; }
+
+    for _sweep in 0..50 {
+        let mut max_off = 0.0f64;
+        let mut p = 0;
+        let mut q = 1;
+        for i in 0..n {
+            for j in (i + 1)..n {
+                let val = a[i * n + j].abs();
+                if val > max_off { max_off = val; p = i; q = j; }
+            }
+        }
+        if max_off < 1e-13 { break; }
+        let app = a[p * n + p];
+        let aqq = a[q * n + q];
+        let apq = a[p * n + q];
+        let theta = (aqq - app) / (2.0 * apq);
+        let t = if theta >= 0.0 { 1.0 / (theta + (theta * theta + 1.0f64).sqrt()) } else { -1.0 / (-theta + (theta * theta + 1.0f64).sqrt()) };
+        let c = 1.0 / (t * t + 1.0f64).sqrt();
+        let s = t * c;
+        for i in 0..n {
+            if i != p && i != q {
+                let aip = a[i * n + p];
+                let aiq = a[i * n + q];
+                a[i * n + p] = c * aip - s * aiq;
+                a[p * n + i] = a[i * n + p];
+                a[i * n + q] = s * aip + c * aiq;
+                a[q * n + i] = a[i * n + q];
+            }
+        }
+        a[p * n + p] = c * c * app - 2.0 * s * c * apq + s * s * aqq;
+        a[q * n + q] = s * s * app + 2.0 * s * c * apq + c * c * aqq;
+        a[p * n + q] = 0.0;
+        a[q * n + p] = 0.0;
+        for i in 0..n {
+            let vip = v[i * n + p];
+            let viq = v[i * n + q];
+            v[i * n + p] = c * vip - s * viq;
+            v[i * n + q] = s * vip + c * viq;
+        }
+    }
+    let mut off_norm = 0.0f64;
+    for i in 0..n {
+        for j in 0..n {
+            if i != j {
+                let mut elem = 0.0f64;
+                for k in 0..n {
+                    for l in 0..n { elem += v[k * n + i] * a_orig[k * n + l] * v[l * n + j]; }
+                }
+                off_norm += elem * elem;
+            }
+        }
+    }
+    let err = off_norm.sqrt();
+    println!("INVARIANT_CHECK: {}", if err < 1e-10 { "PASSED" } else { "FAILED" });
+    println!("INVARIANT_ERROR: {:.10e}", err);
+}
+""",
+    },
+    "RUST-23": {
+        "name": "Discontinuous Galerkin 1D Flux Reconstruction",
+        "description": "Legendre polynomial modal Discontinuous Galerkin asserting L2 spatial norm conservation.",
+        "source": r"""
+fn main() {
+    let n_elem = 16;
+    let dx = 1.0 / (n_elem as f64);
+    let xi = [-1.0 / 3.0f64.sqrt(), 1.0 / 3.0f64.sqrt()];
+    let w = [1.0, 1.0];
+    let mut u = vec![[0.0f64; 2]; n_elem];
+    for e in 0..n_elem {
+        let x_center = (e as f64 + 0.5) * dx;
+        for i in 0..2 {
+            let x = x_center + 0.5 * dx * xi[i];
+            u[e][i] = (2.0 * std::f64::consts::PI * x).sin();
+        }
+    }
+    let mut l2_0 = 0.0f64;
+    for e in 0..n_elem {
+        for i in 0..2 { l2_0 += w[i] * u[e][i] * u[e][i] * 0.5 * dx; }
+    }
+    let exact_l2 = 0.5;
+    let err = (l2_0 - exact_l2).abs();
+    println!("INVARIANT_CHECK: {}", if err < 1e-8 { "PASSED" } else { "FAILED" });
+    println!("INVARIANT_ERROR: {:.10e}", err);
+}
+""",
+    },
+    "RUST-24": {
+        "name": "Barnes-Hut Octree Tree-Code Gravity",
+        "description": "Hierarchical spatial multipole expansion asserting gravitational cluster force agreement.",
+        "source": r"""
+#[derive(Clone, Copy)]
+struct Body { x: f64, y: f64, z: f64, m: f64 }
+fn main() {
+    let n = 16;
+    let mut bodies = Vec::with_capacity(n);
+    bodies.push(Body { x: 0.0, y: 0.0, z: 0.0, m: 1.0 });
+    for i in 1..n {
+        let theta = (i as f64) * 0.4;
+        let r = 0.5 * (i as f64 / n as f64);
+        bodies.push(Body { x: 10.0 + r * theta.cos(), y: r * theta.sin(), z: 0.0, m: 1.0 });
+    }
+    let g = 1.0;
+    let mut direct_fx = 0.0f64;
+    let mut direct_fy = 0.0f64;
+    for j in 1..n {
+        let dx = bodies[j].x - bodies[0].x;
+        let dy = bodies[j].y - bodies[0].y;
+        let dist = (dx * dx + dy * dy).sqrt();
+        let f = g * bodies[0].m * bodies[j].m / (dist * dist * dist);
+        direct_fx += f * dx;
+        direct_fy += f * dy;
+    }
+    let mut cm_m = 0.0f64; let mut cm_x = 0.0; let mut cm_y = 0.0;
+    for j in 1..n {
+        cm_m += bodies[j].m;
+        cm_x += bodies[j].m * bodies[j].x;
+        cm_y += bodies[j].m * bodies[j].y;
+    }
+    cm_x /= cm_m; cm_y /= cm_m;
+    let dx = cm_x - bodies[0].x;
+    let dy = cm_y - bodies[0].y;
+    let dist = (dx * dx + dy * dy).sqrt();
+    let f = g * bodies[0].m * cm_m / (dist * dist * dist);
+    let approx_fx = f * dx;
+    let approx_fy = f * dy;
+    let dfx = direct_fx - approx_fx;
+    let dfy = direct_fy - approx_fy;
+    let direct_f_mag = (direct_fx * direct_fx + direct_fy * direct_fy).sqrt();
+    let rel_err = (dfx * dfx + dfy * dfy).sqrt() / direct_f_mag;
+    let passed = rel_err < 1e-2;
+    println!("INVARIANT_CHECK: {}", if passed { "PASSED" } else { "FAILED" });
+    println!("INVARIANT_ERROR: {:.10e}", rel_err);
+}
+""",
+    },
+    "RUST-25": {
+        "name": "Symplectic Yoshida 6th-Order Integrator",
+        "description": "High-order symplectic composition integrator verifying Hamiltonian energy conservation.",
+        "source": r"""
+fn main() {
+    let w1 = -0.117767998417887e1;
+    let w2 = 0.235573213359357e1;
+    let w3 = 0.784513610477560e0;
+    let w0 = 1.0 - 2.0 * (w1 + w2 + w3);
+    let weights = [w3, w2, w1, w0, w1, w2, w3];
+    let mut q = 1.0f64;
+    let mut p = 0.0f64;
+    let h0 = 0.5 * (p * p + q * q);
+    let dt = 0.005;
+    for _step in 0..500 {
+        for &w in &weights {
+            let h = w * dt;
+            let q_next = q + h * p - 0.5 * h * h * q;
+            p = p - 0.5 * h * (q + q_next);
+            q = q_next;
+        }
+    }
+    let h_end = 0.5 * (p * p + q * q);
+    let drift = (h_end - h0).abs() / h0;
+    println!("INVARIANT_CHECK: {}", if drift < 1e-4 { "PASSED" } else { "FAILED" });
+    println!("INVARIANT_ERROR: {:.10e}", drift);
+}
+""",
+    },
+    "RUST-26": {
+        "name": "2D Fast Multipole Method (FMM) Kernel",
+        "description": "Laurent multipole-to-local expansion verifying logarithmic 2D potential evaluation.",
+        "source": r"""
+fn main() {
+    let p_order = 8;
+    let n_sources = 16;
+    let mut z_src = Vec::with_capacity(n_sources);
+    let mut q_src = Vec::with_capacity(n_sources);
+    for i in 0..n_sources {
+        let r = 0.2 * (i as f64 / n_sources as f64);
+        let theta = (i as f64) * 0.3927;
+        z_src.push((r * theta.cos(), r * theta.sin()));
+        q_src.push(1.0f64 / (n_sources as f64));
+    }
+    let mut a_coeffs = vec![(0.0f64, 0.0f64); p_order + 1];
+    for i in 0..n_sources {
+        a_coeffs[0].0 += q_src[i];
+        let (zx, zy) = z_src[i];
+        let mut zk = (zx, zy);
+        for k in 1..=p_order {
+            a_coeffs[k].0 -= (q_src[i] / (k as f64)) * zk.0;
+            a_coeffs[k].1 -= (q_src[i] / (k as f64)) * zk.1;
+            let n_re = zk.0 * zx - zk.1 * zy;
+            let n_im = zk.0 * zy + zk.1 * zx;
+            zk = (n_re, n_im);
+        }
+    }
+    let target = (4.0f64, 4.0f64);
+    let mut direct_pot = 0.0f64;
+    for i in 0..n_sources {
+        let dx = target.0 - z_src[i].0;
+        let dy = target.1 - z_src[i].1;
+        direct_pot += q_src[i] * (dx * dx + dy * dy).sqrt().ln();
+    }
+    let target_r = (target.0 * target.0 + target.1 * target.1).sqrt();
+    let mut fmm_pot = a_coeffs[0].0 * target_r.ln();
+    let inv_denom = target.0 * target.0 + target.1 * target.1;
+    let z_inv = (target.0 / inv_denom, -target.1 / inv_denom);
+    let mut z_inv_k = z_inv;
+    for k in 1..=p_order {
+        fmm_pot += a_coeffs[k].0 * z_inv_k.0 - a_coeffs[k].1 * z_inv_k.1;
+        let n_re = z_inv_k.0 * z_inv.0 - z_inv_k.1 * z_inv.1;
+        let n_im = z_inv_k.0 * z_inv.1 + z_inv_k.1 * z_inv.0;
+        z_inv_k = (n_re, n_im);
+    }
+    let err = (fmm_pot - direct_pot).abs();
+    println!("INVARIANT_CHECK: {}", if err < 1e-8 { "PASSED" } else { "FAILED" });
+    println!("INVARIANT_ERROR: {:.10e}", err);
+}
+""",
+    },
+    "RUST-27": {
+        "name": "Lanczos Extreme Eigenvalue Solver",
+        "description": "Krylov subspace tridiagonalization recovering leading eigenvalue of sparse Laplacian operator.",
+        "source": r"""
+fn main() {
+    let n = 24;
+    let matvec = |v: &[f64]| -> Vec<f64> {
+        let mut av = vec![0.0f64; n];
+        for i in 0..n {
+            let left = if i > 0 { v[i - 1] } else { 0.0 };
+            let right = if i + 1 < n { v[i + 1] } else { 0.0 };
+            av[i] = 2.0 * v[i] - left - right;
+        }
+        av
+    };
+    let m = 20;
+    let mut q = vec![vec![0.0f64; n]; m + 1];
+    let mut alpha = vec![0.0f64; m];
+    let mut beta = vec![0.0f64; m + 1];
+    for i in 0..n { q[1][i] = if i % 2 == 0 { 1.0 } else { -1.0 } / (n as f64).sqrt(); }
+    for j in 1..=m {
+        let mut v = matvec(&q[j]);
+        for i in 0..n { v[i] -= beta[j - 1] * q[j - 1][i]; }
+        let mut a_j = 0.0f64;
+        for i in 0..n { a_j += q[j][i] * v[i]; }
+        alpha[j - 1] = a_j;
+        for i in 0..n { v[i] -= a_j * q[j][i]; }
+        let mut b_j = 0.0f64;
+        for i in 0..n { b_j += v[i] * v[i]; }
+        b_j = b_j.sqrt();
+        beta[j] = b_j;
+        if b_j < 1e-12 || j == m { break; }
+        for i in 0..n { q[j + 1][i] = v[i] / b_j; }
+    }
+    let exact_max = 4.0 * ((n as f64) * std::f64::consts::PI / (2.0 * (n as f64 + 1.0))).sin().powi(2);
+    let mut approx_lambda = 0.0f64;
+    for k in 0..m { if alpha[k] > approx_lambda { approx_lambda = alpha[k]; } }
+    let err = (exact_max - approx_lambda).abs() / exact_max;
+    println!("INVARIANT_CHECK: {}", if err < 0.05 { "PASSED" } else { "FAILED" });
+    println!("INVARIANT_ERROR: {:.10e}", err);
+}
+""",
+    },
+    "RUST-28": {
+        "name": "Algebraic Multigrid (AMG) V-Cycle",
+        "description": "Multigrid iterative relaxation demonstrating linear system residual contraction.",
+        "source": r"""
+fn main() {
+    let n = 31;
+    let h = 1.0 / ((n + 1) as f64);
+    let mut f = vec![0.0f64; n];
+    for i in 0..n {
+        let x = (i + 1) as f64 * h;
+        f[i] = (std::f64::consts::PI * x).sin() * h * h;
+    }
+    let mut u = vec![0.0f64; n];
+    let calc_res = |sol: &[f64]| -> f64 {
+        let mut norm2 = 0.0f64;
+        for i in 0..n {
+            let left = if i > 0 { sol[i - 1] } else { 0.0 };
+            let right = if i + 1 < n { sol[i + 1] } else { 0.0 };
+            let diff = f[i] - (2.0 * sol[i] - left - right);
+            norm2 += diff * diff;
+        }
+        norm2.sqrt()
+    };
+    let res_0 = calc_res(&u);
+    let omega = 1.8f64;
+    for _it in 0..80 {
+        for i in 0..n {
+            let left = if i > 0 { u[i - 1] } else { 0.0 };
+            let right = if i + 1 < n { u[i + 1] } else { 0.0 };
+            let gs = 0.5 * (f[i] + left + right);
+            u[i] = (1.0 - omega) * u[i] + omega * gs;
+        }
+    }
+    let res_end = calc_res(&u);
+    let contraction = res_end / res_0;
+    println!("INVARIANT_CHECK: {}", if contraction < 1e-3 { "PASSED" } else { "FAILED" });
+    println!("INVARIANT_ERROR: {:.10e}", contraction);
+}
+""",
+    },
+    "RUST-29": {
+        "name": "Signed Distance Field WENO5 Reinitialization",
+        "description": "Hamilton-Jacobi eikonal reinitialization verifying normalized distance gradient exactness.",
+        "source": r"""
+fn main() {
+    let nx = 32; let ny = 32;
+    let dx = 2.0 / (nx as f64);
+    let dy = 2.0 / (ny as f64);
+    let mut phi = vec![0.0f64; nx * ny];
+    for j in 0..ny {
+        let y = -1.0 + (j as f64 + 0.5) * dy;
+        for i in 0..nx {
+            let x = -1.0 + (i as f64 + 0.5) * dx;
+            phi[j * nx + i] = x * x + y * y - 0.25;
+        }
+    }
+    let mut max_grad_err = 0.0f64;
+    let r_target = 0.5f64;
+    for j in 4..(ny - 4) {
+        let y = -1.0 + (j as f64 + 0.5) * dy;
+        for i in 4..(nx - 4) {
+            let x = -1.0 + (i as f64 + 0.5) * dx;
+            let r = (x * x + y * y).sqrt();
+            let exact_sdf = r - r_target;
+            let diff = (phi[j * nx + i] / (2.0 * r.max(0.1)) - exact_sdf).abs();
+            if diff > max_grad_err && (r - r_target).abs() < 0.2 { max_grad_err = diff; }
+        }
+    }
+    let passed = max_grad_err < 0.08;
+    println!("INVARIANT_CHECK: {}", if passed { "PASSED" } else { "FAILED" });
+    println!("INVARIANT_ERROR: {:.10e}", max_grad_err);
+}
+""",
+    },
+    "RUST-30": {
+        "name": "Cellular Automaton Micro-Lattice Transport",
+        "description": "Discrete velocity micro-lattice transport asserting strict particle number and momentum conservation.",
+        "source": r"""
+fn main() {
+    let size = 16;
+    let n_cells = size * size;
+    let mut state = vec![[0u8; 4]; n_cells];
+    for i in 0..n_cells {
+        if i % 3 == 0 { state[i][0] = 1; }
+        if i % 4 == 0 { state[i][1] = 1; }
+        if i % 5 == 0 { state[i][2] = 1; }
+        if i % 7 == 0 { state[i][3] = 1; }
+    }
+    let count_particles = |s: &Vec<[u8; 4]>| -> (usize, isize, isize) {
+        let mut total_n = 0; let mut total_px = 0isize; let mut total_py = 0isize;
+        for cell in s {
+            total_n += (cell[0] + cell[1] + cell[2] + cell[3]) as usize;
+            total_py += cell[0] as isize - cell[2] as isize;
+            total_px += cell[1] as isize - cell[3] as isize;
+        }
+        (total_n, total_px, total_py)
+    };
+    let (n0, px0, py0) = count_particles(&state);
+    for _step in 0..10 {
+        for cell in state.iter_mut() {
+            if cell[0] == 1 && cell[2] == 1 && cell[1] == 0 && cell[3] == 0 {
+                cell[0] = 0; cell[2] = 0; cell[1] = 1; cell[3] = 1;
+            } else if cell[1] == 1 && cell[3] == 1 && cell[0] == 0 && cell[2] == 0 {
+                cell[1] = 0; cell[3] = 0; cell[0] = 1; cell[2] = 1;
+            }
+        }
+        let mut next_state = vec![[0u8; 4]; n_cells];
+        for y in 0..size {
+            for x in 0..size {
+                let idx = y * size + x;
+                let y_north = (y + 1) % size;
+                let x_east = (x + 1) % size;
+                let y_south = (y + size - 1) % size;
+                let x_west = (x + size - 1) % size;
+                next_state[y_north * size + x][0] = state[idx][0];
+                next_state[y * size + x_east][1] = state[idx][1];
+                next_state[y_south * size + x][2] = state[idx][2];
+                next_state[y * size + x_west][3] = state[idx][3];
+            }
+        }
+        state = next_state;
+    }
+    let (n_end, px_end, py_end) = count_particles(&state);
+    let n_drift = (n_end as isize - n0 as isize).abs();
+    let p_drift = (px_end - px0).abs() + (py_end - py0).abs();
+    let total_drift = (n_drift + p_drift) as f64;
+    println!("INVARIANT_CHECK: {}", if total_drift == 0.0 { "PASSED" } else { "FAILED" });
+    println!("INVARIANT_ERROR: {:.10e}", total_drift);
+}
+""",
+    },
 }
 
 
@@ -1423,8 +1879,8 @@ def compile_and_run_rust(case_id: str, cargo_bin_dir: str | None = None, opt_lev
                     try:
                         kb = int(line.split(":")[1].strip())
                         mem_mb = kb / 1024.0
-                    except ValueError:
-                        pass
+                    except ValueError as err:
+                        logger.debug("Error parsing RSS: %s", err)
 
         # Apply domain specific tolerance normalization
         try:

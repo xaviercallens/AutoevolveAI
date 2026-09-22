@@ -3,17 +3,31 @@ Agentic execution loop with symbolic grounding and pain-signal injection.
 
 Formal Lean 4 Specification:
 -----------------------------
-See `formal/ANSE/Basic.lean`:
+See `formal/ANSE/Basic.lean` & `formal/ANSE/Theorems.lean`:
   theorem exists_minimiser (E : EnergyFn X Y) (x : X) :
     ∃ y_star : Y, ∀ y : Y, E.eval x y_star ≤ E.eval x y
 
-In Phase 1, System 1 acts autoregressively, and the agent loop performs
-discrete energy minimisation via iterative trial-and-error:
-  y_0 ~ P(y|x)
-  e_0 = Energy(Exec(y_0))
-  If e_0 > 0:
-    y_{t+1} ~ P(y | x, y_t, pain_signal(e_t, stderr_t))
-Until e_t ≤ threshold (convergence) or max_retries reached.
+  theorem safe_improvement_nonincreasing (ε : ℝ) (hε : 0 < ε) (energy : ArchitectureState → ℝ)
+    (s₁ s₂ : ArchitectureState) : safeProposal ε hε energy s₁ s₂ → energy s₂ ≤ energy s₁
+
+Thermodynamic Active Inference & Low-Tier Hardness:
+---------------------------------------------------
+1. Discrete Energy Minimisation:
+     y_0 ~ P(y|x)
+     e_0 = Energy(Exec(y_0))
+     If e_0 > 0:
+       y_{t+1} ~ P(y | x, y_t, pain_signal(e_t, stderr_t))
+   Until e_t ≤ threshold (convergence) or max_retries reached.
+
+2. Low-Tier Hardness Directives (D1–D8):
+   - D1: Compressed pain prompt template for small models (<100 lines, AST-focused).
+   - D2: Adaptive retry capacity gating based on prompt token budget.
+   - D3: Fail-fast early stopping on catastrophic E1 (>10^6) or diverging E2.
+   - D4: Skeleton lesson formatting stripping verbose boilerplate.
+   - D5: Difficulty tier classification (easy, medium, hard, PhD-level).
+   - D6: Offline trace harvesting for continuous DPO/GRPO fine-tuning.
+   - D7: Tier-specific gates (G1–G9) preventing regression.
+   - D8: Autopoietic prompt strategy registry with live runtime swapping.
 """
 
 from __future__ import annotations

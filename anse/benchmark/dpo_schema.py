@@ -1,9 +1,18 @@
-"""
+r"""
 DPO Dataset Record Schema & Provenance Contracts.
 
-Enforces strict typed structure for DPO preference pairs across multi-domain
-benchmarks (Rust numeric, Pure Mathematics, Theoretical Physics).
-Bans synthetic proxies and validates that all performance telemetry is empirical.
+Mathematical Grounding:
+-----------------------
+Direct Preference Optimization (DPO) maximizes implicit reward margins:
+  P(y_chosen \succ y_rejected | x) = \sigma( \beta \cdot (r(x, y_chosen) - r(x, y_rejected)) )
+where r(x, y) is anti-correlated with physical energy E(x, y):
+  r(x, y) \approx - \log(1 + E(x, y))
+
+Physical Contract:
+------------------
+  \Delta E = E_{rejected} - E_{chosen} > 0
+Every record enforces empirical provenance ('measured'). Any synthetic proxies
+or fabricated measurements trigger immediate validation failure.
 """
 
 from __future__ import annotations

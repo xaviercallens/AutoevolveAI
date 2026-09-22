@@ -66,7 +66,7 @@ def is_small_model(model_name: str) -> bool:
             size = float(match.group(1))
             return size <= 3.0
         except ValueError:
-            pass
+            return any(tag in name for tag in ("tiny", "small", "mini"))
     return any(tag in name for tag in ("tiny", "small", "mini"))
 
 

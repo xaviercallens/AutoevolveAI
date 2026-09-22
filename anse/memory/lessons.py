@@ -9,10 +9,13 @@ from __future__ import annotations
 
 import ast
 import json
+import logging
 import re
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 _STOPWORDS = frozenset(
     "a an and are as at be by for from if in into is it its must not of on or that the "
@@ -124,8 +127,8 @@ def extract_skeleton(code: str, max_chars: int = 400) -> str:
                 skeleton_parts.append(f"class {node.name}:\n    ...")
         if skeleton_parts:
             return "\n\n".join(skeleton_parts)[:max_chars]
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("AST skeleton generation error: %s", exc)
 
     sig_lines = []
     for line in code.splitlines():

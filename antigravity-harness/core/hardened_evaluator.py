@@ -1,6 +1,18 @@
 """
 Hardened Evaluator for ANSE Antigravity Harness.
 
+Formal Lean 4 Verification Grounding:
+-------------------------------------
+See `formal/ANSE/StrongGravity.lean`:
+1. Zero-Trust Completion Axiom (`ANSE.StrongGravity.zeroTrustCompletion`):
+   Task completion strictly implies external cryptographic proof token issuance.
+2. Anti-Simulation Axiom (`ANSE.StrongGravity.antiSimulation`):
+   Presence of `pass`, `...`, `NotImplementedError`, or `mock_*` forces E = 10^6.
+3. Proof-of-Execution Axiom (`ANSE.StrongGravity.proofOfExecution`):
+   Valid test execution requires verified traversal of target production code.
+4. Ephemeral Context Axiom (`ANSE.StrongGravity.ephemeralContext`):
+   Excess tool verbosity is offloaded to hash-addressed scratchpad files.
+
 Provides multi-tier fail-closed execution evaluation:
 1. Anti-Stub AST inspection (rejects empty bodies, stubs, pass, time.sleep, mock tokens).
 2. Computational physics telemetry (nanosecond runtime, peak RSS memory, physical energy E).

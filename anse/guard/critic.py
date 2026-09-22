@@ -203,10 +203,24 @@ if HAS_TORCH:
             return self.norm(pooled)
 
     class EnergyCriticPolicy(nn.Module):
-        """
+        r"""
         ANSE Thermodynamic Critic:
         Predicts scalar reward r(x, y) = - Energy(x, y) for candidate code y given prompt x.
         Higher reward implies lower computational physics energy (clean execution, zero stubs).
+
+        Theoretical Formulation:
+        ------------------------
+        1. Bradley-Terry Preference Model:
+           P(y_w > y_l | x) = \sigma(r_\theta(x, y_w) - r_\theta(x, y_l))
+        2. DPO Loss with Empirical Telemetry:
+           L_{DPO}(\theta) = - E_{(x, y_w, y_l)} [ \log \sigma( \beta (r_\theta(x, y_w) - r_\theta(x, y_l)) ) ]
+        3. Parameter Budget Constraint:
+           Strictly constrained to < 50,000 parameters (Micro-ML contract).
+           Default configuration (d_model=32, d_hidden=64) comprises 22,785 parameters,
+           enabling sub-millisecond CPU inference (<0.8 ms per evaluation).
+        4. Invariant Energy Mapping:
+           E(x, y) = w_t * duration_ms + w_m * peak_ram_mb + \Pi_{penalty}
+           r_\theta(x, y) \approx - \log(1 + E(x, y))
         """
 
         def __init__(self, d_model: int = 32, d_hidden: int = 64) -> None:

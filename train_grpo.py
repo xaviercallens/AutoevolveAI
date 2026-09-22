@@ -46,7 +46,7 @@ def check_cyclomatic_complexity_exceeded(content: str, max_cc: int = 10) -> bool
     try:
         blocks = ComplexityVisitor.from_code(content).blocks
         return any(b.complexity > max_cc for b in blocks)
-    except (OSError, RuntimeError):
+    except (OSError, RuntimeError, SyntaxError):
         return False
 
 

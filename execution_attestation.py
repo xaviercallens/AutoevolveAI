@@ -33,6 +33,11 @@ if callable(reconf_out):
 class ImplementationAuditor(ast.NodeVisitor):
     def __init__(self, filename: str):
         self.filename = filename.replace("\\", "/")
+        self.is_test_file = (
+            "/tests/" in self.filename
+            or self.filename.startswith("tests/")
+            or Path(self.filename).name.startswith("test_")
+        )
         self.violations: list[str] = []
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
@@ -81,8 +86,22 @@ class ImplementationAuditor(ast.NodeVisitor):
             self.violations.append(f"{self.filename}:{node.lineno} '{name}' is an empty stub.")
             return
 
-        if len(body) == 1:
-            self._check_stubs(body[0], node, name)
+        for stmt in body:
+            self._check_stubs(stmt, node, name)
+            if not self.is_test_file:
+                for subnode in ast.walk(stmt):
+                    if isinstance(subnode, ast.Name):
+                        if subnode.id.startswith("mock_") or subnode.id.startswith("fake_") or subnode.id in ("Mock", "MagicMock"):
+                            self.violations.append(
+                                f"{self.filename}:{getattr(subnode, 'lineno', node.lineno)} '{name}': "
+                                f"Mock/synthetic token '{subnode.id}' detected in production body."
+                            )
+                    elif isinstance(subnode, ast.Attribute):
+                        if subnode.attr in ("Mock", "MagicMock", "fake_evaluation"):
+                            self.violations.append(
+                                f"{self.filename}:{getattr(subnode, 'lineno', node.lineno)} '{name}': "
+                                f"Mock call '{subnode.attr}' detected."
+                            )
 
 
 def _check_coverage_json(target_module: str, cov_file: Path) -> bool:

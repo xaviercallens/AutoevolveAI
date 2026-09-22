@@ -191,8 +191,10 @@ class HardenedEvaluator:
         # If the runner explicitly provided mem_mb_real (e.g. from Rust /usr/bin/time), use it.
         # Otherwise, use the tracemalloc peak memory in MB (fallback to synthetic if 0).
         peak_mem_mb = peak_mem / (1024 * 1024)
-        if peak_mem_mb == 0.0:
-            peak_mem_mb = 2.0 + 0.05 * len(details)
+        if peak_mem_mb <= 0.0:
+            import resource
+            usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            peak_mem_mb = max(0.1, usage / 1024.0)
         mem_mb = details.get("mem_mb_real", peak_mem_mb)
 
         try:
@@ -217,3 +219,191 @@ class HardenedEvaluator:
             violations=[],
             metadata=details,
         )
+
+
+def validate_numeric_provenance(
+    dataset_input: str | os.PathLike[str] | list[dict[str, Any]],
+    required_measured_fields: list[str] | None = None,
+    max_constant_ratio: float = 0.1,
+) -> tuple[bool, list[str]]:
+    """
+    H-1 / M-1 Gate: Validates that numeric telemetry is measured empirically.
+    Rejects constant-value fabrication, proxy patterns, and missing keys.
+    """
+    import json
+    from pathlib import Path
+
+    violations: list[str] = []
+    records: list[dict[str, Any]] = []
+
+    if isinstance(dataset_input, (str, os.PathLike)):
+        p = Path(dataset_input)
+        if not p.exists():
+            return False, [f"Dataset file does not exist: {p}"]
+        with open(p, "r", encoding="utf-8") as f:
+            for i, line in enumerate(f):
+                if line.strip():
+                    try:
+                        records.append(json.loads(line))
+                    except json.JSONDecodeError as err:
+                        violations.append(f"Line {i+1} invalid JSON: {err}")
+    else:
+        records = dataset_input
+
+    if not records:
+        return False, ["Dataset contains zero records."]
+
+    fields = required_measured_fields or ["opt_lat", "base_lat", "opt_e", "base_e"]
+    n = len(records)
+
+    for field_name in fields:
+        values = []
+        for i, r in enumerate(records):
+            cid = r.get("case_id", f"record_{i}")
+            if field_name not in r:
+                violations.append(f"Record {cid} missing measured field '{field_name}'")
+                continue
+            val = r[field_name]
+            if not isinstance(val, (int, float)):
+                violations.append(f"Record {cid} field '{field_name}' is not numeric: {val}")
+                continue
+            values.append(val)
+
+            # Check provenance tag if present
+            prov_key = f"{field_name}__provenance"
+            if prov_key in r and r[prov_key] != "measured":
+                violations.append(f"Record {cid} field '{field_name}' has non-measured provenance '{r[prov_key]}'")
+
+        if len(values) >= 5:
+            # Check constant ratio
+            counts: dict[float, int] = {}
+            for v in values:
+                counts[round(v, 4)] = counts.get(round(v, 4), 0) + 1
+            max_repeat = max(counts.values())
+            repeat_ratio = max_repeat / len(values)
+            if repeat_ratio > max_constant_ratio and len(counts) <= 2:
+                violations.append(
+                    f"Field '{field_name}' exhibits constant fabrication: {repeat_ratio*100:.1f}% of records share identical value."
+                )
+
+    return len(violations) == 0, violations
+
+
+def audit_reward_distribution(
+    dataset_input: str | os.PathLike[str] | list[dict[str, Any]],
+    min_reward_delta: float = 5.0,
+) -> tuple[bool, list[str], dict[str, Any]]:
+    """
+    H-2 / M-3 Gate: Audits DPO reward distribution for degenerate or inverted pairs.
+    """
+    import json
+    from pathlib import Path
+
+    violations: list[str] = []
+    records: list[dict[str, Any]] = []
+
+    if isinstance(dataset_input, (str, os.PathLike)):
+        p = Path(dataset_input)
+        if not p.exists():
+            return False, [f"Dataset file does not exist: {p}"], {}
+        with open(p, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    records.append(json.loads(line))
+    else:
+        records = dataset_input
+
+    if not records:
+        return False, ["No records found in dataset."], {}
+
+    deltas: list[float] = []
+    for i, r in enumerate(records):
+        cid = r.get("case_id", f"record_{i}")
+        rc = r.get("reward_chosen")
+        rr = r.get("reward_rejected")
+        rd = r.get("reward_delta")
+
+        if rc is None or rr is None:
+            violations.append(f"Record {cid} missing reward values.")
+            continue
+
+        calc_delta = float(rc) - float(rr)
+        deltas.append(calc_delta)
+
+        if calc_delta <= 0.0:
+            violations.append(f"Record {cid} has non-positive reward delta ({calc_delta:.4f}): chosen <= rejected")
+        elif calc_delta < min_reward_delta:
+            violations.append(f"Record {cid} has marginal reward delta ({calc_delta:.4f} < {min_reward_delta})")
+
+    stats = {
+        "count": len(deltas),
+        "min_delta": min(deltas) if deltas else 0.0,
+        "max_delta": max(deltas) if deltas else 0.0,
+        "mean_delta": sum(deltas) / len(deltas) if deltas else 0.0,
+        "num_violations": len(violations),
+    }
+
+    return len(violations) == 0, violations, stats
+
+
+def verify_model_budget(
+    model_or_path: Any,
+    max_params: int = 50000,
+) -> tuple[bool, int, str]:
+    """
+    M-4 Gate: Verifies that a neural model checkpoint or instance adheres to the parameter budget.
+    """
+    import torch
+
+    if isinstance(model_or_path, (str, os.PathLike)):
+        checkpoint = torch.load(model_or_path, map_location="cpu")
+        state_dict = checkpoint.get("state_dict", checkpoint) if isinstance(checkpoint, dict) else checkpoint
+        param_count = sum(p.numel() for p in state_dict.values())
+    elif hasattr(model_or_path, "parameters"):
+        param_count = sum(p.numel() for p in model_or_path.parameters())
+    else:
+        return False, 0, f"Unsupported model object type: {type(model_or_path)}"
+
+    passed = param_count <= max_params
+    msg = f"Model parameters: {param_count} (budget: <= {max_params})"
+    return passed, param_count, msg
+
+
+def detect_renamed_symbols(
+    old_content: str,
+    new_content: str,
+    search_root: str | Path = ".",
+) -> list[str]:
+    """
+    H-4 / M-5 Gate: Scans for dangling references to symbols removed during refactoring.
+    """
+    import ast
+    import subprocess
+    from pathlib import Path
+
+    def get_names(code: str) -> set[str]:
+        try:
+            tree = ast.parse(code)
+            return {node.id for node in ast.walk(tree) if isinstance(node, ast.Name)}
+        except SyntaxError:
+            return set()
+
+    old_names = get_names(old_content)
+    new_names = get_names(new_content)
+    removed_names = {n for n in (old_names - new_names) if len(n) > 3 and not n.startswith("__")}
+
+    dangling: list[str] = []
+    for symbol in sorted(removed_names):
+        try:
+            res = subprocess.run(
+                ["grep", "-rn", f"\b{symbol}\b", "--include=*.py", str(search_root)],
+                capture_output=True,
+                text=True,
+            )
+            if res.stdout.strip():
+                dangling.append(f"Dangling symbol '{symbol}' found in:\n" + res.stdout.strip())
+        except Exception:
+            pass
+
+    return dangling
+

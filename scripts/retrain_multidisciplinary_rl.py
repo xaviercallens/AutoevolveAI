@@ -77,11 +77,29 @@ def retrain_rl_on_multidisciplinary_cases(
     if not dataset_file.exists():
         raise FileNotFoundError(f"DPO dataset not found: {dataset_file}")
 
+    from anse.benchmark.dpo_schema import DPORecord
+    from antigravity_harness.core.hardened_evaluator import (
+        audit_reward_distribution,
+        validate_numeric_provenance,
+    )
+
     pairs: list[dict[str, Any]] = []
     with open(dataset_file, "r", encoding="utf-8") as f:
         for line in f:
             if line.strip():
-                pairs.append(json.loads(line))
+                record_dict = json.loads(line)
+                # Schema validation (H-2)
+                record = DPORecord.from_dict(record_dict)
+                pairs.append(record.to_dict())
+
+    # Pre-training quality gate assertions (R-1, R-3)
+    valid_prov, prov_errs = validate_numeric_provenance(pairs)
+    if not valid_prov:
+        raise RuntimeError(f"R-3 Numeric Provenance Pre-Training Gate Failed: {prov_errs}")
+
+    valid_dist, dist_errs, stats = audit_reward_distribution(pairs, min_reward_delta=5.0)
+    if not valid_dist:
+        raise RuntimeError(f"R-1 Reward Distribution Pre-Training Gate Failed: {dist_errs}")
 
     import random
     random.seed(42)
@@ -92,16 +110,17 @@ def retrain_rl_on_multidisciplinary_cases(
     train_pairs = pairs[:n_train]
     val_pairs = pairs[n_train:]
 
-    logger.info("Retraining RL EnergyCriticPolicy on %d training cases (out of %d total)...", len(train_pairs), n)
+    logger.info("Retraining RL EnergyCriticPolicy on %d training cases (out of %d total, %d val)...", len(train_pairs), n, len(val_pairs))
 
-    # Tokenize dataset
+    # Tokenize dataset into batched tensors for SIMD / vectorized CPU acceleration
     device = torch.device("cpu")
-    encoded_data = []
-    for item in train_pairs:
-        prompt_t = tokenize_string(item["prompt"]).unsqueeze(0)
-        chosen_t = tokenize_string(item["chosen"]).unsqueeze(0)
-        rejected_t = tokenize_string(item["rejected"]).unsqueeze(0)
-        encoded_data.append((prompt_t, chosen_t, rejected_t, item))
+    train_P = torch.cat([tokenize_string(item["prompt"]).unsqueeze(0) for item in train_pairs], dim=0).to(device)
+    train_C = torch.cat([tokenize_string(item["chosen"]).unsqueeze(0) for item in train_pairs], dim=0).to(device)
+    train_R = torch.cat([tokenize_string(item["rejected"]).unsqueeze(0) for item in train_pairs], dim=0).to(device)
+
+    val_P = torch.cat([tokenize_string(item["prompt"]).unsqueeze(0) for item in val_pairs], dim=0).to(device)
+    val_C = torch.cat([tokenize_string(item["chosen"]).unsqueeze(0) for item in val_pairs], dim=0).to(device)
+    val_R = torch.cat([tokenize_string(item["rejected"]).unsqueeze(0) for item in val_pairs], dim=0).to(device)
 
     # Initialize model
     model = EnergyCriticPolicy(d_model=32, d_hidden=64).to(device)
@@ -110,83 +129,103 @@ def retrain_rl_on_multidisciplinary_cases(
     # Initial pre-RL baseline evaluation
     model.eval()
     with torch.no_grad():
-        init_margins = []
-        init_losses = []
-        for p_t, c_t, r_t, _ in encoded_data:
-            r_c = model(p_t, c_t)
-            r_r = model(p_t, r_t)
-            l, m = compute_dpo_loss(r_c, r_r)
-            init_losses.append(float(l))
-            init_margins.append(float(m))
+        r_c = model(train_P, train_C)
+        r_r = model(train_P, train_R)
+        init_l, init_m = compute_dpo_loss(r_c, r_r)
 
-    initial_loss = float(np.mean(init_losses))
-    initial_margin = float(np.mean(init_margins))
+    initial_loss = float(init_l.detach())
+    initial_margin = float(init_m.detach())
     logger.info("Pre-RL Baseline: Loss=%.4f, Margin=%.4f", initial_loss, initial_margin)
 
-    # Training loop
-    model.train()
+    # Training loop with Early Stopping (R-4) & Gradient Health (R-5)
+    best_val_loss = float("inf")
+    patience = 5
+    patience_counter = 0
+    best_state_dict = None
+
     for ep in range(epochs):
-        ep_losses = []
-        for p_t, c_t, r_t, _ in encoded_data:
-            optimizer.zero_grad()
-            r_c = model(p_t, c_t)
-            r_r = model(p_t, r_t)
-            loss, margin = compute_dpo_loss(r_c, r_r, beta=0.1)
-            loss.backward()
-            optimizer.step()
-            ep_losses.append(float(loss))
+        model.train()
+        optimizer.zero_grad()
+        r_c = model(train_P, train_C)
+        r_r = model(train_P, train_R)
+        loss, margin = compute_dpo_loss(r_c, r_r, beta=0.1)
+        loss.backward()
+
+        # Gradient health check and clipping (R-5)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        optimizer.step()
+
+        # Validation loss evaluation per epoch
+        model.eval()
+        with torch.no_grad():
+            v_c = model(val_P, val_C)
+            v_r = model(val_P, val_R)
+            v_l, v_m = compute_dpo_loss(v_c, v_r, beta=0.1)
+            current_val_loss = float(v_l.detach())
+
+        if current_val_loss < best_val_loss - 1e-4:
+            best_val_loss = current_val_loss
+            patience_counter = 0
+            best_state_dict = {k: v.clone() for k, v in model.state_dict().items()}
+        else:
+            patience_counter += 1
+            if patience_counter >= patience:
+                logger.info("Early stopping triggered at epoch %d (best val loss: %.4f)", ep + 1, best_val_loss)
+                break
+
+    if best_state_dict is not None:
+        model.load_state_dict(best_state_dict)
 
     # Post-RL evaluation
     model.eval()
     with torch.no_grad():
-        final_margins = []
-        final_losses = []
-        for p_t, c_t, r_t, _ in encoded_data:
-            r_c = model(p_t, c_t)
-            r_r = model(p_t, r_t)
-            l, m = compute_dpo_loss(r_c, r_r)
-            final_losses.append(float(l))
-            final_margins.append(float(m))
+        r_c = model(train_P, train_C)
+        r_r = model(train_P, train_R)
+        fin_l, fin_m = compute_dpo_loss(r_c, r_r)
 
-    final_loss = float(np.mean(final_losses))
-    final_margin = float(np.mean(final_margins))
+    final_loss = float(fin_l.detach())
+    final_margin = float(fin_m.detach())
     loss_red_pct = ((initial_loss - final_loss) / initial_loss) * 100.0
     margin_gain = final_margin - initial_margin
 
-    # Save model checkpoint
+    # Save versioned model checkpoint (H-5, T-6)
     output_path = Path(output_model_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(model.state_dict(), str(output_path))
-    logger.info("Saved RL checkpoint to %s", output_path)
+    checkpoint_payload = {
+        "state_dict": model.state_dict(),
+        "arch": {"d_model": 32, "d_hidden": 64, "version": "v2"},
+        "param_count": sum(p.numel() for p in model.parameters()),
+    }
+    torch.save(checkpoint_payload, str(output_path))
+    logger.info("Saved versioned RL checkpoint to %s (params=%d)", output_path, checkpoint_payload["param_count"])
 
-    # Evaluate execution improvement ratio on the validation set
-    # Baseline (unoptimized naive code without RL filtering) vs Retrained Policy (optimized)
+    # Evaluate execution improvement ratio on the validation set strictly using measured values (T-1, R-3)
     benchmark_evaluations = []
     speedup_ratios = []
     energy_reductions = []
 
     for item in val_pairs:
-        cid = item.get("case_id", "")
-        # Fallbacks just in case, but they should be in the dataset now
-        opt_lat = item.get("opt_lat", 30.0)
-        base_lat = item.get("base_lat", 100.0)
-        opt_e = item.get("opt_e", 32.0)
-        base_e = item.get("base_e", 105.0)
+        cid = item["case_id"]
+        # Strict measured fields without synthetic default fallback (T-1)
+        opt_lat = float(item["opt_lat"])
+        base_lat = float(item["base_lat"])
+        opt_e = float(item["opt_e"])
+        base_e = float(item["base_e"])
 
-        speedup = base_lat / max(1.0, opt_lat)
-        e_red = ((base_e - opt_e) / max(1.0, base_e)) * 100.0
+        speedup = base_lat / max(0.001, opt_lat)
+        e_red = ((base_e - opt_e) / max(0.001, base_e)) * 100.0
         
         speedup_ratios.append(speedup)
         energy_reductions.append(e_red)
 
         benchmark_evaluations.append({
             "case_id": cid,
-            "domain": item.get("domain", ""),
-            "baseline_latency_ms": base_lat,
-            "optimized_latency_ms": opt_lat,
+            "domain": item["domain"],
+            "baseline_latency_ms": round(base_lat, 2),
+            "optimized_latency_ms": round(opt_lat, 2),
             "speedup_ratio": round(speedup, 2),
-            "baseline_energy": base_e,
-            "optimized_energy": opt_e,
+            "baseline_energy": round(base_e, 2),
+            "optimized_energy": round(opt_e, 2),
             "energy_reduction_pct": round(e_red, 2),
         })
 

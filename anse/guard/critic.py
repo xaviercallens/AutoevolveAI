@@ -190,18 +190,16 @@ if HAS_TORCH:
 
         def __init__(self, vocab_size: int = 256, d_model: int = 32) -> None:
             super().__init__()
-            self.embedding = nn.Embedding(vocab_size, d_model, padding_idx=0)
+            self.d_model = d_model
+            self.embedding = nn.Embedding(vocab_size, d_model)
             self.conv1 = nn.Conv1d(d_model, d_model, kernel_size=3, padding=1)
             self.conv2 = nn.Conv1d(d_model, d_model, kernel_size=5, padding=2)
             self.norm = nn.LayerNorm(d_model)
 
-        def forward(self, token_ids: torch.Tensor) -> torch.Tensor:
-            x = self.embedding(token_ids)  # [B, L, D]
-            x_conv = x.transpose(1, 2)  # [B, D, L]
-            c1 = F.relu(self.conv1(x_conv))
-            c2 = F.relu(self.conv2(x_conv))
-            out = (c1 + c2).transpose(1, 2)  # [B, L, D]
-            pooled = out.mean(dim=1)  # Mean pooling -> [B, D]
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            emb = self.embedding(x).transpose(1, 2)
+            feat = F.gelu(self.conv1(emb)) + F.gelu(self.conv2(emb))
+            pooled = feat.mean(dim=-1)
             return self.norm(pooled)
 
     class EnergyCriticPolicy(nn.Module):
@@ -213,6 +211,8 @@ if HAS_TORCH:
 
         def __init__(self, d_model: int = 32, d_hidden: int = 64) -> None:
             super().__init__()
+            self.d_model = d_model
+            self.d_hidden = d_hidden
             self.encoder = LightweightCodeEncoder(vocab_size=256, d_model=d_model)
             self.head = nn.Sequential(
                 nn.Linear(d_model * 2, d_hidden),
@@ -274,7 +274,36 @@ class NeuralEnergyCritic:
         self.model_path = Path(model_path) if model_path is not None else None
 
         if self.model_path is not None and self.model_path.exists():
-            state = torch.load(self.model_path, map_location=self.device)
+            checkpoint = torch.load(self.model_path, map_location=self.device)
+            # Check if checkpoint is versioned with state_dict + arch
+            if isinstance(checkpoint, dict) and "state_dict" in checkpoint:
+                state = checkpoint["state_dict"]
+                arch = checkpoint.get("arch", {})
+                ckpt_d_model = arch.get("d_model", d_model)
+                ckpt_d_hidden = arch.get("d_hidden", d_hidden)
+            else:
+                state = checkpoint
+                # Infer architecture from state_dict tensor dimensions
+                if "encoder.embedding.weight" in state:
+                    ckpt_d_model = state["encoder.embedding.weight"].shape[1]
+                else:
+                    ckpt_d_model = d_model
+                if "head.0.weight" in state:
+                    ckpt_d_hidden = state["head.0.weight"].shape[0]
+                else:
+                    ckpt_d_hidden = d_hidden
+
+            # If checkpoint architecture differs from default instance, adapt dynamically
+            if ckpt_d_model != self.model.d_model or ckpt_d_hidden != self.model.d_hidden:
+                logger.info(
+                    "Adapting NeuralEnergyCritic from (%d, %d) to checkpoint (%d, %d)",
+                    self.model.d_model,
+                    self.model.d_hidden,
+                    ckpt_d_model,
+                    ckpt_d_hidden,
+                )
+                self.model = EnergyCriticPolicy(d_model=ckpt_d_model, d_hidden=ckpt_d_hidden).to(self.device)
+
             self.model.load_state_dict(state)
             logger.info("Loaded NeuralEnergyCritic weights from %s", self.model_path)
         self.model.eval()

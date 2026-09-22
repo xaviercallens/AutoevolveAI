@@ -515,5 +515,97 @@ def build_dpo_preference_dataset(
     }
 
 
+@mcp.tool()
+def validate_numeric_provenance(
+    file_path: str,
+    required_measured_fields: list[str] | None = None,
+    max_constant_ratio: float = 0.1,
+) -> dict[str, Any]:
+    """
+    Validates that numeric metrics in a JSONL dataset are empirically measured,
+    rejecting synthetic proxies, constant-value fabrications, and missing fields.
+    """
+    from antigravity_harness.core.hardened_evaluator import (
+        validate_numeric_provenance as _val_prov,
+    )
+
+    valid, violations = _val_prov(
+        file_path,
+        required_measured_fields=required_measured_fields,
+        max_constant_ratio=max_constant_ratio,
+    )
+    return {
+        "valid": valid,
+        "file_path": file_path,
+        "violations": violations,
+    }
+
+
+@mcp.tool()
+def audit_reward_distribution(
+    dataset_path: str,
+    min_reward_delta: float = 5.0,
+) -> dict[str, Any]:
+    """
+    Audits DPO dataset for degenerate pairs, inverted margins, and reward collapse.
+    """
+    from antigravity_harness.core.hardened_evaluator import (
+        audit_reward_distribution as _audit_dpo,
+    )
+
+    valid, violations, stats = _audit_dpo(
+        dataset_path,
+        min_reward_delta=min_reward_delta,
+    )
+    return {
+        "valid": valid,
+        "dataset_path": dataset_path,
+        "statistics": stats,
+        "violations": violations,
+    }
+
+
+@mcp.tool()
+def verify_model_budget(
+    model_path: str,
+    max_parameters: int = 50000,
+) -> dict[str, Any]:
+    """
+    Verifies that a saved PyTorch model checkpoint satisfies parameter budget constraints (<50k).
+    """
+    from antigravity_harness.core.hardened_evaluator import (
+        verify_model_budget as _verify_budget,
+    )
+
+    passed, param_count, msg = _verify_budget(model_path, max_params=max_parameters)
+    return {
+        "passed": passed,
+        "model_path": model_path,
+        "parameter_count": param_count,
+        "max_parameters": max_parameters,
+        "message": msg,
+    }
+
+
+@mcp.tool()
+def detect_renamed_symbols(
+    old_content: str,
+    new_content: str,
+    search_root: str = ".",
+) -> dict[str, Any]:
+    """
+    Identifies removed symbols between old and new file content and checks for dangling references.
+    """
+    from antigravity_harness.core.hardened_evaluator import (
+        detect_renamed_symbols as _detect_symbols,
+    )
+
+    dangling = _detect_symbols(old_content, new_content, search_root=search_root)
+    return {
+        "clean": len(dangling) == 0,
+        "dangling_references": dangling,
+    }
+
+
 if __name__ == "__main__":
     mcp.run()

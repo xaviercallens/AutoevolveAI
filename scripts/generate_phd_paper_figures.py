@@ -109,14 +109,14 @@ def generate_fig2_benchmark_empirical_metrics():
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(11, 7), dpi=300)
 
     # 1. Invariant Error Distribution (Log scale)
-    bp1 = ax1.boxplot([np.log10(errors[d]) for d in domains], labels=domain_labels, patch_artist=True)
+    bp1 = ax1.boxplot([np.log10(errors[d]) for d in domains], tick_labels=domain_labels, patch_artist=True)
     colors = ["#90CAF9", "#CE93D8", "#A5D6A7", "#FFE082"]
     for patch, col in zip(bp1["boxes"], colors):
         patch.set_facecolor(col)
         patch.set_edgecolor("#37474F")
-    ax1.set_ylabel("$\\log_{10}(\\text{Invariant Error } \\epsilon_{\\text{inv}})$")
+    ax1.set_ylabel(r"$\log_{10}(\text{Invariant Error } \epsilon_{\mathrm{inv}})$")
     ax1.set_title("(a) Physical Invariant Precision Across Domains")
-    ax1.axhline(-6, color="#C62828", linestyle="--", alpha=0.7, label="Acceptance Gate ($\\epsilon \\le 10^{-6}$)")
+    ax1.axhline(-6, color="#C62828", linestyle="--", alpha=0.7, label=r"Acceptance Gate ($\epsilon \leq 10^{-6}$)")
     ax1.grid(True, linestyle=":", alpha=0.5)
     ax1.legend(loc="lower left", fontsize=8)
 
@@ -137,7 +137,7 @@ def generate_fig2_benchmark_empirical_metrics():
     ax2.legend(loc="upper right", fontsize=8)
 
     # 3. Memory Footprint Distribution
-    bp3 = ax3.boxplot([memories[d] for d in domains], labels=domain_labels, patch_artist=True)
+    bp3 = ax3.boxplot([memories[d] for d in domains], tick_labels=domain_labels, patch_artist=True)
     for patch, col in zip(bp3["boxes"], colors):
         patch.set_facecolor(col)
         patch.set_edgecolor("#37474F")

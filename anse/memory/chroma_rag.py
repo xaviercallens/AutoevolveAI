@@ -116,6 +116,39 @@ class ChromaRAG:
             metadatas=[meta],
         )
 
+    def index_code_solutions_batch(
+        self,
+        items: list[dict[str, Any]],
+    ) -> None:
+        """Batch indexes multiple verified solutions for high-throughput ONNX/GPU encoding."""
+        if not items:
+            return
+        batch_ids = []
+        batch_docs = []
+        batch_metas = []
+        for it in items:
+            doc_id = it["doc_id"]
+            code_content = it.get("code_content", "")
+            task_prompt = it.get("task_prompt", "")
+            language = it.get("language", "python")
+            energy = it.get("energy", 0.0)
+            meta = it.get("metadata", {})
+            meta.update({
+                "language": language,
+                "energy": energy,
+                "task_prompt_preview": task_prompt[:150],
+            })
+            document_text = f"Task: {task_prompt}\n\nSolution ({language}):\n{code_content}"
+            batch_ids.append(doc_id)
+            batch_docs.append(document_text)
+            batch_metas.append(meta)
+
+        self.code_collection.upsert(
+            ids=batch_ids,
+            documents=batch_docs,
+            metadatas=batch_metas,
+        )
+
     def index_literature_document(
         self,
         doc_id: str,

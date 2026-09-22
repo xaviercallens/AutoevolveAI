@@ -4,6 +4,8 @@ Automated LaTeX Builder and PDF Compiler for ANSE Formal Scientific Paper.
 - Embeds verified numeric results from Python execution across 25 Physical World Models.
 - Embeds the 20 PhD Theoretical Physics Conservation Laws from verified benchmark receipts.
 - Details the Code Neurobrain with Lean 4 formal verification pipeline (2,506 proof jobs).
+- Decouples discrete monotone energy descent gating from continuous Banach contraction in Lean 4.
+- Explicitly scopes micro-kernel invariant verification vs. supercomputing discovery.
 - Details the Reinforcement Learning Pipeline (<50k parameter Critic, DPO loss, empirical speedups).
 - Embeds publication figures (fig1, fig2, fig3).
 - Compiles via pdflatex into publication-ready PDF.
@@ -158,9 +160,11 @@ def build_tex_source() -> str:
 \IEEEtitleabstractindextext{%
 \begin{abstract}
 We introduce \textbf{ANSE (Autopoietic Neuro-Symbolic Energy-based Model)}, an autonomous artificial intelligence architecture grounded in the non-equilibrium thermodynamics of computation. Rather than optimizing subjective natural language heuristics, ANSE evaluates candidate code modifications, neural representations, and symbolic refactorings against an objective physical Energy Functional:
-$E = w_t \cdot \tau_{\text{wall}} + w_m \cdot M_{\text{peak}} + \Pi_{\text{penalty}}$.
-We present a comprehensive physical benchmark spanning 25 multi-scale physical world models and 20 PhD-level theoretical physics conservation laws across quantum electrodynamics, general relativity, fusion magnetohydrodynamics, and cosmology. For every physical problem, we formalize the \textit{Four Definitions Contract}: (1) Mathematical \& Physical Formulation, (2) Conservation Laws \& Physical Invariant Functionals, (3) Algorithmic Discretization \& Numerical Schemes, and (4) Quantitative Acceptance Thresholds. 
-We detail the \textbf{Code Neurobrain} verified by 2,506 formal Lean 4 proof jobs under \texttt{lake build}, establishing mathematical proofs for zero-trust execution attestation, AST anti-simulation gates, and Banach fixed-point autopoietic hot-swapping.
+$E = w_t \cdot \tau_{\text{wall}} + w_m \cdot M_{\text{peak}} + \Pi_{\text{barrier}}$,
+where $\Pi_{\text{barrier}} = 10^6 \cdot \mathbb{I}(\text{violation})$ is a fail-closed discrete indicator barrier penalty functional.
+We present a comprehensive physical benchmark spanning 25 multi-scale physical world models and 20 theoretical physics conservation laws across quantum electrodynamics, general relativity, fusion magnetohydrodynamics, and cosmology. For every physical problem, we formalize the \textit{Four Definitions Contract}: (1) Mathematical \& Physical Formulation, (2) Conservation Laws \& Physical Invariant Functionals, (3) Algorithmic Discretization \& Numerical Schemes, and (4) Quantitative Acceptance Thresholds.
+The benchmark is scoped as \textbf{deterministic micro-kernels} ($0.01$ to $85\text{ ms}$, $\le 4\text{ MB}$ RAM) designed for real-time verification and DPO distillation, distinct from open-ended supercomputing simulations.
+We detail the \textbf{Code Neurobrain} verified by 2,506 formal Lean 4 proof jobs under \texttt{lake build}. Crucially, we decouple convergence into two mathematically rigorous regimes: discrete code updates are governed by a \textit{Monotone Energy Descent Rejection Gate} ($\Delta E \le -\epsilon$, guaranteed to terminate in $\le \lfloor E(c_0)/\epsilon \rfloor$ steps without requiring discrete Lipschitz continuity), while the \textit{Banach Fixed-Point Contraction Theorem} applies to continuous normed soft-prompt and fast-weight parameter manifolds.
 Furthermore, we introduce an empirical \textbf{Reinforcement Learning Pipeline} with a parameter-budgeted Critic network ($<50\text{k}$ parameters, 22,785 parameters) trained via Direct Preference Optimization (DPO). The pipeline demonstrates an average speedup of $475.25\times$ (up to $4062.5\times$), a $20.10\%$ reduction in DPO loss ($0.6937 \to 0.5543$), an average energy reduction of $89.31\%$, and strict anti-hallucination provenance receipts across 120 multidisciplinary benchmarks.
 \end{abstract}
 
@@ -177,10 +181,10 @@ Energy-Based Models, Physics of Computation, Lean 4 Formal Verification, Joint E
 
 ANSE establishes computation as a physical process governed by the laws of thermodynamics (Landauer 1961, Bennett 1982, Friston 2010). In ANSE, all candidate algorithms and world models are scored against an objective physical functional:
 \begin{equation}
-E = w_t \cdot \tau_{\text{wall}} + w_m \cdot M_{\text{peak}} + \Pi_{\text{penalty}}
+E = w_t \cdot \tau_{\text{wall}} + w_m \cdot M_{\text{peak}} + \Pi_{\text{barrier}}
 \label{eq:energy_functional}
 \end{equation}
-where $\tau_{\text{wall}}$ is the execution duration (ms), $M_{\text{peak}}$ is the peak resident heap memory allocation (MB), and $\Pi_{\text{penalty}} = 10^6$ is an insurmountable energy wall triggered whenever an execution crashes, produces incorrect invariant outputs, or contains AST-level stubs (\texttt{pass}, \texttt{...}, \texttt{mock\_*}). The system accepts code refactorings if and only if $\Delta E = E_{\text{child}} - E_{\text{parent}} < 0$.
+where $\tau_{\text{wall}}$ is the execution duration (ms), $M_{\text{peak}}$ is the peak resident heap memory allocation (MB), and $\Pi_{\text{barrier}} = 10^6 \cdot \mathbb{I}(\text{violation})$ is an insurmountable fail-closed indicator barrier penalty triggered whenever an execution crashes, produces incorrect invariant outputs, or contains AST-level stubs (\texttt{pass}, \texttt{...}, \texttt{mock\_*}). The system accepts code refactorings if and only if $\Delta E = E_{\text{child}} - E_{\text{parent}} < 0$.
 
 \begin{figure}[!t]
 \centering
@@ -190,7 +194,7 @@ where $\tau_{\text{wall}}$ is the execution duration (ms), $M_{\text{peak}}$ is 
 \end{figure}
 
 \section{The Four Definitions Contract for Physical Problems}
-To eliminate ambiguity, every physical problem and world model in ANSE is formalized under four rigorous definitions.
+To eliminate ambiguity, every physical problem and world model in ANSE is formalized under four rigorous definitions, representing a clean division of labor between human domain expertise and autonomous AI program synthesis:
 
 \begin{definition}[Mathematical \& Physical Formulation]
 Specifies the state manifold $\mathcal{M}$, the configuration space $\mathcal{Q}$, and the continuous dynamical system via ordinary or partial differential equations $\dot{\mathbf{x}} = \mathbf{f}(\mathbf{x}, t)$, Hamiltonian $\mathcal{H}(\mathbf{q}, \mathbf{p})$, or Lagrangian action $\mathcal{S} = \int \mathcal{L} \, dt$.
@@ -209,10 +213,12 @@ Specifies the mathematical tolerance $\epsilon_{\text{tol}}$ such that the physi
 \begin{equation}
 \mathcal{V}(\mathbf{x}) = \begin{cases} 
 \text{TRUE}, & \text{if } \|\mathcal{I}(\mathbf{x})\| \le \epsilon_{\text{tol}} \\
-\text{FALSE}, & \text{otherwise} \implies E = 10^6
+\text{FALSE}, & \text{otherwise} \implies \Pi_{\text{barrier}} = 10^6
 \end{cases}
 \end{equation}
 \end{definition}
+
+Under this contract, the human domain expert defines the physical specifications (Definitions 1–4), while the autonomous AI model solves the constrained program synthesis and compiler autotuning problem: producing bug-free, zero-stub, SIMD-vectorized code that provably satisfies $\mathcal{I}(\mathbf{x}) \le \epsilon_{\text{tol}}$ under real execution.
 
 \section{Frontier Physical World Models (PWM-21 to PWM-25)}
 
@@ -276,8 +282,8 @@ Specifies the mathematical tolerance $\epsilon_{\text{tol}}$ such that the physi
 \label{fig:physics_simulations}
 \end{figure*}
 
-\section{PhD Theoretical Physics Conservation Laws (PHYS-11 to PHYS-30)}
-Beyond classical and continuum mechanics, ANSE enforces fundamental symmetries and conservation laws across high-energy theory, quantum field theory, and quantum information. Table~\ref{tab:phd_physics} provides empirical validation for the 20 PhD-level theoretical physics cases:
+\section{Theoretical Physics Conservation Laws (PHYS-11 to PHYS-30)}
+Beyond classical and continuum mechanics, ANSE enforces fundamental symmetries and conservation laws across high-energy theory, quantum field theory, and quantum information. Table~\ref{tab:phd_physics} provides empirical validation for the 20 theoretical physics cases:
 \begin{itemize}
     \item \textbf{Yang-Mills Instantons (PHYS-11):} Topological charge quantization $\mathcal{Q} = \frac{1}{8\pi^2} \int \text{Tr}(F \wedge F) = 1 \in \mathbb{Z}$.
     \item \textbf{Ryu-Takayanagi AdS/CFT (PHYS-12):} Boundary entanglement entropy bounded by minimal bulk extremal surface area $S_A = \text{Area}(\gamma_A) / (4 G_N)$.
@@ -287,6 +293,9 @@ Beyond classical and continuum mechanics, ANSE enforces fundamental symmetries a
     \item \textbf{Callan-Symanzik QCD Asymptotic Freedom (PHYS-26):} Negative 1-loop beta function coefficient $\beta_0 = \frac{1}{16\pi^2}(11 - \frac{2}{3}N_f) > 0$.
     \item \textbf{Hawking-Page AdS Transition (PHYS-30):} Free energy phase transition $I_{\text{AdS-BH}} - I_{\text{thermal AdS}} = \frac{\pi r_+^2}{4 G_N}(1 - r_+^2/L^2)$.
 \end{itemize}
+
+\subsection{Scope and Nature: Deterministic Micro-Kernels vs. HPC Simulations}
+It is essential to distinguish between \textit{theoretical domain complexity} and \textit{computational benchmark scale}. The mathematical concepts in Table~\ref{tab:phd_physics} represent advanced doctoral-level theory. However, the computational implementations are explicitly scoped as \textbf{deterministic micro-kernels} ($0.01$ to $85.0\text{ ms}$, $\le 4\text{ MB}$ RSS). They are not multi-day supercomputing simulations (such as full-scale Lattice QCD or large-scale numerical relativity). Their purpose is to provide sub-millisecond, unit-level invariant verification for closed-loop compiler gates and high-throughput RL post-training. The benchmark tests the AI model's capacity to translate complex physics into bug-free, invariant-preserving code, not open-ended scientific discovery.
 
 \begin{table*}[!t]
 \centering
@@ -303,7 +312,7 @@ Beyond classical and continuum mechanics, ANSE enforces fundamental symmetries a
 
 \begin{table*}[!t]
 \centering
-\caption{20 PhD Theoretical Physics Conservation Laws \& Invariants (PHYS-11 to PHYS-30)}
+\caption{20 Theoretical Physics Conservation Laws \& Invariants (PHYS-11 to PHYS-30)}
 \label{tab:phd_physics}
 \begin{tabular}{llccccc}
 \toprule
@@ -314,7 +323,7 @@ Beyond classical and continuum mechanics, ANSE enforces fundamental symmetries a
 \end{tabular}
 \end{table*}
 
-\section{The Code Neurobrain \& Lean 4 Formal Verification Pipeline}
+\section{The Code Neurobrain: Formal Verification in Lean 4}
 The central intelligence engine of ANSE is the **Code Neurobrain**, an active inference loop that operates continuously on source code, abstract syntax trees, and formal mathematical proofs.
 
 \subsection{Lean 4 Formal Proof Verification}
@@ -327,23 +336,38 @@ All core architectural axioms, energy descent properties, and convergence theore
     A natural-language declaration of completion from an LLM carries zero epistemic weight.
     \item \textbf{Anti-Simulation Gate (\texttt{antiSimulation}):}
     \begin{equation}
-    \text{Stub}(\text{AST}) \lor \text{Mock}(\text{AST}) \implies E(\text{task}) = 10^6
+    \text{Stub}(\text{AST}) \lor \text{Mock}(\text{AST}) \implies \Pi_{\text{barrier}} = 10^6
     \end{equation}
-    Presence of empty functions, ellipsis (\texttt{...}), \texttt{pass}, or mock identifiers triggers maximum physical energy penalty.
+    Presence of empty functions, ellipsis (\texttt{...}), \texttt{pass}, or mock identifiers triggers the discrete barrier penalty wall.
     \item \textbf{Proof-of-Execution (\texttt{proofOfExecution}):}
     Execution telemetry enforces that unit tests must execute the intended production routines via \texttt{sys.settrace}, preventing trivial passing tests.
 \end{itemize}
 
-\subsection{Autopoietic Banach Fixed-Point Contraction}
-The self-repair and self-refactoring capacity of the Code Neurobrain is formalized through Banach's Contraction Mapping Theorem (\texttt{ANSE.Theorems.autopoiesis\_exists}):
-\begin{theorem}[Autopoietic Fixed-Point Convergence]
-Let $\mathcal{A}$ be a complete metric space of agent architectures equipped with physical energy metric $d_{\mathcal{E}}(A_1, A_2) = |E(A_1) - E(A_2)|$. If the self-improvement operator $\Phi: \mathcal{A} \to \mathcal{A}$ satisfies Lipschitz condition $\|\Phi(A_1) - \Phi(A_2)\| \le k \|A_1 - A_2\|$ with $k < 1$, then there exists a unique autopoietic fixed point $A^* \in \mathcal{A}$ such that $\Phi(A^*) = A^*$.
-\end{theorem}
+\subsection{Decoupling Discrete Monotone Gating from Continuous Banach Contraction}
+A critical theoretical consideration in autonomous self-improving systems is the mathematical nature of convergence. Code generation over discrete syntax trees is inherently non-convex, discontinuous, and discrete: a single character mutation can introduce an infinite loop or syntax crash, causing a discontinuous jump in energy. Therefore, claiming that stochastic LLM code generation constitutes a smooth contraction mapping over discrete code strings is mathematically unsound.
 
-Furthermore, by \texttt{ANSE.Theorems.safe\_improvement\_nonincreasing}, every permitted state transition satisfies monotonic thermodynamic non-increase:
-\begin{equation}
-\Delta E = E_{\text{child}} - E_{\text{parent}} < 0 \implies E(A_{t+1}) \le E(A_t)
-\end{equation}
+In ANSE, the convergence of the self-improvement architecture is decoupled into two formally separated regimes, both mathematically formalized in Lean 4 (\texttt{formal/ANSE/Autopoiesis.lean}):
+\begin{enumerate}
+    \item \textbf{Discrete Code Space: Gated Monotone Energy Descent.}
+    Let $\mathcal{C}$ denote the space of discrete Abstract Syntax Trees (ASTs). A stochastic generator proposes candidate code mutations $c^* \sim \mathcal{G}(c_t)$. The hypervisor imposes a fail-closed \textit{Thermodynamic Acceptance Gate}:
+    \begin{equation}
+    c_{t+1} = \begin{cases} c^*, & \text{if } E(c^*) + \epsilon \le E(c_t) \\ c_t, & \text{otherwise (immediate rollback)} \end{cases}
+    \end{equation}
+    This is formalized in Lean 4 as \texttt{ANSE.Autopoiesis.safeProposal}, and we formally prove monotonicity in \texttt{ANSE.Autopoiesis.safe\_improvement\_nonincreasing}:
+    \begin{theorem}[\textbf{Monotone Energy Descent under Rejection Gating}]
+    For any valid proposal satisfying $\text{safeProposal}(\epsilon, E, c_t, c^*)$, the energy is strictly non-increasing:
+    $E(c_{t+1}) \le E(c_t) - \epsilon \le E(c_t)$.
+    Because physical energy is strictly non-negative ($E(c) \ge 0$), the sequence $\{E(c_t)\}$ is strictly decreasing and bounded below by $0$. Hence, any sequence of accepted code mutations terminates in at most $\lfloor E(c_0) / \epsilon \rfloor$ steps, definitively ruling out infinite refactoring cycles without requiring any Lipschitz continuity over discrete strings.
+    \end{theorem}
+
+    \item \textbf{Continuous Latent Manifolds: Banach Fixed-Point Contraction.}
+    In contrast, continuous soft-prompt latent prefixes $z \in \mathbb{R}^{d_{\text{latent}}}$ and fast-weight adapter matrices $\theta \in \Theta_{\text{fast}}$ reside in complete normed vector spaces (Banach spaces). Under regularized gradient flow with quadratic curvature penalties, the continuous update operator $\Phi_{\text{cont}}$ satisfies a contraction mapping:
+    \begin{theorem}[\textbf{Continuous Banach Contraction, Proved in Lean 4}]
+    (\texttt{ANSE.Autopoiesis.autopoiesis\_exists}): Let $\mathcal{S}$ be a complete metric space of continuous representation states. If the regularized continuous update operator $\Phi_{\text{cont}}$ satisfies:
+    $\exists k \in [0, 1), \, \forall s_1, s_2 \in \mathcal{S}, \, \|\Phi_{\text{cont}}(s_1) - \Phi_{\text{cont}}(s_2)\| \le k \|s_1 - s_2\|$,
+    then by the Banach Fixed-Point Theorem (verified via Mathlib's \texttt{ContractingWith.fixedPoint\_isFixedPt}), there exists a unique, globally attracting fixed point $s^* \in \mathcal{S}$ such that $\Phi_{\text{cont}}(s^*) = s^*$.
+    \end{theorem}
+\end{enumerate}
 
 \section{Reinforcement Learning Pipeline \& Empirical Optimization}
 To accelerate the Code Neurobrain beyond trial-and-error sandbox search, ANSE integrates an empirical **Direct Preference Optimization (DPO)** pipeline.
@@ -364,7 +388,7 @@ In accordance with the Micro-ML contract ($N_{\text{params}} < 50,000$), the Cri
 \end{itemize}
 
 \subsection{DPO Formulation on Empirical Telemetry}
-Given prompt $x$, chosen solution $y_w$, and rejected solution $y_l$, the objective maximizes the log-likelihood margin:
+Given prompt $x$, winning candidate $y_w$, and losing candidate $y_l$, the objective maximizes the log-likelihood margin:
 \begin{equation}
 \mathcal{L}_{\text{DPO}}(\theta) = -\mathbb{E}_{(x, y_w, y_l)} \left[ \ln \sigma \left( \beta \left( r_\theta(x, y_w) - r_\theta(x, y_l) \right) \right) \right]
 \end{equation}
@@ -408,7 +432,7 @@ To eliminate failure modes on resource-constrained reasoning models, ANSE implem
 \begin{itemize}
     \item \textbf{D1 (Compressed Pain Prompts):} Strips verbose execution dumps to concise AST error spans ($<100$ lines).
     \item \textbf{D2 (Capacity Gating):} Adaptively halts unproductive retry branches based on token consumption.
-    \item \textbf{D3 (Fail-Fast Early Stopping):} Halts iterations immediately upon catastrophic syntax failure ($E = 10^6$) or diverging loss.
+    \item \textbf{D3 (Fail-Fast Early Stopping):} Halts iterations immediately upon catastrophic syntax failure ($E \ge 10^6$) or diverging loss.
     \item \textbf{D4 (Skeleton Lessons):} Extracts interface-only learnings for long-term memory insertion.
     \item \textbf{D5–D8 (Tier Classification \& Live Swapping):} Selects prompt strategies adaptively and executes autopoietic runtime swapping.
 \end{itemize}
@@ -421,8 +445,14 @@ The Anti-Hallucination Numeric Execution Harness (\texttt{paper\_harness.py}) el
     \item \textbf{Live Reference Grounding:} Fetches external literature from arXiv over HTTPS, ensuring zero hallucinated citations.
 \end{enumerate}
 
-\section{Conclusion}
-ANSE establishes an empirical and mathematical foundation for autonomous artificial intelligence. By binding neural generation to the thermodynamic physics of computation, formal verification in Lean 4, and empirical reinforcement learning, ANSE eliminates phantom completions and numeric hallucinations, opening new horizons for self-improving scientific discovery.
+\section{Conclusion \& Open Grand Challenges}
+ANSE establishes an empirical and mathematical foundation for autonomous artificial intelligence. By binding neural generation to the thermodynamic physics of computation, formal verification in Lean 4, and empirical reinforcement learning, ANSE eliminates phantom completions and numeric hallucinations.
+
+We clearly delineate the boundary of what has been achieved:
+\begin{itemize}
+    \item \textbf{Achieved:} Automated, closed-loop invariant verification and autotuning for complex mathematical specifications under hardware constraints.
+    \item \textbf{Open Challenge:} Autonomous scientific discovery—the ability of an AI system to formulate novel conservation laws and hypothesize new physical equations without human specification.
+\end{itemize}
 
 \section*{References}
 \begin{enumerate}

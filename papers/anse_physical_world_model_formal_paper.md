@@ -11,11 +11,11 @@
 
 We introduce **ANSE (Autopoietic Neuro-Symbolic Energy-based Model)**, a novel artificial intelligence architecture grounded in the non-equilibrium thermodynamics of computation. Rather than optimizing subjective language heuristics, ANSE evaluates all proposed algorithms, symbolic refactorings, and predictive world models against an objective physical Energy Functional:
 
-$$E = w_t \cdot \tau_{\text{wall}} + w_m \cdot M_{\text{peak}} + \Pi_{\text{penalty}}$$
+$$E = w_t \cdot \tau_{\text{wall}} + w_m \cdot M_{\text{peak}} + \Pi_{\text{barrier}}$$
 
 We present a comprehensive physical benchmark spanning **25 multi-scale physical world models** and **20 PhD-level theoretical physics conservation laws** across quantum electrodynamics, general relativity, tokamak magnetohydrodynamics, and cosmology. For every physical problem, we formalize the *Four Definitions Contract*: (1) Mathematical & Physical Formulation, (2) Conservation Laws & Physical Invariant Functionals, (3) Algorithmic Discretization & Numerical Schemes, and (4) Quantitative Acceptance Thresholds.
 
-We detail the **Code Neurobrain**, an active inference engine verified by **2,506 formal Lean 4 proof jobs** under `lake build`, establishing mathematical soundness for zero-trust execution attestation, AST anti-simulation gates, and Banach fixed-point autopoietic hot-swapping. Furthermore, we introduce an empirical **Reinforcement Learning Pipeline** featuring a parameter-budgeted Critic network ($<50\text{k}$ parameters, 22,785 parameters) trained via Direct Preference Optimization (DPO). The pipeline demonstrates an average speedup of $\mathbf{475.25\times}$ (up to $\mathbf{4062.5\times}$), a $\mathbf{20.10\%}$ reduction in DPO loss ($0.6937 \to 0.5543$), an average energy reduction of $\mathbf{89.31\%}$, and strict anti-hallucination provenance receipts across 120 multidisciplinary benchmarks.
+We detail the **Code Neurobrain**, an active inference engine verified by **2,506 formal Lean 4 proof jobs** under `lake build`, establishing mathematical soundness for zero-trust execution attestation, AST anti-simulation gates, and the formal decoupling between discrete monotone energy descent gating (`safe_improvement_nonincreasing`) and continuous Banach fixed-point contraction (`autopoiesis_exists`). Furthermore, we introduce an empirical **Reinforcement Learning Pipeline** featuring a parameter-budgeted Critic network ($<50\text{k}$ parameters, 22,785 parameters) trained via Direct Preference Optimization (DPO). The pipeline demonstrates an average speedup of $\mathbf{475.25\times}$ (up to $\mathbf{4062.5\times}$), a $\mathbf{20.10\%}$ reduction in DPO loss ($0.6937 \to 0.5543$), an average energy reduction of $\mathbf{89.31\%}$, and strict anti-hallucination provenance receipts across 120 multidisciplinary benchmarks.
 
 ---
 
@@ -23,13 +23,13 @@ We detail the **Code Neurobrain**, an active inference engine verified by **2,50
 
 The historical trajectory of autonomous artificial intelligence has been predominantly anchored in statistical sequence-to-sequence prediction over massive text corpora. While proficient at surface-level semantic mimicry, contemporary generative models are epistemically ungrounded: they do not possess an internal model of conservation laws, physical symmetries, or thermodynamic bounds.
 
-In ANSE, computation is treated as a physical process governed by non-equilibrium thermodynamics (Landauer 1961, Bennett 1982, Friston 2010). In ANSE, all candidate algorithms, symbolic refactorings, and world models are scored against an objective physical functional:
+In ANSE, computation is treated as a physical process governed by non-equilibrium thermodynamics (Landauer 1961, Bennett 1982, Friston 2010). All candidate algorithms, symbolic refactorings, and world models are scored against an objective physical functional:
 
-$$E = w_t \cdot \tau_{\text{wall}} + w_m \cdot M_{\text{peak}} + \Pi_{\text{penalty}}$$
+$$E = w_t \cdot \tau_{\text{wall}} + w_m \cdot M_{\text{peak}} + \Pi_{\text{barrier}}$$
 
-where $\tau_{\text{wall}}$ is the execution duration in milliseconds, $M_{\text{peak}}$ is the peak resident heap memory allocation in megabytes, and $\Pi_{\text{penalty}} = 10^6$ is an insurmountable energy wall triggered whenever an execution crashes, produces incorrect invariant outputs, or contains AST-level stubs (`pass`, `...`, `mock_*`). The system accepts code refactorings if and only if thermodynamic superiority is proven:
+where $\tau_{\text{wall}}$ is the execution duration in milliseconds, $M_{\text{peak}}$ is the peak resident heap memory allocation in megabytes, and $\Pi_{\text{barrier}} = 10^6 \cdot \mathbb{I}(\text{violation})$ is a fail-closed discrete indicator barrier penalty functional triggered whenever an execution crashes, violates invariant bounds $\|\mathcal{I}(\mathbf{x})\| > \epsilon_{\text{tol}}$, or contains AST-level stubs (`pass`, `...`, `mock_*`). The hypervisor enforces a monotonic acceptance gate:
 
-$$\Delta E = E_{\text{child}} - E_{\text{parent}} < 0$$
+$$\Delta E = E_{\text{child}} - E_{\text{parent}} \le -\epsilon \quad (\epsilon > 0)$$
 
 ---
 
@@ -42,11 +42,9 @@ ANSE is formulated mathematically through the unification of three theoretical p
 
 $$\mathcal{L}_{\text{JEPA}} = \|\hat{E}(x, z) - E_{\text{actual}}\|^2 + \lambda_{\text{var}} \mathcal{L}_{\text{var}} + \lambda_{\text{cov}} \mathcal{L}_{\text{cov}}$$
 
-3. **Autopoiesis & Banach Fixed-Point Contraction:** The agentic codebase possesses self-referential autopoietic closure. Let $\mathcal{C}$ denote the operational space of the hypervisor. A code refactoring operator $\Phi: \mathcal{C} \to \mathcal{C}$ satisfies the Banach contraction mapping theorem:
-
-$$\|\Phi(C_1) - \Phi(C_2)\|_{\mathcal{E}} \le k \|C_1 - C_2\|_{\mathcal{E}}, \quad k < 1$$
-
-guaranteeing exponential convergence to a unique, thermodynamically optimal fixed point $C^*$ without process halt or state degradation.
+3. **Decoupled Autopoiesis: Discrete Gating vs. Continuous Banach Contraction:** The agentic codebase self-regulates across two mathematically separated domains:
+   - **Discrete Code Space (Gated Monotone Energy Descent):** Discrete AST modifications $c^* \sim \mathcal{G}(c_t)$ are filtered by a strict thermodynamic acceptance gate $E(c^*) + \epsilon \le E(c_t)$. Because physical energy is bounded below ($E \ge 0$), the discrete transition sequence terminates in at most $\lfloor E(c_0)/\epsilon \rfloor$ steps, mathematically ruling out cyclic churn without assuming nonexistent Lipschitz continuity over discrete strings.
+   - **Continuous Latent Space (Banach Fixed-Point Contraction):** Continuous soft-prompt vectors $z \in \mathbb{R}^{d_{\text{latent}}}$ and fast-weight adapter matrices $\theta \in \Theta_{\text{fast}}$ reside in complete normed metric spaces. Under regularized gradient flow, the continuous update operator $\Phi_{\text{cont}}$ satisfies $\|\Phi_{\text{cont}}(s_1) - \Phi_{\text{cont}}(s_2)\| \le k \|s_1 - s_2\|$ ($k < 1$), guaranteeing exponential convergence to a unique fixed point $s^*$ via the Banach Fixed-Point Theorem.
 
 ---
 
@@ -163,15 +161,14 @@ All fundamental theorems governing ANSE are specified and proven in Lean 4 under
 1. **Zero-Trust Completion Axiom (`ANSE.StrongGravity.zeroTrustCompletion`):**
    An agent cannot complete a subtask through conversational output. Completion is a strictly binary transition governed exclusively by an external cryptographic token minted by `execution_attestation.py`.
 2. **Anti-Simulation Axiom (`ANSE.StrongGravity.antiSimulation`):**
-   Any detection of `pass`, `...`, `NotImplementedError`, or hardcoded synthetic mock prefixes (`mock_`, `dummy_`, `fake_`) in production paths automatically transitions the subtask state to `FAILED` with maximum energy penalty ($E = 10^6$).
+   Any detection of `pass`, `...`, `NotImplementedError`, or hardcoded synthetic mock prefixes (`mock_`, `dummy_`, `fake_`) in production paths automatically transitions the subtask state to `FAILED` with fail-closed barrier penalty ($\Pi_{\text{barrier}} = 10^6$).
 3. **Proof-of-Execution Axiom (`ANSE.StrongGravity.proofOfExecution`):**
    Unit tests cannot succeed in a vacuum. The test harness employs `sys.settrace` and coverage telemetry to verify that the execution trace entered and executed the target production module.
 4. **Ephemeral Context Axiom (`ANSE.StrongGravity.ephemeralContext`):**
    Tool executions producing verbose output (>60 lines) are automatically truncated and offloaded to `.scratchpad/<hash>.log`, keeping the model's active context lean, dense, and hallucination-free.
-5. **Autopoietic Fixed-Point Convergence (`ANSE.Theorems.autopoiesis_exists`):**
-   Banach fixed-point contraction guarantees the existence and uniqueness of a self-sustaining autopoietic equilibrium in architecture space without execution crashes.
-6. **Monotonic Non-Increasing Energy Descent (`ANSE.Theorems.safe_improvement_nonincreasing`):**
-   Thermodynamic gating guarantees non-increasing energy monotonicity: $\Delta E < 0 \implies E(s_{t+1}) \le E(s_t)$.
+5. **Decoupled Convergence Guarantees:**
+   - **Discrete Code Space Monotone Descent (`ANSE.Theorems.safe_improvement_nonincreasing`):** For discrete AST mutations, if candidate $c^*$ satisfies `safeProposal` ($E(c^*) \le E(c) - \epsilon$), the accepted state sequence is strictly non-increasing: $E(c_{t+1}) \le E(c_t) - \epsilon$. Because $E(c) \ge 0$, any sequence of accepted code refactorings terminates in at most $\lfloor E(c_0)/\epsilon \rfloor$ steps, ruling out infinite loops without requiring Lipschitz continuity over discrete strings.
+   - **Continuous Representation Banach Contraction (`ANSE.Theorems.autopoiesis_exists`):** Continuous latent states and fast-weight adapter matrices inhabit complete normed metric spaces where regularized operator $\Phi_{\text{cont}}$ satisfies $\|\Phi(s_1) - \Phi(s_2)\| \le k \|s_1 - s_2\|$ ($k < 1$). Mathlib's `ContractingWith.fixedPoint_isFixedPt` formally proves existence and uniqueness of the autopoietic fixed point.
 
 ---
 
@@ -257,9 +254,13 @@ To eradicate this epistemic vulnerability, we developed the **Anti-Hallucination
 
 ---
 
-## 12. Conclusion & Discussion
+## 12. Conclusion, Scope & Open Grand Challenges
 
-ANSE establishes an empirical and mathematical foundation for autonomous artificial intelligence. By binding neural generation to the thermodynamic physics of computation, formal verification in Lean 4, and empirical reinforcement learning, ANSE eliminates phantom completions and numeric hallucinations, opening new horizons for self-improving scientific discovery.
+ANSE establishes an empirical and mathematical foundation for autonomous artificial intelligence. By binding neural generation to the thermodynamic physics of computation, formal verification in Lean 4, and empirical reinforcement learning, ANSE eliminates phantom completions and numeric hallucinations.
+
+We clearly delineate the boundary of what has been achieved:
+- **Achieved:** Automated, closed-loop invariant verification and compiler autotuning for complex mathematical specifications under hardware constraints ($<50\text{k}$ parameter budget, sub-millisecond execution, zero stubs, machine-precision invariant conservation).
+- **Open Challenge:** Autonomous scientific discovery—the ability of an AI system to formulate novel conservation laws and hypothesize new physical equations without human specification.
 
 ---
 

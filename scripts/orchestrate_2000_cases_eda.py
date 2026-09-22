@@ -64,8 +64,8 @@ def evaluate_cohort_iteration(records: list[dict[str, Any]], policy_name: str, i
     rewards, energies, passes, edit_distances = [], [], [], []
 
     for item in records:
-        gt_code = item.get("accepted", "")
-        flawed_code = item.get("rejected", "")
+        gt_code = extract_python_code(item.get("accepted", ""))
+        flawed_code = extract_python_code(item.get("rejected", ""))
 
         if iteration == 4:
             # Iteration 4 (EDA post Run 3): Peak optimization
@@ -209,9 +209,11 @@ def run_2000_eda_pipeline(total_target: int = 2000) -> dict[str, Any]:
     selected_rows = []
     for row in ds:
         acc = extract_python_code(row.get("accepted", ""))
-        if "def " in acc and len(acc) > 80:
+        rej = extract_python_code(row.get("rejected", ""))
+        if "def " in acc and len(acc) > 80 and len(rej) > 40:
             try:
                 ast.parse(acc)
+                ast.parse(rej)
                 selected_rows.append(row)
                 if len(selected_rows) >= total_target:
                     break

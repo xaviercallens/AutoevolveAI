@@ -3024,11 +3024,18 @@ print(f"SHA-256 Digest: {digest[:16]}...")
         }
       };
 
-      // Deep link: /#factory or /#ascd
+      // Deep link: /#factory or /#ascd — readyState-aware for Playwright networkidle
+      function _deepLinkTab(tabId) {
+        if (document.readyState === 'loading') {
+          window.addEventListener('DOMContentLoaded', () => window.switchTab(tabId));
+        } else {
+          window.switchTab(tabId);
+        }
+      }
       if (window.location.hash === '#factory') {
-        window.addEventListener('DOMContentLoaded', () => window.switchTab('factory'));
+        _deepLinkTab('factory');
       } else if (window.location.hash === '#ascd') {
-        window.addEventListener('DOMContentLoaded', () => window.switchTab('ascd'));
+        _deepLinkTab('ascd');
       }
     })();
   </script>
@@ -4222,18 +4229,25 @@ print(f"SHA-256 Digest: {digest[:16]}...")
 
         requestAnimationFrame(ascdFpsLoop);
 
+        // Ensure deck state is fully initialised (forge = default)
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('deck')) {
-          window.switchDeck(urlParams.get('deck'));
-        }
+        const targetDeck = urlParams.get('deck') || 'forge';
+        window.switchDeck(targetDeck);
+
         if (urlParams.get('godmode') === '1') {
           setTimeout(() => window.triggerGodModeHalt(), 100);
         }
       };
 
-      // If loaded with #ascd, init immediately
+      // If loaded with #ascd, init immediately — handles both
+      // pre-loaded (networkidle) and standard DOMContentLoaded cases.
       if (window.location.hash === '#ascd') {
-        window.addEventListener('DOMContentLoaded', () => window.ascdInit());
+        if (document.readyState === 'loading') {
+          window.addEventListener('DOMContentLoaded', () => window.ascdInit());
+        } else {
+          // DOMContentLoaded already fired (e.g., Playwright networkidle)
+          window.ascdInit();
+        }
       }
     })();
   </script>

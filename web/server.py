@@ -544,32 +544,48 @@ class ASCDMemoryPruneRequest(BaseModel):
     node_id: str
 
 
-ascd_state: dict[str, Any] = {
-    "status": "RUNNING",
-    "metrics": {
-        "tokens_per_sec": 4250,
-        "active_agents": 12,
-        "cpu_pct": 38.4,
-        "vram_mb": 1420.5,
-        "energy_e": 0.42,
-        "redis_events": 14280,
-    },
-    "mcp_servers": {
-        "mcp_bash_terminal": {"name": "MCP Bash Terminal", "enabled": True, "latency_ms": 2.4},
-        "mcp_filesystem": {"name": "MCP Local Filesystem", "enabled": True, "latency_ms": 1.1},
-        "mcp_memory_graph": {"name": "MCP Memory Graph", "enabled": True, "latency_ms": 3.7},
-        "mcp_lean4_verifier": {"name": "MCP Lean 4 Verifier", "enabled": True, "latency_ms": 12.0},
-    },
-    "dpo_count": 42,
-    "human_corrections": [],
-    "pruned_nodes": [],
-    "agents": [
-        {"id": "agent_alpha", "role": "MicroML Architect", "task": "Optimizing LoRA projection rank", "energy": 0.12, "status": "ACTIVE"},
-        {"id": "agent_beta", "role": "Formal Prover", "task": "Verifying Banach fixed point in Lean 4", "energy": 0.05, "status": "ACTIVE"},
-        {"id": "agent_gamma", "role": "Sandbox Executor", "task": "Benchmarking AST execution physics", "energy": 0.28, "status": "ACTIVE"},
-        {"id": "agent_delta", "role": "JEPA Latent Predictor", "task": "Predicting multi-step energy trajectory", "energy": 0.09, "status": "ACTIVE"},
-    ],
-}
+def get_default_ascd_state() -> dict[str, Any]:
+    return {
+        "status": "RUNNING",
+        "metrics": {
+            "tokens_per_sec": 4250,
+            "active_agents": 12,
+            "cpu_pct": 38.4,
+            "vram_mb": 1420.5,
+            "energy_e": 0.42,
+            "redis_events": 14280,
+        },
+        "mcp_servers": {
+            "mcp_bash_terminal": {"name": "MCP Bash Terminal", "enabled": True, "latency_ms": 2.4},
+            "mcp_filesystem": {"name": "MCP Local Filesystem", "enabled": True, "latency_ms": 1.1},
+            "mcp_memory_graph": {"name": "MCP Memory Graph", "enabled": True, "latency_ms": 3.7},
+            "mcp_lean4_verifier": {"name": "MCP Lean 4 Verifier", "enabled": True, "latency_ms": 12.0},
+        },
+        "dpo_count": 42,
+        "human_corrections": [],
+        "pruned_nodes": [],
+        "agents": [
+            {"id": "agent_alpha", "role": "MicroML Architect", "task": "Optimizing LoRA projection rank", "energy": 0.12, "status": "ACTIVE"},
+            {"id": "agent_beta", "role": "Formal Prover", "task": "Verifying Banach fixed point in Lean 4", "energy": 0.05, "status": "ACTIVE"},
+            {"id": "agent_gamma", "role": "Sandbox Executor", "task": "Benchmarking AST execution physics", "energy": 0.28, "status": "ACTIVE"},
+            {"id": "agent_delta", "role": "JEPA Latent Predictor", "task": "Predicting multi-step energy trajectory", "energy": 0.09, "status": "ACTIVE"},
+        ],
+    }
+
+
+ascd_state: dict[str, Any] = get_default_ascd_state()
+
+
+@app.post("/api/ascd/reset")
+async def ascd_reset() -> dict[str, Any]:
+    """Reset Swarm Command Deck telemetry, metrics, corrections, and MCP toggles to pristine baseline."""
+    global ascd_state
+    ascd_state = get_default_ascd_state()
+    return {
+        "status": "SUCCESS",
+        "message": "ASCD state successfully reset to baseline on Web and Mobile.",
+        "state": ascd_state,
+    }
 
 
 @app.get("/api/ascd/telemetry")
@@ -694,15 +710,15 @@ async def ascd_closed_loop_v2() -> dict[str, Any]:
     if profile_path.exists():
         try:
             profile_data = json.loads(profile_path.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Failed to parse profile JSON: %s", exc)
 
     rl_data: dict[str, Any] = {}
     if rl_path.exists():
         try:
             rl_data = json.loads(rl_path.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Failed to parse RL JSON: %s", exc)
 
     from anse.algorithms.symplectic import explicit_euler_integrate, solve_symplectic_orbit
 

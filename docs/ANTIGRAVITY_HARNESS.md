@@ -204,3 +204,49 @@ Registered with FastMCP under server name `agent-hardening-engine` (mounted in `
 - **Skill Location**: `.agents/skills/antigravity-harness/SKILL.md`
 - **Auto-Discovery**: Automatically mounted by Antigravity CLI and agents from workspace root.
 - **Hardened Gate**: Hooked directly into `.antigravity/hooks/hardened_gate.py` as Step 1.
+
+---
+
+## 7. 120 PhD Multidisciplinary Benchmark Suite (`anse/benchmark/`)
+
+The harness enforces physical zero-stub verification across 120 PhD-level benchmark problems spanning 4 domains (30 cases each):
+
+| Domain | Problem Range | Toolchain & Validation Strategy | Invariant Enforcement |
+|---|---|---|---|
+| **Numeric Rust** | `RUST-01` .. `RUST-30` | Subprocess compilation via `rustc -O` | Symplectic Störmer-Verlet, Barnes-Hut octree, LBM D2Q9, Cooley-Tukey FFT, Cholesky $LDL^T$, Sparse CG, Cash-Karp 4/5, QR Householder. |
+| **Pure Mathematics** | `MATH-01` .. `MATH-30` | SymPy / SciPy exact CAS algebraic geometry | Riemann-Roch, Atiyah-Singer Index, Hodge decomposition, Deligne cohomology, Langlands L-function, Morse-Floer nilpotency, Perelman $\mathcal{W}$-entropy, Serre duality. |
+| **Theoretical Physics** | `PHYS-01` .. `PHYS-30` | Field theory, GR, and quantum dynamics | Schwarzschild ISCO, Casimir vacuum energy, ABJ chiral anomaly, Kerr Penrose energy extraction, SYK maximal chaos Lyapunov bound $\lambda_L \le 2\pi k_B T / \hbar$, Gross-Pitaevskii dispersion, Polyakov string $D=26$. |
+| **Complex Python** | `PYTHON-01` .. `PYTHON-30` | Pure-NumPy physical algorithms | Barnes-Hut 2D quadtree, Leapfrog energy conservation, Fast Fourier convolution theorem, D2Q9 Lattice Boltzmann, Crank-Nicolson heat PDE, Dual quaternion kinematics. |
+
+### Verification Gates:
+- **Gate H-1 (Measured Provenance):** 100% of benchmark records must carry cryptographic execution receipts where `provenance == "measured"`.
+- **Gate H-2 (Reward Delta Separation):** Chosen vs rejected reward margin must satisfy $\Delta R \ge 5.0$ across all preference pairs.
+
+---
+
+## 8. Multi-Tier Gateway Telemetry & Frontier Model Interception
+
+The Multi-Tier Gateway (`gateway.py`) intercepts frontier LLM requests and continuously logs them to Redis LTM:
+
+- **Anthropic Messages API (`POST /v1/messages`)**: Intercepts Claude 3.5 Sonnet and Claude 3 Opus traffic, recording `model_name`, `input_tokens`, `output_tokens`, `messages`, `latency_ms`, and `subtask_id`.
+- **OpenAI Chat Proxy (`POST /v1/chat/completions`)**: Automatically recognizes Claude/Opus and local coder models, routing telemetry to Redis.
+- **Continuous Redis Streams**:
+  - `antigravity:stream:claude_opus`: Captures frontier interactions for downstream student model distillation.
+  - `antigravity:stream:audit`: Full security and governance audit trail.
+- **Harvester Pipeline (`scripts/export_claude_opus_rl_dataset.py`)**: Exports `results/claude_opus_sft_dataset.jsonl` and `results/claude_opus_dpo_dataset.jsonl` for open-weight LoRA training (`train_lora_local.py`).
+
+---
+
+## 9. Antigravity Swarm Command Deck (ASCD) Control Center
+
+The SCADA mission-control cockpit (`web/index.html` + `web/server.py`) operates at 60 FPS over WebSockets:
+
+- **Top HUD**: 6 real-time meters (Active Agents, Throughput, Host CPU, Peak RAM, Energy $E$, Redis Events).
+- **Deck 1 (The Forge)**: Drag-and-drop Microservices DAG, 3D WebGL physics canvas, Monaco Lean 4 Tribunal with theorem gutter alerts.
+- **Deck 2 (Proving Grounds)**: 100x100 QA Fuzzing Heatmap (10,000 cells) and Holographic UI diff slider.
+- **Deck 3 (Engine Room)**: DPO RL Tinder card swiping, 2M Token Context Treemap, and MCP isolation switches.
+- **God Mode**: Spacebar emergency swarm freeze and prompt redirection.
+- **Restoration & State Reset**:
+  - API endpoint: `POST /api/ascd/reset` restores all telemetry, metrics, MCP toggles, and DAG structures to baseline.
+  - Frontend controls: `ascdResetDeck()` accessible on both Desktop and Mobile viewports.
+

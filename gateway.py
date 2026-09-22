@@ -658,9 +658,19 @@ def _should_force_local(x_force_local: str, x_route_target: str) -> bool:
     return x_force_local.lower() == "true" or x_route_target.lower() == "local"
 
 
-# =============================================================================
-# MCP COGNITIVE ROUTER ENDPOINTS
-# =============================================================================
+@app.get("/health")
+async def health_check() -> dict[str, Any]:
+    """Health check endpoint providing status and configured multi-tier models."""
+    return {
+        "status": "ok",
+        "models": {
+            "planning": MODEL_PLANNING,
+            "execution": MODEL_EXECUTION,
+            "verification": MODEL_VERIFICATION,
+        },
+        "upstream_gemini": UPSTREAM_GEMINI,
+        "local_inference_url": LOCAL_INFERENCE_URL,
+    }
 
 
 @app.get("/mcp/servers")

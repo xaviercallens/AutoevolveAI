@@ -106,14 +106,28 @@ export GEMINI_API_BASE=http://localhost:8080
 
 # For OpenAI-compatible agents (Cursor, Claude, Aider):
 export OPENAI_BASE_URL=http://localhost:8080/v1
+
+# For Anthropic Claude Code CLI:
+export ANTHROPIC_BASE_URL=http://localhost:8080
 ```
 
 The gateway automatically:
 1. Inspects the semantic intent of prompts or `X-Task-Phase` headers.
 2. Routes planning and review requests to **Gemini 3.1 Pro** for superior reasoning.
 3. Routes code writing to **Gemini 3.8 Flash** for $4\times$ lower latency and lower token cost.
-4. Falls back to local GPU / vLLM if the upstream API hits rate limits.
-5. Logs every request, response, and tool call into Redis streams for continuous offline training.
+4. Transparently intercepts Anthropic `/v1/messages` and OpenAI `/v1/chat/completions` calls targeting `claude-3-5-sonnet` and `claude-3-opus`.
+5. Logs every request, token count, latency, and response to Redis streams (`gateway:stream`, `gateway:claude_opus_dpo`) for preference harvesting.
+6. Falls back to local GPU / vLLM if the upstream API hits rate limits.
+
+### Harvesting Claude/Opus DPO Preference Datasets
+To extract high-quality pairwise preferences logged by the gateway into HuggingFace/JSONL format:
+```bash
+# Export and validate pairwise RL preference records
+uv run python scripts/export_claude_opus_rl_dataset.py \
+  --output data/claude_opus_dpo_dataset.jsonl \
+  --redis-host localhost \
+  --redis-port 6379
+```
 
 ---
 
@@ -142,6 +156,43 @@ The agent gains access to:
 - `audit_code_changes`: Verifies that modified code has zero stubs.
 - `attest_execution`: Runs tests with coverage tracing and mints cryptographic completion tokens.
 - `offload_context`: Prunes verbose outputs to keep the context window sharp.
+
+---
+
+## 🎮 5. Antigravity Swarm Command Deck (ASCD) Control Center
+
+The **Antigravity Swarm Command Deck (ASCD)** is the real-time operational user interface and telemetry dashboard for ANSE swarm nodes, Lean 4 provers, and execution engines.
+
+### Running the Web Server
+Launch the ASCD web application locally:
+```bash
+PORT=5000 uv run python web/server.py
+```
+Open your browser at `http://localhost:5000` to access the Control Center.
+
+### REST API Endpoints
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/ascd/telemetry` | `GET` | Fetches live swarm telemetry, CPU/VRAM load, active MCP servers, and execution stats. |
+| `/api/ascd/reset` | `POST` | **Atomic Control Center State Reset**: Restores baseline HUD telemetry, re-arms all 5 MCP servers, resets DAG execution nodes, flushes active stress testing, and purges execution log streams without requiring a server restart. |
+| `/api/ascd/halt` | `POST` | Triggers emergency swarm circuit breaker and halts all running execution workers. |
+
+### Web & Mobile Control Center UI State Reset Protocol
+
+The ASCD Control Center features a unified, responsive user interface engineered for both high-resolution workstations (1920×1080) and mobile touch viewports (375×812):
+
+1. **Header Action Bar**:
+   - The `#ascd-btn-reset` button is positioned in the hero action bar.
+   - On mobile screens ($\le 768\text{px}$), the action bar automatically wraps, maintaining a minimum $44\times44\text{px}$ touch target conforming to mobile accessibility standards.
+
+2. **Client-Side Reset Workflow (`window.ascdResetDeck()`)**:
+   - **Step 1: Network Request**: Dispatches `POST /api/ascd/reset` to synchronize baseline state on the backend.
+   - **Step 2: HUD & Telemetry Reset**: Resets system load counters (VRAM: 1.2 GB / 24.0 GB, CPU: 12%, Active Nodes: 8).
+   - **Step 3: Stress Engine Halt**: Cancels active stress loops (`isStressRunning = false`) and restores baseline pulse animations.
+   - **Step 4: Tool & MCP Restoration**: Re-enables all 5 MCP server toggles (`antigravity-guard`, `lean4-prover`, `benchmark-runner`, `redis-telemetry`, `sandbox-evaluator`) to active state.
+   - **Step 5: DAG & Log Purge**: Resets the reactive execution graph to baseline node states and clears the real-time streaming terminal logs.
+   - **Step 6: Deck Navigation**: Switches the view smoothly back to Deck 1 (Swarm Command Overview) and triggers an amber confirmation HUD toast.
 
 ---
 

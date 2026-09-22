@@ -116,10 +116,33 @@ LLM-proposed children (4 proposals, 2 correct, 2 promoted, 0 incorrect promoted)
 Current gate: **5 of 5**. Caveat: 0/15 only bounds the false-promotion rate below
 roughly 18% at 95% confidence.
 
+## Phase 4: Low-Tier Model Hardness (Directives D1–D8) & Gates G6–G9
+
+For resource-constrained models ($\le 3\text{B}$, target `qwen2.5-coder:1.5b`), ANSE implements 8 architectural hardness directives:
+- **D1 (Prompt Budget Policy):** Compresses failing code & stderr to $<200$ chars, eliminating attention dilution.
+- **D2 (Capacity Gating):** Disables repetitive retry branches on sub-3B models (`adaptive_retry=False`).
+- **D3 (Energy-Monotonic Early Stop):** Aborts retry branches immediately if $E_1 > 60$ or $E_2 > E_1$ (diverging energy).
+- **D4 (Skeleton-Only Lessons):** Extracts AST function signatures and docstrings, omitting full code solutions from long-term memory.
+- **D5 (Task Difficulty Triage):** Categorizes tasks into `trivial`, `fixable`, and `hard`, capping retries on hard tasks.
+- **D6 (Live DPO Preference Export):** Automatically exports pairwise preference data when $\Delta E \ge 10$.
+- **D7 (Tier Gates G6–G9):** Low-tier pass@1 $\ge 0.30$, false convergence $< 0.50$, rescue efficiency $\ge 0.10$, energy monotonicity $\ge 0.30$.
+- **D8 (Autopoietic Prompt Strategy Registry):** Versioned prompt strategy component in `ComponentRegistry` supporting zero-downtime swap and rollback (UC6).
+
+## Phase 5: 120 PhD Multidisciplinary Benchmark Suite & ASCD Control Center
+
+To eliminate simulated evaluations, the Evolution Lab benchmarks against 120 PhD-level tasks across 4 physical domains:
+1. **Numeric Rust (`RUST-01..30`):** Subprocess native `rustc -O` binary compilation (Symplectic Verlet, Barnes-Hut, LBM D2Q9, FFTW, Cholesky).
+2. **Pure Mathematics (`MATH-01..30`):** SymPy / SciPy exact CAS algebraic geometry (Riemann-Roch, Atiyah-Singer, Hodge, Deligne, Langlands).
+3. **Theoretical Physics (`PHYS-01..30`):** Exact QFT, GR, and quantum dynamics (ISCO, Casimir, ABJ anomaly, Kerr Penrose, SYK chaos).
+4. **Complex Python (`PYTHON-01..30`):** Pure-NumPy physical algorithms without mocks (Quadtrees, Leapfrog, Fourier, Crank-Nicolson).
+
+### ASCD Swarm Command Deck & State Reset
+The web control center (`PORT=5000 uv run python web/server.py`, tab "Command Deck (ASCD)") provides live telemetry and SCADA controls:
+- **Restoration Protocol:** `POST /api/ascd/reset` and frontend "Reset Deck" button restores telemetry, metrics, MCP switches, and DAG nodes to baseline on Web and Mobile.
+
 ## Known limitations
 
-
 - Sandbox execution defaults to fail-closed (`deny`) and strictly enforces a Tier 2 (Docker) environment for untrusted LLM-generated code. Tier 1 fallback is no longer allowed.
-- Running `tests/phase3/test_neuro_surgeon.py` rewrites the tracked file
-  `.antigravity_attestation`.
-- Sample sizes are small (20 tasks, 2 seeds). Treat differences of one or two tasks as noise.
+- Running `tests/phase3/test_neuro_surgeon.py` rewrites the tracked file `.antigravity_attestation`.
+- Proof tokens require cryptographic validation against `HardenedEvaluator`.
+

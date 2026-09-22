@@ -184,7 +184,7 @@ def build_dpo_dataset(records: list[dict[str, Any]], output_path: Path) -> int:
                 "opt_e": 5.0,
                 "base_e": 25.0,
                 "opt_lat__provenance": "measured",
-                "base_lat__provenance=" : "measured",
+                "base_lat__provenance": "measured",
                 "opt_e__provenance": "measured",
                 "base_e__provenance": "measured",
                 "metadata": {

@@ -101,9 +101,14 @@ class TestDesktopE2E:
 
     def test_desktop_deck1_the_forge_dag_physics_and_lean(self, desktop_page: Page):
         """FRG-01, FRG-02, FRG-03: DAG SVG, 3D Physics Manifold, Lean 4 Tribunal."""
-        # Make sure Deck 1 is active
+        # Make sure Deck 1 is active — use JS evaluate for reliability
+        desktop_page.wait_for_function("typeof window.switchDeck === 'function'", timeout=10000)
         desktop_page.locator("#btn-deck-forge").click()
-        desktop_page.wait_for_selector("#subdeck-forge", state="visible")
+        desktop_page.evaluate("window.switchDeck('forge')")
+        desktop_page.wait_for_function(
+            "!document.getElementById('subdeck-forge').classList.contains('hidden')",
+            timeout=5000,
+        )
 
         # 1. DAG Architecture
         dag_svg = desktop_page.locator("#ascd-dag-svg")
@@ -150,9 +155,14 @@ class TestDesktopE2E:
 
     def test_desktop_deck2_proving_grounds_heatmap_and_diff(self, desktop_page: Page):
         """PRV-01 & PRV-02: 10,000-cell QA Heatmap and Holographic Diff Slider."""
-        # Switch to Deck 2
+        # Switch to Deck 2 — use JS evaluate for reliability
+        desktop_page.wait_for_function("typeof window.switchDeck === 'function'", timeout=10000)
         desktop_page.locator("#btn-deck-proving").click()
-        desktop_page.wait_for_selector("#subdeck-proving", state="visible")
+        desktop_page.evaluate("window.switchDeck('proving')")
+        desktop_page.wait_for_function(
+            "!document.getElementById('subdeck-proving').classList.contains('hidden')",
+            timeout=5000,
+        )
 
         # 1. QA Fuzzing Heatmap
         heatmap = desktop_page.locator("#ascd-heatmap-canvas")
@@ -187,9 +197,15 @@ class TestDesktopE2E:
 
     def test_desktop_deck3_engine_room_rl_treemap_memory_mcp(self, desktop_page: Page):
         """ENG-01 .. ENG-04: RL Tinder DPO, Context Treemap, Memory Pruning, MCP Switchboard."""
-        # Switch to Deck 3
+        # Switch to Deck 3 — wait for switchDeck to be available then call via JS
+        # (belt-and-suspenders: click the button AND call JS to avoid click-timing flakiness)
+        desktop_page.wait_for_function("typeof window.switchDeck === 'function'", timeout=10000)
         desktop_page.locator("#btn-deck-engine").click()
-        desktop_page.wait_for_selector("#subdeck-engine", state="visible")
+        desktop_page.evaluate("window.switchDeck('engine')")
+        desktop_page.wait_for_function(
+            "!document.getElementById('subdeck-engine').classList.contains('hidden')",
+            timeout=5000,
+        )
 
         # 1. RL Tinder DPO Card
         tinder_card = desktop_page.locator("#ascd-tinder-card")

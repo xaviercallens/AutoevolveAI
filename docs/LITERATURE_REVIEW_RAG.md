@@ -46,6 +46,17 @@ This literature review evaluates state-of-the-art peer-reviewed works (2024–20
 * **Finding:** Natural language reasoning hallucinating logical deductions can be grounded by formal interactive theorem provers (ITPs) like Lean 4. The Lean kernel provides a definitive binary ground truth ($0$ or $1$) for logical soundness.
 * **Adoption in AutoevolveAI:** We maintain **2,506 Lean 4 formal proofs** in `formal/ANSE/StrongGravity.lean`, formally certifying our 4 Zero-Trust Axioms, Banach fixed-point self-improvement, and energy monotonicity.
 
+### 3.4. ProofEvolve (arXiv 2026): Neural Evolution of Proof DAGs
+* **Paper Title:** *ProofEvolve: Neuro-Symbolic Theorem Proving with Formal Lean 4 Kernel Feedback* (Chen et al., arXiv 2026).
+* **Key Innovations:**
+  1. **Proof DAG vs. Linear Scripts:** Traditional LLMs output linear tactic scripts (e.g. `intro h, apply lem, exact h`). When a sub-goal fails, the entire script fails. ProofEvolve models formal proofs as **Directed Acyclic Graphs (Proof DAGs)** $G = (V, E, \tau)$ where vertices $V$ are intermediate proof goals, edges $E$ are atomic tactics, and $\tau$ denotes verified transition under the Lean 4 kernel.
+  2. **Schema Library Reuse:** Verified sub-DAGs are detached and cached into a persistent "Schema Library" (similar to our LTM), allowing subsequent theorems to instantiate proven lemmas in $O(1)$ lookup time rather than re-proving from scratch.
+  3. **Kernel-Guided MCTS:** Monte Carlo Tree Search explores tactic expansions where the Lean kernel penalizes unclosed branches with maximum error while guiding the neural policy towards minimal depth.
+* **Integration into AutoevolveAI (`anse/symbolic/proof_evolve.py`):**
+  AutoevolveAI unifies ProofEvolve's Proof DAG with our **Thermodynamic Energy Functional**:
+  $$E_{\text{proof}} = w_t \cdot \tau_{\text{kernel}} + w_m \cdot M_{\text{RAM}} + \alpha \cdot \text{Depth} + \Pi_{\text{sorry}}$$
+  Any introduction of `sorry` or ungrounded axioms receives $E_{\text{proof}} = 10^6$ (rejection). Proofs that compress step count and minimize kernel verification latency achieve minimal energy $\Delta E < 0$ and are promoted to the active theorem registry.
+
 ---
 
 ## 4. The Missing Link: Why AutoevolveAI Goes Beyond Current Literature

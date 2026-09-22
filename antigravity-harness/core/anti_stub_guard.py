@@ -269,7 +269,10 @@ class AntiStubGuard:
         path = Path(dir_path)
         all_violations: list[Violation] = []
 
+        ignored_dirs = {".venv", "venv", ".git", "build", "dist", "__pycache__", "node_modules", "vendor", ".scratchpad"}
         for p in path.rglob("*.py"):
+            if any(part in ignored_dirs for part in p.parts):
+                continue
             if exclude_tests and ("test" in p.name.lower() or "tests" in p.parts):
                 continue
             res = self.audit_file(p)

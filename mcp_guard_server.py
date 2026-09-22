@@ -163,7 +163,9 @@ def check_cyclomatic_complexity(code: str, max_complexity: int = 10) -> dict[str
     try:
         blocks = ComplexityVisitor.from_code(code).blocks
     except SyntaxError as e:
-        return {"passed": False, "error": f"SyntaxError: {e.msg} at line {e.lineno}"}
+        return {"passed": False, "error": f"SyntaxError: {e.msg} at line {e.lineno}", "violations": [f"SyntaxError: {e.msg}"]}
+    except (TypeError, ValueError, OSError) as e:
+        return {"passed": False, "error": f"ComplexityAuditError: {str(e)}", "violations": [f"ComplexityAuditError: {str(e)}"]}
 
     violations: list[str] = []
     block_reports: list[dict[str, Any]] = []

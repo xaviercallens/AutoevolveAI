@@ -1,0 +1,44 @@
+[
+  {
+    "arxiv_id": "2105.09564v1",
+    "title": "Dual-side Sparse Tensor Core",
+    "authors": [
+      "Yang Wang",
+      "Chen Zhang",
+      "Zhiqiang Xie",
+      "Cong Guo",
+      "Yunxin Liu",
+      "Jingwen Leng"
+    ],
+    "published_year": 2021,
+    "abstract": "Leveraging sparsity in deep neural network (DNN) models is promising for accelerating model inference. Yet existing GPUs can only leverage the sparsity from weights but not activations, which are dynamic, unpredictable, and hence challenging to exploit. In this work, we propose a novel architecture to efficiently harness the dual-side sparsity (i.e., weight and activation sparsity). We take a systematic approach to understand the (dis)advantages of previous sparsity-related architectures and propose a novel, unexplored paradigm that combines outer-product computation primitive and bitmap-based encoding format. We demonstrate the feasibility of our design with minimal changes to the existing production-scale inner-product-based Tensor Core. We propose a set of novel ISA extensions and co-design the matrix-matrix multiplication and convolution algorithms, which are the two dominant computation patterns in today's DNN models, to exploit our new dual-side sparse Tensor Core. Our evaluation shows that our design can fully unleash the dual-side DNN sparsity and improve the performance by up to one order of magnitude with \\hl{small} hardware overhead.",
+    "pdf_url": "https://arxiv.org/pdf/2105.09564v1"
+  },
+  {
+    "arxiv_id": "2605.17855v2",
+    "title": "Accelerating 3D Gaussian Splatting using Tensor Cores",
+    "authors": [
+      "Sheng Li",
+      "Yang Sui",
+      "Yue Wu",
+      "Zhuoran Song",
+      "Bo Yuan",
+      "Xulong Tang",
+      "Yue Dai"
+    ],
+    "published_year": 2026,
+    "abstract": "3D Gaussian Splatting (3DGS) has become a leading technique for real-time neural rendering and 3D scene reconstruction, but its rendering cost remains too high for many latency-sensitive scenarios. In particular, the rasterization stage in 3DGS dominates end-to-end rendering time, during which the renderer repeatedly evaluates each Gaussian's contribution to each covered pixel, making this stage compute-bound. At the same time, modern GPUs provide high-throughput Tensor Cores for low-precision matrix operations, yet existing 3DGS systems execute rasterization entirely on CUDA cores and leave Tensor Cores idle. We find that 3DGS rendering can be executed in FP16 with negligible quality degradation, suggesting a promising opportunity for Tensor Core acceleration. However, exploiting Tensor Cores for 3DGS is non-trivial because rasterization does not naturally match their execution model. Existing 3DGS rasterization is expressed as irregular per-pixel scalar operations, whereas Tensor Cores require dense, regular, and reuse-rich matrix workloads. Moreover, conventional tile-by-tile execution fails to exploit Gaussian reuse across neighboring tiles, resulting in repeated data loading and thus high data movement overhead. To this end, we present TensorGS, a 3DGS acceleration framework using Tensor Cores. TensorGS tensorizes the dominant rasterization computation into Tensor-Core-compatible matrix operations and introduces cross-tile grouping to improve Gaussian reuse, amortize overhead, and increase Tensor Core utilization. Experimental results show that TensorGS improves end-to-end rendering performance by 1.65$\\times$ while preserving image quality.",
+    "pdf_url": "https://arxiv.org/pdf/2605.17855v2"
+  },
+  {
+    "arxiv_id": "2411.17887v1",
+    "title": "A Parallel Scan Algorithm in the Tensor Core Unit Model",
+    "authors": [
+      "Anastasios Zouzias",
+      "William F. McColl"
+    ],
+    "published_year": 2024,
+    "abstract": "We present a parallel scan (prefix sum) algorithm in the Tensor Core Unit (TCU) model of computation. The TCU model assumes that multiplication between two square matrices of constant size $s$ is a basic operation. In the $(s^2, \\ell)$-TCU model, we show that for inputs of size $n$, the algorithm has depth at most $2\\lfloor \\log_s (n)\\rfloor$ and runs in $O(n(1 + \\ell /s^2)/p + (s^2 + \\ell) \\log_s (n))$ time assuming $p$ tensor core units. Equivalently, the algorithm performs $O(n/s^2)$ multiplications of square matrices of size s.",
+    "pdf_url": "https://arxiv.org/pdf/2411.17887v1"
+  }
+]

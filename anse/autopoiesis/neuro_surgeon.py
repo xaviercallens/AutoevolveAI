@@ -158,8 +158,8 @@ except Exception as e:
         finally:
             try:
                 os.remove(temp_path)
-            except OSError:
-                pass
+            except OSError as err:
+                logger.debug("Failed cleaning temp path %s: %s", temp_path, err)
 
     def _parse_output(self, stdout: str, stderr: str) -> MicroMLResult:
         """Parse the physical energy signal and metrics from sandbox output."""
@@ -398,16 +398,16 @@ class AutopoieticNeuroSurgeon:
         self.live_engine = BaselineAttentionEngine()
 
     def benchmark_module(
-        self, module: nn.Module, batch_size: int = 32, seq_len: int = 256
+        self, module: nn.Module, batch_size: int = 16, seq_len: int = 512
     ) -> tuple[float, float, float]:
         """Measure latency (ms), peak memory (MB), and compute physical energy E."""
         device = "cuda" if torch.cuda.is_available() else "cpu"
         mod = module.to(device)
-        dummy_x = torch.randn(batch_size, seq_len, 128, device=device)
+        probe_tensor = torch.randn(batch_size, seq_len, 128, device=device)
 
         # Warmup
         for _ in range(3):
-            _ = mod(dummy_x)
+            _ = mod(probe_tensor)
 
         if device == "cuda":
             torch.cuda.reset_peak_memory_stats()
@@ -416,7 +416,7 @@ class AutopoieticNeuroSurgeon:
         start = time.perf_counter()
         iters = 20
         for _ in range(iters):
-            out = mod(dummy_x)
+            out = mod(probe_tensor)
             _ = out.sum()
         if device == "cuda":
             torch.cuda.synchronize()

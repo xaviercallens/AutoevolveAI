@@ -183,17 +183,39 @@ class TestDesktopE2E:
         slider_bar = desktop_page.locator("#ascd-diff-slider-bar")
         assert slider_bar.is_visible()
 
-        # Drag the slider divider
+        # Wait for CSS layout to complete (bounding box must be non-zero)
+        desktop_page.wait_for_function(
+            "document.getElementById('ascd-diff-container').getBoundingClientRect().width > 0",
+            timeout=3000,
+        )
+
+        # Drag via pointer events (the handler listens on pointerdown/pointermove/pointerup)
         cbox = diff_container.bounding_box()
-        assert cbox is not None
-        desktop_page.mouse.move(cbox["x"] + cbox["width"] * 0.5, cbox["y"] + cbox["height"] * 0.5)
-        desktop_page.mouse.down()
-        desktop_page.mouse.move(cbox["x"] + cbox["width"] * 0.25, cbox["y"] + cbox["height"] * 0.5)
-        desktop_page.mouse.up()
+        assert cbox is not None and cbox["width"] > 0, f"diff container has zero width: {cbox}"
+        cx = cbox["x"] + cbox["width"] * 0.5
+        cy = cbox["y"] + cbox["height"] * 0.5
+        target_x = cbox["x"] + cbox["width"] * 0.25
+
+        desktop_page.evaluate("""([cx, cy, tx]) => {
+            const el = document.getElementById('ascd-diff-container');
+            const pid = 1;
+            const mkPE = (type, x, y) => {
+                const e = new PointerEvent(type, {
+                    bubbles: true, cancelable: true, clientX: x, clientY: y,
+                    pointerId: pid, pointerType: 'mouse', isPrimary: true,
+                    buttons: type === 'pointerdown' || type === 'pointermove' ? 1 : 0,
+                });
+                el.dispatchEvent(e);
+            };
+            mkPE('pointerdown', cx, cy);
+            mkPE('pointermove', tx, cy);
+            mkPE('pointerup', tx, cy);
+        }""", [cx, cy, target_x])
+        time.sleep(0.2)
 
         left_pane = desktop_page.locator("#ascd-diff-left")
         style = left_pane.get_attribute("style") or ""
-        assert "width" in style
+        assert "width" in style, f"Slider drag did not update left pane style: '{style}'"
 
     def test_desktop_deck3_engine_room_rl_treemap_memory_mcp(self, desktop_page: Page):
         """ENG-01 .. ENG-04: RL Tinder DPO, Context Treemap, Memory Pruning, MCP Switchboard."""

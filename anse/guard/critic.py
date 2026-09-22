@@ -188,7 +188,7 @@ if HAS_TORCH:
         Maps code strings to dense latent representations without external tokenizers.
         """
 
-        def __init__(self, vocab_size: int = 256, d_model: int = 128) -> None:
+        def __init__(self, vocab_size: int = 256, d_model: int = 32) -> None:
             super().__init__()
             self.embedding = nn.Embedding(vocab_size, d_model, padding_idx=0)
             self.conv1 = nn.Conv1d(d_model, d_model, kernel_size=3, padding=1)
@@ -211,7 +211,7 @@ if HAS_TORCH:
         Higher reward implies lower computational physics energy (clean execution, zero stubs).
         """
 
-        def __init__(self, d_model: int = 128, d_hidden: int = 256) -> None:
+        def __init__(self, d_model: int = 32, d_hidden: int = 64) -> None:
             super().__init__()
             self.encoder = LightweightCodeEncoder(vocab_size=256, d_model=d_model)
             self.head = nn.Sequential(
@@ -259,8 +259,8 @@ class NeuralEnergyCritic:
         self,
         model_path: str | Path | None = None,
         device: str = "auto",
-        d_model: int = 128,
-        d_hidden: int = 256,
+        d_model: int = 32,
+        d_hidden: int = 64,
     ) -> None:
         if not HAS_TORCH:
             raise RuntimeError("PyTorch is required for NeuralEnergyCritic.")

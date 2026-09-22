@@ -814,12 +814,17 @@ class Bench:
         if "uc5" in r:
             checks["G5 all robustness checks pass"] = r["uc5"]["failures"] == 0
         r["gate"] = checks
+        n_passed = sum(checks.values())
+        n_total = len(checks)
+        r["gate_score"] = f"{n_passed}/{n_total}"
+        r["all_gates_passed"] = all(checks.values())
         r["finished"] = time.strftime("%Y-%m-%d %H:%M:%S")
         self.checkpoint()
         print("\nGATE")
         for name, ok in checks.items():
             print(f"  [{'PASS' if ok else 'FAIL'}] {name}")
-        return all(checks.values())
+        print(f"\n  Gate score: {r['gate_score']}")
+        return r["all_gates_passed"]
 
 
 def main() -> int:
@@ -840,8 +845,8 @@ def main() -> int:
     parser.add_argument("--lr", type=float, default=3e-3)
     parser.add_argument("--weight-decay", type=float, default=0.05)
     parser.add_argument("--dropout", type=float, default=0.2)
-    parser.add_argument("--d-hidden", type=int, default=64)
-    parser.add_argument("--d-latent", type=int, default=16)
+    parser.add_argument("--d-hidden", type=int, default=256)
+    parser.add_argument("--d-latent", type=int, default=64)
     parser.add_argument("--energy-weight", type=float, default=10.0)
     parser.add_argument("--ridge-alpha", type=float, default=1.0)
     parser.add_argument(

@@ -603,12 +603,17 @@ class Bench:
                 "G5 the LLM lands at least one promoted improvement, and the held-out differential oracle finds no promoted version that differs from the original parent"
             ] = u["promoted"] >= 1 and u["incorrect_promoted"] == 0
         r["gate"] = checks
+        n_passed = sum(checks.values())
+        n_total = len(checks)
+        r["gate_score"] = f"{n_passed}/{n_total}"
+        r["all_gates_passed"] = all(checks.values())
         r["finished"] = time.strftime("%Y-%m-%d %H:%M:%S")
         self.checkpoint()
         print("\nGATE")
         for name, ok in checks.items():
             print(f"  [{'PASS' if ok else 'FAIL'}] {name}")
-        return all(checks.values())
+        print(f"\n  Gate score: {r['gate_score']}")
+        return r["all_gates_passed"]
 
 
 def main() -> int:

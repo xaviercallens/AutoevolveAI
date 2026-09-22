@@ -170,6 +170,12 @@ class AgentLoop:
         first_failure = ""
         seen_codes: set[str] = set()
         stagnation = 0
+        # Best-of-N tracking: keep the lowest-energy verified candidate
+        best_energy_score = float("inf")
+        best_code = ""
+        best_energy_res: EnergyResult | None = None
+        best_report: TestReport | None = None
+        best_iteration = 0
 
         for iteration in range(1, retries_limit + 1):
             logger.info("Task '%s...' - Iteration %d/%d", task[:40], iteration, retries_limit)
@@ -217,6 +223,18 @@ class AgentLoop:
                     expected_output=expected_output,
                 )
             last_energy = energy_res
+            # Update best-of-N: prefer verified passes with lowest energy
+            is_verified = bool(report and report.all_passed) if hidden_tests else converged
+            was_verified = bool(best_report and best_report.all_passed) if hidden_tests else best_energy_score < float("inf")
+            # Prefer any verified over unverified; among same class, prefer lower energy
+            if (is_verified and not was_verified) or (
+                is_verified == was_verified and energy_res.score < best_energy_score
+            ):
+                best_energy_score = energy_res.score
+                best_code = code
+                best_energy_res = energy_res
+                best_report = report
+                best_iteration = iteration
 
             iter_duration_ms = (time.time() - iter_start) * 1000.0
             converged = self._is_converged(energy_res, report, hidden_tests)
@@ -282,15 +300,35 @@ class AgentLoop:
                     prompt += STAGNATION_NOTE
 
         total_duration_ms = (time.time() - start_time) * 1000.0
-        final_energy = last_energy.score if last_energy else 100.0
+
+        # Best-of-N selection: return the best verified candidate, not the last one.
+        # Fall back to the last attempt if no verified candidate exists.
+        use_best = best_energy_res is not None and best_code
+        final_code = best_code if use_best else code
+        final_energy_res = best_energy_res if use_best else last_energy
+        final_report = best_report if use_best else report
+        final_energy = final_energy_res.score if final_energy_res else 100.0
         final_category = (
-            last_energy.category.value if last_energy else EnergyCategory.RUNTIME_ERROR.value
+            final_energy_res.category.value
+            if final_energy_res
+            else EnergyCategory.RUNTIME_ERROR.value
         )
-        converged = bool(traces) and traces[-1].converged
+        converged = bool(
+            final_report and final_report.all_passed
+        ) if hidden_tests else bool(traces) and any(t.converged for t in traces)
+
+        if use_best and best_iteration != len(traces):
+            logger.info(
+                "Best-of-N selected iteration %d (E=%.1f) over last iteration %d (E=%.1f)",
+                best_iteration,
+                best_energy_score,
+                len(traces),
+                last_energy.score if last_energy else 100.0,
+            )
 
         if converged and hidden_tests and self.lesson_memory is not None:
             self.lesson_memory.add(
-                Lesson(task=task, code=code, failure=first_failure, iterations=len(traces))
+                Lesson(task=task, code=final_code, failure=first_failure, iterations=len(traces))
             )
 
         return LoopSummary(
@@ -299,11 +337,11 @@ class AgentLoop:
             iterations=len(traces),
             final_energy=final_energy,
             final_category=final_category,
-            final_code=code,
+            final_code=final_code,
             traces=traces,
             total_duration_ms=total_duration_ms,
-            tests_passed=report.passed if report is not None else None,
-            tests_total=report.total if report is not None else None,
+            tests_passed=final_report.passed if final_report is not None else None,
+            tests_total=final_report.total if final_report is not None else None,
             lessons_used=len(lessons),
         )
 

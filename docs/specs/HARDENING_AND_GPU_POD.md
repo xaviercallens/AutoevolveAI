@@ -138,6 +138,26 @@ Definition of done: Phase 1 smoke run (2 tasks, 2 seeds) through the tunnel with
 2. Private hold-out: `tasks/private/` (git-ignored) with the same YAML format, located through `ANSE_PRIVATE_TASKS`. The runners report the gap between public-suite and private-suite pass rates as `provenance` metadata and as a gate: a gap above a configured threshold is a reward-hacking flag. Document how to create the private set; do not commit it.
 3. Any future GRPO/LoRA reward must be computed by the trusted driver (WP1), never by in-process asserts.
 
+### WP8 - Storage hardening and Redis schema partitioning
+
+1. Discovered vulnerability: `gateway.py`, `mcp_guard_server.py`, and `antigravity_harness` co-write incompatible payloads to `antigravity:trace:*`, causing unhandled deserialization crashes in `TraceRecord.from_dict()`.
+2. Partition Redis namespaces:
+   - `antigravity:harness:trace:{trace_id}` for DPO/RL pipeline traces
+   - `antigravity:gateway:trace:{event_id}` for API Gateway ingress audit traces
+   - `antigravity:ltm:lesson:{task_id}` for Long-Term Memory
+3. Strong typing and schema versioning: `TraceRecord` gains `schema_version: int = 2` and Pydantic discriminated union decoding.
+4. Quarantine dead-letter pattern: unparseable trace keys are moved to `antigravity:quarantine:{id}` with error metadata rather than silently ignored or terminating the harvester.
+
+### WP9 - Long-Term Lesson Memory (LTM) quality gates & negative-transfer mitigation
+
+1. Discovered vulnerability: non-monotonic retry loops previously stored degraded code into `LessonMemory`, and injecting multi-shot lessons into sub-3B parameter models (Phase 1 UC4) caused pass@1 to regress from 33.3% to 22.2%.
+2. Implement Gate-Before-Store contract in `anse/memory/lessons.py`:
+   - 100% passed hidden tests required
+   - Energy below strict cap ($E < 35.0$)
+   - Anti-stub AST validation (no `ast.Pass`, no placeholder docstrings)
+3. Model capability gate: automatically suppress lesson prompt injection for models < 3B parameters unless explicitly enabled.
+4. Typed vector store with strict dimension checking: replace silent vector dropouts in `redis_bus.py: search_vectors` with validated index shapes.
+
 ## 4. Guardrails for the implementing agent
 
 - Do not move a gate threshold, edit a `results.json`, or choose seeds to obtain a pass. A failing gate is a result.

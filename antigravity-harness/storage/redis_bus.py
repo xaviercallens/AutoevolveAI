@@ -11,7 +11,7 @@ import json
 import math
 import os
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import MISSING as dataclass_MISSING, asdict, dataclass, field, fields
 from typing import Any
 
 
@@ -34,8 +34,17 @@ class TraceRecord:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> TraceRecord:
-        return cls(**data)
+    def from_dict(cls, data: dict[str, Any]) -> "TraceRecord":
+        known = {f.name for f in fields(cls)}
+        filtered = {k: v for k, v in data.items() if k in known}
+        # Check required fields are present
+        required = {f.name for f in fields(cls) if f.default is f.default_factory is type}  # type: ignore[comparison-overlap]
+        missing = {f.name for f in fields(cls)
+                   if f.default is dataclass_MISSING
+                   and f.default_factory is dataclass_MISSING} - set(filtered)
+        if missing:
+            raise ValueError(f"Missing required fields: {missing}")
+        return cls(**filtered)
 
 
 class InMemoryBusBackend:
@@ -199,19 +208,29 @@ class RedisBus:
         return TraceRecord.from_dict(data)
 
     def list_all_traces(self) -> list[TraceRecord]:
-        """Extract all traces from storage."""
+        """Extract all traces from storage.
+
+        Records that cannot be deserialized (e.g. stale data from other pipelines
+        sharing the same Redis) are silently skipped.
+        """
         traces: list[TraceRecord] = []
         if self.is_mock:
             for k, val in self._client.keys.items():
                 if k.startswith("antigravity:trace:"):
-                    traces.append(TraceRecord.from_dict(json.loads(val)))
+                    try:
+                        traces.append(TraceRecord.from_dict(json.loads(val)))
+                    except (ValueError, TypeError):
+                        pass
             return traces
 
         keys = self._client.keys("antigravity:trace:*")
         for k in keys:
             raw = self._client.get(k)
             if raw:
-                traces.append(TraceRecord.from_dict(json.loads(raw)))
+                try:
+                    traces.append(TraceRecord.from_dict(json.loads(raw)))
+                except (ValueError, TypeError):
+                    pass
         return traces
 
     # ─── Vector Store & Cosine Similarity ─────────────────────────────────────

@@ -58,7 +58,7 @@ class APIExtractor:
         else:
             text, token_count = self._chat_openai(messages, max_tokens, temp)
 
-        embedding = self._embed(text)
+        embedding = self._embed_code(text)
         record = HiddenStateRecord(
             hidden_state=torch.tensor([embedding], dtype=torch.float32),
             layer_indices=[-1],
@@ -108,6 +108,30 @@ class APIExtractor:
         response.raise_for_status()
         body = response.json()
         return body["message"]["content"] or "", int(body.get("eval_count", 0))
+
+    def _embed_code(self, text: str) -> list[float]:
+        """Embed only the code portion of the LLM response for JEPA.
+
+        The JEPA world model must predict *execution* energy, so it needs
+        code-semantic embeddings, not text-semantic ones. This method
+        extracts the first Python code block from the response and embeds
+        that alone. Falls back to the full text if no code block is found.
+        """
+        code_text = self._extract_code_for_embedding(text)
+        return self._embed(code_text)
+
+    @staticmethod
+    def _extract_code_for_embedding(text: str) -> str:
+        """Extract the first Python code block from a markdown response."""
+        import re
+
+        # Match ```python ... ``` or ``` ... ``` blocks
+        pattern = r"```(?:python)?\s*\n(.*?)```"
+        match = re.search(pattern, text, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+        # Fallback: if the entire response looks like code (no markdown), use it as-is
+        return text
 
     def _embed(self, text: str) -> list[float]:
         if not text:

@@ -74,15 +74,18 @@ class EnergyResult:
         """Classify task difficulty based on energy and failure category (Directive D5).
 
         Returns:
-            'trivial': Solved or near-perfect on first try (E <= 0 or PERFECT)
-            'fixable': Minor error or assertion failure (0 < E <= 30)
-            'hard': Structural error, runtime exception, timeout, syntax error (E > 30)
+            'trivial': Solved or near-perfect on first try (E == 0)
+            'fixable': Minor error or assertion failure (0 < E < 20)
+            'hard': Structural error, runtime exception (20 <= E < 50)
+            'phd': Impossible for sub-3B to self-correct (E >= 50)
         """
-        if self.score <= 0.0 or self.category == EnergyCategory.PERFECT:
+        if self.score == 0.0:
             return "trivial"
-        if self.score <= 30.0:
+        if self.score < 20.0:
             return "fixable"
-        return "hard"
+        if self.score < 50.0:
+            return "hard"
+        return "phd"
 
 
 # ─── Evaluator ───────────────────────────────────────────────────────────────

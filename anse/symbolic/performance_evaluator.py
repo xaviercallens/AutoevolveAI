@@ -221,6 +221,24 @@ class PerformanceEnergyEvaluator:
         if failure_res is not None:
             return failure_res
 
+        # 1.5. Landauer Bound Check (Physical Hardness)
+        def validate_physical_bounds(duration_ms: float, ram_mb: float) -> None:
+            MIN_POSSIBLE_TIME_MS = 1e-4  # 0.1 microseconds
+            MIN_POSSIBLE_RAM_MB = 1e-2   # ~10 KB
+            if duration_ms < MIN_POSSIBLE_TIME_MS:
+                raise ValueError(f"PHYSICS VIOLATION: Execution time {duration_ms} ms violates CPU/OS scheduling physics.")
+            if 0.0 < ram_mb < MIN_POSSIBLE_RAM_MB:
+                raise ValueError(f"PHYSICS VIOLATION: Memory allocation {ram_mb} MB is lower than Python interpreter overhead.")
+
+        try:
+            validate_physical_bounds(result.duration_ms, result.peak_ram_mb)
+        except ValueError as e:
+            return self._build_failure_result(
+                result=result,
+                category=PerformanceCategory.CRASH,
+                pain_signal=str(e),
+            )
+
         # 2. Continuous Physics Calculation
         duration_ms = max(result.duration_ms, 0.001)
         peak_ram_mb = max(result.peak_ram_mb, 0.0)

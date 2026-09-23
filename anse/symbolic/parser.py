@@ -10,9 +10,22 @@ Supports:
 
 from __future__ import annotations
 
+import ast
 import re
 import textwrap
 from dataclasses import dataclass
+
+def check_complexity_floor(code: str, min_complexity: int = 3) -> bool:
+    """Check if the cyclomatic complexity (branch count) of the code is at least min_complexity."""
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return False
+        
+    branches = sum(1 for node in ast.walk(tree)
+                   if isinstance(node, (ast.If, ast.For, ast.While,
+                                        ast.ExceptHandler, ast.With, ast.Assert)))
+    return branches >= min_complexity
 
 # ─── Output types ────────────────────────────────────────────────────────────
 

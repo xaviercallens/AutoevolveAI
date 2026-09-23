@@ -258,6 +258,8 @@ class AgentLoop:
         seen_codes: set[str] = set()
         stagnation = 0
         energy_history: list[float] = []
+        error_trace_history: list[str] = []
+        non_shrink_count = 0
         # Best-of-N tracking: keep the lowest-energy verified candidate
         best_energy_score = float("inf")
         best_code = ""
@@ -319,14 +321,18 @@ class AgentLoop:
                 iteration == 1
                 and self.is_small
                 and self.prompt_budget.difficulty_triage
-                and diff_tier == "hard"
-                and retries_limit > 2
             ):
-                logger.info(
-                    "Task difficulty classified as 'hard' (E=%.1f) for <=3B model; capping retries_limit to 2 (Directive D5)",
-                    energy_res.score,
-                )
-                retries_limit = 2
+                if diff_tier == "phd":
+                    logger.info(
+                        "PhD-level task detected; capping sub-3B retries to 1 (D5-PhD)"
+                    )
+                    retries_limit = 1
+                elif diff_tier == "hard" and retries_limit > 2:
+                    logger.info(
+                        "Task difficulty classified as 'hard' (E=%.1f) for <=3B model; capping retries_limit to 2 (Directive D5)",
+                        energy_res.score,
+                    )
+                    retries_limit = 2
 
             converged = self._is_converged(energy_res, report, hidden_tests)
 
@@ -376,6 +382,23 @@ class AgentLoop:
                         energy_res.score,
                         energy_history[0],
                     )
+
+            # TASK-01: Banach REPL Convergence Monitor (GAP-01)
+            current_stderr = exec_res.stderr or ""
+            error_trace_history.append(current_stderr)
+            if iteration >= 2 and not converged and not early_stop_reason:
+                previous_stderr = error_trace_history[-2]
+                len_delta = len(current_stderr) - len(previous_stderr)
+                if len_delta >= 0:
+                    non_shrink_count += 1
+                else:
+                    non_shrink_count = 0
+                    
+                if non_shrink_count >= 2 and self.is_small:
+                    early_stop_reason = "banach_convergence_failure"
+                    logger.info("Banach delta: stderr Δ=%d (non-shrink streak: %d). Early stopping.", len_delta, non_shrink_count)
+                else:
+                    logger.info("Banach delta: stderr Δ=%d (non-shrink streak: %d)", len_delta, non_shrink_count)
 
             normalised = " ".join(code.split())
             if normalised and normalised in seen_codes:

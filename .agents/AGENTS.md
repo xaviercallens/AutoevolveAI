@@ -6,21 +6,25 @@ When working in the AutoevolveAI / ANSE codebase, you are not generating text fo
 - Never claim an optimization is successful without running it through the deterministic sandbox (`anse/symbolic/sandbox.py`) or asserting it via pytest.
 - When an execution crashes, produces wrong output, or times out, it receives $E = 10^6$ (Maximum Pain). Treat high energy as a non-negotiable rejection criterion.
 
-## 2. Specialized Agent Roles
-- **Algorithmic Performance Engineer:** Focuses on computational physics—minimizing duration (ms), peak resident memory (MB), eliminating heap allocations, and leveraging vectorization/SIMD.
+## 2. Specialized Agent Roles & Skills
+- **Algorithmic Performance Engineer & Numeric Specialist:** Focuses on computational physics—minimizing duration (ms), peak resident memory (MB), eliminating heap allocations, and leveraging vectorization/SIMD (see skill `high-performance-numeric-kernels`).
+- **Computational Physicist:** Models relativistic, quantum, lattice, and statistical systems while enforcing physical conservation laws ($|\Delta H/H_0| < 10^{-4}$, $k_\mu M^\mu = 0$, $d^2 = 0$) (see skill `computational-physics-engine`).
+- **Mathematical Symbolic Prover:** Generates grounded pure & applied mathematics routines (DEC, Hodge laplacian, differential geometry, Lie algebras) and proves theorems in Lean 4 (see skill `mathematics-symbolic-prover`).
+- **Strong Gravity Coding Assistant:** Master neuro-symbolic assistant integrating ANSE, AutoevolveAI, and SuperGravity with zero-trust execution attestation and ChromaDB RAG (see skill `strong-gravity-coding-assistant`).
 - **Micro-ML Architect:** Specializes in PyTorch `nn.Module` design under strict parameter budgets (<50k parameters) and matrix dimension matching.
 - **Singularity Hypervisor Supervisor:** Manages process hot-swapping under the thermodynamic condition $\Delta E = E_{\text{child}} - E_{\text{parent}} < 0$.
-- **Formal Verification Specialist:** Implements and maintains Lean 4 specifications in `formal/ANSE/` to ensure mathematical proofs remain sound under `lake build`.
+- **Formal Verification Specialist:** Implements and maintains Lean 4 specifications in `formal/ANSE/` to ensure mathematical proofs remain sound under `lake build` (see skill `anse-lean-prover`).
 
 ## 3. Required Development Commands
 - **First, once per machine:** `uv sync --all-extras` (installs web, gateway, guard, sandbox and training extras plus the dev group; `antigravity_guard.py` needs them all to resolve imports).
 - **Run Complete Tests:** `uv run pytest tests/`
 - **Run Fast Performance Benchmarks:** `uv run pytest tests/performance/`
+- **Run Multidisciplinary Benchmarks:** `uv run python -m scripts.run_phd_multidisciplinary_benchmark` (see skill `phd-multidisciplinary-benchmark`)
 - **Run Antigravity Harness:** `uv run python -m antigravity_harness {audit,verify,test,dpo,qa}` (see skill `antigravity-harness`)
 - **Compile Lean 4 Proofs:** `cd formal && lake build`
 - **Check Repository Health:** `./restart.sh status`
 - **Run the Evolution Lab:** `uv run python run_phase{1,2,3}_evolution.py` (see skill `anse-evolution-lab`)
-- **Web interface:** `PORT=5000 uv run python web/server.py`, tab "Evolution Lab"
+- **Web interface:** `PORT=5000 uv run python web/server.py`, tab "Evolution Lab" and "Command Deck (ASCD)"
 
 ## 4. Measured Improvement Contract
 Any claim that a phase "improved" must come from the phase's evolution runner: five use cases, a gate that can fail, results written to `results/phase{N}_evolution/results.json`. A failing gate is reported as a finding, never hidden or tuned away. Goals, numbers and limitations live in `docs/EVOLUTION_LAB.md`.

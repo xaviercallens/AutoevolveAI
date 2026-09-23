@@ -9,7 +9,7 @@ This repo supports two agent environments side by side:
 | MCP | `.antigravity/mcp_config.json` | `.mcp.json` (same `mcp_guard_server.py`) |
 | Guards | `.antigravity/hooks/hardened_gate.py` | `.claude/hooks/*.py` (PreToolUse / PostToolUse) |
 
-Each environment normally leaves the other's config directory alone; change it only when the user asks. Branch `antigravity` is the integration branch for Antigravity-driven work; the Antigravity skill for this workflow is `.agents/skills/anse-evolution-lab/`.
+Each environment normally leaves the other's config directory alone; change it only when the user asks. Branch `antigravity` is the integration branch for Antigravity-driven work. Specialized agent skills live in `.agents/skills/` (`mathematics-symbolic-prover`, `computational-physics-engine`, `high-performance-numeric-kernels`, `strong-gravity-coding-assistant`, `anse-evolution-lab`, `phd-multidisciplinary-benchmark`, `supergravity-guard`).
 
 ## Shared engineering rules
 Follow `.antigravity/rules.md`. The essentials:

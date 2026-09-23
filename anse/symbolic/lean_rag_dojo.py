@@ -64,8 +64,10 @@ class MathlibPremiseRetriever:
                 if doc_clean:
                     doc_text += f" -- {doc_clean}"
 
+                import hashlib
+                content_hash = hashlib.sha256(f"{name}:{sig}".encode()).hexdigest()[:8]
                 premises.append({
-                    "id": f"{module_name}:{name}",
+                    "id": f"{module_name}:{name}:{content_hash}",
                     "name": name,
                     "signature": sig,
                     "module": module_name,

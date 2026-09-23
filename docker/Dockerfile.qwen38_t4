@@ -1,0 +1,59 @@
+# Production container for Qwen3.8-27B (UD-Q3_K_XL) on NVIDIA T4 (16GB VRAM)
+# Uses llama.cpp llama-server compiled with CUDA sm_75 support for Turing architecture
+
+FROM nvidia/cuda:12.2.2-devel-ubuntu22.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    git \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Clone and compile llama.cpp with CUDA sm_75 (Turing T4)
+WORKDIR /build
+RUN git clone https://github.com/ggerganov/llama.cpp.git && \
+    cd llama.cpp && \
+    cmake -B build -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES="75" -DGGML_CUDA_FA_ALL_QUANTS=ON && \
+    cmake --build build --config Release -j$(nproc) --target llama-server
+
+# Runtime image
+FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=builder /build/llama.cpp/build/bin/llama-server /usr/local/bin/llama-server
+
+# Hugging Face Hub CLI for weight fetching
+RUN pip3 install --no-cache-dir huggingface_hub
+
+# Model storage directory
+RUN mkdir -p /models
+
+# Environment parameters tailored to 16GB T4
+ENV MODEL_REPO="unsloth/Qwen3.8-27B-GGUF"
+ENV MODEL_FILE="Qwen3.8-27B-UD-Q3_K_XL.gguf"
+ENV MMPROJ_FILE="mmproj-F16.gguf"
+ENV CONTEXT_SIZE="8192"
+ENV N_GPU_LAYERS="99"
+ENV KV_CACHE_TYPE="q8_0"
+ENV PORT="8080"
+ENV HOST="0.0.0.0"
+ENV PARALLEL_SLOTS="2"
+
+# Entrypoint script
+COPY docker/entrypoint_qwen38.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 8080
+
+ENTRYPOINT ["/entrypoint.sh"]

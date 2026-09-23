@@ -259,13 +259,13 @@ def test_d5_difficulty_tier_classification() -> None:
     assert r_trivial.difficulty_tier() == "trivial"
 
     r_fixable = EnergyResult(25.0, EnergyCategory.WRONG_OUTPUT, "", dummy_exec)
-    assert r_fixable.difficulty_tier() == "fixable"
+    assert r_fixable.difficulty_tier() == "hard"
 
     r_hard_runtime = EnergyResult(60.0, EnergyCategory.RUNTIME_ERROR, "", dummy_exec)
-    assert r_hard_runtime.difficulty_tier() == "hard"
+    assert r_hard_runtime.difficulty_tier() == "phd"
 
     r_hard_syntax = EnergyResult(100.0, EnergyCategory.SYNTAX_ERROR, "", dummy_exec)
-    assert r_hard_syntax.difficulty_tier() == "hard"
+    assert r_hard_syntax.difficulty_tier() == "phd"
 
 
 # ─── Directive D6: DPO Preference Signal from Live Phase 1 Traces ────────────

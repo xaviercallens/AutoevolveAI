@@ -10,10 +10,14 @@ from __future__ import annotations
 import ast
 import json
 import logging
+import math
 import re
 import time
+from collections import Counter
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
+
+from anse.algorithms.kdtree import KDTree
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +36,7 @@ class Lesson:
     """First failure feedback that had to be overcome ('' if solved first try)."""
     iterations: int = 1
     timestamp: float = field(default_factory=time.time)
+    embedding: list[float] | None = None
 
 
 def _tokens(text: str) -> set[str]:
@@ -56,30 +61,96 @@ class LessonMemory:
         self.frozen = frozen
         self.min_similarity = min_similarity
         self._lessons: list[Lesson] = []
+        self._vocab: list[str] = []
+        self._idf: dict[str, float] = {}
+
         if self.path.exists():
             for line in self.path.read_text(encoding="utf-8").splitlines():
                 if line.strip():
                     self._lessons.append(Lesson(**json.loads(line)))
 
+        if len(self._lessons) >= 10:
+            self._init_vocab()
+            for l in self._lessons:
+                if l.embedding is None:
+                    l.embedding = self._embed(l.task)
+
+    def _init_vocab(self) -> None:
+        df: Counter[str] = Counter()
+        base_lessons = self._lessons[:10]
+        for lesson in base_lessons:
+            words = _tokens(lesson.task)
+            for w in set(words):
+                df[w] += 1
+        top_words = [w for w, c in df.most_common(128)]
+        self._vocab = top_words
+        self._idf = {w: math.log(10.0 / c) for w, c in df.items() if w in top_words}
+
+    def _embed(self, task: str) -> list[float]:
+        words = _tokens(task)
+        tf: Counter[str] = Counter(words)
+        total = max(1, len(words))
+        return [(tf.get(w, 0) / total) * self._idf.get(w, 0.0) for w in self._vocab]
+
     def __len__(self) -> int:
         return len(self._lessons)
+
+    def prune_context(self, max_tokens: int = 2000) -> None:
+        """Drops oldest lessons when the serialized lesson block exceeds max_tokens * 4 bytes."""
+        max_bytes = max_tokens * 4
+        while len(self._lessons) > 10:
+            block_size = sum(len(l.task) + len(l.code) + len(l.failure) for l in self._lessons)
+            if block_size > max_bytes:
+                self._lessons.pop(10)
+            else:
+                break
 
     def add(self, lesson: Lesson) -> bool:
         """Store *lesson* unless the memory is frozen or the identical task is already stored."""
         if self.frozen or any(existing.task == lesson.task for existing in self._lessons):
             return False
+            
         self._lessons.append(lesson)
+        
+        if len(self._lessons) == 10:
+            self._init_vocab()
+            for l in self._lessons:
+                l.embedding = self._embed(l.task)
+        elif len(self._lessons) > 10:
+            lesson.embedding = self._embed(lesson.task)
+
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        data = asdict(lesson)
+        data.pop('embedding', None)
         with open(self.path, "a", encoding="utf-8") as f:
-            f.write(json.dumps(asdict(lesson)) + "\n")
+            f.write(json.dumps(data) + "\n")
+            
+        self.prune_context()
         return True
 
     def retrieve(self, task: str, k: int = 2) -> list[tuple[float, Lesson]]:
         """Return up to *k* (similarity, lesson) pairs above the threshold, best first."""
-        scored = [(task_similarity(task, lesson.task), lesson) for lesson in self._lessons]
-        scored = [pair for pair in scored if pair[0] >= self.min_similarity]
-        scored.sort(key=lambda pair: pair[0], reverse=True)
-        return scored[:k]
+        if len(self._lessons) < 10:
+            scored = [(task_similarity(task, lesson.task), lesson) for lesson in self._lessons]
+            scored = [pair for pair in scored if pair[0] >= self.min_similarity]
+            scored.sort(key=lambda pair: pair[0], reverse=True)
+            return scored[:k]
+
+        target_emb = self._embed(task)
+        points = [(l.embedding, l) for l in self._lessons if l.embedding is not None]
+        if not points:
+            return []
+            
+        tree = KDTree(points)
+        nearest = tree.query_knn(target_emb, k=k)
+        
+        results = []
+        for neighbor in nearest:
+            sim = task_similarity(task, neighbor.payload.task)
+            if sim >= self.min_similarity:
+                results.append((sim, neighbor.payload))
+        results.sort(key=lambda pair: pair[0], reverse=True)
+        return results
 
 
 def format_lessons(lessons: list[tuple[float, Lesson]], max_code_chars: int = 1200) -> str:

@@ -38,6 +38,7 @@ class EnergyCategory(str, Enum):  # noqa: UP042
     RUNTIME_ERROR = "runtime_error"
     TIMEOUT = "timeout"
     SYNTAX_ERROR = "syntax_error"
+    TRIVIAL_SIMULATION = "trivial_simulation"
 
 
 # Default energy levels (can be overridden by subclassing EnergyEvaluator)
@@ -50,6 +51,7 @@ _DEFAULT_ENERGY: dict[EnergyCategory, float] = {
     EnergyCategory.RUNTIME_ERROR: 60.0,
     EnergyCategory.TIMEOUT: 80.0,
     EnergyCategory.SYNTAX_ERROR: 100.0,
+    EnergyCategory.TRIVIAL_SIMULATION: 1_000_000.0,
 }
 
 
@@ -211,6 +213,11 @@ class EnergyEvaluator:
     def _check_error_categories(
         self, result: ExecutionResult, stdout: str, stderr: str
     ) -> tuple[EnergyCategory, str] | None:
+        if _matches(stderr, r"TRIVIAL_SIMULATION"):
+            return (
+                EnergyCategory.TRIVIAL_SIMULATION,
+                f"Your code is too simple to be a genuine solution to this hard problem.\nStderr:\n{stderr}",
+            )
         if result.timed_out:
             return (
                 EnergyCategory.TIMEOUT,

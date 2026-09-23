@@ -170,6 +170,7 @@ class AgentLoop:
         adaptive_retry: bool = False,
         prompt_budget: PromptBudgetPolicy | None = None,
         force_adaptive: bool = False,
+        adversarial_validation: bool = False,
     ) -> None:
         self.config = config or get_config()
         self.extractor = extractor or HiddenStateExtractor(config=self.config.model)
@@ -186,6 +187,7 @@ class AgentLoop:
         self.model_name = model_name
         self.is_small = is_small_model(model_name)
         self.model_tier = get_model_tier(model_name)
+        self.adversarial_validation = adversarial_validation or self.is_small
 
         # Directive D2: Disable adaptive retry for sub-3B models unless explicitly forced
         if adaptive_retry and self.is_small and not force_adaptive:
@@ -300,8 +302,57 @@ class AgentLoop:
                     tier_used=1,
                 )
             else:
-                # 3. Execute in Sandbox
-                exec_res, report = self._execute(code, hidden_tests)
+                from antigravity_harness.core.anti_stub_guard import AntiStubGuard
+                from anse.symbolic.parser import check_complexity_floor
+                
+                is_trivial = False
+                reject_reason = ""
+                
+                # 2.1 Adversarial Validation (Red Team)
+                if self.adversarial_validation:
+                    from anse.core.red_team import AdversarialRedTeam
+                    def red_team_caller(p: str, sp: str, temp: float) -> str:
+                        try:
+                            resp, _ = self.extractor.extract(prompt=p, system_prompt=sp, temperature=temp)
+                        except TypeError:
+                            resp, _ = self.extractor.extract(prompt=p, system_prompt=sp)
+                        return resp
+
+                    red_team = AdversarialRedTeam(red_team_caller)
+                    adv_resp = red_team.evaluate(code)
+                    
+                    if "REJECT" in adv_resp.upper():
+                        is_trivial = True
+                        reject_reason = f"TRIVIAL_SIMULATION: Adversary Validator rejected the code: {adv_resp}"
+                
+                # 2.2 AST Anti-Stub Wall
+                if not is_trivial:
+                    guard = AntiStubGuard()
+                    audit_res = guard.audit_code(code)
+                    if not audit_res.is_clean:
+                        is_trivial = True
+                        violations = ", ".join(v.message for v in audit_res.violations)
+                        reject_reason = f"TRIVIAL_SIMULATION: AntiStubGuard detected stubs/mocks: {violations}"
+
+                # 2.3 Complexity Floor (Legacy)
+                if not is_trivial and iteration > 1 and last_energy and last_energy.difficulty_tier() in ("hard", "phd"):
+                    if not check_complexity_floor(code, min_complexity=5):
+                        is_trivial = True
+                        reject_reason = "TRIVIAL_SIMULATION: cyclomatic complexity below floor"
+                
+                if is_trivial:
+                    exec_res = ExecutionResult(
+                        stdout="",
+                        stderr=reject_reason,
+                        returncode=2,
+                        timed_out=False,
+                        duration_ms=0.0,
+                        tier_used=1,
+                    )
+                    report = None
+                else:
+                    # 3. Execute in Sandbox
+                    exec_res, report = self._execute(code, hidden_tests)
 
             # 4. Evaluate Energy
             if hidden_tests:

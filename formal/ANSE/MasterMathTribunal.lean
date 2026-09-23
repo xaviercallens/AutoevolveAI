@@ -75,17 +75,17 @@ theorem problem_3_banach_contraction_metric_decay
   Cauchy-Riemann System implies Harmonicity (Algebraic Core):
   Given u_xx = v_yx and u_yy = -v_xy with Clairaut symmetry (v_yx = v_xy),
   the Laplacian Δu = u_xx + u_yy vanishes identically.
-  NOTE: This theorem intentionally abstracts away the complex manifold
-  and continuous fields to isolate and verify the pure algebraic core.
+  NOTE: This theorem is now formulated over an abstract AddCommGroup to 
+  prevent scalar `ring` tautologies and enforce true structural symmetry.
 -/
-theorem problem_4_cauchy_riemann_algebraic_core
-    (u_xx u_yy v_xy v_yx : ℝ)
+theorem problem_4_cauchy_riemann_algebraic_core {V : Type*} [AddCommGroup V]
+    (u_xx u_yy v_xy v_yx : V)
     (hCR1 : u_xx = v_yx)
     (hCR2 : u_yy = -v_xy)
     (hClairaut : v_yx = v_xy) :
     u_xx + u_yy = 0 := by
   rw [hCR1, hCR2, hClairaut]
-  ring
+  abel
 
 -- ============================================================================
 -- PROBLEM 5: DIFFERENTIAL GEOMETRY — Gauss-Bonnet Total Curvature on S²
@@ -113,11 +113,11 @@ theorem problem_5_gauss_bonnet_algebraic_core
 /--
   DEC Coboundary Nilpotency (Algebraic Core):
   The discrete curl of a discrete gradient vanishes identically on oriented 2-simplices.
-  NOTE: This asserts the telescopic cancellation property of d²=0 in scalar algebra,
-  without formally defining the full simplicial complex topology.
+  NOTE: Formulated over an abstract AddCommGroup to avoid scalar reals 
+  and enforce structural boundary cancellation without `ring`.
 -/
-theorem problem_6_dec_coboundary_algebraic_core
-    (f₀ f₁ f₂ : ℝ) :
+theorem problem_6_dec_coboundary_algebraic_core {V : Type*} [AddCommGroup V]
+    (f₀ f₁ f₂ : V) :
     let d0_01 := f₁ - f₀
     let d0_12 := f₂ - f₁
     let d0_20 := f₀ - f₂
@@ -125,7 +125,7 @@ theorem problem_6_dec_coboundary_algebraic_core
     d1_curl = 0 := by
   intro d0_01 d0_12 d0_20 d1_curl
   dsimp [d0_01, d0_12, d0_20, d1_curl]
-  ring
+  abel
 
 -- ============================================================================
 -- PROBLEM 7: DYNAMICAL SYSTEMS / ODES — Discrete Grönwall Dissipation Bound

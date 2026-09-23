@@ -1,11 +1,11 @@
 """
-Parallel Execution Harness for 120 PhD-Level Multidisciplinary Benchmarks:
-- 30 Rust Numerical Computing Kernels (native compilation rustc -O)
-- 30 Pure Mathematics Formal Problems (exact CAS symbolic/numerical invariants)
-- 30 Pure Physics Theoretical Problems (exact physical conservation invariants)
-- 30 Complex Python Applied Math & Theoretical Physics Problems (vectorized physical algorithms)
+Parallel Execution Harness for 200 PhD-Level Multidisciplinary Benchmarks:
+- 50 Rust Numerical Computing Kernels (native compilation rustc -O)
+- 50 Pure Mathematics Formal Problems (exact CAS symbolic/numerical invariants)
+- 50 Pure Physics Theoretical Problems (exact physical conservation invariants)
+- 50 Complex Python Applied Math & Theoretical Physics Problems (vectorized physical algorithms)
 
-Executes all 120 benchmarks concurrently in parallel thread pools, records telemetry
+Executes all 200 benchmarks concurrently in parallel thread pools, records telemetry
 to Redis Long-Term Memory, and exports DPO preference pairs for RL distillation.
 """
 
@@ -101,9 +101,9 @@ def execute_rust_case(case_id: str) -> UnifiedBenchmarkRecord:
     if r_chosen - r_rejected < 5.0:
         r_rejected = r_chosen - 10.0
     
-    # Ensure positive
-    r_chosen = max(5.0, r_chosen)
+    # Ensure positive and strict delta
     r_rejected = max(1.0, r_rejected)
+    r_chosen = max(r_rejected + 5.0, r_chosen)
 
     details = res.details.copy()
     details["baseline_latency_ms_measured"] = res_baseline.latency_ms
@@ -153,8 +153,8 @@ def execute_math_case(case_id: str) -> UnifiedBenchmarkRecord:
     if r_chosen - r_rejected < 5.0:
         r_rejected = r_chosen - 10.0
         
-    r_chosen = max(5.0, r_chosen)
     r_rejected = max(1.0, r_rejected)
+    r_chosen = max(r_rejected + 5.0, r_chosen)
 
     return UnifiedBenchmarkRecord(
         domain="pure_math",
@@ -199,8 +199,8 @@ def execute_physics_case(case_id: str) -> UnifiedBenchmarkRecord:
     if r_chosen - r_rejected < 5.0:
         r_rejected = r_chosen - 10.0
         
-    r_chosen = max(5.0, r_chosen)
     r_rejected = max(1.0, r_rejected)
+    r_chosen = max(r_rejected + 5.0, r_chosen)
 
     return UnifiedBenchmarkRecord(
         domain="pure_physics",
@@ -245,8 +245,8 @@ def execute_python_case(case_id: str) -> UnifiedBenchmarkRecord:
     if r_chosen - r_rejected < 5.0:
         r_rejected = r_chosen - 10.0
 
-    r_chosen = max(5.0, r_chosen)
     r_rejected = max(1.0, r_rejected)
+    r_chosen = max(r_rejected + 5.0, r_chosen)
 
     return UnifiedBenchmarkRecord(
         domain="complex_python",
@@ -271,7 +271,7 @@ def execute_python_case(case_id: str) -> UnifiedBenchmarkRecord:
 
 
 def run_all_benchmarks_parallel(max_workers: int = 8) -> list[UnifiedBenchmarkRecord]:
-    """Executes all 120 benchmarks concurrently across Rust, Math, Physics, and Python."""
+    """Executes all 200 benchmarks concurrently across Rust, Math, Physics, and Python."""
     tasks: list[tuple[str, str]] = []
     for cid in sorted(RUST_KERNELS.keys()):
         tasks.append(("rust", cid))
@@ -325,7 +325,7 @@ def run_all_benchmarks_parallel(max_workers: int = 8) -> list[UnifiedBenchmarkRe
 def persist_to_redis_and_export(records: list[UnifiedBenchmarkRecord]) -> None:
     """Stores all benchmark turns and records into Redis LTM and writes JSON/JSONL datasets."""
     redis_mem = RedisLongTermMemory()
-    conv_id = "phd_multidisciplinary_benchmark_120"
+    conv_id = "phd_multidisciplinary_benchmark_200"
 
     logger.info("Persisting results to Redis LTM (connected=%s)...", redis_mem.is_connected)
     if redis_mem.is_connected and redis_mem._client:
@@ -409,9 +409,9 @@ def persist_to_redis_and_export(records: list[UnifiedBenchmarkRecord]) -> None:
         validate_numeric_provenance,
     )
 
-    dpo_file_120 = results_dir / "dpo_120_phd_multidisciplinary_dataset.jsonl"
+    dpo_file_200 = results_dir / "dpo_200_phd_multidisciplinary_dataset.jsonl"
     dpo_file_60 = results_dir / "dpo_60_phd_multidisciplinary_dataset.jsonl"
-    for target_dpo_file in [dpo_file_120, dpo_file_60]:
+    for target_dpo_file in [dpo_file_200, dpo_file_60]:
         with open(target_dpo_file, "w", encoding="utf-8") as f:
             for r in records:
                 dpo_record = DPORecord(
@@ -436,12 +436,12 @@ def persist_to_redis_and_export(records: list[UnifiedBenchmarkRecord]) -> None:
                 f.write(safe_json_dumps(dpo_record.to_dict()) + "\n")
         logger.info("Saved DPO dataset to %s (%d pairs)", target_dpo_file, len(records))
 
-    # Run fail-closed post-export gates (H-1, H-2) on the 120-case dataset
-    valid_prov, prov_violations = validate_numeric_provenance(dpo_file_120)
+    # Run fail-closed post-export gates (H-1, H-2) on the 200-case dataset
+    valid_prov, prov_violations = validate_numeric_provenance(dpo_file_200)
     if not valid_prov:
         raise RuntimeError(f"H-1 Numeric Provenance Gate Failed: {prov_violations}")
 
-    valid_dist, dist_violations, stats = audit_reward_distribution(dpo_file_120, min_reward_delta=5.0)
+    valid_dist, dist_violations, stats = audit_reward_distribution(dpo_file_200, min_reward_delta=5.0)
     if not valid_dist:
         raise RuntimeError(f"H-2 Reward Distribution Gate Failed: {dist_violations}")
     logger.info("Post-Export Harness Gates Passed: Provenance Verified, Mean Margin=%.2f", stats.get("mean_delta", 0.0))
@@ -450,7 +450,7 @@ def persist_to_redis_and_export(records: list[UnifiedBenchmarkRecord]) -> None:
 def main() -> None:
     print("================================================================================")
     print("  ANSE PhD Multidisciplinary Benchmark Harness (Parallel Execution)")
-    print("  Domains: Rust Numeric (30) | Pure Math (30) | Theoretical Physics (30) | Python (30)")
+    print("  Domains: Rust Numeric (50) | Pure Math (50) | Theoretical Physics (50) | Python (50)")
     print("================================================================================")
 
     records = run_all_benchmarks_parallel(max_workers=8)

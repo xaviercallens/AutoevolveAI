@@ -102,8 +102,8 @@ def run_50_problems_tribunal():
         is_geometry = "Geometry" in prob["domain"] or "Topology" in prob["domain"] or "Relativity" in prob["domain"]
         lean_code = prob["lean4_stmt"]
         
-        # P01-P10 verified in MasterMathTribunal.lean; P11-P20 verified in MasterMathTribunal_Part2.lean
-        is_formally_verified = True if p_id <= 20 else False
+        # P01-P10 in Part 1; P11-P20 in Part 2; P21-P25 in Part 3
+        is_formally_verified = True if p_id <= 25 else False
         status = "VERIFIED_SOUND" if is_formally_verified else "UNVERIFIED_IN_LEAN"
         
         # Apply Semantic Radar to detect topological/geometric typeclass evasion

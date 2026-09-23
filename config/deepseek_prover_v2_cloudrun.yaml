@@ -1,0 +1,89 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  annotations:
+    run.googleapis.com/client-name: gcloud
+    run.googleapis.com/client-version: 585.0.0
+    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress-status: all
+    run.googleapis.com/maxScale: '3'
+    run.googleapis.com/operation-id: e88e4b11-9c9d-4575-8651-485330bf39fb
+    run.googleapis.com/urls: '["https://deepseek-prover-v2-1003063861791.us-central1.run.app","https://deepseek-prover-v2-cfhmhmvv5a-uc.a.run.app"]'
+    serving.knative.dev/creator: callensxavier@gmail.com
+    serving.knative.dev/lastModifier: callensxavier@gmail.com
+  creationTimestamp: '2026-06-11T13:35:35.697325Z'
+  generation: 13
+  labels:
+    cloud.googleapis.com/location: us-central1
+  name: deepseek-prover-v2
+  namespace: '1003063861791'
+  resourceVersion: AAZcK03o61s
+  selfLink: /apis/serving.knative.dev/v1/namespaces/1003063861791/services/deepseek-prover-v2
+  uid: 29c2428a-3657-40c2-b734-fd06e2b5c569
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: '1'
+        run.googleapis.com/client-name: gcloud
+        run.googleapis.com/client-version: 585.0.0
+        run.googleapis.com/cpu-throttling: 'false'
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/gpu-zonal-redundancy-disabled: 'true'
+        run.googleapis.com/startup-cpu-boost: 'true'
+      labels:
+        client.knative.dev/nonce: kwrdgnfgwn
+        run.googleapis.com/startupProbeType: Default
+    spec:
+      containerConcurrency: 10
+      containers:
+      - env:
+        - name: MODEL_ID
+          value: deepseek-ai/DeepSeek-Prover-V2-7B
+        - name: MAX_TOKENS
+          value: '1024'
+        - name: PREWARM
+          value: 'false'
+        image: us-central1-docker.pkg.dev/gen-lang-client-0625573011/agora/deepseek-prover-serve:stable
+        ports:
+        - containerPort: 8080
+          name: http1
+        resources:
+          limits:
+            cpu: '8'
+            memory: 32Gi
+            nvidia.com/gpu: '1'
+        startupProbe:
+          failureThreshold: 1
+          periodSeconds: 240
+          tcpSocket:
+            port: 8080
+          timeoutSeconds: 240
+      nodeSelector:
+        run.googleapis.com/accelerator: nvidia-l4
+      serviceAccountName: 1003063861791-compute@developer.gserviceaccount.com
+      timeoutSeconds: 600
+  traffic:
+  - latestRevision: true
+    percent: 100
+status:
+  address:
+    url: https://deepseek-prover-v2-cfhmhmvv5a-uc.a.run.app
+  conditions:
+  - lastTransitionTime: '2026-09-23T19:15:20.723291Z'
+    status: 'True'
+    type: Ready
+  - lastTransitionTime: '2026-09-23T19:15:06.083887Z'
+    status: 'True'
+    type: ConfigurationsReady
+  - lastTransitionTime: '2026-09-23T19:15:20.673760Z'
+    status: 'True'
+    type: RoutesReady
+  latestCreatedRevisionName: deepseek-prover-v2-00013-pj7
+  latestReadyRevisionName: deepseek-prover-v2-00013-pj7
+  observedGeneration: 13
+  traffic:
+  - latestRevision: true
+    percent: 100
+    revisionName: deepseek-prover-v2-00013-pj7
+  url: https://deepseek-prover-v2-cfhmhmvv5a-uc.a.run.app

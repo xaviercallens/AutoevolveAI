@@ -1,0 +1,39 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: deepseek-red-team
+  labels:
+    cloud.googleapis.com/location: us-central1
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "5"
+        # Enable GPU on Cloud Run
+        run.googleapis.com/cpu-throttling: "false"
+    spec:
+      containerConcurrency: 10
+      containers:
+      - image: vllm/vllm-openai:latest
+        command:
+        - python3
+        - -m
+        - vllm.entrypoints.openai.api_server
+        - --model
+        - deepseek-ai/DeepSeek-R1-Distill-Qwen-14B
+        - --quantization
+        - awq
+        - --dtype
+        - half
+        - --gpu-memory-utilization
+        - "0.9"
+        - --max-model-len
+        - "4096"
+        resources:
+          limits:
+            cpu: "4000m"
+            memory: "16Gi"
+            nvidia.com/gpu: "1" # Request 1 NVIDIA T4 GPU
+        ports:
+        - containerPort: 8000

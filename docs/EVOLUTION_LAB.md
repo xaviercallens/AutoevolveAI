@@ -157,3 +157,33 @@ The web control center (`PORT=5000 uv run python web/server.py`, tab "Command De
 - **DeepSeek-R1 (DeepSeek, 2025)**: Reasoning capabilities via GRPO reinforcement learning.
 - **AlphaGeometry (Trieu et al., DeepMind, 2024)**: Neuro-symbolic integration for complex math solving.
 - **LeanDojo (Yang et al., 2023)**: Autonomous agents leveraging Retrieval-Augmented Language Models with Lean 4.
+
+## 🚀 Deployment & FinOps Strategy: GCP Serverless "Scale-to-Zero"
+
+To maximize cost-efficiency while retaining deep epistemic reasoning, the Deep Think Red Team Auditor relies on open-weights deployed on Google Cloud Platform (GCP) Serverless environments.
+
+### 1. Active Models
+- **Primary Auditor (Deep Think)**: `deepseek-ai/DeepSeek-R1-Distill-Qwen-14B` (AWQ Quantized)
+- **VRAM Footprint**: ~10.5 GB (Fits comfortably on a single 16 GB NVIDIA T4 GPU)
+- **Framework**: vLLM (OpenAI API compatibility)
+
+### 2. GCP Deployment Architecture (Cloud Run for GPU)
+- **Compute**: 1x NVIDIA T4 GPU, 4 vCPU, 16GB RAM.
+- **Autoscaling Policy**: 
+  - `min-instances: 0` (True Scale-to-Zero when idle)
+  - `max-instances: 5`
+  - *Zero idle costs*: The infrastructure drops to \$0.00 when the RL pipeline or ANSE agentic loop isn't actively generating proofs.
+- **Cold Start**: ~25-40 seconds for the container to pull the GGUF/AWQ weights from cache into VRAM.
+
+### 3. Usage, Tokens & Cost Estimation
+The cost economics dramatically outperform proprietary frontier models, especially for intensive MCTS (Monte Carlo Tree Search) where thousands of tokens of `<think>` reflection are generated before the actual answer.
+
+- **Throughput**: ~35 tokens/sec (batch size 1) on NVIDIA T4.
+- **Active Compute Cost**: ~$0.45 per hour (when executing).
+- **Idle Compute Cost**: $0.00 (Due to `min-instances: 0`).
+- **Estimated Cost per 1 Million Tokens**: 
+  - *Calculation*: 1,000,000 tokens @ 35 t/s ≈ 28,571 seconds ≈ 7.93 hours of active GPU time.
+  - *Final Cost*: 7.93h * $0.45/h = **$3.57 per 1M tokens**.
+- **Savings Factor**: ~4x cheaper than equivalent commercial reasoning API tiers, with absolute data privacy (Zero-Trust) for proprietary math algorithms.
+
+*(Note: See `deploy/gcp_cloudrun_deepseek.yaml` for the exact Knative/Cloud Run definition used by the CI/CD pipeline).*

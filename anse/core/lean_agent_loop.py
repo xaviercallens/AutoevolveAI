@@ -80,6 +80,27 @@ class LeanAgentLoop:
                 
                 if res.compiled_successfully and not res.has_sorry:
                     logger.info(f"Success! Theorem {theorem_name} verified.")
+                    
+                    # --- DEEP THINK RED TEAM AUDIT ---
+                    from anse.core.red_team import DeepThinkAuditor
+                    auditor = DeepThinkAuditor(self.extractor)
+                    audit_state = auditor.invoke({
+                        "math_problem": formal_statement,
+                        "lean_code": code,
+                        "python_metrics": {"error": 0.0, "latency_ms": res.elapsed_ms},
+                        "thoughts": []
+                    })
+                    
+                    if "REJECT" in audit_state["verdict"]:
+                        logger.warning(f"Red Team Audit Rejected: {audit_state['verdict']}")
+                        # Treat as a failure, loop back with the Red Team's thoughts as pain signal
+                        last_error = "Red Team Rejected your solution due to epistemic flaws:\n" + "\n".join(audit_state["thoughts"])
+                        prompt += "\n\n" + RETRY_PROMPT.format(error=last_error)
+                        continue
+                        
+                    logger.info("Red Team Audit Passed. Attestation Verified.")
+                    # ---------------------------------
+                    
                     # Index successful solution to RAG
                     self.rag.index_code_solution(
                         doc_id=f"lean_{theorem_name}_{int(time.time())}",

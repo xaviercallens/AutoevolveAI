@@ -151,3 +151,9 @@ The web control center (`PORT=5000 uv run python web/server.py`, tab "Command De
 - **ProofEvolve Integration**: arXiv 2026 paper successfully added. Formal neuro-symbolic proof evolution via Lean 4. 
 - **10 Master-Level Mathematics Problems**: Verified seamlessly via `scripts/execute_10_master_math_closed_loop.py` using ANSE and Strong Gravity. (0 sorry, 100% strict verification).
 - **Scale Out**: Scaled up dataset orchestration for 5000 Python & 3000 Rust benchmarks with RAG-based context injection via ChromaDB.
+
+## Scientific References (Deep Think & Red Team)
+- **Let's Verify Step by Step (Lightman et al., OpenAI, 2023)**: Foundations of Process Reward Models (PRMs) reducing logical hallucinations in math.
+- **DeepSeek-R1 (DeepSeek, 2025)**: Reasoning capabilities via GRPO reinforcement learning.
+- **AlphaGeometry (Trieu et al., DeepMind, 2024)**: Neuro-symbolic integration for complex math solving.
+- **LeanDojo (Yang et al., 2023)**: Autonomous agents leveraging Retrieval-Augmented Language Models with Lean 4.

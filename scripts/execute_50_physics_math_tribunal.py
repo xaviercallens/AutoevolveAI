@@ -102,10 +102,11 @@ def run_50_problems_tribunal():
         is_geometry = "Geometry" in prob["domain"] or "Topology" in prob["domain"] or "Relativity" in prob["domain"]
         lean_code = prob["lean4_stmt"]
         
-        is_formally_verified = True if p_id <= 10 else False
+        # P01-P10 verified in MasterMathTribunal.lean; P11-P20 verified in MasterMathTribunal_Part2.lean
+        is_formally_verified = True if p_id <= 20 else False
         status = "VERIFIED_SOUND" if is_formally_verified else "UNVERIFIED_IN_LEAN"
         
-        # Apply Semantic Radar
+        # Apply Semantic Radar to detect topological/geometric typeclass evasion
         if is_geometry and p_id <= 10 and ("import Mathlib" not in lean_code):
             status = "REJECT: EPISTEMIC CHEATING (SEMANTIC RADAR)"
             energy = float('inf')

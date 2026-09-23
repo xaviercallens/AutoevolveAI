@@ -139,8 +139,8 @@ def compute_edit_distance_ratio(s1: str, s2: str) -> float:
     if not s1 or not s2:
         return 1.0
 
-    # Cap comparison length to 300 chars for thermodynamic algorithmic efficiency
-    s1, s2 = s1[:300], s2[:300]
+    # Cap comparison length to 80 chars for thermodynamic algorithmic efficiency
+    s1, s2 = s1[:80], s2[:80]
     len1, len2 = len(s1), len(s2)
     prev_row = list(range(len2 + 1))
     for i, c1 in enumerate(s1):
@@ -324,15 +324,27 @@ def extract_dpo_pairs(
     redis_client: Any = None,
     redis_host: str = "localhost",
     redis_port: int = 6379,
+    max_workers: int = 16,
 ) -> list[dict[str, Any]]:
     """Extract DPO training triplets from Redis for all aligned subtasks."""
     r = redis_client or redis.Redis(host=redis_host, port=redis_port, decode_responses=False)
     subtask_ids = _discover_candidate_subtasks(r)
     all_pairs: list[dict[str, Any]] = []
 
-    for subtask_id in subtask_ids:
-        pairs = _process_subtask_traces(subtask_id, r)
-        all_pairs.extend(pairs)
+    if max_workers > 1 and len(subtask_ids) > 10:
+        from concurrent.futures import ThreadPoolExecutor
+
+        def _fetch_worker(sid: str) -> list[dict[str, Any]]:
+            return _process_subtask_traces(sid, r)
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            batch_results = list(executor.map(_fetch_worker, subtask_ids))
+            for pairs in batch_results:
+                all_pairs.extend(pairs)
+    else:
+        for subtask_id in subtask_ids:
+            pairs = _process_subtask_traces(subtask_id, r)
+            all_pairs.extend(pairs)
 
     if output_file and all_pairs:
         _write_pairs_to_jsonl(output_file, all_pairs)

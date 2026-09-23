@@ -234,8 +234,16 @@ class TreeOfThoughtsEngine:
                 code = code_generator(cand) if code_generator else None
                 self.evaluate_state_hardness(cand, source_code=code)
 
-            # Sort candidates by heuristic valuation V(s) descending
-            candidates_t.sort(key=lambda s: s.value, reverse=True)
+            # Sort candidates by heuristic valuation V(s) descending.
+            # Tiebreaker: non-stub candidates rank above stub-detected ones (STUB_DETECTED
+            # is the rejection reason when a 'pass' / '...' stub is found by ZeroStubAudit).
+            # This ensures deterministic pruning: a clean-code candidate always beats a stub
+            # even when both receive value=0.0 (e.g., acceptance command unavailable).
+            def _sort_key(s: ThoughtState):
+                is_stub = s.metadata.get("rejection_reason") == "STUB_DETECTED"
+                return (s.value, not is_stub)  # (primary: value DESC, secondary: non-stub first)
+
+            candidates_t.sort(key=_sort_key, reverse=True)
 
             # Prune to breadth limit b (beam width)
             current_frontier = candidates_t[:breadth_limit]

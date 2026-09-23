@@ -128,6 +128,7 @@ def _harvest_subtask_traces(
     r: Any,
     subtask_keys: list[Any],
     last_watermark: float,
+    max_samples: int | None = None,
 ) -> list[dict[str, Any]]:
     """Iterates subtask trace lists to harvest all verified new samples."""
     sft_records: list[dict[str, Any]] = []
@@ -139,6 +140,8 @@ def _harvest_subtask_traces(
             sample = _process_single_trace_delta(r, tid_str, last_watermark)
             if sample:
                 sft_records.append(sample)
+                if max_samples and len(sft_records) >= max_samples:
+                    return sft_records
     return sft_records
 
 
@@ -162,6 +165,7 @@ def extract_delta_dataset(
     redis_host: str = REDIS_HOST,
     redis_port: int = REDIS_PORT,
     output_dir: Path = Path("./training_runs/datasets"),
+    max_samples: int | None = None,
 ) -> tuple[bool, Path | None, float]:
     """Queries Redis for verified traces recorded since the last training watermark."""
     r = redis_client or redis.Redis(host=redis_host, port=redis_port, decode_responses=False)
@@ -170,7 +174,8 @@ def extract_delta_dataset(
     current_cycle_ts = time.time()
 
     subtask_keys = r.keys("antigravity:subtask:*:traces") or []
-    sft_records = _harvest_subtask_traces(r, subtask_keys, last_watermark)
+    effective_max = max_samples or (min_samples * 2)
+    sft_records = _harvest_subtask_traces(r, subtask_keys, last_watermark, max_samples=effective_max)
 
     print(
         f"📦 Harvester: Found {len(sft_records)} verified samples "

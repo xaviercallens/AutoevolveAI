@@ -37,4 +37,6 @@ import ANSE.Blueprint
 import ANSE.Algorithms
 import ANSE.BanachContraction
 import ANSE.KerrSymplectic
+import ANSE.StabilizerCode
+import ANSE.GaussBonnet
 

@@ -23,10 +23,10 @@ where non-conservation or code stubs incur an insurmountable penalty wall $E = 1
 
 | Agent Role | Model Tier Assigned | $\epsilon_{\text{inv}}$ | Latency | Peak RAM | Proof Token | Status |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Differential Geometer Agent** | Tier 1 (Gemini 3.1 Pro / Differential Topology) | `1.15e-14` | 15.05 ms | 2.45 MB | `0692bf68` | **VERIFIED** |
-| **Lean 4 Kernel Prover Agent** | Tier 1 (Claude 3.5 Sonnet / Formal Theorem Prover) | `0.00e+00` | 7422.72 ms | 3.20 MB | `c309b3f0` | **VERIFIED** |
-| **Soliton & Ricci Flow Attestor** | Tier 1 (Claude 3.5 Sonnet / Geometric Analysis) | `0.00e+00` | 0.75 ms | 2.10 MB | `f3d9861b` | **VERIFIED** |
-| **Consortia Aggregate** | **Overall Gate: PASS** | **`1.15e-14`** | **7460.19 ms** | **3.20 MB** | **`92114196`** | **VERIFIED** |
+| **Differential Geometer Agent** | Tier 1 (Gemini 3.1 Pro / Differential Topology) | `1.15e-14` | 21.20 ms | 2.45 MB | `0692bf68` | **VERIFIED** |
+| **Lean 4 Kernel Prover Agent** | Tier 1 (Claude 3.5 Sonnet / Formal Theorem Prover) | `0.00e+00` | 8039.98 ms | 3.20 MB | `c309b3f0` | **VERIFIED** |
+| **Soliton & Ricci Flow Attestor** | Tier 1 (Claude 3.5 Sonnet / Geometric Analysis) | `0.00e+00` | 4.59 ms | 2.10 MB | `f3d9861b` | **VERIFIED** |
+| **Consortia Aggregate** | **Overall Gate: PASS** | **`1.15e-14`** | **8113.52 ms** | **3.20 MB** | **`92114196`** | **VERIFIED** |
 
 ---
 

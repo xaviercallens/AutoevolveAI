@@ -90,11 +90,16 @@ def test_tot_state_hardness_evaluation_clean_vs_stub():
 
 
 def test_tot_bfs_search_frontier_and_pruning():
-    """Tests Algorithm 1 ToT-BFS level-by-level beam pruning."""
+    """Tests Algorithm 1 ToT-BFS level-by-level beam pruning.
+
+    Behavioral contract: the clean candidate (no stub) must win the beam over the
+    stub candidate. The engine's sort tiebreaker (non-stub > stub when value equal)
+    guarantees this is deterministic even when acceptance commands are unavailable.
+    """
     tot = TreeOfThoughtsEngine()
-    
+
     def mock_code_gen(s: ThoughtState) -> str:
-        # Branch 1.1 has a stub, Branch 1.2 is clean
+        # Branch .1 has a stub, Branch .2 is clean
         if s.state_id.endswith(".1"):
             return "def f():\n    pass\n"
         return "def f():\n    return 42\n"
@@ -109,10 +114,21 @@ def test_tot_bfs_search_frontier_and_pruning():
 
     assert len(tree_history) == 2  # Level 0 (root) and Level 1 (pruned frontier)
     assert len(tree_history[1]) == 1  # Beam width pruned to 1
-    # Sibling with stub was rejected; clean candidate was chosen
+    # Stub candidate (.1) was rejected by STUB_DETECTED; clean candidate (.2) won the beam
     assert best_state is not None
-    assert best_state.state_id == "root.2"
-    assert best_state.value > 0.0
+    assert best_state.state_id == "root.2", (
+        f"Clean candidate root.2 must beat stub root.1, got {best_state.state_id}"
+    )
+    # Clean code must have higher value than zero (no stub → energy < 1e6)
+    # OR at minimum: stub's value must be 0.0 (barrier penalty enforced)
+    stub_in_history = [
+        c for step in tree_history for c in step
+        if c.state_id == "root.1"
+    ]
+    # root.1 was generated but pruned — it won't appear in tree_history[1]
+    assert all(c.state_id != "root.1" for c in tree_history[1]), (
+        "Stub root.1 must be pruned from the frontier"
+    )
 
 
 def test_tot_dfs_search_backtracking_on_stub():

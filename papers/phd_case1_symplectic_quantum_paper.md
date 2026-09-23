@@ -23,10 +23,10 @@ where non-conservation or code stubs incur an insurmountable penalty wall $E = 1
 
 | Agent Role | Model Tier Assigned | $\epsilon_{\text{inv}}$ | Latency | Peak RAM | Proof Token | Status |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Symplectic Integrator Agent** | Tier 1 (Claude 3.5 Sonnet / Mathematical Physics) | `8.02e-11` | 2460.74 ms | 3.10 MB | `a9e21ee2` | **VERIFIED** |
-| **Quantum Vacuum Field Agent** | Tier 1 (Claude 3 Opus / QFT Analytical Formulation) | `5.45e-02` | 37.15 ms | 4.20 MB | `b17357e2` | **VERIFIED** |
-| **Thermodynamic Attestor Agent** | Tier 3 (PyTorch Micro-JEPA Latent Predictor) | `0.00e+00` | 7594.74 ms | 2.10 MB | `c6b6c6cf` | **VERIFIED** |
-| **Consortia Aggregate** | **Overall Gate: PASS** | **`5.45e-02`** | **10122.19 ms** | **4.20 MB** | **`393f2172`** | **VERIFIED** |
+| **Symplectic Integrator Agent** | Tier 1 (Claude 3.5 Sonnet / Mathematical Physics) | `8.02e-11` | 2253.22 ms | 3.10 MB | `a9e21ee2` | **VERIFIED** |
+| **Quantum Vacuum Field Agent** | Tier 1 (Claude 3 Opus / QFT Analytical Formulation) | `5.45e-02` | 37.14 ms | 4.20 MB | `b17357e2` | **VERIFIED** |
+| **Thermodynamic Attestor Agent** | Tier 3 (PyTorch Micro-JEPA Latent Predictor) | `0.00e+00` | 7272.78 ms | 2.10 MB | `c6b6c6cf` | **VERIFIED** |
+| **Consortia Aggregate** | **Overall Gate: PASS** | **`5.45e-02`** | **9587.72 ms** | **4.20 MB** | **`393f2172`** | **VERIFIED** |
 
 ---
 

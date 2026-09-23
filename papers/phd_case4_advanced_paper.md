@@ -21,8 +21,8 @@ where non-conservation or code stubs incur an insurmountable penalty wall $E = 1
 
 | Agent Role | Model Tier Assigned | $\epsilon_{\text{inv}}$ | Latency | Peak RAM | Proof Token | Status |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **QED Theoretical Physicist** | Tier 1 (Claude 3.5 Sonnet / High Energy Physics) | `0.00e+00` | 7.83 ms | 2.10 MB | `92e40ae4` | **VERIFIED** |
-| **Consortia Aggregate** | **Overall Gate: PASS** | **`0.00e+00`** | **7.83 ms** | **2.10 MB** | **`92e40ae4`** | **VERIFIED** |
+| **QED Theoretical Physicist** | Tier 1 (Claude 3.5 Sonnet / High Energy Physics) | `0.00e+00` | 12.69 ms | 2.10 MB | `92e40ae4` | **VERIFIED** |
+| **Consortia Aggregate** | **Overall Gate: PASS** | **`0.00e+00`** | **12.69 ms** | **2.10 MB** | **`92e40ae4`** | **VERIFIED** |
 
 ---
 

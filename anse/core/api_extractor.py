@@ -31,8 +31,10 @@ class APIExtractor:
         seed: int | None = None,
         timeout_s: float = 600.0,
         ollama_native: bool = False,
+        model_name: str | None = None,
     ) -> None:
         self.config = config or get_config().model
+        self.api_model_name = model_name or self.config.api_model_name
         self.seed = seed
         self.ollama_native = ollama_native
         self._client = client or httpx.Client(timeout=timeout_s)
@@ -63,7 +65,7 @@ class APIExtractor:
             hidden_state=torch.tensor([embedding], dtype=torch.float32),
             layer_indices=[-1],
             token_count=token_count,
-            model_id=self.config.api_model_name,
+            model_id=self.api_model_name,
             device="api",
             metadata={"prompt_length": len(prompt), "has_embedding": bool(embedding)},
         )
@@ -73,7 +75,7 @@ class APIExtractor:
         self, messages: list[dict[str, str]], max_tokens: int, temperature: float
     ) -> tuple[str, int]:
         payload: dict[str, object] = {
-            "model": self.config.api_model_name,
+            "model": self.api_model_name,
             "messages": messages,
             "max_tokens": max_tokens,
             "temperature": temperature,
@@ -99,7 +101,7 @@ class APIExtractor:
         response = self._client.post(
             f"{self._native_root}/api/chat",
             json={
-                "model": self.config.api_model_name,
+                "model": self.api_model_name,
                 "messages": messages,
                 "stream": False,
                 "options": options,
@@ -139,7 +141,7 @@ class APIExtractor:
         try:
             response = self._client.post(
                 f"{self._native_root}/api/embeddings",
-                json={"model": self.config.api_model_name, "prompt": text},
+                json={"model": self.api_model_name, "prompt": text},
             )
             response.raise_for_status()
             return [float(x) for x in response.json().get("embedding", [])]

@@ -310,16 +310,17 @@ class AgentLoop:
                 
                 # 2.1 Adversarial Validation (Red Team)
                 if self.adversarial_validation:
-                    from anse.core.red_team import AdversarialRedTeam
-                    def red_team_caller(p: str, sp: str, temp: float) -> str:
-                        try:
-                            resp, _ = self.extractor.extract(prompt=p, system_prompt=sp, temperature=temp)
-                        except TypeError:
-                            resp, _ = self.extractor.extract(prompt=p, system_prompt=sp)
-                        return resp
-
-                    red_team = AdversarialRedTeam(red_team_caller)
-                    adv_resp = red_team.evaluate(code)
+                    from anse.core.red_team import DeepThinkAuditor
+                    
+                    auditor = DeepThinkAuditor()
+                    state = {
+                        "math_problem": task,
+                        "lean_code": code,
+                        "python_metrics": {"error": 0.0, "latency_ms": 0.0},
+                        "thoughts": []
+                    }
+                    result = auditor.invoke(state)
+                    adv_resp = result['verdict']
                     
                     if "REJECT" in adv_resp.upper():
                         is_trivial = True

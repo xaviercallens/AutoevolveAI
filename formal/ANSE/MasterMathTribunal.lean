@@ -72,11 +72,13 @@ theorem problem_3_banach_contraction_metric_decay
 -- PROBLEM 4: COMPLEX & HARMONIC ANALYSIS — Cauchy-Riemann to Laplace Invariance
 -- ============================================================================
 /--
-  Cauchy-Riemann System implies Harmonicity:
+  Cauchy-Riemann System implies Harmonicity (Algebraic Core):
   Given u_xx = v_yx and u_yy = -v_xy with Clairaut symmetry (v_yx = v_xy),
   the Laplacian Δu = u_xx + u_yy vanishes identically.
+  NOTE: This theorem intentionally abstracts away the complex manifold
+  and continuous fields to isolate and verify the pure algebraic core.
 -/
-theorem problem_4_cauchy_riemann_harmonic
+theorem problem_4_cauchy_riemann_algebraic_core
     (u_xx u_yy v_xy v_yx : ℝ)
     (hCR1 : u_xx = v_yx)
     (hCR2 : u_yy = -v_xy)
@@ -89,11 +91,13 @@ theorem problem_4_cauchy_riemann_harmonic
 -- PROBLEM 5: DIFFERENTIAL GEOMETRY — Gauss-Bonnet Total Curvature on S²
 -- ============================================================================
 /--
-  Gauss-Bonnet Theorem on S²:
+  Gauss-Bonnet Total Curvature on S² (Algebraic Core):
   The product of Gaussian curvature K = 1/R² and Area = 4πR² equals 4π,
   matching 2π * χ(S²) where χ(S²) = 2.
+  NOTE: This tests the scalar algebraic equivalence of the Gauss-Bonnet
+  integration result, rather than integrating over a formal 2-manifold.
 -/
-theorem problem_5_gauss_bonnet_sphere_quantization
+theorem problem_5_gauss_bonnet_algebraic_core
     (R : ℝ) (_hR : 0 < R) :
     let K := 1 / (R ^ 2)
     let Area := 4 * Real.pi * (R ^ 2)
@@ -107,10 +111,12 @@ theorem problem_5_gauss_bonnet_sphere_quantization
 -- PROBLEM 6: DISCRETE EXTERIOR CALCULUS — Nilpotency of Exterior Derivative (d² = 0)
 -- ============================================================================
 /--
-  DEC Coboundary Nilpotency:
+  DEC Coboundary Nilpotency (Algebraic Core):
   The discrete curl of a discrete gradient vanishes identically on oriented 2-simplices.
+  NOTE: This asserts the telescopic cancellation property of d²=0 in scalar algebra,
+  without formally defining the full simplicial complex topology.
 -/
-theorem problem_6_dec_coboundary_nilpotent
+theorem problem_6_dec_coboundary_algebraic_core
     (f₀ f₁ f₂ : ℝ) :
     let d0_01 := f₁ - f₀
     let d0_12 := f₂ - f₁

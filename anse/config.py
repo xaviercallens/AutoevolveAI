@@ -357,6 +357,30 @@ class CriticConfig:
 
 
 @dataclass
+class DeepThinkConfig:
+    """Environment-aware Deep Think (System 2 Reasoning) configuration."""
+
+    enabled: bool = True
+    """Whether to use the Deep Think LangGraph PRM."""
+
+    environment: Literal["local_cpu", "rtx_2080", "pod_gpu"] = os.getenv("ANSE_ENV", "local_cpu")
+    """Hardware environment."""
+
+    @property
+    def model_name(self) -> str:
+        """Select the appropriate DeepSeek-R1 model based on hardware capability."""
+        if self.environment == "local_cpu":
+            # 32GB RAM can easily run 7B or 8B quantized on CPU via Ollama
+            return "deepseek-r1:8b"
+        elif self.environment == "rtx_2080":
+            # 8GB-11GB VRAM, can run 14B quantized
+            return "deepseek-r1:14b"
+        elif self.environment == "pod_gpu":
+            # 80GB VRAM (A100) or multi-GPU (GCP)
+            return "deepseek-r1:32b"
+        return "deepseek-r1:8b"
+
+@dataclass
 class ANSEConfig:
     """Top-level configuration — compose all sub-configs here."""
 
@@ -371,6 +395,7 @@ class ANSEConfig:
     sleep: SleepConfig = field(default_factory=SleepConfig)
     autopoiesis: AutopoiesisConfig = field(default_factory=AutopoiesisConfig)
     prompt_budget: PromptBudgetPolicy = field(default_factory=PromptBudgetPolicy)
+    deep_think: DeepThinkConfig = field(default_factory=DeepThinkConfig)
 
     # Runtime mode
     use_local_llm: bool = True

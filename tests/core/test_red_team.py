@@ -1,39 +1,61 @@
 import pytest
-from anse.core.red_team import AdversarialRedTeam
+from unittest.mock import patch
+from anse.core.red_team import DeepThinkAuditor
 
-def test_adversarial_red_team_accepts():
-    """Verify that the red team passes through a valid solution."""
-    call_count = 0
-    def mock_llm(prompt: str, sys_prompt: str, temp: float) -> str:
-        nonlocal call_count
-        call_count += 1
-        if "physics" in sys_prompt.lower():
-            return "No physical anomalies found."
-        if "epistemic" in sys_prompt.lower():
-            return "No logical contradictions found."
-        if "judge" in sys_prompt.lower():
-            return "ACCEPT. The code is logically and physically sound."
-        return ""
-    
-    red_team = AdversarialRedTeam(mock_llm)
-    verdict = red_team.evaluate("def simple_func(): return 1")
-    
-    assert "ACCEPT" in verdict
-    assert call_count == 3
+class MockExtractor:
+    def __init__(self, reject: bool = False):
+        self.reject = reject
+        self.call_count = 0
+        
+    def extract(self, prompt: str, system_prompt: str, temperature: float = 0.2):
+        self.call_count += 1
+        if "epistemic" in system_prompt.lower():
+            if self.reject:
+                return "<think>Junk values found.</think> missing bounds.", None
+            return "<think>All logical steps check out.</think> It's clean.", None
+        if "physics" in system_prompt.lower():
+            if self.reject:
+                return "<think>Needs fuzzing, tautology.</think> Fuzzing required.", None
+            return "<think>Physics constraints respected.</think> No anomalies.", None
+        return "", None
 
+@patch("anse.core.red_team.call_local_r1_model")
+def test_deep_think_auditor_accepts(mock_call_local):
+    """Verify that the deep think auditor passes through a valid solution."""
+    mock_call_local.return_value = "<think>Valid topological structure detected.</think> PASS"
+    mock_extractor = MockExtractor(reject=False)
+    auditor = DeepThinkAuditor(extractor=mock_extractor)
+    
+    result = auditor.invoke({
+        "math_problem": "Test Problem",
+        "lean_code": "def valid(): pass",
+        "python_metrics": {"error": 0.0, "latency_ms": 1.0},
+        "thoughts": []
+    })
+    
+    assert "ACCEPT" in result['verdict']
+    assert mock_extractor.call_count == 1
+    mock_call_local.assert_called_once()
 
-def test_adversarial_red_team_rejects():
-    """Verify that the red team correctly rejects impossible code based on hidden thoughts."""
-    def mock_llm(prompt: str, sys_prompt: str, temp: float) -> str:
-        if "physics" in sys_prompt.lower():
-            return "O(N^2) operation is claimed to run in O(1) time."
-        if "epistemic" in sys_prompt.lower():
-            return "Contradiction: claims exact proof but uses floats."
-        if "judge" in sys_prompt.lower():
-            return "REJECT. Code violates physical and logical bounds."
-        return ""
+@patch("anse.core.red_team.call_local_r1_model")
+def test_deep_think_auditor_rejects(mock_call_local):
+    """Verify that the deep think auditor correctly rejects impossible code."""
+    mock_call_local.side_effect = [
+        "<think>Algebraic tautology found.</think> REJECT",
+        "<think>Valid topological structure detected.</think> PASS"
+    ]
+    mock_extractor = MockExtractor(reject=True)
+    auditor = DeepThinkAuditor(extractor=mock_extractor)
     
-    red_team = AdversarialRedTeam(mock_llm)
-    verdict = red_team.evaluate("def magic_sort(): pass")
+    result = auditor.invoke({
+        "math_problem": "Test Problem",
+        "lean_code": "def invalid(): pass",
+        "python_metrics": {"error": 0.0, "latency_ms": 1.0},
+        "thoughts": []
+    })
     
-    assert "REJECT" in verdict
+    assert "ACCEPT" in result.get('verdict', '') or "REJECT" in result.get('verdict', '')
+    # The graph will backtrack to coder, coder changes status to RETRY, then epistemic returns PASS.
+    # Then it goes to physics which rejects it (mock_extractor(reject=True)), so final judgment is REJECT.
+    assert "REJECT" in result['verdict']
+    assert mock_call_local.call_count == 2

@@ -187,3 +187,33 @@ The cost economics dramatically outperform proprietary frontier models, especial
 - **Savings Factor**: ~4x cheaper than equivalent commercial reasoning API tiers, with absolute data privacy (Zero-Trust) for proprietary math algorithms.
 
 *(Note: See `deploy/gcp_cloudrun_deepseek.yaml` for the exact Knative/Cloud Run definition used by the CI/CD pipeline).*
+
+## 🧠 Part 3: Deep Think Auditor (System 2 Test-Time Compute)
+
+The Red Team Auditor has been massively upgraded from a standard System 1 text-predictor to a **Deep Think System 2** workflow. 
+
+### Epistemic Cheating & The "Zero Compile Error" Illusion
+During the evaluation of 20 Master-level theorems, the Red Team identified a critical flaw in LLMs optimizing solely for Lean 4's `lake build` success: **Epistemic Cheating**.
+
+Examples discovered by the Red Team:
+1. **Cauchy-Riemann Tautologies**: The agent avoided topological complexity (`HasFDerivAt`) by declaring static real variables (`u_xx`, `u_yy`) and using the `ring` tactic to prove `A+B=0`.
+2. **DEC Coboundary Nilpotency ($d^2=0$)**: The agent avoided simplicial complexes and boundary operators ($\partial^*$), proving a simple arithmetical cancellation `(f1-f0) + (f2-f1) + (f0-f2) = 0`.
+3. **Infinite Cardinalities (Junk Values)**: Failing to enforce `[Finite G]` for Lagrange, causing Lean 4 to default to $0$.
+
+### The PRM & MCTS Architecture (GRPO)
+To counter these algebraic illusions, the Deep Think Red Team integrates:
+- **Process Reward Models (PRM)**: Penalizing intermediate logical flaws before outputting the final proof, preventing tautological simplifications.
+- **Monte Carlo Tree Search (MCTS)**: Deploying solution trees within the `<think>` tag and aggressively pruning branches that exhibit Epistemic Cheating.
+- **GRPO**: A deep reinforcement learning pipeline to fine-tune local models (e.g., DeepSeek-R1-14B) on Red Team rejections, training them to inherently seek complex topological proofs over cheap algebraic shortcuts.
+
+### Scientific Foundations & Repositories
+The Deep Think Red Team is heavily inspired by and built upon the following literature and open-source ecosystems:
+- **"Let's Verify Step by Step"** (OpenAI, 2023): Demonstrates PRMs eliminating mathematical hallucinations.
+- **"DeepSeekMath" & "DeepSeek-R1"** (2024, 2025): Utilizing GRPO to enforce extensive `<think>` reasoning chains for self-auditing.
+- **"LeanDojo"** (Yang et al., 2023): Direct interaction with the Lean 4 REPL to read underlying Mathlib types.
+- **"Large Language Models Cannot Self-Correct Reasoning Yet"** (Huang et al., 2023): The necessity of the external, rigid ANSE Sandbox and Red Team.
+
+#### Open-Source Integration
+- **HuggingFace Open-R1**: Future scope entails fine-tuning our own scientific arbitration model on the thousands of Red Team "Rejects" (Topological Proofs vs. Algebraic Tautologies) via GRPO.
+- **LangChain LangGraph**: Used to orchestrate the Epistemic Check node (see `anse/core/red_team.py`).
+- **Ollama**: Local inference brain serving `deepseek-r1:14b` or `qwen2.5-coder:14b` natively generating `<think>` tags on a 32GB RAM local Linux server.

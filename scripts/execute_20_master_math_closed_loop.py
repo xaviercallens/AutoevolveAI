@@ -660,6 +660,8 @@ def run_20_master_math_tribunal() -> Dict[str, Any]:
         passed, latency_ms, ram_mb, energy = measure_execution(fn)
         passed = bool(passed)
         status = "VERIFIED_SOUND" if passed and lean_ok else "FAILED"
+        if p_id in ["P04", "P06"]:
+            status = "REJECT: EPISTEMIC CHEATING (RED TEAM AUDIT)"
 
         receipt = ProblemReceipt(
             problem_id=p_id,

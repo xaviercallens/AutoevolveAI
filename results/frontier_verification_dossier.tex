@@ -65,9 +65,9 @@ This dossier is designed to be injected into a Frontier Reasoning Model (e.g., C
       "Subgroup index is defined via coset quotient type `G \u29f8 H`."
     ],
     "numerical_passed": true,
-    "numerical_latency_ms": 4.371,
+    "numerical_latency_ms": 5.6181,
     "numerical_ram_mb": 0.01,
-    "energy_score": 0.2206,
+    "energy_score": 0.2829,
     "lean4_verified": true,
     "status": "VERIFIED_SOUND"
   },
@@ -84,9 +84,9 @@ This dossier is designed to be injected into a Frontier Reasoning Model (e.g., C
       "In complex spaces, real inner product real part is required."
     ],
     "numerical_passed": true,
-    "numerical_latency_ms": 38.12,
+    "numerical_latency_ms": 68.842,
     "numerical_ram_mb": 0.01,
-    "energy_score": 1.908,
+    "energy_score": 3.4441,
     "lean4_verified": true,
     "status": "VERIFIED_SOUND"
   },
@@ -103,9 +103,9 @@ This dossier is designed to be injected into a Frontier Reasoning Model (e.g., C
       "Uses non-negative real type `\u211d\u22650` to prevent negative Lipschitz constants."
     ],
     "numerical_passed": true,
-    "numerical_latency_ms": 611.7885,
+    "numerical_latency_ms": 830.3438,
     "numerical_ram_mb": 0.01,
-    "energy_score": 30.5914,
+    "energy_score": 41.5192,
     "lean4_verified": true,
     "status": "VERIFIED_SOUND"
   },
@@ -179,9 +179,9 @@ This dossier is designed to be injected into a Frontier Reasoning Model (e.g., C
       "Textbooks frequently skip verifying the induction multiplier non-negativity."
     ],
     "numerical_passed": true,
-    "numerical_latency_ms": 5.6372,
+    "numerical_latency_ms": 5.8271,
     "numerical_ram_mb": 0.01,
-    "energy_score": 0.2839,
+    "energy_score": 0.2934,
     "lean4_verified": true,
     "status": "VERIFIED_SOUND"
   },
@@ -217,9 +217,9 @@ This dossier is designed to be injected into a Frontier Reasoning Model (e.g., C
       "Foundation of measure-theoretic probability without needing full measure integration machinery."
     ],
     "numerical_passed": true,
-    "numerical_latency_ms": 8.0408,
-    "numerical_ram_mb": 0.7852,
-    "energy_score": 0.5591,
+    "numerical_latency_ms": 8.8587,
+    "numerical_ram_mb": 0.6836,
+    "energy_score": 0.5797,
     "lean4_verified": true,
     "status": "VERIFIED_SOUND"
   },
@@ -236,9 +236,9 @@ This dossier is designed to be injected into a Frontier Reasoning Model (e.g., C
       "Holds for arbitrary infinite-dimensional real Hilbert/pre-Hilbert spaces."
     ],
     "numerical_passed": true,
-    "numerical_latency_ms": 0.9352,
+    "numerical_latency_ms": 1.1083,
     "numerical_ram_mb": 0.01,
-    "energy_score": 0.0488,
+    "energy_score": 0.0574,
     "lean4_verified": true,
     "status": "VERIFIED_SOUND"
   },
@@ -248,10 +248,11 @@ This dossier is designed to be injected into a Frontier Reasoning Model (e.g., C
     "domain": "Real Analysis",
     "textbook_solution_summary": "Standard IVT.",
     "lean4_theorem_name": "problem_11_ivt",
-    "lean4_formal_statement": "\u2203 x \u2208 Icc a b, f x = y",
-    "lean4_proof_strategy": "intermediate_value_Icc",
+    "lean4_formal_statement": "(f : \u211d \u2192 \u211d) (a b y : \u211d) (hab : a \u2264 b) (hf : ContinuousOn f (Set.Icc a b)) (hy : f a \u2264 y \u2227 y \u2264 f b) : \u2203 x \u2208 Set.Icc a b, f x = y",
+    "lean4_proof_strategy": "intermediate_value_theorem",
     "implicit_assumptions_exposed": [
-      "Continuous function"
+      "Real Numbers",
+      "Continuous f and interval bounds"
     ],
     "numerical_passed": true,
     "numerical_latency_ms": null,
@@ -282,12 +283,13 @@ This dossier is designed to be injected into a Frontier Reasoning Model (e.g., C
     "problem_id": 13,
     "title": "Zorn's Lemma",
     "domain": "Set Theory",
-    "textbook_solution_summary": "Standard Zorn's lemma.",
+    "textbook_solution_summary": "Standard Zorn.",
     "lean4_theorem_name": "problem_13_zorns_lemma",
-    "lean4_formal_statement": "\u2203 m, \u2200 a, m \u2264 a \u2192 a = m",
-    "lean4_proof_strategy": "exists_maximal_of_chains_bounded",
+    "lean4_formal_statement": "(\u03b1 : Type) [PartialOrder \u03b1] (h : \u2200 (c : Set \u03b1), IsChain (\u2264) c \u2192 \u2203 u, \u2200 x \u2208 c, x \u2264 u) : \u2203 m : \u03b1, \u2200 x, m \u2264 x \u2192 x = m",
+    "lean4_proof_strategy": "zorns_lemma",
     "implicit_assumptions_exposed": [
-      "Axiom of Choice equivalent"
+      "Poset formulation",
+      "Every chain has an upper bound"
     ],
     "numerical_passed": true,
     "numerical_latency_ms": null,
@@ -356,7 +358,7 @@ This dossier is designed to be injected into a Frontier Reasoning Model (e.g., C
     "domain": "Algebra",
     "textbook_solution_summary": "Standard AM-GM.",
     "lean4_theorem_name": "problem_17_am_gm_2",
-    "lean4_formal_statement": "Real.sqrt (x * y) \u2264 (x + y) / 2",
+    "lean4_formal_statement": "(x y : \u211d) (hx : 0 \u2264 x) (hy : 0 \u2264 y) : Real.sqrt (x * y) \u2264 (x + y) / 2",
     "lean4_proof_strategy": "geom_mean_le_arith_mean2_of_nonneg",
     "implicit_assumptions_exposed": [
       "Non-negative reals"

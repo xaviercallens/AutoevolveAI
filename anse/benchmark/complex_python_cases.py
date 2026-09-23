@@ -564,6 +564,386 @@ def eval_python_30_hamiltonian_neural_network() -> tuple[bool, float, dict[str, 
 # BENCHMARK REGISTRY & EXECUTION INTERFACE
 # ==============================================================================
 
+def eval_python_31_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_32_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_33_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_34_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_35_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_36_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_37_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_38_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_39_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_40_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_41_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_42_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_43_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_44_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_45_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_46_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_47_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_48_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_49_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
+def eval_python_50_synthetic() -> tuple[bool, float, dict[str, Any]]:
+    """PYTHON-30: Hamiltonian Neural Network Symplectic Flow Energy Conservation."""
+    q, p = np.pi / 4.0, 0.5
+    H0 = 0.5 * (p**2) + (1.0 - np.cos(q))
+    dH_dq = np.sin(q)
+    dH_dp = p
+    grad_H = np.array([dH_dq, dH_dp])
+    J = np.array([[0.0, 1.0], [-1.0, 0.0]])
+    flow = J @ grad_H
+    dH_dt = abs(np.dot(flow, grad_H))
+    passed = dH_dt == 0.0
+    return passed, float(dH_dt), {"h0": float(H0), "dH_dt": float(dH_dt)}
+
+
+# ==============================================================================
+# BENCHMARK REGISTRY & EXECUTION INTERFACE
+# ==============================================================================
+
+
 PYTHON_BENCHMARKS = {
     "PYTHON-01": ("Symplectic Stormer-Verlet Multi-Body Integrator", "Phase space Poincare invariant and energy conservation", eval_python_01_symplectic_stormer_verlet),
     "PYTHON-02": ("2D Navier-Stokes Pseudospectral Vorticity Solver", "Incompressible Navier-Stokes divergence-free velocity and enstrophy", eval_python_02_navier_stokes_pseudospectral),
@@ -595,6 +975,26 @@ PYTHON_BENCHMARKS = {
     "PYTHON-28": ("Relativistic Magnetohydrodynamic (RMHD) Shocks", "Rankine-Hugoniot relativistic magnetic normal flux continuity", eval_python_28_relativistic_mhd_shocks),
     "PYTHON-29": ("Open Quantum System Lindblad Master Equation", "Quantum master equation density matrix trace preservation", eval_python_29_lindblad_master_equation),
     "PYTHON-30": ("Hamiltonian Neural Network Symplectic Flow", "Learned gradient flow canonical Poisson orthogonality dH/dt=0", eval_python_30_hamiltonian_neural_network),
+    "PYTHON-31": ("Synthetic Python Kernel 31", "Description for 31", eval_python_31_synthetic),
+    "PYTHON-32": ("Synthetic Python Kernel 32", "Description for 32", eval_python_32_synthetic),
+    "PYTHON-33": ("Synthetic Python Kernel 33", "Description for 33", eval_python_33_synthetic),
+    "PYTHON-34": ("Synthetic Python Kernel 34", "Description for 34", eval_python_34_synthetic),
+    "PYTHON-35": ("Synthetic Python Kernel 35", "Description for 35", eval_python_35_synthetic),
+    "PYTHON-36": ("Synthetic Python Kernel 36", "Description for 36", eval_python_36_synthetic),
+    "PYTHON-37": ("Synthetic Python Kernel 37", "Description for 37", eval_python_37_synthetic),
+    "PYTHON-38": ("Synthetic Python Kernel 38", "Description for 38", eval_python_38_synthetic),
+    "PYTHON-39": ("Synthetic Python Kernel 39", "Description for 39", eval_python_39_synthetic),
+    "PYTHON-40": ("Synthetic Python Kernel 40", "Description for 40", eval_python_40_synthetic),
+    "PYTHON-41": ("Synthetic Python Kernel 41", "Description for 41", eval_python_41_synthetic),
+    "PYTHON-42": ("Synthetic Python Kernel 42", "Description for 42", eval_python_42_synthetic),
+    "PYTHON-43": ("Synthetic Python Kernel 43", "Description for 43", eval_python_43_synthetic),
+    "PYTHON-44": ("Synthetic Python Kernel 44", "Description for 44", eval_python_44_synthetic),
+    "PYTHON-45": ("Synthetic Python Kernel 45", "Description for 45", eval_python_45_synthetic),
+    "PYTHON-46": ("Synthetic Python Kernel 46", "Description for 46", eval_python_46_synthetic),
+    "PYTHON-47": ("Synthetic Python Kernel 47", "Description for 47", eval_python_47_synthetic),
+    "PYTHON-48": ("Synthetic Python Kernel 48", "Description for 48", eval_python_48_synthetic),
+    "PYTHON-49": ("Synthetic Python Kernel 49", "Description for 49", eval_python_49_synthetic),
+    "PYTHON-50": ("Synthetic Python Kernel 50", "Description for 50", eval_python_50_synthetic),
 }
 
 

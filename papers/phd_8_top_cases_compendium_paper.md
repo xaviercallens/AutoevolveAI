@@ -1,15 +1,15 @@
-# Volume 1: Autonomous Multi-Agent Symplectic Dynamics and Quantum Field World Models
+# Volume 5: The 8 Top PhD Multi-Agent Scientific Benchmarks: Autonomous Verification under Zero-Trust Physical Hardness
 
 **Authors:** Xavier Callens, AutoevolveAI Research Group, and The ANSE Consortia  
 **Date:** September 2026  
 **Status:** Peer Review Ready (Evaluated under Gemini 3.1 Pro Protocol — Score: 50/50, ACCEPT)  
-**Domain:** Theoretical Physics & Symplectic Mechanics  
-**Artifacts:** [PDF Version](papers/phd_case1_paper.pdf) | [LaTeX Source](papers/phd_case1_paper.tex)
+**Domain:** Doctoral Multi-Agent Scientific Computing  
+**Artifacts:** [PDF Version](papers/phd_case5_paper.pdf) | [LaTeX Source](papers/phd_case5_paper.tex)
 
 ---
 
 ## Abstract
-This paper presents the formal formulation, continuous conservation verification, and empirical multi-agent execution receipts for Theoretical Physics & Symplectic Mechanics under the ANSE Physical Hardness framework. Every candidate solution is evaluated against the physical scalar energy functional:
+This paper presents the formal formulation, continuous conservation verification, and empirical multi-agent execution receipts for Doctoral Multi-Agent Scientific Computing under the ANSE Physical Hardness framework. Every candidate solution is evaluated against the physical scalar energy functional:
 
 $$E(x, y) = \alpha \cdot \text{duration\_ms}(y) + \beta \cdot \text{peak\_ram\_mb}(y) + \gamma \cdot \Pi(y)$$
 

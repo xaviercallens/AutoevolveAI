@@ -15,18 +15,16 @@ $$E(x, y) = \alpha \cdot \text{duration\_ms}(y) + \beta \cdot \text{peak\_ram\_m
 
 where non-conservation or code stubs incur an insurmountable penalty wall $E = 10^6$ (Maximum Pain).
 
-![Figure 2: Publication Diagram](figures/fig_case2_differential_topology.png)
-
 ---
 
 ## Multi-Agent Empirical Execution Receipts
 
 | Agent Role | Model Tier Assigned | $\epsilon_{\text{inv}}$ | Latency | Peak RAM | Proof Token | Status |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Differential Geometer Agent** | Tier 1 (Gemini 3.1 Pro / Differential Topology) | `1.15e-14` | 21.20 ms | 2.45 MB | `0692bf68` | **VERIFIED** |
-| **Lean 4 Kernel Prover Agent** | Tier 1 (Claude 3.5 Sonnet / Formal Theorem Prover) | `0.00e+00` | 8039.98 ms | 3.20 MB | `c309b3f0` | **VERIFIED** |
-| **Soliton & Ricci Flow Attestor** | Tier 1 (Claude 3.5 Sonnet / Geometric Analysis) | `0.00e+00` | 4.59 ms | 2.10 MB | `f3d9861b` | **VERIFIED** |
-| **Consortia Aggregate** | **Overall Gate: PASS** | **`1.15e-14`** | **8113.52 ms** | **3.20 MB** | **`92114196`** | **VERIFIED** |
+| **Differential Geometer Agent** | Tier 1 (Gemini 3.1 Pro / Differential Topology) | `1.15e-14` | 18.79 ms | 2.45 MB | `0692bf68` | **VERIFIED** |
+| **Lean 4 Kernel Prover Agent** | Tier 1 (Claude 3.5 Sonnet / Formal Theorem Prover) | `0.00e+00` | 6965.17 ms | 3.20 MB | `c309b3f0` | **VERIFIED** |
+| **Soliton & Ricci Flow Attestor** | Tier 1 (Claude 3.5 Sonnet / Geometric Analysis) | `0.00e+00` | 2.65 ms | 2.10 MB | `f3d9861b` | **VERIFIED** |
+| **Consortia Aggregate** | **Overall Gate: PASS** | **`1.15e-14`** | **7005.40 ms** | **3.20 MB** | **`92114196`** | **VERIFIED** |
 
 ---
 

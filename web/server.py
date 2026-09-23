@@ -185,6 +185,18 @@ async def serve_index() -> FileResponse:
     return FileResponse(index_path)
 
 
+@app.get("/papers/{filename}")
+async def serve_paper(filename: str) -> FileResponse:
+    if "/" in filename or ".." in filename or "\\" in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    paper_path = (PROJECT_ROOT / "papers" / filename).resolve()
+    if not paper_path.is_relative_to(PROJECT_ROOT / "papers"):
+        raise HTTPException(status_code=403, detail="Forbidden")
+    if not paper_path.exists():
+        raise HTTPException(status_code=404, detail=f"Paper {filename} not found")
+    return FileResponse(paper_path)
+
+
 @app.post("/api/execute")
 @limiter.limit("20/minute")
 async def execute_code(request: Request, req: CodeExecutionRequest) -> dict[str, Any]:
@@ -829,6 +841,19 @@ async def post_dichotomic_decompose(req: DichotomyRequest) -> dict[str, Any]:
     tree_path.parent.mkdir(parents=True, exist_ok=True)
     tree_path.write_text(json.dumps(tree_dict, indent=2), encoding="utf-8")
     return tree_dict
+
+
+@app.get("/api/phd/receipts")
+async def get_phd_receipts() -> dict[str, Any]:
+    """Retrieve 8 PhD use case execution receipts."""
+    receipt_file = PROJECT_ROOT / "results" / "phd_8_cases_execution_receipts.json"
+    if not receipt_file.exists():
+        raise HTTPException(status_code=404, detail="PhD execution receipts not found")
+    try:
+        data = json.loads(receipt_file.read_text(encoding="utf-8"))
+        return {"status": "success", "data": data}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
 
 
 @app.websocket("/ws/ascd")

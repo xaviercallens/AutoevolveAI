@@ -63,7 +63,7 @@ theorem gauss_bonnet_torus_zero :
   This formal lemma bounds the approximation error.
 -/
 theorem numerical_gauss_bonnet_error_bound
-    (Q : ℝ) (ε : ℝ) (hε : ε > 0)
+    (Q : ℝ) (ε : ℝ) (_hε : ε > 0)
     (hQ : |Q - 4 * Real.pi| < ε) :
     |Q - expected_total_curvature| < ε := by
   rw [gauss_bonnet_sphere_value]

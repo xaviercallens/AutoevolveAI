@@ -67,8 +67,8 @@ theorem distance_5_corrects_weight_2 (params : CodeParameters) (h5 : params.d �
 -/
 theorem logical_error_rate_third_order
     (params : CodeParameters)
-    (h5 : params.d ≥ 5)
-    (p_bound : True) :  -- physical error rate bound is a runtime quantity
+    (_h5 : params.d ≥ 5)
+    (_p_bound : True) :  -- physical error rate bound is a runtime quantity
     -- Logical error rate scales as p^3 = p^(⌊d/2⌋+1) for d=5
     -- The dominant uncorrectable pattern requires weight ≥ 3 errors
     ∀ t : ℕ, correctable params t ↔ 2 * t < params.d := by

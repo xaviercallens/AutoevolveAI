@@ -285,6 +285,12 @@ Launch with `PORT=5000 uv run python web/server.py` to interactively explore and
   * Adversarial bio-viability sabotage attack vs. Z3 SMT Control Barrier Function theorem prover (`UNSAT: VIOLATION BLOCKED`).
   * Real-time Pareto projection restoring $100\%$ municipal hospital life-support power ($V_{\text{human}} = 1.0$, $\Delta E = -999,990.67$).
   * 10 End-to-End closed-loop hardness scenario cards with 32-character cryptographic HMAC SHA-256 proof tokens.
+* **ANSE Scenario Studio & Creation Center (`/#scenario-studio`):**
+  * Interactive scenario studio allowing developers to either select from the **10 pre-certified scenarios** or **create custom scenarios** for ANSE V2, V3, and V4.
+  * Live deterministic execution pipeline tracker: `1. AST AUDIT` $\to$ `2. LATENT Z` $\to$ `3. MCTS / INVAR` $\to$ `4. SMT & ΔE` $\to$ `5. ATTESTATION`.
+  * Real-time thermodynamic KPI readouts: Parent Energy ($E_p$), Child Energy ($E_c$), $\Delta E$, and Speedup factor.
+  * Monospace diagnostic terminal output and HMAC SHA-256 cryptographic proof token copy button.
+  * Quick-launch gallery grid for instant single-click execution of any verified scenario.
 * **Antigravity Swarm Command Deck (ASCD) (`/#ascd`):**
   * Microservices DAG architecture, 3D WebGL physics canvas, Lean 4 Tribunal with gutter error indicators, and God Mode Emergency Halt (`Spacebar` / mobile FAB 🛑).
 * **PR Factory (`/#factory`):**
@@ -302,6 +308,10 @@ Launch with `PORT=5000 uv run python web/server.py` to interactively explore and
 | `/api/v3/autopoiesis/hot-swap` | `POST` | Benchmarks and promotes child TorchScript JIT kernel under $\Delta E < 0$. |
 | `/api/v4/safety/smt-evaluate` | `POST` | Solves Z3 SMT Control Barrier Functions and projects adversarial states to safe Pareto frontier. |
 | `/api/e2e/scenarios` | `GET` | Returns 10 End-to-End verified closed-loop scenarios with cryptographic proof tokens. |
+| `/api/scenarios/catalog` | `GET` | Catalog of all 10 verified E2E closed-loop & advanced PhD scenarios. |
+| `/api/scenarios/templates` | `GET` | Preset configuration and code templates for V2, V3, and V4 scenario creation. |
+| `/api/scenarios/run` | `POST` | On-demand live execution of any catalog scenario with 5-stage pipeline telemetry. |
+| `/api/scenarios/create-and-run` | `POST` | Creates and executes custom user-defined scenarios across V2, V3, or V4 with zero-trust validation. |
 
 ---
 

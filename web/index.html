@@ -193,6 +193,9 @@
       <button onclick="switchTab('anse-v4')" id="tab-anse-v4" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
         <span>🛡️</span> ANSE V4: Safe ANSE & 10 E2E Scenarios
       </button>
+      <button onclick="switchTab('scenario-studio')" id="tab-scenario-studio" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+        <span>🧪</span> Studio Scénarios V2-V3-V4
+      </button>
       <button onclick="switchTab('symbiotic')" id="tab-symbiotic" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
         <span>🤝</span> Symbiotic Co-Pilot & Accelerators
       </button>
@@ -2644,6 +2647,244 @@ def vectorize_matmul(A, B):
       </div>
     </section>
 
+    <!-- ================================================================= -->
+    <!-- TAB: SCENARIO STUDIO & CREATION (FONCTIONNALITÉ SCÉNARIO V2-V3-V4) -->
+    <!-- ================================================================= -->
+    <section id="section-scenario-studio" class="hidden space-y-8">
+      <!-- Section Header -->
+      <div class="p-6 rounded-2xl border border-indigo-800/60 bg-gradient-to-br from-slate-900 via-indigo-950/25 to-slate-950 backdrop-blur shadow-xl relative overflow-hidden">
+        <div class="absolute -right-12 -top-12 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 mb-2">
+              <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+              STUDIO DE SCÉNARIOS & CRÉATION INTERACTIVE (V2 • V3 • V4)
+            </div>
+            <h2 class="text-2xl font-black text-white tracking-tight">ANSE Scenario Studio & Execution Center</h2>
+            <p class="text-sm text-slate-400 mt-1 max-w-3xl">
+              Créez, configurez et exécutez vos propres scénarios neuro-symboliques en direct. Validez le filtrage de pensées en microsecondes (V2), l'auto-refactorisation MCTS (V3), et les barrières d'éthique universelle SMT Z3 (V4) sous attestation cryptographique HMAC SHA-256.
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="px-3 py-1.5 rounded-lg bg-indigo-950/60 border border-indigo-700/50 text-indigo-300 font-mono text-xs font-bold">
+              10/10 Scénarios Certifiés
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Studio Workspace Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left: Scenario Creator & Builder (5 cols) -->
+        <div class="lg:col-span-5 space-y-6">
+          <div class="p-5 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur space-y-4">
+            
+            <!-- Mode Selector Switch -->
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+                <span>⚙️</span> Configuration du Scénario
+              </h3>
+              <div class="inline-flex rounded-lg bg-slate-950 p-0.5 border border-slate-800 text-xs">
+                <button type="button" id="studio-mode-catalog-btn" onclick="setStudioMode('catalog')" class="px-2.5 py-1 rounded-md font-bold transition bg-indigo-600 text-white shadow">
+                  Catalogue (10)
+                </button>
+                <button type="button" id="studio-mode-custom-btn" onclick="setStudioMode('custom')" class="px-2.5 py-1 rounded-md font-bold text-slate-400 hover:text-white transition">
+                  Personnalisé
+                </button>
+              </div>
+            </div>
+
+            <!-- ── CATALOG MODE VIEW ── -->
+            <div id="studio-catalog-view" class="space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5">Sélectionner un Scénario Vérifié :</label>
+                <select id="studio-scenario-select" onchange="onStudioCatalogSelect(this.value)" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-none focus:border-indigo-500 font-mono">
+                  <!-- Populated dynamically via /api/scenarios/catalog -->
+                </select>
+              </div>
+
+              <!-- Selected Scenario Metadata Card -->
+              <div id="studio-selected-meta" class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-2">
+                <div class="flex justify-between items-center">
+                  <span id="studio-meta-phase" class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Phase</span>
+                  <span id="studio-meta-domain" class="text-slate-400 text-[11px]">Domain</span>
+                </div>
+                <div id="studio-meta-name" class="font-bold text-white text-sm">Scenario Name</div>
+                <div id="studio-meta-desc" class="text-slate-400 text-[11px] leading-relaxed">Description</div>
+                <div class="pt-2 border-t border-slate-800 flex justify-between font-mono text-[11px]">
+                  <span class="text-slate-500">Invariant :</span>
+                  <span id="studio-meta-invariant" class="text-emerald-400 font-bold">Invariant Formula</span>
+                </div>
+              </div>
+
+              <button onclick="runStudioSelectedCatalog()" id="studio-run-catalog-btn" class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2">
+                <span>▶</span> Exécuter le Scénario en Direct
+              </button>
+            </div>
+
+            <!-- ── CUSTOM MODE VIEW ── -->
+            <div id="studio-custom-view" class="hidden space-y-4">
+              <!-- Phase Selector -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5">Phase Cible ANSE :</label>
+                <div class="grid grid-cols-3 gap-1.5">
+                  <button type="button" id="studio-phase-v2-btn" onclick="setStudioCustomPhase('v2')" class="py-2 rounded-lg text-xs font-bold transition bg-cyan-600 text-black">
+                    V2 (JEPA)
+                  </button>
+                  <button type="button" id="studio-phase-v3-btn" onclick="setStudioCustomPhase('v3')" class="py-2 rounded-lg text-xs font-bold transition bg-slate-950 text-slate-400 border border-slate-800 hover:text-white">
+                    V3 (MCTS)
+                  </button>
+                  <button type="button" id="studio-phase-v4-btn" onclick="setStudioCustomPhase('v4')" class="py-2 rounded-lg text-xs font-bold transition bg-slate-950 text-slate-400 border border-slate-800 hover:text-white">
+                    V4 (Safe)
+                  </button>
+                </div>
+              </div>
+
+              <!-- Scenario Title Input -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1">Nom du Scénario Personnalisé :</label>
+                <input type="text" id="studio-custom-name" value="Custom Scenario Experiment" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-none focus:border-indigo-500 font-mono">
+              </div>
+
+              <!-- Dynamic Parameters Container -->
+              <div id="studio-custom-params" class="space-y-3">
+                <!-- Injected based on Phase -->
+              </div>
+
+              <!-- Code / Payload Editor -->
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <label class="text-xs font-semibold text-slate-400">Code / Payload Déterministe :</label>
+                  <button type="button" onclick="loadStudioPhaseTemplate()" class="text-[11px] text-indigo-400 hover:text-indigo-300">
+                    Charger Modèle
+                  </button>
+                </div>
+                <textarea id="studio-custom-code" rows="6" class="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 font-mono text-[11px] focus:outline-none focus:border-indigo-500 resize-none leading-relaxed"></textarea>
+              </div>
+
+              <button onclick="runStudioCustomScenario()" id="studio-run-custom-btn" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-black font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2">
+                <span>⚡</span> Valider & Exécuter le Scénario
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Right: Execution Telemetry & Diagnostics Deck (7 cols) -->
+        <div class="lg:col-span-7 space-y-6">
+          
+          <!-- Live Pipeline Stages Indicator (5 Stages) -->
+          <div class="p-4 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur space-y-3">
+            <div class="flex items-center justify-between">
+              <h4 class="font-bold text-xs uppercase tracking-wider text-slate-400">Pipeline d'Exécution & Attestation Déterministe</h4>
+              <span id="studio-pipeline-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                EN ATTENTE
+              </span>
+            </div>
+            
+            <div class="grid grid-cols-5 gap-2 text-center text-[10px] font-mono">
+              <div id="stage-1-card" class="p-2 rounded-lg bg-slate-950 border border-slate-800 transition">
+                <div class="text-slate-500 font-bold mb-0.5">1. AST AUDIT</div>
+                <div id="stage-1-status" class="text-slate-400 font-bold">-</div>
+              </div>
+              <div id="stage-2-card" class="p-2 rounded-lg bg-slate-950 border border-slate-800 transition">
+                <div class="text-slate-500 font-bold mb-0.5">2. LATENT Z</div>
+                <div id="stage-2-status" class="text-slate-400 font-bold">-</div>
+              </div>
+              <div id="stage-3-card" class="p-2 rounded-lg bg-slate-950 border border-slate-800 transition">
+                <div class="text-slate-500 font-bold mb-0.5">3. MCTS / INVAR</div>
+                <div id="stage-3-status" class="text-slate-400 font-bold">-</div>
+              </div>
+              <div id="stage-4-card" class="p-2 rounded-lg bg-slate-950 border border-slate-800 transition">
+                <div class="text-slate-500 font-bold mb-0.5">4. SMT & ΔE</div>
+                <div id="stage-4-status" class="text-slate-400 font-bold">-</div>
+              </div>
+              <div id="stage-5-card" class="p-2 rounded-lg bg-slate-950 border border-slate-800 transition">
+                <div class="text-slate-500 font-bold mb-0.5">5. ATTESTATION</div>
+                <div id="stage-5-status" class="text-slate-400 font-bold">-</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI Strip -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="p-3.5 rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Énergie Parent (Ep)</div>
+              <div id="studio-kpi-parent" class="text-xl font-black font-mono text-slate-300 mt-1">--</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">Avant optimisation</div>
+            </div>
+            <div class="p-3.5 rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Énergie Enfant (Ec)</div>
+              <div id="studio-kpi-child" class="text-xl font-black font-mono text-emerald-400 mt-1">--</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">Après optimisation</div>
+            </div>
+            <div class="p-3.5 rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">ΔE Thermodynamique</div>
+              <div id="studio-kpi-delta" class="text-xl font-black font-mono text-cyan-400 mt-1">--</div>
+              <div id="studio-kpi-delta-sub" class="text-[10px] text-slate-500 mt-0.5">Condition ΔE &lt; 0</div>
+            </div>
+            <div class="p-3.5 rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Accélération (Speedup)</div>
+              <div id="studio-kpi-speedup" class="text-xl font-black font-mono text-purple-400 mt-1">--</div>
+              <div id="studio-kpi-speedup-sub" class="text-[10px] text-slate-500 mt-0.5">Facteur de gain</div>
+            </div>
+          </div>
+
+          <!-- Execution Terminal Output -->
+          <div class="p-4 rounded-2xl border border-slate-800 bg-slate-950 font-mono text-xs space-y-2 shadow-inner">
+            <div class="flex items-center justify-between border-b border-slate-900 pb-2">
+              <div class="flex items-center gap-2 text-slate-400 font-bold text-[11px]">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+                <span>Console d'Audit & Télémétrie Déterministe</span>
+              </div>
+              <button onclick="clearStudioLogs()" class="text-[10px] text-slate-500 hover:text-slate-300">
+                Effacer
+              </button>
+            </div>
+            <div id="studio-terminal-logs" class="h-44 overflow-y-auto space-y-1 text-[11px] text-slate-300 pr-1">
+              <div class="text-slate-600">// Prêt pour l'exécution d'un scénario ANSE V2, V3 ou V4.</div>
+            </div>
+          </div>
+
+          <!-- Cryptographic Proof Token Card -->
+          <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Jeton de Preuve Cryptographique HMAC SHA-256 :</div>
+              <div id="studio-proof-token" class="font-mono text-xs text-cyan-400 font-bold break-all mt-0.5">
+                -- Non émis --
+              </div>
+            </div>
+            <button onclick="copyStudioToken()" id="studio-copy-token-btn" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono font-medium transition border border-slate-700 flex items-center gap-1.5 whitespace-nowrap">
+              <span>📋</span> Copier Jeton
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Quick-Launch 10 Scenarios Grid -->
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div>
+            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+              <span>📚</span> Galerie des 10 Scénarios Fermés & Doctoraux Prévérifiés
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Cliquez sur un scénario pour charger sa configuration et l'exécuter en un clic dans le Studio.
+            </p>
+          </div>
+          <button onclick="loadStudioCatalog()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold border border-slate-700">
+            Actualiser
+          </button>
+        </div>
+
+        <div id="studio-quick-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 pt-1">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- ── Mobile Bottom Navigation Bar (PWA) ── -->
@@ -2665,6 +2906,9 @@ def vectorize_matmul(A, B):
     </button>
     <button onclick="switchTab('anse-v4')" data-tab="anse-v4">
       <span class="icon">🛡️</span><span>V4</span>
+    </button>
+    <button onclick="switchTab('scenario-studio')" data-tab="scenario-studio">
+      <span class="icon">🧪</span><span>Studio</span>
     </button>
     <button onclick="switchTab('factory')" data-tab="factory" class="active">
       <span class="icon">🏭</span><span>Factory</span>
@@ -5606,6 +5850,409 @@ ${b.ast}
         }
       }
 
+      // ═════════════════════════════════════════════════════════════════
+      // ANSE SCENARIO STUDIO & CREATOR (V2 • V3 • V4)
+      // ═════════════════════════════════════════════════════════════════
+      let studioCatalogData = [];
+      let studioTemplatesData = {};
+      let studioCurrentMode = 'catalog';
+      let studioCurrentPhase = 'v2';
+      let studioCurrentToken = '';
+
+      function setStudioMode(mode) {
+        studioCurrentMode = mode;
+        const catalogBtn = document.getElementById('studio-mode-catalog-btn');
+        const customBtn = document.getElementById('studio-mode-custom-btn');
+        const catalogView = document.getElementById('studio-catalog-view');
+        const customView = document.getElementById('studio-custom-view');
+
+        if (mode === 'catalog') {
+          if (catalogBtn) catalogBtn.className = 'px-2.5 py-1 rounded-md font-bold transition bg-indigo-600 text-white shadow';
+          if (customBtn) customBtn.className = 'px-2.5 py-1 rounded-md font-bold text-slate-400 hover:text-white transition';
+          if (catalogView) catalogView.classList.remove('hidden');
+          if (customView) customView.classList.add('hidden');
+        } else {
+          if (customBtn) customBtn.className = 'px-2.5 py-1 rounded-md font-bold transition bg-indigo-600 text-white shadow';
+          if (catalogBtn) catalogBtn.className = 'px-2.5 py-1 rounded-md font-bold text-slate-400 hover:text-white transition';
+          if (customView) customView.classList.remove('hidden');
+          if (catalogView) catalogView.classList.add('hidden');
+          setStudioCustomPhase(studioCurrentPhase);
+        }
+      }
+
+      async function loadStudioCatalog() {
+        try {
+          const resp = await fetch('/api/scenarios/catalog');
+          const data = await resp.json();
+          if (resp.ok && data.scenarios) {
+            studioCatalogData = data.scenarios;
+            const select = document.getElementById('studio-scenario-select');
+            if (select) {
+              select.innerHTML = studioCatalogData.map(s => `
+                <option value="${s.id}">#${s.id} - ${s.name} (${s.phase})</option>
+              `).join('');
+            }
+            if (studioCatalogData.length > 0) {
+              onStudioCatalogSelect(studioCatalogData[0].id);
+            }
+
+            // Populate quick-launch gallery grid
+            const grid = document.getElementById('studio-quick-grid');
+            if (grid) {
+              grid.innerHTML = studioCatalogData.map(s => `
+                <div onclick="selectAndRunStudioScenario(${s.id})" class="cursor-pointer p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-900/80 transition space-y-2 text-xs group">
+                  <div class="flex items-center justify-between">
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${s.id <= 5 ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'}">
+                      #${s.id} ${s.category}
+                    </span>
+                    <span class="text-[10px] text-slate-500 font-mono">▶ Lancer</span>
+                  </div>
+                  <div class="font-bold text-slate-200 group-hover:text-white line-clamp-1">${s.name}</div>
+                  <div class="text-[11px] text-slate-400 line-clamp-1">${s.domain}</div>
+                  <div class="pt-1.5 border-t border-slate-900 font-mono text-[10px] text-emerald-400 truncate">
+                    ${s.invariant}
+                  </div>
+                </div>
+              `).join('');
+            }
+          }
+        } catch (err) {
+          console.error('Error loading scenario catalog:', err);
+        }
+      }
+
+      function onStudioCatalogSelect(val) {
+        const scenarioId = parseInt(val, 10);
+        const sc = studioCatalogData.find(s => s.id === scenarioId);
+        if (!sc) return;
+
+        const phaseEl = document.getElementById('studio-meta-phase');
+        const domainEl = document.getElementById('studio-meta-domain');
+        const nameEl = document.getElementById('studio-meta-name');
+        const descEl = document.getElementById('studio-meta-desc');
+        const invEl = document.getElementById('studio-meta-invariant');
+
+        if (phaseEl) phaseEl.textContent = `${sc.category}: ${sc.phase}`;
+        if (domainEl) domainEl.textContent = sc.domain;
+        if (nameEl) nameEl.textContent = sc.name;
+        if (descEl) descEl.textContent = sc.description;
+        if (invEl) invEl.textContent = sc.invariant;
+      }
+
+      function selectAndRunStudioScenario(id) {
+        setStudioMode('catalog');
+        const select = document.getElementById('studio-scenario-select');
+        if (select) {
+          select.value = id;
+          onStudioCatalogSelect(id);
+        }
+        runStudioSelectedCatalog();
+      }
+
+      async function loadStudioTemplates() {
+        try {
+          const resp = await fetch('/api/scenarios/templates');
+          const data = await resp.json();
+          if (resp.ok && data.templates) {
+            studioTemplatesData = data.templates;
+          }
+        } catch (err) {
+          console.error('Error loading scenario templates:', err);
+        }
+      }
+
+      function setStudioCustomPhase(phase) {
+        studioCurrentPhase = phase;
+        ['v2', 'v3', 'v4'].forEach(p => {
+          const btn = document.getElementById(`studio-phase-${p}-btn`);
+          if (btn) {
+            if (p === phase) {
+              btn.className = 'py-2 rounded-lg text-xs font-bold transition bg-indigo-600 text-white shadow';
+            } else {
+              btn.className = 'py-2 rounded-lg text-xs font-bold transition bg-slate-950 text-slate-400 border border-slate-800 hover:text-white';
+            }
+          }
+        });
+
+        const paramsCont = document.getElementById('studio-custom-params');
+        if (!paramsCont) return;
+
+        if (phase === 'v2') {
+          paramsCont.innerHTML = `
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block text-[11px] text-slate-400 mb-1">Candidats :</label>
+                <input type="number" id="studio-param-candidates" value="1000" min="10" max="5000" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs font-mono">
+              </div>
+              <div>
+                <label class="block text-[11px] text-slate-400 mb-1">Top-K :</label>
+                <input type="number" id="studio-param-topk" value="16" min="1" max="100" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs font-mono">
+              </div>
+              <div>
+                <label class="block text-[11px] text-slate-400 mb-1">Dim Latent Z :</label>
+                <input type="number" id="studio-param-latentdim" value="64" min="8" max="256" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs font-mono">
+              </div>
+            </div>
+          `;
+        } else if (phase === 'v3') {
+          paramsCont.innerHTML = `
+            <div class="grid grid-cols-2 gap-2">
+              <label class="flex items-center gap-2 p-2 rounded-lg bg-slate-950 border border-slate-800 text-xs cursor-pointer">
+                <input type="checkbox" id="studio-param-antistub" checked class="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0">
+                <span class="text-slate-300">Audit Anti-Stub AST</span>
+              </label>
+              <label class="flex items-center gap-2 p-2 rounded-lg bg-slate-950 border border-slate-800 text-xs cursor-pointer">
+                <input type="checkbox" id="studio-param-assertdelta" checked class="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0">
+                <span class="text-slate-300">Condition ΔE &lt; 0</span>
+              </label>
+            </div>
+          `;
+        } else if (phase === 'v4') {
+          paramsCont.innerHTML = `
+            <div class="space-y-2">
+              <div>
+                <label class="block text-[11px] text-slate-400 mb-1">Action Proposée :</label>
+                <input type="text" id="studio-param-action" value="divert_hospital_power_to_mining" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs font-mono">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1">Type de Test :</label>
+                  <select id="studio-param-issabotage" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs font-mono">
+                    <option value="true">Adversarial Paradox (Sabotage)</option>
+                    <option value="false">Benign Operation (Nominal)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1">Seuil Viabilité ε :</label>
+                  <input type="number" id="studio-param-epsilon" value="0.10" step="0.01" min="0.01" max="1.0" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs font-mono">
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        loadStudioPhaseTemplate();
+      }
+
+      function loadStudioPhaseTemplate() {
+        if (!studioTemplatesData[studioCurrentPhase]) return;
+        const tpl = studioTemplatesData[studioCurrentPhase];
+        const nameInput = document.getElementById('studio-custom-name');
+        const codeInput = document.getElementById('studio-custom-code');
+        if (nameInput) nameInput.value = tpl.name;
+        if (codeInput) codeInput.value = tpl.code;
+      }
+
+      function updateStudioPipeline(stages, badgeText, badgeClass) {
+        const badge = document.getElementById('studio-pipeline-badge');
+        if (badge) {
+          badge.textContent = badgeText;
+          badge.className = `px-2 py-0.5 rounded text-[10px] font-bold ${badgeClass}`;
+        }
+
+        stages.forEach((st, idx) => {
+          const card = document.getElementById(`stage-${idx + 1}-card`);
+          const statusEl = document.getElementById(`stage-${idx + 1}-status`);
+          if (card && statusEl) {
+            statusEl.textContent = st.status;
+            if (st.status === 'PASSED' || st.status === 'ATTESTED' || st.status === 'APPROVED') {
+              card.className = 'p-2 rounded-lg bg-emerald-950/20 border border-emerald-500/40 text-center text-[10px] font-mono transition';
+              statusEl.className = 'text-emerald-400 font-bold';
+            } else if (st.status === 'PROJECTED') {
+              card.className = 'p-2 rounded-lg bg-amber-950/20 border border-amber-500/40 text-center text-[10px] font-mono transition';
+              statusEl.className = 'text-amber-400 font-bold';
+            } else if (st.status === 'FAILED' || st.status === 'BLOCKED' || st.status === 'REJECTED' || st.status === 'DENIED') {
+              card.className = 'p-2 rounded-lg bg-red-950/20 border border-red-500/40 text-center text-[10px] font-mono transition';
+              statusEl.className = 'text-red-400 font-bold';
+            } else {
+              card.className = 'p-2 rounded-lg bg-slate-950 border border-slate-800 text-center text-[10px] font-mono transition';
+              statusEl.className = 'text-slate-400 font-bold';
+            }
+          }
+        });
+      }
+
+      function updateStudioKPIs(parentE, childE, deltaE, speedup) {
+        const pEl = document.getElementById('studio-kpi-parent');
+        const cEl = document.getElementById('studio-kpi-child');
+        const dEl = document.getElementById('studio-kpi-delta');
+        const sEl = document.getElementById('studio-kpi-speedup');
+
+        if (pEl) pEl.textContent = typeof parentE === 'number' ? parentE.toFixed(2) : parentE;
+        if (cEl) cEl.textContent = typeof childE === 'number' ? childE.toFixed(2) : childE;
+        if (dEl) {
+          dEl.textContent = typeof deltaE === 'number' ? (deltaE > 0 ? `+${deltaE.toFixed(2)}` : deltaE.toFixed(2)) : deltaE;
+          dEl.className = `text-xl font-black font-mono mt-1 ${typeof deltaE === 'number' && deltaE < 0 ? 'text-emerald-400' : 'text-red-400'}`;
+        }
+        if (sEl) sEl.textContent = typeof speedup === 'number' ? `${speedup.toFixed(2)}x` : `${speedup}x`;
+      }
+
+      function appendStudioLogs(logs) {
+        const term = document.getElementById('studio-terminal-logs');
+        if (!term) return;
+        logs.forEach(line => {
+          const div = document.createElement('div');
+          if (line.includes('FAILED') || line.includes('❌') || line.includes('🚨')) {
+            div.className = 'text-red-400';
+          } else if (line.includes('SUCCESS') || line.includes('✅') || line.includes('Attested')) {
+            div.className = 'text-emerald-400 font-bold';
+          } else if (line.includes('PROOF') || line.includes('Token')) {
+            div.className = 'text-cyan-400 font-bold';
+          } else {
+            div.className = 'text-slate-300';
+          }
+          div.textContent = line;
+          term.appendChild(div);
+        });
+        term.scrollTop = term.scrollHeight;
+      }
+
+      function setStudioProofToken(token) {
+        studioCurrentToken = token || '';
+        const el = document.getElementById('studio-proof-token');
+        if (el) {
+          el.textContent = token ? `🔐 ${token}` : '-- Non émis (Échec ou En cours) --';
+        }
+      }
+
+      function clearStudioLogs() {
+        const term = document.getElementById('studio-terminal-logs');
+        if (term) term.innerHTML = '<div class="text-slate-600">// Console d\'audit réinitialisée.</div>';
+      }
+
+      function copyStudioToken() {
+        if (!studioCurrentToken) return;
+        navigator.clipboard.writeText(studioCurrentToken).then(() => {
+          const btn = document.getElementById('studio-copy-token-btn');
+          if (btn) {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<span>✅</span> Copié !';
+            setTimeout(() => { btn.innerHTML = orig; }, 2000);
+          }
+        });
+      }
+
+      async function runStudioSelectedCatalog() {
+        const select = document.getElementById('studio-scenario-select');
+        const scenarioId = select ? parseInt(select.value, 10) : 1;
+        const btn = document.getElementById('studio-run-catalog-btn');
+        const origText = btn ? btn.innerHTML : '';
+        if (btn) {
+          btn.innerHTML = '<span>⏳</span> Exécution en direct dans le Sandbox...';
+          btn.disabled = true;
+        }
+
+        updateStudioPipeline([
+          { status: 'RUNNING' }, { status: 'PENDING' }, { status: 'PENDING' }, { status: 'PENDING' }, { status: 'PENDING' }
+        ], 'EN COURS', 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 animate-pulse');
+
+        try {
+          const resp = await fetch('/api/scenarios/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ scenario_id: scenarioId }),
+          });
+          const data = await resp.json();
+
+          if (resp.ok && data.status === 'success') {
+            updateStudioPipeline(data.pipeline_stages, 'VALIDÉ & CERTIFIÉ', 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30');
+            updateStudioKPIs(data.parent_energy, data.child_energy, data.delta_energy, data.speedup);
+            if (data.execution_log) appendStudioLogs(data.execution_log);
+            setStudioProofToken(data.proof_token);
+          } else {
+            updateStudioPipeline([
+              { status: 'FAILED' }, { status: 'FAILED' }, { status: 'FAILED' }, { status: 'FAILED' }, { status: 'FAILED' }
+            ], 'ERREUR', 'bg-red-500/20 text-red-300 border border-red-500/30');
+            appendStudioLogs([`[ERROR] Execution failed: ${data.detail || 'Unknown error'}`]);
+          }
+        } catch (err) {
+          console.error('Error running catalog scenario:', err);
+          appendStudioLogs([`[NETWORK ERROR] ${err.message}`]);
+        } finally {
+          if (btn) {
+            btn.innerHTML = origText;
+            btn.disabled = false;
+          }
+        }
+      }
+
+      async function runStudioCustomScenario() {
+        const btn = document.getElementById('studio-run-custom-btn');
+        const origText = btn ? btn.innerHTML : '';
+        if (btn) {
+          btn.innerHTML = '<span>⏳</span> Validation Déterministe en cours...';
+          btn.disabled = true;
+        }
+
+        const nameInput = document.getElementById('studio-custom-name');
+        const codeInput = document.getElementById('studio-custom-code');
+        const name = nameInput ? nameInput.value : 'Custom Scenario';
+        const code = codeInput ? codeInput.value : '';
+
+        const params = {};
+        if (studioCurrentPhase === 'v2') {
+          const cEl = document.getElementById('studio-param-candidates');
+          const kEl = document.getElementById('studio-param-topk');
+          const dEl = document.getElementById('studio-param-latentdim');
+          if (cEl) params.candidates_count = parseInt(cEl.value, 10);
+          if (kEl) params.top_k = parseInt(kEl.value, 10);
+          if (dEl) params.latent_dim = parseInt(dEl.value, 10);
+        } else if (studioCurrentPhase === 'v3') {
+          const stubEl = document.getElementById('studio-param-antistub');
+          const deltaEl = document.getElementById('studio-param-assertdelta');
+          if (stubEl) params.verify_anti_stub = stubEl.checked;
+          if (deltaEl) params.assert_banach_delta = deltaEl.checked;
+        } else if (studioCurrentPhase === 'v4') {
+          const actEl = document.getElementById('studio-param-action');
+          const saboEl = document.getElementById('studio-param-issabotage');
+          const epsEl = document.getElementById('studio-param-epsilon');
+          if (actEl) params.action = actEl.value;
+          if (saboEl) params.is_sabotage = saboEl.value === 'true';
+          if (epsEl) params.epsilon_viability = parseFloat(epsEl.value);
+        }
+
+        updateStudioPipeline([
+          { status: 'RUNNING' }, { status: 'PENDING' }, { status: 'PENDING' }, { status: 'PENDING' }, { status: 'PENDING' }
+        ], 'EN COURS', 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 animate-pulse');
+
+        try {
+          const resp = await fetch('/api/scenarios/create-and-run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phase: studioCurrentPhase,
+              name: name,
+              code: code,
+              parameters: params,
+            }),
+          });
+          const data = await resp.json();
+
+          if (resp.ok && data.status === 'success') {
+            const isSuccess = data.closed_loop_passed;
+            const badgeText = isSuccess ? 'VALIDÉ & CERTIFIÉ' : 'REJETÉ (MAX PAIN)';
+            const badgeClass = isSuccess ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30';
+            updateStudioPipeline(data.pipeline_stages, badgeText, badgeClass);
+            updateStudioKPIs(data.parent_energy, data.child_energy, data.delta_energy, data.speedup);
+            if (data.execution_log) appendStudioLogs(data.execution_log);
+            setStudioProofToken(data.proof_token);
+          } else {
+            updateStudioPipeline([
+              { status: 'FAILED' }, { status: 'FAILED' }, { status: 'FAILED' }, { status: 'FAILED' }, { status: 'FAILED' }
+            ], 'ERREUR', 'bg-red-500/20 text-red-300 border border-red-500/30');
+            appendStudioLogs([`[ERROR] Execution failed: ${data.detail || 'Unknown error'}`]);
+          }
+        } catch (err) {
+          console.error('Error creating custom scenario:', err);
+          appendStudioLogs([`[NETWORK ERROR] ${err.message}`]);
+        } finally {
+          if (btn) {
+            btn.innerHTML = origText;
+            btn.disabled = false;
+          }
+        }
+      }
+
       // Export functions to window
       window.runV2SurrogateFilter = runV2SurrogateFilter;
       window.runV2Calibration = runV2Calibration;
@@ -5613,8 +6260,19 @@ ${b.ast}
       window.runV3HotSwap = runV3HotSwap;
       window.runV4SMTEvaluation = runV4SMTEvaluation;
       window.loadE2EScenarios = loadE2EScenarios;
+      window.setStudioMode = setStudioMode;
+      window.loadStudioCatalog = loadStudioCatalog;
+      window.onStudioCatalogSelect = onStudioCatalogSelect;
+      window.selectAndRunStudioScenario = selectAndRunStudioScenario;
+      window.loadStudioTemplates = loadStudioTemplates;
+      window.setStudioCustomPhase = setStudioCustomPhase;
+      window.loadStudioPhaseTemplate = loadStudioPhaseTemplate;
+      window.runStudioSelectedCatalog = runStudioSelectedCatalog;
+      window.runStudioCustomScenario = runStudioCustomScenario;
+      window.clearStudioLogs = clearStudioLogs;
+      window.copyStudioToken = copyStudioToken;
 
-      // Hook tab switcher for V2 and V4 auto-load
+      // Hook tab switcher for V2, V4 and Scenario Studio auto-load
       const priorSwitch = window.switchTab;
       window.switchTab = function(tabId) {
         priorSwitch(tabId);
@@ -5628,13 +6286,18 @@ ${b.ast}
           if (grid && grid.children.length <= 1) {
             loadE2EScenarios();
           }
+        } else if (tabId === 'scenario-studio') {
+          if (studioCatalogData.length === 0) {
+            loadStudioCatalog();
+            loadStudioTemplates();
+          }
         }
       };
 
-      // Deep linking support for #anse-v2, #anse-v3, #anse-v4
+      // Deep linking support for #anse-v2, #anse-v3, #anse-v4, #scenario-studio
       function checkVHash() {
         const hash = window.location.hash;
-        if (hash === '#anse-v2' || hash === '#anse-v3' || hash === '#anse-v4') {
+        if (hash === '#anse-v2' || hash === '#anse-v3' || hash === '#anse-v4' || hash === '#scenario-studio') {
           const tab = hash.substring(1);
           if (document.readyState === 'loading') {
             window.addEventListener('DOMContentLoaded', () => window.switchTab(tab));

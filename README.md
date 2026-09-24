@@ -241,6 +241,16 @@ ANSE v2.3.0 enforces a strict thermodynamic contract ($\Delta E = E_{\text{child
 
 ---
 
+## 🌐 Interactive Web GUI & Command Deck (`web/index.html`)
+
+Launch with `PORT=5000 uv run python web/server.py` to interactively explore and benchmark all ANSE phases:
+* **ANSE V2 (System 1.5 JEPA Intuition):** Fast Surrogate Reality Engine evaluates 1,000 candidate thoughts in $<15\text{ ms}$ ($>98\%$ sandbox latency eliminated), with online calibration against physical sandbox ground truth.
+* **ANSE V3 (Autopoietic Meta-Learning Engine):** Active Latent MCTS thought pruner intercepting hollow stubs and quadratic traps, verified under $\Delta E = E_{\text{child}} - E_{\text{parent}} < 0$ and zero-downtime RCU atomic hot-swap.
+* **ANSE V4 (Safe ANSE & 10 E2E Hardness Scenarios):** Real-time Z3 SMT Control Barrier Functions ($V_{\text{human}} \ge \epsilon$) preventing blackout sabotage and projecting back to safe Pareto manifold; live telemetry cards for all 10 End-to-End verified scenarios with cryptographic HMAC SHA-256 proof tokens.
+* **Antigravity Swarm Command Deck (ASCD):** DAG microservices orchestration, 3D WebGL physics canvas, Lean 4 Tribunal with gutter error indicators, and God Mode Emergency Halt (`Spacebar` / mobile FAB 🛑).
+
+---
+
 ## 📚 Repository Verification & Execution
 
 ```bash

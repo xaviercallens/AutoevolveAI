@@ -193,6 +193,9 @@
       <button onclick="switchTab('anse-v4')" id="tab-anse-v4" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
         <span>🛡️</span> ANSE V4: Safe ANSE & 10 E2E Scenarios
       </button>
+      <button onclick="switchTab('anse-v5')" id="tab-anse-v5" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+        <span>🌌</span> ANSE V5: Science & Rosetta
+      </button>
       <button onclick="switchTab('scenario-studio')" id="tab-scenario-studio" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
         <span>🧪</span> Studio Scénarios V2-V3-V4
       </button>
@@ -2648,6 +2651,245 @@ def vectorize_matmul(A, B):
     </section>
 
     <!-- ================================================================= -->
+    <!-- TAB: ANSE V5: AUTONOMOUS SCIENCE & ROSETTA STONE TRIPLET          -->
+    <!-- ================================================================= -->
+    <section id="section-anse-v5" class="hidden space-y-8">
+      <!-- Section Header -->
+      <div class="p-6 rounded-2xl border border-purple-800/60 bg-gradient-to-br from-slate-900 via-purple-950/25 to-slate-950 backdrop-blur shadow-xl relative overflow-hidden">
+        <div class="absolute -right-12 -top-12 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/10 border border-purple-500/30 text-purple-400 mb-2">
+              <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
+              PHASE V5: AUTONOMOUS SCIENCE • LOCAL CPU LAYA • ROSETTA STONE • GRPO
+            </div>
+            <h2 class="text-2xl font-black text-white tracking-tight">ANSE V5: Cross-Domain Rosetta Stone & System 1 Laya (CPU)</h2>
+            <p class="text-sm text-slate-400 mt-1 max-w-3xl">
+              Résolution et certification simultanée à travers trois domaines complémentaires : <strong>The Theorist</strong> (Preuve formelle Lean 4 sans <code>sorry</code>), <strong>The Physicist</strong> (Prototype numérique Python garantissant les invariants de conservation), et <strong>The Engineer</strong> (Noyau Rust SIMD à allocation zéro sous condition $\Delta E &lt; 0$). Le modèle non-autorégressif <strong>Laya</strong> (exécuté en local sur CPU) assure le triage instantané en millisecondes avant l'exploration de compute au test-time par <strong>GRPO</strong>.
+            </p>
+          </div>
+          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+            <span class="px-3 py-1.5 rounded-lg bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 font-mono text-xs font-bold flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              Modèle Laya CPU Actif (ModernBERT)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DECK 1: Non-Autoregressive System 1 Triage via Laya (CPU Local) -->
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div>
+            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+              <span>🧠</span> Deck 1: Triage Non-Autorégressif System 1 (Modèle Laya sur CPU)
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Évaluation en un seul passage avant (single forward pass) sans génération de texte ni hallucination. Triage en microsecondes.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="setV5LayaPreset('kdv')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono">
+              KdV Soliton
+            </button>
+            <button onclick="setV5LayaPreset('ym')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono">
+              Yang-Mills
+            </button>
+            <button onclick="setV5LayaPreset('chern')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono">
+              Chern Number
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Left: Input & Decision Type -->
+          <div class="lg:col-span-6 space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1.5">Hypothèse Scientifique / État du Problème :</label>
+              <textarea id="v5-laya-input" rows="4" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 font-mono text-xs focus:outline-none focus:border-purple-500 resize-none">Theorem: Given a closed differential 2-form omega on a symplectic manifold M, the exterior derivative satisfies d(d(omega)) = 0. The L2 norm of the KdV soliton satisfies P = integral(u^2 dx) under arbitrary velocity phase shifts.</textarea>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Type de Décision :</label>
+                <select id="v5-laya-type" onchange="onV5LayaTypeChange(this.value)" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs font-mono">
+                  <option value="choice">Choice (Catégoriel)</option>
+                  <option value="score">Score (Échelle 1-5)</option>
+                  <option value="noul">Noul (Probabilité Vrai)</option>
+                </select>
+              </div>
+              <div class="col-span-2">
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Critères / Assertion :</label>
+                <input type="text" id="v5-laya-criteria" value="sound, unsound, needs_proof" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs font-mono">
+              </div>
+            </div>
+
+            <button onclick="runV5LayaTriage()" id="v5-laya-triage-btn" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-purple-600/25 flex items-center justify-center gap-2">
+              <span>⚡</span> Évaluer avec Laya (Inférence CPU Locale)
+            </button>
+          </div>
+
+          <!-- Right: Output & Probability Distribution -->
+          <div class="lg:col-span-6 space-y-4">
+            <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-400">Décision Calibrée System 1 :</span>
+                <span id="v5-laya-decision-badge" class="px-2.5 py-1 rounded text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono">
+                  EN ATTENTE
+                </span>
+              </div>
+
+              <!-- Latency Readout -->
+              <div class="flex items-center justify-between pt-2 border-t border-slate-900 text-xs font-mono">
+                <span class="text-slate-500">Latence Forward Pass (CPU) :</span>
+                <span id="v5-laya-latency" class="text-emerald-400 font-bold">-- ms</span>
+              </div>
+
+              <!-- Calibrated Distribution / Score -->
+              <div class="space-y-1.5 pt-1">
+                <div class="flex justify-between text-[11px] text-slate-400 font-mono">
+                  <span>Distribution des Probabilités :</span>
+                  <span id="v5-laya-confidence">Confiance : --</span>
+                </div>
+                <div id="v5-laya-prob-container" class="space-y-1.5 text-xs font-mono">
+                  <div class="text-slate-600 text-[11px] py-3 text-center">Cliquez sur Évaluer pour lancer l'inférence locale Laya sur CPU.</div>
+                </div>
+              </div>
+
+              <div class="pt-2 border-t border-slate-900 text-[10px] text-slate-500 font-mono flex justify-between">
+                <span>Modèle : ModernBERT-large (842 MB)</span>
+                <span>Périphérique : CPU natif (PyTorch)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DECK 2: Rosetta Stone Triplet Cross-Domain Alignment -->
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div>
+            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+              <span>🏛️</span> Deck 2: Alignement Triplet Rosetta Stone (Theorist • Physicist • Engineer)
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Vérification croisée et stricte : Lean 4 sans <code>sorry</code>, prototype numérique Python conservé, et noyau Rust SIMD avec $\Delta E &lt; 0$.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <select id="v5-rosetta-select" onchange="onV5CurriculumSelect(this.value)" class="px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs font-mono">
+              <option value="kdv_soliton_momentum">#1 KdV Soliton (Conservation L2)</option>
+              <option value="yang_mills_instanton">#2 Yang-Mills (Instanton Q ∈ ℤ)</option>
+              <option value="chern_number_quantum_hall">#3 Quantum Hall (Chern Number)</option>
+            </select>
+            <button onclick="runV5RosettaVerify()" id="v5-rosetta-run-btn" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-black font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-600/25 flex items-center gap-2">
+              <span>▶</span> Vérifier le Triplet
+            </button>
+          </div>
+        </div>
+
+        <!-- 3 Epistemological Domain Cards -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 font-mono text-xs">
+          <!-- The Theorist (Lean 4) -->
+          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-900">
+              <span class="font-bold text-indigo-400 flex items-center gap-1.5">
+                <span>📜</span> 1. The Theorist (Lean 4)
+              </span>
+              <span id="v5-rosetta-lean-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">EN ATTENTE</span>
+            </div>
+            <div class="text-[11px] text-slate-400">Preuve formelle Mathlib4 (Zero-Sorry) :</div>
+            <textarea id="v5-lean4-code" rows="7" readonly class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-[11px] font-mono resize-none focus:outline-none"></textarea>
+          </div>
+
+          <!-- The Physicist (Python) -->
+          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-900">
+              <span class="font-bold text-cyan-400 flex items-center gap-1.5">
+                <span>⚛️</span> 2. The Physicist (Python)
+              </span>
+              <span id="v5-rosetta-py-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">EN ATTENTE</span>
+            </div>
+            <div class="text-[11px] text-slate-400">Prototype numérique & Invariant :</div>
+            <textarea id="v5-python-code" rows="7" readonly class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-[11px] font-mono resize-none focus:outline-none"></textarea>
+          </div>
+
+          <!-- The Engineer (Rust) -->
+          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-900">
+              <span class="font-bold text-amber-400 flex items-center gap-1.5">
+                <span>⚙️</span> 3. The Engineer (Rust SIMD)
+              </span>
+              <span id="v5-rosetta-rust-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">EN ATTENTE</span>
+            </div>
+            <div class="text-[11px] text-slate-400">Noyau SIMD zéro-allocation :</div>
+            <textarea id="v5-rust-code" rows="7" readonly class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-[11px] font-mono resize-none focus:outline-none"></textarea>
+          </div>
+        </div>
+
+        <!-- Pipeline Stages & KPIs -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+          <div class="p-3.5 rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Énergie Parent (Ep)</div>
+            <div id="v5-kpi-parent" class="text-xl font-black font-mono text-slate-300 mt-1">--</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">Avant optimisation</div>
+          </div>
+          <div class="p-3.5 rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Énergie Enfant (Ec)</div>
+            <div id="v5-kpi-child" class="text-xl font-black font-mono text-emerald-400 mt-1">--</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">Après optimisation</div>
+          </div>
+          <div class="p-3.5 rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">ΔE Thermodynamique</div>
+            <div id="v5-kpi-delta" class="text-xl font-black font-mono text-cyan-400 mt-1">--</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">Condition ΔE &lt; 0</div>
+          </div>
+          <div class="p-3.5 rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Accélération (Speedup)</div>
+            <div id="v5-kpi-speedup" class="text-xl font-black font-mono text-purple-400 mt-1">--</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">Facteur de gain</div>
+          </div>
+        </div>
+
+        <!-- Cryptographic Proof Token Card -->
+        <div class="p-4 rounded-xl border border-slate-800 bg-slate-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Jeton de Preuve Triplet Rosetta (HMAC SHA-256) :</div>
+            <div id="v5-proof-token" class="font-mono text-xs text-cyan-400 font-bold break-all mt-0.5">
+              -- Non émis --
+            </div>
+          </div>
+          <button onclick="copyV5Token()" id="v5-copy-token-btn" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono font-medium transition border border-slate-700 flex items-center gap-1.5 whitespace-nowrap">
+            <span>📋</span> Copier Jeton
+          </button>
+        </div>
+      </div>
+
+      <!-- DECK 3: Test-Time Compute GRPO Policy Explorer -->
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div>
+            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+              <span>🚀</span> Deck 3: Exploration de Compute au Test-Time (GRPO Group Relative Policy Optimization)
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Génération et exploration en direct de 8 trajectoires parallèles. Calcul des avantages relatifs normalisés $A_i = \frac{R_i - \mu_R}{\sigma_R}$ sous bac à sable déterministe.
+            </p>
+          </div>
+          <button onclick="runV5GRPOExplore()" id="v5-grpo-run-btn" class="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-purple-600/25 flex items-center gap-2">
+            <span>⚡</span> Lancer l'Exploration GRPO (8 Trajectoires)
+          </button>
+        </div>
+
+        <!-- 8 Trajectories Grid -->
+        <div id="v5-grpo-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-1">
+          <!-- Populated dynamically via JS -->
+          <div class="text-slate-500 text-xs col-span-full text-center py-6">Cliquez sur "Lancer l'Exploration GRPO" pour explorer les trajectoires de raisonnement.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
     <!-- TAB: SCENARIO STUDIO & CREATION (FONCTIONNALITÉ SCÉNARIO V2-V3-V4) -->
     <!-- ================================================================= -->
     <section id="section-scenario-studio" class="hidden space-y-8">
@@ -2728,7 +2970,7 @@ def vectorize_matmul(A, B):
               <!-- Phase Selector -->
               <div>
                 <label class="block text-xs font-semibold text-slate-400 mb-1.5">Phase Cible ANSE :</label>
-                <div class="grid grid-cols-3 gap-1.5">
+                <div class="grid grid-cols-4 gap-1.5">
                   <button type="button" id="studio-phase-v2-btn" onclick="setStudioCustomPhase('v2')" class="py-2 rounded-lg text-xs font-bold transition bg-cyan-600 text-black">
                     V2 (JEPA)
                   </button>
@@ -2737,6 +2979,9 @@ def vectorize_matmul(A, B):
                   </button>
                   <button type="button" id="studio-phase-v4-btn" onclick="setStudioCustomPhase('v4')" class="py-2 rounded-lg text-xs font-bold transition bg-slate-950 text-slate-400 border border-slate-800 hover:text-white">
                     V4 (Safe)
+                  </button>
+                  <button type="button" id="studio-phase-v5-btn" onclick="setStudioCustomPhase('v5')" class="py-2 rounded-lg text-xs font-bold transition bg-slate-950 text-slate-400 border border-slate-800 hover:text-white">
+                    V5 (Rosetta)
                   </button>
                 </div>
               </div>
@@ -2906,6 +3151,9 @@ def vectorize_matmul(A, B):
     </button>
     <button onclick="switchTab('anse-v4')" data-tab="anse-v4">
       <span class="icon">🛡️</span><span>V4</span>
+    </button>
+    <button onclick="switchTab('anse-v5')" data-tab="anse-v5">
+      <span class="icon">🌌</span><span>V5</span>
     </button>
     <button onclick="switchTab('scenario-studio')" data-tab="scenario-studio">
       <span class="icon">🧪</span><span>Studio</span>
@@ -5963,7 +6211,7 @@ ${b.ast}
 
       function setStudioCustomPhase(phase) {
         studioCurrentPhase = phase;
-        ['v2', 'v3', 'v4'].forEach(p => {
+        ['v2', 'v3', 'v4', 'v5'].forEach(p => {
           const btn = document.getElementById(`studio-phase-${p}-btn`);
           if (btn) {
             if (p === phase) {
@@ -6025,6 +6273,25 @@ ${b.ast}
                 <div>
                   <label class="block text-[11px] text-slate-400 mb-1">Seuil Viabilité ε :</label>
                   <input type="number" id="studio-param-epsilon" value="0.10" step="0.01" min="0.01" max="1.0" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs font-mono">
+                </div>
+              </div>
+            </div>
+          `;
+        } else if (phase === 'v5') {
+          paramsCont.innerHTML = `
+            <div class="space-y-2">
+              <div>
+                <label class="block text-[11px] text-slate-400 mb-1">Hypothesis ID / Domain :</label>
+                <input type="text" id="studio-param-hypothesis" value="kdv_soliton_conservation" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs font-mono">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1">Tolérance Relative :</label>
+                  <input type="number" id="studio-param-tolerance" value="0.0001" step="0.00001" min="0.000001" max="0.1" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs font-mono">
+                </div>
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1">Nbre Trajectoires GRPO :</label>
+                  <input type="number" id="studio-param-trajectories" value="8" min="2" max="16" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs font-mono">
                 </div>
               </div>
             </div>
@@ -6209,6 +6476,13 @@ ${b.ast}
           if (actEl) params.action = actEl.value;
           if (saboEl) params.is_sabotage = saboEl.value === 'true';
           if (epsEl) params.epsilon_viability = parseFloat(epsEl.value);
+        } else if (studioCurrentPhase === 'v5') {
+          const hypEl = document.getElementById('studio-param-hypothesis');
+          const tolEl = document.getElementById('studio-param-tolerance');
+          const trajEl = document.getElementById('studio-param-trajectories');
+          if (hypEl) params.hypothesis_id = hypEl.value;
+          if (tolEl) params.tolerance = parseFloat(tolEl.value);
+          if (trajEl) params.trajectories_count = parseInt(trajEl.value, 10);
         }
 
         updateStudioPipeline([
@@ -6253,6 +6527,394 @@ ${b.ast}
         }
       }
 
+      // ═══════════════════════════════════════════════════════════════
+      // ANSE V5 JAVASCRIPT CONTROLLERS (LOCAL CPU LAYA, ROSETTA, GRPO)
+      // ═══════════════════════════════════════════════════════════════
+      let v5CurriculaData = [];
+      let v5CurrentToken = '';
+
+      const v5LayaPresets = {
+        kdv: {
+          text: "Theorem: Given a closed differential 2-form omega on a symplectic manifold M, the exterior derivative satisfies d(d(omega)) = 0. The L2 norm of the KdV soliton satisfies P = integral(u^2 dx) under arbitrary velocity phase shifts.",
+          type: "choice",
+          criteria: "sound, unsound, needs_proof"
+        },
+        ym: {
+          text: "Hypothesis: In SU(2) Yang-Mills gauge theory on Euclidean R^4, the self-dual instanton gauge field yields integer topological charge Q = 1/(8*pi^2) * integral(Tr(F ^ F)) = 1.",
+          type: "choice",
+          criteria: "sound, unsound, needs_proof"
+        },
+        chern: {
+          text: "Hypothesis: The first Chern number of the Berry curvature 2-form over the 2D Brillouin zone is strictly an integer topological invariant C1 in Z, guaranteeing quantized Hall conductance sigma_xy = C1 * e^2/h.",
+          type: "choice",
+          criteria: "sound, unsound, needs_proof"
+        }
+      };
+
+      function setV5LayaPreset(key) {
+        const preset = v5LayaPresets[key];
+        if (!preset) return;
+        const inputEl = document.getElementById('v5-laya-input');
+        const typeEl = document.getElementById('v5-laya-type');
+        const critEl = document.getElementById('v5-laya-criteria');
+        if (inputEl) inputEl.value = preset.text;
+        if (typeEl) {
+          typeEl.value = preset.type;
+          onV5LayaTypeChange(preset.type);
+        }
+        if (critEl) critEl.value = preset.criteria;
+      }
+
+      function onV5LayaTypeChange(type) {
+        const critEl = document.getElementById('v5-laya-criteria');
+        if (!critEl) return;
+        if (type === 'choice') {
+          critEl.value = 'sound, unsound, needs_proof';
+        } else if (type === 'score') {
+          critEl.value = '1-5 rating on mathematical soundness and conservation law consistency';
+        } else if (type === 'noul') {
+          critEl.value = 'This scientific hypothesis obeys strict physical conservation invariants';
+        }
+      }
+
+      async function runV5LayaTriage() {
+        const inputEl = document.getElementById('v5-laya-input');
+        const typeEl = document.getElementById('v5-laya-type');
+        const critEl = document.getElementById('v5-laya-criteria');
+        const btn = document.getElementById('v5-laya-triage-btn');
+        const badge = document.getElementById('v5-laya-decision-badge');
+        const latencyEl = document.getElementById('v5-laya-latency');
+        const confEl = document.getElementById('v5-laya-confidence');
+        const probContainer = document.getElementById('v5-laya-prob-container');
+
+        const text = inputEl ? inputEl.value : '';
+        const decisionType = typeEl ? typeEl.value : 'choice';
+        const criteria = critEl ? critEl.value : '';
+
+        const origBtn = btn ? btn.innerHTML : '';
+        if (btn) {
+          btn.innerHTML = '<span>⏳</span> Inférence CPU locale (Laya)...';
+          btn.disabled = true;
+        }
+
+        try {
+          const resp = await fetch('/api/v5/laya/triage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: text,
+              decision_type: decisionType,
+              criteria: criteria
+            })
+          });
+          const data = await resp.json();
+
+          if (resp.ok && data.status === 'success') {
+            if (latencyEl) latencyEl.textContent = `${data.latency_ms.toFixed(1)} ms`;
+
+            if (data.decision_type === 'choice') {
+              if (badge) {
+                badge.textContent = data.choice.toUpperCase();
+                badge.className = data.choice === 'sound'
+                  ? 'px-2.5 py-1 rounded text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono'
+                  : (data.choice === 'unsound'
+                    ? 'px-2.5 py-1 rounded text-xs font-bold bg-red-500/20 text-red-300 border border-red-500/30 font-mono'
+                    : 'px-2.5 py-1 rounded text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono');
+              }
+              const maxProb = data.probabilities ? Math.max(...Object.values(data.probabilities)) : 0;
+              if (confEl) confEl.textContent = `Confiance : ${(maxProb * 100).toFixed(1)}%`;
+
+              if (probContainer && data.probabilities) {
+                probContainer.innerHTML = Object.entries(data.probabilities).map(([k, v]) => {
+                  const pct = (v * 100).toFixed(1);
+                  const barColor = k === 'sound' ? 'bg-emerald-500' : (k === 'unsound' ? 'bg-red-500' : 'bg-amber-500');
+                  return `
+                    <div class="space-y-0.5">
+                      <div class="flex justify-between text-[11px] text-slate-300">
+                        <span class="font-bold">${k}</span>
+                        <span>${pct}% (${v.toFixed(4)})</span>
+                      </div>
+                      <div class="w-full h-1.5 rounded-full bg-slate-900 overflow-hidden">
+                        <div class="h-full rounded-full ${barColor}" style="width: ${pct}%"></div>
+                      </div>
+                    </div>
+                  `;
+                }).join('');
+              }
+            } else if (data.decision_type === 'score') {
+              if (badge) {
+                badge.textContent = `SCORE: ${data.score.toFixed(2)} / 5`;
+                badge.className = data.score >= 3.5
+                  ? 'px-2.5 py-1 rounded text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono'
+                  : 'px-2.5 py-1 rounded text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono';
+              }
+              if (confEl) confEl.textContent = `Score Normalisé : ${((data.score / 5) * 100).toFixed(1)}%`;
+              if (probContainer) {
+                const pct = ((data.score / 5) * 100).toFixed(1);
+                probContainer.innerHTML = `
+                  <div class="space-y-1 py-1">
+                    <div class="flex justify-between text-xs text-slate-300">
+                      <span>Score de Validité</span>
+                      <span class="text-emerald-400 font-bold">${data.score.toFixed(2)} / 5.0</span>
+                    </div>
+                    <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
+                      <div class="h-full rounded-full bg-purple-500" style="width: ${pct}%"></div>
+                    </div>
+                  </div>
+                `;
+              }
+            } else if (data.decision_type === 'noul') {
+              const truthPct = (data.truth_probability * 100).toFixed(1);
+              if (badge) {
+                badge.textContent = `VRAI: ${truthPct}%`;
+                badge.className = data.truth_probability >= 0.7
+                  ? 'px-2.5 py-1 rounded text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono'
+                  : 'px-2.5 py-1 rounded text-xs font-bold bg-red-500/20 text-red-300 border border-red-500/30 font-mono';
+              }
+              if (confEl) confEl.textContent = `Probabilité : ${truthPct}%`;
+              if (probContainer) {
+                probContainer.innerHTML = `
+                  <div class="space-y-1 py-1">
+                    <div class="flex justify-between text-xs text-slate-300">
+                      <span>Assertion Vérité</span>
+                      <span class="text-purple-400 font-bold">${truthPct}%</span>
+                    </div>
+                    <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
+                      <div class="h-full rounded-full bg-indigo-500" style="width: ${truthPct}%"></div>
+                    </div>
+                  </div>
+                `;
+              }
+            }
+          } else {
+            if (badge) {
+              badge.textContent = 'ERREUR';
+              badge.className = 'px-2.5 py-1 rounded text-xs font-bold bg-red-500/20 text-red-300 border border-red-500/30 font-mono';
+            }
+            if (probContainer) {
+              probContainer.innerHTML = `<div class="text-red-400 text-xs py-2">Erreur: ${data.detail || 'Échec de triage Laya'}</div>`;
+            }
+          }
+        } catch (err) {
+          console.error('Error running Laya triage:', err);
+          if (badge) {
+            badge.textContent = 'ERREUR RÉSEAU';
+            badge.className = 'px-2.5 py-1 rounded text-xs font-bold bg-red-500/20 text-red-300 border border-red-500/30 font-mono';
+          }
+        } finally {
+          if (btn) {
+            btn.innerHTML = origBtn;
+            btn.disabled = false;
+          }
+        }
+      }
+
+      async function loadV5Curricula() {
+        try {
+          const resp = await fetch('/api/v5/curricula');
+          const data = await resp.json();
+          if (resp.ok && data.curricula && data.curricula.length > 0) {
+            v5CurriculaData = data.curricula;
+            const select = document.getElementById('v5-rosetta-select');
+            if (select) {
+              select.innerHTML = data.curricula.map((c, i) => `
+                <option value="${c.id}">#${i + 1} ${c.problem_title}</option>
+              `).join('');
+              onV5CurriculumSelect(data.curricula[0].id);
+            }
+          }
+        } catch (err) {
+          console.error('Error loading V5 curricula:', err);
+        }
+      }
+
+      function onV5CurriculumSelect(id) {
+        const item = v5CurriculaData.find(c => c.id === id);
+        if (!item) return;
+
+        const leanEl = document.getElementById('v5-lean4-code');
+        const pyEl = document.getElementById('v5-python-code');
+        const rustEl = document.getElementById('v5-rust-code');
+
+        if (leanEl) leanEl.value = item.lean4_spec || '';
+        if (pyEl) pyEl.value = item.python_prototype || '';
+        if (rustEl) rustEl.value = item.rust_kernel || '';
+
+        // Reset badges
+        const lBadge = document.getElementById('v5-rosetta-lean-badge');
+        const pBadge = document.getElementById('v5-rosetta-py-badge');
+        const rBadge = document.getElementById('v5-rosetta-rust-badge');
+        if (lBadge) { lBadge.textContent = 'EN ATTENTE'; lBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400'; }
+        if (pBadge) { pBadge.textContent = 'EN ATTENTE'; pBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400'; }
+        if (rBadge) { rBadge.textContent = 'EN ATTENTE'; rBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400'; }
+
+        // Reset KPIs & proof token
+        const pEl = document.getElementById('v5-kpi-parent');
+        const cEl = document.getElementById('v5-kpi-child');
+        const dEl = document.getElementById('v5-kpi-delta');
+        const sEl = document.getElementById('v5-kpi-speedup');
+        const tokEl = document.getElementById('v5-proof-token');
+
+        if (pEl) pEl.textContent = '--';
+        if (cEl) cEl.textContent = '--';
+        if (dEl) dEl.textContent = '--';
+        if (sEl) sEl.textContent = '--';
+        if (tokEl) tokEl.textContent = '-- Non émis --';
+        v5CurrentToken = '';
+      }
+
+      async function runV5RosettaVerify() {
+        const select = document.getElementById('v5-rosetta-select');
+        const problemId = select ? select.value : 'kdv_soliton_momentum';
+        const btn = document.getElementById('v5-rosetta-run-btn');
+        const origBtn = btn ? btn.innerHTML : '';
+        if (btn) {
+          btn.innerHTML = '<span>⏳</span> Vérification Triplet Déterministe...';
+          btn.disabled = true;
+        }
+
+        try {
+          const resp = await fetch('/api/v5/rosetta/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ problem_id: problemId })
+          });
+          const data = await resp.json();
+
+          if (resp.ok && data.status === 'success') {
+            const lBadge = document.getElementById('v5-rosetta-lean-badge');
+            const pBadge = document.getElementById('v5-rosetta-py-badge');
+            const rBadge = document.getElementById('v5-rosetta-rust-badge');
+
+            if (lBadge) {
+              const isSound = data.theorist_lean4 && data.theorist_lean4.status === 'SOUND';
+              lBadge.textContent = isSound ? 'CERTIFIÉ (ZERO-SORRY)' : 'ÉCHEC FORMEL';
+              lBadge.className = isSound ? 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/30';
+            }
+            if (pBadge) {
+              const isConserved = data.physicist_prototype && data.physicist_prototype.status === 'CONSERVED';
+              pBadge.textContent = isConserved ? 'INVARIANT CONSERVÉ' : 'VIOLATION INVARIANT';
+              pBadge.className = isConserved ? 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/30';
+            }
+            if (rBadge) {
+              const isOpt = data.engineer_kernel && data.engineer_kernel.status === 'OPTIMIZED';
+              rBadge.textContent = isOpt ? 'SIMD OPTIMISÉ (ΔE < 0)' : 'PAS D\'ACCÉLÉRATION';
+              rBadge.className = isOpt ? 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/30';
+            }
+
+            const eng = data.engineer_kernel || {};
+            const pEl = document.getElementById('v5-kpi-parent');
+            const cEl = document.getElementById('v5-kpi-child');
+            const dEl = document.getElementById('v5-kpi-delta');
+            const sEl = document.getElementById('v5-kpi-speedup');
+
+            if (pEl) pEl.textContent = typeof eng.parent_energy === 'number' ? eng.parent_energy.toFixed(2) : '--';
+            if (cEl) cEl.textContent = typeof eng.child_energy === 'number' ? eng.child_energy.toFixed(2) : '--';
+            if (dEl) {
+              dEl.textContent = typeof eng.delta_energy === 'number' ? `${eng.delta_energy.toFixed(2)}` : '--';
+              dEl.className = `text-xl font-black font-mono mt-1 ${typeof eng.delta_energy === 'number' && eng.delta_energy < 0 ? 'text-emerald-400' : 'text-red-400'}`;
+            }
+            if (sEl) sEl.textContent = typeof eng.speedup === 'number' ? `${eng.speedup.toFixed(2)}x` : '--';
+
+            v5CurrentToken = data.proof_token || '';
+            const tokEl = document.getElementById('v5-proof-token');
+            if (tokEl) {
+              tokEl.textContent = v5CurrentToken ? `🔐 ${v5CurrentToken}` : '-- Non émis --';
+            }
+          }
+        } catch (err) {
+          console.error('Error verifying Rosetta Stone triplet:', err);
+        } finally {
+          if (btn) {
+            btn.innerHTML = origBtn;
+            btn.disabled = false;
+          }
+        }
+      }
+
+      function copyV5Token() {
+        if (!v5CurrentToken) return;
+        navigator.clipboard.writeText(v5CurrentToken).then(() => {
+          const btn = document.getElementById('v5-copy-token-btn');
+          if (btn) {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<span>✅</span> Copié !';
+            setTimeout(() => { btn.innerHTML = orig; }, 2000);
+          }
+        });
+      }
+
+      async function runV5GRPOExplore() {
+        const select = document.getElementById('v5-rosetta-select');
+        const hypId = select ? select.value : 'kdv_soliton_momentum';
+        const btn = document.getElementById('v5-grpo-run-btn');
+        const grid = document.getElementById('v5-grpo-grid');
+
+        const origBtn = btn ? btn.innerHTML : '';
+        if (btn) {
+          btn.innerHTML = '<span>⏳</span> Exploration de Compute (8 Trajectoires)...';
+          btn.disabled = true;
+        }
+
+        try {
+          const resp = await fetch('/api/v5/grpo/explore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hypothesis_id: hypId })
+          });
+          const data = await resp.json();
+
+          if (resp.ok && data.status === 'success' && grid && data.trajectories) {
+            grid.innerHTML = data.trajectories.map((t, idx) => {
+              const isBest = idx === data.best_index;
+              const borderCls = isBest
+                ? 'border-emerald-500/80 bg-emerald-950/20 ring-1 ring-emerald-500/50'
+                : (t.closed_loop_passed ? 'border-purple-800/40 bg-slate-950' : 'border-red-900/40 bg-red-950/10');
+              const advStr = t.advantage >= 0 ? `+${t.advantage.toFixed(2)}σ` : `${t.advantage.toFixed(2)}σ`;
+              const badgeCls = isBest
+                ? 'bg-emerald-500/30 text-emerald-300 border-emerald-500/50'
+                : (t.closed_loop_passed ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30');
+              const badgeText = isBest ? '⭐ BEST TRAJECTORY' : (t.closed_loop_passed ? 'VALIDÉ' : 'REJETÉ');
+
+              return `
+                <div class="p-3.5 rounded-xl border ${borderCls} space-y-2 font-mono text-xs">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-slate-300">Trajectoire #${t.trajectory_id}</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeCls}">${badgeText}</span>
+                  </div>
+                  <div class="text-[11px] text-slate-400 line-clamp-2">${t.strategy}</div>
+                  <div class="grid grid-cols-2 gap-1.5 pt-1 text-[11px] border-t border-slate-900">
+                    <div>
+                      <span class="text-slate-500">Reward R :</span>
+                      <span class="text-emerald-400 font-bold ml-1">${t.reward.toFixed(3)}</span>
+                    </div>
+                    <div>
+                      <span class="text-slate-500">Avantage A :</span>
+                      <span class="text-purple-400 font-bold ml-1">${advStr}</span>
+                    </div>
+                    <div>
+                      <span class="text-slate-500">Énergie E :</span>
+                      <span class="text-slate-300 ml-1">${t.energy.toFixed(2)}</span>
+                    </div>
+                    <div>
+                      <span class="text-slate-500">Latence :</span>
+                      <span class="text-slate-400 ml-1">${t.duration_ms.toFixed(1)}ms</span>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          }
+        } catch (err) {
+          console.error('Error running GRPO exploration:', err);
+        } finally {
+          if (btn) {
+            btn.innerHTML = origBtn;
+            btn.disabled = false;
+          }
+        }
+      }
+
       // Export functions to window
       window.runV2SurrogateFilter = runV2SurrogateFilter;
       window.runV2Calibration = runV2Calibration;
@@ -6271,8 +6933,16 @@ ${b.ast}
       window.runStudioCustomScenario = runStudioCustomScenario;
       window.clearStudioLogs = clearStudioLogs;
       window.copyStudioToken = copyStudioToken;
+      window.setV5LayaPreset = setV5LayaPreset;
+      window.onV5LayaTypeChange = onV5LayaTypeChange;
+      window.runV5LayaTriage = runV5LayaTriage;
+      window.loadV5Curricula = loadV5Curricula;
+      window.onV5CurriculumSelect = onV5CurriculumSelect;
+      window.runV5RosettaVerify = runV5RosettaVerify;
+      window.copyV5Token = copyV5Token;
+      window.runV5GRPOExplore = runV5GRPOExplore;
 
-      // Hook tab switcher for V2, V4 and Scenario Studio auto-load
+      // Hook tab switcher for V2, V4, V5 and Scenario Studio auto-load
       const priorSwitch = window.switchTab;
       window.switchTab = function(tabId) {
         priorSwitch(tabId);
@@ -6286,6 +6956,10 @@ ${b.ast}
           if (grid && grid.children.length <= 1) {
             loadE2EScenarios();
           }
+        } else if (tabId === 'anse-v5') {
+          if (v5CurriculaData.length === 0) {
+            loadV5Curricula();
+          }
         } else if (tabId === 'scenario-studio') {
           if (studioCatalogData.length === 0) {
             loadStudioCatalog();
@@ -6294,10 +6968,10 @@ ${b.ast}
         }
       };
 
-      // Deep linking support for #anse-v2, #anse-v3, #anse-v4, #scenario-studio
+      // Deep linking support for #anse-v2, #anse-v3, #anse-v4, #anse-v5, #scenario-studio
       function checkVHash() {
         const hash = window.location.hash;
-        if (hash === '#anse-v2' || hash === '#anse-v3' || hash === '#anse-v4' || hash === '#scenario-studio') {
+        if (hash === '#anse-v2' || hash === '#anse-v3' || hash === '#anse-v4' || hash === '#anse-v5' || hash === '#scenario-studio') {
           const tab = hash.substring(1);
           if (document.readyState === 'loading') {
             window.addEventListener('DOMContentLoaded', () => window.switchTab(tab));

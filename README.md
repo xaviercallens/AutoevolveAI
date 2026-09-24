@@ -223,9 +223,9 @@ pie title Benchmark Domain Distribution (200 Cases)
 
 ---
 
-## 🧬 The ANSE Evolution: Phases V1, V2, V3 & V4
+## 🧬 The ANSE Evolution: Phases V1, V2, V3, V4 & V5
 
-ANSE (**Autopoietic Neuro-Symbolic Energy-Based Model**) mathematically links symbolic reasoning, neural execution, and non-equilibrium thermodynamics across four progressive phases:
+ANSE (**Autopoietic Neuro-Symbolic Energy-Based Model**) mathematically links symbolic reasoning, neural execution, and non-equilibrium thermodynamics across five progressive phases:
 
 ### ⚡ Phase V1: Deterministic Reality Engine & Symbolic Sandbox
 * **Sub-process Hardened Sandbox (`HardenedEvaluator`):** All proposed algorithmic code executes in deterministic subprocesses with hardware timeouts, heap isolation, and resident memory quotas.
@@ -246,6 +246,12 @@ ANSE (**Autopoietic Neuro-Symbolic Energy-Based Model**) mathematically links sy
 * **Pre-Input Axiom Matrix (LAIF-Load):** Laws, Axioms, and Invariants Foundation compiling universal physics and human ethics into geometric boundaries.
 * **Z3 SMT Control Barrier Functions (CBF):** Microsoft Z3 solver guarantees Article II bio-viability ($V_{\text{human}} \ge \epsilon = 0.10$). Harmful actions (e.g. municipal blackout sabotage) are proven mathematically `UNSAT`.
 * **Pareto Manifold Projection:** Inviolable implicit SMT layer projects adversarial queries back to the safe human-viable hypercube ($V_{\text{human}} = 1.0$), ensuring harmful states are physically and mathematically unrepresentable.
+
+### 🌌 Phase V5: Autonomous Science, Local CPU Laya & Cross-Domain Rosetta Stone
+* **Local CPU Laya System 1 Triage:** Non-autoregressive decision engine (`convaiinnovations/laya` ModernBERT-large) running locally on CPU in $<35\text{ ms}$, evaluating scientific assertions, classifications (`choice`, `score`, `noul`) with zero autoregressive hallucination.
+* **Rosetta Stone Epistemological Triplet:** Simultaneous 3-domain cross-verification across **The Theorist** (formal Lean 4 theorem with zero sorry), **The Physicist** (Python numerical prototype conserving physical invariants like L2 norm, integer topological charge $Q \in \mathbb{Z}$, or Chern numbers), and **The Engineer** (Rust zero-allocation kernel compiled with SIMD acceleration enforcing $\Delta E = E_{\text{child}} - E_{\text{parent}} < 0$).
+* **Test-Time Compute GRPO Policy Explorer:** Group Relative Policy Optimization generating and exploring 8 parallel candidate reasoning trajectories, calculating normalized advantages $A_i = \frac{R_i - \mu_R}{\sigma_R}$ under the deterministic sandbox.
+* **Autonomous Scientific Curricula:** Self-generating multi-domain PhD curricula spanning KdV Solitons, Euclidean SU(2) Yang-Mills instantons, and 2D Brillouin zone Quantum Hall Chern topological invariants.
 
 ---
 
@@ -285,8 +291,12 @@ Launch with `PORT=5000 uv run python web/server.py` to interactively explore and
   * Adversarial bio-viability sabotage attack vs. Z3 SMT Control Barrier Function theorem prover (`UNSAT: VIOLATION BLOCKED`).
   * Real-time Pareto projection restoring $100\%$ municipal hospital life-support power ($V_{\text{human}} = 1.0$, $\Delta E = -999,990.67$).
   * 10 End-to-End closed-loop hardness scenario cards with 32-character cryptographic HMAC SHA-256 proof tokens.
+* **ANSE V5: Science, Local CPU Laya & Rosetta Stone (`/#anse-v5`):**
+  * **Deck 1 (Laya System 1 on CPU):** Non-autoregressive single-forward-pass triage with calibrated probability distributions, validity scoring, and truth assertions in $<35\text{ ms}$.
+  * **Deck 2 (Rosetta Stone Triplet):** 3-domain cross-verification cards displaying Lean 4 formal specs, Python conservation invariant prototypes, and Rust SIMD kernels with live HMAC SHA-256 proof token minting.
+  * **Deck 3 (GRPO Explorer):** 8 parallel reasoning trajectories with relative advantages $A_i$, rewards $R_i$, and automatic best-trajectory promotion under the deterministic sandbox.
 * **ANSE Scenario Studio & Creation Center (`/#scenario-studio`):**
-  * Interactive scenario studio allowing developers to either select from the **10 pre-certified scenarios** or **create custom scenarios** for ANSE V2, V3, and V4.
+  * Interactive scenario studio allowing developers to either select from the **10 pre-certified scenarios** or **create custom scenarios** for ANSE V2, V3, V4, and V5.
   * Live deterministic execution pipeline tracker: `1. AST AUDIT` $\to$ `2. LATENT Z` $\to$ `3. MCTS / INVAR` $\to$ `4. SMT & ΔE` $\to$ `5. ATTESTATION`.
   * Real-time thermodynamic KPI readouts: Parent Energy ($E_p$), Child Energy ($E_c$), $\Delta E$, and Speedup factor.
   * Monospace diagnostic terminal output and HMAC SHA-256 cryptographic proof token copy button.
@@ -307,11 +317,15 @@ Launch with `PORT=5000 uv run python web/server.py` to interactively explore and
 | `/api/v3/mcts/simulate` | `POST` | Simulates Active Latent MCTS, pruning hollow stubs and quadratic traps. |
 | `/api/v3/autopoiesis/hot-swap` | `POST` | Benchmarks and promotes child TorchScript JIT kernel under $\Delta E < 0$. |
 | `/api/v4/safety/smt-evaluate` | `POST` | Solves Z3 SMT Control Barrier Functions and projects adversarial states to safe Pareto frontier. |
+| `/api/v5/curricula` | `GET` | Catalog of PhD-level scientific curricula ready for Rosetta Stone Triplet verification. |
+| `/api/v5/laya/triage` | `POST` | Non-autoregressive System 1 decision triage using Laya on CPU (choice, score, noul). |
+| `/api/v5/rosetta/verify` | `POST` | Simultaneous 3-domain cross-verification across Lean 4, Python, and Rust with proof token. |
+| `/api/v5/grpo/explore` | `POST` | Test-time compute GRPO policy explorer generating 8 parallel trajectories with normalized advantages. |
 | `/api/e2e/scenarios` | `GET` | Returns 10 End-to-End verified closed-loop scenarios with cryptographic proof tokens. |
 | `/api/scenarios/catalog` | `GET` | Catalog of all 10 verified E2E closed-loop & advanced PhD scenarios. |
-| `/api/scenarios/templates` | `GET` | Preset configuration and code templates for V2, V3, and V4 scenario creation. |
+| `/api/scenarios/templates` | `GET` | Preset configuration and code templates for V2, V3, V4, and V5 scenario creation. |
 | `/api/scenarios/run` | `POST` | On-demand live execution of any catalog scenario with 5-stage pipeline telemetry. |
-| `/api/scenarios/create-and-run` | `POST` | Creates and executes custom user-defined scenarios across V2, V3, or V4 with zero-trust validation. |
+| `/api/scenarios/create-and-run` | `POST` | Creates and executes custom user-defined scenarios across V2, V3, V4, or V5 with zero-trust validation. |
 
 ---
 

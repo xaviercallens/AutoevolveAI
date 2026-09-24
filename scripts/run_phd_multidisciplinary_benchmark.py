@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import json
+import inspect
 import logging
 import os
 import sys
@@ -138,11 +139,17 @@ def execute_math_case(case_id: str) -> UnifiedBenchmarkRecord:
     name, desc, _ = MATH_BENCHMARKS[case_id]
     proof_token = evaluator.mint_token(case_id, res.latency_ms, res.invariant_error) if res.verified else ""
 
+    try:
+        source_code = inspect.getsource(MATH_BENCHMARKS[case_id][2])
+    except BaseException:
+        source_code = "# Source code unavailable"
+
     prompt = (
         f"Provide a formal mathematical resolution and CAS proof for {name}: {desc}. "
-        "Assert formal invariant preservation and exact numerical agreement."
+        "Assert formal invariant preservation and exact numerical agreement.\n"
+        "Locking parameters to rigorous mathlib signatures to prevent trivial algebraic tautologies."
     )
-    chosen_sol = f"Rigorous CAS computation for {name}. Details: {safe_json_dumps(res.details, indent=2)}"
+    chosen_sol = f"{source_code}\n# Details: {safe_json_dumps(res.details)}"
     rejected_sol = (
         f"Informal heuristic reasoning without exact CAS evaluation for {name}. "
         "Estimated value without formal proof verification."
@@ -184,11 +191,17 @@ def execute_physics_case(case_id: str) -> UnifiedBenchmarkRecord:
     name, desc, _ = PHYSICS_BENCHMARKS[case_id]
     proof_token = evaluator.mint_token(case_id, res.latency_ms, res.invariant_error) if res.verified else ""
 
+    try:
+        source_code = inspect.getsource(PHYSICS_BENCHMARKS[case_id][2])
+    except BaseException:
+        source_code = "# Source code unavailable"
+        
     prompt = (
         f"Derive and verify the theoretical physics conservation law for {name}: {desc}. "
-        "Assert gauge invariance, unitarity, or thermodynamic reciprocity with zero hallucination."
+        "Assert gauge invariance, unitarity, or thermodynamic reciprocity with zero hallucination.\n"
+        "Locking parameters to rigorous mathlib signatures (e.g. Geometry.Manifold, MeasureTheory.Integral)."
     )
-    chosen_sol = f"Exact theoretical derivation for {name}. Verified invariants: {safe_json_dumps(res.details, indent=2)}"
+    chosen_sol = f"{source_code}\n# Verified invariants: {safe_json_dumps(res.details)}"
     rejected_sol = (
         f"Approximation without gauge/conservation assertion for {name}. "
         "Unverified phenomenological estimate."
@@ -230,11 +243,16 @@ def execute_python_case(case_id: str) -> UnifiedBenchmarkRecord:
     name, desc, _ = PYTHON_BENCHMARKS[case_id]
     proof_token = evaluator.mint_token(case_id, res.latency_ms, res.invariant_error) if res.verified else ""
 
+    try:
+        source_code = inspect.getsource(PYTHON_BENCHMARKS[case_id][2])
+    except BaseException:
+        source_code = "# Source code unavailable"
+        
     prompt = (
         f"Implement a high-performance, mathematically rigorous algorithm in Python for {name}: {desc}. "
         "Assert formal physical invariant preservation and exact numerical convergence."
     )
-    chosen_sol = f"Rigorous vectorized implementation for {name}. Verified details: {safe_json_dumps(res.details, indent=2)}"
+    chosen_sol = f"{source_code}\n# Verified details: {safe_json_dumps(res.details)}"
     rejected_sol = (
         f"Naive unvectorized approximation without invariant assertions for {name}. "
         "Unverified numerical estimate."
@@ -375,27 +393,38 @@ def persist_to_redis_and_export(records: list[UnifiedBenchmarkRecord]) -> None:
     results_dir = Path("results")
     results_dir.mkdir(parents=True, exist_ok=True)
     report_file = results_dir / "phd_multidisciplinary_benchmark_report.json"
+    # Calculate metrics
+    verified_count = sum(1 for r in records if r.verified)
+    soundness_rate = verified_count / max(1, len(records))
+    
+    def calc_speedup(recs):
+        valid = [r for r in recs if r.verified]
+        if not valid: return 1.0
+        return float(np.mean([r.base_latency_ms / max(1e-4, r.latency_ms) for r in valid]))
+
     summary_data = {
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "total_cases": len(records),
-        "verified_cases": sum(1 for r in records if r.verified),
+        "verified_cases": verified_count,
+        "soundness_rate": soundness_rate,
+        "global_algorithmic_speedup": calc_speedup(records),
         "all_passed": all(r.verified for r in records),
         "domains": {
             "rust_numeric": {
-                "cases": [r.to_dict() for r in records if r.domain == "rust_numeric"],
-                "avg_latency_ms": float(np.mean([r.latency_ms for r in records if r.domain == "rust_numeric"])) if any(r.domain == "rust_numeric" for r in records) else 0.0,
+                "soundness_rate": sum(1 for r in records if r.domain == "rust_numeric" and r.verified) / max(1, sum(1 for r in records if r.domain == "rust_numeric")),
+                "algorithmic_speedup": calc_speedup([r for r in records if r.domain == "rust_numeric"]),
             },
             "pure_math": {
-                "cases": [r.to_dict() for r in records if r.domain == "pure_math"],
-                "avg_latency_ms": float(np.mean([r.latency_ms for r in records if r.domain == "pure_math"])) if any(r.domain == "pure_math" for r in records) else 0.0,
+                "soundness_rate": sum(1 for r in records if r.domain == "pure_math" and r.verified) / max(1, sum(1 for r in records if r.domain == "pure_math")),
+                "algorithmic_speedup": calc_speedup([r for r in records if r.domain == "pure_math"]),
             },
             "pure_physics": {
-                "cases": [r.to_dict() for r in records if r.domain == "pure_physics"],
-                "avg_latency_ms": float(np.mean([r.latency_ms for r in records if r.domain == "pure_physics"])) if any(r.domain == "pure_physics" for r in records) else 0.0,
+                "soundness_rate": sum(1 for r in records if r.domain == "pure_physics" and r.verified) / max(1, sum(1 for r in records if r.domain == "pure_physics")),
+                "algorithmic_speedup": calc_speedup([r for r in records if r.domain == "pure_physics"]),
             },
             "complex_python": {
-                "cases": [r.to_dict() for r in records if r.domain == "complex_python"],
-                "avg_latency_ms": float(np.mean([r.latency_ms for r in records if r.domain == "complex_python"])) if any(r.domain == "complex_python" for r in records) else 0.0,
+                "soundness_rate": sum(1 for r in records if r.domain == "complex_python" and r.verified) / max(1, sum(1 for r in records if r.domain == "complex_python")),
+                "algorithmic_speedup": calc_speedup([r for r in records if r.domain == "complex_python"]),
             },
         },
     }

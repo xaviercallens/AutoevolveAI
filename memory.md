@@ -1,7 +1,7 @@
 # ANSE Repository Memory & State Ledger
-**Version:** 0.3.0 + Evolution Lab (branch `antigravity`)  
+**Version:** 2.3.0 (Phases V1–V4 + 10 E2E Closed-Loop Scenarios under Hardness)  
 **Repository:** `xaviercallens/AutoevolveAI`  
-**Last Updated:** 2026-09-21  
+**Last Updated:** 2026-09-24  
 
 ---
 
@@ -103,3 +103,15 @@ Fully implemented, documented (`docs/ANTIGRAVITY_HARNESS.md`), and tested (`test
 - **CLI Commands:** `uv run python -m antigravity_harness {audit,verify,test,dpo,qa}`.
 - **MCP Integration:** Native tools registered in `mcp_guard_server.py` (`audit_anti_stub`, `verify_lean4_soundness`, `generate_adversarial_qa_suite`, `build_dpo_preference_dataset`).
 - **Quality Gate:** Hooked into `.antigravity/hooks/hardened_gate.py` and documented in `.agents/skills/antigravity-harness/SKILL.md`.
+
+---
+
+## 7. ANSE Phases V2–V4 & 10 Closed-Loop E2E Scenarios (2026-09-24)
+
+- **Phase V2 (System 1.5 JEPA Intuition Engine):** Fast surrogate filter (`FastSurrogateRealityEngine`), TorchScript JIT filter, and Popperian adversarial fuzzing.
+- **Phase V3 (Autopoietic Meta-Learning Engine):** Active latent MCTS thought pruning, dynamic self-refactoring, and thermodynamic child promotion ($\Delta E < 0$).
+- **Phase V4 (Safe ANSE & LAIF-Load):** Hardwired universal physical and humanistic invariants ($V_{\text{human}} \ge \epsilon$) via Microsoft Z3 SMT Control Barrier Functions.
+- **10 End-to-End Scenarios Under Hardness:**
+  - 5 Core Scenarios (`scripts/execute_5_closed_loop_scenarios.py`): Symplectic Yoshida orbit, DEC nilpotency, Latent MCTS pruning, Fused JIT hot-swap, LAIF Z3 CBF.
+  - 5 Advanced PhD Scenarios (`scripts/execute_5_advanced_phd_scenarios.py`): Kerr Penrose extraction, Toric code braiding, Riemann-Roch Dolbeault index, Lattice Boltzmann D2Q9 flow, and Zero-Trust HMAC SHA-256 proof token minting.
+- **Verification:** All 10 scenarios pass `tests/e2e/`, audited by `AntiStubGuard` with zero stubs or simulations detected.

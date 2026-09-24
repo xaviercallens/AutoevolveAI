@@ -149,12 +149,21 @@ def compute_fast_vector(data: list[int]) -> int:
         for node in ast.walk(tree):
             if isinstance(node, ast.FunctionDef):
                 body = node.body
-                if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant) and isinstance(body[0].value.value, str):
+                if (
+                    body
+                    and isinstance(body[0], ast.Expr)
+                    and type(body[0].value) is ast.Constant
+                    and type(body[0].value.value) is str
+                ):
                     count += len(body[1:])
         return count
 
-    e_parent = opt.profile_callable(parent_stripper, sample_tree, benchmark_runs=200)
-    e_child = opt.profile_callable(child_stripper, sample_tree, benchmark_runs=200)
+    # Warmup both functions to eliminate CPU frequency scaling artifacts
+    opt.profile_callable(parent_stripper, sample_tree, warmup_runs=10, benchmark_runs=20)
+    opt.profile_callable(child_stripper, sample_tree, warmup_runs=10, benchmark_runs=20)
+
+    e_parent = opt.profile_callable(parent_stripper, sample_tree, warmup_runs=5, benchmark_runs=300)
+    e_child = opt.profile_callable(child_stripper, sample_tree, warmup_runs=5, benchmark_runs=300)
 
     delta_e = e_child.total_energy - e_parent.total_energy
     speedup = e_parent.duration_ms / max(1e-4, e_child.duration_ms)

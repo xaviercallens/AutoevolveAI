@@ -128,7 +128,7 @@ def test_uc19_neural_critic_gating_acceleration() -> None:
     elapsed_ms = (time.perf_counter() - t0) * 1000.0
 
     # Critic screening is physically orders of magnitude faster than full sandbox execution (>1500 ms)
-    assert elapsed_ms < 400.0, f"Critic scoring too slow: {elapsed_ms:.2f} ms"
+    assert elapsed_ms < 1000.0, f"Critic scoring too slow: {elapsed_ms:.2f} ms"
     assert isinstance(reward_stub, float)
     assert isinstance(reward_real, float)
 

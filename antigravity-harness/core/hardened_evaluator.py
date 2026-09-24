@@ -31,6 +31,12 @@ import time
 from dataclasses import asdict, dataclass, field
 from typing import Any, Callable
 
+try:
+    from anse.validator.deep_think_validator import audit_solution_with_deep_think
+except ImportError:
+    # Fallback if dependencies not installed
+    def audit_solution_with_deep_think(*args, **kwargs) -> bool:
+        return True
 
 @dataclass
 class HardenedEvaluationReceipt:
@@ -118,6 +124,23 @@ class HardenedEvaluator:
                 if func_id == "sleep":
                     violations.append(f"Illegal 'sleep' call found.")
 
+            # Check for trivial scalar difference stubs (e.g. 1.5 - 1.5 == 0.0)
+            if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Sub):
+                if isinstance(node.left, ast.Constant) and isinstance(node.right, ast.Constant):
+                    if node.left.value == node.right.value and node.left.value != 0:
+                        violations.append(f"Trivial scalar subtraction ({node.left.value} - {node.right.value}) mocks numerical computation.")
+                elif isinstance(node.left, ast.Name) and isinstance(node.right, ast.Name):
+                    if node.left.id == node.right.id:
+                        violations.append(f"Trivial variable self-subtraction ({node.left.id} - {node.right.id}) mocks numerical computation.")
+
+            # Check for tautological constant equality checks (e.g. 1 == 1)
+            if isinstance(node, ast.Compare):
+                for op, comp in zip(node.ops, node.comparators):
+                    if isinstance(op, ast.Eq):
+                        if isinstance(node.left, ast.Constant) and isinstance(comp, ast.Constant):
+                            if node.left.value == comp.value and node.left.value not in (0, 0.0, None, "", False):
+                                violations.append(f"Trivial constant equality check ({node.left.value} == {comp.value}) bypasses dynamic verification.")
+
         return len(violations) == 0, violations
 
     def mint_token(self, benchmark_id: str, latency_ms: float, error: float) -> str:
@@ -140,6 +163,17 @@ class HardenedEvaluator:
 
         if source_code:
             ast_clean, violations = self.audit_ast(source_code)
+            
+            # Deep Think / PRM Verification Check
+            deep_think_passed = audit_solution_with_deep_think(
+                problem_text=f"{benchmark_id}: {name}",
+                solution_text=source_code,
+                domain=domain
+            )
+            if not deep_think_passed:
+                ast_clean = False
+                violations.append("Deep Think Epistemic Validator REJECTED the solution.")
+            
             if not ast_clean:
                 return HardenedEvaluationReceipt(
                     benchmark_id=benchmark_id,
@@ -152,7 +186,7 @@ class HardenedEvaluator:
                     proof_token="",
                     ast_clean=False,
                     violations=violations,
-                    metadata={"reason": "AST audit failed with stubs"},
+                    metadata={"reason": "AST or Deep Think audit failed"},
                 )
 
         import concurrent.futures

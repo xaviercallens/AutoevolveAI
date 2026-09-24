@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import json
+import inspect
 import logging
 import math
 import os
@@ -150,6 +151,7 @@ def execute_100_math_physics_suite() -> List[ProblemEvaluationRecord]:
             f"Title: {title}\nDomain: {domain}\n"
             f"Equation: {p['math_equation']}\n"
             f"Physical Invariant Requirement: {p['physics_justification']}\n"
+            f"Constraint: Lock parameters to rigorous Mathlib4 signatures (e.g., Geometry.Manifold, MeasureTheory.Integral) to prevent trivial algebraic rewrites.\n"
         )
 
         records.append(
@@ -257,7 +259,12 @@ def execute_single_python(cid: str) -> ProblemEvaluationRecord:
         f"Implement a computational physics / applied math kernel in Python for {name}: {desc}. "
         f"Assert exact physical conservation laws."
     )
-    chosen_code = f"# Certified numerical kernel for {name}\n# Invariant error: {res.invariant_error}\n"
+    try:
+        source_code = inspect.getsource(PYTHON_BENCHMARKS[cid][2])
+    except BaseException:
+        source_code = "# Source code unavailable"
+    
+    chosen_code = f"{source_code}\n# Invariant error: {res.invariant_error}\n"
     rejected_code = f"# Unverified ungrounded implementation with high energy drift\n"
 
     base_lat = res.latency_ms * 2.5
@@ -576,15 +583,21 @@ def run_200_unified_benchmarks():
         avg_energy = float(np.mean([r.energy_score for r in sub if r.energy_score < 1e5]))
         avg_base_energy = float(np.mean([r.baseline_energy for r in sub]))
         avg_reduction_pct = ((avg_base_energy - avg_energy) / avg_base_energy) * 100.0 if avg_base_energy > 0 else 0.0
+        
+        soundness_rate = verified_count / max(1, len(sub))
+        valid_recs = [r for r in sub if r.verified]
+        algo_speedup = float(np.mean([r.baseline_energy / max(1e-4, r.energy_score) for r in valid_recs])) if valid_recs else 1.0
 
         return {
             "total_problems": len(sub),
             "verified_sound": verified_count,
+            "soundness_rate": round(soundness_rate, 4),
             "fail_closed_rejected": rejected_count,
             "audit_coverage_pct": 100.0,
             "average_latency_ms": round(avg_lat, 4),
             "average_ram_mb": round(avg_ram, 4),
             "average_energy_score": round(avg_energy, 4),
+            "algorithmic_speedup": round(algo_speedup, 4),
             "average_baseline_energy": round(avg_base_energy, 2),
             "average_energy_reduction_pct": round(avg_reduction_pct, 4),
         }
@@ -594,11 +607,15 @@ def run_200_unified_benchmarks():
     python_stats = stats_for_group("python_computational", all_records)
 
     total_verified = sum(1 for r in all_records if r.verified)
+    global_soundness_rate = total_verified / 200.0
     total_cheats = sum(1 for r in all_records if "REJECT" in r.status)
     sound_energies = [r.energy_score for r in all_records if r.energy_score < 1e5]
     global_avg_energy = float(np.mean(sound_energies))
     global_avg_baseline = float(np.mean([r.baseline_energy for r in all_records]))
     global_energy_red_pct = ((global_avg_baseline - global_avg_energy) / global_avg_baseline) * 100.0
+    
+    valid_all = [r for r in all_records if r.verified]
+    global_algo_speedup = float(np.mean([r.baseline_energy / max(1e-4, r.energy_score) for r in valid_all])) if valid_all else 1.0
 
     total_elapsed_s = time.time() - start_total
 
@@ -620,7 +637,9 @@ def run_200_unified_benchmarks():
             "total_elapsed_seconds": round(total_elapsed_s, 2),
         },
         "executive_summary": {
-            "global_verification_success_rate": f"{(total_verified / 197.0) * 100.0:.2f}% on sound problems",
+            "global_verification_success_rate": f"{(total_verified / 200.0) * 100.0:.2f}%",
+            "global_soundness_rate": global_soundness_rate,
+            "global_algorithmic_speedup": round(global_algo_speedup, 4),
             "epistemic_cheat_catch_rate": "100.0% (3/3 cheats intercepted fail-closed)",
             "global_average_optimized_energy": round(global_avg_energy, 4),
             "global_average_baseline_energy": round(global_avg_baseline, 2),

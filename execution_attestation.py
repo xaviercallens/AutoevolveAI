@@ -52,8 +52,8 @@ class ImplementationAuditor(ast.NodeVisitor):
         if (
             body
             and isinstance(body[0], ast.Expr)
-            and isinstance(body[0].value, ast.Constant)
-            and isinstance(body[0].value.value, str)
+            and type(body[0].value) is ast.Constant
+            and type(body[0].value.value) is str
         ):
             return body[1:]
         return body

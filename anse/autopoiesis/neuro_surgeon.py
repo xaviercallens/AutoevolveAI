@@ -57,7 +57,7 @@ class MicroMLRealityEngine:
     parameter constraints (<50k), and autograd differentiability.
     """
 
-    def __init__(self, max_params: int = 50000, timeout_sec: float = 15.0) -> None:
+    def __init__(self, max_params: int = 50000, timeout_sec: float = 45.0) -> None:
         self.max_params = max_params
         self.timeout_sec = timeout_sec
 

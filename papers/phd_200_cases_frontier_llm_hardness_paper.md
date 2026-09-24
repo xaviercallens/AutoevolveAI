@@ -81,14 +81,14 @@ Conservation laws enforce exact Parseval energy equality, shadow Hamiltonian con
 
 | Case ID | Algorithm Kernel | $\epsilon_{\text{inv}}$ | Latency (ms) | RAM (MB) | Proof Token | Gate |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **RUST-01** | SIMD Matrix Multiplication | `0.00e+00` | 64.67 | 2.00 | `231106c9` | **PASS** |
-| **RUST-02** | Cooley-Tukey Radix-2 FFT | `3.02e-15` | 100.01 | 2.50 | `e8929bbd` | **PASS** |
-| **RUST-03** | RKF45 Adaptive Integrator | `8.59e-06` | 37.69 | 2.25 | `95e393e1` | **PASS** |
-| **RUST-04** | LU Decomposition with Pivoting (LUP) | `1.78e-14` | 47.75 | 2.00 | `383b5295` | **PASS** |
-| **RUST-05** | Black-Scholes Monte Carlo Option Pricer | `2.08e-02` | 313.02 | 2.50 | `9130d0c3` | **PASS** |
-| **RUST-06** | 3D k-d Tree Nearest Neighbor Index | `0.00e+00` | 68.58 | 2.12 | `f678a550` | **PASS** |
-| **RUST-07** | Graham Scan 2D Convex Hull | `0.00e+00` | 46.62 | 2.00 | `5bdcfae1` | **PASS** |
-| **RUST-08** | Preconditioned Conjugate Gradient (PCG) | `1.27e-11` | 84.18 | 2.50 | `0366ccdb` | **PASS** |
+| **RUST-01** | SIMD Matrix Multiplication | `0.00e+00` | 41.87 | 2.00 | `90badb41` | **PASS** |
+| **RUST-02** | Cooley-Tukey Radix-2 FFT | `3.02e-15` | 150.65 | 2.50 | `d4a32341` | **PASS** |
+| **RUST-03** | RKF45 Adaptive Integrator | `8.59e-06` | 42.26 | 2.50 | `bdecb641` | **PASS** |
+| **RUST-04** | LU Decomposition with Pivoting (LUP) | `1.78e-14` | 92.07 | 2.00 | `47145d07` | **PASS** |
+| **RUST-05** | Black-Scholes Monte Carlo Option Pricer | `2.08e-02` | 281.22 | 2.50 | `f851b79c` | **PASS** |
+| **RUST-06** | 3D k-d Tree Nearest Neighbor Index | `0.00e+00` | 68.46 | 2.00 | `5d26e263` | **PASS** |
+| **RUST-07** | Graham Scan 2D Convex Hull | `0.00e+00` | 49.39 | 2.00 | `7992b910` | **PASS** |
+| **RUST-08** | Preconditioned Conjugate Gradient (PCG) | `1.27e-11` | 70.13 | 2.50 | `36e9185d` | **PASS** |
 
 ### 3.2 Domain 2: Pure Mathematics & Differential Geometry (50 cases)
 50 advanced pure mathematical problems (`MATH-01` to `MATH-50`) evaluated through computer algebra. Key cases include the Atiyah-Singer Index Theorem on complex manifolds, Hodge decomposition of differential forms ($\Delta = d\delta + \delta d$), Deligne cohomology, Perelman $\mathcal{W}$-entropy monotonicity under Ricci flow, Serre duality, and Malliavin stochastic calculus.
@@ -97,42 +97,42 @@ Invariants require exact algebraic identities and differential nilpotency $d^2 =
 
 | Case ID | Mathematical Problem | $\epsilon_{\text{inv}}$ | Latency (ms) | RAM (MB) | Proof Token | Gate |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **MATH-01** | Fundamental Group pi_1 & van Kampen | `0.00e+00` | 0.03 | 2.90 | `7c57d3d1` | **PASS** |
-| **MATH-02** | Riemann Curvature & Schwarzschild Metric | `0.00e+00` | 4839.04 | 2.70 | `1a9f3ab1` | **PASS** |
-| **MATH-03** | Cauchy Residue Contour Integration | `3.14e-09` | 228.69 | 2.80 | `ffe53dd1` | **PASS** |
-| **MATH-04** | Galois Group Quintic Solvability | `0.00e+00` | 3990.18 | 3.00 | `c5e00ed2` | **PASS** |
-| **MATH-05** | Hilbert Space Spectral Theorem | `3.12e-13` | 0.41 | 2.80 | `745bb083` | **PASS** |
-| **MATH-06** | Riemann Zeta Functional Equation | `6.67e-16` | 249.06 | 2.80 | `8be10c0b` | **PASS** |
-| **MATH-07** | Radon-Nikodym & Lebesgue Decomposition | `0.00e+00` | 274.47 | 2.80 | `751d6aa4` | **PASS** |
-| **MATH-08** | Symplectic 2-Form & Poisson Invariance | `0.00e+00` | 4538.35 | 2.80 | `6cccd853` | **PASS** |
+| **MATH-01** | Fundamental Group pi_1 & van Kampen | `0.00e+00` | 0.03 | 2.90 | `9ea42cce` | **PASS** |
+| **MATH-02** | Riemann Curvature & Schwarzschild Metric | `0.00e+00` | 2850.15 | 2.70 | `e174864e` | **PASS** |
+| **MATH-03** | Cauchy Residue Contour Integration | `3.14e-09` | 520.29 | 2.80 | `ae3c8968` | **PASS** |
+| **MATH-04** | Galois Group Quintic Solvability | `0.00e+00` | 2178.48 | 3.00 | `58c4bb92` | **PASS** |
+| **MATH-05** | Hilbert Space Spectral Theorem | `3.12e-13` | 0.45 | 2.80 | `25b81150` | **PASS** |
+| **MATH-06** | Riemann Zeta Functional Equation | `6.67e-16` | 45.60 | 2.80 | `9dc9ad33` | **PASS** |
+| **MATH-07** | Radon-Nikodym & Lebesgue Decomposition | `0.00e+00` | 114.07 | 2.80 | `3be479a3` | **PASS** |
+| **MATH-08** | Symplectic 2-Form & Poisson Invariance | `0.00e+00` | 2287.50 | 2.80 | `44c8400a` | **PASS** |
 
 ### 3.3 Domain 3: Theoretical Physics & General Relativity (50 cases)
 50 problems in quantum field theory, general relativity, and non-linear dynamics (`PHYS-01` to `PHYS-50`). Prominent implementations include the Innermost Stable Circular Orbit (ISCO) in Schwarzschild spacetime ($r_{\text{ISCO}} = 6GM/c^2$), Casimir vacuum energy between conducting plates, the Adler-Bell-Jackiw (ABJ) chiral anomaly, Penrose energy extraction from rotating Kerr black holes, the Sachdev-Ye-Kitaev (SYK) maximal chaos Lyapunov bound $\lambda_L \le 2\pi k_B T / \hbar$, and Gross-Pitaevskii Bogoliubov sound velocity.
 
 | Case ID | Physical System | $\epsilon_{\text{inv}}$ | Latency (ms) | RAM (MB) | Proof Token | Gate |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **PHYS-01** | QED Ward-Takahashi Identity | `0.00e+00` | 0.00 | 2.80 | `f6b1d34e` | **PASS** |
-| **PHYS-02** | Raychaudhuri Singularity Equation | `3.63e-14` | 28.78 | 2.80 | `1e31b06d` | **PASS** |
-| **PHYS-03** | Onsager Reciprocal Thermodynamics | `6.94e-18` | 0.03 | 2.80 | `89c8cdb7` | **PASS** |
-| **PHYS-04** | Landau Kinetic Plasma Damping | `3.47e-18` | 0.11 | 2.80 | `b60dba26` | **PASS** |
-| **PHYS-05** | Calabi-Cardy Entanglement Entropy | `0.00e+00` | 0.10 | 2.80 | `b78c25ad` | **PASS** |
-| **PHYS-06** | Laughlin Fractional Hall Wavefunction | `0.00e+00` | 0.03 | 2.80 | `2a5c48ce` | **PASS** |
-| **PHYS-07** | KAM Theorem Invariant Tori | `0.00e+00` | 53.05 | 2.70 | `9ed90da0` | **PASS** |
-| **PHYS-08** | CKM Unitarity & Jarlskog Invariant | `2.22e-16` | 148.69 | 2.70 | `0532cb95` | **PASS** |
+| **PHYS-01** | QED Ward-Takahashi Identity | `0.00e+00` | 0.00 | 2.80 | `30b2cc16` | **PASS** |
+| **PHYS-02** | Raychaudhuri Singularity Equation | `3.63e-14` | 18.09 | 2.80 | `ed95896d` | **PASS** |
+| **PHYS-03** | Onsager Reciprocal Thermodynamics | `6.94e-18` | 0.01 | 2.80 | `b8d50fd9` | **PASS** |
+| **PHYS-04** | Landau Kinetic Plasma Damping | `3.47e-18` | 0.07 | 2.80 | `5829c7a3` | **PASS** |
+| **PHYS-05** | Calabi-Cardy Entanglement Entropy | `0.00e+00` | 0.05 | 2.80 | `7ea4d41d` | **PASS** |
+| **PHYS-06** | Laughlin Fractional Hall Wavefunction | `0.00e+00` | 0.01 | 2.80 | `79b52187` | **PASS** |
+| **PHYS-07** | KAM Theorem Invariant Tori | `0.00e+00` | 32.38 | 2.70 | `a87fab40` | **PASS** |
+| **PHYS-08** | CKM Unitarity & Jarlskog Invariant | `2.22e-16` | 0.78 | 2.70 | `ffa2f93b` | **PASS** |
 
 ### 3.4 Domain 4: Complex Applied Computational Physics (50 cases)
 50 pure-NumPy physical simulators (`PYTHON-01` to `PYTHON-50`) enforcing zero heap reallocations. Implementations include 2D Barnes-Hut quadtree force summation, Symplectic Leapfrog orbital integration, Lattice Boltzmann vortex street evolution, Householder QR decomposition, Crank-Nicolson heat diffusion, and Hamiltonian Monte Carlo (HMC) sampling.
 
 | Case ID | Applied Simulation | $\epsilon_{\text{inv}}$ | Latency (ms) | RAM (MB) | Proof Token | Gate |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **PYTHON-01** | Symplectic Stormer-Verlet Multi-Body Integrator | `7.13e-07` | 653.47 | 3.30 | `0107856c` | **PASS** |
-| **PYTHON-02** | 2D Navier-Stokes Pseudospectral Vorticity Solver | `3.85e-15` | 56.55 | 3.20 | `8fa243b4` | **PASS** |
-| **PYTHON-03** | Matrix Product State (MPS) SVD Truncation | `3.03e-16` | 587.61 | 3.20 | `d007ee40` | **PASS** |
-| **PYTHON-04** | Vietoris-Rips Persistent Homology Filtration | `0.00e+00` | 14.95 | 3.30 | `bfb6678f` | **PASS** |
-| **PYTHON-05** | SE(3) Lie Algebra Exponential & BCH Map | `1.42e-16` | 27.18 | 3.20 | `a6952d38` | **PASS** |
-| **PYTHON-06** | Clifford+T Tableau Quantum Stabilizer Simulator | `0.00e+00` | 0.78 | 3.20 | `9f9ea099` | **PASS** |
-| **PYTHON-07** | Hamilton-Jacobi-Bellman Viscosity PDE Solver | `5.55e-15` | 74.42 | 3.20 | `ac54a046` | **PASS** |
-| **PYTHON-08** | Kerr Black Hole Null Geodesic Ray Tracer | `1.59e-32` | 0.04 | 3.20 | `f4b17ec1` | **PASS** |
+| **PYTHON-01** | Symplectic Stormer-Verlet Multi-Body Integrator | `7.13e-07` | 118.96 | 3.30 | `9f6e3635` | **PASS** |
+| **PYTHON-02** | 2D Navier-Stokes Pseudospectral Vorticity Solver | `3.85e-15` | 391.73 | 3.20 | `d75ce4b5` | **PASS** |
+| **PYTHON-03** | Matrix Product State (MPS) SVD Truncation | `3.03e-16` | 607.74 | 3.20 | `5c4f081a` | **PASS** |
+| **PYTHON-04** | Vietoris-Rips Persistent Homology Filtration | `0.00e+00` | 0.57 | 3.30 | `db65fca9` | **PASS** |
+| **PYTHON-05** | SE(3) Lie Algebra Exponential & BCH Map | `1.42e-16` | 0.49 | 3.20 | `5f25fba6` | **PASS** |
+| **PYTHON-06** | Clifford+T Tableau Quantum Stabilizer Simulator | `0.00e+00` | 0.09 | 3.20 | `a08e9703` | **PASS** |
+| **PYTHON-07** | Hamilton-Jacobi-Bellman Viscosity PDE Solver | `5.55e-15` | 0.20 | 3.20 | `b5660536` | **PASS** |
+| **PYTHON-08** | Kerr Black Hole Null Geodesic Ray Tracer | `1.59e-32` | 0.01 | 3.20 | `6b12864e` | **PASS** |
 
 ### 3.5 Scope, Computational Scale, and Limitations
 It is essential to state the scientific boundary of this benchmark suite with absolute clarity:

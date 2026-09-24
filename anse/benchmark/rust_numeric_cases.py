@@ -36,7 +36,7 @@ RUST_KERNELS: dict[str, dict[str, str]] = {
         "description": "Cache-blocked dense matrix multiplication with 4-way unrolling and SIMD autovectorization.",
         "source": r"""
 fn main() {
-    let n = 64;
+    let n = std::hint::black_box(64);
     let mut a = vec![0.0f64; n * n];
     let mut b = vec![0.0f64; n * n];
     let mut c_naive = vec![0.0f64; n * n];
@@ -60,7 +60,7 @@ fn main() {
     }
 
     // Cache-blocked / Tiled with unrolling
-    let block = 16;
+    let block = std::hint::black_box(16);
     for bi in (0..n).step_by(block) {
         for bk in (0..n).step_by(block) {
             for bj in (0..n).step_by(block) {
@@ -156,7 +156,7 @@ fn fft_radix2(buf: &mut [Complex]) {
 }
 
 fn main() {
-    let n = 512;
+    let n = std::hint::black_box(512);
     let mut signal = Vec::with_capacity(n);
     let mut time_energy = 0.0f64;
     for i in 0..n {
@@ -260,7 +260,7 @@ fn main() {
         "description": "Gaussian elimination with row pivoting for linear system solve Ax = b.",
         "source": r"""
 fn main() {
-    let n = 32;
+    let n = std::hint::black_box(32);
     let mut a = vec![0.0f64; n * n];
     let mut b = vec![0.0f64; n];
 
@@ -486,7 +486,7 @@ fn knn_search(node: &Option<Box<KdNode>>, target: &Point3D, best_point: &mut Poi
 }
 
 fn main() {
-    let n = 1000;
+    let n = std::hint::black_box(1000);
     let mut points = Vec::with_capacity(n);
     for i in 0..n {
         let x = ((i * 17) % 1000) as f64 / 100.0;
@@ -580,7 +580,7 @@ fn convex_hull(mut points: Vec<Point>) -> Vec<Point> {
 }
 
 fn main() {
-    let n = 500;
+    let n = std::hint::black_box(500);
     let mut pts = Vec::with_capacity(n);
     for i in 0..n {
         let x = ((i * 47) % 1000) as f64 / 10.0;
@@ -615,7 +615,7 @@ fn main() {
         "description": "Jacobi preconditioned conjugate gradient solver for symmetric positive-definite system.",
         "source": r"""
 fn main() {
-    let n = 256;
+    let n = std::hint::black_box(256);
     // 1D discrete Laplacian: -u'' = f with Dirichlet boundary conditions
     let mut diag = vec![2.0f64; n];
     let off = -1.0f64;
@@ -680,7 +680,7 @@ fn main() {
         "description": "Compressed Sparse Row matrix-vector multiplication with dense reference check.",
         "source": r"""
 fn main() {
-    let n = 1000;
+    let n = std::hint::black_box(1000);
     // Tridiagonal matrix in CSR format
     let mut row_ptr = Vec::with_capacity(n + 1);
     let mut col_ind = Vec::new();
@@ -885,7 +885,7 @@ impl PartialOrd for State {
 }
 
 fn main() {
-    let n = 100;
+    let n = std::hint::black_box(100);
     let mut adj = vec![vec![]; n];
     for i in 0..n {
         for step in [1, 2, 5, 13] {
@@ -928,7 +928,7 @@ fn main() {
 struct Body { x: f64, y: f64, vx: f64, vy: f64, m: f64 }
 
 fn main() {
-    let n = 50;
+    let n = std::hint::black_box(50);
     let mut bodies = Vec::with_capacity(n);
     for i in 0..n {
         let angle = i as f64 * (2.0 * std::f64::consts::PI / n as f64);
@@ -990,7 +990,7 @@ fn main() {
         "description": "Cholesky factorization of symmetric positive-definite matrix with reconstruction check.",
         "source": r"""
 fn main() {
-    let n = 8;
+    let n = std::hint::black_box(8);
     let mut a = vec![0.0f64; n * n];
     for i in 0..n {
         for j in 0..n {
@@ -1120,7 +1120,7 @@ fn main() {
         "description": "LBM fluid simulation with BGK collision operator asserting total mass conservation.",
         "source": r"""
 fn main() {
-    let nx = 32; let ny = 16;
+    let nx = std::hint::black_box(32); let ny = std::hint::black_box(16);
     let w = [4.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0];
     let cx = [0, 1, 0, -1, 0, 1, -1, -1, 1];
     let cy = [0, 0, 1, 0, -1, 1, 1, -1, -1];
@@ -1178,7 +1178,7 @@ fn main() {
         "description": "Householder reflection orthogonalization A = QR asserting Q^T Q = I and exact reconstruction.",
         "source": r"""
 fn main() {
-    let n = 8;
+    let n = std::hint::black_box(8);
     let mut a = vec![0.0f64; n * n];
     for i in 0..n {
         for j in 0..n {
@@ -1235,7 +1235,7 @@ fn main() {
         "description": "Dynamic programming Viterbi decoder verifying global probability optimality against exhaustive search.",
         "source": r"""
 fn main() {
-    let n_states = 2;
+    let n_states = std::hint::black_box(2);
     let start_p = [0.6, 0.4];
     let trans_p = [[0.7, 0.3], [0.4, 0.6]];
     let emit_p = [[0.5, 0.4, 0.1], [0.1, 0.3, 0.6]];
@@ -1341,7 +1341,7 @@ fn main() {
         "description": "Fast Walsh-Hadamard unitary transformation with bit-reversal permutation asserting L2 probability conservation.",
         "source": r"""
 fn main() {
-    let n_qubits = 8;
+    let n_qubits = std::hint::black_box(8);
     let n = 1 << n_qubits;
     let mut re = vec![0.0f64; n];
     let mut im = vec![0.0f64; n];
@@ -1392,7 +1392,7 @@ fn main() {
         "description": "Iterative plane rotations diagonalizing symmetric tensor asserting orthogonal spectral reconstruction.",
         "source": r"""
 fn main() {
-    let n = 4;
+    let n = std::hint::black_box(4);
     let mut a: Vec<f64> = vec![
         4.0, 1.0, 0.5, 0.2,
         1.0, 5.0, 1.2, 0.3,
@@ -1465,7 +1465,7 @@ fn main() {
         "description": "Legendre polynomial modal Discontinuous Galerkin asserting L2 spatial norm conservation.",
         "source": r"""
 fn main() {
-    let n_elem = 16;
+    let n_elem = std::hint::black_box(16);
     let dx = 1.0 / (n_elem as f64);
     let xi = [-1.0 / 3.0f64.sqrt(), 1.0 / 3.0f64.sqrt()];
     let w = [1.0, 1.0];
@@ -1495,7 +1495,7 @@ fn main() {
 #[derive(Clone, Copy)]
 struct Body { x: f64, y: f64, z: f64, m: f64 }
 fn main() {
-    let n = 16;
+    let n = std::hint::black_box(16);
     let mut bodies = Vec::with_capacity(n);
     bodies.push(Body { x: 0.0, y: 0.0, z: 0.0, m: 1.0 });
     for i in 1..n {
@@ -1571,8 +1571,8 @@ fn main() {
         "description": "Laurent multipole-to-local expansion verifying logarithmic 2D potential evaluation.",
         "source": r"""
 fn main() {
-    let p_order = 8;
-    let n_sources = 16;
+    let p_order = std::hint::black_box(8);
+    let n_sources = std::hint::black_box(16);
     let mut z_src = Vec::with_capacity(n_sources);
     let mut q_src = Vec::with_capacity(n_sources);
     for i in 0..n_sources {
@@ -1623,7 +1623,7 @@ fn main() {
         "description": "Krylov subspace tridiagonalization recovering leading eigenvalue of sparse Laplacian operator.",
         "source": r"""
 fn main() {
-    let n = 24;
+    let n = std::hint::black_box(24);
     let matvec = |v: &[f64]| -> Vec<f64> {
         let mut av = vec![0.0f64; n];
         for i in 0..n {
@@ -1633,7 +1633,7 @@ fn main() {
         }
         av
     };
-    let m = 20;
+    let m = std::hint::black_box(20);
     let mut q = vec![vec![0.0f64; n]; m + 1];
     let mut alpha = vec![0.0f64; m];
     let mut beta = vec![0.0f64; m + 1];
@@ -1666,7 +1666,7 @@ fn main() {
         "description": "Multigrid iterative relaxation demonstrating linear system residual contraction.",
         "source": r"""
 fn main() {
-    let n = 31;
+    let n = std::hint::black_box(31);
     let h = 1.0 / ((n + 1) as f64);
     let mut f = vec![0.0f64; n];
     for i in 0..n {
@@ -1706,7 +1706,7 @@ fn main() {
         "description": "Hamilton-Jacobi eikonal reinitialization verifying normalized distance gradient exactness.",
         "source": r"""
 fn main() {
-    let nx = 32; let ny = 32;
+    let nx = std::hint::black_box(32); let ny = std::hint::black_box(32);
     let dx = 2.0 / (nx as f64);
     let dy = 2.0 / (ny as f64);
     let mut phi = vec![0.0f64; nx * ny];
@@ -1740,7 +1740,7 @@ fn main() {
         "description": "Discrete velocity micro-lattice transport asserting strict particle number and momentum conservation.",
         "source": r"""
 fn main() {
-    let size = 16;
+    let size = std::hint::black_box(16);
     let n_cells = size * size;
     let mut state = vec![[0u8; 4]; n_cells];
     for i in 0..n_cells {
@@ -1921,7 +1921,7 @@ RUST_KERNELS["RUST-31"] = {
     "description": "Symplectic 4th-order Suzuki fractal decomposition for 1D Heisenberg spin-1/2 chain preserving unitary norm.",
     "source": r"""fn main() {
     // 4-spin system state vector |psi> in C^16
-    let n = 16;
+    let n = std::hint::black_box(16);
     let mut psi_re = vec![0.0f64; n];
     let mut psi_im = vec![0.0f64; n];
     psi_re[0] = 1.0; // Initial state |0000>
@@ -1929,7 +1929,7 @@ RUST_KERNELS["RUST-31"] = {
     // 4th order Trotter coefficient
     let p = 1.0 / (4.0 - 4.0f64.powf(1.0 / 3.0));
     let dt = 0.05;
-    let steps = 20;
+    let steps = std::hint::black_box(20);
     
     for _ in 0..steps {
         for s in 0..5 {
@@ -1999,7 +1999,7 @@ RUST_KERNELS["RUST-33"] = {
     let mut x: f64 = 2.0; let mut y: f64 = 0.0; let mut z: f64 = 0.0;
     let mut vx: f64 = 0.0; let mut vy: f64 = 0.8; let mut vz: f64 = 0.2;
     let dt: f64 = 0.001;
-    let steps = 1000;
+    let steps = std::hint::black_box(1000);
     let e0: f64 = 0.5 * (vx * vx + vy * vy + vz * vz);
     
     for _ in 0..steps {
@@ -2122,9 +2122,9 @@ RUST_KERNELS["RUST-37"] = {
         [0, 2, 4], [0, 3, 4], [1, 2, 4], [1, 3, 4],
         [0, 2, 5], [0, 3, 5], [1, 2, 5], [1, 3, 5],
     ];
-    let v = 6;
-    let e = 12;
-    let f = 8;
+    let v = std::hint::black_box(6);
+    let e = std::hint::black_box(12);
+    let f = std::hint::black_box(8);
     let chi = v - e + f;
     let chi_err = (chi - 2) as f64;
 
@@ -2222,7 +2222,7 @@ RUST_KERNELS["RUST-41"] = {
     "name": "6th-Order Compact Finite Difference Vorticity",
     "description": "Tridiagonal compact Padé scheme for Navier-Stokes vorticity transport with spectral accuracy.",
     "source": r"""fn main() {
-    let n = 32;
+    let n = std::hint::black_box(32);
     let dx = 2.0 * std::f64::consts::PI / (n as f64);
     let mut u = vec![0.0f64; n];
     for i in 0..n {

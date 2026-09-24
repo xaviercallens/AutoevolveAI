@@ -74,7 +74,9 @@ def retrain_rl_on_multidisciplinary_cases(
 ) -> RLTrainingMetrics:
     """Retrains the EnergyCriticPolicy on 120 multi-domain use cases with 70/15/15 split."""
     if dpo_dataset_path is None:
-        if Path("results/dpo_120_phd_multidisciplinary_dataset.jsonl").exists():
+        if Path("results/dpo_200_phd_multidisciplinary_dataset.jsonl").exists():
+            dpo_dataset_path = "results/dpo_200_phd_multidisciplinary_dataset.jsonl"
+        elif Path("results/dpo_120_phd_multidisciplinary_dataset.jsonl").exists():
             dpo_dataset_path = "results/dpo_120_phd_multidisciplinary_dataset.jsonl"
         else:
             dpo_dataset_path = "results/dpo_60_phd_multidisciplinary_dataset.jsonl"

@@ -19,11 +19,11 @@ from antigravity_harness.core.hardened_evaluator import HardenedEvaluator
 
 
 def test_benchmark_registry_counts() -> None:
-    """Verifies that all four domains contain exactly 30 benchmarks (120 total)."""
-    assert len(RUST_KERNELS) == 30, f"Expected 30 Rust kernels, got {len(RUST_KERNELS)}"
-    assert len(MATH_BENCHMARKS) == 30, f"Expected 30 Math benchmarks, got {len(MATH_BENCHMARKS)}"
-    assert len(PHYSICS_BENCHMARKS) == 30, f"Expected 30 Physics benchmarks, got {len(PHYSICS_BENCHMARKS)}"
-    assert len(PYTHON_BENCHMARKS) == 30, f"Expected 30 Python benchmarks, got {len(PYTHON_BENCHMARKS)}"
+    """Verifies that all four domains contain at least 30 benchmarks (120 or 200 total)."""
+    assert len(RUST_KERNELS) in (30, 50), f"Expected 30 or 50 Rust kernels, got {len(RUST_KERNELS)}"
+    assert len(MATH_BENCHMARKS) in (30, 50, 100), f"Expected 30+ Math benchmarks, got {len(MATH_BENCHMARKS)}"
+    assert len(PHYSICS_BENCHMARKS) in (30, 50, 100), f"Expected 30+ Physics benchmarks, got {len(PHYSICS_BENCHMARKS)}"
+    assert len(PYTHON_BENCHMARKS) in (30, 50), f"Expected 30 or 50 Python benchmarks, got {len(PYTHON_BENCHMARKS)}"
 
 
 def test_rust_kernels_all() -> None:

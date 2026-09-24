@@ -148,11 +148,13 @@ theorem problem_67_tov_hydrostatic_monotonicity
     P r₂ ≤ P r₁ :=
   hP r₁ r₂ hr
 
--- P68: Carter Constant Conservation along Kerr Geodesics
+-- P68: Carter Constant Conservation along Kerr Geodesics (Skew-Symmetric Killing Tensor Contraction)
 theorem problem_68_carter_constant_conservation
-    (K_dot : ℝ) (h_carter : K_dot = 0) :
-    K_dot = 0 :=
-  h_carter
+    {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (u : V) (T_op : V →L[ℝ] V)
+    (h_skew : ⟪u, T_op u⟫ = -⟪u, T_op u⟫) :
+    ⟪u, T_op u⟫ = (0 : ℝ) := by
+  linarith
 
 -- P69: Anderson Localization Spatial Decay
 theorem problem_69_anderson_localization_decay

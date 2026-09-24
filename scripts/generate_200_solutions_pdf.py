@@ -5,11 +5,40 @@ import os
 def escape_latex(s: str) -> str:
     if not s:
         return ""
-    s = s.replace("%", "\\%")
-    s = s.replace("&", "\\&")
-    s = s.replace("#", "\\#")
-    s = s.replace("_", "\\_")
-    s = s.replace("<", "$<$").replace(">", "$>$")
+    replacements = [
+        ("&", "\\&"),
+        ("%", "\\%"),
+        ("$", "\\$"),
+        ("#", "\\#"),
+        ("_", "\\_"),
+        ("^", "\\textasciicircum{}"),
+        ("~", "\\textasciitilde{}"),
+        ("<", "$<$"),
+        (">", "$>$"),
+        ("π", "$\\pi$"),
+        ("α", "$\\alpha$"),
+        ("β", "$\\beta$"),
+        ("γ", "$\\gamma$"),
+        ("δ", "$\\delta$"),
+        ("ε", "$\\epsilon$"),
+        ("λ", "$\\lambda$"),
+        ("μ", "$\\mu$"),
+        ("σ", "$\\sigma$"),
+        ("ω", "$\\omega$"),
+        ("Δ", "$\\Delta$"),
+        ("∇", "$\\nabla$"),
+        ("≤", "$\\le$"),
+        ("≥", "$\\ge$"),
+        ("≠", "$\\ne$"),
+        ("≈", "$\\approx$"),
+        ("→", "$\\to$"),
+        ("∞", "$\\infty$"),
+        ("ℏ", "$\\hbar$"),
+        ("∈", "$\\in$"),
+        ("×", "$\\times$"),
+    ]
+    for orig, rep in replacements:
+        s = s.replace(orig, rep)
     return s
 
 def build_tex():
@@ -20,7 +49,9 @@ def build_tex():
     
     tex = r"""\documentclass[11pt, a4paper]{article}
 \usepackage{amsmath, amssymb, geometry, xcolor, hyperref, caption, booktabs}
-\usepackage[T1]{fontenc}\n\usepackage{lmodern}\n\UseRawInputEncoding
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\UseRawInputEncoding
 \geometry{margin=1in}
 \hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
 

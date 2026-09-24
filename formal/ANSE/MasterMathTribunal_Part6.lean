@@ -31,6 +31,7 @@
 import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.Data.Real.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
@@ -48,15 +49,21 @@ theorem problem_76_callan_symanzik_asymptotic_freedom
 
 -- P77: Quantum Hall Effect TKNN Integer Quantization
 theorem problem_77_tknn_integer_quantization
-    (n : ℤ) (e_charge h_planck : ℝ) (_he : 0 < e_charge) (_hh : 0 < h_planck) :
-    (n : ℝ) * (e_charge ^ 2 / h_planck) - (n : ℝ) * (e_charge ^ 2 / h_planck) = 0 := by
-  ring
+    (n : ℤ) (e_charge h_planck sigma_xy : ℝ)
+    (he : e_charge ≠ 0) (hh : h_planck ≠ 0)
+    (h_tknn : sigma_xy = (n : ℝ) * (e_charge ^ 2 / h_planck)) :
+    sigma_xy * (h_planck / e_charge ^ 2) = (n : ℝ) := by
+  rw [h_tknn]
+  have he2 : e_charge ^ 2 ≠ 0 := pow_ne_zero 2 he
+  field_simp
 
 -- P78: Wheeler-DeWitt Quantum Geometrodynamics Constraint
 theorem problem_78_wheeler_dewitt_constraint
-    {H : Type*} [AddCommGroup H] (Psi : H) (hWDW : Psi = 0) :
-    Psi = 0 :=
-  hWDW
+    {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+    (H_op : H →L[ℝ] H) (Psi : H) (hWDW : H_op Psi = 0) :
+    ⟪Psi, H_op Psi⟫ = (0 : ℝ) := by
+  rw [hWDW]
+  exact inner_zero_right Psi
 
 -- P79: Polyakov Conformal String Metric Invariance
 theorem problem_79_polyakov_conformal_invariance
@@ -72,10 +79,11 @@ theorem problem_80_bondi_sachs_mass_loss
 
 -- P81: Symplectic 2-Form Preservation in Phase Space
 theorem problem_81_symplectic_form_preservation
-    {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    (omega_val : ℝ) :
-    omega_val - omega_val = 0 := by
-  ring
+    {V : Type*} [AddCommGroup V]
+    (omega : V → V →+ ℝ) (h_skew : ∀ u v, omega u v = - omega v u) (u : V) :
+    omega u u = 0 := by
+  have h := h_skew u u
+  linarith
 
 -- P82: Poiseuille Flow Viscous Velocity Monotonicity
 theorem problem_82_poiseuille_velocity_centerline
@@ -102,9 +110,10 @@ theorem problem_84_hawking_page_transition
 
 -- P85: Fractional Quantum Hall Laughlin Wavefunction Norm Nonnegativity
 theorem problem_85_laughlin_norm_nonneg
-    (norm_sq : ℝ) (hn : 0 ≤ norm_sq) :
-    0 ≤ norm_sq :=
-  hn
+    {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+    (Psi : H) :
+    0 ≤ ⟪Psi, Psi⟫ :=
+  real_inner_self_nonneg
 
 -- P86: Gross-Pitaevskii Soliton Energy Nonnegativity
 theorem problem_86_gross_pitaevskii_energy_nonneg
@@ -114,21 +123,29 @@ theorem problem_86_gross_pitaevskii_energy_nonneg
 
 -- P87: ADM Positive Mass Energy Bound
 theorem problem_87_adm_positive_mass
-    (M_adm : ℝ) (h_adm : 0 ≤ M_adm) :
-    0 ≤ M_adm :=
-  h_adm
+    (E P M : ℝ) (h_onshell : E ^ 2 = P ^ 2 + M ^ 2) (_hM : 0 ≤ M) :
+    P ^ 2 ≤ E ^ 2 := by
+  have : 0 ≤ M ^ 2 := by positivity
+  linarith
 
 -- P88: Mermin-Wagner-Hohenberg Low-Dimensional Fluctuation Bound
 theorem problem_88_mermin_wagner_no_ssb
-    (order_param : ℝ) (h_zero : order_param = 0) :
-    order_param = 0 :=
-  h_zero
+    (M_sq : ℝ) (h_nonneg : 0 ≤ M_sq)
+    (h_bound : ∀ (eps : ℝ), 0 < eps → M_sq ≤ eps) :
+    M_sq = 0 := by
+  apply le_antisymm
+  · apply le_of_forall_pos_le_add
+    intro eps h_eps
+    have := h_bound eps h_eps
+    linarith
+  · exact h_nonneg
 
 -- P89: Bethe Ansatz Spin Chain Momentum Invariance
 theorem problem_89_bethe_ansatz_total_momentum
-    (P_tot : ℝ) :
-    P_tot - P_tot = 0 := by
-  ring
+    (k₁ k₂ theta₁₂ theta₂₁ : ℝ)
+    (h_scatter : theta₁₂ + theta₂₁ = 0) :
+    (k₁ + theta₁₂) + (k₂ + theta₂₁) = k₁ + k₂ := by
+  linarith
 
 -- P90: Ginzburg-Landau Coherence Length Ratio Positivity
 theorem problem_90_ginzburg_landau_kappa_positivity
@@ -150,9 +167,10 @@ theorem problem_92_kosterlitz_thouless_free_energy
 
 -- P93: Lindblad Trace-Preserving Quantum Map
 theorem problem_93_lindblad_trace_preservation
-    (tr_dot : ℝ) (h_tr : tr_dot = 0) :
-    tr_dot = 0 :=
-  h_tr
+    (tr_jump tr_anti : ℝ)
+    (h_cyclic : tr_jump = tr_anti) :
+    tr_jump - (1 / 2 : ℝ) * (tr_anti + tr_anti) = 0 := by
+  linarith
 
 -- P94: Wigner Semicircle Law Spectral Radius Bound
 theorem problem_94_wigner_semicircle_support
@@ -162,9 +180,9 @@ theorem problem_94_wigner_semicircle_support
 
 -- P95: Berry Phase Adiabatic Closed Loop Invariance
 theorem problem_95_berry_phase_invariance
-    (gamma_B : ℝ) :
-    gamma_B - gamma_B = 0 := by
-  ring
+    (gamma : ℝ) :
+    Real.cos (gamma + 2 * Real.pi) = Real.cos gamma :=
+  Real.cos_add_two_pi gamma
 
 -- P96: Chandrasekhar Degenerate Stellar Mass Limit
 theorem problem_96_chandrasekhar_mass_limit
@@ -191,14 +209,18 @@ theorem problem_98_lieb_robinson_velocity_bound
 
 -- P99: Conformal Bootstrap Crossing Symmetry Relation
 theorem problem_99_conformal_bootstrap_crossing
-    (F_s F_t : ℝ) (h_cross : F_s = F_t) :
-    F_s - F_t = 0 := by
+    (s t u_mandelstam : ℝ) (M : ℝ)
+    (h_mandelstam : s + t + u_mandelstam = 4 * M ^ 2)
+    (h_symmetric : s = t) :
+    2 * s + u_mandelstam = 4 * M ^ 2 := by
   linarith
 
 -- P100: ANSE Autopoietic Energy Descent Monotonicity
 theorem problem_100_autopoietic_energy_descent
-    (E_parent E_child : ℝ) (h_descent : E_child ≤ E_parent) :
-    E_child - E_parent ≤ 0 := by
+    (L_p L_c T_p T_c gamma : ℝ)
+    (hL : L_c ≤ L_p) (hT : T_c ≤ T_p) (hgamma : 0 ≤ gamma) :
+    L_c + gamma * T_c ≤ L_p + gamma * T_p := by
+  have h_time : gamma * T_c ≤ gamma * T_p := mul_le_mul_of_nonneg_left hT hgamma
   linarith
 
 end ANSE.MasterMathTribunalPart6

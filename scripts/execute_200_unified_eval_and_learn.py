@@ -306,18 +306,26 @@ def execute_50_python_suite() -> List[ProblemEvaluationRecord]:
     return records
 
 
-def train_and_improve_energy_critic(records: List[ProblemEvaluationRecord]) -> Dict[str, Any]:
+def train_and_improve_energy_critic(
+    train_records: List[ProblemEvaluationRecord],
+    val_records: List[ProblemEvaluationRecord],
+) -> Dict[str, Any]:
     """
-    Trains the EnergyCriticPolicy on all 200 benchmark experiences.
-    Demonstrates Bradley-Terry preference alignment without gradient flattening.
+    Trains the EnergyCriticPolicy on 140 training experiences and evaluates on 60 held-out validation tasks.
+    Demonstrates Bradley-Terry preference alignment and out-of-sample generalization.
     """
-    logger.info("Training Energy Critic Model on %d combined experiences...", len(records))
+    logger.info("Training Energy Critic Model on %d train experiences (evaluating on %d held-out validation tasks)...",
+                len(train_records), len(val_records))
     device = torch.device("cpu")
 
     # Vectorize strings into tensor tokens
-    prompts_t = torch.cat([tokenize_string(r.prompt).unsqueeze(0) for r in records], dim=0).to(device)
-    chosen_t = torch.cat([tokenize_string(r.chosen_solution).unsqueeze(0) for r in records], dim=0).to(device)
-    rejected_t = torch.cat([tokenize_string(r.rejected_solution).unsqueeze(0) for r in records], dim=0).to(device)
+    train_prompts_t = torch.cat([tokenize_string(r.prompt).unsqueeze(0) for r in train_records], dim=0).to(device)
+    train_chosen_t = torch.cat([tokenize_string(r.chosen_solution).unsqueeze(0) for r in train_records], dim=0).to(device)
+    train_rejected_t = torch.cat([tokenize_string(r.rejected_solution).unsqueeze(0) for r in train_records], dim=0).to(device)
+
+    val_prompts_t = torch.cat([tokenize_string(r.prompt).unsqueeze(0) for r in val_records], dim=0).to(device)
+    val_chosen_t = torch.cat([tokenize_string(r.chosen_solution).unsqueeze(0) for r in val_records], dim=0).to(device)
+    val_rejected_t = torch.cat([tokenize_string(r.rejected_solution).unsqueeze(0) for r in val_records], dim=0).to(device)
 
     model = EnergyCriticPolicy(d_model=32, d_hidden=64).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=3e-3, weight_decay=1e-4)
@@ -325,25 +333,34 @@ def train_and_improve_energy_critic(records: List[ProblemEvaluationRecord]) -> D
     # Pre-training baseline
     model.eval()
     with torch.no_grad():
-        r_c_init = model(prompts_t, chosen_t)
-        r_r_init = model(prompts_t, rejected_t)
-        init_loss, init_margin = compute_dpo_loss(r_c_init, r_r_init, beta=0.1)
+        r_c_init = model(train_prompts_t, train_chosen_t)
+        r_r_init = model(train_prompts_t, train_rejected_t)
+        init_train_loss, init_train_margin = compute_dpo_loss(r_c_init, r_r_init, beta=0.1)
 
-    initial_loss_val = float(init_loss.detach())
-    initial_margin_val = float(init_margin.detach())
-    logger.info("Pre-Training Baseline: DPO Loss = %.4f, Margin = %.4f", initial_loss_val, initial_margin_val)
+        val_r_c_init = model(val_prompts_t, val_chosen_t)
+        val_r_r_init = model(val_prompts_t, val_rejected_t)
+        init_val_loss, init_val_margin = compute_dpo_loss(val_r_c_init, val_r_r_init, beta=0.1)
+
+    initial_loss_val = float(init_train_loss.detach())
+    initial_margin_val = float(init_train_margin.detach())
+    initial_val_loss_val = float(init_val_loss.detach())
+    initial_val_margin_val = float(init_val_margin.detach())
+    logger.info("Pre-Training Baseline: Train Loss = %.4f, Val Loss = %.4f, Val Margin = %.4f",
+                initial_loss_val, initial_val_loss_val, initial_val_margin_val)
 
     # 35 Training Epochs
     epochs = 35
     loss_history: List[float] = []
     margin_history: List[float] = []
+    val_loss_history: List[float] = []
+    val_margin_history: List[float] = []
 
     for epoch in range(epochs):
         model.train()
         optimizer.zero_grad()
 
-        r_chosen = model(prompts_t, chosen_t)
-        r_rejected = model(prompts_t, rejected_t)
+        r_chosen = model(train_prompts_t, train_chosen_t)
+        r_rejected = model(train_prompts_t, train_rejected_t)
 
         loss, margin = compute_dpo_loss(r_chosen, r_rejected, beta=0.1)
         loss.backward()
@@ -353,22 +370,39 @@ def train_and_improve_energy_critic(records: List[ProblemEvaluationRecord]) -> D
         loss_history.append(float(loss.detach()))
         margin_history.append(float(margin.detach()))
 
+        # Validation evaluation under torch.no_grad()
+        model.eval()
+        with torch.no_grad():
+            v_c = model(val_prompts_t, val_chosen_t)
+            v_r = model(val_prompts_t, val_rejected_t)
+            v_loss, v_margin = compute_dpo_loss(v_c, v_r, beta=0.1)
+            val_loss_history.append(float(v_loss.detach()))
+            val_margin_history.append(float(v_margin.detach()))
+
         if (epoch + 1) % 5 == 0 or epoch == epochs - 1:
-            logger.info("Epoch %02d/%02d: Loss = %.4f, Margin = %.4f", epoch + 1, epochs, loss_history[-1], margin_history[-1])
+            logger.info("Epoch %02d/%02d: Train Loss = %.4f, Val Loss = %.4f, Val Margin = %.4f",
+                        epoch + 1, epochs, loss_history[-1], val_loss_history[-1], val_margin_history[-1])
 
     final_loss_val = loss_history[-1]
     final_margin_val = margin_history[-1]
+    final_val_loss_val = val_loss_history[-1]
+    final_val_margin_val = val_margin_history[-1]
     loss_reduction_pct = ((initial_loss_val - final_loss_val) / initial_loss_val) * 100.0
+    val_loss_reduction_pct = ((initial_val_loss_val - final_val_loss_val) / initial_val_loss_val) * 100.0
 
     model_save_path = REPO_ROOT / "results/rl_energy_model_unified_200.pt"
     torch.save(model.state_dict(), model_save_path)
     logger.info("Saved unified Energy Critic Model checkpoint to %s", model_save_path)
 
-    # Post-training predicted rewards
+    # Post-training predicted rewards on all records
     model.eval()
     with torch.no_grad():
-        pred_c = model(prompts_t, chosen_t).squeeze(-1).numpy()
-        pred_r = model(prompts_t, rejected_t).squeeze(-1).numpy()
+        all_records = train_records + val_records
+        all_prompts = torch.cat([tokenize_string(r.prompt).unsqueeze(0) for r in all_records], dim=0).to(device)
+        all_chosen = torch.cat([tokenize_string(r.chosen_solution).unsqueeze(0) for r in all_records], dim=0).to(device)
+        all_rejected = torch.cat([tokenize_string(r.rejected_solution).unsqueeze(0) for r in all_records], dim=0).to(device)
+        pred_c = model(all_prompts, all_chosen).squeeze(-1).numpy()
+        pred_r = model(all_prompts, all_rejected).squeeze(-1).numpy()
 
     pred_e_chosen = -pred_c
     pred_e_rejected = -pred_r
@@ -377,82 +411,114 @@ def train_and_improve_energy_critic(records: List[ProblemEvaluationRecord]) -> D
 
     return {
         "epochs": epochs,
+        "training_sample_size": len(train_records),
+        "held_out_validation_size": len(val_records),
         "initial_loss": round(initial_loss_val, 4),
         "final_loss": round(final_loss_val, 4),
         "loss_reduction_pct": round(loss_reduction_pct, 2),
         "initial_margin": round(initial_margin_val, 4),
         "final_margin": round(final_margin_val, 4),
         "margin_gain": round(final_margin_val - initial_margin_val, 4),
+        "initial_train_loss": round(initial_loss_val, 4),
+        "final_train_loss": round(final_loss_val, 4),
+        "train_loss_reduction_pct": round(loss_reduction_pct, 2),
+        "initial_val_loss": round(initial_val_loss_val, 4),
+        "final_val_loss": round(final_val_loss_val, 4),
+        "val_loss_reduction_pct": round(val_loss_reduction_pct, 2),
+        "generalization_gap_loss": round(final_val_loss_val - final_loss_val, 4),
+        "initial_train_margin": round(initial_margin_val, 4),
+        "final_train_margin": round(final_margin_val, 4),
+        "initial_val_margin": round(initial_val_margin_val, 4),
+        "final_val_margin": round(final_val_margin_val, 4),
+        "val_margin_gain": round(final_val_margin_val - initial_val_margin_val, 4),
         "autopoietic_energy_descent_satisfied": energy_descent_satisfied,
         "mean_predicted_energy_delta": round(float(np.mean(energy_descents)), 4),
-        "loss_history": [round(x, 4) for x in loss_history],
-        "margin_history": [round(x, 4) for x in margin_history],
+        "train_loss_history": [round(x, 4) for x in loss_history],
+        "val_loss_history": [round(x, 4) for x in val_loss_history],
+        "train_margin_history": [round(x, 4) for x in margin_history],
+        "val_margin_history": [round(x, 4) for x in val_margin_history],
         "checkpoint_path": str(model_save_path),
     }
 
 
-def train_and_improve_jepa_world_model(records: List[ProblemEvaluationRecord]) -> Dict[str, Any]:
+def train_and_improve_jepa_world_model(
+    train_records: List[ProblemEvaluationRecord],
+    val_records: List[ProblemEvaluationRecord],
+) -> Dict[str, Any]:
     """
-    Retrains the Autopoietic JEPA Energy World Model on 200 state transitions.
+    Retrains the Autopoietic JEPA Energy World Model on 140 training transitions and evaluates on 60 held-out tasks.
     Learns predictive representations of latency, RAM, and invariant energy.
     """
-    logger.info("Retraining Autopoietic JEPA World Model on 200 multi-domain tasks...")
+    logger.info("Retraining Autopoietic JEPA World Model on %d train tasks (%d held-out validation)...",
+                len(train_records), len(val_records))
     latent_dim = 64
     hidden_dim = 128
     jepa_model = AutopoieticJEPAWorldModel(latent_dim=latent_dim, hidden_dim=hidden_dim)
     optimizer = torch.optim.AdamW(jepa_model.parameters(), lr=1e-3, weight_decay=1e-5)
 
-    # Build features: [latency, memory, error, energy, verified]
-    features = []
-    energy_targets = []
-    for r in records:
-        f_vec = [
-            min(100.0, r.latency_ms) / 100.0,
-            min(100.0, r.memory_mb) / 100.0,
-            min(1.0, r.invariant_error),
-            min(100.0, r.energy_score) / 100.0,
-            1.0 if r.verified else 0.0,
-        ]
-        # Pad or project to latent_dim
-        padded = np.zeros(latent_dim, dtype=np.float32)
-        padded[:len(f_vec)] = f_vec
-        features.append(padded)
-        energy_targets.append(min(100.0, r.energy_score) / 100.0)
+    def extract_features(recs: List[ProblemEvaluationRecord]):
+        features = []
+        for r in recs:
+            f_vec = [
+                min(100.0, r.latency_ms) / 100.0,
+                min(100.0, r.memory_mb) / 100.0,
+                min(1.0, r.invariant_error),
+                min(100.0, r.energy_score) / 100.0,
+                1.0 if r.verified else 0.0,
+            ]
+            padded = np.zeros(latent_dim, dtype=np.float32)
+            padded[:len(f_vec)] = f_vec
+            features.append(padded)
+        s_t = torch.tensor(np.array(features), dtype=torch.float32)
+        actions = torch.randn(len(recs), latent_dim) * 0.1
+        s_next = s_t.clone()
+        s_next[:, 3] *= 0.5
+        return s_t, actions, s_next
 
-    s_t = torch.tensor(np.array(features), dtype=torch.float32)
-    actions = torch.randn(len(records), latent_dim) * 0.1
-    # Next state simulation: s_{t+1} has reduced energy
-    s_next = s_t.clone()
-    s_next[:, 3] *= 0.5  # energy reduced under action
-    e_actual = torch.tensor(energy_targets, dtype=torch.float32).unsqueeze(-1)
+    train_s_t, train_actions, train_s_next = extract_features(train_records)
+    val_s_t, val_actions, val_s_next = extract_features(val_records)
 
     epochs = 25
-    initial_loss = None
-    final_loss = None
+    with torch.no_grad():
+        init_train_pred = jepa_model(train_s_t, train_actions)
+        initial_train_loss = float(torch.nn.functional.mse_loss(init_train_pred, train_s_next).detach())
+        init_val_pred = jepa_model(val_s_t, val_actions)
+        initial_val_loss = float(torch.nn.functional.mse_loss(init_val_pred, val_s_next).detach())
 
     for epoch in range(epochs):
+        jepa_model.train()
         optimizer.zero_grad()
-        s_pred = jepa_model(s_t, actions)
-        loss = torch.nn.functional.mse_loss(s_pred, s_next)
+        s_pred = jepa_model(train_s_t, train_actions)
+        loss = torch.nn.functional.mse_loss(s_pred, train_s_next)
         loss.backward()
         optimizer.step()
 
-        if epoch == 0:
-            initial_loss = float(loss.detach())
-        if epoch == epochs - 1:
-            final_loss = float(loss.detach())
+    jepa_model.eval()
+    with torch.no_grad():
+        final_train_pred = jepa_model(train_s_t, train_actions)
+        final_train_loss = float(torch.nn.functional.mse_loss(final_train_pred, train_s_next).detach())
+        final_val_pred = jepa_model(val_s_t, val_actions)
+        final_val_loss = float(torch.nn.functional.mse_loss(final_val_pred, val_s_next).detach())
 
     jepa_save_path = REPO_ROOT / "results/jepa_world_model_unified_200.pt"
     torch.save(jepa_model.state_dict(), jepa_save_path)
     logger.info("Saved retrained JEPA World Model to %s", jepa_save_path)
 
-    jepa_loss_reduction = ((initial_loss - final_loss) / initial_loss) * 100.0 if initial_loss else 0.0
+    jepa_val_loss_reduction = ((initial_val_loss - final_val_loss) / initial_val_loss) * 100.0 if initial_val_loss else 0.0
 
     return {
         "epochs": epochs,
-        "initial_jepa_loss": round(initial_loss, 4),
-        "final_jepa_loss": round(final_loss, 4),
-        "jepa_loss_reduction_pct": round(jepa_loss_reduction, 2),
+        "training_sample_size": len(train_records),
+        "held_out_validation_size": len(val_records),
+        "initial_jepa_loss": round(initial_val_loss, 4),
+        "final_jepa_loss": round(final_val_loss, 4),
+        "jepa_loss_reduction_pct": round(jepa_val_loss_reduction, 2),
+        "initial_train_jepa_loss": round(initial_train_loss, 4),
+        "final_train_jepa_loss": round(final_train_loss, 4),
+        "initial_val_jepa_loss": round(initial_val_loss, 4),
+        "final_val_jepa_loss": round(final_val_loss, 4),
+        "val_jepa_loss_reduction_pct": round(jepa_val_loss_reduction, 2),
+        "generalization_gap_jepa": round(final_val_loss - final_train_loss, 4),
         "checkpoint_path": str(jepa_save_path),
         "status": "CONVERGED_SOUND",
     }
@@ -469,11 +535,17 @@ def run_200_unified_benchmarks():
     all_records = math_records + rust_records + python_records
     assert len(all_records) == 200, f"Expected 200 records, got {len(all_records)}"
 
-    # 2. Retrain Energy Critic Model (DPO Bradley-Terry)
-    energy_critic_metrics = train_and_improve_energy_critic(all_records)
+    # Stratified Train (140) / Validation (60) Partition
+    train_records = math_records[:70] + rust_records[:35] + python_records[:35]
+    val_records = math_records[70:] + rust_records[35:] + python_records[35:]
+    logger.info("Constructed Stratified Generalization Split: Train = %d, Validation = %d",
+                len(train_records), len(val_records))
 
-    # 3. Retrain Autopoietic JEPA Energy World Model
-    jepa_metrics = train_and_improve_jepa_world_model(all_records)
+    # 2. Retrain Energy Critic Model (DPO Bradley-Terry) on Train, evaluating on Held-out Val
+    energy_critic_metrics = train_and_improve_energy_critic(train_records, val_records)
+
+    # 3. Retrain Autopoietic JEPA Energy World Model on Train, evaluating on Held-out Val
+    jepa_metrics = train_and_improve_jepa_world_model(train_records, val_records)
 
     # 4. Export DPO Preference Dataset
     dpo_dataset_path = REPO_ROOT / "results/dpo_200_unified_dataset.jsonl"
@@ -595,14 +667,18 @@ def run_200_unified_benchmarks():
     print(f"  • Python Physics PDE    (50): 50/50 verified, rigorous conservation invariants")
     print(f"    - Avg Latency: {python_stats['average_latency_ms']:.2f} ms | Avg RAM: {python_stats['average_ram_mb']:.2f} MB | Avg Energy: {python_stats['average_energy_score']:.2f}")
     print("-" * 95)
-    print("ENERGY CRITIC MODEL (DPO REINFORCEMENT LEARNING):")
-    print(f"  • Bradley-Terry DPO Loss: {energy_critic_metrics['initial_loss']:.4f} -> {energy_critic_metrics['final_loss']:.4f} (-{energy_critic_metrics['loss_reduction_pct']:.2f}%)")
-    print(f"  • Policy Preference Margin: {energy_critic_metrics['initial_margin']:.4f} -> {energy_critic_metrics['final_margin']:.4f} (+{energy_critic_metrics['margin_gain']:.4f})")
+    print("ENERGY CRITIC MODEL (DPO REINFORCEMENT LEARNING ON 140/60 STRATIFIED SPLIT):")
+    print(f"  • Train DPO Loss: {energy_critic_metrics['initial_train_loss']:.4f} -> {energy_critic_metrics['final_train_loss']:.4f} (-{energy_critic_metrics['train_loss_reduction_pct']:.2f}%)")
+    print(f"  • Held-Out Val DPO Loss: {energy_critic_metrics['initial_val_loss']:.4f} -> {energy_critic_metrics['final_val_loss']:.4f} (-{energy_critic_metrics['val_loss_reduction_pct']:.2f}%)")
+    print(f"  • Generalization Gap: {energy_critic_metrics['generalization_gap_loss']:.4f}")
+    print(f"  • Val Preference Margin: {energy_critic_metrics['initial_val_margin']:.4f} -> {energy_critic_metrics['final_val_margin']:.4f} (+{energy_critic_metrics['val_margin_gain']:.4f})")
     print(f"  • Autopoietic Energy Descent (Delta E < 0): {'CONFIRMED' if energy_critic_metrics['autopoietic_energy_descent_satisfied'] else 'FAILED'}")
     print(f"  • Mean Predicted Energy Delta: {energy_critic_metrics['mean_predicted_energy_delta']:.4f}")
     print("-" * 95)
     print("AUTOPOIETIC JEPA ENERGY WORLD MODEL (JESA/JEPA):")
-    print(f"  • JEPA Prediction Loss: {jepa_metrics['initial_jepa_loss']:.4f} -> {jepa_metrics['final_jepa_loss']:.4f} (-{jepa_metrics['jepa_loss_reduction_pct']:.2f}%)")
+    print(f"  • Train JEPA Prediction Loss: {jepa_metrics['initial_train_jepa_loss']:.4f} -> {jepa_metrics['final_train_jepa_loss']:.4f}")
+    print(f"  • Held-Out Val JEPA Loss: {jepa_metrics['initial_val_jepa_loss']:.4f} -> {jepa_metrics['final_val_jepa_loss']:.4f} (-{jepa_metrics['val_jepa_loss_reduction_pct']:.2f}%)")
+    print(f"  • Generalization Gap: {jepa_metrics['generalization_gap_jepa']:.4f}")
     print(f"  • Target Encoder EMA: Converged Sound (tau=0.05)")
     print("=" * 95)
 

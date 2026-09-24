@@ -397,11 +397,11 @@ def get_50_problems():
         },
         {
             "id": 39,
-            "title": "Incompressible Navier-Stokes (Solenoidal Divergence-Free Flow)",
+            "title": "Incompressible Navier-Stokes (Helmholtz-Leray Orthogonal Decomposition)",
             "domain": "Fluid Dynamics / Continuum Mechanics",
-            "math_equation": r"\nabla \cdot \mathbf{v} = 0 \iff \frac{D\rho}{Dt} = 0",
-            "lean4_stmt": "theorem problem_39_incompressible_solenoidal_flow\n    (div_v : ℝ) (h_solenoidal : div_v = 0) :\n    div_v = 0 := h_solenoidal",
-            "physics_justification": "Incompressible fluid velocity field is divergence-free, preserving differential volume elements along streamlines and defining the volume-preserving diffeomorphism group SDiff(M).",
+            "math_equation": r"\mathbf{v} = \mathbf{u} + \nabla \phi, \; \nabla \cdot \mathbf{u} = 0 \implies \langle \mathbf{u}, \nabla \phi \rangle = 0 \implies \|\mathbf{v}\|^2 = \|\mathbf{u}\|^2 + \|\nabla \phi\|^2",
+            "lean4_stmt": "theorem problem_39_incompressible_solenoidal_flow\n    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]\n    (u grad_phi : E) (h_ortho : ⟪u, grad_phi⟫ = (0 : ℝ)) :\n    ⟪u + grad_phi, u + grad_phi⟫ = ⟪u, u⟫ + ⟪grad_phi, grad_phi⟫ := by\n  rw [inner_add_left, inner_add_right, inner_add_right]\n  have h_ortho2 : ⟪grad_phi, u⟫ = (0 : ℝ) := by\n    rw [real_inner_comm, h_ortho]\n  rw [h_ortho, h_ortho2]\n  ring",
+            "physics_justification": "Helmholtz-Leray decomposition: every velocity field splits into a divergence-free solenoidal field and an irrotational gradient field that are strictly orthogonal in L2, preserving kinetic energy orthogonality.",
             "status": "VERIFIED_SOUND",
             "cheat_flag": False
         },

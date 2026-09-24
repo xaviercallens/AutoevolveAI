@@ -16,7 +16,7 @@ REGISTRY_PATH = Path(__file__).resolve().parent / "invariant_registry.yaml"
 
 # Static Fallbacks for ultra-fast lookup
 TOLERANCES: Dict[str, float] = {
-    # Rust Numeric (30 Cases)
+    # Rust Numeric (50 Cases)
     "RUST-01": 1e-12, "RUST-02": 1e-12, "RUST-03": 1e-05, "RUST-04": 1e-12,
     "RUST-05": 0.05,  "RUST-06": 1e-12, "RUST-07": 1e-12, "RUST-08": 1e-08,
     "RUST-09": 1e-12, "RUST-10": 1e-06, "RUST-11": 1e-12, "RUST-12": 1e-12,
@@ -25,7 +25,12 @@ TOLERANCES: Dict[str, float] = {
     "RUST-21": 1e-12, "RUST-22": 1e-10, "RUST-23": 1e-08, "RUST-24": 1e-05,
     "RUST-25": 1e-09, "RUST-26": 1e-08, "RUST-27": 1e-09, "RUST-28": 1e-08,
     "RUST-29": 1e-06, "RUST-30": 1e-08,
-    # Pure Mathematics (30 Cases)
+    "RUST-31": 1e-08, "RUST-32": 1e-06, "RUST-33": 1e-03, "RUST-34": 1e-10,
+    "RUST-35": 1e-08, "RUST-36": 1e-10, "RUST-37": 1e-10, "RUST-38": 0.05,
+    "RUST-39": 1e-04, "RUST-40": 1e-10, "RUST-41": 1e-02, "RUST-42": 1e-10,
+    "RUST-43": 1e-06, "RUST-44": 1e-08, "RUST-45": 1e-04, "RUST-46": 1e-10,
+    "RUST-47": 1e-03, "RUST-48": 1e-02, "RUST-49": 1e-10, "RUST-50": 1e-04,
+    # Pure Mathematics (50 Cases)
     "MATH-01": 1e-12, "MATH-02": 1e-12, "MATH-03": 1e-08, "MATH-04": 1e-12,
     "MATH-05": 1e-08, "MATH-06": 1e-08, "MATH-07": 1e-12, "MATH-08": 1e-12,
     "MATH-09": 1e-06, "MATH-10": 1e-12, "MATH-11": 1e-12, "MATH-12": 1e-12,
@@ -34,7 +39,12 @@ TOLERANCES: Dict[str, float] = {
     "MATH-21": 1e-12, "MATH-22": 1e-12, "MATH-23": 1e-08, "MATH-24": 1e-12,
     "MATH-25": 1e-08, "MATH-26": 1e-12, "MATH-27": 1e-08, "MATH-28": 1e-12,
     "MATH-29": 1e-12, "MATH-30": 1e-08,
-    # Theoretical Physics (30 Cases)
+    "MATH-31": 1e-10, "MATH-32": 1e-10, "MATH-33": 1e-10, "MATH-34": 1e-12,
+    "MATH-35": 1e-12, "MATH-36": 1e-12, "MATH-37": 1e-12, "MATH-38": 1e-12,
+    "MATH-39": 1e-12, "MATH-40": 1e-12, "MATH-41": 1e-12, "MATH-42": 1e-12,
+    "MATH-43": 1e-12, "MATH-44": 1e-06, "MATH-45": 1e-12, "MATH-46": 1e-12,
+    "MATH-47": 1e-12, "MATH-48": 1e-12, "MATH-49": 1e-12, "MATH-50": 1e-12,
+    # Theoretical Physics (50 Cases)
     "PHYS-01": 1e-12, "PHYS-02": 1e-12, "PHYS-03": 1e-12, "PHYS-04": 1e-06,
     "PHYS-05": 1e-12, "PHYS-06": 1e-12, "PHYS-07": 1e-08, "PHYS-08": 1e-12,
     "PHYS-09": 1e-12, "PHYS-10": 1e-12, "PHYS-11": 1e-12, "PHYS-12": 1e-12,
@@ -43,7 +53,12 @@ TOLERANCES: Dict[str, float] = {
     "PHYS-21": 1e-12, "PHYS-22": 1e-12, "PHYS-23": 1e-08, "PHYS-24": 1e-08,
     "PHYS-25": 1e-12, "PHYS-26": 1e-12, "PHYS-27": 1e-12, "PHYS-28": 1e-08,
     "PHYS-29": 1e-12, "PHYS-30": 1e-12,
-    # Complex Python Applied Physics & Math (30 Cases)
+    "PHYS-31": 1e-10, "PHYS-32": 1e-10, "PHYS-33": 1e-10, "PHYS-34": 1e-10,
+    "PHYS-35": 1e-10, "PHYS-36": 1e-12, "PHYS-37": 1e-04, "PHYS-38": 1e-10,
+    "PHYS-39": 1e-12, "PHYS-40": 1e-12, "PHYS-41": 1e-12, "PHYS-42": 1e-04,
+    "PHYS-43": 1e-03, "PHYS-44": 1e-10, "PHYS-45": 1e-10, "PHYS-46": 1e-12,
+    "PHYS-47": 1e-10, "PHYS-48": 1e-10, "PHYS-49": 1e-10, "PHYS-50": 1e-10,
+    # Complex Python Applied Physics & Math (50 Cases)
     "PYTHON-01": 1e-08, "PYTHON-02": 1e-06, "PYTHON-03": 1e-08, "PYTHON-04": 1e-12,
     "PYTHON-05": 1e-10, "PYTHON-06": 1e-12, "PYTHON-07": 1e-06, "PYTHON-08": 1e-08,
     "PYTHON-09": 1e-08, "PYTHON-10": 1e-10, "PYTHON-11": 1e-08, "PYTHON-12": 1e-06,
@@ -52,6 +67,11 @@ TOLERANCES: Dict[str, float] = {
     "PYTHON-21": 1e-06, "PYTHON-22": 1e-06, "PYTHON-23": 1e-06, "PYTHON-24": 1e-06,
     "PYTHON-25": 1e-12, "PYTHON-26": 1e-08, "PYTHON-27": 1e-08, "PYTHON-28": 1e-06,
     "PYTHON-29": 1e-08, "PYTHON-30": 1e-08,
+    "PYTHON-31": 1e-08, "PYTHON-32": 1e-08, "PYTHON-33": 1e-03, "PYTHON-34": 1e-10,
+    "PYTHON-35": 1e-08, "PYTHON-36": 1e-08, "PYTHON-37": 1e-08, "PYTHON-38": 1e-08,
+    "PYTHON-39": 1e-08, "PYTHON-40": 1e-10, "PYTHON-41": 0.5,   "PYTHON-42": 1e-04,
+    "PYTHON-43": 1e-12, "PYTHON-44": 1e-10, "PYTHON-45": 1e-02, "PYTHON-46": 1e-03,
+    "PYTHON-47": 1e-10, "PYTHON-48": 0.05,  "PYTHON-49": 1e-04, "PYTHON-50": 1e-04,
 }
 
 _REGISTRY_CACHE: Dict[str, Dict[str, Any]] | None = None

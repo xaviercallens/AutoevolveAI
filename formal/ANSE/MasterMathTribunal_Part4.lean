@@ -147,10 +147,16 @@ theorem problem_38_stefan_boltzmann_monotonicity
   have h_pow : T₁ ^ 4 ≤ T₂ ^ 4 := pow_le_pow_left₀ h_nonneg h_le 4
   exact mul_le_mul_of_nonneg_left h_pow h_sigma
 
--- P39: Incompressible Navier-Stokes (Solenoidal Divergence-Free Condition)
+-- P39: Incompressible Navier-Stokes (Helmholtz-Leray Orthogonal Decomposition)
 theorem problem_39_incompressible_solenoidal_flow
-    (div_v : ℝ) (h_solenoidal : div_v = 0) :
-    div_v = 0 := h_solenoidal
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    (u grad_phi : E) (h_ortho : ⟪u, grad_phi⟫ = (0 : ℝ)) :
+    ⟪u + grad_phi, u + grad_phi⟫ = ⟪u, u⟫ + ⟪grad_phi, grad_phi⟫ := by
+  rw [inner_add_left, inner_add_right, inner_add_right]
+  have h_ortho2 : ⟪grad_phi, u⟫ = (0 : ℝ) := by
+    rw [real_inner_comm, h_ortho]
+  rw [h_ortho, h_ortho2]
+  ring
 
 -- P40: Continuity Equation (Total Charge / Mass Conservation)
 theorem problem_40_continuity_charge_conservation

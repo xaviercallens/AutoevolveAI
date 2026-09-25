@@ -197,12 +197,36 @@ def stage_qlora(cap: Capability, dry_run: bool) -> StageResult:
         )
     if dry_run:
         return StageResult("qlora_7b", Status.SKIPPED, "dry-run")
+
+    # Delegate to the step-by-step engine (ARTIFACT -> DATA -> FIT -> EVAL ->
+    # GATE) rather than reimplementing the DATA/FIT logic here. One training
+    # engine, not two that can drift apart.
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from night_training_workflow import Outcome, Step, run_model
+
+    journal = run_model("qwen_lora", smoke=False)
+    reached = journal.last_ok
+    if reached in (Step.FIT, Step.EVAL, Step.GATE):
+        fit = next(
+            (s.data for s in journal.steps if s.step is Step.FIT), {}
+        )
+        status = Status.TRAINED if fit.get("weights_written") else Status.FAILED
+        return StageResult(
+            "qlora_7b",
+            status,
+            f"reached {reached}; see journal for the full step record",
+            metrics=fit,
+            artifact=fit.get("adapter_dir"),
+        )
+    blocked = next(
+        (s for s in journal.steps if s.outcome is Outcome.BLOCKED),
+        journal.steps[-1] if journal.steps else None,
+    )
     return StageResult(
         "qlora_7b",
         Status.SKIPPED,
-        "GPU present but the verified-data gate (card P4-2) has not landed; "
-        "refusing to train on unverified rows",
-        metrics={"vram_free_mib": cap.vram_free_mib},
+        blocked.detail if blocked else "no steps recorded",
+        metrics={"vram_free_mib": cap.vram_free_mib, "reached_step": reached},
     )
 
 

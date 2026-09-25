@@ -394,9 +394,17 @@ This 200-problem compendium proves that neuro-symbolic reasoning can be systemat
 def generate_master_tex() -> str:
     return r"""\documentclass[11pt, a4paper]{article}
 \usepackage{amsmath, amssymb, geometry, xcolor, hyperref, caption, booktabs, listings}
-\usepackage[T1]{fontenc}
-\usepackage{lmodern}
-\UseRawInputEncoding
+\usepackage{fontspec}
+\usepackage{newunicodechar}
+\newunicodechar{ℤ}{\ensuremath{\mathbb{Z}}}
+\newunicodechar{ℝ}{\ensuremath{\mathbb{R}}}
+\newunicodechar{ℂ}{\ensuremath{\mathbb{C}}}
+\newunicodechar{ℕ}{\ensuremath{\mathbb{N}}}
+\newunicodechar{ℚ}{\ensuremath{\mathbb{Q}}}
+\newunicodechar{π}{\ensuremath{\pi}}
+\newunicodechar{∞}{\ensuremath{\infty}}
+\setmainfont{DejaVu Serif}
+\setmonofont{DejaVu Sans Mono}
 \geometry{margin=0.9in}
 \hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue}
 
@@ -470,19 +478,19 @@ def build_all_sections_and_compile():
     with open(main_tex_path, "w", encoding="utf-8") as f:
         f.write(master_tex)
 
-    logger.info("Master LaTeX written to %s. Compiling PDF...", main_tex_path)
+    logger.info("Master LaTeX written to %s. Compiling PDF via XeLaTeX...", main_tex_path)
 
-    cmd = ["pdflatex", "-interaction=nonstopmode", "main.tex"]
+    cmd = ["xelatex", "-interaction=nonstopmode", "main.tex"]
     proc1 = subprocess.run(cmd, cwd=COMPENDIUM_DIR, capture_output=True, text=True, errors="replace")
     if proc1.returncode != 0:
-        logger.error("Pass 1 pdflatex failed:\n%s", proc1.stdout[-3000:])
-        raise RuntimeError("Pass 1 pdflatex compilation failed.")
+        logger.error("Pass 1 xelatex failed:\n%s", proc1.stdout[-3000:])
+        raise RuntimeError("Pass 1 xelatex compilation failed.")
 
     # Pass 2 for table of contents
     proc2 = subprocess.run(cmd, cwd=COMPENDIUM_DIR, capture_output=True, text=True, errors="replace")
     if proc2.returncode != 0:
-        logger.error("Pass 2 pdflatex failed:\n%s", proc2.stdout[-3000:])
-        raise RuntimeError("Pass 2 pdflatex compilation failed.")
+        logger.error("Pass 2 xelatex failed:\n%s", proc2.stdout[-3000:])
+        raise RuntimeError("Pass 2 xelatex compilation failed.")
 
     output_pdf = COMPENDIUM_DIR / "main.pdf"
     target_pdf = RESULTS_DIR / "200_problems_comprehensive_dossier.pdf"

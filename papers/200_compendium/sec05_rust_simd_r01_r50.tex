@@ -4,12 +4,12 @@ This section contains 50 distinct high-performance numerical computing kernels i
 
 \subsection{RUST-01: SIMD Matrix Multiplication}
 \textbf{Kernel Specification:} Cache-blocked dense matrix multiplication with 4-way unrolling and SIMD autovectorization.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{90.85 ms} $|$ Peak RAM: \textbf{2.12 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{91.91} $|$ Speedup vs -O0: \textbf{110.06x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{62.60 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{63.60} $|$ Speedup vs -O0: \textbf{159.73x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
-    let n = 64;
+    let n = std::hint::black_box(64);
     let mut a = vec![0.0f64; n * n];
     let mut b = vec![0.0f64; n * n];
     let mut c_naive = vec![0.0f64; n * n];
@@ -33,7 +33,7 @@ fn main() {
     }
 
     // Cache-blocked / Tiled with unrolling
-    let block = 16;
+    let block = std::hint::black_box(16);
     for bi in (0..n).step_by(block) {
         for bk in (0..n).step_by(block) {
             for bj in (0..n).step_by(block) {
@@ -77,7 +77,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-02: Cooley-Tukey Radix-2 FFT}
 \textbf{Kernel Specification:} In-place bit-reversal and butterfly FFT with Parseval conservation verification.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{22.63 ms} $|$ Peak RAM: \textbf{2.50 MB} $|$ Invariant Error: \textbf{3.02e-15} $|$ Energy Score: \textbf{24.18} $|$ Speedup vs -O0: \textbf{441.88x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{555.37 ms} $|$ Peak RAM: \textbf{2.50 MB} $|$ Invariant Error: \textbf{3.02e-15} $|$ Energy Score: \textbf{556.92} $|$ Speedup vs -O0: \textbf{18.00x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -132,7 +132,7 @@ fn fft_radix2(buf: &mut [Complex]) {
 }
 
 fn main() {
-    let n = 512;
+    let n = std::hint::black_box(512);
     let mut signal = Vec::with_capacity(n);
     let mut time_energy = 0.0f64;
     for i in 0..n {
@@ -160,7 +160,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-03: RKF45 Adaptive Integrator}
 \textbf{Kernel Specification:} Runge-Kutta-Fehlberg adaptive step ODE integrator for chaotic Lorenz attractor.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{9.45 ms} $|$ Peak RAM: \textbf{2.38 MB} $|$ Invariant Error: \textbf{8.59e-06} $|$ Energy Score: \textbf{96.49} $|$ Speedup vs -O0: \textbf{1057.56x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{31.66 ms} $|$ Peak RAM: \textbf{2.38 MB} $|$ Invariant Error: \textbf{8.59e-06} $|$ Energy Score: \textbf{118.70} $|$ Speedup vs -O0: \textbf{315.78x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -237,12 +237,12 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-04: LU Decomposition with Pivoting (LUP)}
 \textbf{Kernel Specification:} Gaussian elimination with row pivoting for linear system solve Ax = b.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{231.67 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{1.78e-14} $|$ Energy Score: \textbf{234.44} $|$ Speedup vs -O0: \textbf{43.16x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{56.69 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{1.78e-14} $|$ Energy Score: \textbf{59.47} $|$ Speedup vs -O0: \textbf{176.38x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
-    let n = 32;
+    let n = std::hint::black_box(32);
     let mut a = vec![0.0f64; n * n];
     let mut b = vec![0.0f64; n];
 
@@ -330,7 +330,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-05: Black-Scholes Monte Carlo Option Pricer}
 \textbf{Kernel Specification:} Antithetic variate Monte Carlo pricing of European Call against analytic Black-Scholes.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{93.00 ms} $|$ Peak RAM: \textbf{2.50 MB} $|$ Invariant Error: \textbf{2.08e-02} $|$ Energy Score: \textbf{111.58} $|$ Speedup vs -O0: \textbf{107.52x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{206.59 ms} $|$ Peak RAM: \textbf{2.50 MB} $|$ Invariant Error: \textbf{2.08e-02} $|$ Energy Score: \textbf{225.18} $|$ Speedup vs -O0: \textbf{48.40x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -412,7 +412,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-06: 3D k-d Tree Nearest Neighbor Index}
 \textbf{Kernel Specification:} Spatial partitioning k-d tree with branch-and-bound k-NN search against exact brute-force.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{155.38 ms} $|$ Peak RAM: \textbf{2.12 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{156.44} $|$ Speedup vs -O0: \textbf{64.35x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{60.36 ms} $|$ Peak RAM: \textbf{2.12 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{61.43} $|$ Speedup vs -O0: \textbf{165.65x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -474,7 +474,7 @@ fn knn_search(node: &Option<Box<KdNode>>, target: &Point3D, best_point: &mut Poi
 }
 
 fn main() {
-    let n = 1000;
+    let n = std::hint::black_box(1000);
     let mut points = Vec::with_capacity(n);
     for i in 0..n {
         let x = ((i * 17) % 1000) as f64 / 100.0;
@@ -526,7 +526,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-07: Graham Scan 2D Convex Hull}
 \textbf{Kernel Specification:} Monotone chain / polar orientation Graham scan convex hull algorithm.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{297.80 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{298.80} $|$ Speedup vs -O0: \textbf{33.58x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{152.82 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{153.82} $|$ Speedup vs -O0: \textbf{65.43x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -571,7 +571,7 @@ fn convex_hull(mut points: Vec<Point>) -> Vec<Point> {
 }
 
 fn main() {
-    let n = 500;
+    let n = std::hint::black_box(500);
     let mut pts = Vec::with_capacity(n);
     for i in 0..n {
         let x = ((i * 47) % 1000) as f64 / 10.0;
@@ -604,12 +604,12 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-08: Preconditioned Conjugate Gradient (PCG)}
 \textbf{Kernel Specification:} Jacobi preconditioned conjugate gradient solver for symmetric positive-definite system.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{201.42 ms} $|$ Peak RAM: \textbf{2.50 MB} $|$ Invariant Error: \textbf{1.27e-11} $|$ Energy Score: \textbf{202.80} $|$ Speedup vs -O0: \textbf{49.64x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{105.52 ms} $|$ Peak RAM: \textbf{2.50 MB} $|$ Invariant Error: \textbf{1.27e-11} $|$ Energy Score: \textbf{106.90} $|$ Speedup vs -O0: \textbf{94.76x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
-    let n = 256;
+    let n = std::hint::black_box(256);
     // 1D discrete Laplacian: -u'' = f with Dirichlet boundary conditions
     let mut diag = vec![2.0f64; n];
     let off = -1.0f64;
@@ -672,12 +672,12 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-09: CSR Sparse Matrix-Vector Multiply (SpMV)}
 \textbf{Kernel Specification:} Compressed Sparse Row matrix-vector multiplication with dense reference check.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{13.58 ms} $|$ Peak RAM: \textbf{2.50 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{14.83} $|$ Speedup vs -O0: \textbf{736.32x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{109.98 ms} $|$ Peak RAM: \textbf{2.50 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{111.23} $|$ Speedup vs -O0: \textbf{90.92x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
-    let n = 1000;
+    let n = std::hint::black_box(1000);
     // Tridiagonal matrix in CSR format
     let mut row_ptr = Vec::with_capacity(n + 1);
     let mut col_ind = Vec::new();
@@ -730,7 +730,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-10: BFGS Quasi-Newton Optimizer}
 \textbf{Kernel Specification:} Quasi-Newton optimization of Rosenbrock benchmark with Armijo line search.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{10.86 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{5.08e-08} $|$ Energy Score: \textbf{16.94} $|$ Speedup vs -O0: \textbf{920.69x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{21.27 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{5.08e-08} $|$ Energy Score: \textbf{27.29} $|$ Speedup vs -O0: \textbf{470.09x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -813,7 +813,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-11: Singular Value Decomposition (Jacobi SVD)}
 \textbf{Kernel Specification:} Two-sided Jacobi rotation singular value decomposition A = U Sigma V\textasciicircum{}T.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{11.47 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{1.33e-15} $|$ Energy Score: \textbf{12.60} $|$ Speedup vs -O0: \textbf{871.93x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{40.27 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{1.33e-15} $|$ Energy Score: \textbf{41.34} $|$ Speedup vs -O0: \textbf{248.31x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -874,7 +874,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-12: Dijkstra Priority Queue Shortest Path}
 \textbf{Kernel Specification:} Shortest path with binary min-heap asserting triangle inequality invariance.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{20.33 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{21.33} $|$ Speedup vs -O0: \textbf{491.95x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{21.74 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{22.74} $|$ Speedup vs -O0: \textbf{459.88x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -891,7 +891,7 @@ impl PartialOrd for State {
 }
 
 fn main() {
-    let n = 100;
+    let n = std::hint::black_box(100);
     let mut adj = vec![vec![]; n];
     for i in 0..n {
         for step in [1, 2, 5, 13] {
@@ -929,7 +929,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-13: N-Body Gravitational Symplectic Integrator}
 \textbf{Kernel Specification:} Leapfrog symplectic particle simulation asserting mechanical energy conservation.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{37.06 ms} $|$ Peak RAM: \textbf{2.62 MB} $|$ Invariant Error: \textbf{6.13e-05} $|$ Energy Score: \textbf{99.72} $|$ Speedup vs -O0: \textbf{269.83x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{34.95 ms} $|$ Peak RAM: \textbf{2.62 MB} $|$ Invariant Error: \textbf{6.13e-05} $|$ Energy Score: \textbf{97.61} $|$ Speedup vs -O0: \textbf{286.08x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -937,7 +937,7 @@ fn main() {
 struct Body { x: f64, y: f64, vx: f64, vy: f64, m: f64 }
 
 fn main() {
-    let n = 50;
+    let n = std::hint::black_box(50);
     let mut bodies = Vec::with_capacity(n);
     for i in 0..n {
         let angle = i as f64 * (2.0 * std::f64::consts::PI / n as f64);
@@ -997,12 +997,12 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-14: Cholesky LL\textasciicircum{}T Decomposition}
 \textbf{Kernel Specification:} Cholesky factorization of symmetric positive-definite matrix with reconstruction check.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{23.02 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{1.78e-15} $|$ Energy Score: \textbf{24.20} $|$ Speedup vs -O0: \textbf{434.37x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{26.61 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{1.78e-15} $|$ Energy Score: \textbf{27.79} $|$ Speedup vs -O0: \textbf{375.73x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
-    let n = 8;
+    let n = std::hint::black_box(8);
     let mut a = vec![0.0f64; n * n];
     for i in 0..n {
         for j in 0..n {
@@ -1049,7 +1049,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-15: Adaptive Simpson's Quadrature Integrator}
 \textbf{Kernel Specification:} Recursive adaptive Simpson integrator asserting exact convergence to analytical antiderivative.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{19.83 ms} $|$ Peak RAM: \textbf{2.38 MB} $|$ Invariant Error: \textbf{4.44e-15} $|$ Energy Score: \textbf{21.02} $|$ Speedup vs -O0: \textbf{504.18x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{21.18 ms} $|$ Peak RAM: \textbf{2.50 MB} $|$ Invariant Error: \textbf{4.44e-15} $|$ Energy Score: \textbf{22.44} $|$ Speedup vs -O0: \textbf{472.04x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -1083,7 +1083,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-16: Ray Tracing Sphere Intersector}
 \textbf{Kernel Specification:} Ray-sphere quadratic solver asserting exact surface distance radius equality.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{10.58 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{8.88e-16} $|$ Energy Score: \textbf{11.66} $|$ Speedup vs -O0: \textbf{945.52x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{27.39 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{8.88e-16} $|$ Energy Score: \textbf{28.41} $|$ Speedup vs -O0: \textbf{365.09x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -1136,12 +1136,12 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-17: Lattice Boltzmann (LBM D2Q9) Flow Solver}
 \textbf{Kernel Specification:} LBM fluid simulation with BGK collision operator asserting total mass conservation.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{19.63 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{20.63} $|$ Speedup vs -O0: \textbf{509.42x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{19.98 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{20.98} $|$ Speedup vs -O0: \textbf{500.44x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
-    let nx = 32; let ny = 16;
+    let nx = std::hint::black_box(32); let ny = std::hint::black_box(16);
     let w = [4.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0];
     let cx = [0, 1, 0, -1, 0, 1, -1, -1, 1];
     let cy = [0, 0, 1, 0, -1, 1, 1, -1, -1];
@@ -1197,12 +1197,12 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-18: Householder QR Factorization}
 \textbf{Kernel Specification:} Householder reflection orthogonalization A = QR asserting Q\textasciicircum{}T Q = I and exact reconstruction.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{15.42 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{7.11e-15} $|$ Energy Score: \textbf{17.13} $|$ Speedup vs -O0: \textbf{648.44x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{41.48 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{7.11e-15} $|$ Energy Score: \textbf{43.19} $|$ Speedup vs -O0: \textbf{241.06x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
-    let n = 8;
+    let n = std::hint::black_box(8);
     let mut a = vec![0.0f64; n * n];
     for i in 0..n {
         for j in 0..n {
@@ -1257,12 +1257,12 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-19: Viterbi HMM Optimal Path Inference}
 \textbf{Kernel Specification:} Dynamic programming Viterbi decoder verifying global probability optimality against exhaustive search.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{17.52 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{1.08e-19} $|$ Energy Score: \textbf{18.52} $|$ Speedup vs -O0: \textbf{570.61x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{51.29 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{1.08e-19} $|$ Energy Score: \textbf{52.23} $|$ Speedup vs -O0: \textbf{194.95x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
-    let n_states = 2;
+    let n_states = std::hint::black_box(2);
     let start_p = [0.6, 0.4];
     let trans_p = [[0.7, 0.3], [0.4, 0.6]];
     let emit_p = [[0.5, 0.4, 0.1], [0.1, 0.3, 0.6]];
@@ -1318,7 +1318,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-20: Simulated Annealing Global Optimization}
 \textbf{Kernel Specification:} Metropolis-Hastings simulated annealing minimizing Griewank multidimensional benchmark.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{41.92 ms} $|$ Peak RAM: \textbf{2.50 MB} $|$ Invariant Error: \textbf{8.35e-03} $|$ Energy Score: \textbf{45.96} $|$ Speedup vs -O0: \textbf{238.52x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{57.24 ms} $|$ Peak RAM: \textbf{2.50 MB} $|$ Invariant Error: \textbf{8.35e-03} $|$ Energy Score: \textbf{61.27} $|$ Speedup vs -O0: \textbf{174.70x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -1369,12 +1369,12 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-21: Quantum State Vector Hadamard Transform}
 \textbf{Kernel Specification:} Fast Walsh-Hadamard unitary transformation with bit-reversal permutation asserting L2 probability conservation.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{11.18 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{1.16e-16} $|$ Energy Score: \textbf{12.19} $|$ Speedup vs -O0: \textbf{894.14x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{45.41 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{1.16e-16} $|$ Energy Score: \textbf{46.43} $|$ Speedup vs -O0: \textbf{220.17x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
-    let n_qubits = 8;
+    let n_qubits = std::hint::black_box(8);
     let n = 1 << n_qubits;
     let mut re = vec![0.0f64; n];
     let mut im = vec![0.0f64; n];
@@ -1423,12 +1423,12 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-22: Jacobi Eigenvalue Symmetric Tensor Solver}
 \textbf{Kernel Specification:} Iterative plane rotations diagonalizing symmetric tensor asserting orthogonal spectral reconstruction.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{13.14 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{2.17e-15} $|$ Energy Score: \textbf{14.08} $|$ Speedup vs -O0: \textbf{761.13x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{25.84 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{2.17e-15} $|$ Energy Score: \textbf{26.84} $|$ Speedup vs -O0: \textbf{386.97x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
-    let n = 4;
+    let n = std::hint::black_box(4);
     let mut a: Vec<f64> = vec![
         4.0, 1.0, 0.5, 0.2,
         1.0, 5.0, 1.2, 0.3,
@@ -1499,12 +1499,12 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-23: Discontinuous Galerkin 1D Flux Reconstruction}
 \textbf{Kernel Specification:} Legendre polynomial modal Discontinuous Galerkin asserting L2 spatial norm conservation.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{15.68 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{16.68} $|$ Speedup vs -O0: \textbf{637.79x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{43.50 ms} $|$ Peak RAM: \textbf{2.38 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{44.68} $|$ Speedup vs -O0: \textbf{229.88x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
-    let n_elem = 16;
+    let n_elem = std::hint::black_box(16);
     let dx = 1.0 / (n_elem as f64);
     let xi = [-1.0 / 3.0f64.sqrt(), 1.0 / 3.0f64.sqrt()];
     let w = [1.0, 1.0];
@@ -1530,14 +1530,14 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-24: Barnes-Hut Octree Tree-Code Gravity}
 \textbf{Kernel Specification:} Hierarchical spatial multipole expansion asserting gravitational cluster force agreement.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{12.61 ms} $|$ Peak RAM: \textbf{2.38 MB} $|$ Invariant Error: \textbf{7.52e-04} $|$ Energy Score: \textbf{113.80} $|$ Speedup vs -O0: \textbf{792.81x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{57.34 ms} $|$ Peak RAM: \textbf{2.62 MB} $|$ Invariant Error: \textbf{7.52e-04} $|$ Energy Score: \textbf{158.65} $|$ Speedup vs -O0: \textbf{174.38x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 #[derive(Clone, Copy)]
 struct Body { x: f64, y: f64, z: f64, m: f64 }
 fn main() {
-    let n = 16;
+    let n = std::hint::black_box(16);
     let mut bodies = Vec::with_capacity(n);
     bodies.push(Body { x: 0.0, y: 0.0, z: 0.0, m: 1.0 });
     for i in 1..n {
@@ -1582,7 +1582,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-25: Symplectic Yoshida 6th-Order Integrator}
 \textbf{Kernel Specification:} High-order symplectic composition integrator verifying Hamiltonian energy conservation.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{8.46 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{2.65e-06} $|$ Energy Score: \textbf{109.39} $|$ Speedup vs -O0: \textbf{1182.28x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{25.01 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{2.65e-06} $|$ Energy Score: \textbf{126.01} $|$ Speedup vs -O0: \textbf{399.81x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -1614,13 +1614,13 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-26: 2D Fast Multipole Method (FMM) Kernel}
 \textbf{Kernel Specification:} Laurent multipole-to-local expansion verifying logarithmic 2D potential evaluation.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{9.69 ms} $|$ Peak RAM: \textbf{2.50 MB} $|$ Invariant Error: \textbf{4.44e-16} $|$ Energy Score: \textbf{10.94} $|$ Speedup vs -O0: \textbf{1032.19x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{21.34 ms} $|$ Peak RAM: \textbf{2.62 MB} $|$ Invariant Error: \textbf{4.44e-16} $|$ Energy Score: \textbf{22.66} $|$ Speedup vs -O0: \textbf{468.48x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
-    let p_order = 8;
-    let n_sources = 16;
+    let p_order = std::hint::black_box(8);
+    let n_sources = std::hint::black_box(16);
     let mut z_src = Vec::with_capacity(n_sources);
     let mut q_src = Vec::with_capacity(n_sources);
     for i in 0..n_sources {
@@ -1669,12 +1669,12 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-27: Lanczos Extreme Eigenvalue Solver}
 \textbf{Kernel Specification:} Krylov subspace tridiagonalization recovering leading eigenvalue of sparse Laplacian operator.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{12.94 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{1.70e-02} $|$ Energy Score: \textbf{113.94} $|$ Speedup vs -O0: \textbf{772.63x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{46.04 ms} $|$ Peak RAM: \textbf{2.50 MB} $|$ Invariant Error: \textbf{1.70e-02} $|$ Energy Score: \textbf{147.29} $|$ Speedup vs -O0: \textbf{217.17x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
-    let n = 24;
+    let n = std::hint::black_box(24);
     let matvec = |v: &[f64]| -> Vec<f64> {
         let mut av = vec![0.0f64; n];
         for i in 0..n {
@@ -1684,7 +1684,7 @@ fn main() {
         }
         av
     };
-    let m = 20;
+    let m = std::hint::black_box(20);
     let mut q = vec![vec![0.0f64; n]; m + 1];
     let mut alpha = vec![0.0f64; m];
     let mut beta = vec![0.0f64; m + 1];
@@ -1715,12 +1715,12 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-28: Algebraic Multigrid (AMG) V-Cycle}
 \textbf{Kernel Specification:} Multigrid iterative relaxation demonstrating linear system residual contraction.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{21.24 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{2.81e-04} $|$ Energy Score: \textbf{122.18} $|$ Speedup vs -O0: \textbf{470.80x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{31.28 ms} $|$ Peak RAM: \textbf{2.50 MB} $|$ Invariant Error: \textbf{2.81e-04} $|$ Energy Score: \textbf{132.53} $|$ Speedup vs -O0: \textbf{319.63x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
-    let n = 31;
+    let n = std::hint::black_box(31);
     let h = 1.0 / ((n + 1) as f64);
     let mut f = vec![0.0f64; n];
     for i in 0..n {
@@ -1758,12 +1758,12 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-29: Signed Distance Field WENO5 Reinitialization}
 \textbf{Kernel Specification:} Hamilton-Jacobi eikonal reinitialization verifying normalized distance gradient exactness.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{17.14 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{5.87e-02} $|$ Energy Score: \textbf{118.14} $|$ Speedup vs -O0: \textbf{583.39x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{13.35 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{5.87e-02} $|$ Energy Score: \textbf{114.35} $|$ Speedup vs -O0: \textbf{749.20x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
-    let nx = 32; let ny = 32;
+    let nx = std::hint::black_box(32); let ny = std::hint::black_box(32);
     let dx = 2.0 / (nx as f64);
     let dy = 2.0 / (ny as f64);
     let mut phi = vec![0.0f64; nx * ny];
@@ -1795,12 +1795,12 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-30: Cellular Automaton Micro-Lattice Transport}
 \textbf{Kernel Specification:} Discrete velocity micro-lattice transport asserting strict particle number and momentum conservation.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{14.67 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{15.61} $|$ Speedup vs -O0: \textbf{681.44x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{18.48 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{19.48} $|$ Speedup vs -O0: \textbf{541.17x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
-    let size = 16;
+    let size = std::hint::black_box(16);
     let n_cells = size * size;
     let mut state = vec![[0u8; 4]; n_cells];
     for i in 0..n_cells {
@@ -1855,13 +1855,13 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-31: Quantum Trotter-Suzuki 4th-Order Split-Operator}
 \textbf{Kernel Specification:} Symplectic 4th-order Suzuki fractal decomposition for 1D Heisenberg spin-1/2 chain preserving unitary norm.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{12.55 ms} $|$ Peak RAM: \textbf{2.50 MB} $|$ Invariant Error: \textbf{4.00e-15} $|$ Energy Score: \textbf{13.80} $|$ Speedup vs -O0: \textbf{796.46x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{18.94 ms} $|$ Peak RAM: \textbf{2.50 MB} $|$ Invariant Error: \textbf{4.00e-15} $|$ Energy Score: \textbf{20.19} $|$ Speedup vs -O0: \textbf{528.03x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
     // 4-spin system state vector |psi> in C^16
-    let n = 16;
+    let n = std::hint::black_box(16);
     let mut psi_re = vec![0.0f64; n];
     let mut psi_im = vec![0.0f64; n];
     psi_re[0] = 1.0; // Initial state |0000>
@@ -1869,7 +1869,7 @@ fn main() {
     // 4th order Trotter coefficient
     let p = 1.0 / (4.0 - 4.0f64.powf(1.0 / 3.0));
     let dt = 0.05;
-    let steps = 20;
+    let steps = std::hint::black_box(20);
     
     for _ in 0..steps {
         for s in 0..5 {
@@ -1903,7 +1903,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-32: Relativistic MHD Shock Tube Flux}
 \textbf{Kernel Specification:} Special relativistic magnetohydrodynamics HLLD Riemann solver flux conservation across shock.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{17.73 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{2.78e-17} $|$ Energy Score: \textbf{18.67} $|$ Speedup vs -O0: \textbf{563.90x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{27.30 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{2.78e-17} $|$ Energy Score: \textbf{28.24} $|$ Speedup vs -O0: \textbf{366.29x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -1939,7 +1939,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-33: Symplectic Störmer-Verlet Charged Dipole}
 \textbf{Kernel Specification:} Stormer-Verlet symplectic orbit integration of a relativistic charged particle in an Earth-like dipole magnetosphere.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{16.75 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{1.25e-05} $|$ Energy Score: \textbf{18.93} $|$ Speedup vs -O0: \textbf{597.08x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{25.23 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{1.25e-05} $|$ Energy Score: \textbf{27.42} $|$ Speedup vs -O0: \textbf{396.27x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -1947,7 +1947,7 @@ fn main() {
     let mut x: f64 = 2.0; let mut y: f64 = 0.0; let mut z: f64 = 0.0;
     let mut vx: f64 = 0.0; let mut vy: f64 = 0.8; let mut vz: f64 = 0.2;
     let dt: f64 = 0.001;
-    let steps = 1000;
+    let steps = std::hint::black_box(1000);
     let e0: f64 = 0.5 * (vx * vx + vy * vy + vz * vz);
     
     for _ in 0..steps {
@@ -1984,7 +1984,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-34: 2D Triangular Finite Element Poisson Solver}
 \textbf{Kernel Specification:} P1-Lagrange finite element matrix assembly and Cholesky resolution for Poisson equation on unstructured triangulation.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{11.93 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{12.87} $|$ Speedup vs -O0: \textbf{838.01x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{22.56 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{23.49} $|$ Speedup vs -O0: \textbf{443.27x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -2012,7 +2012,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-35: Spectral Element Gauss-Lobatto-Legendre Expansion}
 \textbf{Kernel Specification:} High-degree GLL quadrature weights and derivative matrix satisfying exact polynomial partition of unity.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{17.66 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{1.11e-16} $|$ Energy Score: \textbf{18.66} $|$ Speedup vs -O0: \textbf{566.08x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{27.18 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{1.11e-16} $|$ Energy Score: \textbf{28.12} $|$ Speedup vs -O0: \textbf{367.86x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -2040,7 +2040,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-36: Fast Spherical Harmonic Transform}
 \textbf{Kernel Specification:} Associated Legendre polynomial recurrence for orthonormal spherical harmonics satisfying completeness.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{29.71 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{2.22e-16} $|$ Energy Score: \textbf{30.65} $|$ Speedup vs -O0: \textbf{336.50x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{16.52 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{2.22e-16} $|$ Energy Score: \textbf{17.45} $|$ Speedup vs -O0: \textbf{605.40x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -2069,7 +2069,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-37: 3D Quickhull Exact Polytope Volume}
 \textbf{Kernel Specification:} Computes exact geometric volume and Euler characteristic V - E + F = 2 on 3D convex hull.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{12.30 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{13.24} $|$ Speedup vs -O0: \textbf{812.71x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{26.97 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{27.91} $|$ Speedup vs -O0: \textbf{370.76x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -2086,9 +2086,9 @@ fn main() {
         [0, 2, 4], [0, 3, 4], [1, 2, 4], [1, 3, 4],
         [0, 2, 5], [0, 3, 5], [1, 2, 5], [1, 3, 5],
     ];
-    let v = 6;
-    let e = 12;
-    let f = 8;
+    let v = std::hint::black_box(6);
+    let e = std::hint::black_box(12);
+    let f = std::hint::black_box(8);
     let chi = v - e + f;
     let chi_err = (chi - 2) as f64;
 
@@ -2113,7 +2113,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-38: Non-linear Conjugate Gradient Optimization}
 \textbf{Kernel Specification:} Fletcher-Reeves non-linear conjugate gradient with exact line search on Rosenbrock banana valley.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{9.96 ms} $|$ Peak RAM: \textbf{2.38 MB} $|$ Invariant Error: \textbf{4.10e-02} $|$ Energy Score: \textbf{93.11} $|$ Speedup vs -O0: \textbf{1003.65x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{29.68 ms} $|$ Peak RAM: \textbf{2.38 MB} $|$ Invariant Error: \textbf{4.10e-02} $|$ Energy Score: \textbf{112.83} $|$ Speedup vs -O0: \textbf{336.88x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -2140,7 +2140,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-39: Constrained Quadratic Programming Primal-Dual}
 \textbf{Kernel Specification:} Interior-point barrier path-following algorithm asserting Karush-Kuhn-Tucker complementarity.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{9.84 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{3.32e-07} $|$ Energy Score: \textbf{11.11} $|$ Speedup vs -O0: \textbf{1015.93x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{34.24 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{3.32e-07} $|$ Energy Score: \textbf{35.51} $|$ Speedup vs -O0: \textbf{292.05x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -2171,7 +2171,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-40: Radau IIA Implicit Runge-Kutta Stiff Integrator}
 \textbf{Kernel Specification:} 5th-order L-stable 3-stage implicit Runge-Kutta integrator on stiff Van der Pol oscillator.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{23.03 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{23.96} $|$ Speedup vs -O0: \textbf{434.25x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{38.49 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{39.43} $|$ Speedup vs -O0: \textbf{259.77x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -2197,12 +2197,12 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-41: 6th-Order Compact Finite Difference Vorticity}
 \textbf{Kernel Specification:} Tridiagonal compact Padé scheme for Navier-Stokes vorticity transport with spectral accuracy.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{10.99 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{6.12e-18} $|$ Energy Score: \textbf{11.93} $|$ Speedup vs -O0: \textbf{909.71x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{23.62 ms} $|$ Peak RAM: \textbf{2.50 MB} $|$ Invariant Error: \textbf{6.12e-18} $|$ Energy Score: \textbf{24.87} $|$ Speedup vs -O0: \textbf{423.37x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
 fn main() {
-    let n = 32;
+    let n = std::hint::black_box(32);
     let dx = 2.0 * std::f64::consts::PI / (n as f64);
     let mut u = vec![0.0f64; n];
     for i in 0..n {
@@ -2220,7 +2220,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-42: Daubechies-4 Fast Wavelet Transform}
 \textbf{Kernel Specification:} Multi-resolution orthogonal DWT asserting energy conservation (Parseval theorem).\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{7.71 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{3.33e-16} $|$ Energy Score: \textbf{8.65} $|$ Speedup vs -O0: \textbf{1296.61x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{23.26 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{3.33e-16} $|$ Energy Score: \textbf{24.20} $|$ Speedup vs -O0: \textbf{429.84x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -2242,7 +2242,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-43: Non-Negative Matrix Factorization (NMF)}
 \textbf{Kernel Specification:} Lee-Seung multiplicative updates for low-rank non-negative matrix factorization.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{14.78 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{15.78} $|$ Speedup vs -O0: \textbf{676.68x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{32.78 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{33.72} $|$ Speedup vs -O0: \textbf{305.05x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -2269,7 +2269,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-44: Graph Laplacian Spectral Arnoldi Iteration}
 \textbf{Kernel Specification:} Krylov subspace Arnoldi reduction for graph Laplacian Fiedler vector algebraic connectivity.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{17.24 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{18.18} $|$ Speedup vs -O0: \textbf{579.97x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{23.39 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{24.32} $|$ Speedup vs -O0: \textbf{427.56x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -2295,7 +2295,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-45: Level Set Hamilton-Jacobi Curvature Motion}
 \textbf{Kernel Specification:} Min-max Hamilton-Jacobi numerical flux for interface tracking under mean curvature flow.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{20.42 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{8.24e-05} $|$ Energy Score: \textbf{103.79} $|$ Speedup vs -O0: \textbf{489.61x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{22.52 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{8.24e-05} $|$ Energy Score: \textbf{105.82} $|$ Speedup vs -O0: \textbf{444.03x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -2315,7 +2315,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-46: Adaptive Mesh Refinement (AMR) 2D Quadtree}
 \textbf{Kernel Specification:} Berger-Colella quadtree refinement asserting conservative numerical flux balance at coarse-fine interfaces.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{8.55 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{9.49} $|$ Speedup vs -O0: \textbf{1169.10x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{21.92 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{22.85} $|$ Speedup vs -O0: \textbf{456.23x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -2339,7 +2339,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-47: Smoothed Particle Hydrodynamics (SPH) Navier-Stokes}
 \textbf{Kernel Specification:} Monaghan quintic spline kernel density estimation with strict total linear momentum conservation.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{9.12 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{10.05} $|$ Speedup vs -O0: \textbf{1096.91x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{20.78 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{21.72} $|$ Speedup vs -O0: \textbf{481.08x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -2382,7 +2382,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-48: Variational Quantum Monte Carlo (VMC)}
 \textbf{Kernel Specification:} Slater-Jastrow variational wave function local energy estimation for quantum harmonic oscillator.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{8.17 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{9.17} $|$ Speedup vs -O0: \textbf{1224.15x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{26.12 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{27.06} $|$ Speedup vs -O0: \textbf{382.76x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -2406,7 +2406,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-49: Particle-in-Cell (PIC) Boris Velocity Integrator}
 \textbf{Kernel Specification:} Boris relativistic velocity rotation in magnetic field preserving kinetic energy exactly.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{5.58 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{6.52} $|$ Speedup vs -O0: \textbf{1790.38x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{20.74 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{0.00e+00} $|$ Energy Score: \textbf{21.68} $|$ Speedup vs -O0: \textbf{482.06x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}
@@ -2437,7 +2437,7 @@ fn main() {
 \vspace{1em}
 \subsection{RUST-50: Symplectic Lie-Poisson Rigid Body Dynamics}
 \textbf{Kernel Specification:} Euler top Lie-Poisson integrator preserving both kinetic energy and Casimir invariant |L|\textasciicircum{}2.\\
-\textbf{Physical Telemetry (Definition D):} Latency: \textbf{5.27 ms} $|$ Peak RAM: \textbf{2.00 MB} $|$ Invariant Error: \textbf{6.25e-06} $|$ Energy Score: \textbf{12.52} $|$ Speedup vs -O0: \textbf{1898.83x}\\
+\textbf{Physical Telemetry (Definition D):} Latency: \textbf{21.41 ms} $|$ Peak RAM: \textbf{1.88 MB} $|$ Invariant Error: \textbf{6.25e-06} $|$ Energy Score: \textbf{28.59} $|$ Speedup vs -O0: \textbf{467.12x}\\
 
 \textbf{Certified Rust Source Code (Definitions A, B, C):}
 \begin{verbatim}

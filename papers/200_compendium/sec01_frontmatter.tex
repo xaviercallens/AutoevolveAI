@@ -13,7 +13,7 @@
 \begin{abstract}
 This compendium documents the exhaustive specification, formal mathematical proofs, numerical conservation laws, and high-performance kernel source codes for the \textbf{200-Problem ANSE Multidisciplinary Benchmark}. Spanning across 100 formal problems in pure mathematics and theoretical physics certified in the Lean 4 kernel with Mathlib4, 50 native high-performance Rust SIMD computing kernels compiled with \texttt{rustc -O}, and 50 complex computational physics partial differential equation (PDE) solvers in Python, this document establishes a zero-hallucination, physically grounded foundation for neuro-symbolic intelligence. 
 
-All algorithms and proofs are evaluated against the objective physical Energy metric ($E$), where failures, invariant violations, or memory leaks receive a non-negotiable failure barrier penalty ($E = 10^6$). Evaluated across a stratified train (140) and held-out validation (60) split, the post-reinforcement learning policy achieves an average energy reduction of \textbf{99.9964\%}, a \textbf{99.10\% held-out validation loss reduction} under Direct Preference Optimization (DPO), and empirical confirmation of the monotonic energy descent condition ($\Delta E < 0$).
+All algorithms and proofs are evaluated against the objective physical Energy metric ($E$), where failures, invariant violations, or memory leaks receive a non-negotiable failure barrier penalty ($E = 10^6$). Evaluated across a stratified train (140) and held-out validation (60) split, the post-reinforcement learning policy achieves an average energy reduction of \textbf{99.9952\%}, a \textbf{99.94\% held-out validation loss reduction} under Direct Preference Optimization (DPO), and empirical confirmation of the monotonic energy descent condition ($\Delta E < 0$).
 \end{abstract}
 
 \vspace{1.5em}
@@ -30,10 +30,10 @@ All algorithms and proofs are evaluated against the objective physical Energy me
 \midrule
 Formal Mathematics (Lean 4) & 50 & 47 / 47 valid (3 cheats caught) & 13.75 ms & 0.8124 \\
 Theoretical Physics (Lean 4) & 50 & 50 / 50 verified sound & 13.75 ms & 0.8124 \\
-Rust Numerical SIMD Kernels & 50 & 50 / 50 verified sound & 34.99 ms & 52.98 \\
-Python Computational PDEs & 50 & 50 / 50 verified sound & 46.46 ms & 52.08 \\
+Rust Numerical SIMD Kernels & 50 & 50 / 50 verified sound & 50.72 ms & 68.74 \\
+Python Computational PDEs & 50 & 50 / 50 verified sound & 65.73 ms & 71.34 \\
 \midrule
-\textbf{Global 200 Total} & \textbf{200} & \textbf{197 / 197 Valid (100.0\%)} & \textbf{29.80 ms} & \textbf{27.07} \\
+\textbf{Global 200 Total} & \textbf{200} & \textbf{197 / 197 Valid (100.0\%)} & \textbf{29.80 ms} & \textbf{35.95} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -41,8 +41,8 @@ Python Computational PDEs & 50 & 50 / 50 verified sound & 46.46 ms & 52.08 \\
 \begin{itemize}
     \item \textbf{Lean 4 Formal Soundness:} 97 problems proven with \textbf{0 sorry} and \textbf{0 admit} in Mathlib4.
     \item \textbf{AST Verification Interception Rate:} 3/3 scalar-reduction counterexamples (MP-04, MP-05, MP-06) intercepted fail-closed by AST semantic inspection and penalized with $E = 10^6$.
-    \item \textbf{Monotonic Energy Descent:} $\Delta E = E_{\text{chosen}} - E_{\text{rejected}} = \mathbf{-53.21} < 0$, satisfying the strict optimization criterion.
-    \item \textbf{Total Benchmark Elapsed Time:} Completed all 200 parallel tasks in \textbf{44.96 seconds}.
+    \item \textbf{Monotonic Energy Descent:} $\Delta E = E_{\text{chosen}} - E_{\text{rejected}} = \mathbf{-75.00} < 0$, satisfying the strict optimization criterion.
+    \item \textbf{Total Benchmark Elapsed Time:} Completed all 200 parallel tasks in \textbf{190.91 seconds}.
 \end{itemize}
 
 \newpage

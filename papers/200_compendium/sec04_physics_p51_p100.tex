@@ -12,12 +12,7 @@ D F = d F + [A, F] = 0 \iff \iota(v) \wedge (\iota(v) \wedge \iota(v)) = 0
 Non-Abelian gauge covariance: the covariant exterior derivative of the Yang-Mills field strength 2-form vanishes identically, prohibiting non-Abelian magnetic monopoles and guaranteeing smooth bundle geometry.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_51_yang_mills_bianchi_identity
-    {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M] (v : M) :
-    ExteriorAlgebra.ι R v * (ExteriorAlgebra.ι R v * ExteriorAlgebra.ι R v) = 0 := by
-  rw [ExteriorAlgebra.ι_sq_zero v, mul_zero]
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-51.lean}
 
 \vspace{1em}
 \subsection{MP-52: Raychaudhuri Geodesic Riccati Focusing Bound}
@@ -30,12 +25,7 @@ theorem problem_51_yang_mills_bianchi_identity
 Under the Strong Energy Condition (R\_mu\_nu k\textasciicircum{}mu k\textasciicircum{}nu $>$= 0), gravitational attraction forces convergence of timelike and null geodesic congruences, proving the inevitability of spacetime singularities.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_52_raychaudhuri_riccati_focusing
-    (theta : ℝ) :
-    0 ≤ (1 / 3 : ℝ) * theta ^ 2 := by
-  positivity
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-52.lean}
 
 \vspace{1em}
 \subsection{MP-53: Ryu-Takayanagi Holographic Entanglement Area Positivity}
@@ -48,13 +38,7 @@ S_A = \frac{\text{Area}(\gamma_A)}{4 G_N} \ge 0 \quad (\text{Area} \ge 0, \, G_N
 In AdS/CFT, boundary Von Neumann entanglement entropy is holographically dual to the minimal bulk surface area. Positivity ensures nonnegativity of quantum information in the boundary CFT.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_53_ryu_takayanagi_area_positivity
-    (Area G_N : ℝ) (hA : 0 ≤ Area) (hG : 0 < G_N) :
-    0 ≤ Area / (4 * G_N) := by
-  have : 0 < 4 * G_N := by positivity
-  exact div_nonneg hA (le_of_lt this)
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-53.lean}
 
 \vspace{1em}
 \subsection{MP-54: Hodge Star Dual Involution on Riemannian Manifolds}
@@ -67,13 +51,7 @@ theorem problem_53_ryu_takayanagi_area_positivity
 Isomorphism between differential k-forms and (n-k)-forms in pseudo-Riemannian manifolds, establishing electromagnetic duality and the Hodge decomposition Delta = d delta + delta d.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_54_hodge_star_dual_involution
-    {E : Type*} [AddCommGroup E] (star : E →+ E)
-    (h_invol : ∀ x, star (star x) = x) (w : E) :
-    star (star w) - w = 0 := by
-  rw [h_invol w, sub_self]
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-54.lean}
 
 \vspace{1em}
 \subsection{MP-55: Jarzynski Work Fluctuation Dissipation Bound}
@@ -86,12 +64,7 @@ theorem problem_54_hodge_star_dual_involution
 Exact non-equilibrium equality connecting macroscopic irreversible work dissipation with microscopic equilibrium Helmholtz free energy differences, rigorously deriving the Second Law via Jensen's inequality.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_55_jarzynski_work_dissipation
-    (W_avg Delta_F : ℝ) (h_diss : 0 ≤ W_avg - Delta_F) :
-    Delta_F ≤ W_avg := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-55.lean}
 
 \vspace{1em}
 \subsection{MP-56: Kitaev Toric Code Stabilizer Commutativity}
@@ -104,12 +77,7 @@ theorem problem_55_jarzynski_work_dissipation
 Mutually commuting star and plaquette Pauli stabilizer operators define the topological quantum code ground state subspace, enabling fault-tolerant topological quantum memory protected by Z2 gauge flux.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_56_kitaev_toric_code_commutativity
-    {A : Type*} [Ring A] (As Bp : A) (h_comm : As * Bp = Bp * As) :
-    As * Bp - Bp * As = 0 := by
-  rw [h_comm, sub_self]
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-56.lean}
 
 \vspace{1em}
 \subsection{MP-57: Korteweg-de Vries (KdV) Soliton Momentum Invariant}
@@ -122,13 +90,7 @@ theorem problem_56_kitaev_toric_code_commutativity
 Infinite hierarchy of conservation laws in completely integrable soliton systems: L2 mass and momentum invariants are strictly conserved under nonlinear steepening and dispersive spreading.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_57_kdv_soliton_momentum_conservation
-    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    (u u_dot : E) (h_ortho : ⟪u, u_dot⟫ = 0) :
-    2 * ⟪u, u_dot⟫ = 0 := by
-  rw [h_ortho, mul_zero]
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-57.lean}
 
 \vspace{1em}
 \subsection{MP-58: Tsirelson Quantum Nonlocality Bound}
@@ -141,12 +103,7 @@ theorem problem_57_kdv_soliton_momentum_conservation
 Fundamental quantum mechanical upper bound on Bell-CHSH nonlocality: while classical local hidden variables cannot exceed 2, entangled quantum states achieve at most 2*sqrt(2), preserving relativistic causality.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_58_tsirelson_quantum_bound
-    (S : ℝ) (hS : S ≤ 2 * Real.sqrt 2) :
-    S - 2 * Real.sqrt 2 ≤ 0 := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-58.lean}
 
 \vspace{1em}
 \subsection{MP-59: Onsager Reciprocal Kinetic Symmetry}
@@ -159,13 +116,7 @@ L_{ij} = L_{ji} \iff \langle L x, y \rangle = \langle x, L y \rangle
 Microscopic time-reversal invariance implies thermodynamic symmetry of cross-transport coefficients (e.g. thermoelectric Seebeck and Peltier effects).\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_59_onsager_reciprocal_symmetry
-    {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    (L : V →ₗ[ℝ] V) (h_symm : ∀ x y, ⟪L x, y⟫ = ⟪x, L y⟫) (x y : V) :
-    ⟪L x, y⟫ - ⟪x, L y⟫ = 0 := by
-  rw [h_symm x y, sub_self]
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-59.lean}
 
 \vspace{1em}
 \subsection{MP-60: Atiyah-Singer Index Vanishing for Self-Adjoint Dirac Operators}
@@ -178,12 +129,7 @@ theorem problem_59_onsager_reciprocal_symmetry
 Self-adjointness of the geometric Dirac operator forces kernel and cokernel dimensions to match identically, eliminating chiral gravitational anomalies.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_60_atiyah_singer_dirac_index
-    (dim_ker dim_coker : ℕ) (h_selfadjoint : dim_ker = dim_coker) :
-    (dim_ker : ℤ) - (dim_coker : ℤ) = 0 := by
-  rw [h_selfadjoint, sub_self]
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-60.lean}
 
 \vspace{1em}
 \subsection{MP-61: Chern-Simons 3-Form Topological Invariant Modulo Integer}
@@ -196,12 +142,7 @@ S_{\text{CS}}[A^g] - S_{\text{CS}}[A] = 2\pi k \in 2\pi \mathbb{Z}
 Under large gauge transformations on compact 3-manifolds, the Chern-Simons action shifts by an integer winding number, quantizing the coupling level k for path-integral gauge invariance.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_61_chern_simons_topological_shift
-    (CS : ℝ) (k : ℤ) :
-    (CS + k) - CS = k := by
-  ring
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-61.lean}
 
 \vspace{1em}
 \subsection{MP-62: Casimir Vacuum Attractive Force Energy Positivity}
@@ -214,13 +155,7 @@ theorem problem_61_chern_simons_topological_shift
 Macroscopic manifestation of zero-point vacuum fluctuations: Dirichlet boundary conditions on conducting plates select discrete electromagnetic modes, generating an attractive force.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_62_casimir_force_positivity
-    (hbar c d : ℝ) (hh : 0 < hbar) (hc : 0 < c) (hd : 0 < d) :
-    0 < (Real.pi ^ 2 * hbar * c) / (240 * d ^ 4) := by
-  have hpi : 0 < Real.pi := Real.pi_pos
-  positivity
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-62.lean}
 
 \vspace{1em}
 \subsection{MP-63: Penrose Cosmic Censorship Inequality}
@@ -233,12 +168,7 @@ M \ge \sqrt{\frac{A}{16\pi}} \iff M - \sqrt{\frac{A}{16\pi}} \ge 0
 Geometric inequality bounding total ADM spacetime mass by event horizon area. Prevents formation of naked singularities under weak cosmic censorship.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_63_penrose_cosmic_censorship
-    (M A : ℝ) (_hA : 0 ≤ A) (h_penrose : Real.sqrt (A / (16 * Real.pi)) ≤ M) :
-    0 ≤ M - Real.sqrt (A / (16 * Real.pi)) := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-63.lean}
 
 \vspace{1em}
 \subsection{MP-64: Bohmian Quantum Potential Kinetic Energy Nonnegativity}
@@ -251,12 +181,7 @@ T_{\text{Bohm}} = \frac{1}{2} m v^2 \ge 0 \quad (m > 0)
 In the pilot-wave formulation, particle trajectories follow the guidance equation v = grad S / m, where classical kinetic energy remains strictly non-negative while quantum effects reside in the Bohmian potential Q.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_64_bohmian_kinetic_positivity
-    (m v : ℝ) (_hm : 0 < m) :
-    0 ≤ (1 / 2 : ℝ) * m * v ^ 2 := by
-  positivity
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-64.lean}
 
 \vspace{1em}
 \subsection{MP-65: BRST Quantization Nilpotency (s² = 0)}
@@ -269,12 +194,7 @@ s^2 \Phi = 0 \quad \forall \Phi \implies s(s(\Phi)) = 0
 Nilpotency of the Becchi-Rouet-Stora-Tyutin fermionic symmetry operator s\textasciicircum{}2 = 0 defines physical quantum states via BRST cohomology, ensuring unitarity and decoupling unphysical Faddeev-Popov ghosts.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_65_brst_charge_nilpotency
-    {V : Type*} [AddCommGroup V] (s : V →+ V) (h_nil : ∀ x, s (s x) = 0) (x : V) :
-    s (s x) = 0 :=
-  h_nil x
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-65.lean}
 
 \vspace{1em}
 \subsection{MP-66: Fluctuation-Dissipation Linear Response Positivity}
@@ -287,12 +207,7 @@ S_F(\omega) = 2 k_B T \gamma \ge 0 \quad (T > 0, \, \gamma \ge 0)
 Direct link between thermal equilibrium Brownian fluctuations and macroscopic friction coefficients, ensuring passive energy dissipation in thermal baths.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_66_fluctuation_dissipation_positivity
-    (kB T gamma : ℝ) (_hk : 0 < kB) (_hT : 0 < T) (hg : 0 ≤ gamma) :
-    0 ≤ 2 * kB * T * gamma := by
-  positivity
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-66.lean}
 
 \vspace{1em}
 \subsection{MP-67: TOV Hydrostatic Stellar Gradient Monotonicity}
@@ -305,12 +220,7 @@ r_1 \le r_2 \implies P(r_2) \le P(r_1) \quad (\text{monotonic pressure drop})
 In the Tolman-Oppenheimer-Volkoff relativistic hydrostatic equation, pressure monotonically decreases outward from the stellar core, maintaining stability against gravitational collapse.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_67_tov_hydrostatic_monotonicity
-    (r₁ r₂ : ℝ) (P : ℝ → ℝ) (hP : ∀ x y, x ≤ y → P y ≤ P x) (hr : r₁ ≤ r₂) :
-    P r₂ ≤ P r₁ :=
-  hP r₁ r₂ hr
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-67.lean}
 
 \vspace{1em}
 \subsection{MP-68: Carter Constant Conservation along Kerr Geodesics}
@@ -323,14 +233,7 @@ theorem problem_67_tov_hydrostatic_monotonicity
 Hidden symmetry of rotating Kerr black holes: existence of a second-rank Killing tensor guarantees the conservation of Carter's fourth constant K, rendering orbital equations completely integrable.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_68_carter_constant_conservation
-    {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    (u : V) (T_op : V →L[ℝ] V)
-    (h_skew : ⟪u, T_op u⟫ = -⟪u, T_op u⟫) :
-    ⟪u, T_op u⟫ = (0 : ℝ) := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-68.lean}
 
 \vspace{1em}
 \subsection{MP-69: Anderson Localization Spatial Decay}
@@ -343,12 +246,7 @@ theorem problem_68_carter_constant_conservation
 Constructive quantum interference in disordered crystal lattices halts wavepacket diffusion, exponentially localizing electronic eigenfunctions with characteristic localization length xi.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_69_anderson_localization_decay
-    (C _xi _r : ℝ) (hC : 0 ≤ C) (_hxi : 0 < _xi) (_hr : 0 ≤ _r) :
-    0 ≤ C * Real.exp (-_r / _xi) := by
-  positivity
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-69.lean}
 
 \vspace{1em}
 \subsection{MP-70: Semiclassical Spectral Density Positivity}
@@ -361,12 +259,7 @@ theorem problem_69_anderson_localization_decay
 Gutzwiller trace formula: the total quantum density of states (smooth Thomas-Fermi background plus oscillatory periodic orbit sum) remains strictly non-negative.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_70_spectral_density_positivity
-    (rho_0 delta_rho : ℝ) (_h0 : 0 ≤ rho_0) (h_bound : -rho_0 ≤ delta_rho) :
-    0 ≤ rho_0 + delta_rho := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-70.lean}
 
 \vspace{1em}
 \subsection{MP-71: Landauer Principle Thermodynamic Heat Dissipation}
@@ -379,13 +272,7 @@ Q_{\text{erasure}} \ge k_B T \ln 2 > 0 \quad (T > 0)
 Irreversible erasure of one bit of logical information reduces information entropy by delta S = kB ln 2, necessarily dissipating at least kB T ln 2 of heat into the environment.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_71_landauer_erasure_heat
-    (kB T : ℝ) (_hk : 0 < kB) (_hT : 0 < T) :
-    0 < kB * T * Real.log 2 := by
-  have h2 : 0 < Real.log 2 := Real.log_pos (by norm_num)
-  positivity
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-71.lean}
 
 \vspace{1em}
 \subsection{MP-72: Casimir-Polder Retarded Potential Attractiveness}
@@ -398,12 +285,7 @@ V_{\text{CP}}(r) = -\frac{C}{r^7} < 0 \iff 0 < \frac{C}{r^7} \quad (C > 0, \, r 
 At distances larger than molecular transition wavelengths, retardation effects due to finite speed of light soften the London 1/r\textasciicircum{}6 dispersion potential into the attractive 1/r\textasciicircum{}7 Casimir-Polder law.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_72_casimir_polder_attractiveness
-    (C r : ℝ) (_hC : 0 < C) (_hr : 0 < r) :
-    0 < C / r ^ 7 := by
-  positivity
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-72.lean}
 
 \vspace{1em}
 \subsection{MP-73: BPS Bound in Extended Supersymmetry}
@@ -416,12 +298,7 @@ M \ge |Z| \iff M - |Z| \ge 0
 Bogomol'nyi-Prasad-Sommerfield bound: in extended supersymmetry algebras, particle mass is bounded below by the central charge |Z|, protecting BPS states from quantum corrections.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_73_bps_mass_bound
-    (M Z : ℝ) (h_bps : |Z| ≤ M) :
-    0 ≤ M - |Z| := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-73.lean}
 
 \vspace{1em}
 \subsection{MP-74: Tolman Gravitational Temperature Conservation}
@@ -434,12 +311,7 @@ T_1 \sqrt{g_{00}(r_1)} = T_2 \sqrt{g_{00}(r_2)} \quad (\text{thermal equilibrium
 In a stationary gravitational field, gravitational redshift causes lower regions to have higher local proper temperature to prevent heat flow, satisfying T sqrt(-g00) = const.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_74_tolman_temperature_constancy
-    (T₁ T₂ g00_1 g00_2 : ℝ) (h_tolman : T₁ * Real.sqrt g00_1 = T₂ * Real.sqrt g00_2) :
-    T₁ * Real.sqrt g00_1 - T₂ * Real.sqrt g00_2 = 0 := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-74.lean}
 
 \vspace{1em}
 \subsection{MP-75: Goldstone Theorem Spontaneous Symmetry Breaking Mode}
@@ -452,12 +324,7 @@ theorem problem_74_tolman_temperature_constancy
 Spontaneous breakdown of continuous global symmetry implies the existence of gapless (massless) excitation modes along flat degenerate vacuum manifold directions.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_75_goldstone_gapless_mode
-    (omega_0 : ℝ) (h_gapless : omega_0 = 0) :
-    omega_0 = 0 :=
-  h_gapless
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-75.lean}
 
 \vspace{1em}
 \subsection{MP-76: Callan-Symanzik Asymptotic Freedom Running Coupling}
@@ -470,13 +337,7 @@ theorem problem_75_goldstone_gapless_mode
 Negative beta function in non-Abelian SU(3) gauge theory causes strong interaction coupling to decrease logarithmically at high energies (asymptotic freedom) and grow at low energies (confinement).\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_76_callan_symanzik_asymptotic_freedom
-    (beta_0 g : ℝ) (h_beta : 0 < beta_0) (hg : 0 < g) :
-    -beta_0 * g ^ 3 < 0 := by
-  have : 0 < beta_0 * g ^ 3 := by positivity
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-76.lean}
 
 \vspace{1em}
 \subsection{MP-77: Quantum Hall Effect TKNN Integer Quantization}
@@ -489,16 +350,7 @@ theorem problem_76_callan_symanzik_asymptotic_freedom
 Thouless-Kohmoto-Nightingale-den Nijs (TKNN) invariant: Hall conductance is topological, proportional to the first Chern number of the occupied magnetic Bloch bundle integrated over the Brillouin zone.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_77_tknn_integer_quantization
-    (n : ℤ) (e_charge h_planck sigma_xy : ℝ)
-    (he : e_charge ≠ 0) (hh : h_planck ≠ 0)
-    (h_tknn : sigma_xy = (n : ℝ) * (e_charge ^ 2 / h_planck)) :
-    sigma_xy * (h_planck / e_charge ^ 2) = (n : ℝ) := by
-  rw [h_tknn]
-  have he2 : e_charge ^ 2 ≠ 0 := pow_ne_zero 2 he
-  field_simp
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-77.lean}
 
 \vspace{1em}
 \subsection{MP-78: Wheeler-DeWitt Quantum Geometrodynamics Constraint}
@@ -511,14 +363,7 @@ theorem problem_77_tknn_integer_quantization
 Diffeomorphism invariance in general relativity turns the Hamiltonian into a pure constraint equation H Psi = 0, stating that the wave function of the universe is stationary and time is relational.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_78_wheeler_dewitt_constraint
-    {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
-    (H_op : H →L[ℝ] H) (Psi : H) (hWDW : H_op Psi = 0) :
-    ⟪Psi, H_op Psi⟫ = (0 : ℝ) := by
-  rw [hWDW]
-  exact inner_zero_right Psi
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-78.lean}
 
 \vspace{1em}
 \subsection{MP-79: Polyakov Conformal String Metric Invariance}
@@ -531,12 +376,7 @@ g'_{ab} = e^{2\omega(\sigma)} g_{ab} \implies \sqrt{-g'} = e^{2\omega} \sqrt{-g}
 Weyl conformal invariance of the two-dimensional string worldsheet decouples worldsheet metric degrees of freedom, leaving only transverse string oscillations in the critical dimension.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_79_polyakov_conformal_invariance
-    (omega : ℝ) (g_det : ℝ) (hg : 0 < g_det) :
-    0 < Real.exp (2 * omega) * g_det := by
-  positivity
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-79.lean}
 
 \vspace{1em}
 \subsection{MP-80: Bondi-Sachs Gravitational Wave Mass Deficit}
@@ -549,12 +389,7 @@ theorem problem_79_polyakov_conformal_invariance
 Bondi mass loss formula: an isolated radiating system necessarily loses total mass-energy through outgoing gravitational radiation, guaranteeing that gravitational waves carry positive energy.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_80_bondi_sachs_mass_loss
-    (M_dot : ℝ) (h_loss : M_dot ≤ 0) :
-    0 ≤ -M_dot := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-80.lean}
 
 \vspace{1em}
 \subsection{MP-81: Symplectic 2-Form Preservation in Phase Space}
@@ -567,14 +402,7 @@ theorem problem_80_bondi_sachs_mass_loss
 Hamiltonian flows are canonical transformations that preserve the differential 2-form omega = dq wedge dp, underlaying symplectic integrators and Poincaré recurrence.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_81_symplectic_form_preservation
-    {V : Type*} [AddCommGroup V]
-    (omega : V → V →+ ℝ) (h_skew : ∀ u v, omega u v = - omega v u) (u : V) :
-    omega u u = 0 := by
-  have h := h_skew u u
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-81.lean}
 
 \vspace{1em}
 \subsection{MP-82: Poiseuille Flow Viscous Velocity Monotonicity}
@@ -587,17 +415,7 @@ u(r) = v_{\max}\left(1 - \frac{r^2}{R^2}\right) \ge 0 \quad (r \le R)
 Exact laminar solution of the Navier-Stokes equations in a pipe: viscous shear forces produce a parabolic velocity profile with maximum velocity along the centerline and zero slip at walls.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_82_poiseuille_velocity_centerline
-    (r R v_max : ℝ) (hr : 0 ≤ r) (hR : r ≤ R) (hR_pos : 0 < R) (hv : 0 ≤ v_max) :
-    0 ≤ v_max * (1 - (r / R) ^ 2) := by
-  have h_ratio : (r / R) ^ 2 ≤ 1 := by
-    have h1 : 0 ≤ r / R := div_nonneg hr (le_of_lt hR_pos)
-    have h2 : r / R ≤ 1 := (div_le_one hR_pos).mpr hR
-    nlinarith
-  have h_diff : 0 ≤ 1 - (r / R) ^ 2 := by linarith
-  exact mul_nonneg hv h_diff
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-82.lean}
 
 \vspace{1em}
 \subsection{MP-83: BCS Superconducting Gap Energy Positivity}
@@ -610,12 +428,7 @@ theorem problem_82_poiseuille_velocity_centerline
 Bardeen-Cooper-Schrieffer theory: attractive phonon-mediated interaction binds electrons into Cooper pairs, opening a forbidden energy gap 2*Delta that protects supercurrents from dissipation.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_83_bcs_gap_positivity
-    (Delta : ℝ) (hD : 0 < Delta) :
-    0 < 2 * Delta := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-83.lean}
 
 \vspace{1em}
 \subsection{MP-84: Hawking-Page Thermodynamic Phase Transition Threshold}
@@ -628,12 +441,7 @@ F_{\text{BH}} \le F_{\text{AdS}} \iff F_{\text{AdS}} - F_{\text{BH}} \ge 0
 In anti-de Sitter space, black holes become thermodynamically favored over thermal gas above a critical Hawking temperature, dual to the confinement-deconfinement transition in gauge theory.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_84_hawking_page_transition
-    (F_bh F_ads : ℝ) (h_trans : F_bh ≤ F_ads) :
-    0 ≤ F_ads - F_bh := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-84.lean}
 
 \vspace{1em}
 \subsection{MP-85: Fractional Quantum Hall Laughlin Wavefunction Norm Nonnegativity}
@@ -646,13 +454,7 @@ theorem problem_84_hawking_page_transition
 Laughlin trial state for nu = 1/m fractional quantum Hall effect: Jastrow factor enforces exact zeros of order m when electrons coincide, explaining incompressible fractional quantum liquid states.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_85_laughlin_norm_nonneg
-    {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
-    (Psi : H) :
-    0 ≤ ⟪Psi, Psi⟫ :=
-  real_inner_self_nonneg
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-85.lean}
 
 \vspace{1em}
 \subsection{MP-86: Gross-Pitaevskii Soliton Energy Nonnegativity}
@@ -665,12 +467,7 @@ E[\psi] = \int \left(\frac{\hbar^2}{2m}|\nabla \psi|^2 + \frac{g}{2}|\psi|^4\rig
 Mean-field energy functional for repulsive Bose-Einstein condensates: nonnegativity of kinetic and repulsive interaction integrals guarantees stable macroscopic quantum ground states.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_86_gross_pitaevskii_energy_nonneg
-    (E_kin E_int : ℝ) (hk : 0 ≤ E_kin) (hi : 0 ≤ E_int) :
-    0 ≤ E_kin + E_int := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-86.lean}
 
 \vspace{1em}
 \subsection{MP-87: ADM Positive Mass Energy Bound}
@@ -683,13 +480,7 @@ E^2 = P^2 + M^2 \wedge M \ge 0 \implies P^2 \le E^2
 Schoen-Yau and Witten positive energy theorem: asymptotically flat spacetimes satisfying the dominant energy condition possess non-negative total ADM mass, with M = 0 if and only if spacetime is flat Minkowski space.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_87_adm_positive_mass
-    (E P M : ℝ) (h_onshell : E ^ 2 = P ^ 2 + M ^ 2) (_hM : 0 ≤ M) :
-    P ^ 2 ≤ E ^ 2 := by
-  have : 0 ≤ M ^ 2 := by positivity
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-87.lean}
 
 \vspace{1em}
 \subsection{MP-88: Mermin-Wagner-Hohenberg Low-Dimensional Fluctuation Bound}
@@ -702,18 +493,7 @@ theorem problem_87_adm_positive_mass
 Infrared divergence of gapless Goldstone fluctuations at finite temperature in one and two dimensions prevents long-range spontaneous symmetry breaking of continuous symmetries.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_88_mermin_wagner_no_ssb
-    (M_sq : ℝ) (h_nonneg : 0 ≤ M_sq)
-    (h_bound : ∀ (eps : ℝ), 0 < eps → M_sq ≤ eps) :
-    M_sq = 0 := by
-  apply le_antisymm
-  · apply le_of_forall_pos_le_add
-    intro eps h_eps
-    have := h_bound eps h_eps
-    linarith
-  · exact h_nonneg
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-88.lean}
 
 \vspace{1em}
 \subsection{MP-89: Bethe Ansatz Spin Chain Momentum Invariance}
@@ -726,13 +506,7 @@ theorem problem_88_mermin_wagner_no_ssb
 Exact solvability of the 1D Heisenberg XXX spin chain: factorization of the many-body S-matrix into two-body collisions preserves total quasi-momentum of magnon excitations.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_89_bethe_ansatz_total_momentum
-    (k₁ k₂ theta₁₂ theta₂₁ : ℝ)
-    (h_scatter : theta₁₂ + theta₂₁ = 0) :
-    (k₁ + theta₁₂) + (k₂ + theta₂₁) = k₁ + k₂ := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-89.lean}
 
 \vspace{1em}
 \subsection{MP-90: Ginzburg-Landau Coherence Length Ratio Positivity}
@@ -745,12 +519,7 @@ theorem problem_89_bethe_ansatz_total_momentum
 The Ginzburg-Landau parameter kappa = lambda / xi separates Type I superconductors (kappa $<$ 1/sqrt(2), positive domain wall energy) from Type II superconductors (kappa $>$ 1/sqrt(2), vortex lattice formation).\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_90_ginzburg_landau_kappa_positivity
-    (lambda_L xi : ℝ) (hl : 0 < lambda_L) (hx : 0 < xi) :
-    0 < lambda_L / xi := by
-  positivity
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-90.lean}
 
 \vspace{1em}
 \subsection{MP-91: Maxwell-Chern-Simons Topologically Massive Photon Energy}
@@ -763,12 +532,7 @@ m_{\text{top}}^2 > 0 \quad (\text{Chern-Simons topological mass generation})
 In 2+1 dimensions, adding a Chern-Simons term gives gauge bosons a gauge-invariant topological mass without breaking local U(1) gauge symmetry or introducing Higgs scalars.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_91_topological_photon_mass
-    (m_top : ℝ) (hm : 0 < m_top) :
-    0 < m_top ^ 2 := by
-  positivity
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-91.lean}
 
 \vspace{1em}
 \subsection{MP-92: Kosterlitz-Thouless Vortex Dissociation Energy}
@@ -781,12 +545,7 @@ theorem problem_91_topological_photon_mass
 Berezinskii-Kosterlitz-Thouless transition in the 2D XY model: competition between logarithmic vortex energy U = pi J ln(L/a) and vortex entropy S = 2 kB ln(L/a) triggers topological vortex unbinding at T\_BKT = pi J / (2 kB).\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_92_kosterlitz_thouless_free_energy
-    (U S T : ℝ) (h_vortex : U - T * S ≤ 0) :
-    T * S - U ≥ 0 := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-92.lean}
 
 \vspace{1em}
 \subsection{MP-93: Lindblad Trace-Preserving Quantum Map}
@@ -799,13 +558,7 @@ theorem problem_92_kosterlitz_thouless_free_energy
 Completely positive trace-preserving (CPTP) Markovian master equation: the commutator [H, rho] and Lindblad jump dissipators L rho L\textasciicircum{}dagger - 1/2 {L\textasciicircum{}dagger L, rho} identically preserve density matrix trace Tr(rho) = 1.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_93_lindblad_trace_preservation
-    (tr_jump tr_anti : ℝ)
-    (h_cyclic : tr_jump = tr_anti) :
-    tr_jump - (1 / 2 : ℝ) * (tr_anti + tr_anti) = 0 := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-93.lean}
 
 \vspace{1em}
 \subsection{MP-94: Wigner Semicircle Law Spectral Radius Bound}
@@ -818,12 +571,7 @@ theorem problem_93_lindblad_trace_preservation
 Universal eigenvalue distribution of large Gaussian Orthogonal / Unitary Ensembles (GOE/GUE): eigenvalues are compactly supported on the interval [-R, R] with semicircular density.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_94_wigner_semicircle_support
-    (R E : ℝ) (hE : E ^ 2 ≤ R ^ 2) :
-    0 ≤ R ^ 2 - E ^ 2 := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-94.lean}
 
 \vspace{1em}
 \subsection{MP-95: Berry Phase Adiabatic Closed Loop Invariance}
@@ -836,12 +584,7 @@ theorem problem_94_wigner_semicircle_support
 Geometric phase acquired by an adiabatic cyclic evolution around a closed loop in parameter space, determined solely by the holonomy of the Berry connection and independent of traversal rate.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_95_berry_phase_invariance
-    (gamma : ℝ) :
-    Real.cos (gamma + 2 * Real.pi) = Real.cos gamma :=
-  Real.cos_add_two_pi gamma
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-95.lean}
 
 \vspace{1em}
 \subsection{MP-96: Chandrasekhar Degenerate Stellar Mass Limit}
@@ -854,12 +597,7 @@ M \le M_{\text{Ch}} \approx 1.44 \, M_\odot \iff M_{\text{Ch}} - M \ge 0
 Maximum mass supported by relativistic electron degeneracy pressure in white dwarfs: exceeding M\_Ch causes relativistic softening of the equation of state (P \textasciitilde{} rho\textasciicircum{}(4/3)), resulting in gravitational collapse.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_96_chandrasekhar_mass_limit
-    (M M_ch : ℝ) (hM : M ≤ M_ch) :
-    0 ≤ M_ch - M := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-96.lean}
 
 \vspace{1em}
 \subsection{MP-97: Jeans Instability Gravitational Wavevector Threshold}
@@ -872,17 +610,7 @@ theorem problem_96_chandrasekhar_mass_limit
 Self-gravitating gas clouds: when spatial perturbation scale exceeds the Jeans length lambda\_J = 2*pi/k\_J, thermal sound pressure cannot counteract gravity, driving exponential star formation collapse.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_97_jeans_instability_omega_sq
-    (c_s k_J k : ℝ) (hk : k < k_J) (hc : 0 < c_s) (hk_pos : 0 ≤ k) :
-    c_s ^ 2 * (k ^ 2 - k_J ^ 2) < 0 := by
-  have h_sq : k ^ 2 < k_J ^ 2 := by
-    have h_kj_pos : 0 < k_J := by linarith
-    nlinarith
-  have h_diff : k ^ 2 - k_J ^ 2 < 0 := by linarith
-  have hc_sq : 0 < c_s ^ 2 := by positivity
-  nlinarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-97.lean}
 
 \vspace{1em}
 \subsection{MP-98: Lieb-Robinson Information Propagation Velocity}
@@ -895,12 +623,7 @@ theorem problem_97_jeans_instability_omega_sq
 Emergent effective light-cone velocity in non-relativistic quantum spin systems with local interactions: quantum information propagation outside the Lieb-Robinson cone is exponentially suppressed.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_98_lieb_robinson_velocity_bound
-    (v_LR t r : ℝ) (_hv : 0 < v_LR) (_ht : 0 ≤ t) (hr : v_LR * t < r) :
-    0 < r - v_LR * t := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-98.lean}
 
 \vspace{1em}
 \subsection{MP-99: Conformal Bootstrap Crossing Symmetry Relation}
@@ -913,14 +636,7 @@ s + t + u = 4M^2 \wedge s = t \implies 2s + u = 4M^2
 Associativity of the Operator Product Expansion (OPE) in Conformal Field Theories: s-channel and t-channel conformal block decompositions must match identically, non-perturbatively constraining CFT spectra.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_99_conformal_bootstrap_crossing
-    (s t u_mandelstam : ℝ) (M : ℝ)
-    (h_mandelstam : s + t + u_mandelstam = 4 * M ^ 2)
-    (h_symmetric : s = t) :
-    2 * s + u_mandelstam = 4 * M ^ 2 := by
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-99.lean}
 
 \vspace{1em}
 \subsection{MP-100: ANSE Autopoietic Energy Descent Monotonicity}
@@ -933,14 +649,7 @@ L_c \le L_p \wedge T_c \le T_p \wedge \gamma \ge 0 \implies L_c + \gamma T_c \le
 Thermodynamic criterion for autopoietic self-improvement: an autonomous architecture update is committed if and only if the physical Lyapunov energy strictly decreases, guaranteeing asymptotic stability and convergence.\\
 
 \textbf{Formal Lean 4 Constructive Proof (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_100_autopoietic_energy_descent
-    (L_p L_c T_p T_c gamma : ℝ)
-    (hL : L_c ≤ L_p) (hT : T_c ≤ T_p) (hgamma : 0 ≤ gamma) :
-    L_c + gamma * T_c ≤ L_p + gamma * T_p := by
-  have h_time : gamma * T_c ≤ gamma * T_p := mul_le_mul_of_nonneg_left hT hgamma
-  linarith
-\end{verbatim}
+\lstinputlisting{compendium_sources/MP-100.lean}
 
 \vspace{1em}
 \newpage

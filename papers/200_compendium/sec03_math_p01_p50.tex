@@ -12,12 +12,7 @@ This section contains 50 formal pure mathematics problems verified in the Lean 4
 Left/right coset partitioning divides the finite group manifold into disjoint orbits of equal measure |H|. Enforcing [Finite G] prevents Nat.card from vacuously vanishing on infinite sets, establishing exact conservation of discrete states across quotient projections.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_1_lagrange_index_multiplicativity
-    {G : Type*} [Group G] [Finite G] (H : Subgroup G) :
-    Nat.card H * H.index = Nat.card G := by
-  exact Subgroup.card_mul_index H
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-01.lean}
 
 \vspace{1em}
 \subsection{MP-02: Parallelogram Identity in Real Hilbert Spaces}
@@ -30,12 +25,7 @@ theorem problem_1_lagrange_index_multiplicativity
 The geometric bedrock of quantum state spaces. By the Jordan-von Neumann theorem, the parallelogram identity is the necessary and sufficient condition for a normed space to be induced by an inner product, guaranteeing Euclidean geometry in state space.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_2_parallelogram_law
-    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (x y : E) :
-    ‖x + y‖ ^ 2 + ‖x - y‖ ^ 2 = 2 * (‖x‖ ^ 2 + ‖y‖ ^ 2) := by
-  exact parallelogram_law_with_norm ℝ x y
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-02.lean}
 
 \vspace{1em}
 \subsection{MP-03: Banach Contraction Mapping \& Unique Fixed Point}
@@ -48,18 +38,7 @@ d(T(x), T(y)) \le c\, d(x, y) \quad (c < 1) \implies \exists!\, x^* \in X: T(x^*
 Guarantees deterministic global convergence of iterative dynamical flows, Picard-Lindelöf trajectory integration, and autopoietic self-improving operator equilibrium in ANSE without divergence or chaotic runaway.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_3_banach_contraction_unique_fixed_point
-    {X : Type*} [MetricSpace X] [CompleteSpace X] [Nonempty X]
-    {c : ℝ≥0} (hc : c < 1) {T : X → X} (hT : LipschitzWith c T) :
-    ∃! x : X, T x = x := by
-  have hcon : ContractingWith c T := ⟨hc, hT⟩
-  use hcon.fixedPoint
-  dsimp
-  refine ⟨hcon.fixedPoint_isFixedPt, ?_⟩
-  intro y hy
-  exact hcon.fixedPoint_unique hy
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-03.lean}
 
 \vspace{1em}
 \subsection{MP-04: Cauchy-Riemann Equations Implies Harmonicity}
@@ -72,14 +51,7 @@ theorem problem_3_banach_contraction_unique_fixed_point
 EPISTEMIC CHEAT REJECTED BY RED TEAM. The proposed formulation reduced holomorphic field theory and complex manifold differentiability to 4 unconstrained real scalars (u\_xx + u\_yy = 0 via ring). Fail-closed semantic radar assigned Maximum Pain Energy E = ∞.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_4_cauchy_riemann_algebraic_core
-    (u_xx u_yy v_xy v_yx : ℝ)
-    (hCR1 : u_xx = v_yx) (hCR2 : u_yy = -v_xy) (hClairaut : v_yx = v_xy) :
-    u_xx + u_yy = 0 := by
-  rw [hCR1, hCR2, hClairaut]
-  ring
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-04.lean}
 
 \vspace{1em}
 \subsection{MP-05: Gauss-Bonnet Total Curvature Quantization on S²}
@@ -92,13 +64,7 @@ theorem problem_4_cauchy_riemann_algebraic_core
 EPISTEMIC CHEAT REJECTED BY RED TEAM. The proposed formulation replaced Riemannian connection 2-form integration over a 2-sphere with trivial scalar fraction simplification (1/R\textasciicircum{}2 * 4πR\textasciicircum{}2 = 4π). Fail-closed semantic radar assigned Maximum Pain Energy E = ∞.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_5_gauss_bonnet_algebraic_core
-    (R : ℝ) (_hR : 0 < R) :
-    let K := 1 / (R ^ 2); let Area := 4 * Real.pi * (R ^ 2);
-    K * Area = 4 * Real.pi := by
-  intro K Area; dsimp [K, Area]; have hRsq : R ^ 2 ≠ 0 := by positivity; field_simp [hRsq]
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-05.lean}
 
 \vspace{1em}
 \subsection{MP-06: Coboundary Nilpotency in Discrete Exterior Calculus}
@@ -111,14 +77,7 @@ theorem problem_5_gauss_bonnet_algebraic_core
 EPISTEMIC CHEAT REJECTED BY RED TEAM. Replaced simplicial chain complex topology and boundary operators with elementary scalar cancellation (f1 - f0 + f2 - f1 + f0 - f2 = 0). Fail-closed semantic radar assigned Maximum Pain Energy E = ∞.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_6_dec_coboundary_algebraic_core
-    (f₀ f₁ f₂ : ℝ) :
-    let d0_01 := f₁ - f₀; let d0_12 := f₂ - f₁; let d0_20 := f₀ - f₂;
-    let d1_curl := d0_01 + d0_12 + d0_20;
-    d1_curl = 0 := by
-  intro d0_01 d0_12 d0_20 d1_curl; dsimp; ring
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-06.lean}
 
 \vspace{1em}
 \subsection{MP-07: Discrete Grönwall Lemma \& Dynamic Dissipation Bound}
@@ -131,20 +90,7 @@ E_{n+1} \le (1 + \alpha) E_n \implies E_n \le (1 + \alpha)^n E_0
 Fundamental energy stability theorem in numerical physics. Establishes uniform bounds preventing exponential blowup in discrete time integration schemes for hyperbolic and parabolic PDEs.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_7_discrete_gronwall
-    (E : ℕ → ℝ) (α : ℝ) (hα : 0 ≤ α) (_hE : ∀ n, 0 ≤ E n)
-    (h_step : ∀ n, E (n + 1) ≤ (1 + α) * E n) :
-    ∀ n, E n ≤ (1 + α) ^ n * E 0 := by
-  intro n
-  induction n with
-  | zero => simp
-  | succ k ih =>
-    calc
-      E (k + 1) ≤ (1 + α) * E k := h_step k
-      _ ≤ (1 + α) * ((1 + α) ^ k * E 0) := mul_le_mul_of_nonneg_left ih (by linarith)
-      _ = (1 + α) ^ (k + 1) * E 0 := by rw [pow_succ', mul_assoc]
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-07.lean}
 
 \vspace{1em}
 \subsection{MP-08: Fermat's Little Theorem in Modular Arithmetic ℤ/pℤ}
@@ -157,12 +103,7 @@ a^{p-1} \equiv 1 \pmod p \quad \forall a \in (\mathbb{Z}/p\mathbb{Z})^\times
 Algebraic basis of modular symmetry groups and discrete topological phases. Verifies that the unit group of the Galois field GF(p) is cyclic of order p - 1, crucial for cryptographic attestation hashing.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_8_fermats_little_theorem
-    (p : ℕ) [Fact p.Prime] (a : ZMod p) (ha : a ≠ 0) :
-    a ^ (p - 1) = 1 := by
-  exact ZMod.pow_card_sub_one_eq_one ha
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-08.lean}
 
 \vspace{1em}
 \subsection{MP-09: Markov-Chebyshev Level Set Functional Inequality}
@@ -175,14 +116,7 @@ theorem problem_8_fermats_little_theorem
 The foundational pointwise inequality of measure theory that integrates directly to P(X ≥ ε) ≤ E[X]/ε. Governs concentration of measure in quantum statistical ensembles and tail bounds in energy minimization.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_9_markov_chebyshev_pointwise
-    (x ε : ℝ) (_hε : 0 < ε) (hx : 0 ≤ x) :
-    (if x ≥ ε then ε else 0) ≤ x := by
-  split_ifs with h
-  · exact h
-  · exact hx
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-09.lean}
 
 \vspace{1em}
 \subsection{MP-10: Cauchy-Schwarz Inequality in Real Inner Product Space}
@@ -195,12 +129,7 @@ theorem problem_9_markov_chebyshev_pointwise
 Guarantees that geometric projection and cosine of angles are well-defined in infinite-dimensional real vector spaces. Enforces submultiplicativity of quantum transition amplitudes and bounds kinetic cross-terms.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_10_cauchy_schwarz_real
-    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (x y : E) :
-    @inner ℝ E _ x y ≤ ‖x‖ * ‖y‖ := by
-  exact real_inner_le_norm x y
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-10.lean}
 
 \vspace{1em}
 \subsection{MP-11: Intermediate Value Theorem (IVT)}
@@ -213,15 +142,7 @@ f \in C([a, b]) \wedge y \in [f(a), f(b)] \implies \exists x \in [a, b]: f(x) = 
 Ensures topological connectedness of phase trajectories. Guarantees that continuous physical fields transitioning across energy barriers necessarily cross every intermediate potential level.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_11_ivt (f : ℝ → ℝ) (a b y : ℝ) (hab : a ≤ b) 
-    (hf : ContinuousOn f (Icc a b)) (hy : f a ≤ y ∧ y ≤ f b) : 
-    ∃ x ∈ Icc a b, f x = y := by
-  have h_sub := intermediate_value_Icc hab hf
-  have hy_icc : y ∈ Icc (f a) (f b) := hy
-  rcases h_sub hy_icc with ⟨x, hx, hfx⟩
-  exact ⟨x, hx, hfx⟩
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-11.lean}
 
 \vspace{1em}
 \subsection{MP-12: Cayley-Hamilton Matrix Annihilation Theorem}
@@ -234,11 +155,7 @@ p_M(M) = 0 \quad \text{where } p_M(\lambda) = \det(\lambda I - M)
 Governs finite-dimensional matrix dynamics. Allows the exact truncation of linear dynamical evolutions exp(M t) into a polynomial of degree n-1, vital for closed-form propagator computations.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_12_cayley_hamilton {n : Type*} [DecidableEq n] [Fintype n] {R : Type*} [CommRing R] 
-    (M : Matrix n n R) : aeval M M.charpoly = 0 :=
-  Matrix.aeval_self_charpoly M
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-12.lean}
 
 \vspace{1em}
 \subsection{MP-13: Zorn's Lemma (Maximal Element in Inductive Posets)}
@@ -251,12 +168,7 @@ theorem problem_12_cayley_hamilton {n : Type*} [DecidableEq n] [Fintype n] {R : 
 Equivalent to the Axiom of Choice. Ensures the existence of maximal orthonormal bases in non-separable Hilbert spaces, ultrafilter compactifications, and maximal ideals in quantum C*-algebras.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_13_zorns_lemma {α : Type*} [PartialOrder α] 
-    (h : ∀ (c : Set α), IsChain (· ≤ ·) c → BddAbove c) : 
-    ∃ m : α, IsMax m :=
-  zorn_le h
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-13.lean}
 
 \vspace{1em}
 \subsection{MP-14: Baire Category Theorem}
@@ -269,12 +181,7 @@ theorem problem_13_zorns_lemma {α : Type*} [PartialOrder α]
 Underpins functional analysis (Uniform Boundedness Principle, Open Mapping Theorem). Guarantees that complete energy landscapes cannot be dissolved into a countable union of nowhere-dense fluctuations.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_14_baire_category {X : Type*} [TopologicalSpace X] [BaireSpace X] 
-    (s : ℕ → Set X) (ho : ∀ n, IsOpen (s n)) (hd : ∀ n, Dense (s n)) : 
-    Dense (⋂ n, s n) :=
-  BaireSpace.baire_property s ho hd
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-14.lean}
 
 \vspace{1em}
 \subsection{MP-15: Cantor's Diagonalization Theorem}
@@ -287,15 +194,7 @@ theorem problem_14_baire_category {X : Type*} [TopologicalSpace X] [BaireSpace X
 Demonstrates the strict cardinality hierarchy of configuration spaces. Proves that continuum field theories (infinite degrees of freedom) cannot be faithfully represented by discrete countable states.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_15_cantors_theorem {α : Type*} (f : α → Set α) : ¬ Function.Surjective f := by
-  intro h
-  let s : Set α := {x | x ∉ f x}
-  obtain ⟨x, hx⟩ := h s
-  by_cases hxs : x ∈ s
-  · have hx_not : x ∉ f x := hxs; rw [hx] at hx_not; exact hx_not hxs
-  · have hx_in : x ∈ f x := by { by_contra hc; exact hxs hc }; rw [hx] at hx_in; exact hxs hx_in
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-15.lean}
 
 \vspace{1em}
 \subsection{MP-16: Infinitude of Primes (Euclid's Theorem)}
@@ -308,10 +207,7 @@ theorem problem_15_cantors_theorem {α : Type*} (f : α → Set α) : ¬ Functio
 The spectrum of multiplicative primes is infinite and unbounded. Essential for cyclic group representations, discrete Fourier transforms across arbitrary frequencies, and p-adic quantum mechanics.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_16_infinitude_primes (n : ℕ) : ∃ p, n ≤ p ∧ Nat.Prime p :=
-  Nat.exists_infinite_primes n
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-16.lean}
 
 \vspace{1em}
 \subsection{MP-17: Arithmetic Mean - Geometric Mean (AM-GM) Inequality}
@@ -324,16 +220,7 @@ theorem problem_16_infinitude_primes (n : ℕ) : ∃ p, n ≤ p ∧ Nat.Prime p 
 Direct consequence of the convexity of the exponential and logarithmic functions. Bounds thermodynamic entropy maximization and optimal power allocation in physical networks.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_17_am_gm_2 (x y : ℝ) (hx : 0 ≤ x) (hy : 0 ≤ y) : 
-    Real.sqrt (x * y) ≤ (x + y) / 2 := by
-  have h : 0 ≤ (Real.sqrt x - Real.sqrt y) ^ 2 := sq_nonneg (Real.sqrt x - Real.sqrt y)
-  have h_exp : (Real.sqrt x - Real.sqrt y) ^ 2 = (Real.sqrt x)^2 - 2 * (Real.sqrt x * Real.sqrt y) + (Real.sqrt y)^2 := by ring
-  rw [Real.sq_sqrt hx, Real.sq_sqrt hy] at h_exp
-  have h_mul : Real.sqrt x * Real.sqrt y = Real.sqrt (x * y) := by rw [Real.sqrt_mul hx]
-  rw [h_mul] at h_exp
-  linarith
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-17.lean}
 
 \vspace{1em}
 \subsection{MP-18: Irrationality of the Golden Square Root Sqrt(2)}
@@ -346,10 +233,7 @@ theorem problem_17_am_gm_2 (x y : ℝ) (hx : 0 ≤ x) (hy : 0 ≤ y) :
 Demonstrates the necessity of Cauchy completion for continuous physical space. Without irrational real coordinates, simple harmonic oscillator orbits with period sqrt(2) would vanish from phase space.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_18_sqrt_2_irrational : Irrational (Real.sqrt 2) :=
-  irrational_sqrt_two
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-18.lean}
 
 \vspace{1em}
 \subsection{MP-19: Primality of 2 (Minimal Prime Generator)}
@@ -362,10 +246,7 @@ theorem problem_18_sqrt_2_irrational : Irrational (Real.sqrt 2) :=
 Generator of the binary Galois field GF(2). Forms the mathematical basis for quantum qubit state representations, parity symmetry Z2, and fermionic Fock space occupation numbers.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_19_prime_two : Nat.Prime 2 :=
-  Nat.prime_two
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-19.lean}
 
 \vspace{1em}
 \subsection{MP-20: Triangle Inequality in General Metric Spaces}
@@ -378,11 +259,7 @@ d(x, z) \le d(x, y) + d(y, z) \quad \forall x, y, z \in X
 Defines subadditivity of geodesic paths across physical Riemannian manifolds, enforcing the shortest-path variational principle in geometric optics and particle trajectories.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_20_triangle_inequality {X : Type*} [MetricSpace X] (x y z : X) : 
-    dist x z ≤ dist x y + dist y z :=
-  dist_triangle x y z
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-20.lean}
 
 \vspace{1em}
 \subsection{MP-21: Picard-Lindelöf (Cauchy-Lipschitz) Existence Theorem}
@@ -395,13 +272,7 @@ theorem problem_20_triangle_inequality {X : Type*} [MetricSpace X] (x y z : X) :
 Rigorous foundation of deterministic classical dynamics in Banach spaces. Proves existence and local uniqueness of trajectory solutions for Lipschitz vector fields, eliminating unphysical causal branching.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_21_picard_lindelof {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-    {f : ℝ → E → E} {tmin tmax : ℝ} {t₀ : Set.Icc tmin tmax} {x₀ : E} {a L K : ℝ≥0}
-    (hf : IsPicardLindelof f t₀ x₀ a 0 L K) :
-    ∃ α : ℝ → E, α t₀ = x₀ ∧ ∀ t ∈ Icc tmin tmax, HasDerivWithinAt α (f t (α t)) (Icc tmin tmax) t :=
-  IsPicardLindelof.exists_eq_forall_mem_Icc_hasDerivWithinAt₀ hf
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-21.lean}
 
 \vspace{1em}
 \subsection{MP-22: Stokes / Multidimensional Divergence Theorem}
@@ -414,19 +285,7 @@ theorem problem_21_picard_lindelof {E : Type*} [NormedAddCommGroup E] [NormedSpa
 General multi-dimensional divergence theorem in Lean 4. Relates internal bulk source divergence to external boundary flux, forming the physical basis of Gauss's Law, continuity equations, and conservation laws.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_22_stokes_divergence {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] {n : ℕ} 
-    (I : Box (Fin (n + 1)))
-    (f : (Fin (n + 1) → ℝ) → Fin (n + 1) → E)
-    (f' : (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ) →L[ℝ] (Fin (n + 1) → E))
-    (s : Set (Fin (n + 1) → ℝ)) (hs : s.Countable)
-    (Hs : ∀ x ∈ s, ContinuousWithinAt f (Box.Icc I) x)
-    (Hd : ∀ x ∈ (Box.Icc I) \ s, HasFDerivWithinAt f (f' x) (Box.Icc I) x) :
-    HasIntegral I GP (fun x => ∑ i, f' x (Pi.single i 1) i) BoxAdditiveMap.volume
-      (∑ i, (integral (I.face i) GP (fun x => f (i.insertNth (I.upper i) x) i) BoxAdditiveMap.volume -
-             integral (I.face i) GP (fun x => f (i.insertNth (I.lower i) x) i) BoxAdditiveMap.volume)) :=
-  hasIntegral_GP_divergence_of_forall_hasDerivWithinAt I f f' s hs Hs Hd
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-22.lean}
 
 \vspace{1em}
 \subsection{MP-23: Sylow's First Theorem (Existence of p-Subgroups)}
@@ -439,11 +298,7 @@ p^n \mid |G| \implies \exists H \le G: |H| = p^n
 Classifies the internal finite symmetry subgroups of physical gauge groups. Guarantees the existence of stable discrete isotropy subgroups in crystalline lattices and quantum spin systems.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_23_sylow_first {G : Type*} [Group G] [Finite G] (p : ℕ) {n : ℕ} [Fact p.Prime]
-    (hdvd : p ^ n ∣ Nat.card G) : ∃ K : Subgroup G, Nat.card K = p ^ n :=
-  Sylow.exists_subgroup_card_pow_prime p hdvd
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-23.lean}
 
 \vspace{1em}
 \subsection{MP-24: Finite-Dimensional Spectral Theorem for Self-Adjoint Operators}
@@ -456,12 +311,7 @@ T = T^\dagger \implies \exists \text{ orthonormal basis } \{b_i\}: T b_i = \lamb
 The postulate of quantum measurements: every physical observable is represented by a self-adjoint operator whose eigenstates form a complete orthonormal basis with real eigenvalues.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_24_spectral_theorem {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    [FiniteDimensional ℝ E] {n : ℕ} (hn : Module.finrank ℝ E = n) (T : E →ₗ[ℝ] E) (hT : T.IsSymmetric) :
-    ∃ (b : OrthonormalBasis (Fin n) ℝ E), ∀ i, HasEigenvector T (hT.eigenvalues hn i) (b i) :=
-  ⟨hT.eigenvectorBasis hn, hT.hasEigenvector_eigenvectorBasis hn⟩
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-24.lean}
 
 \vspace{1em}
 \subsection{MP-25: Heine-Borel Theorem in Proper Metric Spaces}
@@ -474,11 +324,7 @@ K \subseteq X \text{ is compact} \iff K \text{ is closed and bounded}
 Ensures the existence of energy minimizers in variational mechanics (Weierstrass Extreme Value Theorem). Without compactness of closed bounded energy sub-levels, physical ground states would not exist.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_25_heine_borel {α : Type*} [MetricSpace α] [ProperSpace α] (s : Set α) :
-    IsCompact s ↔ IsClosed s ∧ IsBounded s :=
-  Metric.isCompact_iff_isClosed_bounded
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-25.lean}
 
 \vspace{1em}
 \subsection{MP-26: Noether's Theorem (Continuous Symmetry and Conserved Current)}
@@ -491,17 +337,7 @@ theorem problem_25_heine_borel {α : Type*} [MetricSpace α] [ProperSpace α] (s
 Grounds the profound connection between continuous spacetime/internal symmetries and exact dynamical conservation laws (linear momentum, angular momentum, charge).\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_26_noether_conserved_charge
-    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    (p X : ℝ → E) (p' X' : E) (t : ℝ)
-    (hp : HasDerivAt p p' t) (hX : HasDerivAt X X' t)
-    (h_symm : ⟪p t, X'⟫ + ⟪p', X t⟫ = (0 : ℝ)) :
-    HasDerivAt (fun s => ⟪p s, X s⟫) (0 : ℝ) t := by
-  have h := HasDerivAt.inner ℝ hp hX
-  rw [h_symm] at h
-  exact h
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-26.lean}
 
 \vspace{1em}
 \subsection{MP-27: Schrödinger Equation Unitary Evolution (Probability Conservation)}
@@ -514,13 +350,7 @@ U^\dagger U = I \implies \langle U\psi_1, U\psi_2 \rangle = \langle \psi_1, \psi
 Enforces conservation of quantum probability and information (Born rule). The linear isometry equivalence preserves quantum overlap and prohibits probability leakage.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_27_schrodinger_unitary_evolution
-    {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
-    (U : H ≃ₗᵢ[ℂ] H) (ψ₁ ψ₂ : H) :
-    @inner ℂ H _ (U ψ₁) (U ψ₂) = @inner ℂ H _ ψ₁ ψ₂ ∧ ‖U ψ₁‖ = ‖ψ₁‖ := by
-  exact ⟨LinearIsometryEquiv.inner_map_map U ψ₁ ψ₂, LinearIsometryEquiv.norm_map U ψ₁⟩
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-27.lean}
 
 \vspace{1em}
 \subsection{MP-28: Einstein Field Equations (Vacuum Gravitation)}
@@ -533,15 +363,7 @@ R_{\mu\nu} = 0 \wedge R = 0 \implies G_{\mu\nu} \equiv R_{\mu\nu} - \frac{1}{2} 
 Formulates Ricci-flat vacuum spacetime. Demonstrates that vanishing Ricci curvature identically zeroes the Einstein curvature tensor, governing gravitational wave propagation and black hole exteriors.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_28_einstein_field_vacuum
-    {V : Type*} [AddCommGroup V] [Module ℝ V]
-    (Ric g G : V →ₗ[ℝ] V →ₗ[ℝ] ℝ) (R : ℝ)
-    (hG : ∀ X Y, G X Y = Ric X Y - (1 / 2 * R) * g X Y)
-    (h_vacuum_ricci : Ric = 0) (h_vacuum_scalar : R = 0) :
-    ∀ X Y, G X Y = 0 := by
-  intro X Y; rw [hG, h_vacuum_ricci, h_vacuum_scalar]; simp
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-28.lean}
 
 \vspace{1em}
 \subsection{MP-29: Maxwell's Equations (Exterior Derivative Nilpotency d² = 0)}
@@ -554,12 +376,7 @@ d F = d(d A) = 0 \iff \iota(v) \wedge \iota(v) = 0
 The algebraic heart of the homogeneous Maxwell equations and Bianchi identities. Exterior algebra nilpotency ι(v)\textasciicircum{}2 = 0 prohibits magnetic monopoles and guarantees gauge invariant potentials.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_29_maxwell_bianchi_identity
-    {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M] (v : M) :
-    ExteriorAlgebra.ι R v * ExteriorAlgebra.ι R v = 0 :=
-  ExteriorAlgebra.ι_sq_zero v
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-29.lean}
 
 \vspace{1em}
 \subsection{MP-30: Hamilton's Equations (Symplectic Energy Conservation)}
@@ -572,15 +389,7 @@ theorem problem_29_maxwell_bianchi_identity
 Symplectic orthogonality: phase velocity is perpendicular to the Hamiltonian gradient. Proves exact energy conservation along phase curves and underpins Liouville's phase volume preservation.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_30_hamilton_energy_conservation
-    {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    (grad_q grad_p dq dp : V)
-    (h_dq : dq = grad_p) (h_dp : dp = -grad_q) :
-    ⟪grad_q, dq⟫ + ⟪grad_p, dp⟫ = (0 : ℝ) := by
-  rw [h_dq, h_dp, inner_neg_right, real_inner_comm grad_p grad_q]
-  exact add_neg_cancel ⟪grad_p, grad_q⟫
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-30.lean}
 
 \vspace{1em}
 \subsection{MP-31: Second Law of Thermodynamics (Monotonic Entropy Growth)}
@@ -593,12 +402,7 @@ theorem problem_30_hamilton_energy_conservation
 The thermodynamic arrow of time. In isolated systems, thermodynamic entropy is a monotonically non-decreasing function of physical time, ruling out macroscopic time-reversal.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_31_second_law_thermodynamics
-    (S : ℝ → ℝ) (h_mono : Monotone S) (t₁ t₂ : ℝ) (h_time : t₁ ≤ t₂) :
-    S t₁ ≤ S t₂ :=
-  h_mono h_time
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-31.lean}
 
 \vspace{1em}
 \subsection{MP-32: Dirac Equation (Clifford Algebra Anticommutation)}
@@ -611,13 +415,7 @@ theorem problem_31_second_law_thermodynamics
 Linearizes the relativistic wave equation into first order while preserving Lorentz covariance. The Clifford anticommutation of orthogonal vectors guarantees spin-1/2 fermionic representations.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_32_dirac_clifford_anticommutation
-    {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M]
-    (Q : QuadraticForm R M) (a b : M) (h_ortho : Q.IsOrtho a b) :
-    CliffordAlgebra.ι Q a * CliffordAlgebra.ι Q b + CliffordAlgebra.ι Q b * CliffordAlgebra.ι Q a = 0 :=
-  CliffordAlgebra.ι_mul_ι_add_swap_of_isOrtho h_ortho
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-32.lean}
 
 \vspace{1em}
 \subsection{MP-33: Lorentz Force Relativistic Orthogonality (Mass Conservation)}
@@ -630,15 +428,7 @@ theorem problem_32_dirac_clifford_anticommutation
 Skew-symmetry of the electromagnetic field tensor F implies the 4-force is strictly orthogonal to 4-velocity. Proves proper rest mass m0 is an invariant of motion.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_33_lorentz_force_orthogonality
-    {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    (F : V →ₗ[ℝ] V) (h_skew : ∀ x y, ⟪F x, y⟫ = -⟪x, F y⟫) (u : V) :
-    ⟪u, F u⟫ = (0 : ℝ) := by
-  have h1 := h_skew u u
-  have h2 : ⟪F u, u⟫ = ⟪u, F u⟫ := real_inner_comm u (F u)
-  linarith
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-33.lean}
 
 \vspace{1em}
 \subsection{MP-34: Euler-Lagrange Equation (Stationary Action Principle)}
@@ -651,13 +441,7 @@ theorem problem_33_lorentz_force_orthogonality
 Hamilton's principle of stationary action: physical trajectories make the action functional stationary, equating generalized momentum flux to generalized generalized force.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_34_euler_lagrange_stationarity
-    {V : Type*} [AddCommGroup V]
-    (p_dot F : V) (h_EL : p_dot = F) :
-    p_dot - F = 0 := by
-  rw [h_EL]; exact sub_self F
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-34.lean}
 
 \vspace{1em}
 \subsection{MP-35: Heisenberg / Robertson Uncertainty Principle}
@@ -670,12 +454,7 @@ theorem problem_34_euler_lagrange_stationarity
 Mathematical foundation of quantum indeterminacy. Cauchy-Schwarz in complex Hilbert space bounds the non-vanishing commutator of conjugate observables (position and momentum).\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_35_heisenberg_uncertainty_bound
-    {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] (u v : H) :
-    ‖@inner ℂ H _ u v‖ ≤ ‖u‖ * ‖v‖ :=
-  norm_inner_le_norm u v
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-35.lean}
 
 \vspace{1em}
 \subsection{MP-36: Planck's Radiation Law (Spectral Energy Density Positivity)}
@@ -688,15 +467,7 @@ u(\nu, T) = \frac{8\pi h \nu^3}{c^3} \frac{1}{e^{h\nu/k_B T} - 1} > 0 \quad (\nu
 Resolves the Rayleigh-Jeans ultraviolet catastrophe. Proves spectral energy density remains strictly positive and bounded for any positive frequency and temperature.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_36_planck_radiation_positivity
-    (hbar nu c _kB _T : ℝ)
-    (hh : 0 < hbar) (hnu : 0 < nu) (hc : 0 < c) (_hk : 0 < _kB) (_hT : 0 < _T)
-    (denom : ℝ) (h_denom : 0 < denom) :
-    0 < (2 * hbar * nu^3 / c^2) / denom := by
-  have h_num : 0 < 2 * hbar * nu^3 / c^2 := by positivity
-  exact div_pos h_num h_denom
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-36.lean}
 
 \vspace{1em}
 \subsection{MP-37: Ehrenfest Theorem (Commuting Observables are Constants of Motion)}
@@ -709,12 +480,7 @@ theorem problem_36_planck_radiation_positivity
 Quantum-classical correspondence: an observable that commutes with the Hamiltonian operator is a rigorous constant of motion whose expectation value is time-invariant.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_37_ehrenfest_constant_of_motion
-    {A : Type*} [Ring A] (H O : A) (h_comm : H * O = O * H) :
-    H * O - O * H = 0 := by
-  rw [h_comm]; exact sub_self (O * H)
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-37.lean}
 
 \vspace{1em}
 \subsection{MP-38: Stefan-Boltzmann Law (Quartic Growth Monotonicity)}
@@ -727,13 +493,7 @@ j^* = \sigma T^4 \implies T_1 \le T_2 \implies \sigma T_1^4 \le \sigma T_2^4
 Integral of Planck's spectral radiance over all frequencies yields total radiant emittance proportional to T\textasciicircum{}4. Monotonicity ensures thermal stability of stellar and thermodynamic systems.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_38_stefan_boltzmann_monotonicity
-    (sigma T₁ T₂ : ℝ) (h_sigma : 0 ≤ sigma) (h_nonneg : 0 ≤ T₁) (h_le : T₁ ≤ T₂) :
-    sigma * T₁ ^ 4 ≤ sigma * T₂ ^ 4 := by
-  have h_pow : T₁ ^ 4 ≤ T₂ ^ 4 := pow_le_pow_left₀ h_nonneg h_le 4
-  exact mul_le_mul_of_nonneg_left h_pow h_sigma
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-38.lean}
 
 \vspace{1em}
 \subsection{MP-39: Incompressible Navier-Stokes (Helmholtz-Leray Orthogonal Decomposition)}
@@ -746,17 +506,7 @@ theorem problem_38_stefan_boltzmann_monotonicity
 Helmholtz-Leray decomposition: every velocity field splits into a divergence-free solenoidal field and an irrotational gradient field that are strictly orthogonal in L2, preserving kinetic energy orthogonality.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_39_incompressible_solenoidal_flow
-    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    (u grad_phi : E) (h_ortho : ⟪u, grad_phi⟫ = (0 : ℝ)) :
-    ⟪u + grad_phi, u + grad_phi⟫ = ⟪u, u⟫ + ⟪grad_phi, grad_phi⟫ := by
-  rw [inner_add_left, inner_add_right, inner_add_right]
-  have h_ortho2 : ⟪grad_phi, u⟫ = (0 : ℝ) := by
-    rw [real_inner_comm, h_ortho]
-  rw [h_ortho, h_ortho2]
-  ring
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-39.lean}
 
 \vspace{1em}
 \subsection{MP-40: Continuity Equation (Total Isolated Charge Conservation)}
@@ -769,12 +519,7 @@ theorem problem_39_incompressible_solenoidal_flow
 Local conservation law: rate of charge/mass accumulation inside a control volume matches boundary flux. For isolated boundaries, total charge Q is an exact invariant.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_40_continuity_charge_conservation
-    (Q_dot Flux : ℝ) (h_cont : Q_dot + Flux = 0) (h_isolated : Flux = 0) :
-    Q_dot = 0 := by
-  linarith
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-40.lean}
 
 \vspace{1em}
 \subsection{MP-41: Friedmann FLRW Expansion Positivity in Flat Universe}
@@ -787,13 +532,7 @@ H^2 = \left(\frac{\dot{a}}{a}\right)^2 = \frac{8\pi G}{3} \rho \ge 0 \quad (\rho
 In flat FLRW cosmology, the square of the Hubble expansion rate is proportional to energy density ρ. Nonnegativity under the Weak Energy Condition (ρ ≥ 0) ensures real expansion velocity.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_41_friedmann_flat_expansion_nonneg
-    (G rho : ℝ) (hG : 0 < G) (hrho : 0 ≤ rho) :
-    0 ≤ (8 * Real.pi * G / 3) * rho := by
-  have : 0 ≤ 8 * Real.pi * G / 3 := by { have hpi : 0 < Real.pi := Real.pi_pos; positivity }
-  exact mul_nonneg this hrho
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-41.lean}
 
 \vspace{1em}
 \subsection{MP-42: Geodesic Velocity Norm Conservation}
@@ -806,13 +545,7 @@ a^\mu = 0 \implies \frac{d}{d\tau}(u_\mu u^\mu) = 2 u_\mu a^\mu = 0
 In curved spacetime, free-falling test particles follow autoparallel geodesics where covariant acceleration vanishes (a = 0), strictly conserving proper time interval dτ\textasciicircum{}2.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_42_geodesic_velocity_norm_conservation
-    {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    (u a : V) (h_geodesic : a = 0) :
-    ⟪u, a⟫ = (0 : ℝ) := by
-  rw [h_geodesic]; exact inner_zero_right u
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-42.lean}
 
 \vspace{1em}
 \subsection{MP-43: Klein-Gordon Relativistic Dispersion Relation}
@@ -825,12 +558,7 @@ E^2 - p^2 c^2 = m^2 c^4 \iff E^2 = p^2 + m^2 \quad (c=1)
 The relativistic mass-shell constraint p\_μ p\textasciicircum{}μ = m\textasciicircum{}2 for spin-0 scalar bosons, linking temporal frequency to spatial wavevectors.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_43_klein_gordon_energy_momentum
-    (E p_norm m : ℝ) (h_onshell : E^2 - p_norm^2 = m^2) :
-    E^2 = p_norm^2 + m^2 := by
-  linarith
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-43.lean}
 
 \vspace{1em}
 \subsection{MP-44: Larmor Formula Radiated Power Positivity}
@@ -843,15 +571,7 @@ P = \frac{q^2 a^2}{6\pi \varepsilon_0 c^3} \ge 0
 Any accelerating electric charge radiates electromagnetic energy at a strictly non-negative rate, guaranteeing radiative damping and consistency of the Poynting flux.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_44_larmor_power_nonneg
-    (q a eps0 c : ℝ) (heps : 0 < eps0) (hc : 0 < c) :
-    0 ≤ (q^2 * a^2) / (6 * Real.pi * eps0 * c^3) := by
-  have hpi : 0 < Real.pi := Real.pi_pos
-  have h_num : 0 ≤ q^2 * a^2 := mul_nonneg (sq_nonneg q) (sq_nonneg a)
-  have h_den : 0 < 6 * Real.pi * eps0 * c^3 := by positivity
-  exact div_nonneg h_num (le_of_lt h_den)
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-44.lean}
 
 \vspace{1em}
 \subsection{MP-45: Virial Theorem Bound State Energy}
@@ -864,14 +584,7 @@ theorem problem_44_larmor_power_nonneg
 For gravitationally or electrostatically bound systems in inverse-square force potentials, total energy equals negative average kinetic energy, proving gravitational binding.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_45_virial_bound_state_energy
-    (T_avg V_avg E_tot : ℝ)
-    (h_virial : 2 * T_avg + V_avg = 0)
-    (h_energy : E_tot = T_avg + V_avg) :
-    E_tot = -T_avg := by
-  linarith
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-45.lean}
 
 \vspace{1em}
 \subsection{MP-46: Equipartition Theorem Thermal Kinetic Positivity}
@@ -884,12 +597,7 @@ theorem problem_45_virial_bound_state_energy
 Each quadratic degree of freedom in thermodynamic equilibrium carries 1/2 k\_B T of energy. Nonnegativity at non-negative Kelvin temperature enforces thermodynamic ground states.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_46_equipartition_kinetic_nonneg
-    (kB T : ℝ) (hkB : 0 < kB) (hT : 0 ≤ T) :
-    0 ≤ (1 / 2) * kB * T := by
-  positivity
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-46.lean}
 
 \vspace{1em}
 \subsection{MP-47: Unruh Effect Temperature Positivity under Proper Acceleration}
@@ -902,14 +610,7 @@ T_U = \frac{\hbar a}{2\pi k_B c} > 0 \quad (a > 0)
 An observer undergoing uniform proper acceleration a in Minkowski vacuum perceives a thermal bath of blackbody radiation with strictly positive Unruh temperature.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_47_unruh_temperature_positivity
-    (hbar a kB c : ℝ)
-    (hh : 0 < hbar) (ha : 0 < a) (hk : 0 < kB) (hc : 0 < c) :
-    0 < (hbar * a) / (2 * Real.pi * kB * c) := by
-  have hpi : 0 < Real.pi := Real.pi_pos
-  positivity
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-47.lean}
 
 \vspace{1em}
 \subsection{MP-48: Hawking Radiation Temperature Positivity}
@@ -922,14 +623,7 @@ T_H = \frac{\hbar c^3}{8\pi G M k_B} > 0 \quad (M > 0)
 Schwarzschild black holes possess a non-vanishing event horizon surface gravity and emit quantum thermal radiation with positive temperature inversely proportional to black hole mass.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_48_hawking_temperature_positivity
-    (hbar c G M kB : ℝ)
-    (hh : 0 < hbar) (hc : 0 < c) (hG : 0 < G) (hM : 0 < M) (hk : 0 < kB) :
-    0 < (hbar * c^3) / (8 * Real.pi * G * M * kB) := by
-  have hpi : 0 < Real.pi := Real.pi_pos
-  positivity
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-48.lean}
 
 \vspace{1em}
 \subsection{MP-49: Bekenstein Information \& Entropy Bound Nonnegativity}
@@ -942,14 +636,7 @@ S \le \frac{2\pi k_B R E}{\hbar c}
 Universal upper bound on entropy and information contained within any finite region of space of radius R containing finite energy E, proving holographic finiteness.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_49_bekenstein_bound_nonneg
-    (kB R E hbar c : ℝ)
-    (hk : 0 < kB) (hR : 0 ≤ R) (hE : 0 ≤ E) (hh : 0 < hbar) (hc : 0 < c) :
-    0 ≤ (2 * Real.pi * kB * R * E) / (hbar * c) := by
-  have hpi : 0 < Real.pi := Real.pi_pos
-  positivity
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-49.lean}
 
 \vspace{1em}
 \subsection{MP-50: Bell's Inequality (CHSH Strict Discrete Bound)}
@@ -962,18 +649,7 @@ A, A', B, B' \in \{-1, 1\} \implies A B - A B' + A' B + A' B' \in \{-2, 2\} \imp
 The foundational theorem of quantum nonlocality: local hidden variable models are strictly bounded by |S| ≤ 2. In contrast, quantum entangled states achieve the Tsirelson bound 2√2.\\
 
 \textbf{Formal Lean 4 Verification (Definitions C \& D):}
-\begin{verbatim}
-theorem problem_50_bell_chsh_discrete_bound
-    (A A' B B' : ℝ)
-    (hA : A = 1 ∨ A = -1) (hA' : A' = 1 ∨ A' = -1)
-    (hB : B = 1 ∨ B = -1) (hB' : B' = 1 ∨ B' = -1) :
-    A * B - A * B' + A' * B + A' * B' = 2 ∨ A * B - A * B' + A' * B + A' * B' = -2 := by
-  rcases hA with rfl | rfl <;>
-  rcases hA' with rfl | rfl <;>
-  rcases hB with rfl | rfl <;>
-  rcases hB' with rfl | rfl <;>
-  norm_num
-\end{verbatim}
+\lstinputlisting[language=lean]{/home/xavkal/xdev/AutoevolveAI/papers/200_compendium/compendium_sources/MP-50.lean}
 
 \vspace{1em}
 \newpage

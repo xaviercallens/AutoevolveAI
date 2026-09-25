@@ -121,6 +121,12 @@ def execute_100_math_physics_suite() -> List[ProblemEvaluationRecord]:
             detected_cheat = True
             cheat_reason = cheat_reason or "Scalar trivialization bypasses manifold topology"
 
+        # Anti-LaTeX Linter Check (IoC Redactor Plan)
+        import re
+        if not detected_cheat and re.search(r"\\begin|\\theta|\\Theta|\\mathbb|\$|b_\{3\}", code):
+            detected_cheat = True
+            cheat_reason = "LATEX_BLEED_DETECTED: Source code contains LaTeX macros."
+
         passed, lat, ram, energy, reward = DeterministicPhysicalSandbox.measure(p_id, detected_cheat)
 
         if detected_cheat:
@@ -194,17 +200,29 @@ def execute_single_rust(cid: str) -> ProblemEvaluationRecord:
 
     prompt = (
         f"Implement a high-performance numerical kernel in Rust for {kernel_info['name']}: "
-        f"{kernel_info['description']} Assert invariant correctness and output INVARIANT_CHECK: PASSED."
+        f"{kernel_info['description']} Assert invariant correctness and output INVARIANT_CHECK: PASSED.\n"
+        f"You are a compiler. NEVER use LaTeX macros (\\theta, \\mathbb, \\begin) in your response. Output only pure raw source code without any formatting or markdown blocks."
     )
     chosen_code = kernel_info["source"].strip()
     rejected_code = res_base.details.get("stdout", "Baseline execution unoptimized")
+    
+    import re
+    latex_bleed = bool(re.search(r"\\begin|\\theta|\\Theta|\\mathbb|\$|b_\{3\}", chosen_code))
+    if latex_bleed:
+        res.verified = False
+        res.invariant_error = 999.0
+        res.energy = 999999.0
+        res.latency_ms = 999.0
+        res.memory_mb = 999.0
 
-    r_c = 10.0 - (res.latency_ms * 0.05) - (res.invariant_error * 10.0)
+    r_c = 10.0 - (res.latency_ms * 0.05) - (res.invariant_error * 10.0) if not latex_bleed else -2.5
     r_r = 10.0 - (res_base.latency_ms * 0.05) - (res_base.invariant_error * 10.0)
-    if r_c - r_r < 2.0:
+    if r_c - r_r < 2.0 and not latex_bleed:
         r_r = r_c - 2.5
+    elif latex_bleed:
+        r_r = 0.5
 
-    energy_red = max(0.0, res_base.energy - res.energy)
+    energy_red = max(0.0, res_base.energy - res.energy) if not latex_bleed else 0.0
 
     return ProblemEvaluationRecord(
         problem_id=cid,
@@ -257,7 +275,8 @@ def execute_single_python(cid: str) -> ProblemEvaluationRecord:
 
     prompt = (
         f"Implement a computational physics / applied math kernel in Python for {name}: {desc}. "
-        f"Assert exact physical conservation laws."
+        f"Assert exact physical conservation laws.\n"
+        f"You are a compiler. NEVER use LaTeX macros (\\theta, \\mathbb, \\begin) in your response. Output only pure raw source code without any formatting or markdown blocks."
     )
     try:
         source_code = inspect.getsource(PYTHON_BENCHMARKS[cid][2])
@@ -266,13 +285,22 @@ def execute_single_python(cid: str) -> ProblemEvaluationRecord:
     
     chosen_code = f"{source_code}\n# Invariant error: {res.invariant_error}\n"
     rejected_code = f"# Unverified ungrounded implementation with high energy drift\n"
+    
+    import re
+    latex_bleed = bool(re.search(r"\\begin|\\theta|\\Theta|\\mathbb|\$|b_\{3\}", chosen_code))
+    if latex_bleed:
+        res.verified = False
+        res.invariant_error = 999.0
+        res.energy = 999999.0
+        res.latency_ms = 999.0
+        res.memory_mb = 999.0
 
     base_lat = res.latency_ms * 2.5
     base_energy = res.energy * 2.2
-    energy_red = base_energy - res.energy
+    energy_red = base_energy - res.energy if not latex_bleed else 0.0
 
-    r_c = 10.0 - (res.latency_ms * 0.05) - (res.invariant_error * 10.0)
-    r_r = r_c - 3.5
+    r_c = 10.0 - (res.latency_ms * 0.05) - (res.invariant_error * 10.0) if not latex_bleed else -2.5
+    r_r = r_c - 3.5 if not latex_bleed else 0.5
 
     return ProblemEvaluationRecord(
         problem_id=cid,

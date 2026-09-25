@@ -23,9 +23,20 @@ TimeoutStartSec=infinity
 # always passes. Most phase 0/1 cards need no GPU anyway; the cards that do
 # fail their own accept commands, which is the honest place to find out.
 
-ExecStart=/home/callensxavier_gmail_com/AutoevolveAI/.venv/bin/python \
+# Two passes in order: implement cards, then retrain whatever those cards just
+# unblocked.
+#
+# The '-' prefix is on the CARD pass, not the trainer. With Type=oneshot a
+# failing ExecStart aborts the remaining ones, and a failed card is a normal
+# nightly outcome (it stays pending and retries tomorrow) -- it must not stop
+# the model that was already trainable. Card failures are recorded in
+# docs/remediation/nightly_logs/, so the signal is not lost by ignoring the
+# exit code here. Unit status therefore reflects the trainer.
+ExecStart=-/home/callensxavier_gmail_com/AutoevolveAI/.venv/bin/python \
     scripts/night_phase_runner.py \
     --budget-ceiling 25.00
+ExecStart=/home/callensxavier_gmail_com/AutoevolveAI/.venv/bin/python \
+    scripts/post_implement_training.py
 
 Environment="PYTHONPATH=/home/callensxavier_gmail_com/AutoevolveAI"
 Environment="PATH=/home/callensxavier_gmail_com/AutoevolveAI/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"

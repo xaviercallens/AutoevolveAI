@@ -131,8 +131,8 @@ cards:
     depends_on: []
     read_first: [gateway.py]
     spec:
-      - "SECURITY. gateway.py has no authentication on any route (verified across :661-904). /mcp/tools/{server}/{tool} (:691), /mcp/call (:707) and /mcp/rpc/{server} (:719) invoke arbitrary MCP tools unauthenticated, and :904 is a catch-all proxy."
-      - "x_api_key (:736) is only forwarded upstream, never validated. Worse, :751-753 skips upstream entirely when the key is empty or starts with 'test_', returning a synthetic response, and :810-811 fabricates token counts. Remove that bypass — it is a forgery path, not a test affordance."
+      - "SECURITY. gateway.py does not authenticate its routes, and one path accepts a request without validating the supplied key. This repo is PUBLIC and this card is the fix, so the route names, line numbers and bypass condition are NOT written here -- read docs/remediation/SECURITY_PRIVATE.md (gitignored, local only)."
+      - "Add real auth on every route (compare secrets with hmac.compare_digest) and deny by default: a new route must be unreachable until explicitly allowed. Remove the unvalidated-key path entirely -- it is a forgery path, not a test affordance -- and stop returning fabricated token counts."
       - "Add real auth on every route (shared secret compared with hmac.compare_digest at minimum) and deny by default: a new route must be unreachable until explicitly allowed."
       - "Sequence this BEFORE P3-x puts real conversation data in Redis and before GCS credentials are reachable from this process."
       - "Human tier: a security boundary and a credential decision. Do not delegate."

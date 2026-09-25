@@ -5,10 +5,17 @@ Global pytest configuration and anti-cheat runtime enforcement for ANSE test sui
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
 import pytest
+
+# Wire datalake vendor path for vendored imports like rl_common and rl_agent_api
+_datalake_vendor = Path("/mnt/disks/disk-socrateai-local-1/AutoevolveAI/datalake/vendor/laya")
+if _datalake_vendor.exists() and str(_datalake_vendor) not in sys.path:
+    sys.path.insert(0, str(_datalake_vendor))
 
 # Ensure Hypothesis is optionally loaded if installed
 try:

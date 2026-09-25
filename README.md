@@ -5,7 +5,7 @@
 
 [![Lean 4 Formal Specs](https://img.shields.io/badge/Lean_4-v4.34.0--rc2%20(2%2C967%20Jobs)-blue?style=for-the-badge&logo=lean)](formal/ANSE/StrongGravity.lean)
 [![Benchmarks: 200 Cases](https://img.shields.io/badge/Benchmarks-200%2F200_Passing-brightgreen?style=for-the-badge&logo=pytest)](results/200_unified_eval_report.json)
-[![Release: v2.3.0](https://img.shields.io/badge/Release-v2.3.0-blueviolet?style=for-the-badge&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v2.3.0)
+[![Release: v12.3.0](https://img.shields.io/badge/Release-v2.3.0-blueviolet?style=for-the-badge&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v2.3.0)
 [![Safe ANSE V4](https://img.shields.io/badge/Safe_ANSE_V4-Z3_SMT_Inviolable-emerald?style=for-the-badge&logo=shield)](anse/v4/implicit_smt.py)
 [![Closed-Loop Hardness](https://img.shields.io/badge/Closed--Loop_Hardness-10%2F10_Passing-brightgreen?style=for-the-badge&logo=checkmarx)](scripts/execute_5_closed_loop_scenarios.py)
 [![RL Energy Reduction](https://img.shields.io/badge/Energy_Reduction--90.3%25-orange?style=for-the-badge&logo=speedtest)](results/reinforcement_learning_2000_cases_eda_run4.json)
@@ -257,7 +257,7 @@ ANSE (**Autopoietic Neuro-Symbolic Energy-Based Model**) mathematically links sy
 
 ## 🛡️ 10 End-to-End Closed-Loop Scenarios Under Hardness
 
-ANSE v2.3.0 enforces a strict thermodynamic contract ($\Delta E = E_{\text{child}} - E_{\text{parent}} < 0$) and zero-trust execution attestation verified across 10 end-to-end scenarios:
+ANSE v12.3.0 enforces a strict thermodynamic contract ($\Delta E = E_{\text{child}} - E_{\text{parent}} < 0$) and zero-trust execution attestation verified across 10 end-to-end scenarios:
 
 ### Core Closed-Loop Scenarios (`scripts/execute_5_closed_loop_scenarios.py`)
 1. **Symplectic Orbit Integration ($|\Delta H / H_0| < 10^{-4}$):** 4th-Order Symplectic Yoshida Integrator maintains exact Hamiltonian conservation ($|\Delta H/H_0| = 1.38 \times 10^{-14}$) over $10^4$ steps ($\Delta E = -999,740.82$).

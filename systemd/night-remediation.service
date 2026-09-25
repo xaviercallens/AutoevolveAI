@@ -1,0 +1,75 @@
+[Unit]
+Description=AutoevolveAI nightly remediation card runner
+Documentation=file:///home/callensxavier_gmail_com/AutoevolveAI/docs/remediation/NIGHT_ORCHESTRATION.md
+After=network-online.target
+Wants=network-online.target
+# NOTE: deliberately no `After=redis.service`. No redis unit exists on this
+# host yet (card P0-5). Ordering against a missing unit is silently ignored,
+# which reads like a dependency that is not there.
+
+[Service]
+Type=oneshot
+User=callensxavier_gmail_com
+WorkingDirectory=/home/callensxavier_gmail_com/AutoevolveAI
+
+# A full phase can run for hours. Type=oneshot inherits DefaultTimeoutStartSec
+# (90s on this host), which would SIGTERM the runner mid-card and leave a
+# half-applied tree. This is not optional.
+TimeoutStartSec=infinity
+
+# No ExecStartPre GPU gate. An earlier version called
+# `agent_environment --require-gpu`, but that flag does not exist and the
+# module ignores argv, so it exited 0 with no GPU present -- a gate that
+# always passes. Most phase 0/1 cards need no GPU anyway; the cards that do
+# fail their own accept commands, which is the honest place to find out.
+
+# Two passes in order: implement cards, then retrain whatever those cards just
+# unblocked.
+#
+# The '-' prefix is on the CARD pass, not the trainer. With Type=oneshot a
+# failing ExecStart aborts the remaining ones, and a failed card is a normal
+# nightly outcome (it stays pending and retries tomorrow) -- it must not stop
+# the model that was already trainable. Card failures are recorded in
+# docs/remediation/nightly_logs/, so the signal is not lost by ignoring the
+# exit code here. Unit status therefore reflects the trainer.
+ExecStart=-/home/callensxavier_gmail_com/AutoevolveAI/.venv/bin/python \
+    scripts/night_phase_runner.py \
+    --budget-ceiling 25.00
+ExecStart=-/home/callensxavier_gmail_com/AutoevolveAI/.venv/bin/python \
+    scripts/post_implement_training.py
+
+# Closing pass: branch, push, open or update the PR for the night's commits.
+# '-' as well: a GitHub outage must not mark the night a failure when the cards
+# and training already ran and committed locally. The PR is reporting, not work.
+ExecStart=-/home/callensxavier_gmail_com/AutoevolveAI/.venv/bin/python \
+    scripts/night_finalize.py
+
+Environment="PYTHONPATH=/home/callensxavier_gmail_com/AutoevolveAI"
+# ~/.local/bin FIRST: it holds the `claude` binary (a symlink into
+# ~/.local/share/claude/versions/). Without it the runner launches no model at
+# all -- HeadlessError("`claude` is not on PATH") on every card. Verified by
+# running `claude -p` under `env -i` with this exact PATH.
+Environment="PATH=/home/callensxavier_gmail_com/.local/bin:/home/callensxavier_gmail_com/AutoevolveAI/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+# `claude` resolves its credentials under $HOME; User= sets it, but be explicit.
+Environment="HOME=/home/callensxavier_gmail_com"
+Environment="CLOUDSDK_CORE_PROJECT=gen-lang-client-0625573011"
+Environment="OLLAMA_MODELS=/mnt/disks/disk-socrateai-local-1/leanmaster/ollama"
+# Keep pytest from reaching for the real Lean toolchain (card P0-8).
+Environment="ANSE_LEAN_TESTS=0"
+
+# Yield to interactive work; this is background repair, not a deadline.
+Nice=10
+IOSchedulingClass=idle
+
+MemoryMax=12G
+TasksMax=512
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=night-remediation
+
+[Install]
+WantedBy=multi-user.target

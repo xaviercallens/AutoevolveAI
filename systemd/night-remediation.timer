@@ -1,0 +1,22 @@
+[Unit]
+Description=Nightly trigger for the AutoevolveAI remediation card runner
+# NOTE: deliberately no `Requires=night-remediation.service` here. On a timer
+# unit that pulls the service in as a dependency of the TIMER, so `systemctl
+# start` on the timer fires the run immediately instead of at 01:00.
+
+[Timer]
+OnCalendar=*-*-* 01:00:00 UTC
+Persistent=true
+AccuracySec=1min
+RandomizedDelaySec=0
+
+# Unit= defaults to the same basename with .service, so it is redundant here
+# and only adds a place for the two names to drift apart.
+#
+# Overlap: systemd will not start a second instance of a service that is
+# already running, and the runner additionally holds an exclusive flock on
+# .night_runner.lock (exit 3 if held). Both are real; neither comes from a
+# setting in this file.
+
+[Install]
+WantedBy=timers.target

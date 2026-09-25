@@ -1,9 +1,15 @@
 """Unit tests for anse.symbolic.repl_pain_loop (Physical Lean 4 REPL & Anti-LaTeX Bleed-Through)."""
 
+import os
 import pytest
 from anse.symbolic.repl_pain_loop import (
     REPLPainLoop,
     detect_latex_bleed_through,
+)
+
+pytestmark = pytest.mark.skipif(
+    not os.getenv("ANSE_LEAN_TESTS"),
+    reason="Skipped by default to avoid multi-GB Mathlib download. Run with ANSE_LEAN_TESTS=1 to enable.",
 )
 
 

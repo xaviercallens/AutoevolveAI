@@ -410,6 +410,16 @@ def run(
                 status_path.write_text(
                     json.dumps({"done": sorted(done)}, indent=2) + "\n"
                 )
+                # Fold the bookkeeping into the card's own commit. Without this
+                # the runner leaves status.json modified, and since it refuses
+                # to start on a dirty tree it would abort every subsequent
+                # night -- a scheduler that runs exactly once.
+                git("add", str(status_path))
+                if outcome.committed_sha is not None:
+                    git("commit", "--amend", "--no-edit")
+                else:
+                    # Card changed nothing of its own; record the pass alone.
+                    git("commit", "-m", f"chore(night): record {card['id']} done")
             logger.info(
                 "   PASS %s (%s, $%.4f)", card["id"], outcome.reason, outcome.cost_usd
             )

@@ -167,8 +167,19 @@ Rather than evaluating code through subjective token probabilities, ANSE grounds
 \end{equation}
 where $t_{\text{exec}}$ is duration in milliseconds, $M_{\text{peak}}$ is resident set size in megabytes, $\mathcal{I}_{\text{error}}$ is invariant drift, and $\Pi_{\text{penalty}} = 10^6$ for failures.
 
-\subsection{Fail-Closed AST Semantic Verification}
-To prevent synthetic degradation and epistemic shortcuts (e.g., proving high-dimensional manifold theorems by substituting arbitrary scalar constants and applying \texttt{ring}), the pre-compilation AST semantic verification module inspects proof terms and solver structures. Any candidate that trivializes a tensor invariant to a scalar identity is fail-closed, intercepted, and assigned a failure penalty $E = 10^6$.
+\subsection{Fail-Closed Two-Stage Hard-Gate \& Epistemic Verification}
+To prevent synthetic degradation, hypothesis smuggling, and epistemic evasion (e.g., proving manifold theorems by passing conclusion identities as theorem parameters such as \texttt{h\_invol}, assuming operator commutativity \texttt{h\_comm}, or assuming orthogonality \texttt{h\_ortho} to reduce Navier-Stokes to Pythagoras), ANSE deploys a \textbf{Two-Stage Hard-Gate}:
+
+\begin{itemize}
+    \item \textbf{Stage 1 (Syntax \& Typability):} Full deterministic compilation with \texttt{lake build}, \texttt{rustc -O}, and Python sandbox enforcing Exit Code 0.
+    \item \textbf{Stage 2 (Semantic \& Epistemic Audit):} Abstract Syntax Tree (AST) inspection verifying:
+    \begin{enumerate}
+        \item \textit{Interdiction of Hypothesis Smuggling:} Theorem signatures are scanned to reject ad-hoc parameter hypotheses that trivialize the goal to ring identities or \texttt{sub\_self}.
+        \item \textit{Interdiction of Vacuous Abstraction:} Banning opaque boolean flags (\texttt{is\_hodge : Prop}) and empty type mocks.
+        \item \textit{Mandatory Grounded Operators:} Mathematical formulations must import genuine Sobolev spaces, differential forms, Lie algebras, and L-series from Mathlib4.
+    \end{enumerate}
+\end{itemize}
+Any candidate that fails either Stage 1 or Stage 2 is fail-closed, intercepted, and assigned the maximum barrier penalty functional $E = 10^6$.
 
 \newpage
 """

@@ -4,6 +4,8 @@ import Mathlib.Analysis.Calculus.ContDiff.Basic
 
 open InnerProductSpace
 
+namespace ANSE.NavierStokes
+
 -- Spatial domain is Euclidean 3-space R^3
 abbrev Point3 := Fin 3 → ℝ
 abbrev Vector3 := Fin 3 → ℝ
@@ -57,3 +59,5 @@ def NavierStokesGlobalExistenceAndSmoothness : Prop :=
       (∀ t ≥ 0, ContDiff ℝ ⊤ (p t)) ∧
       u 0 = u₀ ∧
       SatisfiesNavierStokes u p ν
+
+end ANSE.NavierStokes

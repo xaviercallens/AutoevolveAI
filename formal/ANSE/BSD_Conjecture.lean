@@ -1,9 +1,13 @@
 import Mathlib.AlgebraicGeometry.EllipticCurve.Weierstrass
 import Mathlib.AlgebraicGeometry.EllipticCurve.LFunction
-import Mathlib.Analysis.Calculus.Deriv.Basic
+import Mathlib.Topology.MetricSpace.Basic
+import Mathlib.Order.Filter.Basic
 
 open Complex
 open WeierstrassCurve
+open Filter Topology
+
+namespace ANSE.BSD
 
 /-- Non-singular Elliptic Curve over the rational numbers Q -/
 structure RationalEllipticCurve where
@@ -14,12 +18,12 @@ structure RationalEllipticCurve where
 noncomputable def hasse_weil_L_series (E : RationalEllipticCurve) (s : ℂ) : ℂ :=
   E.curve.LSeries s
 
-/-- Analytic order of vanishing of the Hasse-Weil L-series at the central point s = 1 -/
+/-- Rigorous analytic order of vanishing of the Hasse-Weil L-series at s = 1.
+    Defined via topological filter convergence: lim_{s → 1, s ≠ 1} L(E, s) / (s - 1)^r = c ≠ 0.
+    Eliminates all algebraic tautologies or unconstrained remainder mocks. -/
 def HasAnalyticOrderAtOne (E : RationalEllipticCurve) (r : ℕ) : Prop :=
-  -- L(E, s) = c * (s - 1)^r + O((s - 1)^(r+1)) with c ≠ 0 near s = 1
   ∃ (c : ℂ), c ≠ 0 ∧
-    ∀ (s : ℂ), s ≠ 1 →
-      ∃ (R : ℂ), hasse_weil_L_series E s = c * (s - 1)^r + R * (s - 1)^(r + 1)
+    Tendsto (fun s : ℂ => hasse_weil_L_series E s / (s - 1)^r) (nhdsWithin 1 {1}ᶜ) (nhds c)
 
 /-- The Mordell-Weil Algebraic Rank of E(Q): E(Q) ≅ Z^r ⊕ Torsion -/
 structure MordellWeilStructure (E : RationalEllipticCurve) where
@@ -32,3 +36,5 @@ def BirchSwinnertonDyerConjecture
     (E : RationalEllipticCurve)
     (MW : MordellWeilStructure E) : Prop :=
   HasAnalyticOrderAtOne E MW.rank
+
+end ANSE.BSD

@@ -7,6 +7,8 @@ open InnerProductSpace
 
 set_option linter.overlappingInstances false
 
+namespace ANSE.YangMills
+
 -- 4D Spacetime domain R^4
 abbrev Point4 := Fin 4 → ℝ
 abbrev Vector4 := Fin 4 → ℝ
@@ -51,3 +53,5 @@ def YangMillsMassGapConjecture
       inner (𝕜 := ℂ) YM.vacuum ψ = 0 →
       ψ ≠ 0 →
       E ≥ Δ
+
+end ANSE.YangMills

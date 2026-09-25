@@ -54,9 +54,22 @@ class SemanticGatekeeper:
          "Vacuous Structure: RationalEllipticCurve mocked with unconstrained Nat numbers rather than WeierstrassCurve and L-series."),
     ]
 
+    # LaTeX Bleed-Through patterns (TeX macros mistakenly injected into Lean code)
+    LATEX_BLEED_PATTERNS = [
+        (r"\\(?:theta|rightarrow|leftarrow|Sigma|mathbb|mathbf|forall|exists|times|le|ge|neq|Delta|nabla|alpha|beta|gamma|nu|mu|psi|omega|pi)\b",
+         "LaTeX Bleed-Through: Raw TeX macro detected in Lean source code. Use native Unicode (e.g. ℝ, ℂ, ℕ, →, ∑, ∀, ∃) or Lean identifiers."),
+    ]
+
+    # Mathematical Tautologies (Algebraic remainder solving for arbitrary function values)
+    TAUTOLOGY_PATTERNS = [
+        (r"hasse_weil_L_series.*=.*c\s*\*\s*\(s\s*-\s*1\)\^r\s*\+\s*R\s*\*",
+         "Algebraic Tautology: BSD vanishing order trivialized via unconstrained remainder R. Use Filter.Tendsto or Asymptotics."),
+    ]
+
     # Required operators per topic
     OPERATOR_REQUIREMENTS = {
         "navier_stokes": {
+
             "required_any": [r"Deriv", r"fderiv", r"nabla", r"div", r"curl", r"Laplacian", r"ContDiff"],
             "description": "Navier-Stokes requires differential calculus operators (fderiv, div, ContDiff, etc.)."
         },
@@ -100,6 +113,16 @@ class SemanticGatekeeper:
                     rule="OPERATOR_COMPLETENESS",
                     message=f"Missing essential operators for {topic}. {req['description']}"
                 ))
+
+        # 4. Check for LaTeX Bleed-Through
+        for pattern, msg in self.LATEX_BLEED_PATTERNS:
+            if re.search(pattern, code):
+                violations.append(SemanticViolation(rule="NO_LATEX_BLEED_THROUGH", message=msg))
+
+        # 5. Check for Mathematical Tautologies
+        for pattern, msg in self.TAUTOLOGY_PATTERNS:
+            if re.search(pattern, code):
+                violations.append(SemanticViolation(rule="NO_MATHEMATICAL_TAUTOLOGY", message=msg))
 
         # Calculate Energy Penalty
         if violations:

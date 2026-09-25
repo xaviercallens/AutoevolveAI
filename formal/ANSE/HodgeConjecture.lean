@@ -6,6 +6,8 @@ open Complex
 
 set_option linter.unusedVariables false
 
+namespace ANSE.Hodge
+
 /-- Complex Projective Algebraic Manifold Structure -/
 structure ComplexProjectiveManifold where
   Carrier : Type
@@ -52,3 +54,5 @@ def HodgeConjecture : Prop :=
       ∀ (α : CohomologyQ),
         IsRationalHodgeClass HS α →
         ∃ (z : Cycles), cycles.cycle_class_map z = α
+
+end ANSE.Hodge

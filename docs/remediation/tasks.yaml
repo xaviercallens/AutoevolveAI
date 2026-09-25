@@ -1,0 +1,1031 @@
+# AutoevolveAI remediation workflow — cards for tiered model execution.
+#
+# Schema matches docs/v2/tasks.yaml (ported to main via card P0-1) so that
+# tools/v2_tasks.py can drive it: id, title, phase, tier, depends_on, spec,
+# accept (+ optional create, tests, read_first, edit).
+#
+# Tiers:
+#   low   - a Haiku-class model can finish the card from the card alone.
+#   mid   - a Sonnet-class model: cross-file reasoning or a judgement call.
+#   human - a person runs or decides it: sudo, reboot, money, credentials,
+#           published claims, or anything that fails open. accept: [] by
+#           convention; where the result is machine-checkable, a paired low
+#           card verifies it afterwards.
+#
+# `accept` commands are run by the DRIVER, never trusted from the model.
+# Authored against main (no .coveragerc, no --cov-fail-under=100 gate).
+#
+# Evidence for every card is in docs/remediation/AUDIT_2026-09-25.md.
+
+rules:
+  - "Type-annotate every function signature (.antigravity/rules.md §1.3)."
+  - "No stubs (pass / ... / NotImplementedError) and no mock_ dummy_ fake_ prefixes outside tests/ (§6.1). NOTE: .claude/hooks/post_edit_verify.py rejects the edit if a function body is a bare pass/.../raise NotImplementedError. When a card asks you to make a path fail, raise a NAMED domain exception with a message, never NotImplementedError."
+  - "Every test needs >=2 real assertions, no tautologies (assert True, assert x == x, lone assert x is not None). Use pytest.raises(Exact, match=...) for negative cases (§2.2)."
+  - "Mock only external I/O (sockets, subprocess, cloud clients). Never mock the module under test (§2.3)."
+  - "Use Hypothesis for pure functions: assert invariants (round-trip, idempotence, oracle equivalence), not scalar examples (§3)."
+  - "Report only real tool output. Never invent a number, a duration, or a test result (§6.3)."
+  - "Run tests with .venv/bin/python (3.11). System python3 is 3.10 and breaks on StrEnum."
+  - "Do not run `pytest tests/` unscoped until P0-8 lands: tests/test_repl_pain_loop.py shells to real `lake env lean` and triggers a multi-GB Mathlib fetch."
+  - "If a card's premise is false when you read the code, stop and report the discrepancy. Do not adapt the card to make it pass."
+
+# Scoped, deterministic acceptance for cards that add a module + its tests.
+# Per-card accept lists name the specific test file; this anchor is only for
+# cards that must additionally leave the whole remediation suite green.
+acc_suite: &acc_suite
+  - ".venv/bin/python -m pytest tests/remediation -q -p no:cacheprovider"
+
+cards:
+
+  # ─────────────────────────────────────────────────────────────────────
+  # PHASE 0 — Restore the platform. Nothing downstream is real until these
+  # land: no GPU, no Redis, no auth, and no card driver on main.
+  # ─────────────────────────────────────────────────────────────────────
+
+  - id: P0-1
+    title: "Port the card driver to main (cherry-pick 99b8290)"
+    phase: 0
+    tier: human
+    depends_on: []
+    spec:
+      - "git cherry-pick 99b8290 from origin/AIautoevolveClaudeGCP. It carries tools/v2_tasks.py, tools/setup_v2_env.sh, docs/v2/{tasks.yaml,README.md,MODEL_SELECTION_T4.md}, v2_runners/t4_fit_probe.py, docs/ROADMAP_V1_V2_COMPANION.md."
+      - "Expected conflicts are limited to .gitignore, anse/v2/__init__.py, tests/v2/__init__.py. Keep main's versions of the two __init__.py files — main's anse/v2/ has six real modules, the GCP branch has a bare package."
+      - "Do NOT run the 42 ported cards. They assume the GCP branch state and a --cov-fail-under=100 gate main does not have; their accept commands will fail on main. They are ported for the driver and for reference only."
+      - "Human tier: cherry-pick onto a branch with uncommitted work present, and a judgement call on each conflict."
+    accept: []
+
+  - id: P0-2
+    title: "Add --file to tools/v2_tasks.py so it can drive this card set"
+    phase: 0
+    tier: low
+    depends_on: [P0-1]
+    read_first: [tools/v2_tasks.py]
+    edit: [tools/v2_tasks.py]
+    create: [tests/remediation/test_v2_tasks_file_flag.py]
+    spec:
+      - "tools/v2_tasks.py currently hardcodes docs/v2/tasks.yaml and writes state to docs/v2/status.json. Add a global --file PATH option (default: docs/v2/tasks.yaml) accepted by every subcommand (list, next, card, done, check)."
+      - "Derive the status path from the tasks path: <dir>/status.json alongside the given file. So --file docs/remediation/tasks.yaml uses docs/remediation/status.json."
+      - "Do not change any existing behaviour when --file is omitted. Do not change the render() output format."
+      - "While you are here, fix the documented mismatch: `list --tier X` advertises tier filtering but never filters. Make it filter, matching ready()/next semantics."
+      - "Do NOT touch the `done` subcommand's behaviour (it appends an id without running accept commands). That is a separate card, P5-7."
+    tests:
+      - "--file pointing at a temp YAML with 2 cards: list shows both; next returns the one with satisfied deps; done writes status.json NEXT TO the temp file, not under docs/v2/."
+      - "Omitting --file still resolves docs/v2/tasks.yaml and docs/v2/status.json (assert on the resolved paths, do not write to the real ones — use monkeypatch)."
+      - "list --tier low on a mixed-tier fixture returns only low cards; assert a mid card is absent."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_v2_tasks_file_flag.py -q -p no:cacheprovider"
+      - ".venv/bin/python tools/v2_tasks.py --file docs/remediation/tasks.yaml check"
+
+  - id: P0-3
+    title: "Restore the NVIDIA driver so the T4 is usable"
+    phase: 0
+    tier: human
+    depends_on: []
+    spec:
+      - "The T4 is physically present (lspci: 00:04.0 TU104GL [Tesla T4]) but no kernel module is loaded: lsmod shows no nvidia, modinfo nvidia errors, nvidia-smi exits 9, torch.cuda.is_available() is False. Running kernel is 6.8.0-1067-gcp; only nvidia-kernel-common-580-server is installed; dkms is absent."
+      - "Install the FLAVOUR metapackage, not the version-pinned one: `sudo apt install linux-modules-nvidia-580-server-gcp nvidia-driver-580-server`. The metapackage (candidate 6.8.0-1067.75~22.04.1+2) tracks kernel upgrades; linux-modules-nvidia-580-server-6.8.0-1067-gcp pins to the current kernel and the GPU will vanish at the next bump."
+      - "unattended-upgrades is ACTIVE and /lib/modules holds five kernels (1060, 1063, 1064, 1066, 1067). This is how the GPU was lost. Either keep the metapackage current or hold the kernel — decide and record which."
+      - "Reboot, then confirm: nvidia-smi -L names a Tesla T4, and `.venv/bin/python -c 'import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))'` prints True and the device name."
+      - "Human tier: passwordless sudo is available on this host, which is exactly why an agent must not do this. Kernel module install plus reboot."
+    accept: []
+
+  - id: P0-4
+    title: "Machine-checkable GPU readiness probe"
+    phase: 0
+    tier: low
+    depends_on: [P0-3]
+    read_first: [anse/infrastructure/agent_environment.py]
+    edit: [anse/infrastructure/agent_environment.py]
+    create: [tests/remediation/test_gpu_readiness.py]
+    spec:
+      - "anse/infrastructure/agent_environment.py already has detect_gpu() -> GPUInfo (live nvidia-smi) and AUTOEVOLVE_GPU_HINT. Add: verify_gpu_ready() -> GPUReadiness."
+      - "GPUReadiness is a frozen dataclass: driver_ok: bool, torch_cuda_ok: bool, name: str | None, total_memory_mb: int | None, disagreement: str | None."
+      - "driver_ok comes from the existing detect_gpu(). torch_cuda_ok comes from torch.cuda.is_available(). Import torch lazily INSIDE the function so the module stays importable on a CPU-only box."
+      - "disagreement is a human-readable string when driver_ok != torch_cuda_ok (that combination means a driver/toolkit mismatch, which is the failure mode this card exists to catch), else None."
+      - "Add a --require-gpu flag to the module's existing main(): exit 0 when driver_ok and torch_cuda_ok are both True, exit 1 otherwise, printing the readiness dataclass as JSON. This is the gate later cards call."
+      - "Do NOT make AUTOEVOLVE_GPU_HINT satisfy --require-gpu. The hint selects a model profile; it must never assert that a driver works."
+    tests:
+      - "Patch detect_gpu and torch.cuda.is_available across the four combinations; assert disagreement is None when they agree and non-None (mentioning both) when they differ."
+      - "--require-gpu exits 1 when torch reports False even if AUTOEVOLVE_GPU_HINT=t4 is set — assert the exit code and that the hint did not flip it."
+      - "The module still imports when torch import raises ImportError (simulate with monkeypatch on the import); verify_gpu_ready returns torch_cuda_ok False rather than propagating."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_gpu_readiness.py -q -p no:cacheprovider"
+
+  - id: P0-5
+    title: "Install and configure Redis for durable local memory"
+    phase: 0
+    tier: human
+    depends_on: []
+    spec:
+      - "No Redis exists on this host: no process, nothing on 6379, redis-server and redis-cli absent from PATH. Meanwhile gateway.py:25, attestation_reporter.py:13, harvest_delta.py:17, harvest_training_pipeline.py:18, export_training_data.py:13 and daily_trainer_daemon.py:15 all import redis unconditionally."
+      - "Install redis-server. Use the configuration the repo already declares in docker-compose.yml:7-16 rather than inventing one: appendonly yes, appendfsync everysec, maxmemory 4gb, maxmemory-policy noeviction."
+      - "Bind to 127.0.0.1 only and set requirepass. Do not expose 6379 on the GCP external interface, and do not add a firewall rule for it."
+      - "Put the AOF/RDB directory on /mnt/disks/disk-socrateai-local-1 (203 GB free), not on / (81 GB free)."
+      - "Enable the service so it survives reboot — the night job depends on it."
+      - "Human tier: package install, a service, and a credential."
+    accept: []
+
+  - id: P0-6
+    title: "Authenticate gateway.py before Redis holds real data"
+    phase: 0
+    tier: human
+    depends_on: []
+    read_first: [gateway.py]
+    spec:
+      - "SECURITY. gateway.py has no authentication on any route (verified across :661-904). /mcp/tools/{server}/{tool} (:691), /mcp/call (:707) and /mcp/rpc/{server} (:719) invoke arbitrary MCP tools unauthenticated, and :904 is a catch-all proxy."
+      - "x_api_key (:736) is only forwarded upstream, never validated. Worse, :751-753 skips upstream entirely when the key is empty or starts with 'test_', returning a synthetic response, and :810-811 fabricates token counts. Remove that bypass — it is a forgery path, not a test affordance."
+      - "Add real auth on every route (shared secret compared with hmac.compare_digest at minimum) and deny by default: a new route must be unreachable until explicitly allowed."
+      - "Sequence this BEFORE P3-x puts real conversation data in Redis and before GCS credentials are reachable from this process."
+      - "Human tier: a security boundary and a credential decision. Do not delegate."
+    accept: []
+
+  - id: P0-7
+    title: "Confirm the MCP guard server reconnects, or render an absolute path"
+    phase: 0
+    tier: low
+    depends_on: []
+    read_first: [.mcp.json, scripts/render_mcp_configs.py]
+    spec:
+      - "All 17 mcp_guard_server.py tools are currently unreachable from Claude Code. The original .mcp.json pointed at /home/xavkal/... which does not exist on this host; it was changed to ${CLAUDE_PROJECT_DIR:-.}/.venv/bin/python. Whether Claude Code expands that ${VAR:-default} form has NOT been verified by anyone."
+      - "Settle it empirically: restart Claude Code, then check whether the python-code-guard server is connected (its tools appear as mcp__python-code-guard__*)."
+      - "If it connects: record that in docs/remediation/status notes and stop."
+      - "If it does not: extend scripts/render_mcp_configs.py with a render_claude_code_config(project_root) that writes .mcp.json with this machine's literal absolute interpreter path — the same treatment .antigravity/mcp_config.json already gets — and re-run it. Keep check_claude_code_config() working for whichever form ends up in the file."
+      - "SCOPE: this card covers the python-code-guard server ONLY. mcp_claude_workflow.py is also absent from .mcp.json, but do NOT declare it here — its verifier (claude_workflow.py:150) executes model-supplied acceptance_command with shell=True, so exposing it before card P5-6 closes that hole would hand a self-certification path to every model that runs these cards. P5-6 declares it."
+    tests:
+      - "If you add render_claude_code_config: tmp_path fixture, assert the written JSON parses, that the command path is absolute and exists, and that a re-render is idempotent (byte-identical second write)."
+    accept:
+      - ".venv/bin/python -c \"import json,pathlib; d=json.loads(pathlib.Path('.mcp.json').read_text()); s=d['mcpServers']; assert 'python-code-guard' in s, sorted(s)\""
+      - ".venv/bin/python scripts/render_mcp_configs.py --agent claude_code"
+
+  - id: P0-8
+    title: "Stop pytest from triggering a multi-GB Mathlib fetch"
+    phase: 0
+    tier: low
+    depends_on: []
+    read_first: [tests/test_repl_pain_loop.py, anse/symbolic/repl_pain_loop.py]
+    edit: [tests/test_repl_pain_loop.py]
+    create: [tests/remediation/test_lean_skip_guard.py]
+    spec:
+      - "tests/test_repl_pain_loop.py shells out to real `lake env lean` with no skip guard. Any unscoped `pytest tests/` therefore starts a Mathlib download. One fired accidentally during the audit session and left 673 MB in formal/.lake."
+      - "Gate every test in that file that invokes lake/lean behind an opt-in env var: skip unless ANSE_LEAN_TESTS=1. Use a module-level pytestmark with pytest.mark.skipif and a reason string that names the variable."
+      - "Do not weaken the assertions and do not convert the tests to mocks — when ANSE_LEAN_TESTS=1 they must still run the real compiler. This card changes WHEN they run, never WHAT they check."
+      - "Apply the same guard to any other test that shells to lake/lean. Find them with: grep -rln 'lake env lean\\|lake build' tests/"
+    tests:
+      - "With ANSE_LEAN_TESTS unset, run the file via pytest programmatically and assert every lean-invoking test reports skipped and zero lake subprocesses were spawned (patch subprocess.run and assert it was not called)."
+      - "With ANSE_LEAN_TESTS=1, assert the skip mark does not apply (check the mark evaluates False); do not actually run the compiler in this test."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_lean_skip_guard.py -q -p no:cacheprovider"
+      - "bash -c 'cd \"$PWD\" && timeout 120 .venv/bin/python -m pytest tests/test_repl_pain_loop.py -q -p no:cacheprovider 2>&1 | grep -qE \"skipped|no tests ran\"'"
+
+  # ─────────────────────────────────────────────────────────────────────
+  # PHASE 1 — Stop the fabrication. Quarantine + fail loudly, per the
+  # decision on 2026-09-25. Nothing in Phase 4 may be scheduled until this
+  # phase is complete: a nightly timer over these paths would industrialise
+  # the production of unbacked results.
+  # ─────────────────────────────────────────────────────────────────────
+
+  - id: P1-1
+    title: "Create the quarantine area and its contract"
+    phase: 1
+    tier: low
+    depends_on: []
+    create: [quarantine/README.md, anse/infrastructure/fabrication.py, tests/remediation/test_fabrication_exceptions.py]
+    spec:
+      - "Create quarantine/README.md explaining: this directory holds modules that reported success without doing the work; nothing here may be imported by anse/, scripts/ or tests/ except by a test asserting it is NOT imported; each entry lists its original path, the audit finding, and the date."
+      - "Create anse/infrastructure/fabrication.py defining the exceptions later cards raise instead of returning invented values. Define: FabricatedResultError(RuntimeError) as the base; TelemetryUnavailableError(FabricatedResultError); SimulationRefusedError(FabricatedResultError); UnverifiedDataError(FabricatedResultError)."
+      - "Each exception takes a message and stores .component (str) and .remedy (str) attributes, so a caller can print what to do instead. Give the base an __init__(self, message: str, *, component: str, remedy: str) -> None."
+      - "These are real exception classes with real bodies — do not use `pass` as a class body (the post-edit hook rejects it). Give each a docstring and let the base hold the logic."
+    tests:
+      - "Raising TelemetryUnavailableError carries component and remedy through str() and attribute access; assert both attributes and that it is a FabricatedResultError and a RuntimeError."
+      - "pytest.raises(FabricatedResultError, match=...) catches each subclass; assert at least two distinct subclasses are caught by the base."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_fabrication_exceptions.py -q -p no:cacheprovider"
+
+  - id: P1-2
+    title: "gpu_telemetry: return real NVML readings or raise"
+    phase: 1
+    tier: low
+    depends_on: [P1-1]
+    read_first: [anse/infrastructure/gpu_telemetry.py]
+    edit: [anse/infrastructure/gpu_telemetry.py]
+    create: [tests/remediation/test_gpu_telemetry_real.py]
+    spec:
+      - "anse/infrastructure/gpu_telemetry.py:16-23 returns random.uniform/random.gauss values while its docstring (:10) claims to replace simulation with 'physical truth' and :14 logs 'Connected to physical GPU sensors'. :13 sets connected = True unconditionally."
+      - "Rewrite get_real_telemetry() to read actual values via nvidia-smi --query-gpu=temperature.gpu,utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits, parsed into a typed dict. Reuse the subprocess/timeout/error shape already in anse/infrastructure/agent_environment.py detect_gpu()."
+      - "When no GPU is reachable, raise TelemetryUnavailableError (component='gpu_telemetry', remedy pointing at card P0-3). Never return a number that was not measured."
+      - "Fix __init__: self.connected must reflect an actual probe, not be hardcoded True."
+      - "Remove the 'physical truth' / 'physical sensors' wording; the docstring must describe what the code does."
+      - "Delete the random import once unused — vulture and the guards will flag it."
+    tests:
+      - "Patch subprocess.run to return a known CSV line; assert every parsed field equals the injected value (temperature, utilisation, memory used/total) — at least 3 field assertions."
+      - "Patch shutil.which to None; assert pytest.raises(TelemetryUnavailableError, match='gpu') and assert the remedy text mentions the driver card."
+      - "Assert the module source contains no 'random.' call: read the file and assert 'random.uniform' not in it and 'random.gauss' not in it."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_gpu_telemetry_real.py -q -p no:cacheprovider"
+
+  - id: P1-3
+    title: "engine_v3: remove the hardcoded 'physical energy' multiplier"
+    phase: 1
+    tier: mid
+    depends_on: [P1-2]
+    read_first: [anse/v3/engine_v3.py]
+    edit: [anse/v3/engine_v3.py]
+    create: [tests/remediation/test_engine_v3_energy.py]
+    spec:
+      - "anse/v3/engine_v3.py:73-80 comments 'Fetch True Physical Telemetry from Hardware' and logs 'based on raw hardware telemetry' while consuming gpu_telemetry's random numbers. Further down it computes final_physical_energy = baseline_energy * 0.95 if commit_success else * 0.99 under a 'Simulate Final Physical execution' comment — a hardcoded multiplier presented as a measurement."
+      - "Replace the multiplier with a real measurement from the existing deterministic sandbox (anse/symbolic/sandbox.py), which already computes E = duration_ms + peak_ram_mb. If no measurement is available, raise SimulationRefusedError rather than estimating."
+      - "Propagate P1-2's TelemetryUnavailableError instead of swallowing it: on a GPU-less host this path must fail loudly, not produce an energy number."
+      - "Correct every comment and log string that claims hardware provenance the code does not have."
+      - "Mid tier: requires reading how the sandbox reports energy and rewiring a call site, not a local edit."
+    tests:
+      - "Patch the sandbox to return a known duration/RAM pair; assert final energy equals the sandbox value and is NOT baseline*0.95 or baseline*0.99 (assert both inequalities explicitly)."
+      - "Patch telemetry to raise TelemetryUnavailableError; assert it propagates out of the engine (pytest.raises) rather than being replaced by a default."
+      - "Assert the literals 0.95 and 0.99 no longer appear as energy multipliers in the touched function (read the source of that function via inspect.getsource and assert)."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_engine_v3_energy.py -q -p no:cacheprovider"
+
+  - id: P1-4
+    title: "latent_dreamer: stop asserting an outcome it never measured"
+    phase: 1
+    tier: mid
+    depends_on: [P1-1]
+    read_first: [anse/core/latent_dreamer.py]
+    edit: [anse/core/latent_dreamer.py]
+    create: [tests/remediation/test_latent_dreamer_honesty.py]
+    spec:
+      - "anse/core/latent_dreamer.py:121-122 scores torch.randn vectors through a randomly-initialised, never-trained FastJEPALatentPredictor under no_grad — the resulting energies are noise. :262 returns 'catastrophic_forgetting_prevented': True as a literal, having consolidated nothing. :175 computes speedup_vs_sandbox as 3000.0/latency against a hardcoded constant."
+      - "Remove the hardcoded True. execute_sleep_cycle must either report a measured retention figure (compare performance on a held-out replay set before and after consolidation) or raise SimulationRefusedError when no trained predictor is loaded."
+      - "dream_and_search must refuse to run against an untrained predictor: check for loaded weights and raise SimulationRefusedError naming the checkpoint it expected. Scoring random vectors through random weights is not a search."
+      - "Delete speedup_vs_sandbox or make it take the measured sandbox baseline as an argument. A ratio against a hardcoded 3000.0 is not a speedup."
+      - "Keep HippocampalReplayEngine (:195-264) — its JSONL append and shuffle are real. Only the claims around it are false."
+      - "Mid tier: requires deciding what 'measured retention' means here and touching a class with real callers."
+    tests:
+      - "Assert execute_sleep_cycle raises SimulationRefusedError when no trained predictor is present; assert the message names a checkpoint path."
+      - "With a stub predictor carrying loaded weights, assert the returned retention value is derived from the replay comparison (inject two known scores and assert the arithmetic), not a constant."
+      - "Assert the literal True is no longer returned for that key: inspect.getsource of execute_sleep_cycle must not contain 'catastrophic_forgetting_prevented\": True' or \"'catastrophic_forgetting_prevented': True\"."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_latent_dreamer_honesty.py -q -p no:cacheprovider"
+
+  - id: P1-5
+    title: "A DRY_RUN must never be recorded as a deployed checkpoint"
+    phase: 1
+    tier: mid
+    depends_on: [P1-1]
+    read_first: [daily_trainer_daemon.py, train_checkpoint.py]
+    edit: [daily_trainer_daemon.py]
+    create: [tests/remediation/test_no_dry_run_deployment.py]
+    spec:
+      - "THE MOST LOAD-BEARING CARD IN PHASE 1. daily_trainer_daemon.run_cycle:72 accepts train_checkpoint.py's config-only dry-run output (:153-172, taken whenever CUDA is absent per :210-218), hot-reloads it, and calls _record_successful_deployment:29-42, writing antigravity:active_lora_version and pushing antigravity:lora:history. A cycle that trained nothing is recorded as a deployed checkpoint, with no error."
+      - "Seven receipts prove it fires: adapters/checkpoint_v*/final_adapter/adapter_config.json, each with \"mode\": \"DRY_RUN\"."
+      - "In _record_successful_deployment, read the adapter_config.json being deployed and raise UnverifiedDataError when mode is DRY_RUN or when adapter_model.safetensors is absent from the adapter directory. A deployment record requires trained weights on disk."
+      - "In run_cycle, treat a dry-run result as a cycle FAILURE: log at error level and do not advance antigravity:training:watermark_ts. A silent skip would let the watermark march past unprocessed data."
+      - "Do not make train_checkpoint.py's dry-run path disappear — it is legitimate for config validation. The defect is the daemon treating it as a success."
+      - "Mid tier: a cross-file invariant spanning the daemon, the trainer's return shape and Redis state."
+    tests:
+      - "Write a temp adapter dir with mode DRY_RUN and no safetensors; assert _record_successful_deployment raises UnverifiedDataError and that fakeredis shows NO write to active_lora_version and no push to lora:history (assert both keys)."
+      - "Write a temp adapter dir with mode REAL plus a non-empty adapter_model.safetensors; assert the deployment IS recorded and both keys are set."
+      - "Assert run_cycle leaves training:watermark_ts unchanged when the trainer returns a dry-run result (read the key before and after)."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_no_dry_run_deployment.py -q -p no:cacheprovider"
+
+  - id: P1-6
+    title: "Quarantine the seven DRY_RUN adapter receipts"
+    phase: 1
+    tier: low
+    depends_on: [P1-5]
+    create: [quarantine/dry_run_adapters/README.md]
+    spec:
+      - "adapters/checkpoint_v*/ contains seven adapter_config.json receipts with \"mode\": \"DRY_RUN\", no weights, and \"dataset\" values using Windows separators (training_runs\\\\datasets\\\\delta_...). Their delta files are 1-line fixtures, so they cannot be output of a real run (default min_samples=50)."
+      - "git mv each affected checkpoint directory under quarantine/dry_run_adapters/ preserving its name. Do not delete — they are evidence."
+      - "Write quarantine/dry_run_adapters/README.md recording: what these are, that no weights were ever produced, the 2026-09-25 audit reference, and that antigravity:active_lora_version in Redis may still name one (P1-5 prevents new ones; this card does not rewrite history)."
+      - "grep for references to adapters/checkpoint_v across the repo and report any code path that still expects them. Do not fix those paths in this card — list them in the README."
+    tests: []
+    accept:
+      - "bash -c 'test -d quarantine/dry_run_adapters && test -f quarantine/dry_run_adapters/README.md'"
+      - "bash -c 'test -z \"$(find adapters -name adapter_config.json -exec grep -l DRY_RUN {} + 2>/dev/null)\"'"
+
+  - id: P1-7
+    title: "red_team: refuse to audit rather than fabricate a verdict"
+    phase: 1
+    tier: mid
+    depends_on: [P1-1]
+    read_first: [anse/core/red_team.py]
+    edit: [anse/core/red_team.py]
+    create: [tests/remediation/test_red_team_refusal.py]
+    spec:
+      - "anse/core/red_team.py:32-35 returns a hardcoded simulated PRM verdict when Ollama is unreachable; :82-90 mock_coder_auto_correction fabricates a 'fix'; :37-41 extract_lean_ast is a string-match mock. Verdict logic at :140-147 is substring matching on LLM prose."
+      - "Replace the simulated-verdict fallback with SimulationRefusedError naming the unreachable endpoint. An adversarial audit that cannot reach its model must fail, not pass."
+      - "Delete mock_coder_auto_correction, or move it to quarantine/ if any caller depends on it — check with grep first and record the result in the card's report."
+      - "Rename extract_lean_ast to reflect that it is a regex scan, not an AST, and make it raise rather than return a fake structure when the input does not parse. Naming a string match 'AST' is how a caller comes to trust it."
+      - "Leave the substring verdict logic in place but mark it clearly as heuristic in the docstring and return a confidence field the caller can act on. Replacing it properly is out of scope here."
+      - "Mid tier: two lazy importers (agent_loop.py:313, lean_agent_loop.py:85) must keep working."
+    tests:
+      - "Patch the Ollama client to raise ConnectionError; assert pytest.raises(SimulationRefusedError) and that the message contains the endpoint URL."
+      - "Assert mock_coder_auto_correction is absent from the module namespace (hasattr is False) — or, if it was moved, that anse.core.red_team does not import from quarantine."
+      - "Assert the renamed regex scanner raises on unparseable input instead of returning a dict."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_red_team_refusal.py -q -p no:cacheprovider"
+      - ".venv/bin/python -c \"import anse.core.red_team as r; assert not hasattr(r,'mock_coder_auto_correction')\""
+
+  - id: P1-8
+    title: "Silent in-memory fallbacks must announce themselves"
+    phase: 1
+    tier: low
+    depends_on: [P1-1]
+    read_first: [antigravity-harness/storage/redis_bus.py, anse/memory/redis_memory.py]
+    edit: [antigravity-harness/storage/redis_bus.py, anse/memory/redis_memory.py]
+    create: [tests/remediation/test_no_silent_memory_loss.py]
+    spec:
+      - "antigravity-harness/storage/redis_bus.py:126-144 catches bare Exception and swaps in plain dicts, setting is_mock=True with no log or warning, while its docstring (:2) claims 'JSON state persistence'. With Redis down — the current state — every record_trace/publish_event is volatile RAM the caller cannot distinguish from a durable write."
+      - "anse/memory/redis_memory.py:48 claims 'Long-term persistent conversation and trace memory'; _connect (:78) only logger.warning()s and store_turn (:92) returns False. Callers that ignore the bool lose data silently."
+      - "In redis_bus: narrow the bare `except Exception` to the redis connection errors actually expected, log at ERROR (not debug) naming the host and port, and make is_mock visible in the return value of every write method so a caller cannot mistake volatile for durable."
+      - "In redis_memory: keep returning False (callers depend on the signature) but log at ERROR with the key that was dropped, and add a strict: bool = False parameter that raises UnverifiedDataError instead of returning False. The night-training path will pass strict=True."
+      - "Correct both docstrings: they may claim persistence only for the path that actually persists."
+    tests:
+      - "redis_bus with a patched failing connection: assert is_mock is True in a write's return value AND that an ERROR-level record was emitted (caplog), asserting both the level and that the message contains the port."
+      - "redis_memory.store_turn(strict=True) with no client: assert pytest.raises(UnverifiedDataError); with strict=False assert it returns False and logs at ERROR."
+      - "Assert neither module's docstring claims unconditional persistence: read the source and assert the word 'persistence'/'persistent' is qualified (appears within 200 chars of 'redis' or 'when connected')."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_no_silent_memory_loss.py -q -p no:cacheprovider"
+
+  - id: P1-9
+    title: "mcts_lean_solver: fix a proof gate that passes almost anything"
+    phase: 1
+    tier: mid
+    depends_on: [P0-8]
+    read_first: [anse/core/mcts_lean_solver.py, anse/formal/lean_runner.py]
+    edit: [anse/core/mcts_lean_solver.py]
+    create: [tests/remediation/test_mcts_lean_gate.py]
+    spec:
+      - "anse/core/mcts_lean_solver.py:54-57 invokes bare `lean /tmp/MCTSTarget.lean` and scores success as ('error' not in res.stdout). Lean writes diagnostics to STDERR, so this returns 1.0 ('VICTOIRE') on almost any input, including a file that failed to compile. It also bypasses `lake env`, so `import Mathlib` cannot resolve."
+      - "Replace the check with the contract already implemented correctly in anse/formal/lean_runner.py:52-108: run via `lake env lean` with cwd=formal, treat a non-zero exit as failure, and additionally audit `#print axioms <thm>` output for sorryAx. Prefer importing lean_runner over reimplementing it — this repo has five parallel Lean invocation paths already and does not need a sixth."
+      - "Score 1.0 only when the exit code is 0 AND no sorryAx appears. Anything else scores 0.0 with the compiler's stderr attached to the result."
+      - "Gate the test behind ANSE_LEAN_TESTS=1 per card P0-8 — this card must not reintroduce an unguarded Mathlib fetch."
+      - "Mid tier: requires reading two modules and choosing reuse over reimplementation."
+    tests:
+      - "Patch subprocess to return (returncode=1, stdout='', stderr='error: unknown identifier'); assert the score is 0.0 and the stderr text is carried into the result — assert both."
+      - "Patch to (returncode=0, stdout='', stderr=''); assert 1.0. Patch to returncode=0 with sorryAx in the axioms output; assert 0.0."
+      - "Regression assertion for the original defect: returncode=1 with an EMPTY stdout must score 0.0 (the old code scored 1.0 here)."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_mcts_lean_gate.py -q -p no:cacheprovider"
+
+  - id: P1-10
+    title: "The MCP code critic must fail closed"
+    phase: 1
+    tier: low
+    depends_on: [P1-1]
+    read_first: [mcp_guard_server.py]
+    edit: [mcp_guard_server.py]
+    create: [tests/remediation/test_critic_fail_closed.py]
+    spec:
+      - "mcp_guard_server.py:358-364 wraps the SLM critic call and swallows any exception, returning accepted: True. A guard that approves code because it crashed is worse than no guard."
+      - "Return accepted: False on any exception, with an 'error' field naming the exception type and the reason the critic was unreachable."
+      - "Do the same audit for the neighbouring tools: :149-152 and :225-226 return secure/clean: False when a tool is missing, which is correct — confirm no other tool in this file defaults to a passing verdict on error. Report any you find; fix only the critic in this card."
+    tests:
+      - "Patch CodeCritic to raise RuntimeError; assert the tool returns accepted False and that the error field names RuntimeError — two assertions."
+      - "Patch CodeCritic to return a rejecting verdict; assert accepted is False and the original reason survives (not replaced by the error path)."
+      - "Patch CodeCritic to accept; assert accepted True and no error key."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_critic_fail_closed.py -q -p no:cacheprovider"
+
+  # ─────────────────────────────────────────────────────────────────────
+  # PHASE 2 — Measure the machine before using it. Nothing here trains;
+  # these cards establish the facts Phase 4 depends on.
+  # ─────────────────────────────────────────────────────────────────────
+
+  - id: P2-1
+    title: "A real VRAM capability check"
+    phase: 2
+    tier: low
+    depends_on: [P0-4]
+    create: [anse/infrastructure/vram.py, tests/remediation/test_vram.py]
+    spec:
+      - "No code in this repo queries real VRAM: zero hits repo-wide for get_device_properties, total_memory, mem_get_info. What exists is hardcoded strings ('RTX 2080 8GB', train_lora_local.py:207, train_grpo.py:178) and unconditional bnb configs."
+      - "Create anse/infrastructure/vram.py with: vram_snapshot() -> VramSnapshot (frozen dataclass: total_mb, free_mb, used_mb, device_name), reading torch.cuda.mem_get_info and get_device_properties. Import torch lazily; raise TelemetryUnavailableError when CUDA is unavailable."
+      - "Add fits_in_vram(required_mb: int, headroom_mb: int = 1024) -> bool — pure given a snapshot, so take the snapshot as an optional argument for testability: fits_in_vram(required_mb, headroom_mb=1024, snapshot=None)."
+      - "Add estimate_qlora_footprint_mb(param_count_b: float, bits: int = 4, batch: int = 1, seq_len: int = 2048) -> int returning a documented, arithmetic estimate (weights + optimizer + activations). Document each term in the docstring. An estimate is honest when it is labelled one."
+      - "The T4 has 15,360 MiB — NOT 16 GB. Use the measured figure, never a rounded assumption."
+    tests:
+      - "Hypothesis: fits_in_vram is monotonic in required_mb (if a larger requirement fits, a smaller one does too) and always False when required_mb + headroom_mb > total_mb — assert both properties."
+      - "estimate_qlora_footprint_mb grows with param_count_b and with seq_len; assert two strict inequalities."
+      - "vram_snapshot raises TelemetryUnavailableError when torch.cuda.is_available() is patched False; assert the exception type and that .component is set."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_vram.py -q -p no:cacheprovider"
+
+  - id: P2-2
+    title: "Model residency policy for a 15 GB T4 holding 27 GB of weights"
+    phase: 2
+    tier: mid
+    depends_on: [P0-3, P2-1]
+    create: [anse/infrastructure/model_residency.py, tests/remediation/test_model_residency.py, docs/remediation/MODEL_RESIDENCY.md]
+    spec:
+      - "'Deploy all the models on the T4' is not physically possible: ~27 GB of pulled weights (qwen3:8b, qwen2.5-coder:7b-instruct, mistral:7b-instruct, qwen3-embedding:0.6b, DeepSeek-Prover-V2-7B Q8, Goedel-Prover-V2-8B Q6) against 15,360 MiB of VRAM. The deliverable is a residency policy, not simultaneous deployment."
+      - "Create anse/infrastructure/model_residency.py with a ResidencyPolicy frozen dataclass (model: str, role: str, keep_alive: str, max_loaded: int) and a module-level registry mapping each pulled model to its role: generation, embedding, prover, baseline."
+      - "Provide plan_sequence(roles_needed: list[str]) -> list[ResidencyPolicy] returning the load order that minimises evictions — group consecutive uses of the same model, and never schedule two resident models whose combined footprint exceeds the VRAM snapshot."
+      - "Set OLLAMA_MAX_LOADED_MODELS=1 and an explicit keep_alive per role. Project memory records the failure mode this prevents: two models evict each other on every trace (~10-20 s reload) and keep_alive holds ~8 GiB."
+      - "Document in docs/remediation/MODEL_RESIDENCY.md: the measured sizes, why simultaneous residency is impossible, and the chosen ordering. State plainly that the embedding model and the generation model cannot both stay resident during a trace loop."
+      - "Do NOT restart or reconfigure the running Ollama service in this card — it serves other work on this host. Emit the recommended env settings; applying them is card P2-3."
+      - "Mid tier: a design with a measured constraint and a real trade-off."
+    tests:
+      - "plan_sequence never returns a plan whose concurrent footprint exceeds an injected VRAM snapshot — assert with a snapshot smaller than the two largest models combined."
+      - "plan_sequence groups repeated roles: given [gen, embed, gen], assert the returned order has the two gen entries adjacent (fewer evictions than the naive order) and assert the length is preserved."
+      - "Every registry entry names a model that `ollama list` reports — read the model names from a fixture file, not the live daemon, and assert the registry is a subset."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_model_residency.py -q -p no:cacheprovider"
+
+  - id: P2-3
+    title: "Apply the Ollama residency settings to the service"
+    phase: 2
+    tier: human
+    depends_on: [P2-2]
+    spec:
+      - "Apply the env settings from P2-2 to the ollama systemd unit: OLLAMA_MAX_LOADED_MODELS=1, OLLAMA_FLASH_ATTENTION=1, OLLAMA_KV_CACHE_TYPE=q8_0 (the last two were measured useful on this T4 per docs/v2/MODEL_SELECTION_T4.md)."
+      - "The unit already sets OLLAMA_MODELS=/mnt/disks/disk-socrateai-local-1/leanmaster/ollama and OLLAMA_HOST=127.0.0.1:11434. Preserve both."
+      - "Human tier: this restarts a service that other work on this host depends on, including the LeanMaster stack sharing that model store. Coordinate before restarting."
+      - "After restart, re-run P2-2's plan against the live daemon and confirm the reported loaded-model count never exceeds 1."
+    accept: []
+
+  - id: P2-4
+    title: "Verify whether Ollama 0.34.1 honours seed and temperature"
+    phase: 2
+    tier: low
+    depends_on: [P0-3]
+    create: [v2_runners/verify_ollama_determinism.py, tests/remediation/test_ollama_determinism_runner.py]
+    spec:
+      - "CLAUDE.md states Ollama 0.1.44 ignores seed/temperature on /v1/chat/completions, which is why anse/core/api_extractor.py has ollama_native=True. This host runs 0.34.1. The caveat may be stale, and several downstream claims ('two runs are two samples') depend on it."
+      - "Write v2_runners/verify_ollama_determinism.py: for both /v1/chat/completions and /api/chat, issue two requests with identical seed and temperature=0 against a model named on the command line, and report whether the outputs are byte-identical."
+      - "Report the actual Ollama version from /api/version in the output. Print a clear verdict per endpoint: HONOURS_SEED or IGNORES_SEED, plus the raw outputs when they differ."
+      - "Exit 0 regardless of the verdict — this is a measurement, not a gate. Exit non-zero only when the daemon is unreachable."
+      - "Do NOT edit CLAUDE.md in this card. Report the finding; updating the documented caveat is P6-5."
+      - "This runner lives outside the test suite because it needs the live daemon. The unit test covers its parsing and verdict logic against recorded responses."
+    tests:
+      - "Feed the verdict function two identical recorded responses and assert HONOURS_SEED; feed two differing ones and assert IGNORES_SEED — two assertions."
+      - "Assert the runner raises/exits non-zero on a connection error (patch httpx to raise) and that the message names the URL."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_ollama_determinism_runner.py -q -p no:cacheprovider"
+      - ".venv/bin/python -m py_compile v2_runners/verify_ollama_determinism.py"
+
+  - id: P2-5
+    title: "Wire the DeepSeek and Goedel provers to a real verification gate"
+    phase: 2
+    tier: mid
+    depends_on: [P1-9, P2-2]
+    create: [anse/formal/prover_client.py, tests/remediation/test_prover_client.py]
+    spec:
+      - "Both prover models were pulled manually and have ZERO code path: grep finds no reference to hf.co/mradermacher/Goedel-Prover-V2-8B-GGUF:Q6_K or hf.co/unsloth/DeepSeek-Prover-V2-7B-GGUF:Q8_0 anywhere. DeepSeek-Prover exists only as a dormant Cloud Run YAML (config/deepseek_prover_v2_cloudrun.yaml) with no Python client. scripts/lean_interactive_agent.py:51-53 is a literal stub returning 'sorry'."
+      - "Create anse/formal/prover_client.py: ProverClient(model: str, base_url: str, client: httpx.Client | None = None) with propose_proof(goal: str, context: str = '') -> ProofAttempt. Inject the HTTP client so tests stay hermetic — follow the pattern in anse/core/api_extractor.py."
+      - "ProofAttempt is a frozen dataclass: model, proof_text, verified (bool), verifier_output (str). verified is set ONLY by anse/formal/lean_runner.py's exit-code + sorryAx audit — never by the model's own claim, and never by parsing the model's prose."
+      - "Strip any <think> blocks before the proof is parsed (qwen-family and prover models emit them); reuse the existing strip_think helper rather than writing a second one — find it first."
+      - "A proof containing `sorry` is verified=False by definition. Assert this explicitly in the code, not just in tests."
+      - "Register both models in P2-2's residency registry under role 'prover'. They are 7-8 GB each and cannot be resident alongside the generation model."
+      - "Mid tier: a new integration that must defer to an existing verification contract rather than inventing one."
+    tests:
+      - "Patch the HTTP client to return a proof and the lean runner to report success; assert verified True and that verifier_output is the runner's output, not the model's text."
+      - "Patch the runner to report a non-zero exit; assert verified False even though the model claimed success in its prose — this is the card's core invariant."
+      - "A returned proof containing 'sorry' is verified False even when the runner exits 0; assert explicitly."
+      - "A response wrapped in <think>...</think> has the block stripped before parsing; assert the stripped text and that the marker is absent."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_prover_client.py -q -p no:cacheprovider"
+
+  - id: P2-6
+    title: "Decide the DeepSeek Cloud Run service: keep, deploy, or delete"
+    phase: 2
+    tier: human
+    depends_on: [P2-5]
+    read_first: [config/deepseek_prover_v2_cloudrun.yaml, scripts/manage_serverless.sh]
+    spec:
+      - "config/deepseek_prover_v2_cloudrun.yaml declares a Cloud Run service (deepseek-prover-v2, us-central1, image deepseek-prover-serve:stable) and scripts/manage_serverless.sh:12,14 can start/stop/scale it via gcloud. No Python client calls it."
+      - "With P2-5 running the same model locally on the T4 at zero marginal cost, decide: delete the YAML, keep it dormant as a documented burst path, or deploy and point ProverClient at it."
+      - "If keeping or deploying: confirm whether the service is currently running and billing. `gcloud run services list --region us-central1` under project gen-lang-client-0625573011."
+      - "Human tier: a cost decision against a cloud account."
+    accept: []
+
+  # ─────────────────────────────────────────────────────────────────────
+  # PHASE 3 — Long-term memory: Redis for the hot path, GCS for durability.
+  # ─────────────────────────────────────────────────────────────────────
+
+  - id: P3-1
+    title: "Add the GCS dependency and a typed storage client"
+    phase: 3
+    tier: low
+    depends_on: [P0-5]
+    create: [anse/infrastructure/gcs_backup.py, tests/remediation/test_gcs_backup.py]
+    edit: [pyproject.toml]
+    spec:
+      - "No GCS code exists in the repo: zero hits for google.cloud, storage.Client, gs://, GOOGLE_APPLICATION_CREDENTIALS. google-cloud-storage is not installed and not declared."
+      - "Add a new optional-dependency extra to pyproject.toml: backup = [\"google-cloud-storage>=2.18\"]. Do not add it to an existing extra — the guards read those lists to decide what may be imported."
+      - "Create anse/infrastructure/gcs_backup.py: GcsBackup(bucket: str, prefix: str, client: object | None = None) with upload_file(local: Path, remote_name: str) -> str returning the gs:// URI, download_file(remote_name: str, local: Path) -> Path, and list_backups(limit: int = 50) -> list[str] newest first."
+      - "Inject the storage client so tests never touch the network. Import google.cloud.storage lazily inside the constructor so the module imports without the extra installed."
+      - "Raise a named error (reuse UnverifiedDataError or add BackupError to anse/infrastructure/fabrication.py) when an upload reports success but a subsequent existence check fails. A backup that was not verified to exist is not a backup."
+      - "Credentials: rely on the host's application-default service account (1003063861791-compute@developer.gserviceaccount.com, project gen-lang-client-0625573011). Do NOT write a key file into the repo and do not add credentials to any config that is committed."
+    tests:
+      - "With an injected fake client (defined in the test file — this is a test double, which the rules permit inside tests/), assert upload_file returns the correct gs:// URI and that the blob name includes the prefix — two assertions."
+      - "Assert the post-upload existence check runs and that a client reporting the blob absent raises the named error (pytest.raises with match)."
+      - "list_backups returns newest first: inject three blobs with known timestamps and assert the exact order."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_gcs_backup.py -q -p no:cacheprovider"
+      - ".venv/bin/python -c \"import tomllib,pathlib; d=tomllib.loads(pathlib.Path('pyproject.toml').read_text()); assert 'backup' in d['project']['optional-dependencies']\""
+
+  - id: P3-2
+    title: "Choose the backup bucket, lifecycle and service-account scope"
+    phase: 3
+    tier: human
+    depends_on: [P3-1]
+    spec:
+      - "28 buckets are visible to this host's service account, including gs://socrateai-datalake-..., gs://gen-lang-client-0625573011-agora-checkpoints and gs://symbrain-v12-results. Decide which bucket receives AutoevolveAI memory backups, or create a dedicated one."
+      - "Set a lifecycle policy (for example: keep daily backups 30 days, weekly 1 year). Without one, a nightly job grows the bill indefinitely."
+      - "Decide retention for conversation data specifically. Redis will hold user conversation turns (anse/memory/redis_memory.py keys conversation:{id}:turns); backing those to cloud storage is a data-retention decision, not a technical one."
+      - "Confirm the service account has objectAdmin on the chosen bucket only, not project-wide storage admin."
+      - "Human tier: money, data retention and an IAM grant."
+    accept: []
+
+  - id: P3-3
+    title: "Redis snapshot to GCS, with a verified restore"
+    phase: 3
+    tier: mid
+    depends_on: [P3-1, P3-2]
+    create: [scripts/backup_redis_to_gcs.py, tests/remediation/test_redis_backup_roundtrip.py]
+    spec:
+      - "Write scripts/backup_redis_to_gcs.py: trigger BGSAVE, wait for rdb_bgsave_in_progress to clear (poll INFO persistence, with a timeout), then upload the RDB via P3-1's GcsBackup under a timestamped name."
+      - "Also export the logical keyspace as JSONL alongside the RDB — an RDB is only restorable into a compatible Redis, while the JSONL survives a version change. Cover the documented key families: antigravity:conversation:*, antigravity:trace:*, antigravity:attestation:*, antigravity:stream:audit, and the training watermark keys."
+      - "A backup is not complete until it is restorable: implement --verify to download the JSONL just uploaded, parse it, and assert the key count matches what was exported. Fail loudly on mismatch."
+      - "Implement --restore FROM_URI that loads a JSONL export into a target Redis, refusing to run against a non-empty database unless --force is given."
+      - "Never log key VALUES — they contain conversation content. Log counts and key names only."
+      - "Mid tier: a data-integrity round trip with a destructive restore path."
+    tests:
+      - "Round trip against fakeredis and an injected fake GCS client: populate known keys of each family, back up, flush, restore, assert every key and value is recovered — assert both the count and at least one exact value."
+      - "--verify with a truncated download raises and exits non-zero; assert the exception and that it names the expected vs actual count."
+      - "--restore against a non-empty DB without --force refuses: assert it raises and that no key was overwritten (read a sentinel key afterwards)."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_redis_backup_roundtrip.py -q -p no:cacheprovider"
+
+  - id: P3-4
+    title: "Unify the two Chroma roots that never shared an index"
+    phase: 3
+    tier: mid
+    depends_on: []
+    read_first: [anse/memory/harvester.py, anse/memory/chroma_rag.py, anse/config.py]
+    edit: [anse/config.py, anse/memory/chroma_rag.py]
+    create: [tests/remediation/test_chroma_single_root.py]
+    spec:
+      - "Harvester persists to data/chroma (anse/config.py:251, 21 embeddings on disk in collection phase1_traces). ChromaRAG persists to data/chroma_db (chroma_rag.py:68, directory has never existed). They are two indexes that were meant to be one — retrieval never sees what the harvester captured."
+      - "Route both through a single configured path in anse/config.py. Keep data/chroma (it holds the only real embeddings) and point ChromaRAG at it."
+      - "Collections stay separate within that one store; it is the persist directory that must be shared."
+      - "Also note: anse/config.py:263 sets the harvester JSONL to data/interactions.jsonl, which has NEVER been written — the JSONL side of the harvester has never run. Do not fix that here; card P4-1 depends on it and will."
+      - "Mid tier: touches shared config with two live consumers."
+    tests:
+      - "Both classes, constructed with a tmp_path-patched config, resolve to the same persist directory — assert equality of the resolved paths, and assert the directory is created once."
+      - "Writing through the harvester and reading through ChromaRAG returns the written record (use a tmp store, real chromadb — it is installed, so this is not an external-I/O mock)."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_chroma_single_root.py -q -p no:cacheprovider"
+
+  - id: P3-5
+    title: "Replace the hash pseudo-embedding with a real one"
+    phase: 3
+    tier: mid
+    depends_on: [P3-4, P2-2]
+    read_first: [anse/memory/chroma_rag.py]
+    edit: [anse/memory/chroma_rag.py]
+    create: [tests/remediation/test_real_embeddings.py]
+    spec:
+      - "anse/memory/chroma_rag.py:29 FastDeterministicEmbeddingFunction is a hash-based pseudo-embedding. It is deterministic and fast and carries NO semantic signal, so similarity search over it returns arbitrary neighbours. Any 'retrieval' built on it is retrieval in name only."
+      - "Replace it with qwen3-embedding:0.6b via Ollama /api/embed — the model is already pulled and is 1024-dimensional. Inject the HTTP client for testability."
+      - "Latent dim must be 1024 everywhere. Project memory records the trap: JEPADataset silently zero-pads short vectors to hidden_dim (default 4096), which trains on constant dimensions and looks like it works. Assert the dimension at the boundary rather than padding."
+      - "Keep the hash function available under a clearly non-semantic name for offline tests, and document in its docstring that it must never be used for retrieval."
+      - "Register the embedding model in P2-2's residency registry — it competes with the generation model for VRAM."
+      - "Mid tier: changes what every stored vector means; existing vectors in data/chroma are in the old space and must be re-embedded or dropped (state which in the card report)."
+    tests:
+      - "Injected client returning a known 1024-vector: assert the embedding is passed through unchanged and that its length is 1024 — two assertions."
+      - "A response with the wrong dimension raises rather than being padded; assert the exception names both expected and actual dimensions."
+      - "Semantic sanity with a recorded fixture (three vectors, two of them near-duplicates): assert the near-duplicate pair ranks above the unrelated one. Do NOT call the live daemon in a unit test."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_real_embeddings.py -q -p no:cacheprovider"
+
+  # ─────────────────────────────────────────────────────────────────────
+  # PHASE 4 — Night dream training. BLOCKED until Phase 1 is complete:
+  # scheduling the current dream path nightly would automate fabrication.
+  # Target architecture is docs/ROADMAP_V1_V2_COMPANION.md §4 (Night
+  # School) — implement that, do not reinvent it.
+  # ─────────────────────────────────────────────────────────────────────
+
+  - id: P4-1
+    title: "Make the harvester actually write its episode log"
+    phase: 4
+    tier: mid
+    depends_on: [P3-4]
+    read_first: [anse/memory/harvester.py, anse/config.py, anse/jepa/dataset.py]
+    create: [tests/remediation/test_harvester_jsonl.py]
+    spec:
+      - "anse/config.py:263 points the harvester at data/interactions.jsonl. That file has never been written — only the Chroma side of the harvester has ever run. anse/jepa/dataset.py:10 reads exactly that file, which is why the most genuine trainer in the repo (anse/jepa/, real AdamW and loss.backward() at trainer.py:132-136, CPU-viable) has never had data."
+      - "Find why the JSONL write does not happen (anse/memory/harvester.py:71 onward) and fix it so every captured trace appends a record. Report the root cause in the card report — if the write is simply never called, say so."
+      - "Record schema per line: task id, prompt, completion, verdict, energy, timestamp, latent (1024-d, per P3-5). Write atomically (temp file + rename) so a crash mid-write cannot corrupt the log."
+      - "Do not backfill from the 21 existing Chroma embeddings unless their source records are recoverable — a reconstructed episode is not an observed one."
+      - "Mid tier: requires diagnosing why an existing path is dead."
+    tests:
+      - "Harvesting two traces against a tmp_path config appends exactly two lines, each valid JSON with every required field — assert the count and the field set."
+      - "A crash between write and rename leaves no partial line: simulate by patching rename to raise, then assert the destination file is unchanged."
+      - "The latent, when present, is 1024-d; assert the length and that a wrong-dimension latent is rejected rather than padded."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_harvester_jsonl.py -q -p no:cacheprovider"
+
+  - id: P4-2
+    title: "One verified-data gate that every trainer must pass through"
+    phase: 4
+    tier: mid
+    depends_on: [P1-5, P4-1]
+    create: [anse/curator/verified_dataset.py, tests/remediation/test_verified_dataset.py]
+    spec:
+      - "The verified-only gate EXISTS and is correct on the designed path: harvest_delta.py:85-93,113 and harvest_training_pipeline.py:91-113 filter on verdict == 'PASSED'; extract_dpo_pairs.py:99-111 does the same. But the ONE script that has actually run bypasses it: scripts/execute_local_redis_ltm_lora.py:159 pulls raw conversation turns filtered only by string length (>15/>20 chars). grep for verdict|PASSED|attestation in that file returns zero hits. Same for scripts/train_qwen_lora.py and pod/train_lora_pod.py."
+      - "Create anse/curator/verified_dataset.py as the single chokepoint: build_sft_dataset(rows) and build_dpo_dataset(rows) that accept only rows carrying an attestation verdict of PASSED, and raise UnverifiedDataError listing the rejected ids otherwise."
+      - "Per project rule (.antigravity/rules.md §8.5): only hidden-test-verified solutions may enter lesson memory, DPO pairs or any fine-tuning set. This module is that rule in code."
+      - "Route execute_local_redis_ltm_lora.py, train_qwen_lora.py and pod/train_lora_pod.py through it. Do not leave a second path open — the point of a chokepoint is that there is one."
+      - "Also reject the 1-line fixture rows currently in training_runs/datasets/delta_*.jsonl (e.g. content 'Implement binary search.' / 'return 0', trace_id tr_001, timestamp 50.0). A minimum-rows threshold is not enough; check for the fixture trace_ids explicitly and refuse."
+      - "Mid tier: changes the contract of three existing trainers."
+    tests:
+      - "A mix of PASSED and FAILED rows yields only the PASSED ones; assert the count and that a known FAILED id is absent."
+      - "Rows with no verdict field at all raise UnverifiedDataError; assert the message lists the offending ids."
+      - "The known fixture rows are rejected even if labelled PASSED; assert the refusal names them."
+      - "Hypothesis: build_sft_dataset output length is always <= input length, and every output row has verdict PASSED — assert both invariants."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_verified_dataset.py -q -p no:cacheprovider"
+
+  - id: P4-3
+    title: "Rebuild the dream LoRA trainer on real episodes"
+    phase: 4
+    tier: mid
+    depends_on: [P1-4, P4-2, P2-1]
+    read_first: [anse/autopoiesis/dream_lora_trainer.py, train_checkpoint.py]
+    create: [tests/remediation/test_dream_trainer_inputs.py]
+    spec:
+      - "anse/autopoiesis/dream_lora_trainer.py has a genuine optimizer/backward loop but trains on fabricated tensors: input_ids = torch.randint(...) at :111-115, with a :100 comment reading 'Dummy loop'. The adapter is never saved (:163 'theoretically saved'). It is dead regardless: `from rl_common import` at :27 does not resolve, and checkpoints/laya does not exist."
+      - "Either rebuild it on P4-2's verified dataset, or delete it and extend train_checkpoint.py (which already has real QLoRA: bnb NF4 + SFTTrainer at :222-256). PREFER extending train_checkpoint.py — this repo does not need a second trainer, and the existing one is correct."
+      - "CORRECTED 2026-09-25: rl_common is NOT a hallucinated import. The module is real and lives in the data lake; `scripts/bootstrap_from_datalake.py --only code` vendors it to vendor/laya/rl_common.py (19,139 B, defines load_cfg and DecisionModel — the exact two names dream_lora_trainer.py:27 imports). Vendor it and fix the import path; do NOT delete the import as an earlier version of this card said."
+      - "The adapter must actually be written to disk: adapter_model.safetensors must exist when the run reports success. No weight file exists in this checkout (the lake has 0.5B ones; see P4-8)."
+      - "Check VRAM via P2-1 before loading; refuse with a clear message rather than OOMing. The T4 has 15,360 MiB and the base model is Qwen2.5-Coder-7B-Instruct (train_checkpoint.py:68) — note anse/config.py:34 defaults load_in_4bit to False, which will not fit."
+      - "Fix train_grpo.py:29 while you are here if you touch it: check_has_stubs substring-matches 'pass', so 'password', 'bypass' and 'passed' all trigger a false stub penalty. Use word boundaries or AST."
+      - "Mid tier: a build-or-delete judgement and a real training path."
+    tests:
+      - "The trainer refuses a dataset that did not come through P4-2 — assert pytest.raises(UnverifiedDataError)."
+      - "With VRAM patched below the estimated footprint, the trainer refuses before loading the model; assert the exception and that no model load was attempted (patch the loader and assert not called)."
+      - "Assert torch.randint no longer appears in the training-input path: inspect.getsource of the batch-building function must not contain 'randint'."
+      - "Assert the dead import is gone: 'rl_common' not in the module source."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_dream_trainer_inputs.py -q -p no:cacheprovider"
+
+  - id: P4-4
+    title: "Execute one real QLoRA run and record its true loss curve"
+    phase: 4
+    tier: human
+    depends_on: [P0-3, P4-3]
+    spec:
+      - "This is the card that proves the stack works. Run ONE QLoRA fine-tune on the T4 over a P4-2-verified dataset, and keep every artifact: the step-by-step loss, the adapter weights, the dataset hash, the base model id, and the wall-clock duration."
+      - "Success is not 'loss went down'. Success is: adapter_model.safetensors exists, the loss series came from the trainer's own logs, and the run is reproducible from the recorded dataset hash. A run whose loss rose is a valid result and must be reported as one."
+      - "Context for honesty: the only previous real run on disk (results/redis_lora_execution_report.json) was 0.5B over 8 steps with loss 3.532 -> 3.692 — it rose 4.52% — and was labelled \"status\": \"SUCCESS\". Do not repeat that."
+      - "Write the artifacts where P6-1 can find them; the figure pipeline will be rebuilt to read real runs only."
+      - "Human tier: hours of GPU time and a judgement about whether the result is worth keeping."
+    accept: []
+
+  - id: P4-5
+    title: "Promotion gate with measured no-regression and rollback"
+    phase: 4
+    tier: mid
+    depends_on: [P4-4]
+    create: [anse/autopoiesis/adapter_promotion.py, tests/remediation/test_adapter_promotion.py]
+    spec:
+      - "Implement the Night School promotion rule from docs/ROADMAP_V1_V2_COMPANION.md §4: promote a new adapter only if it beats the incumbent on a frozen eval set AND regresses nothing on a personal regression set; otherwise keep yesterday's and write a report."
+      - "promote(candidate: AdapterRef, incumbent: AdapterRef, results: EvalResults) -> PromotionDecision, a frozen dataclass carrying promoted: bool, reason: str, and the per-metric deltas."
+      - "Rollback via symlink: an 'active' symlink points at the promoted adapter directory; rolling back is repointing it. Never mutate an adapter directory in place."
+      - "Refuse to promote an adapter with no adapter_model.safetensors, reusing P1-5's rule. The two cards enforce the same invariant at different layers, deliberately."
+      - "A tie is not an improvement — require a strictly better primary metric, and say so in the reason string."
+      - "Mid tier: a policy decision expressed in code, with a destructive symlink operation."
+    tests:
+      - "A candidate better on the primary metric with no regression promotes: assert promoted True and that the symlink now resolves to the candidate — two assertions."
+      - "A candidate better on primary but regressed on the regression set does NOT promote; assert promoted False and that the symlink still resolves to the incumbent."
+      - "A tie does not promote; assert False and that the reason mentions the tie."
+      - "A candidate directory without safetensors raises; assert the exception type."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_adapter_promotion.py -q -p no:cacheprovider"
+
+  - id: P4-6
+    title: "Schedule the night run — last, not first"
+    phase: 4
+    tier: human
+    depends_on: [P4-4, P4-5, P1-5, P1-6]
+    spec:
+      - "ONLY after P4-4 has produced one real run and P1-5/P1-6 have closed the DRY_RUN laundering path. Scheduling before that automates the production of unbacked results."
+      - "systemd timer at 01:00 per ROADMAP §4, with a GPU-idle precondition: skip the run rather than contend with interactive work. Use P0-4's --require-gpu as the precondition check — if the driver is missing after a kernel upgrade, the job must fail visibly, not silently train on CPU."
+      - "Send the run report somewhere a human sees it. A nightly job whose failures are invisible is a nightly job that stops working without anyone noticing."
+      - "Note the existing precedent on this host: datalake-harvest-daemon.service runs under ~/venv/bin/python (3.10), NOT the repo .venv (3.11). Pin the interpreter explicitly in the unit file."
+      - "scripts/nightly_dream_phase.py is the existing trigger and is currently unreferenced by any crontab or timer; it would abort at :31-33 because .scratchpad/hippocampus_replay.jsonl does not exist. Decide whether to fix or replace it."
+      - "Human tier: a system service that spends GPU hours unattended."
+    accept: []
+
+  - id: P4-7
+    title: "Settle the training-data provenance question"
+    phase: 4
+    tier: human
+    depends_on: []
+    read_first: [docs/ROADMAP_V1_V2_COMPANION.md]
+    spec:
+      - "ROADMAP §4.5 flags this as an explicit precondition and it remains undecided: which artifacts may become SFT targets. The roadmap's own position is to train on your own artifacts and verifier outcomes, and to use assistant transcripts for retrieval rather than as SFT targets."
+      - "Decide and write it down, because P4-2's gate should encode it. This is a terms-of-use question about the providers whose outputs appear in ~/.claude/projects transcripts."
+      - "Also settle the scrubbing requirement from the same section: PII/secret scrubbing as a hard gate with its own test suite, before any capture reaches a training set. The capture path reads real conversation transcripts."
+      - "Human tier: a legal and privacy decision that is not the model's to make."
+    accept: []
+
+  # ─────────────────────────────────────────────────────────────────────
+  # PHASE 5 — Claude Code hardening parity with the Antigravity pipeline.
+  # ─────────────────────────────────────────────────────────────────────
+
+  - id: P5-1
+    title: "Strengthen post-edit stub and fake-data detection"
+    phase: 5
+    tier: low
+    depends_on: []
+    read_first: [.claude/hooks/post_edit_verify.py, execution_attestation.py]
+    edit: [.claude/hooks/post_edit_verify.py]
+    create: [tests/remediation/test_post_edit_verify.py]
+    spec:
+      - "Two gaps vs the Antigravity side. First: post_edit_verify.py:22-23 flags a stub only when it is the SOLE statement in a body, while execution_attestation.py's ImplementationAuditor flags a pass/... anywhere in a body. Match the stricter rule."
+      - "Second: post_edit_verify.py has no mock_/fake_/MagicMock detection at all. Port the rules from execution_attestation.py:92-105 — flag mock_/fake_/dummy_ prefixed names and Mock/MagicMock usage in non-test files."
+      - "Keep the existing exemption logic correct: files under tests/ are exempt from the fake-data rule (the project rules permit test doubles there), but NOT from the syntax check."
+      - "Keep the hook stdlib-only. It runs under system python3 (3.10) per .claude/settings.json:23, so no venv imports and no walrus-free-only syntax concerns beyond 3.10."
+      - "Exit 2 with the file:line and rule name on violation, matching the current output shape so existing behaviour is not surprising."
+    tests:
+      - "A function with a docstring, a real statement AND a stray `pass` is now flagged (it was not before); assert exit code 2 and that the message names the line."
+      - "A non-test file defining mock_client is flagged; the same file under tests/ is not — assert both outcomes."
+      - "A clean file still exits 0; assert the exit code and empty stderr."
+      - "A syntax error in a tests/ file is still flagged; assert exit 2 (the tests/ exemption must not cover syntax)."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_post_edit_verify.py -q -p no:cacheprovider"
+
+  - id: P5-2
+    title: "Harden the bash guard's bypassable regexes"
+    phase: 5
+    tier: low
+    depends_on: []
+    read_first: [.claude/hooks/pre_bash_guard.py]
+    edit: [.claude/hooks/pre_bash_guard.py]
+    create: [tests/remediation/test_pre_bash_guard.py]
+    spec:
+      - "pre_bash_guard.py:8-14 matches literal strings and is trivially evaded. Known gaps: `git -c <anything> push --force`, `git push origin +main` (the + refspec is a force push), `env GIT_...` prefixes, and `rm -rf /home/...` (the current pattern matches bare / only)."
+      - "Add patterns for: refspec force pushes (+branch), `git -c` wrappers before a blocked subcommand, and rm -rf against any absolute path outside /tmp — err toward blocking; a false positive costs one clarification, a false negative costs a repository."
+      - "Keep the existing five rules working; this card only adds coverage."
+      - "Do not attempt to make the guard bulletproof against a determined bypass — it cannot be, and the card should not claim it is. Document that in the module docstring: this stops accidents, not adversaries."
+    tests:
+      - "Each new bypass form is blocked: assert exit 2 for `git push origin +main`, for `git -c core.hooksPath=/dev/null push --force`, and for `rm -rf /home/user/x` — three assertions."
+      - "Benign commands still pass: `git push`, `rm -rf /tmp/scratch`, `git commit -m 'fix pass'` — assert exit 0 for each."
+      - "Hypothesis: any command containing `--no-verify` as a whole word is blocked regardless of surrounding text."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_pre_bash_guard.py -q -p no:cacheprovider"
+
+  - id: P5-3
+    title: "Add the missing Stop hook"
+    phase: 5
+    tier: mid
+    depends_on: [P5-1]
+    read_first: [.claude/settings.json, .agents/scripts/stop_attestation_check.py]
+    create: [.claude/hooks/stop_completion_check.py, tests/remediation/test_stop_hook.py]
+    edit: [.claude/settings.json]
+    spec:
+      - "THE LARGEST HARDENING GAP. Antigravity has a Stop hook (.agents/hooks.json -> stop_attestation_check.py) that runs an anti-stub audit at turn end. Claude Code has none: a turn can end claiming completion with zero gate."
+      - "Create .claude/hooks/stop_completion_check.py: on Stop, audit the files changed in this session (git diff --name-only HEAD plus git status --porcelain) for stubs and fake-data markers, reusing P5-1's rules."
+      - "Do NOT copy the Antigravity script's failure mode: stop_attestation_check.py:70-71 wraps its whole audit in `except Exception: pass`, so any git hiccup silently passes. Let unexpected errors surface."
+      - "Do NOT wire in execution_attestation.py's PROOF_TOKEN. That token is forgeable (see P5-5) and CLAUDE.md:28 scopes it to Antigravity. This hook checks the code, not a token."
+      - "Return the Stop hook's documented JSON shape. A blocking decision must carry a reason the model can act on."
+      - "Register it under a Stop matcher in .claude/settings.json alongside the existing PreToolUse/PostToolUse entries."
+      - "Mid tier: a hook that can block turn completion — a wrong rule here is disruptive on every turn."
+    tests:
+      - "A session diff containing a stubbed function produces a blocking decision naming the file; assert the decision field and the filename."
+      - "A clean diff allows the stop; assert the non-blocking decision."
+      - "A git failure surfaces rather than silently passing: patch subprocess to raise and assert the exception is not swallowed (pytest.raises)."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_stop_hook.py -q -p no:cacheprovider"
+      - ".venv/bin/python -c \"import json,pathlib; h=json.loads(pathlib.Path('.claude/settings.json').read_text())['hooks']; assert 'Stop' in h, sorted(h)\""
+
+  - id: P5-4
+    title: "Run the full static pipeline on edited files"
+    phase: 5
+    tier: mid
+    depends_on: [P5-1]
+    read_first: [.antigravity/hooks/hardened_gate.py]
+    create: [.claude/hooks/post_edit_static.py, tests/remediation/test_post_edit_static.py]
+    edit: [.claude/settings.json]
+    spec:
+      - "Antigravity's hardened_gate.py runs Ruff (:87), Bandit (:93), Vulture (:100), MyPy (:107) and Radon CC<=10 (:40-55). The Claude Code side runs none of them."
+      - "Add a PostToolUse hook that runs ruff, bandit and radon CC on the single edited file. All three are installed in .venv."
+      - "Scope to the edited file only. A whole-repo gate on every edit is unusable, and the repo currently has pre-existing failures that would block all work: antigravity_guard.py reports hallucinated imports (z3, matplotlib, pymilvus, sentence_transformers, rl_common, arxiv) and an f-string syntax error in scripts/generate_analysis_report.py."
+      - "This hook needs .venv/bin/python, not system python3 — unlike the existing stdlib-only hooks. Resolve it via $CLAUDE_PROJECT_DIR and degrade gracefully (warn, exit 0) if the venv is absent, so a fresh clone is not bricked."
+      - "MyPy is deliberately excluded: pyproject.toml:70 sets python_version = \"10.0.0\", which is invalid and must be fixed by P6-5 first."
+      - "Mid tier: a hook on the hot edit path with a real latency budget — keep it under a couple of seconds per file."
+    tests:
+      - "A file with CC > 10 is flagged; assert exit 2 and that the function name appears in the message."
+      - "A file with a bandit high-severity finding is flagged; a file with only a low-severity informational finding is not — assert both."
+      - "A missing .venv degrades to exit 0 with a warning rather than blocking; assert the exit code and that stderr mentions the venv."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_post_edit_static.py -q -p no:cacheprovider"
+
+  - id: P5-5
+    title: "Decide the fate of the forgeable attestation token"
+    phase: 5
+    tier: human
+    depends_on: []
+    read_first: [execution_attestation.py]
+    spec:
+      - "execution_attestation.py:258-277 mints the PROOF_TOKEN as blake2b('ANSE:attestation:v1:' + HEAD)[:32] then sha256(key + target_module). It is deterministic, derived from public repository state, and uses no secret. Anyone with the repo can compute any token, and main()'s verify mode (:301-320) recomputes with the same public key — so verification proves nothing."
+      - "The receipt path is redirectable via ANSE_ATTESTATION_PATH (:18), and .antigravity_attestation is a plain writable tracked file with no signature."
+      - "Decide one of: (a) mint with an HMAC over a secret held outside the repo, making the token meaningful; (b) drop the token and rely on the deterministic code audits, which are the part that actually works; (c) keep it explicitly as a process ritual and remove every claim that it is cryptographic proof."
+      - "Option (b) is the honest default — the audit portion of execution_attestation.py (AST stubs at :61-87, mock detection at :92-105, coverage check at :142-197) is genuinely useful; only the token ceremony is theatre."
+      - "Whatever you choose, .antigravity/rules.md §6.2 currently calls it 'a cryptographically signed nonce'. That wording must match reality."
+      - "Human tier: a decision about a project-wide contract, plus possibly a secret."
+    accept: []
+
+  - id: P5-6
+    title: "Stop the workflow verifier from executing model-supplied shell"
+    phase: 5
+    tier: mid
+    depends_on: []
+    read_first: [claude_workflow.py, mcp_claude_workflow.py]
+    edit: [claude_workflow.py]
+    create: [tests/remediation/test_workflow_verifier.py]
+    spec:
+      - "claude_workflow.py:150 runs the acceptance_command with shell=True, and that command came from the model via plan_decompose_task. The 'black-box external verification gate' therefore executes whatever the model wrote — self-certification is one `exit 0` away."
+      - "This mirrors the card-workflow rule that this very file set is built on: accept commands are run by the driver, never trusted from the model."
+      - "Require acceptance commands to come from an allowlist of shapes (pytest invocations, py_compile, the repo's own guard scripts) and reject anything else with a clear message. Parse with shlex and run without shell=True."
+      - "Reject command chaining outright (;, &&, ||, backticks, $()) — an allowlisted prefix followed by arbitrary shell is not allowlisted."
+      - "Once the allowlist is enforced, declare mcp_claude_workflow.py as a second server in .mcp.json (card P0-7 deliberately left it out until now, because declaring it earlier would expose the shell=True path this card closes). Its three tools — plan_decompose_task, get_current_subtask_context, submit_subtask_for_verification — are unreachable from Claude Code until then."
+      - "Mid tier: a security boundary with an existing caller contract."
+    tests:
+      - "An allowlisted pytest command runs; assert it was invoked with a list argv and shell=False — two assertions."
+      - "`pytest x && curl evil.example` is rejected; assert the refusal and that no subprocess was spawned."
+      - "A bare `exit 0` is rejected; assert the message names the allowlist."
+      - "Hypothesis: no input containing a shell metacharacter is ever executed."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_workflow_verifier.py -q -p no:cacheprovider"
+
+  - id: P5-7
+    title: "Make `v2_tasks.py done` verify before it records"
+    phase: 5
+    tier: low
+    depends_on: [P0-2]
+    read_first: [tools/v2_tasks.py]
+    edit: [tools/v2_tasks.py]
+    create: [tests/remediation/test_v2_tasks_done_verifies.py]
+    spec:
+      - "tools/v2_tasks.py `done` appends the id to status.json without running anything, while its own docstring says to use it 'only after every accept command passed'. That is the same class of defect as P1-5: a record of success that verifies nothing."
+      - "Make `done <ID>` run the card's accept commands and refuse to record unless all exit 0. Print each command's exit code."
+      - "Human-tier cards have accept: [] by convention. For those, require an explicit --human-confirmed flag so the empty list cannot silently auto-pass."
+      - "Add --force for the genuine override case, and make it print a loud warning naming the card. An override that leaves no trace is indistinguishable from a bug."
+      - "Run accept commands with shell semantics matching the driver's documented contract, but never from the card-executing model's output — the commands come from the YAML, which is reviewed."
+    tests:
+      - "A card whose accept command exits 1 is NOT recorded; assert status.json is unchanged and the exit code is non-zero."
+      - "A card whose commands all pass IS recorded; assert the id appears in status.json."
+      - "A human-tier card without --human-confirmed is refused; with the flag it records — assert both."
+      - "--force records despite a failing command and emits a warning naming the card; assert both."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_v2_tasks_done_verifies.py -q -p no:cacheprovider"
+
+  # ─────────────────────────────────────────────────────────────────────
+  # PHASE 6 — Reconcile published claims with reproducible evidence.
+  # Added on the 2026-09-25 decision to card these rather than only
+  # report them.
+  # ─────────────────────────────────────────────────────────────────────
+
+  - id: P6-1
+    title: "Figures must come from real runs or not render at all"
+    phase: 6
+    tier: mid
+    depends_on: [P4-4]
+    read_first: [scripts/generate_phd_paper_figures.py]
+    edit: [scripts/generate_phd_paper_figures.py]
+    create: [tests/remediation/test_figures_require_real_data.py]
+    spec:
+      - "scripts/generate_phd_paper_figures.py:199-202 synthesises the published loss curve as initial_loss*(1 - 0.201*(1 - exp(-e/5))) plus np.random.normal noise and writes it into fig3_dpo_reward_margins_and_loss_reduction.pdf. This is fabricated data inside a publication artifact."
+      - "Delete the synthesis. Read the loss series from a real run's artifacts (P4-4 produces them) and raise FabricatedResultError when none exists. A missing figure is a correct outcome when there is no run behind it."
+      - "Audit the sibling scripts for the same pattern before finishing: scripts/generate_3_phd_paper_figures.py and scripts/generate_paper_figures.py. Report what you find; fix the same defect wherever it appears."
+      - "Every figure must be traceable: stamp the source artifact path and the run id into the figure caption or an adjacent .json sidecar, so a reader can check it."
+      - "Mid tier: touches publication output and needs judgement about what counts as a real source."
+    tests:
+      - "With no run artifacts present, generating the figure raises FabricatedResultError and writes NO pdf — assert both the exception and the absent file."
+      - "With a fixture run artifact, the rendered series equals the artifact's series exactly (assert element-wise), and no np.random call occurs (patch np.random.normal and assert not called)."
+      - "Assert the synthesis formula is gone: the module source must not contain '0.201' or 'np.random.normal' in the figure-data path."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_figures_require_real_data.py -q -p no:cacheprovider"
+
+  - id: P6-2
+    title: "Reconcile the -20.1% loss-reduction claim with the measured -4.52%"
+    phase: 6
+    tier: low
+    depends_on: []
+    read_first: [scripts/build_phd_200_paper.py, results/redis_lora_execution_report.json]
+    spec:
+      - "scripts/build_phd_200_paper.py:302 claims '-20.1% loss reduction' for 1.5B and 7B students and 'stubs from 42% to 0%'. The only real run on disk, results/redis_lora_execution_report.json, is 0.5B over 8 steps with loss 3.532 -> 3.692 — loss ROSE 4.52% — and is labelled \"status\": \"SUCCESS\"."
+      - "Produce docs/remediation/CLAIMS_RECONCILIATION.md listing, for each quantitative claim in the generated paper: the claim, the artifact that should support it, and whether that artifact exists in this checkout. Do not edit the paper in this card."
+      - "Also correct the 'SUCCESS' label in the report generator: a run whose loss increased is not a success. Find where that status is written and make the label follow the measurement."
+      - "Do NOT fabricate a corrected number. If no run supports a claim, the reconciliation entry says 'unsupported in this checkout' — that is the finding."
+      - "Low tier because it is mechanical: read the claims, check the artifacts, tabulate. The judgement about what to do next is P6-3."
+    tests: []
+    accept:
+      - "bash -c 'test -f docs/remediation/CLAIMS_RECONCILIATION.md && grep -qi supported docs/remediation/CLAIMS_RECONCILIATION.md'"
+      - ".venv/bin/python -c \"import json,pathlib; p=pathlib.Path('results/redis_lora_execution_report.json'); assert p.exists(), 'report missing'; r=json.loads(p.read_text())['train_report']; assert not (r['loss_reduction_pct'] < 0 and r['status'] == 'SUCCESS'), r\""
+
+  - id: P6-3
+    title: "Decide what happens to the already-published claims"
+    phase: 6
+    tier: human
+    depends_on: [P6-1, P6-2]
+    spec:
+      - "P6-2 produces the reconciliation table. This card decides the response for each unsupported claim: regenerate from real data, annotate as preliminary, or retract."
+      - "In scope: the loss-reduction figures, the stub-rate claim, and the Lean verification counts ('2,506 / 2,968 / 3,736 Lean 4 jobs compiled cleanly' in scripts/build_latex_paper.py:167,330 and commit 31c29d4) — formal/ has never been built in this checkout, so none are reproducible here."
+      - "Also decide on the Millennium modules. The audit found 0 sorry and 0 axiom tokens in the five files, but did NOT build them and did NOT audit what the theorems state. Absence of sorry in an unbuilt file is not evidence of a proof, and these are the highest-stakes claims in the repository."
+      - "If anything was shared outside this repo, decide whether a correction is owed to whoever received it."
+      - "Human tier: these are your claims and only you can retract or defend them."
+    accept: []
+
+  - id: P6-4
+    title: "Establish a reproducible Lean build count, or mark the claims unverified"
+    phase: 6
+    tier: human
+    depends_on: [P0-8]
+    spec:
+      - "formal/ is a genuine Mathlib-dependent Lake project (lakefile.toml, lean-toolchain v4.34.0-rc2, manifest pinning mathlib + batteries + aesop + Qq). It has NEVER been built here: no .lake/build, zero .olean files. 673 MB of partial Mathlib sits in formal/.lake from an accidental fetch during the audit."
+      - "Either run the build to completion and record the real job count (expect >10 minutes; project memory says run it detached), or mark every build-count claim as unverified per P6-3."
+      - "If building: `~/.elan/bin/lake build` in formal/. Record the actual count from the build output and the four known sorries (formal/ANSE/Basic.lean:160, Theorems.lean:61, System2.lean:170, System2.lean:185)."
+      - "Also decide the fate of the 673 MB partial checkout — it is a head start on a real build, or 673 MB to reclaim."
+      - "Note the standing preference in project memory (2026-09-21): 'Lean 4 is not needed at this stage; don't spend time on the Mathlib build.' The v12.1.0 commit contradicts that. Reconcile the two explicitly rather than letting them coexist."
+      - "Human tier: hours of compute against a stated preference not to spend them."
+    accept: []
+
+  - id: P6-5
+    title: "Make the version numbers and docs tell one story"
+    phase: 6
+    tier: low
+    depends_on: []
+    read_first: [pyproject.toml, anse/__init__.py, README.md, CLAUDE.md]
+    edit: [pyproject.toml, anse/__init__.py]
+    create: [tests/remediation/test_version_consistency.py]
+    spec:
+      - "Three live version numbers disagree: pyproject.toml:3 is 12.2.0, anse/__init__.py:5 is 2.2.0, README.md:8 and :260 say v2.3.0. Pick one and make the others follow it."
+      - "Fix pyproject.toml:70: [tool.mypy] python_version = \"10.0.0\" is not a valid version and contradicts requires-python = \">=3.11\" (line 7). Set it to 3.11. P5-4 is blocked on this."
+      - "Add a test asserting pyproject's version and anse.__version__ agree, so they cannot drift again."
+      - "Update CLAUDE.md's stale environment facts: it says Ollama 0.1.44 ignores seed/temperature, but this host runs 0.34.1 — use P2-4's measured verdict, and do not assert either way without it."
+      - "Record in CLAUDE.md that 'v12' is a release label: there is no v12 module or orchestrator, anse/v2..v5 is an orthogonal older numbering, and the real entry points are main.py:91, deploy_anse.py:88, gateway.py and web/. A reader currently cannot learn this from the README, which describes no v10/v11/v12 architecture at all."
+    tests:
+      - "Assert tomllib-parsed project.version equals anse.__version__ — and assert the value is non-empty, so the test cannot pass on two empty strings."
+      - "Assert [tool.mypy] python_version parses as a two-component version and is >= 3.11."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_version_consistency.py -q -p no:cacheprovider"
+
+  - id: P0-9
+    title: "Kick-start from the data lake: vendor dead-import modules and real corpora"
+    phase: 0
+    tier: low
+    depends_on: []
+    read_first: [scripts/bootstrap_from_datalake.py]
+    create: [tests/remediation/test_bootstrap_datalake.py]
+    spec:
+      - "The GCS data lake holds artifacts this checkout lacks. Two of them repair code the audit wrongly called hallucinated: rl_common.py (19,139 B) and rl_agent_api.py (4,732 B), which satisfy the imports at anse/autopoiesis/dream_lora_trainer.py:27 and anse/v5/laya_system_one.py:47."
+      - "Run: .venv/bin/python scripts/bootstrap_from_datalake.py --only code, then --only data. Both stage to the second disk (/mnt/disks/disk-socrateai-local-1/AutoevolveAI/datalake) because / has 81 GB free versus 203 GB there."
+      - "Wire the vendored modules onto the import path so the two dead imports resolve. Prefer a path entry or a thin shim over copying the files into anse/ — they are third-party artifacts, not this repo's code, and should stay identifiable as vendored."
+      - "Do NOT run --only models in this card, and do NOT restore Redis here. Model promotion is gated by P4-8; the Redis restore writes to /var/lib/redis and belongs to P0-5."
+      - "The bootstrap verifies every download against the size the bucket reports and raises on mismatch. Do not add a fallback that swallows a failed fetch — a bootstrap that reports success for a file it did not get is the defect this whole card set exists to remove."
+    tests:
+      - "Patch subprocess.run so `gcloud storage cp` writes a file of the wrong size; assert fetch() raises RuntimeError and the message names both sizes."
+      - "Patch it to report success while writing nothing; assert fetch() raises rather than returning a path (the 'reported success but does not exist' branch)."
+      - "Assert the vendored rl_common exposes load_cfg and DecisionModel once the import path is wired — import them and assert both are callable/class objects."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_bootstrap_datalake.py -q -p no:cacheprovider"
+      - ".venv/bin/python -c \"import importlib.util as u; assert u.find_spec('rl_common') is not None, 'rl_common still not importable'\""
+
+  - id: P4-8
+    title: "Evaluate data-lake model candidates before any of them serve"
+    phase: 4
+    tier: mid
+    depends_on: [P0-9, P4-5]
+    create: [tests/remediation/test_lake_candidate_eval.py]
+    spec:
+      - "The lake's flagship Qwen artifact (merged_quick_restart/model.safetensors, 1.84 GiB) is the output of an 8-step run whose loss ROSE 3.532 -> 3.692, labelled \"status\": \"SUCCESS\" in its own report, on Qwen/Qwen2.5-0.5B-Instruct. Decision of 2026-09-25: 7B is the target base; the 0.5B artifacts are reference and regression fixtures ONLY and must never become the active adapter."
+      - "Route every lake model through P4-5's promote() gate: candidate vs incumbent on the frozen eval set plus the personal regression set, strictly-better primary metric, no regression. Auto-promote on pass (decision of 2026-09-25); a SUCCESS label in a manifest is not an input to that decision."
+      - "Treat the JEPA checkpoint (jepa_best.pt, 23,435,277 B) as the highest-value candidate: anse/jepa/ is the most genuine trainer in the repo and has never had weights or data. Evaluate it first."
+      - "The energy surrogate (surrogate_energy_predictor_v2.pt) stays in shadow mode until AUROC >= 0.80 on a task-split, de-duplicated evaluation, per docs/ROADMAP_V1_V2_COMPANION.md and the Phase-2 leakage finding. Do not promote it on MAE."
+      - "Record for each candidate: source URI, byte size, the eval metrics, and the promote/reject decision with its reason. A candidate rejected on measurement is a result worth keeping."
+    tests:
+      - "A candidate whose primary metric ties the incumbent is rejected; assert promoted is False and the reason names the tie."
+      - "A candidate carrying status=SUCCESS metadata but failing the eval is rejected; assert the metadata did not influence the decision (assert on the reason, and that the label appears nowhere in the decision path via inspect.getsource)."
+      - "The 0.5B artifacts are never selected as the active adapter even when they pass: assert the promotion path refuses a candidate whose base model id is not the configured target base."
+    accept:
+      - ".venv/bin/python -m pytest tests/remediation/test_lake_candidate_eval.py -q -p no:cacheprovider"
+
+  - id: P6-6
+    title: "Resolve the 14 uninitialised submodules"
+    phase: 6
+    tier: low
+    depends_on: []
+    spec:
+      - "All 14 registered submodules are uninitialised (leading '-' in git submodule status; every directory empty): tools/ai-second-brain, tools/autoresearch, and vendor/{aider, antigravity-swarm, dspy, eb_jepa, enso, langgraph, LeanDojo, mcts-reasoning, open-r1, paperproof, SWE-agent, tree-of-thought-llm}."
+      - "None are on the critical path: nothing imports from vendor/, and the concepts are reimplemented in-repo (anse/orchestration/dspy_bridge.py:27 'inspired by dspy.Signature', anse/core/red_team.py:38 'Mock/Fallback for LeanDojo'). anse/core/autoresearch_swarm.py:37 has its subprocess call commented out."
+      - "For each: either initialise it (if something should import it) or deregister it from .gitmodules. A registered-but-empty submodule is a trap — it makes a fresh clone look broken and invites code that assumes it is populated."
+      - "tools/ai-second-brain is the one with a live consumer: anse/core/second_brain.py writes into its empty directory, and update_second_brain.py:15-18 injects 4 hardcoded strings labelled 'Ground Truth'. Deregistering it means that module needs a real home — note that in the card report; do not fix second_brain.py here."
+      - "Note the redundancy: langgraph is both a pip dependency (pyproject.toml:25) and a submodule."
+    tests: []
+    accept:
+      - "bash -c 'test -z \"$(git submodule status | grep \"^-\")\" || test -z \"$(git config -f .gitmodules --get-regexp path | awk \"{print \\$2}\" | while read p; do test -d \"$p\" && test -z \"$(ls -A \"$p\")\" && echo \"$p\"; done)\"'"

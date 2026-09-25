@@ -1,0 +1,52 @@
+[Unit]
+Description=AutoevolveAI nightly remediation card runner
+Documentation=file:///home/callensxavier_gmail_com/AutoevolveAI/docs/remediation/NIGHT_ORCHESTRATION.md
+After=network-online.target
+Wants=network-online.target
+# NOTE: deliberately no `After=redis.service`. No redis unit exists on this
+# host yet (card P0-5). Ordering against a missing unit is silently ignored,
+# which reads like a dependency that is not there.
+
+[Service]
+Type=oneshot
+User=callensxavier_gmail_com
+WorkingDirectory=/home/callensxavier_gmail_com/AutoevolveAI
+
+# A full phase can run for hours. Type=oneshot inherits DefaultTimeoutStartSec
+# (90s on this host), which would SIGTERM the runner mid-card and leave a
+# half-applied tree. This is not optional.
+TimeoutStartSec=infinity
+
+# No ExecStartPre GPU gate. An earlier version called
+# `agent_environment --require-gpu`, but that flag does not exist and the
+# module ignores argv, so it exited 0 with no GPU present -- a gate that
+# always passes. Most phase 0/1 cards need no GPU anyway; the cards that do
+# fail their own accept commands, which is the honest place to find out.
+
+ExecStart=/home/callensxavier_gmail_com/AutoevolveAI/.venv/bin/python \
+    scripts/night_phase_runner.py \
+    --budget-ceiling 25.00
+
+Environment="PYTHONPATH=/home/callensxavier_gmail_com/AutoevolveAI"
+Environment="PATH=/home/callensxavier_gmail_com/AutoevolveAI/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="CLOUDSDK_CORE_PROJECT=gen-lang-client-0625573011"
+Environment="OLLAMA_MODELS=/mnt/disks/disk-socrateai-local-1/leanmaster/ollama"
+# Keep pytest from reaching for the real Lean toolchain (card P0-8).
+Environment="ANSE_LEAN_TESTS=0"
+
+# Yield to interactive work; this is background repair, not a deadline.
+Nice=10
+IOSchedulingClass=idle
+
+MemoryMax=12G
+TasksMax=512
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=night-remediation
+
+[Install]
+WantedBy=multi-user.target

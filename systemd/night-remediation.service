@@ -39,7 +39,13 @@ ExecStart=/home/callensxavier_gmail_com/AutoevolveAI/.venv/bin/python \
     scripts/post_implement_training.py
 
 Environment="PYTHONPATH=/home/callensxavier_gmail_com/AutoevolveAI"
-Environment="PATH=/home/callensxavier_gmail_com/AutoevolveAI/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+# ~/.local/bin FIRST: it holds the `claude` binary (a symlink into
+# ~/.local/share/claude/versions/). Without it the runner launches no model at
+# all -- HeadlessError("`claude` is not on PATH") on every card. Verified by
+# running `claude -p` under `env -i` with this exact PATH.
+Environment="PATH=/home/callensxavier_gmail_com/.local/bin:/home/callensxavier_gmail_com/AutoevolveAI/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+# `claude` resolves its credentials under $HOME; User= sets it, but be explicit.
+Environment="HOME=/home/callensxavier_gmail_com"
 Environment="CLOUDSDK_CORE_PROJECT=gen-lang-client-0625573011"
 Environment="OLLAMA_MODELS=/mnt/disks/disk-socrateai-local-1/leanmaster/ollama"
 # Keep pytest from reaching for the real Lean toolchain (card P0-8).

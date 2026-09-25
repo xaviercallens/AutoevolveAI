@@ -35,8 +35,14 @@ TimeoutStartSec=infinity
 ExecStart=-/home/callensxavier_gmail_com/AutoevolveAI/.venv/bin/python \
     scripts/night_phase_runner.py \
     --budget-ceiling 25.00
-ExecStart=/home/callensxavier_gmail_com/AutoevolveAI/.venv/bin/python \
+ExecStart=-/home/callensxavier_gmail_com/AutoevolveAI/.venv/bin/python \
     scripts/post_implement_training.py
+
+# Closing pass: branch, push, open or update the PR for the night's commits.
+# '-' as well: a GitHub outage must not mark the night a failure when the cards
+# and training already ran and committed locally. The PR is reporting, not work.
+ExecStart=-/home/callensxavier_gmail_com/AutoevolveAI/.venv/bin/python \
+    scripts/night_finalize.py
 
 Environment="PYTHONPATH=/home/callensxavier_gmail_com/AutoevolveAI"
 # ~/.local/bin FIRST: it holds the `claude` binary (a symlink into

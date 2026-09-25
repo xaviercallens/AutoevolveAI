@@ -104,6 +104,24 @@ def cmd_qa(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_triage(args: argparse.Namespace) -> int:
+    from antigravity_harness.core.laya_gate import LayaQualityGate
+    gate = LayaQualityGate()
+    target = Path(args.target)
+    
+    if target.is_file():
+        success = gate.evaluate_file(target)
+        return 0 if success else 1
+    elif target.is_dir():
+        all_success = True
+        for filepath in target.rglob("*"):
+            if filepath.is_file() and filepath.suffix in [".py", ".md", ".json", ".txt", ".lean"]:
+                if not gate.evaluate_file(filepath):
+                    all_success = False
+        return 0 if all_success else 1
+    return 1
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="antigravity-harness",
@@ -148,6 +166,10 @@ def main() -> int:
     p_dichotomy.add_argument("--output", default="results/dichotomic_tree.json", help="Path to save JSON tree")
     p_dichotomy.add_argument("--execute", action="store_true", help="Execute and verify leaf tasks")
 
+    # triage
+    p_triage = subparsers.add_parser("triage", help="Use Laya System 1 to triage epistemic deception and thermodynamic violations")
+    p_triage.add_argument("target", help="File or directory path to triage")
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
@@ -155,6 +177,8 @@ def main() -> int:
 
     if args.command == "audit":
         return cmd_audit(args)
+    elif args.command == "triage":
+        return cmd_triage(args)
     elif args.command == "verify":
         return cmd_verify(args)
     elif args.command == "test":

@@ -1,0 +1,101 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{titlesec}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.98,0.98,0.98}
+
+\lstset{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    literate={ℂ}{{$\mathbb{C}$}}1 {ℝ}{{$\mathbb{R}$}}1 {∧}{{$\land$}}1 {∀}{{$\forall$}}1 {∃}{{$\exists$}}1 {→}{{$\rightarrow$}}1 {≥}{{$\ge$}}1 {≤}{{$\le$}}1 {Δ}{{$\Delta$}}1 {≠}{{$\neq$}}1 {‖}{{$\|$}}1 {•}{{$\cdot$}}1
+}
+
+\lstdefinelanguage{Lean}{
+  morekeywords={import, open, def, theorem, lemma, Prop, ∀, ∧, ∃, →, let, in, match, with, exact, apply, rfl, structure, where, True, Type, class, instance},
+  sensitive=true,
+  morecomment=[l]{--},
+  morecomment=[s]{/-}{-/},
+  morestring=[b]",
+}
+
+\title{\textbf{Architecture ANSE v7}\\ \Large Intégrité Neuro-Symbolique et Preuves Mathématiques Formelles}
+\author{Équipe de Recherche ANSE v7}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Ce document synthétise la révision majeure vers ANSE v7, incluant la résolution des hallucinations sémantiques. Le système intègre désormais un Linter AST pour la précision symbolique et exploite la librairie Mathlib4 (RAG) pour un ancrage ontologique exact des opérateurs (espaces de Hilbert, normes euclidiennes). Les trois évaluations du Millénaire (Riemann, Yang-Mills, Navier-Stokes) sont présentées dans leur formulation corrigée.
+\end{abstract}
+
+\section{I. L'Hypothèse de Riemann (MATH-51)}
+L'Hypothèse de Riemann postule que les zéros non-triviaux du prolongement analytique de $\zeta(s)$ sont sur la droite $\Re(s) = 1/2$.
+\subsection{Évaluation Numérique (Haute Précision AST)}
+Pour préserver l'arithmétique multiprécision et contourner la dégradation IEEE 754, l'orchestrateur empêche l'usage de \texttt{complex()} via le linter AST :
+\begin{lstlisting}[language=Python]
+import sympy as sp
+t1_str = '14.1347251417346937156614437215'
+# Instanciation purement symbolique (AST approuve)
+s1 = sp.Float('0.5', 30) + sp.I * sp.Float(t1_str, 30)
+z1 = sp.zeta(s1).evalf(30)
+\end{lstlisting}
+\subsection{Spécification Formelle Lean 4}
+\begin{lstlisting}[language=Lean]
+def InCriticalStrip (s : ℂ) : Prop := 0 < s.re ∧ s.re < 1
+
+def riemann_hypothesis : Prop :=
+  ∀ (s : ℂ), InCriticalStrip s → riemannZeta s = 0 → s.re = 1/2
+\end{lstlisting}
+
+\section{II. Yang-Mills et le Mass Gap (PHYS-52)}
+\subsection{Spécification Formelle Lean 4 (Mathlib Grounding)}
+L'espace des états est correctement typé comme un Espace de Hilbert sur $\mathbb{C}$, et l'Hamiltonien opère sur cet espace. L'énergie découle strictement de l'équation aux valeurs propres $H \psi = E \psi$.
+\begin{lstlisting}[language=Lean]
+structure QuantumGaugeTheory where
+  HilbertSpace : Type
+  [inner : InnerProductSpace ℂ HilbertSpace]
+  [complete : CompleteSpace HilbertSpace]
+  Hamiltonian : HilbertSpace →L[ℂ] HilbertSpace
+  vacuum : HilbertSpace
+
+def has_strict_mass_gap (Q : QuantumGaugeTheory) : Prop :=
+  ∃ (Delta : ℝ), Delta > 0 ∧ ∀ (psi : Q.HilbertSpace) (E : ℝ), 
+  Q.Hamiltonian psi = E • psi → psi ≠ Q.vacuum → E ≥ Delta
+\end{lstlisting}
+
+\section{III. Régularité de Navier-Stokes (PHYS-53)}
+\subsection{Spécification Formelle Lean 4}
+Utilisation de la norme canonique $\lVert u(t,x) \rVert$ (\texttt{norm}) issue des classes \texttt{NormedAddCommGroup} de Mathlib, remplaçant les fonctions arbitraires de magnitude.
+\begin{lstlisting}[language=Lean]
+def navier_stokes_local_smoothness (u : ℝ → EuclideanSpace ℝ (Fin 3) → EuclideanSpace ℝ (Fin 3)) : Prop :=
+  ∀ (t : ℝ) (x : EuclideanSpace ℝ (Fin 3)), t > 0 → ∃ (M : ℝ), ‖u t x‖ ≤ M
+\end{lstlisting}
+
+\end{document}

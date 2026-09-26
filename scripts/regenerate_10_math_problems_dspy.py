@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+from pathlib import Path
 from anse.core.red_team import DeepThinkAuditor
 from anse.core.api_extractor import APIExtractor
 import time
@@ -10,10 +11,10 @@ logger = logging.getLogger("DSPy-DeepSeek-Regenerator")
 
 # Simulated DSPy Signature / Pipeline for Lean 4 Proof Generation
 class DSPyLeanProver:
-    def __init__(self):
+    def __init__(self, call_log_path: str | Path | None = None):
         # In a real environment, this connects to the GCP T4 Serverless Endpoint
         # or local Ollama (deepseek-r1:14b)
-        self.llm = APIExtractor(timeout_s=1.0) # Points to vLLM on GCP T4/Local
+        self.llm = APIExtractor(timeout_s=1.0, call_log_path=call_log_path) # Points to vLLM on GCP T4/Local
         self.auditor = DeepThinkAuditor(extractor=self.llm)
 
     def generate_proof(self, theorem_statement: str) -> dict:
@@ -69,10 +70,11 @@ class DSPyLeanProver:
             "thoughts": audit_result['thoughts']
         }
 
-def run_regeneration():
-    prover = DSPyLeanProver()
-    
-    problems = [
+def run_regeneration(num_problems: int = 10, call_log_path: str | Path | None = None):
+    call_log_path = call_log_path or os.environ.get("ANSE_CALL_LOG")
+    prover = DSPyLeanProver(call_log_path=call_log_path)
+
+    problems_all = [
         "Lagrange's Subgroup Index Multiplicativity",
         "Parallelogram Identity in Real Hilbert Spaces",
         "Banach Contraction Mapping & Unique Fixed Point",
@@ -82,19 +84,42 @@ def run_regeneration():
         "Discrete Gronwall Lemma & Dynamic Dissipation Bound",
         "Fermat's Little Theorem in Modular Arithmetic ZpZ",
         "Markov-Chebyshev Level Set Functional Inequality",
-        "Cauchy-Schwarz Inequality in Real Inner Product Space"
+        "Cauchy-Schwarz Inequality in Real Inner Product Space",
+        "Stokes' Theorem: Boundary Integration & Vector Calculus",
+        "Fundamental Theorem of Algebra: Polynomial Roots",
+        "Picard-Lindelöf Uniqueness of ODEs",
+        "Gromov-Witten Invariants in Algebraic Geometry",
+        "Elliptic Regularity & Sobolev Space Embedding",
+        "Kähler-Einstein Metrics & Fano Surfaces",
+        "Intersection Theory: Bézout's Theorem",
+        "Morse Theory: Critical Points & Homology",
+        "Stable Homotopy & Cohomology Operations",
+        "Derived Categories & Homological Algebra",
     ]
-    
+
+    problems = problems_all[:num_problems]
+    logger.info(f"Regenerating {len(problems)} master-level math problems")
+    if call_log_path:
+        logger.info(f"LLM call logging enabled: {call_log_path}")
+
     results = []
-    for prob in problems:
+    for i, prob in enumerate(problems, 1):
+        logger.info(f"[{i}/{len(problems)}] {prob}")
         res = prover.generate_proof(prob)
         results.append(res)
         time.sleep(1) # Rate limit
-        
-    with open("results/dspy_deepseek_10_problems_generation.json", "w") as f:
+
+    results_dir = Path("results")
+    results_dir.mkdir(parents=True, exist_ok=True)
+    results_file = results_dir / f"dspy_deepseek_{len(problems)}_problems_generation.json"
+
+    with open(results_file, "w") as f:
         json.dump(results, f, indent=2)
-        
-    logger.info("Generation complete. Results saved to results/dspy_deepseek_10_problems_generation.json")
+
+    logger.info(f"Generation complete. Results saved to {results_file}")
+    return results_file
 
 if __name__ == "__main__":
-    run_regeneration()
+    import sys
+    num = int(sys.argv[1]) if len(sys.argv) > 1 else 10
+    run_regeneration(num_problems=num)

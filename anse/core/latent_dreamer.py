@@ -24,13 +24,18 @@ import random
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Protocol
 
 import torch
 import torch.nn as nn
 
 logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+DEFAULT_JEPA_CHECKPOINT = PROJECT_ROOT / "checkpoints" / "latent_dreamer_jepa.pt"
+
+
+class SimulationRefusedError(Exception):
+    """Raised when a result would be reported without a trained model backing it."""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -58,7 +63,7 @@ class GRPOTreeSearchResult:
     group_std_energy: float
     latency_ms: float
     calibrated_physical_energy: float | None = None
-    speedup_vs_sandbox: float = 1500.0
+    speedup_vs_sandbox: float | None = None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -82,9 +87,18 @@ class FastJEPALatentPredictor(nn.Module):
             nn.Linear(hidden_dim, 1),
             nn.Softplus(),  # Ensures strictly non-negative physical energy E >= 0
         )
+        self.is_trained = False
+        self.checkpoint_path: Path | None = None
 
     def forward(self, z: torch.Tensor) -> torch.Tensor:
         return self.net(z).squeeze(-1)
+
+    def load_checkpoint(self, checkpoint_path: Path) -> None:
+        """Load trained weights, marking this predictor as fit to score real thoughts."""
+        state_dict = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+        self.load_state_dict(state_dict)
+        self.checkpoint_path = checkpoint_path
+        self.is_trained = True
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -97,10 +111,15 @@ class LatentDreamer:
     Orchestrates the 16-Thought Latent MCTS and Group Relative Policy Optimization (GRPO).
     """
 
-    def __init__(self, latent_dim: int = 32, num_branches: int = 16) -> None:
+    def __init__(
+        self,
+        latent_dim: int = 32,
+        num_branches: int = 16,
+        predictor: FastJEPALatentPredictor | None = None,
+    ) -> None:
         self.latent_dim = latent_dim
         self.num_branches = num_branches
-        self.predictor = FastJEPALatentPredictor(latent_dim=latent_dim)
+        self.predictor = predictor if predictor is not None else FastJEPALatentPredictor(latent_dim=latent_dim)
         self.predictor.eval()
         with torch.no_grad():
             _ = self.predictor(torch.zeros(1, latent_dim))
@@ -109,11 +128,19 @@ class LatentDreamer:
         self,
         prompt: str,
         seed_code_candidates: list[str] | None = None,
+        sandbox_baseline_ms: float | None = None,
     ) -> GRPOTreeSearchResult:
         """
         Branch into K=16 thought trajectories, score in latent space via JEPA in ~2ms,
         and compute GRPO relative advantages.
         """
+        if not self.predictor.is_trained:
+            raise SimulationRefusedError(
+                "dream_and_search refuses to score thoughts through an untrained "
+                "FastJEPALatentPredictor; load trained weights first via "
+                f"FastJEPALatentPredictor.load_checkpoint(...), expected checkpoint at "
+                f"{DEFAULT_JEPA_CHECKPOINT}"
+            )
         start_t = time.perf_counter()
         k = self.num_branches
 
@@ -172,7 +199,11 @@ class LatentDreamer:
             group_std_energy=round(std_e, 4),
             latency_ms=round(total_latency_ms, 2),
             calibrated_physical_energy=round(nodes[best_idx].predicted_energy * 0.95, 4),
-            speedup_vs_sandbox=round(3000.0 / max(total_latency_ms, 0.01), 1),
+            speedup_vs_sandbox=(
+                round(sandbox_baseline_ms / max(total_latency_ms, 0.01), 1)
+                if sandbox_baseline_ms is not None
+                else None
+            ),
         )
 
 
@@ -192,15 +223,29 @@ class HippocampalTrace:
     is_anchor_memory: bool = False
 
 
+class RetentionScorer(Protocol):
+    """A trained predictor able to score a replay batch and consolidate it."""
+
+    is_trained: bool
+    checkpoint_path: Path | None
+    score_replay_batch: Callable[[list[dict[str, Any]]], float]
+    consolidate: Callable[[list[dict[str, Any]]], None]
+
+
 class HippocampalReplayEngine:
     """
     Solves catastrophic forgetting by separating fast wake-phase inference
     from deep sleep-phase batched memory replay.
     """
 
-    def __init__(self, memory_file: Path | None = None) -> None:
+    def __init__(
+        self,
+        memory_file: Path | None = None,
+        predictor: RetentionScorer | None = None,
+    ) -> None:
         self.memory_file = memory_file or PROJECT_ROOT / ".scratchpad" / "hippocampus_replay.jsonl"
         self.memory_file.parent.mkdir(parents=True, exist_ok=True)
+        self.predictor = predictor
 
     def log_wake_episode(
         self,
@@ -244,13 +289,39 @@ class HippocampalReplayEngine:
         if not traces:
             return {"consolidated_traces": 0, "status": "EMPTY_MEMORY"}
 
+        if self.predictor is None or not getattr(self.predictor, "is_trained", False):
+            raise SimulationRefusedError(
+                "execute_sleep_cycle refuses to claim consolidation results without a "
+                "trained predictor to measure retention against; load trained weights "
+                f"first, expected checkpoint at {DEFAULT_JEPA_CHECKPOINT}"
+            )
+
         # Mix recent traces with anchor memories from different domains
         anchors = [t for t in traces if t.get("is_anchor")]
         recents = traces[-batch_size:]
 
         replay_batch = list({t["trace_id"]: t for t in (anchors + recents)}.values())
+        replay_ids = {t["trace_id"] for t in replay_batch}
+        held_out = [t for t in traces if t["trace_id"] not in replay_ids]
+
+        if not held_out:
+            raise SimulationRefusedError(
+                "execute_sleep_cycle has no held-out traces distinct from the replay "
+                "batch to measure retention against; log more traces or shrink batch_size"
+            )
+
+        score_before = self.predictor.score_replay_batch(held_out)
+        if score_before == 0:
+            raise SimulationRefusedError(
+                "execute_sleep_cycle cannot compute a retention ratio from a zero "
+                "pre-consolidation retention score"
+            )
+
         random.seed(42)
         random.shuffle(replay_batch)
+        self.predictor.consolidate(replay_batch)
+        score_after = self.predictor.score_replay_batch(held_out)
+        measured_retention = round(score_after / score_before, 4)
 
         domains_covered = list({t.get("domain", "general") for t in replay_batch})
         avg_energy = sum(t["energy"] for t in replay_batch) / max(len(replay_batch), 1)
@@ -259,6 +330,6 @@ class HippocampalReplayEngine:
             "consolidated_traces": len(replay_batch),
             "domains_covered": domains_covered,
             "average_replay_energy": round(avg_energy, 3),
-            "catastrophic_forgetting_prevented": True,
+            "measured_retention": measured_retention,
             "status": "REM_SLEEP_CONSOLIDATION_COMPLETE",
         }

@@ -15,8 +15,17 @@ from dataclasses import dataclass
 from anse.v3.jepa_mcts import JEPALatentMCTS
 from anse.v3.adversarial_dpo import AdversarialDPO, DPOPreferencePair
 from anse.v3.autopoietic_meta_learning import AutopoieticMetaLearner
+from anse.infrastructure.gpu_telemetry import GPUTelemetryHook
+from anse.infrastructure.fabrication import SimulationRefusedError
+from anse.symbolic.sandbox import SandboxExecutor
 
 logger = logging.getLogger(__name__)
+
+# Deterministic probe executed in the sandbox to obtain a real duration/RAM
+# measurement for the "final physical execution" energy figure. It does not
+# decode the MCTS latent into source code (no such decoder exists yet); it
+# only exists to produce a genuine sandbox measurement instead of an estimate.
+_PHYSICAL_EXECUTION_PROBE = "print('anse_v3_physical_execution_probe')"
 
 @dataclass
 class V3CycleResult:
@@ -27,19 +36,20 @@ class V3CycleResult:
     final_physical_energy: float
 
 class ANSEEngineV3:
-    def __init__(self, latent_dim: int = 128):
+    def __init__(self, latent_dim: int = 128, sandbox: SandboxExecutor | None = None) -> None:
         self.latent_dim = latent_dim
-        
+
         # Core Neural Models (Mocked as simple linear layers for structural integration)
         self.jepa_world_model = nn.Linear(latent_dim, 2)  # Outputs (Energy, Confidence)
         self.policy_model = nn.Linear(latent_dim, latent_dim)
         self.ref_model = nn.Linear(latent_dim, latent_dim)
-        
+
         # Phase V3 Components
         self.mcts = JEPALatentMCTS(self.jepa_world_model, latent_dim=latent_dim)
         self.adversarial_dpo = AdversarialDPO(self.policy_model, self.ref_model)
         self.meta_learner = AutopoieticMetaLearner(self.policy_model)
-        
+        self.sandbox = sandbox or SandboxExecutor()
+
         self.optimizer = torch.optim.AdamW(self.policy_model.parameters(), lr=1e-4)
         self.cycle_count = 0
 
@@ -68,20 +78,21 @@ class ANSEEngineV3:
         
         # Step 3 & 4: Autopoietic Neural Self-Modification
         logger.info("3. Generating Neural Self-Modification Hypothesis...")
-        
-        # Fetch True Physical Telemetry from Hardware (Improvement 2)
-        from anse.infrastructure.gpu_telemetry import GPUTelemetryHook
+
+        # Fetch live GPU telemetry via nvidia-smi. This raises TelemetryUnavailableError
+        # (propagated below, uncaught) rather than returning a default on a GPU-less host.
         gpu_hook = GPUTelemetryHook()
         real_telemetry = gpu_hook.get_real_telemetry()
-        
+
         telemetry = {
-            "cache_misses": real_telemetry["l2_cache_misses"], 
+            "gpu_temp_c": real_telemetry["gpu_temp_c"],
+            "gpu_utilization_percent": real_telemetry["gpu_utilization_percent"],
+            "memory_used_mb": real_telemetry["memory_used_mb"],
             "bottleneck": "attention",
-            "active_tflops": real_telemetry["active_tflops"]
         }
-        logger.info(f"Generating hypothesis based on raw hardware telemetry: {telemetry}")
+        logger.info(f"Generating hypothesis based on live nvidia-smi telemetry: {telemetry}")
         proposal = self.meta_learner.generate_hypothesis(telemetry)
-        
+
         commit_success = False
         if self.meta_learner.formal_meta_verification(proposal):
             self.meta_learner.shadow_training(proposal, [dpo_pair])
@@ -89,9 +100,19 @@ class ANSEEngineV3:
         else:
             logger.error("   Formal Meta-Verification FAILED. Aborting Neural Update.")
 
-        # Simulate Final Physical execution of the MCTS decoded thought
-        final_physical_energy = baseline_energy * 0.95 if commit_success else baseline_energy * 0.99
-            
+        # Final Physical execution of the MCTS decoded thought, measured in the
+        # deterministic sandbox: E = duration_ms + peak_ram_mb of a real run.
+        execution_result = self.sandbox.execute(_PHYSICAL_EXECUTION_PROBE, trusted=True)
+        if execution_result.timed_out or execution_result.returncode != 0:
+            raise SimulationRefusedError(
+                "Sandbox execution of the decoded thought did not produce a valid "
+                f"measurement (returncode={execution_result.returncode}, "
+                f"timed_out={execution_result.timed_out}); refusing to estimate an energy value.",
+                component="engine_v3.run_singularity_loop",
+                remedy="Inspect the sandbox stderr and fix the failing probe before retrying.",
+            )
+        final_physical_energy = execution_result.duration_ms + execution_result.peak_ram_mb
+
         logger.info(f"--- Phase V3 Cycle Completed ---")
         return V3CycleResult(
             cycle_id=self.cycle_count,

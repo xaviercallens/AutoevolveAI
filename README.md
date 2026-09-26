@@ -7,8 +7,8 @@
 **A research harness that refuses to report success it has not earned.**
 
 [![Tests](https://img.shields.io/badge/tests-1079_passing-brightgreen?style=flat-square&logo=pytest)](#measured-status)
-[![Lean 4](https://img.shields.io/badge/Lean_4-218_theorems-blue?style=flat-square&logo=lean)](formal/ANSE)
-[![Release](https://img.shields.io/badge/release-v12.5.0-blueviolet?style=flat-square&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v12.5.0)
+[![Lean 4](https://img.shields.io/badge/Lean_4-225_theorems-blue?style=flat-square&logo=lean)](formal/ANSE)
+[![Release](https://img.shields.io/badge/release-v13.0.0-blueviolet?style=flat-square&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v13.0.0)
 [![Python](https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python)](pyproject.toml)
 [![Rust](https://img.shields.io/badge/rust-1.96-000000?style=flat-square&logo=rust)](crates/)
 [![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)](LICENSE)
@@ -173,7 +173,7 @@ because a test passed on one host and failed on the other.
 
 ## Measured status
 
-Measured on the T4 host at `v12.5.0`. Reproduce with the commands shown.
+Measured on the T4 host at `v13.0.0`. Reproduce with the commands shown.
 
 | What | Result | Command |
 |---|---|---|
@@ -182,9 +182,46 @@ Measured on the T4 host at `v12.5.0`. Reproduce with the commands shown.
 | Anti-stub AST guard | **exit 0** — 124 files | `python test_rigor_guard.py` |
 | Environment validator | **10/10** capability checks | `scripts/validate_environment.py` |
 | CPU-profile validation | **5 passed** | `pytest tests/test_local_32gb_cpu_antigravity_validation.py` |
-| Lean theorems authored | **218** across 34 files | `grep -c theorem formal/ANSE/*.lean` |
-| Open proof obligations | **4**, tracked in a registry | `formal/ANSE/Blueprint.lean:155-183` |
+| Lean theorems authored | **225** across 35 files | `grep -c theorem formal/ANSE/*.lean` |
+|  Open proof obligations | **4**, tracked in a registry | `formal/ANSE/Blueprint.lean:155-183` |
 | Chroma corpora | 1,881 Mathlib premises + 315 paper chunks | `scripts/validate_environment.py` |
+| Verified research pipeline | **4/4 gates pass** | `scripts/phd_demo/run_experiment.py --check` |
+
+### A worked example: one claim, verified three independent ways
+
+`scripts/phd_demo/` carries a complete PhD-level result end to end — Störmer–Verlet
+on the harmonic oscillator, its exact symplecticity, and the modified Hamiltonian it
+conserves. It exists as the reference for what "verified" is supposed to mean here.
+
+| Method | What it established |
+|---|---|
+| **SymPy** — derived, never recalled | `det M = 1` exactly; solving for a conserved quadratic form yields `H_h = p²/2 + (ω²/2)(1−ω²h²/4)q²`, with defect `H − H_h = ω⁴h²q²/8` |
+| **Lean 4** — `formal/ANSE/VerletSymplectic.lean` | **7 theorems, zero `sorryAx`**; axioms are only `propext`, `Classical.choice`, `Quot.sound` |
+| **Python + Rust** — independent implementations | `amplitude/h² = 0.250000000` at four step sizes against the proved `ω²/4`; cross-language agreement `5.5×10⁻¹⁰` |
+
+Over 200,000 steps the modified Hamiltonian is conserved to `1.2×10⁻¹³` — machine
+precision, so the theorem is exact rather than asymptotic — while explicit Euler
+reaches `3.76×10²¹⁶` or overflows.
+
+**Both gates rejected something real.** The Lean axiom audit rejected the first
+attempt: four theorems stated over a general `Field K` failed because `ring` cannot
+prove `2⁻¹·2 = 1` without knowing the characteristic is not 2. The statements were
+corrected, not the gate.
+
+**And the peer review returned a false positive, which is the more useful result.**
+Three adversarial lenses rejected the paper 3/3 across 3 loops. Checking whether they
+were *right* showed they were not: the `formal` lens wrote "`sorryAx` present in all
+of them" while the ledger records `sorry_ax_present: false` — it inverted the
+negation. That exposed a missing control in the harness. A negative control alone is
+half a validation, because a reviewer that rejects everything passes it while
+carrying no information — the exact mirror of the `ACCEPT WITHOUT RESERVATION`
+scripts it replaced. A **positive control** was added (3/3 accept a trivially-correct
+document), so both extremes are now bounded. The residual gap — passing both controls
+yet misreading a real 15 KB artifact — is a capability limit of a 7B referee, and it
+is recorded as **gate G5 unmet**: not passed, and not failed either.
+
+The paper (`papers/phd_demo_verlet/`, 352 KB, 5 figures) is therefore **not
+candidate-complete**, and says so. That is the intended behaviour.
 
 ### Hardware findings worth knowing
 

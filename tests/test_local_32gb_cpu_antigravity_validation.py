@@ -24,6 +24,7 @@ from peft import LoraConfig, get_peft_model
 from anse.config import PerformanceConfig
 from anse.infrastructure.agent_environment import (
     ANTIGRAVITY,
+    describe_agent_detection,
     detect_coding_agent,
     detect_gpu,
     detect_system_memory,
@@ -48,18 +49,41 @@ from anse.v4.implicit_smt import ImplicitSMTLayer
 
 
 def test_environment_profile_detection(tmp_path: Path) -> None:
-    """Validate that the environment profile detects Antigravity, 32GB RAM, and CPU device."""
-    # Ensure Antigravity signal is present for test deterministic evaluation
+    """Validate that the environment profile detects Antigravity, 32GB RAM, and CPU device.
+
+    A genuine Antigravity host does not export Claude Code's variables, so they
+    are cleared here rather than merely adding Antigravity's on top. Without
+    this, the environment carries BOTH agents' signals and resolution falls to
+    the `_AGENT_ENV_SIGNALS` tie-break -- which is why this test passed on the
+    Antigravity host and failed on the GCP T4 host, where `CLAUDECODE=1` is set
+    by the process actually driving the session. The bug was in the fixture, not
+    in the detector; `describe_agent_detection()` now reports that ambiguity
+    explicitly.
+    """
+    antigravity_only = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in ("CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT", "AUTOEVOLVE_AGENT")
+    }
+    antigravity_only["ANTIGRAVITY_AGENT"] = "1"
+
     with (
-        patch.dict("os.environ", {"ANTIGRAVITY_AGENT": "1"}, clear=False),
+        patch.dict("os.environ", antigravity_only, clear=True),
         patch("shutil.which", return_value=None),  # simulate no nvidia-smi
     ):
         agent = detect_coding_agent()
         gpu = detect_gpu()
         memory = detect_system_memory()
         profile = resolve_capability_profile(project_root=tmp_path)
+        detection = describe_agent_detection()
 
     assert agent == ANTIGRAVITY
+    # The simulated host must be unambiguous, or the assertion above is a coin-flip.
+    assert detection["ambiguous"] is False, (
+        f"simulated Antigravity host still carries multiple agent signals: "
+        f"{detection['signals_matched']}"
+    )
+    assert detection["signals_matched"] == [ANTIGRAVITY]
     assert gpu.available is False
     assert memory.total_mb > 25000, f"Expected ~32GB RAM, got {memory.total_mb}MB"
     assert memory.ram_gb >= 28.0, f"Expected ~32GB RAM, got {memory.ram_gb}GB"

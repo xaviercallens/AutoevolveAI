@@ -59,14 +59,26 @@ def _agent_override() -> str | None:
     return value if value in _VALID_AGENTS else None
 
 
-def _agent_from_signals() -> str | None:
+def _agents_from_signals() -> tuple[str, ...]:
+    """Every agent whose env signals are present, in _AGENT_ENV_SIGNALS order.
+
+    Returns all matches rather than the first, so that an ambiguous environment
+    is something callers can see instead of a tie silently broken by the order
+    of a module-level tuple.
+    """
+    matched: list[str] = []
     for agent, var, expected in _AGENT_ENV_SIGNALS:
         seen = os.environ.get(var)
         if not seen:
             continue
-        if expected is None or seen == expected:
-            return agent
-    return None
+        if (expected is None or seen == expected) and agent not in matched:
+            matched.append(agent)
+    return tuple(matched)
+
+
+def _agent_from_signals() -> str | None:
+    matched = _agents_from_signals()
+    return matched[0] if matched else None
 
 
 def detect_coding_agent() -> str:
@@ -74,8 +86,36 @@ def detect_coding_agent() -> str:
 
     Resolution order: an explicit `AUTOEVOLVE_AGENT` override, then verified
     env-var signals, else "unknown". Never inferred from filesystem layout.
+
+    **When more than one agent's signals are present** the environment is
+    genuinely ambiguous -- for example an Antigravity run started from a shell
+    that still exports Claude Code's variables. Precedence is then
+    `_AGENT_ENV_SIGNALS` order (Claude Code first), because `CLAUDECODE=1` is
+    exported by the Claude Code process itself, whereas `ANTIGRAVITY_AGENT` is
+    also the documented manual opt-in and so is the likelier leftover. Use
+    `AUTOEVOLVE_AGENT` to settle it explicitly, and `describe_agent_detection()`
+    to see what was actually matched -- relying on this tie-break silently is
+    how a CPU-profile test came to pass on an Antigravity host and fail on a
+    GPU host that had both variables set.
     """
     return _agent_override() or _agent_from_signals() or UNKNOWN_AGENT
+
+
+def describe_agent_detection() -> dict[str, object]:
+    """Expose how the agent was resolved, including any ambiguity.
+
+    Deployment validation should assert on this rather than on
+    `detect_coding_agent()` alone, so a host with conflicting signals is a
+    visible finding instead of an accepted coin-flip.
+    """
+    override = _agent_override()
+    matched = _agents_from_signals()
+    return {
+        "resolved": override or (matched[0] if matched else UNKNOWN_AGENT),
+        "override": override,
+        "signals_matched": list(matched),
+        "ambiguous": override is None and len(matched) > 1,
+    }
 
 
 @dataclass(frozen=True)

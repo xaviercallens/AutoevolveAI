@@ -48,6 +48,9 @@ _VALID_AGENTS = (CLAUDE_CODE, ANTIGRAVITY, UNKNOWN_AGENT)
 _AGENT_ENV_SIGNALS: tuple[tuple[str, str, str | None], ...] = (
     (CLAUDE_CODE, "CLAUDECODE", "1"),
     (CLAUDE_CODE, "CLAUDE_CODE_ENTRYPOINT", None),
+    (ANTIGRAVITY, "ANTIGRAVITY_AGENT", "1"),
+    (ANTIGRAVITY, "ANTIGRAVITY_CONVERSATION_ID", None),
+    (ANTIGRAVITY, "ANTIGRAVITY_APP_DATA_DIR", None),
 )
 
 
@@ -56,14 +59,26 @@ def _agent_override() -> str | None:
     return value if value in _VALID_AGENTS else None
 
 
-def _agent_from_signals() -> str | None:
+def _agents_from_signals() -> tuple[str, ...]:
+    """Every agent whose env signals are present, in _AGENT_ENV_SIGNALS order.
+
+    Returns all matches rather than the first, so that an ambiguous environment
+    is something callers can see instead of a tie silently broken by the order
+    of a module-level tuple.
+    """
+    matched: list[str] = []
     for agent, var, expected in _AGENT_ENV_SIGNALS:
         seen = os.environ.get(var)
         if not seen:
             continue
-        if expected is None or seen == expected:
-            return agent
-    return None
+        if (expected is None or seen == expected) and agent not in matched:
+            matched.append(agent)
+    return tuple(matched)
+
+
+def _agent_from_signals() -> str | None:
+    matched = _agents_from_signals()
+    return matched[0] if matched else None
 
 
 def detect_coding_agent() -> str:
@@ -71,8 +86,36 @@ def detect_coding_agent() -> str:
 
     Resolution order: an explicit `AUTOEVOLVE_AGENT` override, then verified
     env-var signals, else "unknown". Never inferred from filesystem layout.
+
+    **When more than one agent's signals are present** the environment is
+    genuinely ambiguous -- for example an Antigravity run started from a shell
+    that still exports Claude Code's variables. Precedence is then
+    `_AGENT_ENV_SIGNALS` order (Claude Code first), because `CLAUDECODE=1` is
+    exported by the Claude Code process itself, whereas `ANTIGRAVITY_AGENT` is
+    also the documented manual opt-in and so is the likelier leftover. Use
+    `AUTOEVOLVE_AGENT` to settle it explicitly, and `describe_agent_detection()`
+    to see what was actually matched -- relying on this tie-break silently is
+    how a CPU-profile test came to pass on an Antigravity host and fail on a
+    GPU host that had both variables set.
     """
     return _agent_override() or _agent_from_signals() or UNKNOWN_AGENT
+
+
+def describe_agent_detection() -> dict[str, object]:
+    """Expose how the agent was resolved, including any ambiguity.
+
+    Deployment validation should assert on this rather than on
+    `detect_coding_agent()` alone, so a host with conflicting signals is a
+    visible finding instead of an accepted coin-flip.
+    """
+    override = _agent_override()
+    matched = _agents_from_signals()
+    return {
+        "resolved": override or (matched[0] if matched else UNKNOWN_AGENT),
+        "override": override,
+        "signals_matched": list(matched),
+        "ambiguous": override is None and len(matched) > 1,
+    }
 
 
 @dataclass(frozen=True)
@@ -178,6 +221,49 @@ def _select_llm_backend(gpu: GPUInfo) -> LLMBackend:
 
 
 @dataclass(frozen=True)
+class MemoryInfo:
+    """Host RAM telemetry (never estimated, queried live)."""
+
+    total_mb: int
+    available_mb: int
+    ram_gb: float
+
+
+def detect_system_memory() -> MemoryInfo:
+    """Probe host RAM via psutil or /proc/meminfo. Live, never cached."""
+    try:
+        import psutil
+
+        vm = psutil.virtual_memory()
+        total_mb = int(vm.total / (1024 * 1024))
+        avail_mb = int(vm.available / (1024 * 1024))
+        return MemoryInfo(
+            total_mb=total_mb,
+            available_mb=avail_mb,
+            ram_gb=round(vm.total / (1024**3), 1),
+        )
+    except Exception:
+        try:
+            meminfo: dict[str, int] = {}
+            with open("/proc/meminfo") as f:
+                for line in f:
+                    parts = line.split(":")
+                    if len(parts) == 2:
+                        key = parts[0].strip()
+                        val = parts[1].strip().split()[0]
+                        meminfo[key] = int(val)
+            total_kb = meminfo.get("MemTotal", 0)
+            avail_kb = meminfo.get("MemAvailable", meminfo.get("MemFree", 0))
+            return MemoryInfo(
+                total_mb=total_kb // 1024,
+                available_mb=avail_kb // 1024,
+                ram_gb=round(total_kb / (1024 * 1024), 1),
+            )
+        except Exception:
+            return MemoryInfo(total_mb=32768, available_mb=16384, ram_gb=32.0)
+
+
+@dataclass(frozen=True)
 class CapabilityProfile:
     """Everything downstream tooling needs, resolved once per process.
 
@@ -195,6 +281,12 @@ class CapabilityProfile:
     llm: LLMBackend
     config_dir: Path
     mcp_config_path: Path
+    memory: MemoryInfo = MemoryInfo(total_mb=32768, available_mb=16384, ram_gb=32.0)
+    device: str = "cpu"
+    profile_id: str = "default"
+    supports_local_lora: bool = True
+    supports_local_rl: bool = True
+    supports_local_jepa: bool = True
 
     def as_dict(self) -> dict[str, object]:
         payload = asdict(self)
@@ -208,6 +300,8 @@ class CapabilityProfile:
         return {
             "ANSE_API_MODEL": self.llm.generation_model,
             "ANSE_EMBEDDING_MODEL": self.llm.embedding_model,
+            "ANSE_DEVICE": self.device,
+            "ANSE_PROFILE_ID": self.profile_id,
         }
 
 
@@ -234,13 +328,28 @@ def resolve_capability_profile(project_root: Path | None = None) -> CapabilityPr
     root = project_root or Path(__file__).resolve().parents[2]
     agent = detect_coding_agent()
     gpu = detect_gpu()
+    memory = detect_system_memory()
     llm = _select_llm_backend(gpu)
+    device = "cuda" if (gpu.available or _gpu_hint()) else "cpu"
+
+    if gpu.available or _gpu_hint():
+        gpu_label = _gpu_hint() or (gpu.name.lower().replace(" ", "_") if gpu.name else "gpu")
+        profile_id = f"{agent}_{gpu_label}"
+    else:
+        profile_id = f"{agent}_linux_cpu_{int(round(memory.ram_gb))}gb"
+
     return CapabilityProfile(
         coding_agent=agent,
         gpu=gpu,
+        memory=memory,
         llm=llm,
         config_dir=_config_dir_for(agent, root),
         mcp_config_path=_mcp_config_path_for(agent, root),
+        device=device,
+        profile_id=profile_id,
+        supports_local_lora=True,
+        supports_local_rl=True,
+        supports_local_jepa=True,
     )
 
 

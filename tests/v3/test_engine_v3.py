@@ -69,7 +69,10 @@ def test_v3_singularity_loop_e2e():
     
     assert result.cycle_id == 1
     assert result.autopoietic_commit_success is True
-    # If successful, final energy is baseline * 0.95 = 1900.0
-    assert result.final_physical_energy == 1900.0
+    # final_physical_energy is now a real sandbox measurement (duration_ms + peak_ram_mb
+    # of an actual subprocess run), not a multiplier of baseline_energy.
+    assert result.final_physical_energy != baseline_energy * 0.95
+    assert result.final_physical_energy != baseline_energy * 0.99
+    assert result.final_physical_energy > 0.0
     assert isinstance(result.mcts_energy_pred, float)
     assert isinstance(result.dpo_loss, float)

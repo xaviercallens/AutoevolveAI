@@ -58,7 +58,10 @@ for r in data["receipts"]:
     domain = r["domain"][:15] + "..." if len(r["domain"]) > 15 else r["domain"]
     domain = domain.replace("&", "\\&")
     title = title.replace("&", "\\&")
-    tex_content += f"{r['problem_id']} & {domain} & {r['numerical_latency_ms']} & {r['energy_score']} & {r['status'].replace('_', '\\_')} \\\\\n"
+    # Hoisted out of the f-string: a backslash inside an f-string expression is a
+    # syntax error before Python 3.12, and this file must parse under >=3.11.
+    status = r["status"].replace("_", "\\_")
+    tex_content += f"{r['problem_id']} & {domain} & {r['numerical_latency_ms']} & {r['energy_score']} & {status} \\\\\n"
 
 tex_content += """\\bottomrule
 \\end{tabular}

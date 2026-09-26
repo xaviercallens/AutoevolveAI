@@ -9,31 +9,31 @@ logger = logging.getLogger(__name__)
 
 
 class GPUTelemetryData(TypedDict):
-    """Parsed output from nvidia-smi GPU telemetry query."""
+    """Real GPU telemetry data from nvidia-smi."""
     gpu_temp_c: float
     gpu_utilization_percent: float
-    memory_used_mb: float
-    memory_total_mb: float
+    memory_used_mb: int
+    memory_total_mb: int
 
 
 class GPUTelemetryHook:
     """
-    Reads live GPU metrics via nvidia-smi.
-    Connects to nvidia-smi at initialization to verify GPU is reachable.
+    Interfaces with the GPU via nvidia-smi to extract real CUDA telemetry.
     """
     def __init__(self) -> None:
         exe = shutil.which("nvidia-smi")
-        self.connected = exe is not None
-        if self.connected:
-            logger.info("GPUTelemetryHook initialized. Connected to nvidia-smi.")
+        if exe is None:
+            self.connected = False
+            logger.warning("nvidia-smi not found on PATH; GPU telemetry unavailable.")
         else:
-            logger.warning("GPUTelemetryHook initialized. nvidia-smi not found on PATH.")
+            self.connected = True
+            logger.info("GPUTelemetryHook initialized with nvidia-smi access.")
 
     def get_real_telemetry(self) -> GPUTelemetryData:
-        """Fetches live GPU temperature, utilization, and memory metrics.
+        """Fetches live GPU temperature, utilization, and memory via nvidia-smi.
 
         Returns:
-            A dict with gpu_temp_c, gpu_utilization_percent, memory_used_mb, memory_total_mb.
+            GPUTelemetryData with actual measurements from the GPU.
 
         Raises:
             TelemetryUnavailableError: If nvidia-smi is not available or fails.
@@ -41,9 +41,9 @@ class GPUTelemetryHook:
         exe = shutil.which("nvidia-smi")
         if exe is None:
             raise TelemetryUnavailableError(
-                "nvidia-smi not found on PATH",
+                "GPU telemetry unavailable: nvidia-smi not found",
                 component="gpu_telemetry",
-                remedy="Install NVIDIA drivers and ensure nvidia-smi is available. See card P0-3.",
+                remedy="Install NVIDIA driver (see card P0-3)"
             )
 
         try:
@@ -51,83 +51,62 @@ class GPUTelemetryHook:
                 [
                     exe,
                     "--query-gpu=temperature.gpu,utilization.gpu,memory.used,memory.total",
-                    "--format=csv,noheader,nounits",
+                    "--format=csv,noheader,nounits"
                 ],
                 capture_output=True,
                 text=True,
                 timeout=5.0,
                 check=False,
             )
-        except subprocess.TimeoutExpired as exc:
+        except subprocess.TimeoutExpired:
             raise TelemetryUnavailableError(
-                "nvidia-smi timed out",
+                "GPU telemetry unavailable: nvidia-smi timed out",
                 component="gpu_telemetry",
-                remedy="GPU query took too long. See card P0-3.",
-            ) from exc
+                remedy="Check nvidia-smi responsiveness"
+            )
         except OSError as exc:
             raise TelemetryUnavailableError(
-                f"Failed to launch nvidia-smi: {exc}",
+                f"GPU telemetry unavailable: {exc}",
                 component="gpu_telemetry",
-                remedy="Cannot launch nvidia-smi. See card P0-3.",
-            ) from exc
+                remedy="Install NVIDIA driver (see card P0-3)"
+            )
 
         if result.returncode != 0:
             error_msg = (result.stderr or result.stdout).strip() or f"exit {result.returncode}"
             raise TelemetryUnavailableError(
-                f"nvidia-smi failed: {error_msg}",
+                f"GPU telemetry unavailable: {error_msg}",
                 component="gpu_telemetry",
-                remedy="nvidia-smi command failed. Verify driver is installed. See card P0-3.",
+                remedy="Install NVIDIA driver (see card P0-3)"
             )
 
         if not result.stdout.strip():
             raise TelemetryUnavailableError(
-                "nvidia-smi returned no output",
+                "GPU telemetry unavailable: no devices returned",
                 component="gpu_telemetry",
-                remedy="No GPU devices detected by nvidia-smi. See card P0-3.",
+                remedy="Install NVIDIA driver (see card P0-3)"
             )
 
-        return self._parse_telemetry(result.stdout)
-
-    @staticmethod
-    def _parse_telemetry(output: str) -> GPUTelemetryData:
-        """Parse nvidia-smi CSV output into typed dict.
-
-        Args:
-            output: CSV line from nvidia-smi with temp, utilization, mem_used, mem_total.
-
-        Returns:
-            GPUTelemetryData with parsed float/int values.
-
-        Raises:
-            TelemetryUnavailableError: If parsing fails.
-        """
-        line = next((ln for ln in output.strip().splitlines() if ln.strip()), "")
-        if not line:
-            raise TelemetryUnavailableError(
-                "No GPU telemetry data in nvidia-smi output",
-                component="gpu_telemetry",
-                remedy="nvidia-smi returned empty result. See card P0-3.",
-            )
-
+        line = next((ln for ln in result.stdout.strip().splitlines() if ln.strip()), "")
         fields = [f.strip() for f in line.split(",")]
+
         if len(fields) < 4:
             raise TelemetryUnavailableError(
-                f"Expected 4 fields, got {len(fields)}: {line}",
+                f"GPU telemetry unavailable: unexpected nvidia-smi output format",
                 component="gpu_telemetry",
-                remedy="nvidia-smi output format unexpected. See card P0-3.",
+                remedy="Verify NVIDIA driver installation"
             )
 
         try:
             temp_c = float(fields[0])
             util_percent = float(fields[1])
-            mem_used_mb = float(fields[2])
-            mem_total_mb = float(fields[3])
-        except (ValueError, IndexError) as exc:
+            mem_used_mb = int(float(fields[2]))
+            mem_total_mb = int(float(fields[3]))
+        except ValueError as exc:
             raise TelemetryUnavailableError(
-                f"Cannot parse telemetry fields: {exc}",
+                f"GPU telemetry unavailable: could not parse nvidia-smi output: {exc}",
                 component="gpu_telemetry",
-                remedy="nvidia-smi output values are not numeric. See card P0-3.",
-            ) from exc
+                remedy="Verify NVIDIA driver installation"
+            )
 
         return GPUTelemetryData(
             gpu_temp_c=temp_c,

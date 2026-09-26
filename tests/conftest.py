@@ -13,9 +13,13 @@ from unittest.mock import patch
 import pytest
 
 # Wire datalake vendor path for vendored imports like rl_common and rl_agent_api
-_datalake_vendor = Path("/mnt/disks/disk-socrateai-local-1/AutoevolveAI/datalake/vendor/laya")
-if _datalake_vendor.exists() and str(_datalake_vendor) not in sys.path:
-    sys.path.insert(0, str(_datalake_vendor))
+for _candidate in [
+    Path("/mnt/disks/disk-socrateai-local-1/AutoevolveAI/datalake/vendor/laya"),
+    Path(__file__).resolve().parent.parent / "checkpoints" / "laya",
+    Path(__file__).resolve().parent.parent / "vendor" / "laya",
+]:
+    if _candidate.exists() and str(_candidate) not in sys.path:
+        sys.path.insert(0, str(_candidate))
 
 # Ensure Hypothesis is optionally loaded if installed
 try:

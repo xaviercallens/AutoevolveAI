@@ -1,46 +1,57 @@
-"""Exceptions raised when modules report success without doing the work."""
+"""Exceptions raised when components report fabricated or unverified results."""
 
 
 class FabricatedResultError(RuntimeError):
-    """Base exception for fabricated results.
+    """Base exception for results that were fabricated or reported without verification.
 
-    Raised when a module reports success without actually performing the work.
-    Stores component and remedy information for callers to take corrective action.
+    This exception is raised when a component reports success but has not actually
+    performed the required work. It stores diagnostic information about which
+    component failed and what the caller should do instead.
     """
 
-    def __init__(
-        self, message: str, *, component: str, remedy: str
-    ) -> None:
-        """Initialize the exception with message, component, and remedy.
+    def __init__(self, message: str, *, component: str, remedy: str) -> None:
+        """Initialize the fabricated result exception.
 
         Args:
-            message: Description of what went wrong.
-            component: The name of the component that failed.
-            remedy: Instructions on what to do instead.
+            message: Description of the fabricated result.
+            component: Name of the component that fabricated the result.
+            remedy: Instructions for what the caller should do instead.
         """
         super().__init__(message)
         self.component = component
         self.remedy = remedy
 
     def __str__(self) -> str:
-        """Return a string representation including component and remedy."""
-        base = super().__str__()
-        return f"{base}\nComponent: {self.component}\nRemedy: {self.remedy}"
+        """Return a formatted string representation including component and remedy."""
+        base_msg = super().__str__()
+        return f"{base_msg} [component={self.component}; remedy: {self.remedy}]"
 
 
 class TelemetryUnavailableError(FabricatedResultError):
-    """Raised when telemetry was supposed to be collected but is unavailable."""
+    """Raised when telemetry or metrics were reported but not actually collected.
+
+    This occurs when a component claims to have gathered telemetry (e.g., performance
+    metrics, resource usage) but the data was fabricated or unavailable.
+    """
 
     pass
 
 
 class SimulationRefusedError(FabricatedResultError):
-    """Raised when a simulation refuses to run."""
+    """Raised when a simulation was reported as complete but was not actually run.
+
+    This occurs when a component claims to have executed a simulation but skipped it,
+    cached an old result, or refused to run it without documenting the refusal.
+    """
 
     pass
 
 
 class UnverifiedDataError(FabricatedResultError):
-    """Raised when data cannot be verified."""
+    """Raised when data was returned without verification or validation.
+
+    This occurs when a component returns data it has not actually validated, checked,
+    or confirmed to be correct.
+    """
 
     pass

@@ -98,8 +98,8 @@ theorem simple_identity (n : Nat) : n + 0 = n := by
             # This should NOT call subprocess.run because the test would be skipped
             # We verify the guard is in place by checking that subprocess wasn't called
             # However, the test file itself won't actually run due to skip marks.
-            # So we just verify the skip mark is present and correctly configured.
-            assert True  # If we got here, the module loaded correctly
+            assert repl is not None
+            assert not mock_run.called
 
     finally:
         if original_env is not None:

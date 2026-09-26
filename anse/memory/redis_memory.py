@@ -2,7 +2,11 @@
 Redis Long-Term Memory Hub for AutoevolveAI / ANSE.
 
 Persists full multi-turn conversations, user prompts, LLM thoughts, tool calls,
-and outputs into persistent Redis data structures and streams.
+and outputs into persistent Redis data structures and streams when Redis is available.
+
+Note: Persistence is guaranteed only when connected to a live Redis instance. When Redis
+is unavailable, store_turn() will return False (when strict=False) or raise UnverifiedDataError
+(when strict=True) to signal that the turn was NOT persisted.
 """
 
 from __future__ import annotations
@@ -13,6 +17,8 @@ import os
 import time
 from dataclasses import asdict, dataclass, field
 from typing import Any
+
+from anse.infrastructure.fabrication import UnverifiedDataError
 
 logger = logging.getLogger(__name__)
 
@@ -45,8 +51,12 @@ class ConversationTurn:
 
 class RedisLongTermMemory:
     """
-    Long-term persistent conversation and trace memory backed by Redis.
+    Long-term persistent conversation and trace memory backed by Redis (when connected).
     Provides indexing, search, streaming, and full trajectory replay.
+
+    When Redis is unavailable, store_turn() falls back to volatile behavior: returning False
+    (if strict=False) or raising UnverifiedDataError (if strict=True) instead of persisting.
+    Callers must check the return value or catch the exception to detect when writes fail.
     """
 
     def __init__(
@@ -75,7 +85,7 @@ class RedisLongTermMemory:
             self._client.ping()
             logger.info("Connected to Redis Long-Term Memory at %s:%d", self.host, self.port)
         except Exception as e:
-            logger.warning("Could not connect to Redis: %s", e)
+            logger.error("Could not connect to Redis at %s:%d: %s", self.host, self.port, e)
             self._client = None
 
     @property
@@ -87,16 +97,41 @@ class RedisLongTermMemory:
         conversation_id: str,
         turn: ConversationTurn,
         publish_stream: bool = True,
+        strict: bool = False,
     ) -> bool:
-        """Store a single dialogue turn into Redis."""
+        """
+        Store a single dialogue turn into Redis.
+
+        Args:
+            conversation_id: Unique conversation identifier
+            turn: The conversation turn to store
+            publish_stream: Whether to publish to the event stream
+            strict: If True, raise UnverifiedDataError when Redis is unavailable.
+                   If False (default), return False and log at ERROR level.
+
+        Returns:
+            True if successfully persisted to Redis, False otherwise.
+
+        Raises:
+            UnverifiedDataError: If strict=True and Redis is not connected.
+        """
+        turns_key = f"antigravity:conversation:{conversation_id}:turns"
         if not self._client:
-            return False
+            if strict:
+                logger.error("Cannot store turn for conversation %s: Redis not connected, strict mode enabled", conversation_id)
+                raise UnverifiedDataError(
+                    f"Cannot persist turn for conversation {conversation_id}: Redis unavailable",
+                    component="RedisLongTermMemory",
+                    remedy="Ensure Redis is running and reachable, or pass strict=False to allow data loss"
+                )
+            else:
+                logger.error("Cannot store turn for conversation %s: Redis not connected, data lost", conversation_id)
+                return False
 
         pipe = self._client.pipeline()
         turn_json = json.dumps(turn.to_dict())
 
         # 1. Append to conversation turns list
-        turns_key = f"antigravity:conversation:{conversation_id}:turns"
         pipe.rpush(turns_key, turn_json)
 
         # 2. Add to global conversations set

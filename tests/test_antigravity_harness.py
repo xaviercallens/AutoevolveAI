@@ -168,8 +168,9 @@ def test_lean4_verifier_detects_sorry(tmp_path):
 
 def test_redis_bus_in_memory_streams():
     bus = RedisBus(use_mock=True)
-    msg_id = bus.publish_event("tasks", {"task_id": "t1", "action": "benchmark"})
-    assert msg_id
+    result = bus.publish_event("tasks", {"task_id": "t1", "action": "benchmark"})
+    assert result["value"]  # Check that the message ID is present
+    assert result["is_mock"] is True  # Check that we're using in-memory backend
 
     events = bus.consume_events("tasks", last_id="0")
     assert len(events) == 1
@@ -433,16 +434,18 @@ def test_redis_bus_batch_and_ttl():
     assert batch_results[0][0][0] == "v1"
     assert batch_results[1][0][0] == "v2"
 
-    ttl_ok = bus.set_with_ttl("temp_key", "temporary_value", ttl_seconds=60)
-    assert ttl_ok
+    ttl_result = bus.set_with_ttl("temp_key", "temporary_value", ttl_seconds=60)
+    assert ttl_result["value"] is True
+    assert ttl_result["is_mock"] is True
 
 
 def test_redis_bus_trim_stream():
     bus = RedisBus(use_mock=True)
     for i in range(10):
         bus.publish_event("large_stream", {"idx": str(i)})
-    trimmed = bus.trim_stream("large_stream", max_len=3)
-    assert trimmed == 7
+    trim_result = bus.trim_stream("large_stream", max_len=3)
+    assert trim_result["value"] == 7
+    assert trim_result["is_mock"] is True
     remaining = bus.consume_events("large_stream", last_id="0", count=10)
     assert len(remaining) == 3
 

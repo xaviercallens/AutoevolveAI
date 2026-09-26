@@ -28,6 +28,26 @@ masking a substantially working suite.
 
 ---
 
+## 0b. The two supported environment profiles
+
+One detection engine (`anse/infrastructure/agent_environment.py`) resolves both. Verified on this host; the CPU profile's figures are from the Antigravity host's own validation run.
+
+| | **Claude Code / GCP T4** | **Antigravity / local Linux** |
+|---|---|---|
+| `profile_id` | `claude_code_tesla_t4` | `antigravity_linux_cpu_31gb` |
+| `coding_agent` | `claude_code` (`CLAUDECODE=1`) | `antigravity` (`ANTIGRAVITY_AGENT=1`) |
+| `device` | `cuda` | `cpu` |
+| GPU | Tesla T4, 15,360 MB, driver 580.178.04 | none (`nvidia-smi` absent) |
+| RAM | 29.4 GB | 31.3 GB |
+| `config_dir` | `.claude` | `.antigravity` |
+| MCP config | `.mcp.json` | `.antigravity/mcp_config.json` |
+| Generation model | `qwen3:8b` @ **36 tok/s on GPU** | CPU-tier local model |
+| Embeddings | `qwen3-embedding:0.6b`, 1024-d | same, CPU |
+| QLoRA ceiling | **Phi-3-mini 3.8B @ seq 1024**, 9,601 MiB, 373 tok/s | small adapters (896 trainable params measured, 869 MB RSS) |
+| `supports_local_{lora,rl,jepa}` | all `True` | all `True` |
+
+**Detection precedence is now explicit.** Both hosts' signals can coexist (e.g. Antigravity launched from a shell that still exports `CLAUDECODE`). `describe_agent_detection()` returns `{resolved, override, signals_matched, ambiguous}` so an ambiguous host is a visible finding rather than a tie broken silently by tuple order — which is precisely the bug that made PR #4's CPU test pass on one host and fail on the other. `AUTOEVOLVE_AGENT` settles it explicitly. **Deployment validation should assert on `ambiguous is False`, not on `resolved` alone.**
+
 ## 1. Principles (binding on every card, workflow and release)
 
 1. **A release is verified against its diff, not its intent.** Read `git diff <base>...<branch>` and require every release-note claim to cite a file that diff touches.
@@ -43,7 +63,11 @@ masking a substantially working suite.
 
 These block Stage 1 of any workflow. They are not code questions.
 
-### 2.1 Merge direction for the divergent git state — **human, shared history**
+### 2.1 Merge direction for the divergent git state — **RESOLVED 2026-09-26**
+
+> **Settled in favour of option (a).** `origin/main` advanced independently to `85c709c`, carrying the canonical P1-1…P1-5 card commits plus `z3-solver`, a portable three-path `tests/conftest.py` vendor resolution, and a broadened `test_rigor_guard.py`. Branch `feat/env-profile-ltm-rag-v12.5` merged `origin/main` and then `origin/antigravity-localLinuxenv` (PR #4). All 12 conflicts were card work and were resolved to main's canonical reviewed versions; the runaway process's unreviewed duplicates are discarded, and this session's own work had zero conflicts. **Effect on the gates:** `test_rigor_guard.py` now exits **0** (124 files), `pytest tests/` now **collects 1145 tests, exit 0** (z3 declared *and* installed), and `antigravity_guard.py`'s import/syntax stage passes — it now fails only on 2,306 pre-existing repo-wide Ruff findings, which is card P6-10 below, not a blocker.
+
+### 2.1b The original decision, retained for the record
 
 Local `main` is 4 commits ahead of `origin/main` with duplicate implementations of P1-1/P1-2/P1-3/P1-10 produced by the runaway process, while `night/remediation-2026-09-25` holds 14 reviewed card commits that `origin/main` does not contain.
 
@@ -106,6 +130,61 @@ Escalation rate falls only if the local model genuinely solves more. The **cost 
 | Resident VRAM, that model | 4,653 MiB | `nvidia-smi` |
 | Prover at Q8_0 | ~9.5 GB — fits, ~5 GB spare | fork analysis; **re-pull at Q4_K_M (~4.5 GB)** to allow prover + embedder co-residency |
 | Training dtype | **fp16, never bf16** | sm_75 has fp16 tensor cores but no bf16 ones. `torch.cuda.is_bf16_supported()` returns `True` here anyway and must not be trusted. FlashAttention-2 needs sm_80+; use SDPA/xformers. |
+
+### 4.1 Measured QLoRA capacity — and three facts that change the training plan
+
+All measured on this T4 with the GPU exclusive (NF4 + double quant, gradient checkpointing, PagedAdamW8bit, r=16 on q/k/v/o, batch 1):
+
+| dtype | TFLOPS (4096² matmul) | |
+|---|---|---|
+| **fp16** | **20.82** | ← use this |
+| fp32 | 3.87 | |
+| tf32 | 3.88 | tf32 is a no-op on sm_75 |
+| **bf16** | **2.28** | **9.1× slower than fp16** |
+
+**bf16 is a trap on this card.** `torch.cuda.is_bf16_supported()` returns `True` and is misleading — Turing has no bf16 tensor cores, so it is emulated and lands *below fp32*. Any trainer configured `bf16=True` runs ~9× slow. Mandate `bnb_4bit_compute_dtype=torch.float16`, `fp16=True`. Attention: FLASH is **unavailable** (needs sm_80+); MEM_EFFICIENT and MATH are available, so use `attn_implementation="sdpa"`, never `flash_attention_2`.
+
+| Base | seq | peak MiB | train tok/s |
+|---|---|---|---|
+| **Phi-3-mini 3.8B** | **1024** | **9,601** | **373** ← ceiling with real headroom |
+| Phi-3-mini 3.8B | 2048 | OOM | — |
+| Qwen2.5-0.5B | 2048 | 10,419 | 640 |
+| 7B *(estimated)* | 512 | ~9,200 | fits |
+| 7B *(estimated)* | 1024 | ~13,900 | **<1 GB headroom — unreliable** |
+| 14B *(estimated)* | any | ~14,000–21,000 | **off the table** |
+
+**Three facts that reshape "train a large model at night":**
+
+1. **The Ollama store is GGUF — not trainable.** Only two complete HF bases exist on disk: **Phi-3-mini-4k-instruct (3.8B)** and Qwen2.5-0.5B, plus a real 2.9 GB qwen2.5-1.5b on disk 2. The Qwen2.5-1.5B / Mistral-7B / Ministral-3B entries in the HF cache are **12–28 KB metadata stubs, never downloaded**; the Qwen3.8-27B entries are GGUF, inference only. So the largest model trainable tonight is **3.8B**, not 7B or larger. 7B needs a ~15 GB download (174 GB free, feasible) and would then only train at seq ≤ 512.
+2. **`post_implement_training.py:189`'s ~11,000 MiB budget for "7B"** is roughly right at seq ≤ 512 but **under-budgets seq 1024** (would OOM) — and is moot until a 7B HF base is actually present.
+3. **Never size training against a shared GPU.** An earlier probe showed Phi-3/1024 OOM; that was *contention* (Ollama had grown to 4,646 MiB), not a capacity limit. Re-measured exclusive, it fits with 5.3 GB headroom.
+
+**Nightly throughput:** 373 tok/s → 8 h ≈ 10.7 M tokens ≈ **~10,500 samples/night** at seq 1024; 6 h ≈ 7,900.
+
+### 4.2 This is a SPOT instance — checkpoint or lose the night
+
+Instance metadata: `provisioningModel=SPOT`, `preemptible=TRUE`, `automatic-restart=FALSE`, `on-host-maintenance=TERMINATE`. Measured boot history: 3 min, 7 min, 11.9 h, 18.3 h, 22.4 h, 23 h, 86 h — **median ~20 h, with two sub-10-minute boots.** A 10k-sample epoch takes ~8 h, comparable to the short tail.
+
+**`train_checkpoint.py:141` sets `save_strategy="no"`, so a preempted night loses everything.** Required: checkpoint every ~250 steps with resume, and poll `metadata/instance/preempted` (currently `FALSE`; flips ~30 s before termination) to flush. `scripts/train_qwen_lora.py:61` already has `save_steps=50` and is the better template.
+
+### 4.3 Honest cost model — do not build the case on inference arbitrage
+
+Costs are **estimated list prices** (no billing API access). Spot compute ≈ $0.12–0.23/hr (midpoint $0.19); disks ≈ $35/mo billed even when stopped. **24/7 ≈ $174/mo; 8 h-nights-only ≈ $81/mo.**
+
+Marginal cost per 1M output tokens = `$/hr ÷ (tok_s · 3600 / 1e6)`:
+
+| Regime | $/1M output | vs API |
+|---|---|---|
+| 3.6 tok/s (the CPU state it was actually in) | **$14.66** | worse than Sonnet, worse than Haiku |
+| 34 tok/s (GPU, after the fix) | **$1.55** | 3.2× cheaper than Haiku |
+
+The restart moved local inference from *economically indefensible* to *3× cheaper than the cheapest tier* — it is the precondition for the whole local-first thesis.
+
+**But the honest caveat:** Batch API is 50% off, so **Batch Haiku is ~$2.50/1M output**. Local T4 at $1.55 is only **1.6× cheaper while being a far weaker model.** At ~30% duty cycle the T4 yields ~27 M output tok/mo, displacing ~$68/mo of Batch Haiku against a $174/mo bill — **the T4 does not pay for itself on inference substitution.** It is justified by what has no API equivalent at any price: **QLoRA training, embeddings, and bulk best-of-N sampling under a verifier.** Build the economic case on those, not on token arbitrage.
+
+### 4.4 A VRAM thief to pause
+
+`datalake-harvest-daemon.service` (PID 1266, `--interval 1800`, running under `~/venv` py3.10 rather than the repo `.venv`) periodically re-touches the embedding model and refreshes its keep-alive. It will **silently steal VRAM mid-night.** It must be paused for every training window. Observed live in this session: running the validator (code model) concurrently with the PDF ingest (embedding model) under `OLLAMA_MAX_LOADED_MODELS=1` caused ~200 s cold-load thrashing on every alternation — direct evidence that the day/night mutex must be a hard interlock, not a convention.
 
 **Duty cycle** — enforced by systemd timers plus a VRAM mutex so inference and training never contend:
 

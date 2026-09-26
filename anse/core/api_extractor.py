@@ -12,7 +12,10 @@ silently ignore ``seed`` and ``temperature`` on /v1/chat/completions, so every
 
 from __future__ import annotations
 
+import json
 import logging
+from datetime import datetime, timezone
+from pathlib import Path
 
 import httpx
 import torch
@@ -32,6 +35,7 @@ class APIExtractor:
         timeout_s: float = 600.0,
         ollama_native: bool = False,
         model_name: str | None = None,
+        call_log_path: str | Path | None = None,
     ) -> None:
         self.config = config or get_config().model
         self.api_model_name = model_name or self.config.api_model_name
@@ -40,6 +44,9 @@ class APIExtractor:
         self._client = client or httpx.Client(timeout=timeout_s)
         self._base = self.config.api_base_url.rstrip("/")
         self._native_root = self._base[:-3] if self._base.endswith("/v1") else self._base
+        self._call_log_path = Path(call_log_path) if call_log_path else None
+        if self._call_log_path:
+            self._call_log_path.parent.mkdir(parents=True, exist_ok=True)
 
     def extract(
         self,
@@ -59,6 +66,9 @@ class APIExtractor:
             text, token_count = self._chat_native(messages, max_tokens, temp)
         else:
             text, token_count = self._chat_openai(messages, max_tokens, temp)
+
+        if self._call_log_path:
+            self._log_call(messages, text, token_count, max_tokens, temp)
 
         embedding = self._embed_code(text)
         record = HiddenStateRecord(
@@ -148,3 +158,25 @@ class APIExtractor:
         except (httpx.HTTPError, ValueError) as exc:
             logger.warning("Embedding unavailable (%s); trace will not be vector-indexed.", exc)
             return []
+
+    def _log_call(
+        self,
+        messages: list[dict[str, str]],
+        output: str,
+        token_count: int,
+        max_tokens: int,
+        temperature: float,
+    ) -> None:
+        if not self._call_log_path:
+            return
+        call_record = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "model": self.api_model_name,
+            "input": {"messages": messages, "max_tokens": max_tokens, "temperature": temperature},
+            "output": {"text": output, "completion_tokens": token_count},
+        }
+        try:
+            with open(self._call_log_path, "a") as f:
+                f.write(json.dumps(call_record) + "\n")
+        except Exception as exc:
+            logger.warning("Failed to log LLM call: %s", exc)

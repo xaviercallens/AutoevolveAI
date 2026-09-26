@@ -258,6 +258,10 @@ def make_figures(py: dict[str, Any]) -> list[Path]:
 
     FIGS.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
+    # Deterministic PDF output. Without this matplotlib stamps a CreationDate and
+    # a byte-identical plot hashes differently on every run, which would make the
+    # ledger's sha256 provenance anchor meaningless.
+    PDF_META = {"CreationDate": None}
     h_demo = 0.1
     n_short = 4000
 
@@ -284,7 +288,7 @@ def make_figures(py: dict[str, Any]) -> list[Path]:
     ax[1].legend(fontsize=8); ax[1].grid(alpha=0.3)
     fig.tight_layout()
     p1 = FIGS / "fig1_energy_behaviour.pdf"
-    fig.savefig(p1); fig.savefig(p1.with_suffix(".png"), dpi=150); plt.close(fig)
+    fig.savefig(p1, metadata=PDF_META); fig.savefig(p1.with_suffix(".png"), dpi=150); plt.close(fig)
     written += [p1, p1.with_suffix(".png")]
 
     # Figure 2: O(h^2) scaling against the Lean-proved constant.
@@ -306,7 +310,7 @@ def make_figures(py: dict[str, Any]) -> list[Path]:
     ax[1].legend(fontsize=8); ax[1].grid(alpha=0.3)
     fig.tight_layout()
     p2 = FIGS / "fig2_h2_scaling.pdf"
-    fig.savefig(p2); fig.savefig(p2.with_suffix(".png"), dpi=150); plt.close(fig)
+    fig.savefig(p2, metadata=PDF_META); fig.savefig(p2.with_suffix(".png"), dpi=150); plt.close(fig)
     written += [p2, p2.with_suffix(".png")]
 
     # Figure 3: phase portrait -- area preservation vs spiral.
@@ -321,7 +325,7 @@ def make_figures(py: dict[str, Any]) -> list[Path]:
     ax.legend(fontsize=8); ax.grid(alpha=0.3); ax.set_aspect("equal")
     fig.tight_layout()
     p3 = FIGS / "fig3_phase_portrait.pdf"
-    fig.savefig(p3); fig.savefig(p3.with_suffix(".png"), dpi=150); plt.close(fig)
+    fig.savefig(p3, metadata=PDF_META); fig.savefig(p3.with_suffix(".png"), dpi=150); plt.close(fig)
     written += [p3, p3.with_suffix(".png")]
 
     return written

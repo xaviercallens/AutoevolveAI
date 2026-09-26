@@ -57,6 +57,14 @@ class TestDetectCodingAgent:
         with patch.dict("os.environ", {"CLAUDE_CODE_ENTRYPOINT": "cli"}, clear=True):
             assert detect_coding_agent() == CLAUDE_CODE
 
+    def test_antigravity_agent_env_var_wins(self) -> None:
+        with patch.dict("os.environ", {"ANTIGRAVITY_AGENT": "1"}, clear=True):
+            assert detect_coding_agent() == ANTIGRAVITY
+
+    def test_antigravity_conversation_id_signal(self) -> None:
+        with patch.dict("os.environ", {"ANTIGRAVITY_CONVERSATION_ID": "conv-1234"}, clear=True):
+            assert detect_coding_agent() == ANTIGRAVITY
+
 
 class TestParseNvidiaSmiCsv:
     def test_parses_name_and_memory(self) -> None:
@@ -172,6 +180,31 @@ class TestResolveCapabilityProfile:
         overrides = profile.env_overrides()
         assert overrides["ANSE_API_MODEL"] == "qwen3:8b"
         assert overrides["ANSE_EMBEDDING_MODEL"] == "qwen3-embedding:0.6b"
+
+    def test_antigravity_cpu_profile_resolution(self, tmp_path: Path) -> None:
+        with (
+            patch.dict("os.environ", {"ANTIGRAVITY_AGENT": "1"}, clear=True),
+            patch("shutil.which", return_value=None),
+        ):
+            profile = resolve_capability_profile(project_root=tmp_path)
+        assert profile.coding_agent == ANTIGRAVITY
+        assert profile.device == "cpu"
+        assert profile.supports_local_lora is True
+        assert profile.supports_local_rl is True
+        assert profile.supports_local_jepa is True
+        assert profile.config_dir == tmp_path / ".antigravity"
+        assert profile.mcp_config_path == tmp_path / ".antigravity" / "mcp_config.json"
+        assert "antigravity_linux_cpu_" in profile.profile_id
+
+
+class TestDetectSystemMemory:
+    def test_detect_system_memory_returns_positive_ram(self) -> None:
+        from anse.infrastructure.agent_environment import detect_system_memory
+
+        mem = detect_system_memory()
+        assert mem.total_mb > 0
+        assert mem.available_mb > 0
+        assert mem.ram_gb > 0.0
 
 
 @given(

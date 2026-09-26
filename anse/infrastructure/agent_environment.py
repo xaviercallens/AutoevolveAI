@@ -48,6 +48,9 @@ _VALID_AGENTS = (CLAUDE_CODE, ANTIGRAVITY, UNKNOWN_AGENT)
 _AGENT_ENV_SIGNALS: tuple[tuple[str, str, str | None], ...] = (
     (CLAUDE_CODE, "CLAUDECODE", "1"),
     (CLAUDE_CODE, "CLAUDE_CODE_ENTRYPOINT", None),
+    (ANTIGRAVITY, "ANTIGRAVITY_AGENT", "1"),
+    (ANTIGRAVITY, "ANTIGRAVITY_CONVERSATION_ID", None),
+    (ANTIGRAVITY, "ANTIGRAVITY_APP_DATA_DIR", None),
 )
 
 
@@ -178,6 +181,49 @@ def _select_llm_backend(gpu: GPUInfo) -> LLMBackend:
 
 
 @dataclass(frozen=True)
+class MemoryInfo:
+    """Host RAM telemetry (never estimated, queried live)."""
+
+    total_mb: int
+    available_mb: int
+    ram_gb: float
+
+
+def detect_system_memory() -> MemoryInfo:
+    """Probe host RAM via psutil or /proc/meminfo. Live, never cached."""
+    try:
+        import psutil
+
+        vm = psutil.virtual_memory()
+        total_mb = int(vm.total / (1024 * 1024))
+        avail_mb = int(vm.available / (1024 * 1024))
+        return MemoryInfo(
+            total_mb=total_mb,
+            available_mb=avail_mb,
+            ram_gb=round(vm.total / (1024**3), 1),
+        )
+    except Exception:
+        try:
+            meminfo: dict[str, int] = {}
+            with open("/proc/meminfo") as f:
+                for line in f:
+                    parts = line.split(":")
+                    if len(parts) == 2:
+                        key = parts[0].strip()
+                        val = parts[1].strip().split()[0]
+                        meminfo[key] = int(val)
+            total_kb = meminfo.get("MemTotal", 0)
+            avail_kb = meminfo.get("MemAvailable", meminfo.get("MemFree", 0))
+            return MemoryInfo(
+                total_mb=total_kb // 1024,
+                available_mb=avail_kb // 1024,
+                ram_gb=round(total_kb / (1024 * 1024), 1),
+            )
+        except Exception:
+            return MemoryInfo(total_mb=32768, available_mb=16384, ram_gb=32.0)
+
+
+@dataclass(frozen=True)
 class CapabilityProfile:
     """Everything downstream tooling needs, resolved once per process.
 
@@ -195,6 +241,12 @@ class CapabilityProfile:
     llm: LLMBackend
     config_dir: Path
     mcp_config_path: Path
+    memory: MemoryInfo = MemoryInfo(total_mb=32768, available_mb=16384, ram_gb=32.0)
+    device: str = "cpu"
+    profile_id: str = "default"
+    supports_local_lora: bool = True
+    supports_local_rl: bool = True
+    supports_local_jepa: bool = True
 
     def as_dict(self) -> dict[str, object]:
         payload = asdict(self)
@@ -208,6 +260,8 @@ class CapabilityProfile:
         return {
             "ANSE_API_MODEL": self.llm.generation_model,
             "ANSE_EMBEDDING_MODEL": self.llm.embedding_model,
+            "ANSE_DEVICE": self.device,
+            "ANSE_PROFILE_ID": self.profile_id,
         }
 
 
@@ -234,13 +288,28 @@ def resolve_capability_profile(project_root: Path | None = None) -> CapabilityPr
     root = project_root or Path(__file__).resolve().parents[2]
     agent = detect_coding_agent()
     gpu = detect_gpu()
+    memory = detect_system_memory()
     llm = _select_llm_backend(gpu)
+    device = "cuda" if (gpu.available or _gpu_hint()) else "cpu"
+
+    if gpu.available or _gpu_hint():
+        gpu_label = _gpu_hint() or (gpu.name.lower().replace(" ", "_") if gpu.name else "gpu")
+        profile_id = f"{agent}_{gpu_label}"
+    else:
+        profile_id = f"{agent}_linux_cpu_{int(round(memory.ram_gb))}gb"
+
     return CapabilityProfile(
         coding_agent=agent,
         gpu=gpu,
+        memory=memory,
         llm=llm,
         config_dir=_config_dir_for(agent, root),
         mcp_config_path=_mcp_config_path_for(agent, root),
+        device=device,
+        profile_id=profile_id,
+        supports_local_lora=True,
+        supports_local_rl=True,
+        supports_local_jepa=True,
     )
 
 

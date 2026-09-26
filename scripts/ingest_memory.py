@@ -40,15 +40,21 @@ logger = logging.getLogger("ingest_memory")
 
 
 def ingest_transcripts(
-    chroma_root: Path, limit_files: int | None, redis_url: str | None
+    chroma_root: Path,
+    limit_files: int | None,
+    redis_url: str | None,
+    transcript_root: Path | None = None,
 ) -> dict[str, Any]:
-    from anse.memory.transcript_ltm import import_all
+    from anse.memory.transcript_ltm import DEFAULT_TRANSCRIPT_ROOT, import_all
 
+    root = transcript_root or DEFAULT_TRANSCRIPT_ROOT
     report = import_all(
+        root=root,
         redis_url=redis_url,
         chroma_directory=chroma_root / "transcripts",
         limit_files=limit_files,
     )
+    report["transcript_root"] = str(root)
     scrubbed = report["scrub"]["total_replacements"]
     if report["turns_stored"] and scrubbed == 0:
         # Not an error, but worth surfacing: a corpus of real development
@@ -77,6 +83,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--transcripts", action="store_true")
     parser.add_argument("--pdfs", action="store_true")
     parser.add_argument("--limit-files", type=int, default=None)
+    parser.add_argument(
+        "--transcript-root",
+        type=Path,
+        default=None,
+        help="Directory of session JSONL to import. The default is ~/.claude/projects, "
+        "which is EVERY project on this machine -- measured here at 1,601 files / "
+        "80,537 turns / roughly 5.6 h of embedding. Scope it to one project unless "
+        "you mean the whole corpus, and note that other projects' transcripts are "
+        "other projects' data.",
+    )
     parser.add_argument("--chroma-root", type=Path, default=DEFAULT_CHROMA_ROOT)
     parser.add_argument("--redis-url", default=None)
     parser.add_argument("--json", action="store_true")
@@ -97,7 +113,10 @@ def main(argv: list[str] | None = None) -> int:
         logger.info("ingesting Claude Code transcripts -> Redis + Chroma")
         try:
             results["transcripts"] = ingest_transcripts(
-                args.chroma_root, args.limit_files, args.redis_url
+                args.chroma_root,
+                args.limit_files,
+                args.redis_url,
+                transcript_root=args.transcript_root,
             )
             t = results["transcripts"]
             logger.info(

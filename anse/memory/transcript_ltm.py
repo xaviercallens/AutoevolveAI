@@ -183,6 +183,40 @@ def parse_transcript(path: Path, scrub_report: ScrubReport | None = None) -> lis
     return turns
 
 
+# Well under the 4096-token runtime window Ollama gives the embedding model
+# (~4 chars/token, so ~6000 chars is ~1500 tokens). Overlap keeps a sentence that
+# straddles a boundary retrievable from at least one window.
+EMBED_CHUNK_CHARS = 6000
+EMBED_CHUNK_OVERLAP = 400
+
+
+def _chunk_for_embedding(
+    text: str,
+    chunk_chars: int = EMBED_CHUNK_CHARS,
+    overlap: int = EMBED_CHUNK_OVERLAP,
+) -> list[str]:
+    """Split a turn into windows that fit the embedding model's runtime context.
+
+    Always returns at least one non-empty chunk, because the caller has already
+    established the turn has text and the embedding function rejects empty input.
+    """
+    stripped = text.strip()
+    if len(stripped) <= chunk_chars:
+        return [stripped]
+
+    chunks: list[str] = []
+    start = 0
+    while start < len(stripped):
+        end = min(start + chunk_chars, len(stripped))
+        window = stripped[start:end].strip()
+        if window:
+            chunks.append(window)
+        if end >= len(stripped):
+            break
+        start = max(end - overlap, start + 1)
+    return chunks or [stripped[:chunk_chars]]
+
+
 def iter_transcripts(root: Path | str = DEFAULT_TRANSCRIPT_ROOT) -> Iterator[Path]:
     """Yield every session JSONL under the Claude Code projects root."""
     root = Path(root)
@@ -245,20 +279,30 @@ class TranscriptLTM:
         self._redis.sadd(f"{REDIS_KEY_PREFIX}:sessions", turn.session_id)
 
         if self._collection is not None:
+            # Redis holds the turn whole; Chroma gets it in windows.
+            #
+            # Ollama's RUNTIME context for the embedding model is 4096 tokens even
+            # though the model advertises 32768, and transcript turns are heavy-tailed:
+            # measured median 298 chars but p99 10,461 and max 111,045. Embedding a
+            # long turn whole returns HTTP 500 "the input length exceeds the context
+            # length" and, because the embedding function fails closed, aborts the
+            # whole import. Chunking keeps the durable record complete while making
+            # every embedded document fit.
+            chunks = _chunk_for_embedding(turn.text)
+            base = {
+                "session_id": turn.session_id,
+                "project_slug": turn.project_slug,
+                "role": turn.role,
+                "turn_index": turn.turn_index,
+                "tool_names": ",".join(turn.tool_names),
+                "trainable": False,
+                "usage": turn.usage,
+                "chunks": len(chunks),
+            }
             self._collection.upsert(
-                ids=[turn.record_id],
-                documents=[turn.text],
-                metadatas=[
-                    {
-                        "session_id": turn.session_id,
-                        "project_slug": turn.project_slug,
-                        "role": turn.role,
-                        "turn_index": turn.turn_index,
-                        "tool_names": ",".join(turn.tool_names),
-                        "trainable": False,
-                        "usage": turn.usage,
-                    }
-                ],
+                ids=[f"{turn.record_id}:{i}" for i in range(len(chunks))],
+                documents=chunks,
+                metadatas=[{**base, "chunk_index": i} for i in range(len(chunks))],
             )
 
     def turn_count(self) -> int:

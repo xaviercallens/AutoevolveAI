@@ -212,22 +212,78 @@ class DocumentStore:
             )
         return len(documents)
 
+    def ingest_text_file(
+        self, path: Path, extra_metadata: dict[str, Any] | None = None
+    ) -> int:
+        """Index a plain-text or Markdown document.
+
+        The literature this project actually cites lives in Markdown, not PDF
+        (`docs/LITERATURE_REVIEW_RAG.md`, `docs/EBM_JEPA_Foundations.md`,
+        `docs/LeCun2006_EBM_Summary.md`). Restricting ingestion to PDFs reported an
+        empty `literature` collection while the material sat on disk unindexed,
+        which reads as "no literature" rather than "wrong file extension".
+
+        Provenance is identical to the PDF path: content hash plus a page number,
+        which for a flat text file is always 1.
+        """
+        digest = sha256_of(path)
+        if self.already_indexed(digest):
+            logger.info("%s already indexed (sha256=%s)", path.name, digest[:12])
+            return 0
+
+        text = path.read_text(encoding="utf-8", errors="replace")
+        chunks = chunk_text(text)
+        if not chunks:
+            raise ValueError(f"{path.name}: no chunk met the minimum length")
+
+        ids, documents, metadatas = [], [], []
+        for index, chunk in enumerate(chunks):
+            ids.append(f"{digest[:16]}:t{index}")
+            documents.append(chunk)
+            metadata: dict[str, Any] = {
+                "source_path": str(path),
+                "source_name": path.name,
+                "source_sha256": digest,
+                "page": 1,
+                "chunk_index": index,
+            }
+            if extra_metadata:
+                metadata.update(extra_metadata)
+            metadatas.append(metadata)
+
+        BATCH = 32
+        for start in range(0, len(documents), BATCH):
+            self._collection.upsert(
+                ids=ids[start : start + BATCH],
+                documents=documents[start : start + BATCH],
+                metadatas=metadatas[start : start + BATCH],
+            )
+        return len(documents)
+
     def ingest_directory(
         self,
         directory: Path | str,
         pattern: str = "*.pdf",
         extra_metadata: dict[str, Any] | None = None,
     ) -> IngestReport:
-        """Index every matching PDF under `directory`, reporting skips honestly."""
+        """Index every matching file under `directory`, reporting skips honestly.
+
+        Dispatches on extension: `.pdf` goes through the PDF text extractor, and
+        `.md`/`.txt`/`.rst` through the plain-text path.
+        """
         directory = Path(directory)
         report = IngestReport(
             collection=self.collection_name,
             embedding_model=self.embedding_function.model,
         )
 
+        TEXT_SUFFIXES = {".md", ".txt", ".rst"}
         for path in sorted(directory.rglob(pattern)):
             try:
-                written = self.ingest_pdf(path, extra_metadata=extra_metadata)
+                if path.suffix.lower() in TEXT_SUFFIXES:
+                    written = self.ingest_text_file(path, extra_metadata=extra_metadata)
+                else:
+                    written = self.ingest_pdf(path, extra_metadata=extra_metadata)
             except Exception as exc:
                 report.skipped.append({"path": str(path), "reason": str(exc)})
                 logger.warning("skipped %s: %s", path.name, exc)

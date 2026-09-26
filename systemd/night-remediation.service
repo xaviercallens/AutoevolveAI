@@ -53,6 +53,15 @@ Environment="PATH=/home/callensxavier_gmail_com/.local/bin:/home/callensxavier_g
 # `claude` resolves its credentials under $HOME; User= sets it, but be explicit.
 Environment="HOME=/home/callensxavier_gmail_com"
 Environment="CLOUDSDK_CORE_PROJECT=gen-lang-client-0625573011"
+
+# gh/git auth: `gh auth status` in an interactive session shows the token is
+# supplied via $GH_TOKEN, not a stored keyring credential -- so a service that
+# doesn't set it has none, and `git push` fails with "could not read Username
+# for 'https://github.com'". This is exactly what happened on the 2026-09-26
+# 01:00 run (see the journal for that night). The value lives outside the repo
+# (this is a PUBLIC repo) in a mode-600 file only this user can read; only its
+# PATH is committed here.
+EnvironmentFile=/home/callensxavier_gmail_com/.config/night-remediation/secrets.env
 Environment="OLLAMA_MODELS=/mnt/disks/disk-socrateai-local-1/leanmaster/ollama"
 # Keep pytest from reaching for the real Lean toolchain (card P0-8).
 Environment="ANSE_LEAN_TESTS=0"

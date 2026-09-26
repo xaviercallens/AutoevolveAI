@@ -5,7 +5,7 @@
 
 [![Lean 4 Formal Specs](https://img.shields.io/badge/Lean_4-v4.34.0--rc2%20(2%2C967%20Jobs)-blue?style=for-the-badge&logo=lean)](formal/ANSE/StrongGravity.lean)
 [![Benchmarks: 200 Cases](https://img.shields.io/badge/Benchmarks-200%2F200_Passing-brightgreen?style=for-the-badge&logo=pytest)](results/200_unified_eval_report.json)
-[![Release: v12.4.0](https://img.shields.io/badge/Release-v12.4.0-blueviolet?style=for-the-badge&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v12.4.0)
+[![Release: v12.5.0](https://img.shields.io/badge/Release-v12.5.0-blueviolet?style=for-the-badge&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v12.5.0)
 [![Safe ANSE V4](https://img.shields.io/badge/Safe_ANSE_V4-Z3_SMT_Inviolable-emerald?style=for-the-badge&logo=shield)](anse/v4/implicit_smt.py)
 [![Closed-Loop Hardness](https://img.shields.io/badge/Closed--Loop_Hardness-10%2F10_Passing-brightgreen?style=for-the-badge&logo=checkmarx)](scripts/execute_5_closed_loop_scenarios.py)
 [![RL Energy Reduction](https://img.shields.io/badge/Energy_Reduction--90.3%25-orange?style=for-the-badge&logo=speedtest)](results/reinforcement_learning_2000_cases_eda_run4.json)

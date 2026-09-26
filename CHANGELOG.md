@@ -2,7 +2,90 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [12.5.0] — Multi-AI Coding & Multi-Environment (2026-09-26)
+
+**This is the release v12.4.0 claimed to be.** That release asserted a set of remediation cards had landed, and that all three verification gates passed; neither was true of its diff (see `docs/remediation/AUDIT_2026-09-26.md` §0). Every number below was measured on the hosts named, and the failures are listed alongside the successes.
+
+`scripts/verify_release.py` was run against this release **before** it was tagged, and its first run **blocked** this very entry — for naming a card in prose that this diff does not implement. The wording was corrected rather than the gate weakened. That is the intended workflow.
+
+**Still unmerged, to be explicit:** the harvester-JSONL card and the other Phase-3/Phase-4 work remain on `night/remediation-2026-09-25` and are *not* in this release.
+
+### Two supported environment profiles, one detection engine
+
+`anse/infrastructure/agent_environment.py` resolves both:
+
+| | Claude Code / GCP T4 | Antigravity / local Linux |
+|---|---|---|
+| `profile_id` | `claude_code_tesla_t4` | `antigravity_linux_cpu_31gb` |
+| device | `cuda` — Tesla T4, 15,360 MB, driver 580.178.04 | `cpu` — no `nvidia-smi` |
+| RAM | 29.4 GB | 31.3 GB |
+| config | `.claude` / `.mcp.json` | `.antigravity` / `mcp_config.json` |
+| generation | `qwen3:8b` @ **34.7 tok/s on GPU** | CPU-tier local model |
+| embeddings | `qwen3-embedding:0.6b`, **1024-d** | same, CPU |
+| QLoRA ceiling | **Phi-3-mini 3.8B @ seq 1024** — 9,601 MiB, 373 tok/s | small adapters, 869 MB RSS |
+| `supports_local_{lora,rl,jepa}` | all `True` | all `True` |
+
+**Agent precedence is now explicit.** Both hosts' signals can coexist (Antigravity launched from a shell still exporting `CLAUDECODE`). `describe_agent_detection()` returns `{resolved, override, signals_matched, ambiguous}`, so an ambiguous host is a visible finding rather than a tie broken silently by tuple order — the bug that made the CPU-profile test pass on one host and fail on the other. Validation should assert on `ambiguous is False`, not on `resolved` alone.
+
+### The T4 was never actually being used
+
+`ollama serve` had started 2.5 h **before** `/dev/nvidia*` existed and had served CPU-only ever since: **2.3 tok/s, 0 MiB GPU**. A restart plus a residency drop-in (`OLLAMA_MAX_LOADED_MODELS=1`, `KEEP_ALIVE=10m`, `NUM_PARALLEL=1`) gives **34–36 tok/s warm, 100% GPU, 4,653 MiB resident** — a **15× speedup**, independently confirmed by Ollama's own `print_timing: 34.23 t/s`. Every prior "T4 inference" figure in this repo was false; the 36 tok/s in project memory was accurate as a potential and had never been reached. `scripts/validate_environment.py` now fails below 10 tok/s to catch the regression.
+
+### New capability
+
+- **`anse/memory/ollama_embeddings.py`** — real 1024-d semantic embeddings, replacing `chroma_rag.FastDeterministicEmbeddingFunction`, which builds vectors from `hashlib.md5` over character n-grams and carries no semantic signal. **Fails closed** (`EmbeddingUnavailableError`) rather than substituting a placeholder, and guards against dimension drift.
+- **`anse/memory/document_store.py`** — PDF ingestion into separate `own_papers` / `literature` collections. Every chunk carries `{source_path, source_sha256, page}`, because no paper under `papers/` linked any quantitative claim to an artifact. Idempotent by content hash.
+- **`anse/memory/transcript_ltm.py`** — Claude Code transcripts → Redis (durable) + Chroma (retrieval). Scrubbing is a hard gate with a `ScrubReport`, so an implausibly clean run is visible. Every record is `trainable=False / usage="retrieval_only"`: provider terms restrict using assistant output as training targets, so transcripts serve retrieval and episode segmentation only.
+- **`scripts/validate_environment.py`** — end-to-end validator, PASS/FAIL/SKIP with the evidence behind each verdict, nonzero exit on any FAIL.
+- **`scripts/verify_release.py`** (card P6-7) — verifies release claims against the shipped diff and gate assertions against real exit codes. **Negative control:** run against v12.4.0 it correctly **BLOCKS** on all 10 fabricated card claims.
+- **`scripts/ingest_memory.py`** — entry point for both corpora.
+- **Five workflows** in `.claude/workflows/` — `anse-honest-baseline`, `anse-lean-proof-gate`, `anse-ladder-cascade`, `anse-nightly-distill`, `anse-claims-provenance`. **Authored; none has been run.**
+
+### Measured results
+
+```
+pytest tests/                      1145 collected, exit 0   (was UNCOLLECTABLE — 0 tests ran)
+full suite                         1079 passed / 15 failed / 43 skipped / 8 errors
+test_rigor_guard.py                exit 0 — 124 files pass
+validate_environment.py            10 capability checks pass, 0 fail
+CPU-profile validation             5 passed  (was 1 failed / 4 passed)
+tests/infrastructure/agent_env      23 passed
+tests/memory/ (new)                30 passed / 2 skipped
+PDF ingest                         21 files, 315 chunks, 1024-d
+```
+
+Semantic retrieval, verified: an **English** query for "Riemann hypothesis zeta zeros" returns **French** text from `anse_v6_riemann_hypothesis.pdf` p1 at distance 0.3028 — cross-lingual matching the md5 function could not do at all.
+
+### Still failing — stated, not suppressed
+
+- **`antigravity_guard.py` exits 1.** Its import/syntax stage now passes (one real fix: a backslash inside an f-string at `scripts/generate_analysis_report.py:60`), but it fails on **2,306 pre-existing repo-wide Ruff findings**. Tracked as a card; not addressed here.
+- **15 test failures.** **6 of them are the P1-4 remediation working** — `latent_dreamer` now raises `SimulationRefusedError: scoring random vectors through untrained weights is not a search`, and the old tests assert `status == "success"`, i.e. they asserted the fabricating behaviour. Those tests are the stale artifacts. The rest cluster on Laya/v5 and vLLM hot-reload.
+- **8 errors** are a missing Playwright browser binary, not a code defect.
+- **`tests/v3/test_engine_v3.py` was failing on `main`** before this release: it still asserted `final_physical_energy == 1900.0`, the hardcoded multiplier that main's own P1-3 had removed. P1-3 had landed incompletely; this release fixes the test.
+
+### Findings that change the roadmap
+
+- **bf16 is a trap on sm_75:** measured fp16 **20.82** TFLOPS vs bf16 **2.28** — bf16 is **9.1× slower than fp16** and slower than fp32, because Turing has no bf16 tensor cores. `torch.cuda.is_bf16_supported()` returns `True` and is misleading. Use fp16 and `attn_implementation="sdpa"` (FlashAttention-2 needs sm_80+).
+- **The Ollama model store is GGUF and therefore not trainable.** Only Phi-3-mini 3.8B and Qwen2.5-0.5B are complete HF bases on disk; the Qwen2.5-1.5B / Mistral-7B / Ministral-3B cache entries are 12–28 KB metadata stubs. "Train a large model at night" means **3.8B today**. 14B is off the table on one T4.
+- **This host is a SPOT instance** (`automatic-restart=FALSE`), measured boot history median ~20 h with two sub-10-minute boots against an ~8 h epoch — and `train_checkpoint.py:141` sets `save_strategy="no"`, so a preemption loses the whole night.
+- **Honest cost:** the GPU fix moved local inference from **$14.66 → $1.55** per 1M output tokens. But Batch Haiku is ~$2.50, so the T4 is only **1.6× cheaper while being a weaker model**, displacing ~$68/mo against a ~$174/mo bill. **The T4 does not pay for itself on inference substitution** — justify it on QLoRA training, embeddings and bulk best-of-N under a verifier.
+- **Two `papers/figures/` PDFs are byte-identical** (`sha256 22453f85…`): the figure labelled "200 benchmarks" is the same bytes as the one labelled "120 benchmarks". Caught by content-hash idempotency, which a filename check would have missed.
+- **Lean's `sorry` compiles and exits 0**, so every proof gate keyed on `returncode` accepts unproved theorems; of ~10 call sites only `anse/formal/lean_runner.py:60` is sound.
+- **The "peer review" scripts make zero model calls** — they hardcode `"ACCEPT WITHOUT RESERVATION"` attributed to a model never invoked. Any "stop when peer review accepts" condition would fire immediately and falsely.
+
+### Docs
+
+`docs/remediation/AUDIT_2026-09-26.md` (extends the 2026-09-25 audit; self-reports the v12.4.0 release integrity failure and a runaway process that spent $9.76) and `docs/remediation/IMPROVEMENT_PLAN_2026-09-26.md` (local-first verified cascade whose KPIs are verifier exit codes and real dollars, T4 duty cycle, L0→L1→L2 ladder, 19 new/redefined cards, and an operational definition of the terminating condition).
+
+### Open decision
+
+Whether paid-tier outputs may be used as **training targets** is a terms-of-use question, not a technical one (plan §2.2). This release ships the safe default: escalation acts as a **router**, and only the local model's own verifier-labelled samples train. `transcript_ltm.py` enforces it at the type level.
+
+---
+
 ## [12.4.0] — Multi-AI & Multi-Environment Release (2026-09-26)
+
+> **Superseded by 12.5.0. The claims in this entry were not true of its diff.** It asserted that cards P1-1…P4-1 had landed when those commits lived only on an unmerged branch, and that `antigravity_guard.py`, `test_rigor_guard.py` and `pytest tests/` all passed when all three were failing — `pytest` could not even collect. Retained unedited for the record; see `docs/remediation/AUDIT_2026-09-26.md` §0 and `scripts/verify_release.py`, which blocks this entry.
 
 ### 🎯 Major Features
 

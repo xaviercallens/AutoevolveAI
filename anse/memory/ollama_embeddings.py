@@ -163,6 +163,21 @@ class OllamaEmbeddingFunction:
             vectors.append(vector)
         return vectors
 
+    def embed_query(self, input: Sequence[str]) -> list[list[float]]:  # noqa: A002
+        """Embed search queries.
+
+        Chroma's `EmbeddingFunction` protocol defines `embed_query` separately
+        from `__call__` so that models trained with distinct document and query
+        encoders can use each. It defaults to `__call__` only for true
+        subclasses of that Protocol; this class is duck-typed against it (to
+        avoid a hard chromadb import), so the method must be defined explicitly
+        or `collection.query()` raises AttributeError while `upsert()` succeeds
+        -- a split failure where writes work and reads do not.
+
+        qwen3-embedding uses one encoder for both, so this delegates.
+        """
+        return self(input)
+
     def probe(self) -> dict[str, Any]:
         """Verify the backend is live and report what it is.
 

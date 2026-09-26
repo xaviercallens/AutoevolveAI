@@ -74,6 +74,19 @@ def test_dimension_is_unknown_before_first_call() -> None:
     assert fn.dimension is None
 
 
+def test_satisfies_chroma_embedding_function_protocol() -> None:
+    """Chroma calls `__call__` on upsert but `embed_query` on query.
+
+    Because this class is duck-typed against Chroma's Protocol rather than
+    subclassing it, `embed_query` does not come for free. Its absence produced
+    a split failure in practice: ingestion of 315 chunks succeeded while every
+    query raised AttributeError.
+    """
+    fn = OllamaEmbeddingFunction()
+    for method in ("__call__", "embed_query", "name"):
+        assert callable(getattr(fn, method, None)), f"missing {method}"
+
+
 @requires_ollama
 def test_embeds_and_fixes_dimension() -> None:
     """A live embed returns a real vector and pins the dimension."""

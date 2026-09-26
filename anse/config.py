@@ -249,7 +249,9 @@ class MemoryConfig:
     """ChromaDB episodic memory settings."""
 
     persist_directory: Path = ROOT / "data" / "chroma"
-    """Local directory for ChromaDB persistence."""
+    """Single shared ChromaDB persist directory for both the Harvester and
+    ChromaRAG. Collections stay separate within it (e.g. 'phase1_traces' vs.
+    'ltm_code_solutions'); it is the on-disk store itself that must not fork."""
 
     collection_name: str = "anse_episodes"
     """ChromaDB collection name."""

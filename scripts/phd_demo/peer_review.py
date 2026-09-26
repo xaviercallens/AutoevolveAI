@@ -43,7 +43,7 @@ LEDGER = REPO / "results" / "phd_demo" / "artifacts.json"
 OUT = REPO / "results" / "phd_demo" / "review"
 
 OLLAMA = "http://localhost:11434"
-DEFAULT_MODEL = "qwen3:8b"
+DEFAULT_MODEL = "qwen2.5-coder:7b-instruct"
 
 # Each reviewer gets a distinct lens. A paper can fail in several ways, and
 # redundant identical reviewers catch fewer of them than diverse ones.
@@ -102,7 +102,10 @@ def call_ollama(prompt: str, model: str, timeout: float = 900.0) -> str:
                 "model": model,
                 "prompt": prompt,
                 "stream": False,
-                "options": {"temperature": 0.3, "num_predict": 900},
+                "options": {"temperature": 0.3, "num_predict": 1400},
+                # Suppress reasoning traces: a <think> block can consume the
+                # entire token budget and leave the answer field empty.
+                "think": False,
             },
             timeout=timeout,
         )
@@ -173,6 +176,57 @@ def review_once(paper: str, ledger: dict[str, Any], model: str) -> list[Review]:
     return reviews
 
 
+TRIVIAL_LEDGER: dict[str, Any] = {
+    "measured": {"ratio": 0.25, "steps": 200000},
+    "gates": {"all_pass": True},
+}
+
+TRIVIAL_DOC = r"""\begin{abstract}
+We measured a ratio of $0.25$ over $200000$ steps. All gates passed.
+\end{abstract}
+\section{Result}
+The measured ratio is $0.25$. The number of steps was $200000$.
+The gate status was: all passed. No other claim is made in this document.
+"""
+
+
+def positive_control(model: str, trials: int = 3) -> dict[str, Any]:
+    """Can the reviewer ACCEPT? The control a negative control cannot replace.
+
+    A gate validated only against a broken paper is half-validated: a reviewer
+    that rejects everything passes that test while carrying no information. Here
+    every claim is trivially present in a three-line ledger, so a rejection means
+    the reviewer is miscalibrated rather than perceptive.
+
+    Run this alongside the negative control. Passing both bounds the reviewer's
+    behaviour at the easy extremes -- it does NOT establish competence on a real
+    paper, which is a separate and harder question.
+    """
+    prompt = f"""You are a referee. Decide whether the document's claims are supported by the ledger.
+
+=== LEDGER (ground truth) ===
+{json.dumps(TRIVIAL_LEDGER, indent=1)}
+
+=== DOCUMENT ===
+{TRIVIAL_DOC}
+
+Respond with ONLY JSON:
+{{"rejects": true or false, "severity": "fatal"|"major"|"minor"|"none",
+  "unsupported_claims": [], "reasoning": "one sentence"}}
+"""
+    verdicts = [
+        parse_verdict(call_ollama(prompt, model), "positive-control", model)
+        for _ in range(trials)
+    ]
+    accepted = sum(1 for v in verdicts if not v.rejects)
+    return {
+        "trials": trials,
+        "accepted": accepted,
+        "passed": accepted == trials,
+        "verdicts": [v.as_dict() for v in verdicts],
+    }
+
+
 def corrupt_paper(paper: str, ledger: dict[str, Any]) -> str:
     """Inject a claim the ledger contradicts, for the negative control.
 
@@ -200,6 +254,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--model", default=DEFAULT_MODEL)
     ap.add_argument("--negative-control", action="store_true",
                     help="verify the reviewer can reject a knowingly-broken paper")
+    ap.add_argument("--positive-control", action="store_true",
+                    help="verify the reviewer can ACCEPT a trivially-correct document; "
+                         "a reviewer that rejects everything is as uninformative as one "
+                         "that accepts everything")
     args = ap.parse_args(argv)
 
     if not PAPER.exists() or not LEDGER.exists():
@@ -210,7 +268,24 @@ def main(argv: list[str] | None = None) -> int:
     ledger = json.loads(LEDGER.read_text())
     OUT.mkdir(parents=True, exist_ok=True)
 
-    record: dict[str, Any] = {"model": args.model, "loops": [], "negative_control": None}
+    record: dict[str, Any] = {"model": args.model, "loops": [],
+                              "negative_control": None, "positive_control": None}
+
+    if args.positive_control:
+        print("=== POSITIVE CONTROL: reviewer must ACCEPT a trivially-correct document ===")
+        try:
+            pos = positive_control(args.model)
+        except ReviewerUnavailable as exc:
+            print(f"REVIEWER UNAVAILABLE: {exc}", file=sys.stderr)
+            return 1
+        record["positive_control"] = pos
+        print(f"  accepted {pos['accepted']}/{pos['trials']} trials -> "
+              f"{'PASSED' if pos['passed'] else 'FAILED (reviewer rejects everything)'}\n")
+        if not pos["passed"]:
+            print("The reviewer cannot accept even a trivially-correct document; its "
+                  "rejections carry no information.")
+            (OUT / "review.json").write_text(json.dumps(record, indent=2) + "\n")
+            return 1
 
     if args.negative_control:
         print("=== NEGATIVE CONTROL: reviewer must REJECT a corrupted paper ===")
@@ -259,16 +334,21 @@ def main(argv: list[str] | None = None) -> int:
             break
         print(f"  -> {len(rejecting)}/{len(reviews)} lenses reject; issues recorded\n")
 
-    final = record["loops"][-1]
+    # --loops 0 runs the negative control alone, so there may be no review loop.
+    final = record["loops"][-1] if record["loops"] else {"accepted": None}
     record["final_accepted"] = final["accepted"]
     record["loops_run"] = len(record["loops"])
     (OUT / "review.json").write_text(json.dumps(record, indent=2) + "\n")
 
     print("=" * 70)
+    print(f"positive control : "
+          f"{'PASSED' if (record['positive_control'] or {}).get('passed') else 'not run'}")
     print(f"negative control : "
           f"{'PASSED' if (record['negative_control'] or {}).get('passed') else 'not run'}")
     print(f"loops run        : {record['loops_run']}")
-    print(f"final verdict    : {'ACCEPTED' if final['accepted'] else 'REJECTED'}")
+    verdict = ("not run" if final["accepted"] is None
+               else "ACCEPTED" if final["accepted"] else "REJECTED")
+    print(f"final verdict    : {verdict}")
     print(f"record           : {(OUT / 'review.json').relative_to(REPO)}")
     return 0
 

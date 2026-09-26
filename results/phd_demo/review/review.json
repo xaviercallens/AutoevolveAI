@@ -1,0 +1,190 @@
+{
+  "model": "qwen2.5-coder:7b-instruct",
+  "loops": [
+    {
+      "loop": 1,
+      "reviews": [
+        {
+          "lens": "provenance",
+          "model": "qwen2.5-coder:7b-instruct",
+          "model_actually_invoked": true,
+          "rejects": true,
+          "severity": "fatal",
+          "unsupported_claims": [
+            "exact symplecticity",
+            "exactly conserved modified Hamiltonian"
+          ],
+          "reasoning": "The axioms required for the proofs are not present in the Lean formalisation, rendering the theorems unproven."
+        },
+        {
+          "lens": "formal",
+          "model": "qwen2.5-coder:7b-instruct",
+          "model_actually_invoked": true,
+          "rejects": true,
+          "severity": "fatal",
+          "unsupported_claims": [],
+          "reasoning": "The theorem and proposition are not proved in the provided text."
+        },
+        {
+          "lens": "statistics",
+          "model": "qwen2.5-coder:7b-instruct",
+          "model_actually_invoked": true,
+          "rejects": true,
+          "severity": "major",
+          "unsupported_claims": [
+            "exact symplecticity",
+            "exactly conserved modified Hamiltonian"
+          ],
+          "reasoning": "Theorems 1 and 2 are not proved in the provided Lean code. Theorems 3 and 4 are proved, but the proofs are not verified."
+        }
+      ],
+      "rejecting": 3,
+      "accepted": false
+    },
+    {
+      "loop": 2,
+      "reviews": [
+        {
+          "lens": "provenance",
+          "model": "qwen2.5-coder:7b-instruct",
+          "model_actually_invoked": true,
+          "rejects": true,
+          "severity": "major",
+          "unsupported_claims": [
+            "exact symplecticity",
+            "exactly conserved modified Hamiltonian"
+          ],
+          "reasoning": "The machine-checked verification found that the theorems and propositions are not fully proved, as indicated by the presence of 'sorryAx' in the audit output."
+        },
+        {
+          "lens": "formal",
+          "model": "qwen2.5-coder:7b-instruct",
+          "model_actually_invoked": true,
+          "rejects": true,
+          "severity": "major",
+          "unsupported_claims": [
+            "exact symplecticity",
+            "exactly conserved modified Hamiltonian",
+            "linear stability"
+          ],
+          "reasoning": "Theorems and propositions about exact symplecticity, conserved modified Hamiltonian, and linear stability are not supported by the provided Lean proofs. The proofs rely on unproved axioms and do not provide a rigorous verification of these properties."
+        },
+        {
+          "lens": "statistics",
+          "model": "qwen2.5-coder:7b-instruct",
+          "model_actually_invoked": true,
+          "rejects": true,
+          "severity": "major",
+          "unsupported_claims": [
+            "Theorems 1 and 2 are not fully verified."
+          ],
+          "reasoning": "The machine-checked verification process did not complete successfully due to the presence of sorryAx in the output, indicating unproved theorems."
+        }
+      ],
+      "rejecting": 3,
+      "accepted": false
+    },
+    {
+      "loop": 3,
+      "reviews": [
+        {
+          "lens": "provenance",
+          "model": "qwen2.5-coder:7b-instruct",
+          "model_actually_invoked": true,
+          "rejects": true,
+          "severity": "major",
+          "unsupported_claims": [
+            "exact symplecticity",
+            "exactly conserved modified Hamiltonian",
+            "closed-form defect",
+            "bounded energy error",
+            "linear stability"
+          ],
+          "reasoning": "Theorems and propositions are not machine-checked, and the numerical experiment does not validate the theoretical claims."
+        },
+        {
+          "lens": "formal",
+          "model": "qwen2.5-coder:7b-instruct",
+          "model_actually_invoked": true,
+          "rejects": true,
+          "severity": "fatal",
+          "unsupported_claims": [
+            "Theorems 1 and 2, Proposition 1, and Corollary 1 are unproven."
+          ],
+          "reasoning": "The Lean 4 build reported exit code 0 and audited 7 theorems, with 'sorryAx' present in all of them. This indicates that the theorems are not proved."
+        },
+        {
+          "lens": "statistics",
+          "model": "qwen2.5-coder:7b-instruct",
+          "model_actually_invoked": true,
+          "rejects": true,
+          "severity": "fatal",
+          "unsupported_claims": [
+            "exact symplecticity",
+            "exactly conserved modified Hamiltonian",
+            "closed-form defect",
+            "bounded energy error",
+            "linear stability"
+          ],
+          "reasoning": "Theorems and propositions are not fully proved in the Lean code, and the acceptance criterion is based on the presence of 'sorryAx' placeholders, which indicates unproved theorems."
+        }
+      ],
+      "rejecting": 3,
+      "accepted": false
+    }
+  ],
+  "negative_control": {
+    "lenses": [
+      {
+        "lens": "provenance",
+        "model": "qwen2.5-coder:7b-instruct",
+        "model_actually_invoked": true,
+        "rejects": true,
+        "severity": "major",
+        "unsupported_claims": [],
+        "reasoning": "The build reported exit code 0 and audited 7 theorems, with 'sorryAx' present: 'false'. This indicates that the theorems were not fully proved, and the build should be rejected."
+      },
+      {
+        "lens": "formal",
+        "model": "qwen2.5-coder:7b-instruct",
+        "model_actually_invoked": true,
+        "rejects": true,
+        "severity": "major",
+        "unsupported_claims": [
+          "Theorems 1 and 2 are not fully proved."
+        ],
+        "reasoning": "The build reported exit code 0 and audited 7 theorems, with 'sorryAx' present for all of them. This indicates that the theorems are not fully proved."
+      },
+      {
+        "lens": "statistics",
+        "model": "qwen2.5-coder:7b-instruct",
+        "model_actually_invoked": true,
+        "rejects": true,
+        "severity": "major",
+        "unsupported_claims": [
+          "Theorems 1 and 2 are proved by the ring tactic over Q"
+        ],
+        "reasoning": "The build reported exit code 0 and audited 7 theorems, with sorryAx present. Only propext, Classical.choice and Quot.sound appear - the three standard axioms of Lean's logic. No theorem depends on anything else."
+      }
+    ],
+    "rejected_by": 3,
+    "passed": true
+  },
+  "final_accepted": false,
+  "loops_run": 3,
+  "positive_control": {
+    "trials": 3,
+    "accepted": 3,
+    "passed": true,
+    "note": "Reviewer accepts a document whose every claim is in a 3-line ledger, 3/3 trials. Combined with the negative control, its behaviour is bounded at both easy extremes."
+  },
+  "adjudication": {
+    "verdict_reported_by_referees": "REJECTED (3/3 lenses, all 3 loops)",
+    "verdict_is_correct": false,
+    "why": "The rejection is a demonstrable FALSE POSITIVE. The 'formal' lens stated: \"The Lean 4 build reported exit code 0 and audited 7 theorems, with 'sorryAx' present in all of them.\" The ledger records verification_lean.sorry_ax_present = false, and the paper states 'with sorryAx present: false'. The referee inverted the negation. The 'statistics' lens repeated the same inversion.",
+    "diagnosis": "Not a calibration failure -- both controls pass. A capability failure: a 7B instruct model lost the polarity of a negation across ~15 KB of LaTeX plus JSON. Controls bound behaviour on trivial inputs; they do not establish competence on a real paper, and that gap is the finding.",
+    "consequence_for_the_paper": "The paper's mathematical claims remain independently verified: SymPy derived det M = 1 and the shadow Hamiltonian; Lean proved 7 theorems with zero sorryAx (exit 0); Python and Rust agree to 5.5e-10; the measured ratio matches the proved omega^2/4 to 9 significant figures. What is NOT established is gate G5 (adversarial review), because this reviewer cannot be trusted in either direction on this input.",
+    "candidate_complete": false,
+    "correct_next_step": "Escalate. The local tier has verifiably failed on a task within its remit, which is exactly the trigger the cascade design in docs/remediation/IMPROVEMENT_PLAN_2026-09-26.md section 3 specifies. Re-run the review on a frontier model and compare. Do NOT record G5 as passed on the strength of a referee that misread its own evidence -- and do not record it as failed on that strength either."
+  }
+}

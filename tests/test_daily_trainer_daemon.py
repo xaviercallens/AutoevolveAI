@@ -146,8 +146,13 @@ def test_vllm_reloader_handles_load_error() -> None:
     assert success is False
 
 
-def test_daily_trainer_daemon_successful_cycle(tmp_path: Path) -> None:
-    """Validate full autonomous cycle execution with watermark advancement."""
+def test_daily_trainer_daemon_dry_run_cycle_is_not_deployed(tmp_path: Path) -> None:
+    """A dry-run training result (no GPU/deps) must fail the cycle, not be deployed.
+
+    train_checkpoint.run_training_job(dry_run=True) writes an adapter_config.json
+    with "mode": "DRY_RUN" and no adapter_model.safetensors. That must never reach
+    Redis as a deployed checkpoint (see tests/remediation/test_no_dry_run_deployment.py).
+    """
     mock_redis = MagicMock()
     mock_pipe = MagicMock()
     mock_redis.pipeline.return_value = mock_pipe
@@ -172,12 +177,10 @@ def test_daily_trainer_daemon_successful_cycle(tmp_path: Path) -> None:
         dry_run=True,
         http_client=mock_client,
     )
-    assert success is True
+    assert success is False
 
-    # Verify atomic watermark and metadata progression in Redis
-    assert mock_pipe.set.call_count >= 3
-    assert mock_pipe.rpush.call_count == 1
-    mock_pipe.execute.assert_called_once()
+    # A dry-run result must never be written to Redis as a deployed checkpoint.
+    mock_pipe.execute.assert_not_called()
 
 
 def test_daily_trainer_daemon_preserves_watermark_on_skip() -> None:

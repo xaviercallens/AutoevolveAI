@@ -7,6 +7,8 @@ Periodically queries Redis traces, fine-tunes new adapters, and hot-swaps weight
 from __future__ import annotations
 
 import argparse
+import json
+import logging
 import os
 import time
 from pathlib import Path
@@ -14,9 +16,12 @@ from typing import Any
 
 import redis
 
+from anse.infrastructure.fabrication import UnverifiedDataError
 from harvest_delta import extract_delta_dataset
 from train_checkpoint import run_training_job
 from vllm_reloader import hot_reload_vllm_adapter
+
+logger = logging.getLogger("anse.daily_trainer_daemon")
 
 CHECK_INTERVAL_SECONDS = int(os.getenv("CHECK_INTERVAL_SECONDS", 86400))  # 24 Hours
 MIN_TRAIN_SAMPLES = int(os.getenv("MIN_TRAIN_SAMPLES", 50))
@@ -26,13 +31,47 @@ REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 
 
+def _verify_trained_adapter(adapter_path: Path) -> None:
+    """Confirms the adapter directory holds real trained weights, not a dry-run stub."""
+    config_path = adapter_path / "adapter_config.json"
+    try:
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as err:
+        raise UnverifiedDataError(
+            f"Cannot read adapter_config.json at {config_path}: {err}",
+            component="daily_trainer_daemon._record_successful_deployment",
+            remedy="Ensure run_training_job wrote a valid adapter_config.json before deployment.",
+        ) from err
+
+    if config.get("mode") == "DRY_RUN":
+        raise UnverifiedDataError(
+            f"Adapter at {adapter_path} was produced by a DRY_RUN training job.",
+            component="daily_trainer_daemon._record_successful_deployment",
+            remedy="Run training with GPU/deps available so it produces real weights, then retry deployment.",
+        )
+
+    weights_path = adapter_path / "adapter_model.safetensors"
+    if not weights_path.is_file():
+        raise UnverifiedDataError(
+            f"Adapter at {adapter_path} is missing adapter_model.safetensors.",
+            component="daily_trainer_daemon._record_successful_deployment",
+            remedy="Do not deploy a checkpoint without trained weights on disk.",
+        )
+
+
 def _record_successful_deployment(
     r: Any,
     cycle_id: int,
     cycle_watermark: float,
     adapter_path: Path,
 ) -> None:
-    """Updates Redis watermark and active adapter metadata atomically."""
+    """Updates Redis watermark and active adapter metadata atomically.
+
+    Raises UnverifiedDataError if the adapter at adapter_path is a dry-run stub
+    or is missing trained weights; a deployment record requires real weights on disk.
+    """
+    _verify_trained_adapter(adapter_path)
+
     pipe = r.pipeline()
     pipe.set("antigravity:training:watermark_ts", str(cycle_watermark))
     pipe.set("antigravity:active_lora_version", f"checkpoint_v{cycle_id}")
@@ -82,7 +121,15 @@ def run_cycle(
     )
 
     if success:
-        _record_successful_deployment(r, cycle_id, cycle_watermark, adapter_path)
+        try:
+            _record_successful_deployment(r, cycle_id, cycle_watermark, adapter_path)
+        except UnverifiedDataError as err:
+            logger.error(
+                "Cycle %s produced no trained weights (%s). Watermark NOT advanced.",
+                cycle_id,
+                err,
+            )
+            return False
         return True
 
     print("⚠️ vLLM failed to load weights. Redis watermark preserved for retry.")

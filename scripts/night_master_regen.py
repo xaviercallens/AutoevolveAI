@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import subprocess
 import sys
 import time
@@ -40,26 +41,27 @@ def run_master_math_generation() -> dict[str, Any]:
     CALL_LOGS.mkdir(parents=True, exist_ok=True)
 
     call_log_file = CALL_LOGS / f"master_math_{datetime.now(timezone.utc).isoformat()}.jsonl"
-    env = {
-        "PYTHONPATH": str(REPO),
-        "ANSE_CALL_LOG": str(call_log_file),
-        "AUTOEVOLVE_GPU_HINT": "t4",
-    }
 
     start = time.time()
     try:
+        env = os.environ.copy()
+        env.update({
+            "PYTHONPATH": str(REPO),
+            "ANSE_CALL_LOG": str(call_log_file),
+            "AUTOEVOLVE_GPU_HINT": "t4",
+        })
+
         result = subprocess.run(
             [
                 sys.executable,
-                str(REPO / "scripts" / "execute_20_master_math_closed_loop.py"),
+                str(REPO / "scripts" / "regenerate_10_math_problems_dspy.py"),
+                "20",  # 20 master problems
             ],
             cwd=str(REPO),
             capture_output=True,
             text=True,
             timeout=3600,  # 1 hour max
-            env={**dict(Path("/proc/self/environ").read_text().split("\x00")), **env}
-            if Path("/proc/self/environ").exists()
-            else env,
+            env=env,
         )
         elapsed = time.time() - start
 

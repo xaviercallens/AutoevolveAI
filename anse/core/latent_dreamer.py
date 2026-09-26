@@ -29,8 +29,11 @@ from typing import Any
 import torch
 import torch.nn as nn
 
+from anse.infrastructure.fabrication import SimulationRefusedError
+
 logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+DEFAULT_JEPA_CHECKPOINT = PROJECT_ROOT / "checkpoints" / "latent_dreamer_jepa.pt"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -58,7 +61,7 @@ class GRPOTreeSearchResult:
     group_std_energy: float
     latency_ms: float
     calibrated_physical_energy: float | None = None
-    speedup_vs_sandbox: float = 1500.0
+    speedup_vs_sandbox: float | None = None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -82,9 +85,18 @@ class FastJEPALatentPredictor(nn.Module):
             nn.Linear(hidden_dim, 1),
             nn.Softplus(),  # Ensures strictly non-negative physical energy E >= 0
         )
+        self.is_loaded = False
+        self.checkpoint_path: Path | None = None
 
     def forward(self, z: torch.Tensor) -> torch.Tensor:
         return self.net(z).squeeze(-1)
+
+    def load_checkpoint(self, path: Path) -> None:
+        """Load trained weights from disk. Marks the predictor as usable for real scoring."""
+        state_dict = torch.load(path, map_location="cpu", weights_only=True)
+        self.load_state_dict(state_dict)
+        self.is_loaded = True
+        self.checkpoint_path = path
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -97,23 +109,42 @@ class LatentDreamer:
     Orchestrates the 16-Thought Latent MCTS and Group Relative Policy Optimization (GRPO).
     """
 
-    def __init__(self, latent_dim: int = 32, num_branches: int = 16) -> None:
+    def __init__(
+        self,
+        latent_dim: int = 32,
+        num_branches: int = 16,
+        checkpoint_path: Path | None = None,
+    ) -> None:
         self.latent_dim = latent_dim
         self.num_branches = num_branches
+        self.expected_checkpoint = checkpoint_path or DEFAULT_JEPA_CHECKPOINT
         self.predictor = FastJEPALatentPredictor(latent_dim=latent_dim)
         self.predictor.eval()
-        with torch.no_grad():
-            _ = self.predictor(torch.zeros(1, latent_dim))
+        if self.expected_checkpoint.exists():
+            self.predictor.load_checkpoint(self.expected_checkpoint)
 
     def dream_and_search(
         self,
         prompt: str,
         seed_code_candidates: list[str] | None = None,
+        sandbox_baseline_ms: float | None = None,
     ) -> GRPOTreeSearchResult:
         """
         Branch into K=16 thought trajectories, score in latent space via JEPA in ~2ms,
         and compute GRPO relative advantages.
         """
+        if not self.predictor.is_loaded:
+            raise SimulationRefusedError(
+                f"LatentDreamer has no trained JEPA predictor loaded; expected checkpoint "
+                f"at {self.expected_checkpoint}",
+                component="LatentDreamer.dream_and_search",
+                remedy=(
+                    f"train FastJEPALatentPredictor and save its weights to "
+                    f"{self.expected_checkpoint} before dreaming; scoring random vectors "
+                    "through untrained weights is not a search"
+                ),
+            )
+
         start_t = time.perf_counter()
         k = self.num_branches
 
@@ -172,7 +203,11 @@ class LatentDreamer:
             group_std_energy=round(std_e, 4),
             latency_ms=round(total_latency_ms, 2),
             calibrated_physical_energy=round(nodes[best_idx].predicted_energy * 0.95, 4),
-            speedup_vs_sandbox=round(3000.0 / max(total_latency_ms, 0.01), 1),
+            speedup_vs_sandbox=(
+                round(sandbox_baseline_ms / max(total_latency_ms, 0.01), 1)
+                if sandbox_baseline_ms is not None
+                else None
+            ),
         )
 
 
@@ -192,15 +227,28 @@ class HippocampalTrace:
     is_anchor_memory: bool = False
 
 
+# A trained predictor accepted by HippocampalReplayEngine must duck-type:
+#   is_loaded: bool
+#   checkpoint_path: Path | None
+#   evaluate(traces: list[dict[str, Any]]) -> float
+#   consolidate(traces: list[dict[str, Any]]) -> None
+ConsolidationPredictor = Any
+
+
 class HippocampalReplayEngine:
     """
     Solves catastrophic forgetting by separating fast wake-phase inference
     from deep sleep-phase batched memory replay.
     """
 
-    def __init__(self, memory_file: Path | None = None) -> None:
+    def __init__(
+        self,
+        memory_file: Path | None = None,
+        predictor: ConsolidationPredictor | None = None,
+    ) -> None:
         self.memory_file = memory_file or PROJECT_ROOT / ".scratchpad" / "hippocampus_replay.jsonl"
         self.memory_file.parent.mkdir(parents=True, exist_ok=True)
+        self.predictor = predictor
 
     def log_wake_episode(
         self,
@@ -229,9 +277,23 @@ class HippocampalReplayEngine:
 
     def execute_sleep_cycle(self, batch_size: int = 16) -> dict[str, Any]:
         """
-        Sleep Phase (REM Replay): Consolidates diverse historical memories with recent ones
-        to reinforce generalized invariant reasoning across domains.
+        Sleep Phase (REM Replay): Consolidates diverse historical memories with recent ones,
+        then measures retention by comparing predictor performance on a held-out set of
+        traces before and after consolidation.
         """
+        if self.predictor is None or not getattr(self.predictor, "is_loaded", False):
+            checkpoint = getattr(self.predictor, "checkpoint_path", None) or DEFAULT_JEPA_CHECKPOINT
+            raise SimulationRefusedError(
+                f"HippocampalReplayEngine has no trained predictor loaded; expected checkpoint "
+                f"at {checkpoint}",
+                component="HippocampalReplayEngine.execute_sleep_cycle",
+                remedy=(
+                    f"train a predictor and load weights from {checkpoint} before requesting "
+                    "a sleep cycle; consolidating without a trained predictor cannot measure "
+                    "retention"
+                ),
+            )
+
         if not self.memory_file.exists():
             return {"consolidated_traces": 0, "status": "NO_TRACES"}
 
@@ -252,6 +314,28 @@ class HippocampalReplayEngine:
         random.seed(42)
         random.shuffle(replay_batch)
 
+        replay_ids = {t["trace_id"] for t in replay_batch}
+        held_out = [t for t in traces if t["trace_id"] not in replay_ids]
+        if not held_out:
+            raise SimulationRefusedError(
+                "No held-out traces remain to measure retention; the replay batch consumed "
+                "every logged trace",
+                component="HippocampalReplayEngine.execute_sleep_cycle",
+                remedy="log more wake episodes or reduce batch_size so a disjoint held-out set exists",
+            )
+
+        score_before = self.predictor.evaluate(held_out)
+        if score_before == 0:
+            raise SimulationRefusedError(
+                "Predictor reported a zero pre-consolidation score; a retention ratio "
+                "against zero is undefined",
+                component="HippocampalReplayEngine.execute_sleep_cycle",
+                remedy="fix the predictor's evaluate() to return a non-zero baseline score",
+            )
+        self.predictor.consolidate(replay_batch)
+        score_after = self.predictor.evaluate(held_out)
+        retention_score = round(score_after / score_before, 4)
+
         domains_covered = list({t.get("domain", "general") for t in replay_batch})
         avg_energy = sum(t["energy"] for t in replay_batch) / max(len(replay_batch), 1)
 
@@ -259,6 +343,7 @@ class HippocampalReplayEngine:
             "consolidated_traces": len(replay_batch),
             "domains_covered": domains_covered,
             "average_replay_energy": round(avg_energy, 3),
-            "catastrophic_forgetting_prevented": True,
+            "held_out_size": len(held_out),
+            "retention_score": retention_score,
             "status": "REM_SLEEP_CONSOLIDATION_COMPLETE",
         }

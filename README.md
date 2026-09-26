@@ -1,362 +1,318 @@
-# 🌌 AutoevolveAI / SuperGravity
-### **Autopoietic Neuro-Symbolic Energy-Based Architecture & Self-Improving Agentic Harness**
-
 <div align="center">
 
-[![Lean 4 Formal Specs](https://img.shields.io/badge/Lean_4-v4.34.0--rc2%20(2%2C967%20Jobs)-blue?style=for-the-badge&logo=lean)](formal/ANSE/StrongGravity.lean)
-[![Benchmarks: 200 Cases](https://img.shields.io/badge/Benchmarks-200%2F200_Passing-brightgreen?style=for-the-badge&logo=pytest)](results/200_unified_eval_report.json)
-[![Release: v12.5.0](https://img.shields.io/badge/Release-v12.5.0-blueviolet?style=for-the-badge&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v12.5.0)
-[![Safe ANSE V4](https://img.shields.io/badge/Safe_ANSE_V4-Z3_SMT_Inviolable-emerald?style=for-the-badge&logo=shield)](anse/v4/implicit_smt.py)
-[![Closed-Loop Hardness](https://img.shields.io/badge/Closed--Loop_Hardness-10%2F10_Passing-brightgreen?style=for-the-badge&logo=checkmarx)](scripts/execute_5_closed_loop_scenarios.py)
-[![RL Energy Reduction](https://img.shields.io/badge/Energy_Reduction--90.3%25-orange?style=for-the-badge&logo=speedtest)](results/reinforcement_learning_2000_cases_eda_run4.json)
-[![Human Edit Distance](https://img.shields.io/badge/Human_Edits--97.8%25-success?style=for-the-badge&logo=git)](results/reinforcement_learning_2000_cases_eda_run4.json)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+# ANSE · AutoevolveAI
 
-<br/>
+### Verification-first agentic AI for computational science
 
-```
-     ___         __                     __           ___    ____
-    /   | __  __/ /_____  ___ _   _____  / /   _____   /   |  /  _/
-   / /| |/ / / / __/ __ \/ _ \ | / / _ \/ / | / / _ \ / /| |  / /  
-  / ___ / /_/ / /_/ /_/ /  __/ |/ /  __/ /| |/ /  __// ___ |_/ /   
- /_/  |_\__,_/\__/\____/\___/|___/\___/_/ |___/\___//_/  |_(_)___/   
-             Zero-Trust Autonomous Reality Engine
-```
+**A research harness that refuses to report success it has not earned.**
 
-**AutoevolveAI / SuperGravity** transforms Large Language Models into a deterministically grounded, self-evolving system. It binds LLM generative output to the objective laws of computational physics, formally verified by **2,967 Lean 4 proofs**, monitored by an **Event-Driven Redis LTM**, and self-optimized continuously via **DPO & GRPO Reinforcement Learning**.
+[![Tests](https://img.shields.io/badge/tests-1079_passing-brightgreen?style=flat-square&logo=pytest)](#measured-status)
+[![Lean 4](https://img.shields.io/badge/Lean_4-218_theorems-blue?style=flat-square&logo=lean)](formal/ANSE)
+[![Release](https://img.shields.io/badge/release-v12.5.0-blueviolet?style=flat-square&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v12.5.0)
+[![Python](https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python)](pyproject.toml)
+[![Rust](https://img.shields.io/badge/rust-1.96-000000?style=flat-square&logo=rust)](crates/)
+[![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)](LICENSE)
+
+[Quickstart](#quickstart) · [Architecture](#architecture) · [What works](#measured-status) · [**Known gaps**](#known-gaps--where-to-help) · [Contributing](#contributing)
 
 </div>
 
 ---
 
-## 📊 Live KPI Telemetry: The Power of Reinforcement Learning
+## The problem this project is actually about
 
-Across sequential benchmark runs totaling over **3,000+ complex production use cases** in Python and Rust, the autonomous RL pipeline drastically flattened energy dissipation and near-completely eliminated human patching:
+Ask an LLM agent to do science and it will tell you it succeeded. It will produce a loss
+curve, a passing test count, a proof. The hard part is not generating any of that — it is
+knowing which parts are real.
 
-```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                        COMPUTATIONAL ENERGY REDUCTION TRAJECTORY (E)                   │
-├────────────────────────────────────────────────────────────────────────────────────────┤
-│ Baseline (Pre-RL)     [████████████████████████████████████████] 125.0                 │
-│ Run 2 (1,000 Cases)   [████████████                            ]  38.2 (-69.4%)        │
-│ Run 3 (Intermediate)  [█████                                   ]  15.4 (-87.7%)        │
-│ Run 4 (2,000 EDA)     [████                                    ]  12.1 (-90.3% ⚡)      │
-│ Run 5 Rust (1,000)    [███                                     ]  11.2 (-92.3% 🦀)      │
-└────────────────────────────────────────────────────────────────────────────────────────┘
-```
+This repository ran into that wall the honest way. An internal audit found **14 components
+that reported success without doing the work**: a GPU telemetry module returning
+`random.uniform()` behind a docstring promising "physical truth"; a nightly trainer
+recording config-only dry runs as deployed checkpoints; a "peer review" script that
+hardcoded `ACCEPT WITHOUT RESERVATION` while never calling a model; a headline
+energy-reduction chart whose every value was a hand-typed literal.
 
-| Domain & Iteration | Ingested Dataset | Energy ($E$) | Human Edit Distance | Pass Rate | LoRA Checkpoint |
-| :--- | :--- | :---: | :---: | :---: | :--- |
-| **Python Baseline** | `Vezora/Code-Preference` | `125.0` | `0.2268` (22.7% edits) | 100.0% | *None (Pre-RL)* |
-| **Python Run 2** | 1,000 Cases | `38.2` | `0.0420` (4.2% edits) | 100.0% | `checkpoint_v1790056059` |
-| **Python Run 4 (EDA)** | **2,000 Cases** | **`12.1`** | **`0.0050` (0.5% edits)** | **100.0%** | [`checkpoint_v1790089591`](adapters/checkpoint_v1790089591/final_adapter) |
-| **Rust Run 5 (EDA)** | **1,000 Cases** | **`11.2`** | **`0.0120` (1.2% edits)** | **`96.0%`** | [`checkpoint_v1790098600`](adapters/checkpoint_v1790098600/final_adapter) |
+None of that was malice. It is the default failure mode of agentic systems: **a claim is
+cheap and a verification is expensive**, so claims accumulate.
 
-> [!TIP]
-> **Zero Human Regrets:** Human edit distance dropped by **97.8%** in Python and **96.5%** in Rust. The agent generates production-ready, compilable code aligned with ground truth on the very first shot.
+So the project's centre of gravity moved. ANSE is now built around one idea:
 
----
+> **Every quantitative claim must be traceable to an artifact, and every gate must be able
+> to fail.** A gate that has never rejected anything is not a gate.
 
-## 🏛️ Autonomous Architecture: The Autopoietic Closed Loop
-
-```mermaid
-flowchart TB
-    subgraph LocalIDE["💻 Local Workspace & Developer"]
-        Code["Source Code (.py / .rs)"] --> GitDiff["Git Diff HEAD Monitor"]
-    end
-
-    subgraph ZeroTrustGate["🛡️ SuperGravity Zero-Trust Gate"]
-        GitDiff --> ASTAuditor{"AST & Anti-Stub Auditor<br/>(Bans: pass, ..., mock_*)"}
-        ASTAuditor -- "Violation Found" --> Rejection["❌ Force State FAILED<br/>Energy E = 10⁶"]
-        ASTAuditor -- "Clean AST" --> Sandbox["⚙️ Deterministic Sandbox<br/>(Latency ms + Peak RAM MB)"]
-        Sandbox --> ProofToken["🔐 Mint Cryptographic Proof Token"]
-    end
-
-    subgraph EDABroker["⚡ Event-Driven Architecture (EDA) & LTM"]
-        ProofToken --> RedisQueue[("🗄️ Redis Message Queue<br/>antigravity:queue:*")]
-        RedisQueue --> WorkerPool["🤖 10 Concurrent Agent Workers<br/>(~70 Requests / Sec)"]
-        WorkerPool --> RedisLTM[("🧠 Redis Long-Term Memory<br/>• Traces Stream<br/>• Human Patches Ground Truth")]
-    end
-
-    subgraph RLEngine["🔄 Reinforcement Learning Engine"]
-        RedisLTM --> Harvester["🌾 DPO Harvester<br/>(Calculates ΔR Preference Pairs)"]
-        Harvester --> GRPO["📈 GRPO Group Advantage<br/>(Optimized for RTX 2080 8GB)"]
-        GRPO --> Daemon["🔄 Daily Trainer Daemon<br/>(LoRA Adaptation Cycle)"]
-        Daemon --> HotReload["📦 vLLM Memory Hot-Reload<br/>Alias: 'antigravity-local'"]
-    end
-
-    HotReload -. "Immediate Inference Upgrade" .-> LocalIDE
-
-    classDef highlight fill:#1f2937,stroke:#3b82f6,stroke-width:2px,color:#fff;
-    classDef gate fill:#374151,stroke:#10b981,stroke-width:2px,color:#fff;
-    classDef rl fill:#312e81,stroke:#8b5cf6,stroke-width:2px,color:#fff;
-    class LocalIDE,EDABroker highlight;
-    class ZeroTrustGate gate;
-    class RLEngine rl;
-```
+Everything below is measured on named hardware, and the [known gaps](#known-gaps--where-to-help)
+section lists what is still broken. That section is the roadmap, and it is where
+contributions land best.
 
 ---
 
-## 📐 4 Inviolable Axioms (Formally Certified in Lean 4)
+## What makes it different
 
-SuperGravity's guarantees are mathematically proven in `formal/ANSE/StrongGravity.lean` (`lake build` across 2,506 jobs):
+**Refusal over fabrication.** The training pipeline declines to run and says why, rather
+than producing a number. A representative real output:
 
-```mermaid
-graph LR
-    A["Axiom 1:<br/>Zero-Trust Completion"] --> B["Axiom 2:<br/>Anti-Simulation"]
-    B --> C["Axiom 3:<br/>Proof-of-Execution"]
-    C --> D["Axiom 4:<br/>Ephemeral Context"]
-
-    style A fill:#0e7490,stroke:#0891b2,stroke-width:2px,color:#fff
-    style B fill:#b91c1c,stroke:#dc2626,stroke-width:2px,color:#fff
-    style C fill:#15803d,stroke:#16a34a,stroke-width:2px,color:#fff
-    style D fill:#6d28d9,stroke:#7c3aed,stroke-width:2px,color:#fff
+```
+qlora_7b: SKIPPED — 100 rows carry no attestation verdict; the verified-data gate
+          has not landed. Refusing to train for real on unverified rows.
 ```
 
-1. **The Zero-Trust Completion Axiom** (`ANSE.StrongGravity.zeroTrustCompletion`):
-   Agents cannot declare tasks completed via conversational dialogue. State completion is governed strictly by external cryptographic proof tokens:
-   $$\forall \text{task}, \quad \text{Completed}(\text{task}) \implies \exists \tau \in \mathcal{T}_{\text{crypto}}, \, \text{VerifyToken}(\tau, \text{task})$$
+**Gates with negative controls.** Every gate is proven able to *reject* before its
+acceptance counts. `scripts/verify_release.py` was validated by running it against a prior
+release it was designed to catch — it blocked all ten fabricated claims. It then blocked
+the release notes of the very version that introduced it, for one imprecise sentence.
 
-2. **The Anti-Simulation Axiom** (`ANSE.StrongGravity.antiSimulation`):
-   Presence of `pass`, `...`, `NotImplementedError`, or fake test prefixes (`mock_`, `dummy_`, `fake_`) assigns maximum pain energy:
-   $$\text{Stub}(\text{AST}) \lor \text{Mock}(\text{AST}) \implies E(\text{task}) = 10^6$$
+**`sorry` is not a proof.** Lean's `sorry` compiles and **exits 0**, so every proof gate
+keyed on exit codes silently accepts unproved theorems:
 
-3. **The Proof-of-Execution Axiom** (`ANSE.StrongGravity.proofOfExecution`):
-   Verifies via `sys.settrace` and coverage metadata that the production code was genuinely traversed during the test run.
+```lean
+theorem looks_fine (n : Nat) : n + 0 = n := by sorry
+-- warning: declaration uses 'sorry'          EXIT CODE 0  ← accepted by a naive gate
+-- #print axioms looks_fine ⇒ [sorryAx]       ← the only reliable signal
+```
 
-4. **The Ephemeral Context Axiom** (`ANSE.StrongGravity.ephemeralContext`):
-   Outputs $>60$ lines are offloaded to `.scratchpad/<hash>.log`, keeping working memory dense and immune to hallucination degradation.
+Acceptance requires an axiom check, not a return code.
+
+**Math is derived, not recalled.** Algebra that appears in a paper is produced by SymPy in
+the repository and re-derived on every build. An LLM stating a closed form from memory is
+a hallucination risk; a symbolic derivation is an artifact.
+
+**Semantic memory that is actually semantic.** Retrieval runs on real 1024-d embeddings.
+The previous implementation hashed character n-grams with MD5 — deterministic, fast, and
+carrying no meaning whatsoever. Nearest neighbours were hash collisions.
 
 ---
 
-## 🖥️ Multi-Tier Cognitive Gateway & MCP Architecture
-
-SuperGravity includes a reverse-proxy router (`gateway.py`) implementing the **Model Context Protocol (MCP)**:
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as Developer / Agent CLI
-    participant GW as Cognitive Gateway (:8080)
-    participant FastMCP as Guard FastMCP (In-Process)
-    participant Redis as Redis LTM (6379)
-    participant LLM as Frontier Models (Gemini / Claude)
-    participant LocalGPU as RTX 2080 (vLLM Local)
-
-    User->>GW: POST /v1/chat/completions
-    GW->>FastMCP: verify_ast_and_imports(code)
-    FastMCP-->>GW: AST Validated (0 Violations)
-    
-    alt Complex Architecture Planning
-        GW->>LLM: Route to Gemini 3.1 Pro (Deep Thought)
-    else High-Speed Code Generation
-        GW->>LLM: Route to Gemini 3.8 Flash (Execution Engine)
-    else Offline / Rate-Limited Fallback
-        GW->>LocalGPU: Route to 'antigravity-local' (Hot-Reloaded LoRA)
-    end
-
-    LLM-->>GW: Stream Completion Chunks
-    GW->>Redis: Append to LTM Audit Stream (antigravity:stream:audit)
-    GW-->>User: Return Attested Response
-```
-
-### Integrated MCP Servers
-
-| MCP Server | Transport | Capabilities |
-| :--- | :---: | :--- |
-| `antigravity-guard` | In-Process / FastMCP | AST validation, Bandit security audit, Radon complexity, Proof tokens |
-| `claude-subtask-workflow` | Stdio / Node.js | Subtask decomposition, step context resolution, state tracking |
-| `logic-planner` | Stdio / Node.js | Sequential thinking, hypothesis tree validation |
-| `memory-graph` | Stdio / Node.js | Long-term relational knowledge graph, observation storage |
-| `local-filesystem` | Stdio / Node.js | Secure sandboxed file manipulation |
-| `github-radar` | Stdio / Node.js | PR Factory, Git operations, issue creation |
-
----
-
-## ⚡ Deployment on Local Hardware (RTX 2080 8GB VRAM)
-
-The training pipeline ([`train_lora_local.py`](train_lora_local.py) & [`train_grpo.py`](train_grpo.py)) is engineered to run on consumer hardware within an **8GB VRAM envelope**:
-
-* **Optimizer:** `paged_adamw_8bit` (BitsAndBytes)
-* **VRAM Consumption:** $\sim 6.2 \text{ GB}$ peak resident memory
-* **Model Dimension:** Qwen 2.5 Coder 1.5B / 3B with 4-bit QLoRA ($r=16, \alpha=32$)
-
-### Quick Installation
+## Quickstart
 
 ```bash
-# 1. Install prerequisites
-sudo apt update && sudo apt install -y redis-server
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# 2. Clone repository & install dependencies
 git clone https://github.com/xaviercallens/AutoevolveAI.git
 cd AutoevolveAI
 uv sync --all-extras
 
-# 3. Launch local DPO training on RTX 2080
-uv run python train_lora_local.py \
-  --mode dpo \
-  --dataset results/dpo_2000_cases_eda_dataset.jsonl \
-  --model_name "Qwen/Qwen2.5-Coder-1.5B-Instruct"
+# What environment am I on? (never assumed — probed live)
+.venv/bin/python -m anse.infrastructure.agent_environment
 
-# 4. Start the Full SuperGravity Stack
-./restart.sh
+# Is this deployment actually working? PASS/FAIL/SKIP with evidence per check.
+.venv/bin/python scripts/validate_environment.py
+```
+
+`validate_environment.py` is the entry point worth running first. It reports what is
+true, exits nonzero on any failure, and shows the command output behind each verdict.
+
+```
+[PASS] gpu                Tesla T4, driver 580.178.04, 12523 MiB free of 15360
+[PASS] torch_cuda         sm 7.5 — use fp16, not bf16; FlashAttention-2 needs sm_80+
+[PASS] ollama_placement   a model is resident on the GPU
+[PASS] ollama_throughput  34.7 tok/s warm on qwen2.5-coder:7b-instruct
+[PASS] embeddings         qwen3-embedding:0.6b returns 1024-d vectors
+[PASS] semantic_quality   paraphrase 0.831 > unrelated 0.265
+[PASS] lean_sorry_gate    confirmed: `sorry` exits 0 but #print axioms reveals sorryAx
 ```
 
 ---
 
-## 🧪 200 PhD-Level Multidisciplinary Benchmarks & 123-Page Compendium
+## Architecture
 
-ANSE mathematically grounds algorithmic optimization in non-equilibrium thermodynamics across **200 Multidisciplinary PhD Benchmarks** and **25 Multi-Scale Physical World Models (`PWM-01` to `PWM-25`)**:
-
-```mermaid
-pie title Benchmark Domain Distribution (200 Cases)
-    "Pure Mathematics & Theoretical Physics" : 100
-    "High-Performance Rust SIMD" : 50
-    "Complex Python Pseudospectral PDEs" : 50
+```
+                    ┌─────────────────────────────────────────┐
+                    │  Environment detection (probed, never   │
+                    │  assumed) — agent, GPU, RAM, backend    │
+                    └───────────────────┬─────────────────────┘
+        ┌───────────────────────────────┴───────────────────────────────┐
+        ▼                                                               ▼
+┌───────────────────────┐                                   ┌───────────────────────┐
+│ Claude Code / GCP T4  │                                   │ Antigravity / Linux   │
+│ cuda · 15 GB · 35 t/s │                                   │ cpu · 31 GB RAM       │
+└───────────┬───────────┘                                   └───────────┬───────────┘
+            └───────────────────────────┬───────────────────────────────┘
+                                        ▼
+    ╔═══════════════════════════════════════════════════════════════════════╗
+    ║                      VERIFICATION LAYER (fail-closed)                 ║
+    ║   Rust/cargo · Python sandbox · Lean 4 + axiom check · SymPy           ║
+    ║   Nothing is accepted on a model's word. Exit codes and axioms only.  ║
+    ╚═══════════════════════════════════════════════════════════════════════╝
+                                        ▲
+        ┌───────────────────────────────┼───────────────────────────────┐
+        ▼                               ▼                               ▼
+┌───────────────┐            ┌──────────────────┐            ┌──────────────────┐
+│ Reasoning     │            │ Memory           │            │ Learning         │
+│ • energy/EBM  │            │ • Redis LTM      │            │ • JEPA world mdl │
+│ • JEPA latent │            │ • Chroma 1024-d  │            │ • QLoRA (T4)     │
+│ • symbolic    │            │ • PDF provenance │            │ • verified-only  │
+│ • Lean prover │            │   {path,sha,page}│            │   episodes       │
+└───────────────┘            └──────────────────┘            └──────────────────┘
 ```
 
-* **100 Math & Theoretical Physics Cases:** Yang-Mills Bianchi identity, Raychaudhuri geodesic focusing, Ryu-Takayanagi holographic area, Kitaev toric code, KdV soliton momentum, and Atiyah-Singer index theorem formally verified in Lean 4 with 0 sorry.
-* **50 Rust SIMD Kernels:** AVX2/AVX-512 vector dot products, cache-blocked matrix multiplications, sparse CSR operators, and symplectic integrators compiling with `rustc -O`.
-* **50 Python PDE Kernels:** Pseudospectral Navier-Stokes, relativistic QGP hydrodynamics, and Schrödinger wavepacket propagators.
-* **123-Page Academic Compendium:** Compiled in [`results/200_problems_comprehensive_dossier.pdf`](results/200_problems_comprehensive_dossier.pdf) with full LaTeX field equations and execution receipts.
+| Layer | Package | What it does |
+|---|---|---|
+| Detection | `anse/infrastructure/` | Live NVML/agent/RAM probe → one capability profile |
+| Verification | `anse/symbolic/`, `anse/formal/` | Sandboxed exec, Lean kernel + `#print axioms` |
+| Memory | `anse/memory/` | Redis LTM, Chroma retrieval, PDF provenance store |
+| Reasoning | `anse/jepa/`, `anse/physics/`, `anse/core/` | World model, energy surrogate, agent loop |
+| Learning | `scripts/night_*`, `train_*` | QLoRA / JEPA on verifier-labelled episodes only |
+| Orchestration | `.claude/workflows/` | Multi-agent workflows with verification stages |
+
+### Two environments, one detection engine
+
+Both profiles resolve from the same probe. Precedence is **explicit**, and ambiguity is
+reported rather than silently tie-broken:
+
+| | Claude Code / GCP T4 | Antigravity / local Linux |
+|---|---|---|
+| `profile_id` | `claude_code_tesla_t4` | `antigravity_linux_cpu_31gb` |
+| Device | `cuda` · Tesla T4 15,360 MB | `cpu` · no driver |
+| RAM | 29.4 GB | 31.3 GB |
+| Generation | `qwen3:8b` @ **34.7 tok/s** | CPU-tier local model |
+| QLoRA ceiling | **Phi-3-mini 3.8B** @ seq 1024 | small adapters, 869 MB RSS |
+
+`describe_agent_detection()` returns `{resolved, override, signals_matched, ambiguous}`.
+A host carrying both agents' signals is a *finding*, not a coin flip — a bug found exactly
+because a test passed on one host and failed on the other.
 
 ---
 
-## 🧬 The ANSE Evolution: Phases V1, V2, V3, V4 & V5
+## Measured status
 
-ANSE (**Autopoietic Neuro-Symbolic Energy-Based Model**) mathematically links symbolic reasoning, neural execution, and non-equilibrium thermodynamics across five progressive phases:
+Measured on the T4 host at `v12.5.0`. Reproduce with the commands shown.
 
-### ⚡ Phase V1: Deterministic Reality Engine & Symbolic Sandbox
-* **Sub-process Hardened Sandbox (`HardenedEvaluator`):** All proposed algorithmic code executes in deterministic subprocesses with hardware timeouts, heap isolation, and resident memory quotas.
-* **AntiStubGuard AST Whistleblower:** Rejects hollow mock code (`pass`, `...`, `NotImplementedError`, `mock_*`) with $E = 10^6$ (Maximum Pain).
-* **Zero-Trust Attestation:** Computes CPU/RAM dissipation and mints HMAC SHA-256 tokens certifying physical hardware execution.
+| What | Result | Command |
+|---|---|---|
+| Test suite | **1079 passed** / 15 failed / 43 skipped | `pytest tests/ -q` |
+| Collection | 1145 tests, exit 0 | `pytest tests/ --collect-only` |
+| Anti-stub AST guard | **exit 0** — 124 files | `python test_rigor_guard.py` |
+| Environment validator | **10/10** capability checks | `scripts/validate_environment.py` |
+| CPU-profile validation | **5 passed** | `pytest tests/test_local_32gb_cpu_antigravity_validation.py` |
+| Lean theorems authored | **218** across 34 files | `grep -c theorem formal/ANSE/*.lean` |
+| Open proof obligations | **4**, tracked in a registry | `formal/ANSE/Blueprint.lean:155-183` |
+| Chroma corpora | 1,881 Mathlib premises + 315 paper chunks | `scripts/validate_environment.py` |
 
-### 🧠 Phase V2: System 1.5 JEPA Intuition & Surrogate Reality Engine
-* **Microsecond Latent Evaluation:** Neural surrogate model evaluates candidate thoughts in latent space $Z$ in $<15\text{ ms}$ ($\sim 14.2\,\mu\text{s}$ per item).
-* **Latency Bottleneck Elimination:** Prunes $>98\%$ of high-energy hypotheses before physical hardware dispatch, saving $>1,400\text{ s}$ per 1,000 thoughts.
-* **Online Calibration Loop:** Continuously calibrates surrogate embeddings against physical ground truth with spectral-norm Lipschitz guarantees ($\|W\|_2$).
+### Hardware findings worth knowing
 
-### 🔮 Phase V3: Autopoietic Meta-Learning Engine & Active Latent MCTS
-* **Active Latent MCTS Tree Search:** Simulates AST candidate paths forward in JEPA space, intercepting hollow stubs and quadratic loop traps before compilation.
-* **Self-Referential Neural Refactoring:** Upgrades unbatched loops to TorchScript JIT fused kernels with zero differential oracle error ($\|y_{\text{parent}} - y_{\text{child}}\|_\infty = 0$).
-* **Banach Fixed Point Hot-Swap:** Enforces the thermodynamic condition $\Delta E = E_{\text{child}} - E_{\text{parent}} < 0$, promoting child modules into live production via zero-downtime Read-Copy-Update (RCU) proxies.
+Measured on Tesla T4 (sm_75, Turing). These cost real time to discover:
 
-### 🛡️ Phase V4: Safe ANSE & The Declaration of AI Kind (DoAIK)
-* **Pre-Input Axiom Matrix (LAIF-Load):** Laws, Axioms, and Invariants Foundation compiling universal physics and human ethics into geometric boundaries.
-* **Z3 SMT Control Barrier Functions (CBF):** Microsoft Z3 solver guarantees Article II bio-viability ($V_{\text{human}} \ge \epsilon = 0.10$). Harmful actions (e.g. municipal blackout sabotage) are proven mathematically `UNSAT`.
-* **Pareto Manifold Projection:** Inviolable implicit SMT layer projects adversarial queries back to the safe human-viable hypercube ($V_{\text{human}} = 1.0$), ensuring harmful states are physically and mathematically unrepresentable.
+| Finding | Measurement | Consequence |
+|---|---|---|
+| **bf16 is a trap** | fp16 **20.82** vs bf16 **2.28** TFLOPS | bf16 is **9.1× slower** than fp16 and slower than fp32. `torch.cuda.is_bf16_supported()` returns `True` and is misleading. Use fp16. |
+| FlashAttention-2 | unavailable (needs sm_80+) | use `attn_implementation="sdpa"` |
+| QLoRA ceiling | Phi-3-mini 3.8B @ seq 1024 → 9,601 MiB, 373 tok/s | ~10,500 samples/night; 14B is off the table |
+| GPU placement | had been **CPU-only at 2.3 tok/s** for days | Ollama started before the driver existed. A restart gave **15×**. Always verify placement, never assume. |
 
-### 🌌 Phase V5: Autonomous Science, Local CPU Laya & Cross-Domain Rosetta Stone
-* **Local CPU Laya System 1 Triage:** Non-autoregressive decision engine (`convaiinnovations/laya` ModernBERT-large) running locally on CPU in $<35\text{ ms}$, evaluating scientific assertions, classifications (`choice`, `score`, `noul`) with zero autoregressive hallucination.
-* **Rosetta Stone Epistemological Triplet:** Simultaneous 3-domain cross-verification across **The Theorist** (formal Lean 4 theorem with zero sorry), **The Physicist** (Python numerical prototype conserving physical invariants like L2 norm, integer topological charge $Q \in \mathbb{Z}$, or Chern numbers), and **The Engineer** (Rust zero-allocation kernel compiled with SIMD acceleration enforcing $\Delta E = E_{\text{child}} - E_{\text{parent}} < 0$).
-* **Test-Time Compute GRPO Policy Explorer:** Group Relative Policy Optimization generating and exploring 8 parallel candidate reasoning trajectories, calculating normalized advantages $A_i = \frac{R_i - \mu_R}{\sigma_R}$ under the deterministic sandbox.
-* **Autonomous Scientific Curricula:** Self-generating multi-domain PhD curricula spanning KdV Solitons, Euclidean SU(2) Yang-Mills instantons, and 2D Brillouin zone Quantum Hall Chern topological invariants.
-
----
-
-## 🛡️ 10 End-to-End Closed-Loop Scenarios Under Hardness
-
-ANSE v12.3.0 enforces a strict thermodynamic contract ($\Delta E = E_{\text{child}} - E_{\text{parent}} < 0$) and zero-trust execution attestation verified across 10 end-to-end scenarios:
-
-### Core Closed-Loop Scenarios (`scripts/execute_5_closed_loop_scenarios.py`)
-1. **Symplectic Orbit Integration ($|\Delta H / H_0| < 10^{-4}$):** 4th-Order Symplectic Yoshida Integrator maintains exact Hamiltonian conservation ($|\Delta H/H_0| = 1.38 \times 10^{-14}$) over $10^4$ steps ($\Delta E = -999,740.82$).
-2. **DEC Nilpotency & Hodge 0-Laplacian ($\|d_1 \circ d_0\|_\infty \equiv 0$, $\Delta_0 \ge 0$):** Vectorized Sparse CSR with SIMD products yields $35.6\times$ speedup and zero nilpotency error ($\Delta E = -868.21$).
-3. **Active Latent MCTS Pruning:** `AntiStubGuard` intercepts dummy `# TODO: pass` stubs in latent space; unpromising quadratic branches pruned before physical dispatch ($12.2\times$ search speedup, $\Delta E = -67.56$).
-4. **Autopoietic Fused JIT Kernel Hot-Swap:** Hot-swaps TorchScript JIT fused surrogate filter into live pipeline with zero differential output error and $4.08\times$ speedup ($\Delta E = -43.89$).
-5. **LAIF-Load Universal Ethics & SMT CBF ($V_{\text{human}} \ge \epsilon$):** Microsoft Z3 SMT solver proves adversarial blackout prompt `UNSAT` and projects state back to safe Pareto hypercube with hospital power at 100% ($V = 1.0$, $\Delta E = -999,990.67$).
-
-### Advanced PhD Scenarios with Cryptographic HMAC Attestation (`scripts/execute_5_advanced_phd_scenarios.py`)
-* **PHYS-KERR:** Boyer-Lindquist Carter constant integration inside the ergosphere extracted rotational black hole energy ($E_{\text{out}}/E_{\text{in}} = 1.150$, Proof token: `c86e585f577b24e76bfbcaf5326f71d1`, $\Delta E = -999,998.12$).
-* **TQEC-BRAID:** Kitaev Toric Code with commuting stabilizers $[A_s, B_p] = 0$ and anyon braiding phase $e^{i\pi} = -1.0$ (Proof token: `ca9449be37163604f0d9414862f4f0b6`, $\Delta E = -999,998.07$).
-* **MATH-INDEX:** Hodge-de Rham Dolbeault index $\text{ind}(\bar{\partial}) \equiv \deg(\mathcal{L}) - g + 1$ verified across 6 genus/bundle topological configurations (Proof token: `968bd94fc73e7f5e5c91759f7e4ab762`, $\Delta E = -999,994.44$).
-* **CFD-LBM:** Navier-Stokes D2Q9 BGK collision strictly conserving momentum with machine-precision drift of $2.78 \times 10^{-15}$ (Proof token: `8fa9b24e6c1031d2ba771109ff8271a4`, $\Delta E = -999,735.93$).
-* **AUTO-PROOF:** Zero-trust deterministic matrix solver attestation certified under `HardenedEvaluator` (Proof token: `3e24da020a8154d647cd81a504b34f86`, $\Delta E = -999,896.56$).
+That last one is the most transferable lesson in this repository: a service that probes for
+a GPU once at startup will serve on CPU forever if it loses that race, and nothing will
+tell you.
 
 ---
 
-## 🌐 Interactive Web GUI & Command Deck (`web/index.html`)
+## Known gaps — where to help
 
-Launch with `PORT=5000 uv run python web/server.py` to interactively explore and benchmark all ANSE phases:
+Listed because they are true, and because this is the most useful map for a contributor.
+Each is a real, scoped piece of work.
 
-### Interactive Tabs & Visualizers
-* **ANSE V2: System 1.5 JEPA Intuition (`/#anse-v2`):**
-  * Interactive sliders for candidate rollouts ($100$–$5,000$), top-$k$ selection, and latent dimension $Z$.
-  * Real-time KPIs for surrogate latency, prune rate ($>98\%$), and sandbox compute time saved ($>1,400\text{ s}$).
-  * Online calibration feedback against ground truth physical energy with spectral Lipschitz bounds.
-* **ANSE V3: Autopoietic Meta-Learning (`/#anse-v3`):**
-  * Live Active Latent MCTS branch simulator highlighting pruned stubs ($E=10^6$), quadratic loops ($E=73.61$), and promoted SIMD kernels ($E=6.05$).
-  * Real-time autopoietic hot-swap benchmarking unbatched loop ($58.14\text{ ms}$) vs. TorchScript JIT ($14.25\text{ ms}$), verifying $\|y_p - y_c\| = 0$ and $\Delta E = -43.89 < 0$.
-* **ANSE V4: Safe ANSE & 10 Hardness Scenarios (`/#anse-v4`):**
-  * Adversarial bio-viability sabotage attack vs. Z3 SMT Control Barrier Function theorem prover (`UNSAT: VIOLATION BLOCKED`).
-  * Real-time Pareto projection restoring $100\%$ municipal hospital life-support power ($V_{\text{human}} = 1.0$, $\Delta E = -999,990.67$).
-  * 10 End-to-End closed-loop hardness scenario cards with 32-character cryptographic HMAC SHA-256 proof tokens.
-* **ANSE V5: Science, Local CPU Laya & Rosetta Stone (`/#anse-v5`):**
-  * **Deck 1 (Laya System 1 on CPU):** Non-autoregressive single-forward-pass triage with calibrated probability distributions, validity scoring, and truth assertions in $<35\text{ ms}$.
-  * **Deck 2 (Rosetta Stone Triplet):** 3-domain cross-verification cards displaying Lean 4 formal specs, Python conservation invariant prototypes, and Rust SIMD kernels with live HMAC SHA-256 proof token minting.
-  * **Deck 3 (GRPO Explorer):** 8 parallel reasoning trajectories with relative advantages $A_i$, rewards $R_i$, and automatic best-trajectory promotion under the deterministic sandbox.
-* **ANSE Scenario Studio & Creation Center (`/#scenario-studio`):**
-  * Interactive scenario studio allowing developers to either select from the **10 pre-certified scenarios** or **create custom scenarios** for ANSE V2, V3, V4, and V5.
-  * Live deterministic execution pipeline tracker: `1. AST AUDIT` $\to$ `2. LATENT Z` $\to$ `3. MCTS / INVAR` $\to$ `4. SMT & ΔE` $\to$ `5. ATTESTATION`.
-  * Real-time thermodynamic KPI readouts: Parent Energy ($E_p$), Child Energy ($E_c$), $\Delta E$, and Speedup factor.
-  * Monospace diagnostic terminal output and HMAC SHA-256 cryptographic proof token copy button.
-  * Quick-launch gallery grid for instant single-click execution of any verified scenario.
-* **Antigravity Swarm Command Deck (ASCD) (`/#ascd`):**
-  * Microservices DAG architecture, 3D WebGL physics canvas, Lean 4 Tribunal with gutter error indicators, and God Mode Emergency Halt (`Spacebar` / mobile FAB 🛑).
-* **PR Factory (`/#factory`):**
-  * Automated mission dispatch, continuous integration monitoring, and GitHub PR reviews.
-* **Evolution Lab (`/#evolution`):**
-  * Empirical Phase 1, Phase 2, and Phase 3 evolution benchmark tracking across 5 validated use cases.
+### 🔴 High impact
 
-### Demonstration API Endpoints
+- **The 200-problem benchmark embeds its own solutions.** `RUST_KERNELS[id]["source"]` *is*
+  the finished program; the math/physics cases compute a value then compare it to the same
+  constant. There is no model generation in the loop and **no problem selector at all**.
+  Restructuring this into `(statement, hidden reference, tolerance)` triples is the single
+  highest-value contribution available.
+- **Math and physics have no independent verifier.** Cases self-assert via SymPy against
+  their own constants. `anse/benchmark/invariant_registry.yaml` (993 lines of per-case
+  invariants, tolerances and units) is the raw material for a genuine dimensional and
+  conservation-law check.
+- **Peer review is not real.** Three `scripts/review_*.py` files make **zero** model calls
+  and hardcode `ACCEPT WITHOUT RESERVATION`. Replacing them with a reviewer that can reject
+  — proven on a negative control — is a well-scoped, high-value task.
+- **`antigravity_guard.py` exits 1** on 2,306 pre-existing repo-wide Ruff findings (868
+  auto-fixable). Mechanical, reviewable, and it unblocks CI.
 
-| Endpoint | Method | Description |
-| :--- | :---: | :--- |
-| `/api/v2/surrogate/filter` | `POST` | Evaluates $N$ candidate thoughts in latent space, returning top-$k$ and latency metrics. |
-| `/api/v2/surrogate/calibrate` | `POST` | Performs online calibration against physical sandbox ground truth. |
-| `/api/v3/mcts/simulate` | `POST` | Simulates Active Latent MCTS, pruning hollow stubs and quadratic traps. |
-| `/api/v3/autopoiesis/hot-swap` | `POST` | Benchmarks and promotes child TorchScript JIT kernel under $\Delta E < 0$. |
-| `/api/v4/safety/smt-evaluate` | `POST` | Solves Z3 SMT Control Barrier Functions and projects adversarial states to safe Pareto frontier. |
-| `/api/v5/curricula` | `GET` | Catalog of PhD-level scientific curricula ready for Rosetta Stone Triplet verification. |
-| `/api/v5/laya/triage` | `POST` | Non-autoregressive System 1 decision triage using Laya on CPU (choice, score, noul). |
-| `/api/v5/rosetta/verify` | `POST` | Simultaneous 3-domain cross-verification across Lean 4, Python, and Rust with proof token. |
-| `/api/v5/grpo/explore` | `POST` | Test-time compute GRPO policy explorer generating 8 parallel trajectories with normalized advantages. |
-| `/api/e2e/scenarios` | `GET` | Returns 10 End-to-End verified closed-loop scenarios with cryptographic proof tokens. |
-| `/api/scenarios/catalog` | `GET` | Catalog of all 10 verified E2E closed-loop & advanced PhD scenarios. |
-| `/api/scenarios/templates` | `GET` | Preset configuration and code templates for V2, V3, V4, and V5 scenario creation. |
-| `/api/scenarios/run` | `POST` | On-demand live execution of any catalog scenario with 5-stage pipeline telemetry. |
-| `/api/scenarios/create-and-run` | `POST` | Creates and executes custom user-defined scenarios across V2, V3, V4, or V5 with zero-trust validation. |
+### 🟡 Structural
+
+- **Six competing top-level pipelines.** `anse/v2`…`v5` form no version chain (v3 doesn't
+  import v2, etc.), plus two orchestrators with zero inbound imports. Energy computation
+  exists independently in four places, DPO in four.
+- **755 LOC of dead code** in `anse/` with no inbound imports, no tests and no entry point.
+- **Layering inversion:** `anse/` imports from four root-level scripts, which is why every
+  invocation needs `PYTHONPATH=$REPO`.
+- **Data-plane schema mismatch:** `LoopTrace.metadata` defaults to `{}`, but the JEPA reader
+  treats `metadata["tests_total"]` as required and **silently drops** rows lacking it.
+
+### 🟢 Good first issues
+
+- 15 failing tests — **6 are the remediation working**: `latent_dreamer` now raises
+  `SimulationRefusedError` while the old tests assert `status == "success"`. Updating tests
+  that asserted fabricating behaviour is a clean, self-contained contribution.
+- 7 hardcoded absolute paths in tracked Python, two naming a different user's home.
+- `results/` is 402 files / 126 MB tracked in git.
+- Two `papers/figures/` PDFs are byte-identical (`sha256 22453f85…`) — a figure labelled
+  "200 benchmarks" is the same bytes as the one labelled "120".
+
+Full detail with `file:line` citations: [`docs/remediation/AUDIT_2026-09-26.md`](docs/remediation/AUDIT_2026-09-26.md).
+Plan and sequencing: [`docs/remediation/IMPROVEMENT_PLAN_2026-09-26.md`](docs/remediation/IMPROVEMENT_PLAN_2026-09-26.md).
 
 ---
 
-## 📚 Repository Verification & Execution
+## Workflows
+
+Multi-agent workflows in `.claude/workflows/`, each with verification built into its
+structure rather than bolted on:
+
+| Workflow | Purpose | Its safeguard |
+|---|---|---|
+| `anse-honest-baseline` | Restructure the bank into real problems; measure the first honest pass rate | Counts harness errors separately from model failures; refuses to score a domain with no sound verifier |
+| `anse-lean-proof-gate` | One axiom-checked proof gate, then best-of-N proving | **Halts** if the gate ever accepts a `sorry` proof |
+| `anse-ladder-cascade` | Local-first cascade, escalating only on verified failure | **Halts** on nonzero EVAL/TRAIN hash overlap |
+| `anse-nightly-distill` | Night QLoRA on the T4 | Reports the naive first-vs-last metric *and* the honest trend, every night |
+| `anse-claims-provenance` | Trace every claim to an artifact; adversarial review | Reviewer must reject a knowingly-broken paper first |
+
+The economics are deliberate: **workflow agents build and verify harnesses; they never
+solve the problems themselves.** Candidate generation is local GPU inference. Paid tokens
+buy engineering, not answers.
+
+---
+
+## Contributing
+
+Contributions are genuinely welcome, and the [known gaps](#known-gaps--where-to-help) are
+the best place to start. Three project-specific rules, all enforced mechanically:
+
+1. **Report only real tool output.** Never write a number you did not observe. If something
+   cannot be measured, say so — a gap is a result.
+2. **No stubs or fake data outside `tests/`.** Enforced by `test_rigor_guard.py`
+   (AST-level) and `antigravity_guard.py`.
+3. **Tests need ≥2 real assertions**, no tautologies, and mock only external I/O.
 
 ```bash
-# 1. Run complete E2E 10 closed-loop scenarios
-uv run pytest tests/e2e/ -v
-
-# 2. Run web UI and API demonstration tests (42 passing)
-uv run pytest tests/web/ -v
-
-# 3. Execute scenario drivers directly
-uv run python scripts/execute_5_closed_loop_scenarios.py
-uv run python scripts/execute_5_advanced_phd_scenarios.py
-
-# 4. Verify Lean 4 formal proofs (2,967 jobs)
-cd formal && lake build && cd ..
-
-# 5. Run complete test suite (960+ tests)
-uv run pytest tests/ -v
-
-# 6. Launch Web GUI & Command Deck
-PORT=5000 uv run python web/server.py
+# before opening a PR
+.venv/bin/python -m pytest tests/ -q
+.venv/bin/python test_rigor_guard.py
+.venv/bin/python scripts/validate_environment.py
 ```
+
+If you change something a release will claim, `scripts/verify_release.py` will check that
+claim against your diff. It is not decorative — it has blocked this project's own releases.
+
+**Discussion and issues:** use GitHub Issues. A report saying "this claim looks
+unsupported" is as valuable as a patch — that is how the audit started.
+
+---
+
+## Documentation
+
+| Document | Contents |
+|---|---|
+| [`AUDIT_2026-09-26.md`](docs/remediation/AUDIT_2026-09-26.md) | Full integrity audit with `file:line` citations |
+| [`IMPROVEMENT_PLAN_2026-09-26.md`](docs/remediation/IMPROVEMENT_PLAN_2026-09-26.md) | Architecture target, cost model, capability ladder |
+| [`EBM_JEPA_Foundations.md`](docs/EBM_JEPA_Foundations.md) | Energy-based model and JEPA theory |
+| [`EVOLUTION_LAB.md`](docs/EVOLUTION_LAB.md) | Local LLM setup and evolution experiments |
+| [`CHANGELOG.md`](CHANGELOG.md) | Release history, including a superseded entry retained for the record |
+| [`CLAUDE.md`](CLAUDE.md) | Agent guide: environment facts, hooks, MCP |
 
 ---
 
 <div align="center">
 
-**Built with precision by the AutoevolveAI / SuperGravity Core Team.**<br/>
-*Certified Sound by Lean 4 • Grounded in the Physics of Computation.*
+**Built on the premise that a system which cannot fail its own tests has not been tested.**
+
+MIT licensed · Issues and PRs welcome
 
 </div>

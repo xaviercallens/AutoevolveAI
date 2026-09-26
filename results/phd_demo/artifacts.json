@@ -1,0 +1,210 @@
+{
+  "experiment": "stormer_verlet_symplecticity",
+  "omega": 1.0,
+  "steps": 200000,
+  "step_sizes": [
+    0.2,
+    0.1,
+    0.05,
+    0.025
+  ],
+  "initial_condition": {
+    "q0": 1.0,
+    "p0": 0.0,
+    "H0": 0.5
+  },
+  "derivation_sympy": {
+    "q_next": "-h**2*omega**2*q/2 + h*p + q",
+    "p_next": "h**3*omega**4*q/4 - h**2*omega**2*p/2 - h*omega**2*q + p",
+    "det_M": "1",
+    "det_is_one": true,
+    "trace_M": "-h**2*omega**2 + 2",
+    "invariant_b_is_zero": true,
+    "shadow_a_coefficient": "omega**2*(-h**2*omega**2 + 4)/8",
+    "shadow_matches_closed_form": true,
+    "true_minus_shadow": "h**2*omega**4*q**2/8",
+    "stability_threshold_h": [
+      "-2/omega",
+      "2/omega"
+    ]
+  },
+  "verification_lean": {
+    "available": true,
+    "exit_code": 0,
+    "theorems_checked": 7,
+    "sorry_ax_present": false,
+    "axiom_lines": [
+      "'ANSE.Verlet.det_eq_one' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "'ANSE.Verlet.shadowH_invariant' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "'ANSE.Verlet.shadowH_sub_trueH' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "'ANSE.Verlet.trace_eq' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "'ANSE.Verlet.qNext_eq_matrix' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "'ANSE.Verlet.pNext_eq_matrix' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "'ANSE.Verlet.shadowH_eq_trueH_at_zero' depends on axioms: [propext, Classical.choice, Quot.sound]"
+    ],
+    "accepted": true
+  },
+  "numerics_python": {
+    "language": "python",
+    "omega": 1.0,
+    "steps": 200000,
+    "H0": 0.5,
+    "theory_amplitude_over_h2": 0.25,
+    "runs": [
+      {
+        "h": 0.2,
+        "omega_h": 0.2,
+        "verlet_energy_amplitude_rel": 0.009999999994094178,
+        "verlet_amplitude_over_h2": 0.24999999985235438,
+        "verlet_shadow_drift_rel": 1.2089095157029483e-13,
+        "verlet_energy_final": 0.49691137345800696,
+        "euler_energy_final": NaN,
+        "euler_finite": false,
+        "euler_growth_factor": null
+      },
+      {
+        "h": 0.1,
+        "omega_h": 0.1,
+        "verlet_energy_amplitude_rel": 0.0024999999998797096,
+        "verlet_amplitude_over_h2": 0.2499999999879709,
+        "verlet_shadow_drift_rel": 1.2243060923184683e-13,
+        "verlet_energy_final": 0.49975275347976406,
+        "euler_energy_final": NaN,
+        "euler_finite": false,
+        "euler_growth_factor": null
+      },
+      {
+        "h": 0.05,
+        "omega_h": 0.05,
+        "verlet_energy_amplitude_rel": 0.0006250000000377343,
+        "verlet_amplitude_over_h2": 0.25000000001509365,
+        "verlet_shadow_drift_rel": 8.342989283236949e-14,
+        "verlet_energy_final": 0.49970215087422687,
+        "euler_energy_final": 3.76035154922672e+216,
+        "euler_finite": true,
+        "euler_growth_factor": 7.52070309845344e+216
+      },
+      {
+        "h": 0.025,
+        "omega_h": 0.025,
+        "verlet_energy_amplitude_rel": 0.00015625000004160228,
+        "verlet_amplitude_over_h2": 0.2500000000665636,
+        "verlet_shadow_drift_rel": 1.1148381101783725e-13,
+        "verlet_energy_final": 0.49992807223168745,
+        "euler_energy_final": 9.307277855029516e+53,
+        "euler_finite": true,
+        "euler_growth_factor": 1.8614555710059033e+54
+      }
+    ]
+  },
+  "numerics_rust": {
+    "language": "rust",
+    "omega": 1,
+    "steps": 200000,
+    "H0": 0.5,
+    "runs": [
+      {
+        "h": 0.2,
+        "verlet_energy_amplitude_rel": 0.009999999993817621,
+        "verlet_amplitude_over_h2": 0.24999999984544047,
+        "verlet_shadow_drift_rel": 1.2089095157029483e-13,
+        "verlet_energy_final": 0.49691137345800696,
+        "euler_energy_final": NaN,
+        "euler_finite": false
+      },
+      {
+        "h": 0.1,
+        "verlet_energy_amplitude_rel": 0.0024999999995172217,
+        "verlet_amplitude_over_h2": 0.24999999995172212,
+        "verlet_shadow_drift_rel": 1.2243060923184683e-13,
+        "verlet_energy_final": 0.49975275347976406,
+        "euler_energy_final": NaN,
+        "euler_finite": false
+      },
+      {
+        "h": 0.05,
+        "verlet_energy_amplitude_rel": 0.0006250000000377343,
+        "verlet_amplitude_over_h2": 0.25000000001509365,
+        "verlet_shadow_drift_rel": 8.342989283236949e-14,
+        "verlet_energy_final": 0.49970215087422687,
+        "euler_energy_final": 3.76035154922672e+216,
+        "euler_finite": true
+      },
+      {
+        "h": 0.025,
+        "verlet_energy_amplitude_rel": 0.00015624999995556,
+        "verlet_amplitude_over_h2": 0.24999999992889593,
+        "verlet_shadow_drift_rel": 1.1148381101783725e-13,
+        "verlet_energy_final": 0.49992807223168745,
+        "euler_energy_final": 9.307277855029516e+53,
+        "euler_finite": true
+      }
+    ],
+    "available": true
+  },
+  "cross_language_check": {
+    "performed": true,
+    "tolerance": 1e-09,
+    "worst_relative_difference": 5.506706200674592e-10,
+    "agree": true,
+    "rows": [
+      {
+        "h": 0.2,
+        "python_amplitude_over_h2": 0.24999999985235438,
+        "rust_amplitude_over_h2": 0.24999999984544047,
+        "relative_difference": 2.7655655559745596e-11
+      },
+      {
+        "h": 0.1,
+        "python_amplitude_over_h2": 0.2499999999879709,
+        "rust_amplitude_over_h2": 0.24999999995172212,
+        "relative_difference": 1.449951270230221e-10
+      },
+      {
+        "h": 0.05,
+        "python_amplitude_over_h2": 0.25000000001509365,
+        "rust_amplitude_over_h2": 0.25000000001509365,
+        "relative_difference": 0.0
+      },
+      {
+        "h": 0.025,
+        "python_amplitude_over_h2": 0.2500000000665636,
+        "rust_amplitude_over_h2": 0.24999999992889593,
+        "relative_difference": 5.506706200674592e-10
+      }
+    ]
+  },
+  "figures": [
+    {
+      "path": "results/phd_demo/figures/fig1_energy_behaviour.pdf",
+      "sha256": "895b72f155ddce25410c45cb0b0bf8c21a348c84ce2ff14834a1be16d3036713"
+    },
+    {
+      "path": "results/phd_demo/figures/fig1_energy_behaviour.png",
+      "sha256": "a3a7325b1e2e86760038a36416296a9c9757ccc15932cfce33eb3c5b736e5840"
+    },
+    {
+      "path": "results/phd_demo/figures/fig2_h2_scaling.pdf",
+      "sha256": "565ad69b8c68d6320ab50ead0493eacfacbdd5bb323c1a1c4244f7799c61feea"
+    },
+    {
+      "path": "results/phd_demo/figures/fig2_h2_scaling.png",
+      "sha256": "4961a5e05daa779c6e35cb23d50772d42e3b65f061ced4b1855bd9aaa670c329"
+    },
+    {
+      "path": "results/phd_demo/figures/fig3_phase_portrait.pdf",
+      "sha256": "72bdb13853de607c54061b105e4412c85edab5f49b6d2f8ab7aea3fae0364f6b"
+    },
+    {
+      "path": "results/phd_demo/figures/fig3_phase_portrait.png",
+      "sha256": "27371005e93b475d1c4b1bbe17d5a1088824b1d1cf3a789152de02186024bb04"
+    }
+  ],
+  "gates": {
+    "sympy_derivation_consistent": true,
+    "lean_accepted_no_sorry": true,
+    "numerics_match_theory": true,
+    "cross_language_agree": true,
+    "all_pass": true
+  }
+}

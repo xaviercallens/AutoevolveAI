@@ -357,10 +357,9 @@ def evaluate_code_with_critic(code: str, task_context: str = "") -> dict[str, An
         }
     except Exception as exc:
         return {
-            "decision": "SKIPPED",
-            "accepted": True,
-            "reason": f"Critic execution fallback: {exc}",
-            "energy_penalty": 0.0,
+            "accepted": False,
+            "error": type(exc).__name__,
+            "reason": str(exc),
         }
 
 

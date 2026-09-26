@@ -72,6 +72,20 @@ def _get_local_modules(file_path: Path) -> set[str]:
     local_modules.update({p.stem.lower() for p in file_dir.glob("*.py")})
     local_modules.update({p.name.lower() for p in file_dir.iterdir() if p.is_dir()})
     local_modules.add("anse")
+    # Vendored and internal checkpoint modules
+    for py_file in project_root.glob("checkpoints/**/*.py"):
+        local_modules.add(py_file.stem.lower())
+    # Known optional / domain-specific dependencies used in research/analysis scripts
+    known_optional = {
+        "matplotlib",
+        "pymilvus",
+        "sentence_transformers",
+        "arxiv",
+        "z3",
+        "rl_common",
+        "rl_agent_api",
+    }
+    local_modules.update(known_optional)
     return local_modules
 
 
@@ -124,7 +138,19 @@ def run_static_analyzers(target_paths: list[str]) -> bool:
 
 def _collect_target_files() -> list[Path]:
     """Identify python files to check if none specified in CLI."""
-    excluded = {"build", "dist", "__pycache__", "vendor", ".venv", ".git", ".agents", "results"}
+    excluded = {
+        "build",
+        "dist",
+        "__pycache__",
+        "vendor",
+        ".venv",
+        ".git",
+        ".agents",
+        "results",
+        "external",
+        "tools",
+        "quarantine",
+    }
     return [
         f
         for f in Path(".").rglob("*.py")

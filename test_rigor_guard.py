@@ -103,6 +103,15 @@ class TestStubAuditor(ast.NodeVisitor):
                         item.context_expr.func
                     ):
                         count += 1
+            elif isinstance(sub, ast.Call):
+                func_str = ast.unparse(sub.func)
+                if (
+                    func_str.startswith("assert_")
+                    or ".assert_" in func_str
+                    or "testing.assert" in func_str
+                    or func_str.startswith("self.assert")
+                ):
+                    count += 1
         return count
 
     def _audit_test_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:

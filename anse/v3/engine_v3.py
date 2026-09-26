@@ -15,8 +15,16 @@ from dataclasses import dataclass
 from anse.v3.jepa_mcts import JEPALatentMCTS
 from anse.v3.adversarial_dpo import AdversarialDPO, DPOPreferencePair
 from anse.v3.autopoietic_meta_learning import AutopoieticMetaLearner
+from anse.infrastructure.fabrication import SimulationRefusedError
+from anse.symbolic.sandbox import SandboxExecutor
 
 logger = logging.getLogger(__name__)
+
+# Minimal deterministic probe run through the sandbox to obtain a real,
+# measured (duration_ms + peak_ram_mb) reading for the final physical
+# execution step. It is not a physics workload; it exists so the energy
+# figure comes from an actual subprocess measurement rather than an estimate.
+_PHYSICAL_EXECUTION_PROBE = "pass\n"
 
 @dataclass
 class V3CycleResult:
@@ -42,6 +50,7 @@ class ANSEEngineV3:
         
         self.optimizer = torch.optim.AdamW(self.policy_model.parameters(), lr=1e-4)
         self.cycle_count = 0
+        self._sandbox = SandboxExecutor()
 
     def run_singularity_loop(self, initial_latent: torch.Tensor, baseline_energy: float) -> V3CycleResult:
         """
@@ -69,19 +78,21 @@ class ANSEEngineV3:
         # Step 3 & 4: Autopoietic Neural Self-Modification
         logger.info("3. Generating Neural Self-Modification Hypothesis...")
         
-        # Fetch True Physical Telemetry from Hardware (Improvement 2)
+        # Fetch GPU telemetry via nvidia-smi. Propagates TelemetryUnavailableError
+        # (raised by GPUTelemetryHook, per P1-2) instead of swallowing it: on a
+        # GPU-less host this cycle must fail loudly, not report a fabricated number.
         from anse.infrastructure.gpu_telemetry import GPUTelemetryHook
         gpu_hook = GPUTelemetryHook()
         real_telemetry = gpu_hook.get_real_telemetry()
-        
+
         telemetry = {
-            "cache_misses": real_telemetry["l2_cache_misses"], 
+            "gpu_temp_c": real_telemetry["gpu_temp_c"],
+            "gpu_utilization_percent": real_telemetry["gpu_utilization_percent"],
             "bottleneck": "attention",
-            "active_tflops": real_telemetry["active_tflops"]
         }
         logger.info(f"Generating hypothesis based on raw hardware telemetry: {telemetry}")
         proposal = self.meta_learner.generate_hypothesis(telemetry)
-        
+
         commit_success = False
         if self.meta_learner.formal_meta_verification(proposal):
             self.meta_learner.shadow_training(proposal, [dpo_pair])
@@ -89,9 +100,19 @@ class ANSEEngineV3:
         else:
             logger.error("   Formal Meta-Verification FAILED. Aborting Neural Update.")
 
-        # Simulate Final Physical execution of the MCTS decoded thought
-        final_physical_energy = baseline_energy * 0.95 if commit_success else baseline_energy * 0.99
-            
+        # Measure the final physical execution of the MCTS-decoded thought by
+        # running a probe through the deterministic sandbox and reading its
+        # real E = duration_ms + peak_ram_mb, instead of estimating it.
+        sandbox_result = self._sandbox.execute(_PHYSICAL_EXECUTION_PROBE, trusted=True)
+        if sandbox_result.timed_out or sandbox_result.returncode != 0:
+            raise SimulationRefusedError(
+                "Final physical energy cannot be reported: the sandbox probe "
+                "did not complete successfully",
+                component="engine_v3.final_physical_energy",
+                remedy="Investigate the sandbox execution failure before retrying the cycle",
+            )
+        final_physical_energy = sandbox_result.duration_ms + sandbox_result.peak_ram_mb
+
         logger.info(f"--- Phase V3 Cycle Completed ---")
         return V3CycleResult(
             cycle_id=self.cycle_count,

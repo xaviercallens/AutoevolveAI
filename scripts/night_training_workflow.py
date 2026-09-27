@@ -226,7 +226,9 @@ def step_fit(
         return None
 
     base_id = "Qwen/Qwen2.5-0.5B-Instruct" if smoke else "Qwen/Qwen2.5-Coder-7B-Instruct"
-    need = 3_000 if smoke else 11_000
+    # 7B in fp16 is ~14.2 GiB of weights alone and cannot fit a 15 GiB T4
+    # (FIT OOM'd on 2026-09-27). Non-smoke runs load 4-bit NF4 (~5 GiB).
+    need = 3_000 if smoke else 7_000
     if free_mib < need:
         journal.record(
             StepRecord(
@@ -256,11 +258,27 @@ def step_fit(
         tok = AutoTokenizer.from_pretrained(base_id)
         if tok.pad_token is None:
             tok.pad_token = tok.eos_token
-        net = AutoModelForCausalLM.from_pretrained(
-            base_id, dtype=torch.float16, device_map={"": 0}
-        )
-        net.gradient_checkpointing_enable()
-        net.enable_input_require_grads()
+        if smoke:
+            net = AutoModelForCausalLM.from_pretrained(
+                base_id, dtype=torch.float16, device_map={"": 0}
+            )
+            net.gradient_checkpointing_enable()
+            net.enable_input_require_grads()
+        else:
+            from peft import prepare_model_for_kbit_training
+            from transformers import BitsAndBytesConfig
+
+            net = AutoModelForCausalLM.from_pretrained(
+                base_id,
+                device_map={"": 0},
+                quantization_config=BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_compute_dtype=torch.float16,  # sm_75: no bf16
+                    bnb_4bit_use_double_quant=True,
+                ),
+            )
+            net = prepare_model_for_kbit_training(net, use_gradient_checkpointing=True)
         net = get_peft_model(
             net,
             LoraConfig(

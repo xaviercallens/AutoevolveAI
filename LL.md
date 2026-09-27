@@ -44,6 +44,11 @@ model-emitted imports and substitute a pinned header
 - One model at a time fits the T4 (MAX_LOADED_MODELS=1). Embedding jobs and
   prover jobs thrash each other through model swaps — serialize them, or move
   embeddings (qwen3-embedding is 0.6B) off-GPU.
+- Training a 7B on the T4 needs 4-bit QLoRA. The trainer loaded
+  Qwen2.5-Coder-7B in plain fp16 (~14.2 GiB of weights on a 15 GiB card) and
+  OOM'd at FIT on 2026-09-27; while it held the card it also starved the
+  embedder (cudaMalloc OOM in the literature ingest). With NF4 + fp16 compute
+  (sm_75 has no bf16), the fit runs at ~8.1 GiB.
 
 ## 5. Computational ground truth is cheap — use it first
 
@@ -82,6 +87,14 @@ A proof of a wrong statement is worthless; review statements first.
 - Failures are data: the bake-off's 12 kernel-verified failures are the first
   discriminative signal this project has produced (the old harvest was 100%
   passing and taught nothing).
+- A falling training loss is not an improvement. `night_training_workflow.py`
+  EVAL compares first vs last *training* loss (no held-out rows, despite its
+  docstring); with 14 rows x 200 steps that falls by construction. GATE
+  correctly refuses promotion until card P4-5 (held-out eval) lands. Report
+  such adapters as "trained candidate, not promoted", never as better.
+- Job tmp dirs are deleted with the job. Experiment evidence (results JSON,
+  proof files, controls) must be copied into `results/<run>/` before the run
+  ends, or the numbers in the report become unverifiable.
 
 ## 9. Session mechanics that cost time
 

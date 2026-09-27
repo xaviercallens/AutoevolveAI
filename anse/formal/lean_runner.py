@@ -18,6 +18,11 @@ logger = logging.getLogger("LeanRunner")
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 FORMAL_DIR = PROJECT_ROOT / "formal"
 
+# The only axioms a kernel-checked Mathlib proof may depend on. Anything else
+# (e.g. a smuggled `axiom cheat : False`) compiles with exit code 0 and would
+# previously pass this gate — verified empirically on 2026-09-27.
+TRUSTED_AXIOMS: frozenset[str] = frozenset({"propext", "Classical.choice", "Quot.sound"})
+
 
 @dataclass
 class LeanVerificationResult:
@@ -29,6 +34,11 @@ class LeanVerificationResult:
     has_sorry: bool
     energy_score: float
     output: str
+    untrusted_axioms: list[str] = None  # type: ignore[assignment]
+
+    def __post_init__(self) -> None:
+        if self.untrusted_axioms is None:
+            self.untrusted_axioms = []
 
 
 class LeanKernelVerifier:
@@ -92,9 +102,16 @@ class LeanKernelVerifier:
                 axioms = [a.strip() for a in cleaned.split(",") if a.strip()]
 
             has_sorry = "sorryAx" in axioms or "sorryAx" in raw_output
+            untrusted = [a for a in axioms if a not in TRUSTED_AXIOMS and a != "sorryAx"]
 
-            # If sorryAx exists, penalize with Maximum Pain
-            energy = 0.05 + (elapsed / 1000.0) if not has_sorry else 1000000.0
+            # sorryAx or any non-whitelisted axiom awards Maximum Pain: a proof
+            # from `axiom cheat : False` is not a proof.
+            clean = not has_sorry and not untrusted
+            energy = 0.05 + (elapsed / 1000.0) if clean else 1000000.0
+            if untrusted:
+                logger.error(
+                    "Untrusted axioms in %s: %s -- rejecting", theorem_name, untrusted
+                )
 
             return LeanVerificationResult(
                 theorem_name=theorem_name,
@@ -105,6 +122,7 @@ class LeanKernelVerifier:
                 has_sorry=has_sorry,
                 energy_score=energy,
                 output=raw_output.strip(),
+                untrusted_axioms=untrusted,
             )
         finally:
             if temp_check_file.exists():

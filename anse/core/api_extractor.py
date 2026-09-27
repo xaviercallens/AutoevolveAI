@@ -25,6 +25,27 @@ from anse.core.encoder import HiddenStateRecord
 
 logger = logging.getLogger(__name__)
 
+_DISK2_CALL_LOGS = Path("/mnt/disks/disk-socrateai-local-1/AutoevolveAI/call_logs")
+
+
+def _default_call_log() -> Path | None:
+    """Every LLM call is persisted unless ANSE_CALL_LOG=off.
+
+    Resolution order: ANSE_CALL_LOG env var, then the disk-2 call-log dir,
+    then a repo-local fallback. The JSONL file is the durable record; Redis
+    (see _log_call) is the searchable LTM layer on top of it.
+    """
+    import os
+
+    env = os.environ.get("ANSE_CALL_LOG", "").strip()
+    if env.lower() in {"off", "0", "none"}:
+        return None
+    if env:
+        return Path(env)
+    if _DISK2_CALL_LOGS.parent.exists():
+        return _DISK2_CALL_LOGS / "llm_calls.jsonl"
+    return Path(__file__).resolve().parent.parent.parent / "data" / "call_logs" / "llm_calls.jsonl"
+
 
 class APIExtractor:
     def __init__(
@@ -44,9 +65,10 @@ class APIExtractor:
         self._client = client or httpx.Client(timeout=timeout_s)
         self._base = self.config.api_base_url.rstrip("/")
         self._native_root = self._base[:-3] if self._base.endswith("/v1") else self._base
-        self._call_log_path = Path(call_log_path) if call_log_path else None
+        self._call_log_path = Path(call_log_path) if call_log_path else _default_call_log()
         if self._call_log_path:
             self._call_log_path.parent.mkdir(parents=True, exist_ok=True)
+        self._redis = None  # lazily connected in _log_call
 
     def extract(
         self,
@@ -175,8 +197,25 @@ class APIExtractor:
             "input": {"messages": messages, "max_tokens": max_tokens, "temperature": temperature},
             "output": {"text": output, "completion_tokens": token_count},
         }
+        line = json.dumps(call_record)
         try:
             with open(self._call_log_path, "a") as f:
-                f.write(json.dumps(call_record) + "\n")
+                f.write(line + "\n")
         except Exception as exc:
             logger.warning("Failed to log LLM call: %s", exc)
+        # LTM layer: push to Redis so calls are queryable across sessions.
+        # The JSONL above is the durable record; Redis failure must not break
+        # generation, so this degrades to a warning.
+        try:
+            if self._redis is None:
+                import os
+
+                import redis
+
+                self._redis = redis.Redis.from_url(
+                    os.environ.get("ANSE_REDIS_URL", "redis://localhost:6379/0"),
+                    socket_connect_timeout=2,
+                )
+            self._redis.lpush("anse:ltm:llm_calls", line)
+        except Exception as exc:
+            logger.warning("LLM call not pushed to Redis LTM: %s", exc)

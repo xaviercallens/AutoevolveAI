@@ -7,8 +7,8 @@
 **A research harness that refuses to report success it has not earned.**
 
 [![Tests](https://img.shields.io/badge/tests-1371_passing-brightgreen?style=flat-square&logo=pytest)](#measured-status)
-[![Lean 4](https://img.shields.io/badge/Lean_4-229_theorems-blue?style=flat-square&logo=lean)](formal/ANSE)
-[![Release](https://img.shields.io/badge/release-v13.2.1-blueviolet?style=flat-square&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v13.2.1)
+[![Lean 4](https://img.shields.io/badge/Lean_4-254_theorems-blue?style=flat-square&logo=lean)](formal/ANSE)
+[![Release](https://img.shields.io/badge/release-v13.3.0-blueviolet?style=flat-square&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v13.3.0)
 [![Python](https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python)](pyproject.toml)
 [![Rust](https://img.shields.io/badge/rust-1.96-000000?style=flat-square&logo=rust)](crates/)
 [![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)](LICENSE)
@@ -182,7 +182,7 @@ Measured on the T4 host at `v13.2.1`, in the main checkout (not a release worktr
 | Anti-stub AST guard | **exit 0** — 124 files | `python test_rigor_guard.py` |
 | Environment validator | **10/10** capability checks | `scripts/validate_environment.py` |
 | CPU-profile validation | **5 passed** | `pytest tests/test_local_32gb_cpu_antigravity_validation.py` |
-| Lean theorems authored | **229** across 36 files | `grep -cE '^(theorem|lemma|example) ' formal/ANSE/*.lean | awk -F: '{s+=$2} END{print s}'` |
+| Lean theorems authored | **254** across 39 files | `grep -cE '^(theorem|lemma|example) ' formal/ANSE/*.lean | awk -F: '{s+=$2} END{print s}'` |
 |  Open proof obligations | **4**, tracked in a registry | `formal/ANSE/Blueprint.lean:155-183` |
 | Chroma corpora | 1,881 Mathlib premises + 315 paper chunks | `scripts/validate_environment.py` |
 | Verified research pipeline | **4/4 gates pass** | `scripts/phd_demo/run_experiment.py --check` |

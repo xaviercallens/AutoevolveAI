@@ -2,6 +2,61 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [13.3.0] — Three preregistered cosmology problems, a synthesis paper, and a learning retrofit (2026-09-27)
+
+**Science (reproductions of published values, not new measurements).** One
+Workflow ran three problems through literature + preregistration (targets fetched
+from the papers) -> fit with controls -> Lean 4 -> Elenchus ledger -> paper ->
+adversarial model referee that re-runs everything -> fix round (LL.md §12):
+
+| run | outcome | headline |
+|---|---|---|
+| `desi_dr2_bao` | SUCCESS, 14/14 preregistered criteria | Om 0.29781±0.00856 (+0.04σ), h·r_d 101.530±0.732 Mpc, wCDM w −0.9164±0.0787 |
+| `bao_bbn_h0` | SUCCESS on DR2; DR1 check PARTIAL | H0 68.545±0.594 vs 68.51±0.58 with an exact CAMB r_d; DR1 |ΔH0| 0.167 vs strict 0.15, and environment-dependent (PASS under the other Python env; preregistered PARTIAL kept) |
+| `eboss_vs_desi` | science PASS | SDSS Om 0.2987±0.0164 vs 0.299±0.016; SDSS–DESI DR2 tension 0.88σ |
+
+- The H0 run was amended (CAMB primary) **before any fit output was read**; the
+  pre-amendment output is hash-locked unread and both analyses are reported.
+- **Synthesis paper** `papers/cosmo_synthesis/` (26 pp.): every number generated
+  from the result JSONs; three rounds of three independent model referees (stats,
+  formal, novelty) with response letters in `reviews/`; no blocking issue in any
+  round. Novelty is claimed only for the combination of safeguards and three derived
+  consistency numbers.
+- **Lean:** 25 new theorems in `formal/ANSE/{DESI_DR2_wCDM,BAO_BBN_H0,BAO_Consistency}.lean`,
+  whitelist-only axioms; dual-environment check (pinned build 4/4 files; LeanMaster
+  full Mathlib 3/4, the 4th blocked by its repo import, not a proof failure).
+  Sound count: **254** theorems across 39 files.
+- **Learning retrofit** (`scripts/cosmo3_retrofit.py`): 84 literature chunks into
+  Chroma; 206 verdict-bearing episodes (173 pass / 33 fail) as JEPA rows on disk 2.
+  **Negative result:** JEPA trained on them is indistinguishable from a
+  shuffled-label control; no learning is claimed (TODO 19).
+- **Cross-project:** the BAO numerics were ported to rusty-SUNDIALS
+  (`crates/qf-bao-distances`, PR #61) and reproduce the DR2 fit; the port exposed a
+  cvode defect fixed in rusty-SUNDIALS PR #60.
+
+**Tooling.** `antigravity_guard.py` allowlists the venv-cosmo Boltzmann codes and the
+reused `fit_desi_bao` module (0 phantom imports under the main venv); a scoped ruff
+exemption keeps the hash-pinned research scripts byte-identical;
+`formal/ANSE.lean` imports the three modules (a duplicated import removed);
+`scripts/publish_cosmo_synthesis.py` (Zenodo + Hugging Face + lab-archive bundle).
+
+**Measured gates at this commit.**
+- `test_rigor_guard.py`: exit 0 (141 files).
+- `antigravity_guard.py`: exit 1 — phantom-import stage clean; the static-analysis
+  stage still fails on pre-existing Ruff debt. The new cosmology scripts are clean.
+- `pytest tests/` in the cosmo3 worktree (no `formal/.lake`, the same environment
+  class v13.2.1 flagged as weaker than the main checkout): 1358 passed / 22 failed /
+  49 skipped / 8 errors. Diffed by test id against v13.2.0's worktree set: one extra
+  failure, `tests/phase2/test_ml_sandbox.py::TestMLSandboxExecutor::test_successful_training`
+  (sandbox subprocess rc −1 under heavy concurrent CAMB/MCMC/Lean load), which passes
+  in isolation. README's test badge keeps v13.2.1's main-checkout measurement.
+
+**Open, disclosed.** No person has audited any Tier A Lean statement (all audits are a
+model referee's, labelled as such; TODO 14). Preregistrations were not git-committed
+before the fits (TODO 18). The ledgers' "Tier B" is not Elenchus's exact-arithmetic
+Tier B (TODO 20). After pulling, run `cd formal && lake build` once so the three new
+modules get oleans.
+
 ## [13.2.1] — Corrections to the published v13.2.0 release (2026-09-27)
 
 **Unlike v13.1.0 below, `v13.2.0` WAS tagged and published**

@@ -1,0 +1,590 @@
+# ANSE v2 implementation cards. Canonical source; docs/v2/README.md explains the workflow.
+# tier: low   = a Haiku-class model can finish it from the card alone
+#       mid   = needs a Sonnet-class model (fiddly design or reading unfamiliar code)
+#       human = a person runs it or decides (GPU runs, gates, legal, installing hooks)
+# Every card is one commit. `accept` commands are run by the driver, not trusted from the model.
+
+rules:
+  - "Do exactly ONE card. Read every file in read_first completely before editing anything."
+  - "Logic goes in anse/v2/ with I/O, GPU, network, clock and randomness INJECTED as arguments, so tests are hermetic. anse/ is under the 100 percent line+branch gate. Code that needs a GPU, Ollama, systemd or the network goes in v2_runners/ (not gated) as thin glue with no logic worth testing."
+  - "Never edit judge modules unless the card lists them: anse/symbolic/{sandbox,evaluator,ml_sandbox,ml_evaluator,parser}.py, execution_attestation.py, anse/v2/{metrics,promotion_gate,writable_set}.py, .coveragerc, tests/conftest.py."
+  - "Never weaken, skip, xfail or delete a test, and never lower fail_under. No stubs, no pass-bodies, no hard-coded expected metric values."
+  - "You are done only when every accept command exits 0. Paste the last 15 lines of output into your final message. Do not claim success otherwise."
+  - "If an accept command still fails after 3 honest attempts, STOP. Write BLOCKED: what you tried and the exact error. Do not widen scope or edit unrelated files."
+  - "Match surrounding style (type hints, from __future__ import annotations, docstring density). Test files go in tests/v2/test_<module>.py and must fail if the feature is removed."
+  - "Commit with message 'v2(<id>): <title>'. Do not push. Do not stage files the card does not name."
+
+# Reusable acceptance blocks.
+acc_v2: &acc_v2
+  - "source .venv-v2/bin/activate && python -m pytest tests/v2 -q -p no:cacheprovider --cov=anse/v2 --cov-branch --cov-report=term-missing --cov-fail-under=100"
+acc_full: &acc_full
+  - "source .venv-v2/bin/activate && python -m pytest tests -q -p no:cacheprovider --cov --cov-report=term-missing:skip-covered --cov-fail-under=100"
+
+cards:
+# ───────────────────────── Phase 0: evaluation integrity ─────────────────────────
+- id: V0-1
+  title: "Group-aware train/val split"
+  phase: 0
+  tier: low
+  depends_on: []
+  read_first: [anse/jepa/dataset.py, anse/jepa/trainer.py, tests/phase2/test_trainer.py]
+  edit: [anse/jepa/dataset.py, anse/jepa/trainer.py, tests/phase2/test_trainer.py]
+  spec:
+    - "JEPADataset gets an attribute groups: list[str], parallel to its pairs, holding each source row's 'task' value ('' if missing)."
+    - "train_val_split(dataset, val_fraction, seed, group_by_task=False). When True: shuffle the UNIQUE groups with random.Random(seed), move whole groups into validation until at least val_fraction of rows are there, return two torch Subset objects. No group may appear in both. Raise ValueError if fewer than 2 groups exist."
+    - "JEPATrainer.train gains group_by_task: bool = False and passes it through. Default behaviour must stay byte-identical."
+  tests:
+    - "no group appears in both subsets; result is deterministic for a fixed seed; ValueError with a single group; default path unchanged (same indices as before for the same seed)."
+  accept: *acc_full
+
+- id: V0-2
+  title: "De-duplicate (task, code) on dataset ingest"
+  phase: 0
+  tier: low
+  depends_on: [V0-1]
+  read_first: [anse/jepa/dataset.py]
+  edit: [anse/jepa/dataset.py, tests/phase2/test_coverage_gaps_phase2.py]
+  spec:
+    - "JEPADataset(..., dedupe: bool = True). Rows that have a 'code' field and share the same (task, code) as an earlier row are dropped (first one wins) and counted in self.n_duplicates_dropped."
+    - "Rows WITHOUT a 'code' field are never de-duplicated (existing synthetic test datasets rely on that). Log one info line with the count."
+  tests:
+    - "duplicates dropped and counted; rows without code kept; dedupe=False keeps everything."
+  accept: *acc_full
+
+- id: V0-3
+  title: "Metrics for a zero-inflated, few-valued target"
+  phase: 0
+  tier: low
+  depends_on: []
+  create: [anse/v2/metrics.py, tests/v2/test_metrics.py]
+  spec:
+    - "auroc(scores: list[float], labels: list[int]) -> float | None. Rank-based (Mann-Whitney), ties get average rank. Return None if labels contain only one class."
+    - "spearman(xs, ys) -> float | None. Average ranks for ties. None if either series is constant or len < 3."
+    - "bootstrap_ci(fn, xs, ys, n=1000, seed=0, alpha=0.05) -> tuple[float, float]. Resample index pairs with random.Random(seed); skip resamples where fn returns None; raise ValueError if fewer than 10 valid resamples."
+    - "median_baseline_mae(actuals) -> float. MAE of always predicting the median."
+    - "Pure python or numpy only. No scipy."
+  tests:
+    - "auroc: perfect=1.0, inverted=0.0, all-ties=0.5, single class=None. spearman: perfect, inverted, ties, constant=None. bootstrap_ci: deterministic per seed, lo<=hi, ValueError branch. Compare auroc against a brute-force O(n^2) pair count on random data (hypothesis or seeded loop)."
+  accept: *acc_v2
+
+- id: V0-4
+  title: "VICReg must not return NaN for batches smaller than 2"
+  phase: 0
+  tier: low
+  depends_on: []
+  read_first: [anse/jepa/world_model.py]
+  edit: [anse/jepa/world_model.py, tests/phase2/test_coverage_gaps_phase2.py]
+  spec:
+    - "In VICRegLoss.forward: if z.shape[0] < 2 return (z.sum() * 0.0, {'std_loss': 0.0, 'cov_loss': 0.0}) so gradients stay attached and finite."
+  tests:
+    - "batch of 1 gives a finite zero loss and backward() leaves all parameter grads finite; batch of 2 unchanged."
+  accept: *acc_full
+
+- id: V0-5
+  title: "Frozen benchmark split with hash manifest"
+  phase: 0
+  tier: low
+  depends_on: []
+  read_first: [tasks/phase1_benchmark.yaml, main.py]
+  create: [anse/v2/benchmark_split.py, tests/v2/test_benchmark_split.py]
+  spec:
+    - "split_tasks(tasks: list[dict], fractions=(0.6, 0.2, 0.2), salt='anse-v2') -> dict[str, list[dict]] with keys train, dev, test. Assign each task by int(sha256(salt + task['name']).hexdigest(), 16) % 1000 thresholds, so adding tasks never moves existing ones."
+    - "manifest(splits) -> dict mapping split name to a sorted list of task names plus a 'sha256' of that list. verify_manifest(splits, manifest) -> bool."
+    - "Every task must have a unique 'name'; raise ValueError on duplicates."
+  tests:
+    - "stable under reordering and under appending new tasks; fractions roughly respected on 500 synthetic tasks; manifest round-trips; verify_manifest fails after removing one task."
+  accept: *acc_v2
+
+- id: V0-6
+  title: "Per-layer parameter report for the Phase 3 pain signal"
+  phase: 0
+  tier: mid
+  depends_on: []
+  read_first: [anse/autopoiesis/neuro_surgeon.py, tasks/micro_ml_architect.yaml]
+  create: [anse/v2/param_report.py, tests/v2/test_param_report.py]
+  edit: [anse/autopoiesis/neuro_surgeon.py, tests/phase3/test_neuro_surgeon.py]
+  spec:
+    - "param_report(module: torch.nn.Module, budget: int) -> str. Lines: one per direct leaf module with name, class, parameter count, percent of total, sorted largest first (top 5); then 'TOTAL n / budget b (x.x times over)' or 'within budget'."
+    - "When MicroMLRealityEngine raises the 'Parameter budget exceeded (N > B)' error, append param_report(...) to the error trace. Keep the original first line unchanged (run_llm_phase3.py parses it with a regex)."
+  tests:
+    - "report ordering, percentages, over/within wording; the engine trace still starts with 'Parameter budget exceeded (' and now contains the table."
+  accept: *acc_full
+
+- id: V0-7
+  title: "Budget ladder for the Micro-ML architect"
+  phase: 0
+  tier: mid
+  depends_on: [V0-6]
+  read_first: [anse/autopoiesis/neuro_surgeon.py, run_llm_phase3.py]
+  edit: [anse/autopoiesis/neuro_surgeon.py, run_llm_phase3.py, tests/phase3/test_ollama_extractor.py]
+  spec:
+    - "MicroMLRealityEngine takes param_budget: int = 50_000 (currently hard-coded). ActiveInferenceLoop.run_live(max_turns, param_budget=None) forwards it and formats it into LIVE_TASK_PROMPT and LIVE_FEEDBACK_TEMPLATE instead of the literal 50,000."
+    - "run_llm_phase3.py: --budgets 5000000,500000,50000 runs the trials once per budget and reports convergence per budget. Default stays 50000 only."
+  tests:
+    - "prompts contain the chosen budget; default prompt text still contains '50,000'; an engine with a large budget accepts a net the small budget rejects."
+  accept: *acc_full
+
+- id: T-1
+  title: "Convert an MBPP-style jsonl into the task yaml schema"
+  phase: 0
+  tier: low
+  depends_on: []
+  read_first: [tasks/phase1_benchmark.yaml, main.py]
+  create: [anse/v2/task_pool.py, tests/v2/test_task_pool.py]
+  spec:
+    - "convert_mbpp(rows: list[dict], tier: str = 'pool') -> list[dict]. Each row has task_id (int), text (str), test_list (list[str]). Output dict: name 'mbpp_<task_id>', tier, task = text + ' Include these asserts at the bottom of your code:\\n' + newline-joined test_list, expected_output None."
+    - "Skip rows missing any of the three keys and return them counted via a second function count_skipped(rows). dump_yaml(tasks, path) writes {'tasks': [...]} with yaml.safe_dump(sort_keys=False)."
+    - "A human downloads the jsonl (e.g. MBPP sanitized) into data/; this card never touches the network."
+  tests:
+    - "conversion shape, skipped rows, yaml round-trip through main.load_tasks."
+  accept: *acc_v2
+
+# ───────────────────────── Phase A: own the weights ─────────────────────────
+- id: A-1
+  title: "Generator protocol shared by every backend"
+  phase: A
+  tier: low
+  depends_on: []
+  read_first: [anse/core/ollama_extractor.py, anse/core/encoder.py]
+  create: [anse/v2/protocols.py, tests/v2/test_protocols.py]
+  spec:
+    - "typing.Protocol runtime_checkable class Generator with: extract(self, prompt: str, system_prompt: str | None = None, *, max_new_tokens: int | None = None, temperature: float | None = None) -> tuple[str, HiddenStateRecord] and attribute model_id: str. Import HiddenStateRecord from anse.core.encoder."
+  tests:
+    - "OllamaExtractor(client=fake) satisfies isinstance(x, Generator); an object without extract does not."
+  accept: *acc_v2
+
+- id: A-2
+  title: "TransformersExtractor returning the generator's real hidden state"
+  phase: A
+  tier: mid
+  depends_on: [A-1]
+  read_first: [anse/core/ollama_extractor.py, anse/core/encoder.py, anse/v2/protocols.py]
+  create: [anse/v2/hf_extractor.py, tests/v2/test_hf_extractor.py]
+  spec:
+    - "TransformersExtractor(loader: Callable[[], tuple[model, tokenizer]], model_id: str, adapter_id: str | None = None). Lazy: call loader() on first extract only."
+    - "extract() tokenizes (chat template if tokenizer has apply_chat_template, else plain), calls model.generate(**inputs, max_new_tokens=..., do_sample=temperature>0, temperature=..., output_hidden_states=True, return_dict_in_generate=True), decodes only the new tokens, strips <think>...</think> (reuse strip_think from anse.core.ollama_extractor)."
+    - "hidden_state = mean over generated steps of the LAST layer's last-position vector, shape [1, d], float32. Return HiddenStateRecord(device='hf-cuda' or as given, layer_indices=[-1], metadata includes adapter_id)."
+    - "Tests use a fake model/tokenizer class implementing exactly the calls above; no torch.hub, no downloads."
+  tests:
+    - "loader called once across two extracts; hidden state shape and value equal to the mean of the fake per-step vectors; temperature 0 sets do_sample False; think block stripped; adapter_id lands in metadata."
+  accept: *acc_v2
+
+- id: A-3
+  title: "Real 4-bit loader + Phase 1 smoke runner"
+  phase: A
+  tier: mid
+  depends_on: [A-2]
+  read_first: [run_llm_phase1.py, anse/v2/hf_extractor.py, train_lora_local.py]
+  create: [v2_runners/hf_loader.py, v2_runners/phase_a_smoke.py]
+  spec:
+    - "hf_loader.load(model_name, adapter_dir=None) -> (model, tokenizer): BitsAndBytesConfig 4-bit NF4, compute dtype torch.float16 (T4 has no bf16), device_map='auto'; if adapter_dir, PeftModel.from_pretrained."
+    - "phase_a_smoke.py: same 20-task benchmark and JSON report as run_llm_phase1.py but with TransformersExtractor, model 'Qwen/Qwen2.5-Coder-7B-Instruct' (arg). Keep under 80 lines, reuse run_llm_phase1 helpers by import."
+    - "Not gated, not unit-tested. It must at least pass python -m py_compile."
+  accept:
+    - "source .venv-v2/bin/activate && python -m py_compile v2_runners/hf_loader.py v2_runners/phase_a_smoke.py"
+
+- id: GA
+  title: "GATE A: HF backend within 3 points of Ollama on the Phase 1 benchmark"
+  phase: A
+  tier: human
+  depends_on: [A-3]
+  spec:
+    - "Run v2_runners/phase_a_smoke.py on the T4 with 3 seeds. Pass if mean convergence >= 77 percent (Ollama baseline 80)."
+    - "Write docs/v2/gates/GA.md: command, model, seeds, per-tier results, verdict."
+  accept: []
+
+# ───────────────────────── Phase B: verified-data flywheel ─────────────────────────
+- id: B-1
+  title: "Episode store on SQLite"
+  phase: B
+  tier: low
+  depends_on: []
+  create: [anse/v2/episode_store.py, tests/v2/test_episode_store.py]
+  spec:
+    - "@dataclass Episode: task_id, split ('train'|'dev'|'test'), prompt, code, energy: float, passed: bool, temperature: float, model_id, adapter_id: str | None, origin: str ('local_model'|'claude_code'|'antigravity'|'human'), created_at: float, latent: list[float] | None, id: str (uuid4 default), code_sha: str (computed in __post_init__ from sha256(code))."
+    - "EpisodeStore(path: str | Path). stdlib sqlite3 only. Table episodes with UNIQUE(task_id, code_sha). insert(ep) -> bool (False when the unique constraint rejects it, never raises for that case). count(split=None, passed=None) -> int. iter_episodes(split=None, passed=None, origin=None) -> Iterator[Episode] ordered by created_at, id. latent stored as JSON text."
+    - "preference_pairs(split, max_per_task=4) -> list[tuple[Episode, Episode]]: for each task_id with at least one passed and one failed episode, pair passed x failed in deterministic order, at most max_per_task pairs. Only origin 'local_model' or 'human' episodes are eligible."
+    - "Context-manager support (with EpisodeStore(...) as s) closing the connection."
+  tests:
+    - "duplicate insert returns False; counts and filters; ordering; pair construction and cap; ineligible origins excluded; latent round-trip; persistence across reopen (tmp_path)."
+  accept: *acc_v2
+
+- id: B-2
+  title: "Best-of-N sampler with injected sandbox and generator"
+  phase: B
+  tier: mid
+  depends_on: [B-1, A-1]
+  read_first: [run_llm_phase2.py, anse/v2/protocols.py, anse/v2/episode_store.py]
+  create: [anse/v2/sampler.py, tests/v2/test_sampler.py]
+  spec:
+    - "sample_task(generator: Generator, task: dict, split: str, n: int, temperatures: Sequence[float], run_fn: Callable[[str, dict], float], store: EpisodeStore, clock: Callable[[], float] = time.time) -> list[Episode]. run_fn(code, task) returns the ENERGY score (0 best). passed = energy <= 5.0."
+    - "For i in range(n): temperature = temperatures[i % len(temperatures)]; prompt = 'TASK:\\n' + task['task']; call generator.extract; extract code with anse.symbolic.parser.extract_code; build Episode(origin='local_model', latent=record.to_embedding()); store.insert; keep only episodes that inserted."
+    - "A generator or run_fn exception is recorded as energy 100.0 with the exception text in prompt-independent metadata NOT stored; the loop continues. Never swallow KeyboardInterrupt."
+  tests:
+    - "n and temperature cycling; duplicates not returned; exception path gives energy 100 and continues; passed threshold at exactly 5.0."
+  accept: *acc_v2
+
+- id: B-3
+  title: "Harvest runner over the training pool"
+  phase: B
+  tier: low
+  depends_on: [B-2, V0-5, T-1]
+  read_first: [run_llm_phase2.py, anse/v2/sampler.py, anse/v2/benchmark_split.py]
+  create: [v2_runners/harvest.py]
+  spec:
+    - "CLI: --tasks (yaml), --db (sqlite path), --model, --n 8, --split train. Load tasks with main.load_tasks, split with split_tasks, sample only the requested split, run_fn = EnergyEvaluator over SandboxExecutor as in run_llm_phase2.py, print running counts of episodes / passed / pairs. Resumable: skips nothing but the store dedupes. Under 80 lines."
+  accept:
+    - "source .venv-v2/bin/activate && python -m py_compile v2_runners/harvest.py"
+
+- id: GB
+  title: "GATE B: data volume"
+  phase: B
+  tier: human
+  depends_on: [B-3]
+  spec:
+    - "Run harvest.py until the store holds >= 5000 episodes and preference_pairs('train') returns >= 1000 pairs, on a pool of >= 200 tasks. Write docs/v2/gates/GB.md with counts, pass rate per tier, wall time."
+  accept: []
+
+# ───────────────────────── Phase C: nightly consolidation ─────────────────────────
+- id: C-1
+  title: "Secret and PII scrubber"
+  phase: C
+  tier: low
+  depends_on: []
+  create: [anse/v2/scrub.py, tests/v2/test_scrub.py]
+  spec:
+    - "scrub(text: str) -> tuple[str, dict[str, int]] returning the cleaned text and a count per category."
+    - "Categories and placeholders: openai/anthropic style keys (sk-[A-Za-z0-9_-]{20,}) -> <SECRET>; GitHub tokens (gh[pousr]_[A-Za-z0-9]{30,}) -> <SECRET>; AWS access key ids (AKIA[0-9A-Z]{16}) -> <SECRET>; 'Bearer <token>' headers -> Bearer <SECRET>; PEM private key blocks -> <SECRET>; e-mail addresses -> <EMAIL>; home paths /home/<name>/ and /Users/<name>/ and C:\\Users\\<name>\\ -> <HOME>/; long high-entropy strings after key= or token= or password= -> <SECRET>."
+    - "Idempotent: scrub(scrub(x)[0])[0] == scrub(x)[0]. Never raises on any str input (including empty and 1 MB)."
+  tests:
+    - "one positive and one near-miss negative per category (e.g. the word 'sk-' inside prose is untouched); idempotence with hypothesis text strategy; counts; a realistic transcript snippet with three secrets."
+  accept: *acc_v2
+
+- id: C-2
+  title: "Curator: episodes to SFT and DPO files with policy and replay"
+  phase: C
+  tier: mid
+  depends_on: [B-1, C-1]
+  read_first: [anse/v2/episode_store.py, anse/v2/scrub.py, extract_dpo_pairs.py]
+  create: [anse/v2/curator.py, tests/v2/test_curator.py]
+  spec:
+    - "@dataclass Policy: no_train_origins: frozenset[str] = frozenset({'claude_code','antigravity'}); per_task_cap: int = 8; replay_fraction: float = 0.3; seed: int = 0. A human may edit the default only in a commit that cites docs/v2/gates/N8.md."
+    - "curate(store, since: float, policy: Policy, replay_pool_since: float = 0.0) -> Curated(sft: list[dict], dpo: list[dict], stats: dict). SFT rows: {'messages': [{'role':'user','content':prompt},{'role':'assistant','content':code}]} from split=='train', passed, energy == 0.0 episodes created at or after since, origin not in no_train_origins, at most per_task_cap per task_id (lowest duration is not known, so keep the earliest). DPO rows: {'prompt','chosen','rejected'} from store.preference_pairs('train')."
+    - "Replay: add int(replay_fraction / (1 - replay_fraction) * n_new) rows sampled with random.Random(seed) from episodes older than since (only if that many exist). Every text field passes through scrub(). Splits 'dev' and 'test' NEVER appear in any output."
+  tests:
+    - "test/dev leakage impossible (assert none of their task_ids appear); claude_code origin excluded by default and included when policy overrides; cap; replay ratio; scrub applied; determinism per seed."
+  accept: *acc_v2
+
+- id: C-3
+  title: "Adapter registry with rollback"
+  phase: C
+  tier: low
+  depends_on: []
+  create: [anse/v2/adapters.py, tests/v2/test_adapters.py]
+  spec:
+    - "AdapterRegistry(root: Path). register(src_dir: Path, metadata: dict) -> str copies src_dir to root/<version> (version = 'v' + zero-padded counter), writes manifest.json with metadata and sha256 of every file. current() -> str | None reads the 'current' symlink. promote(version) atomically repoints current (create temp symlink then os.replace). rollback() -> str repoints to the previous promoted version, ValueError if none. verify(version) -> bool recomputes hashes."
+    - "Keep a promotions.log (json lines) so rollback works after a restart."
+  tests:
+    - "register increments; promote/rollback sequence; verify detects a tampered file; restart persistence with a new AdapterRegistry on the same root."
+  accept: *acc_v2
+
+- id: C-4
+  title: "Promotion gate (pure function)"
+  phase: C
+  tier: low
+  depends_on: []
+  create: [anse/v2/promotion_gate.py, tests/v2/test_promotion_gate.py]
+  spec:
+    - "@dataclass EvalReport: pass_at_1: float (0..100), per_tier: dict[str, float], regression_failures: int."
+    - "@dataclass Decision: promote: bool, reasons: list[str]."
+    - "decide(old: EvalReport, new: EvalReport, min_gain: float = 5.0, max_tier_drop: float = 2.0) -> Decision. Promote only if new.pass_at_1 >= old.pass_at_1 + min_gain AND for every tier in old.per_tier: new.per_tier.get(tier, 0) >= old.per_tier[tier] - max_tier_drop AND new.regression_failures == 0. reasons lists EVERY violated rule, or one line stating the gain when promoting."
+    - "Mark this file JUDGE: put the word JUDGE in the module docstring. Pure function, no I/O, no clock."
+  tests:
+    - "each rule failing alone; all failing together lists all reasons; exact-boundary values (gain 5.0 passes, 4.99 fails; drop 2.0 passes, 2.01 fails); missing tier in new counts as 0."
+  accept: *acc_v2
+
+- id: C-5
+  title: "Nightly orchestration logic"
+  phase: C
+  tier: mid
+  depends_on: [C-2, C-3, C-4]
+  read_first: [daily_trainer_daemon.py, train_lora_local.py, anse/v2/curator.py, anse/v2/adapters.py, anse/v2/promotion_gate.py]
+  create: [anse/v2/nightly.py, tests/v2/test_nightly.py]
+  spec:
+    - "run_night(store, registry, *, gpu_idle: Callable[[], bool], train_fn: Callable[[Path, Path, Path], Path], eval_fn: Callable[[Path | None], EvalReport], policy: Policy, now: Callable[[], float], state_path: Path) -> dict. Steps: skip with {'status':'busy'} if not gpu_idle(); read last watermark from state_path (json, 0.0 if absent); curate(since=watermark); skip with {'status':'too_little_data'} if len(sft) < 50 and len(dpo) < 20; write sft.jsonl and dpo.jsonl to a temp dir; adapter_dir = train_fn(sft_path, dpo_path, workdir); old = eval_fn(registry.current path or None); new = eval_fn(adapter_dir); decision = decide(old, new); if promote: register+promote; ALWAYS write a report dict (decision.reasons, stats, versions) and advance the watermark ONLY when status is 'promoted' or 'rejected' (not for busy / too_little_data)."
+    - "All heavy work is injected; the real train_fn and eval_fn are glue in C-6."
+  tests:
+    - "busy; too little data; promoted path registers and promotes; rejected path leaves current unchanged and still advances the watermark; watermark persistence; a train_fn exception is reported as status 'error' and does not advance the watermark."
+  accept: *acc_v2
+
+- id: C-6
+  title: "Nightly glue: real training, eval, and systemd units"
+  phase: C
+  tier: mid
+  depends_on: [C-5, A-3]
+  read_first: [train_lora_local.py, train_checkpoint.py, vllm_reloader.py, anse/v2/nightly.py]
+  create: [v2_runners/nightly.py, deploy/night-school.service, deploy/night-school.timer]
+  spec:
+    - "v2_runners/nightly.py wires run_night with: gpu_idle = nvidia-smi query (memory.used < 1000 MiB and utilization.gpu < 10), train_fn = subprocess call to the EXISTING train_lora_local.py (do not rewrite training; read its CLI first, target the T4 16 GB: 4-bit, fp16, batch 1, grad-accum 16, max length 2048), eval_fn = Phase A runner on the dev split of the frozen benchmark plus the personal regression set data/regression/*.yaml."
+    - "deploy/night-school.timer: OnCalendar=*-*-* 01:00:00, Persistent=true. The .service runs the venv python with the module path, Nice=10, and User set to a placeholder the human edits."
+    - "Not unit-tested; py_compile only. Do not enable or install the units."
+  accept:
+    - "source .venv-v2/bin/activate && python -m py_compile v2_runners/nightly.py"
+
+- id: GC
+  title: "GATE C: the flywheel must actually improve the model"
+  phase: C
+  tier: human
+  depends_on: [C-6, GB]
+  spec:
+    - "Run one full night manually. Evaluate on the never-touched TEST split. Pass only if pass@1 rises by at least 5 points with no tier down more than 2 (this is exactly promotion_gate.decide). Repeat on 3 different seeds; require 2 of 3."
+    - "If it fails, do NOT start phases D to F. Write docs/v2/gates/GC.md with what you changed (data volume, learning rate, replay) and decide next steps. This gate decides whether the v2 thesis holds."
+  accept: []
+
+# ───────────────────────── Phase D: an honest surrogate ─────────────────────────
+- id: D-1
+  title: "Baseline ladder for the energy surrogate"
+  phase: D
+  tier: mid
+  depends_on: [V0-1, V0-3, B-1]
+  read_first: [anse/v2/metrics.py, anse/v2/episode_store.py]
+  create: [anse/v2/surrogate_baselines.py, tests/v2/test_surrogate_baselines.py]
+  spec:
+    - "Common interface: fit(X: np.ndarray, y: np.ndarray) and predict_proba(X) -> np.ndarray of P(fail) where y is 1 if energy > 5 else 0."
+    - "Classes: MedianBaseline (constant = training fail rate), LogisticBaseline (torch, L2, lbfgs or 200 Adam steps, standardise features with training mean/std), MLPBaseline (3 layers, hidden 128, dropout 0.1, Adam, 150 epochs, seed arg)."
+    - "evaluate_ladder(episodes: list[Episode], seed=0, n_splits=5) -> dict: whole-task holdout (GroupKFold-style, implemented by hand: assign each task_id to a fold by hash), per model AUROC and Spearman with bootstrap CI from anse.v2.metrics. Skip folds where a class is missing."
+  tests:
+    - "on synthetic data where label depends linearly on feature 0, logistic AUROC > 0.9 and median baseline == 0.5; no task_id appears in both train and test of any fold; folds deterministic."
+  accept: *acc_v2
+
+- id: D-2
+  title: "Shadow-mode surrogate wrapper"
+  phase: D
+  tier: low
+  depends_on: [D-1]
+  create: [anse/v2/shadow.py, tests/v2/test_shadow.py]
+  spec:
+    - "ShadowSurrogate(predict_fn: Callable[[list[float]], float], log_path: Path). observe(latent, actual_energy) appends a json line with predicted P(fail), actual label. NEVER returns a decision that skips the sandbox."
+    - "gate_open(min_auroc=0.80, min_n=300) -> bool computes AUROC over the log with anse.v2.metrics.auroc; False if n < min_n or auroc is None."
+    - "order_candidates(latents: list[list[float]]) -> list[int] returns indices sorted by predicted P(fail) ascending (ordering only)."
+  tests:
+    - "observe never gates; gate_open False below n, False at auroc 0.79, True at 0.80 with n=300; ordering stable for ties."
+  accept: *acc_v2
+
+- id: GD
+  title: "GATE D: surrogate earns its keep or stays in shadow"
+  phase: D
+  tier: human
+  depends_on: [D-2, GB]
+  spec:
+    - "Run evaluate_ladder on >= 5000 episodes using the generator's own hidden state (Phase A latents). Pass if any learned model beats LogisticBaseline AND reaches AUROC >= 0.80 with a bootstrap CI lower bound > 0.70 on whole-task holdout. Otherwise the surrogate stays shadow-only; record in docs/v2/gates/GD.md."
+  accept: []
+
+# ───────────────────────── Phase E: validated adversary ─────────────────────────
+- id: E-1
+  title: "Input spec validator"
+  phase: E
+  tier: low
+  depends_on: []
+  create: [anse/v2/spec_validator.py, tests/v2/test_spec_validator.py]
+  spec:
+    - "@dataclass ArgSpec: name, type (int|float|str|list|dict|bool), min_value/max_value (numbers), min_len/max_len (sized), element_type (for list). @dataclass InputSpec: args: list[ArgSpec], precondition: str | None (a Python expression over the args, evaluated with eval on {'__builtins__': {}} plus len, sum, min, max, sorted, abs, all, any)."
+    - "validate(spec, values: list) -> tuple[bool, list[str]] returning every violated rule. bool is not accepted where int is required. A precondition that raises counts as a violation."
+    - "This is the anti-cheat for the adversary: an input that violates the task spec is worthless and gets no reward."
+  tests:
+    - "each rule alone; bool vs int; precondition true, false, raising; empty spec accepts empty list."
+  accept: *acc_v2
+
+- id: E-2
+  title: "Crucible: architect vs validated adversary scoring"
+  phase: E
+  tier: mid
+  depends_on: [E-1]
+  read_first: [anse/v2/spec_validator.py, anse/symbolic/sandbox.py]
+  create: [anse/v2/crucible.py, tests/v2/test_crucible.py]
+  spec:
+    - "run_round(architect_code: str, adversary_inputs: list[list], spec: InputSpec, oracle: Callable[..., object], call_fn: Callable[[str, list], tuple[bool, object]]) -> RoundResult. call_fn runs the architect code in the sandbox on one input and returns (ok, output). oracle computes the reference answer."
+    - "For each adversary input: invalid per spec -> counted invalid, ignored. Valid and (not ok or output != oracle) -> counted as a valid_failure. Valid and correct -> valid_pass."
+    - "Rewards: architect_reward = +1 if valid_failure == 0 and valid_pass >= 1 else -1; adversary_reward = min(valid_failure, 3) - 0.5 * invalid_count (so junk inputs are penalised). RoundResult holds all counts and both rewards."
+  tests:
+    - "invalid inputs never help the adversary; a crash on a valid input rewards the adversary; all-invalid adversary gets a negative reward and architect neither gains nor loses (architect_reward 0 when valid_pass + valid_failure == 0)."
+  accept: *acc_v2
+
+- id: E-3
+  title: "Seeded-bug suite for measuring the adversary"
+  phase: E
+  tier: low
+  depends_on: [E-2]
+  create: [tasks/seeded_bugs.yaml, tests/v2/test_seeded_bugs.py]
+  spec:
+    - "20 entries, each: name, task, buggy_code (a plausible implementation with ONE bug such as off-by-one, empty-list crash, unstable sort, integer overflow assumption, mutating the input), reference_code, spec (ArgSpec-compatible dict), known_failing_input (a valid input on which buggy_code differs from reference_code)."
+    - "The test loads the yaml and proves, using exec in a subprocess-free restricted namespace, that for every entry: reference_code passes on known_failing_input, buggy_code fails on it, and known_failing_input validates against the spec."
+  accept: *acc_v2
+
+- id: GE
+  title: "GATE E: does self-play find real bugs?"
+  phase: E
+  tier: human
+  depends_on: [E-3, A-3]
+  spec:
+    - "Have the adversary (same weights, adversary prompt) produce 5 inputs per seeded-bug entry. Pass if >= 30 percent of entries get at least one input that is BOTH valid and failing. Record in docs/v2/gates/GE.md."
+  accept: []
+
+# ───────────────────────── Phase F: gated autopoiesis ─────────────────────────
+- id: F-1
+  title: "Writable-set guard (the judge is not editable by the model)"
+  phase: F
+  tier: low
+  depends_on: []
+  create: [anse/v2/writable_set.py, tests/v2/test_writable_set.py]
+  spec:
+    - "JUDGE_PATHS: frozenset of repo-relative paths: anse/symbolic/sandbox.py, anse/symbolic/evaluator.py, anse/symbolic/ml_sandbox.py, anse/symbolic/ml_evaluator.py, anse/symbolic/parser.py, execution_attestation.py, anse/v2/metrics.py, anse/v2/promotion_gate.py, anse/v2/writable_set.py, .coveragerc, tests/conftest.py."
+    - "WRITABLE_PREFIXES = ('anse/v2/surrogate', 'anse/v2/shadow', 'anse/autopoiesis/evolved_core.py'). is_writable(path: str, repo_root: Path) -> bool: resolve the path, reject anything outside repo_root, reject symlinks that resolve into JUDGE_PATHS, reject '..' tricks, allow only paths under WRITABLE_PREFIXES that are not in JUDGE_PATHS."
+    - "Mark JUDGE in the module docstring."
+  tests:
+    - "each judge path rejected; traversal '../' and absolute paths rejected; symlink into a judge file rejected (tmp_path); allowed prefix accepted; a prefix look-alike ('anse/v2/surrogate_evil_../') behaves per resolve()."
+  accept: *acc_v2
+
+- id: F-2
+  title: "Gated self-patch pipeline with rollback"
+  phase: F
+  tier: mid
+  depends_on: [F-1, C-3, C-4]
+  read_first: [anse/autopoiesis/hypervisor.py, anse/autopoiesis/evolved_core.py, execution_attestation.py, anse/v2/writable_set.py]
+  create: [anse/v2/self_patch.py, tests/v2/test_self_patch.py]
+  spec:
+    - "apply_patch(target: str, new_source: str, repo_root: Path, *, bench_fn: Callable[[Path], EvalReport], timing_fn: Callable[[Path], float], baseline: EvalReport, baseline_ms: float, attest_fn: Callable[[Path], str]) -> PatchResult."
+    - "Steps: is_writable else reject; compile() the source else reject; write to a candidate copy of the repo file under a temp dir (never the live file); bench_fn must show no drop in any tier versus baseline (use decide with min_gain=0.0); timing_fn best-of-5 must be strictly lower than baseline_ms; only then copy over the live file keeping the previous content as <target>.bak-<n>, and return the attest_fn token. Any step failing returns PatchResult(applied=False, reason=...) and leaves the live file byte-identical."
+    - "rollback(target, repo_root) restores the newest .bak."
+  tests:
+    - "judge file rejected; syntax error rejected; regression rejected; slower rejected; accepted case writes .bak and returns token; live file byte-identical after every rejection; rollback restores."
+  accept: *acc_v2
+
+- id: GF
+  title: "GATE F: one accepted and one correctly rejected self-patch"
+  phase: F
+  tier: human
+  depends_on: [F-2, GD]
+  spec:
+    - "Ask the model to speed up surrogate inference. Record one accepted patch and one deliberately bad patch that the gate rejects, both with attestation output, in docs/v2/gates/GF.md."
+  accept: []
+
+# ───────────────────────── Night School: capture, verify, recall, serve ─────────────────────────
+- id: N-1
+  title: "Claude Code transcript parser"
+  phase: N
+  tier: mid
+  depends_on: [C-1]
+  read_first: [anse/v2/scrub.py]
+  create: [anse/v2/capture/__init__.py, anse/v2/capture/claude_transcript.py, tests/v2/test_claude_transcript.py]
+  spec:
+    - "FIRST inspect one real file: ls ~/.claude/projects/*/*.jsonl | head -1, then read the first 30 lines. Expected: one JSON object per line with type (user|assistant|system|summary), message {role, content: str | list of blocks with type text|tool_use|tool_result|thinking}, timestamp, sessionId, uuid. If the real field names differ, follow the real file and note the difference in the module docstring."
+    - "parse(lines: Iterable[str]) -> tuple[list[Turn], int] returning turns and the number of skipped (malformed or unknown) lines. Turn(role, text, tool_uses: list[ToolUse(name, input: dict, id)], tool_results: list[ToolResult(tool_use_id, text, is_error)], ts, session_id). 'thinking' blocks are DROPPED, never stored. Tool result text is truncated to 20000 chars."
+    - "Tests use a small synthetic fixture you write by hand (do NOT copy real transcript content into the repo)."
+  tests:
+    - "string content, block content, tool_use + tool_result pairing, thinking dropped, malformed JSON and unknown type skipped and counted, truncation."
+  accept: *acc_v2
+
+- id: N-2
+  title: "Segment turns into episodes with a verification signal"
+  phase: N
+  tier: mid
+  depends_on: [N-1, B-1]
+  read_first: [anse/v2/capture/claude_transcript.py, anse/v2/episode_store.py]
+  create: [anse/v2/capture/segmenter.py, tests/v2/test_segmenter.py]
+  spec:
+    - "segment(turns: list[Turn]) -> list[CapturedEpisode]. A boundary is every Turn whose role is user and that carries text (not only tool_results). CapturedEpisode: request (scrubbed with anse.v2.scrub.scrub), files_edited (paths from Edit/Write/MultiEdit tool_use inputs), final_text (last assistant text, scrubbed), test_outcome: True | False | None."
+    - "test_outcome comes from the LAST Bash tool_result in the episode whose text matches r'\\d+ passed' (True when no r'\\d+ failed' or 'error' in the same text) or r'\\d+ failed' (False); None if no test run."
+    - "to_episode(ce, task_id: str, split: str) -> Episode with origin='claude_code' (so the curator excludes it from training by default), energy 0.0 if test_outcome True, 100.0 if False, skip (return None) if None. Retrieval memory (N-6) may use any CapturedEpisode."
+  tests:
+    - "boundaries; tool_result-only user turns are not boundaries; secrets scrubbed; outcome detection; origin is claude_code; None outcome yields no Episode."
+  accept: *acc_v2
+
+- id: N-3
+  title: "Live hook spool (installed by a human)"
+  phase: N
+  tier: mid
+  depends_on: [C-1]
+  read_first: [harness_hook.py, anse/v2/scrub.py]
+  create: [v2_runners/hook_spool.py, docs/v2/hooks.md]
+  spec:
+    - "hook_spool.py reads one JSON object from stdin (Claude Code hook payload), scrubs every string value with anse.v2.scrub.scrub, appends one json line to ~/.night_school/spool/YYYY-MM-DD.jsonl (create dirs, mode 0700), always exits 0 and never prints to stdout (a crashing hook must not disturb the session). Under 60 lines."
+    - "FIRST read the current Claude Code hooks documentation (the claude-code-guide agent or the official docs) to confirm the payload fields and the settings.json schema. docs/v2/hooks.md gives the exact settings.json snippet for UserPromptSubmit, PostToolUse and Stop, using an absolute path placeholder. State clearly that a HUMAN installs it; this card must not edit any settings file."
+  accept:
+    - "source .venv-v2/bin/activate && python -m py_compile v2_runners/hook_spool.py && echo '{\"a\":\"mail me at x@y.com\"}' | python v2_runners/hook_spool.py && grep -c '<EMAIL>' ~/.night_school/spool/*.jsonl"
+
+- id: N-4
+  title: "Antigravity adapter over the existing attestation receipts"
+  phase: N
+  tier: mid
+  depends_on: [B-1]
+  read_first: [harness_hook.py, execution_attestation.py, antigravity_guard.py, attestation_reporter.py, run_antigravity_session.sh]
+  create: [anse/v2/capture/antigravity.py, tests/v2/test_antigravity_capture.py]
+  spec:
+    - "Determine from the READ files what an Antigravity run leaves behind (receipt format, log locations). Do not assume a format that the code does not produce; describe what you found in the module docstring."
+    - "parse_receipts(lines) -> list[CapturedEpisode] (same dataclass as segmenter.py; import it) tolerant of malformed lines, secrets scrubbed, origin 'antigravity'. If the receipts carry no prompt text, set request to the receipt's task identifier and mark files_edited from whatever paths are present."
+  tests:
+    - "synthetic receipts built from the real format you found; malformed lines skipped."
+  accept: *acc_v2
+
+- id: N-5a
+  title: "Math verifier: numeric identity check"
+  phase: N
+  tier: low
+  depends_on: []
+  create: [anse/v2/verifiers/__init__.py, anse/v2/verifiers/math_check.py, tests/v2/test_math_check.py]
+  spec:
+    - "check_identity(lhs: str, rhs: str, symbols: list[str], trials: int = 20, seed: int = 0, tol: float = 1e-9, domain: tuple[float, float] = (-3.0, 3.0)) -> bool. Parse with sympy.sympify (a parse error returns False), lambdify to numpy, evaluate at random points; skip points that give nan or inf; require at least trials // 2 valid points and max relative error <= tol on all of them."
+    - "Never call sympy.simplify or eval on untrusted text beyond sympify with an explicit local_dict of the given symbols."
+  tests:
+    - "sin^2+cos^2 == 1 true; (x+1)^2 vs x^2+1 false; log(x) with negative domain points skipped; parse error False; too few valid points False; deterministic per seed."
+  accept: *acc_v2
+
+- id: N-5b
+  title: "Physics verifier: dimensional consistency"
+  phase: N
+  tier: low
+  depends_on: []
+  create: [anse/v2/verifiers/physics_units.py, tests/v2/test_physics_units.py]
+  spec:
+    - "check_dimensions(expression: str, expected_unit: str, variables: dict[str, str]) -> bool. variables maps a name to a unit string ('m/s'). Build pint quantities (ureg.Quantity(1.0, unit)) for each name, evaluate the expression with a restricted namespace containing ONLY those quantities plus pi and sqrt, then compare .dimensionality with ureg(expected_unit).dimensionality. Any exception returns False."
+    - "check_conserved(states: list[dict[str, float]], quantity_fn: Callable[[dict], float], rel_tol: float = 1e-6) -> bool: True if quantity_fn is constant within rel_tol across all states (at least 2 states required)."
+  tests:
+    - "F = m*a in N true, in J false; kinetic energy in J; unknown variable False; conserved energy of a frictionless oscillator sampled analytically true, damped false."
+  accept: *acc_v2
+
+- id: N-6
+  title: "Retrieval memory over past episodes"
+  phase: N
+  tier: low
+  depends_on: []
+  create: [anse/v2/retrieval.py, tests/v2/test_retrieval.py]
+  spec:
+    - "Retriever(db_path: Path, embed_fn: Callable[[str], list[float]]). add(text: str, meta: dict) -> str (id); text is scrubbed first with anse.v2.scrub.scrub. search(query: str, k: int = 5, domain: str | None = None) -> list[Hit(text, meta, score)] using brute-force cosine similarity with numpy over vectors stored as float32 blobs in sqlite3. Dimension mismatch between stored and query vectors raises ValueError (never pad)."
+    - "meta must include a 'domain' key in {'coding','math','physics','other'} (default 'other')."
+  tests:
+    - "nearest neighbour correct for orthogonal vectors; domain filter; k larger than corpus; dimension mismatch; persistence across reopen; scrubbing applied."
+  accept: *acc_v2
+
+- id: N-7
+  title: "Companion MCP server (recall and ask)"
+  phase: N
+  tier: mid
+  depends_on: [N-6, C-3]
+  read_first: [mcp_guard_server.py, mcp_claude_workflow.py, mcp_config.json, anse/core/ollama_extractor.py]
+  create: [v2_runners/companion_mcp.py]
+  spec:
+    - "Follow the structure of mcp_guard_server.py. Tools: recall(query: str, k: int = 5, domain: str = '') -> list of hits from Retriever (embedding via OllamaExtractor.embed); ask(prompt: str) -> text from the local Ollama model named in ~/.night_school/config.json (key 'model', default 'qwen3:8b')."
+    - "Do not register it in any mcp_config.json; give the human the exact snippet in a comment at the top of the file."
+  accept:
+    - "source .venv-v2/bin/activate && python -m py_compile v2_runners/companion_mcp.py"
+
+- id: N-8
+  title: "DECISION: what may the companion train on?"
+  phase: N
+  tier: human
+  depends_on: []
+  spec:
+    - "Read the current terms that apply to your Claude and Antigravity/Gemini plans about using outputs to train models. Write docs/v2/gates/N8.md with the decision and the date. Until this file exists, anse/v2/curator.py Policy.no_train_origins must keep 'claude_code' and 'antigravity' excluded."
+    - "Also decide retention: how long raw spool files are kept (suggest 30 days) and confirm scrub tests (C-1) pass before any transcript reaches the store."
+  accept: []

@@ -87,6 +87,7 @@ def scan_dangerous_imports(code: str, blocklist: list[str]) -> list[str]:
 _RUNNER_SCRIPT = textwrap.dedent("""
 import sys
 import runpy
+import subprocess
 try:
     import resource
 except ImportError:

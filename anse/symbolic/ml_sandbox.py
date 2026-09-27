@@ -37,6 +37,7 @@ _ML_RUNNER_SCRIPT = textwrap.dedent("""
 import sys
 import json
 import traceback
+import subprocess
 import time
 
 try:

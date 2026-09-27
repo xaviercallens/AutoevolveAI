@@ -106,7 +106,9 @@ class CodeAuditRequest(BaseModel):
 
 class JEPAPredictRequest(BaseModel):
     code: str = Field(max_length=100_000)
-    latent_dim: int = Field(default=16, ge=2, le=512)
+    # sha256 hex digest -> 32 byte-pairs, so latent_dim > 32 slices "" and
+    # int("", 16) raises (a 500); the covariance term needs at least 4.
+    latent_dim: int = Field(default=16, ge=4, le=32)
     gamma_margin: float = Field(default=1.0, ge=0.0, le=10.0)
     cov_weight: float = Field(default=0.01, ge=0.0, le=1.0)
 

@@ -107,5 +107,13 @@ def prevent_overmocking(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture(autouse=True)
 def isolated_attestation_path(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Isolate the execution attestation file so tests do not dirty the git working tree."""
-    monkeypatch.setenv("ANSE_ATTESTATION_PATH", str(tmp_path / ".antigravity_attestation"))
+    """Isolate the execution attestation file so tests do not dirty the git working tree.
+
+    Both paths are needed: execution_attestation reads ANSE_ATTESTATION_PATH at
+    call time in some functions, but also freezes ATTESTATION_FILE at import.
+    """
+    import execution_attestation
+
+    receipt = tmp_path / ".antigravity_attestation"
+    monkeypatch.setenv("ANSE_ATTESTATION_PATH", str(receipt))
+    monkeypatch.setattr(execution_attestation, "ATTESTATION_FILE", receipt)

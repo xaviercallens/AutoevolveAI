@@ -2,6 +2,139 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [13.1.0] — Operational hardening, honest hardness baseline, BSD formalization (2026-09-27)
+
+Twenty-seven commits since `v13.0.0`, most from parallel Claude sessions running
+concurrently on this box. Every measured number below was re-verified independently
+rather than taken from commit messages — this project has a documented history of
+overstated claims, and that discipline does not get suspended for a busy day.
+
+**Net regression check: zero.** `pytest tests/` reports the identical shape as the
+`v13.0.0` baseline — **1080 passed / 14 failed / 43 skipped / 8 errors** — after all 27
+commits. `test_rigor_guard.py` still exits 0 (124 files). `antigravity_guard.py` still
+exits 1 on the same pre-existing Ruff debt.
+
+### Fixed: a self-inflicted MCP outage across ~9 sessions
+
+The previous release's own commit (`2fade3b`) replaced `.mcp.json`'s
+`${CLAUDE_PROJECT_DIR:-.}` with a bare `${CLAUDE_PROJECT_DIR}`, on the claim that Claude
+Code does not expand the `:-default` form. **That claim was backwards**, and it broke
+every MCP server for roughly nine sessions. Diagnosed this time from Claude Code's own
+MCP logs rather than a live session's stale error (the session that made the original
+change had started *before* the fix it was "reacting to" had even landed, so it was
+looking at a stale ENOENT the whole time):
+
+```
+.mcp.json form                       connected   ENOENT
+${CLAUDE_PROJECT_DIR:-.}                  24         0
+${CLAUDE_PROJECT_DIR}  (the "fix")          0         8
+```
+
+`CLAUDE_PROJECT_DIR` is set for hooks but not for `.mcp.json` expansion; without the
+`:-.` default it resolves to nothing and `posix_spawn` gets `/.venv/bin/python`.
+Reverted, and `scripts/restart_session.sh`'s MCP check now calls `claude mcp list`
+directly instead of pattern-matching the config, so it cannot repeat this mistake.
+`python-code-guard`, `claude-subtask-workflow` and a newly-registered `leanmaster`
+(absolute path, lives outside this repo) all report Connected.
+
+### New: `scripts/restart_session.sh`
+
+End-to-end stack verifier — venv, disk 2, GPU driver, Redis, Ollama **GPU placement**
+(the T4 silently serves on CPU if Ollama wins the startup race against the driver;
+this script catches and fixes it), the residency policy, warm throughput, MCP health,
+the resolved environment profile, and the episode corpus against the JEPA data
+contract. PASS/FAIL/SKIP with evidence per line, exit 1 on any FAIL. Both a working
+config and the exact broken config above were run through it as controls before it
+was trusted.
+
+### New: shared GPU lease across three touch points
+
+Root-caused a real production incident: **another project on this same T4**
+(`runux-ai-runtime`) ran `systemctl stop ollama` mid-baseline to free the card for its
+own benchmark, and the hardness ladder runner kept going, logging 112 instant
+connection errors as if they were prover results. A stdlib-only flock+JSON lease now
+coordinates `run_ladder.py`, `night_training_workflow.py`, and `restart_session.sh`.
+Two real bugs were found testing it across actual OS process boundaries (not just
+in-process): pid-based identity let one holder steal another's lease when pids
+coincided, and a CLI acquirer that recorded its own transient pid made the lease look
+abandoned the instant that helper process exited. The proposal was also handed to the
+other project as a doc-only PR, without touching its uncommitted work.
+
+### New: an honest hardness baseline for Lean theorem proving
+
+`results/hardness/baseline.json` — DeepSeek-Prover-V2-7B and Goedel-Prover-V2-8B,
+greedy decoding, full tiered ladder, 118 attempts (59 items × 2 models). Independently
+re-verified against the raw file, not just the commit message:
+
+```
+           DeepSeek        Goedel
+T0 (Mathlib lemmas)   6/10           8/10
+T1/T2/T3 (curve facts)  0/12 every tier, both models
+T4 (BSD sentinel)       0/1  (correctly never passes)
+false-item acceptances: 0 / 118
+```
+
+Root cause of the T1-T3 zero, confirmed by hand-replaying two failures against
+`lake env lean`: both models write plausible generic tactics but never reference the
+specific Mathlib lemma names the goal needs. A second, subtler trap was found one
+level past the known `sorryAx`-exits-0 issue: **Lean's error recovery still prints
+`sorryAx`-tagged axioms for a *failed* tactic block**, so an axiom-only check without
+also requiring `rc == 0` would misread a failed proof as clean. `build_ladder.py`
+already required both; this is now documented so it isn't rediscovered.
+
+### New: kernel-verified BSD groundwork
+
+`formal/ANSE/Curve37a1.lean` — `gen_on_W37` proves `(0,0)` satisfies the Weierstrass
+equation of curve 37a1 (the canonical rank-1 curve). Re-verified directly for this
+release: `lake env lean` exit 0, axioms exactly `[propext, Classical.choice,
+Quot.sound]`, zero `sorryAx`.
+
+`formal/ANSE/BSD_RankStatement.lean` replaces a defective free-field "rank" with
+`Module.rank ℚ (ℚ ⊗[ℤ] W.toAffine.Point)` and states analytic rank via an entire
+continuation of Mathlib's `WeierstrassCurve.LFunction`. This is a **corrected
+statement**, not a proof — it type-checks and compiles against the pinned Mathlib, and
+is presented as such.
+
+Lean count: **226** declarations across 35 files (was 225), still zero real `sorry`
+usage anywhere in `formal/ANSE/*.lean` (confirmed by grepping for the tactic, not the
+word — the word appears only in `Blueprint.lean`'s documentation registry).
+
+### New: Lean premise signature indexer, `leanmaster` MCP registered
+
+`scripts/index_lean_signatures.py` indexes theorem signatures from the vendored
+`anthropics-flt` (45,455 signatures) and `openai-navierstokes` (36,825 signatures)
+corpora into Chroma. **Not yet fully embedded** — the commit that introduced it says so
+explicitly ("full 82k embed is an overnight job"); sliced runs via `--limit` have run
+so far. Repeating that qualifier here rather than the round total, because presenting
+a corpus size as an indexed count is exactly the kind of claim this project exists to
+catch.
+
+### Fixed: two real fabrication paths caught and removed before this release
+
+- A `timeout_s=1.0` misconfiguration made every DSPy generation call time out, and the
+  `except` branch synthesized a `True := by trivial` proof instead of failing loudly.
+  The resulting "20/20 rejected, Qwen too small" result was entirely an artifact of
+  the timeout — no model output was ever judged. Fixed (900s timeout, failures return
+  `GENERATION_FAILED`), and every simulated artifact it produced
+  (`bsd_agent_swarm.py`, `millennium_*solver*.py`, fabricated `results/millennium/`,
+  `results/validation/`, `results/bsd/`) was removed from `main` rather than left as
+  standing "results."
+- Default-on LLM call logging would have written pytest's **mocked** completions into
+  the durable long-term memory (disk-2 JSONL and `anse:ltm:llm_calls` in Redis).
+  Logging is now off under `PYTEST_CURRENT_TEST` unless a call site opts back in
+  explicitly.
+
+### Known limitation carried forward
+
+The 12-episode corpus from `v13.0.0` (harvested again this cycle) still has **zero
+failing examples** — well-formed for the JEPA data contract, but with no
+correctness signal to train on. `TODO.md` item 3 (raise `PER_TIER_TRUE` to 30, add
+harder tiers) and item 1 (point the trainer at the actual prover's base model,
+DeepSeek-Prover-V2-7B, instead of Qwen2.5-Coder-7B) are the recorded blockers before a
+training run on this data could mean anything.
+
+---
+
 ## [13.0.0] — Verification-First (2026-09-26)
 
 A major version because the project's organising principle changed, not because an API

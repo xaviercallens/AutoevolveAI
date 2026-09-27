@@ -6,9 +6,9 @@
 
 **A research harness that refuses to report success it has not earned.**
 
-[![Tests](https://img.shields.io/badge/tests-1079_passing-brightgreen?style=flat-square&logo=pytest)](#measured-status)
-[![Lean 4](https://img.shields.io/badge/Lean_4-225_theorems-blue?style=flat-square&logo=lean)](formal/ANSE)
-[![Release](https://img.shields.io/badge/release-v13.0.0-blueviolet?style=flat-square&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v13.0.0)
+[![Tests](https://img.shields.io/badge/tests-1080_passing-brightgreen?style=flat-square&logo=pytest)](#measured-status)
+[![Lean 4](https://img.shields.io/badge/Lean_4-226_theorems-blue?style=flat-square&logo=lean)](formal/ANSE)
+[![Release](https://img.shields.io/badge/release-v13.1.0-blueviolet?style=flat-square&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v13.1.0)
 [![Python](https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python)](pyproject.toml)
 [![Rust](https://img.shields.io/badge/rust-1.96-000000?style=flat-square&logo=rust)](crates/)
 [![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)](LICENSE)
@@ -173,16 +173,16 @@ because a test passed on one host and failed on the other.
 
 ## Measured status
 
-Measured on the T4 host at `v13.0.0`. Reproduce with the commands shown.
+Measured on the T4 host at `v13.1.0`. Reproduce with the commands shown.
 
 | What | Result | Command |
 |---|---|---|
-| Test suite | **1079 passed** / 15 failed / 43 skipped | `pytest tests/ -q` |
+| Test suite | **1080 passed** / 14 failed / 43 skipped / 8 errors | `pytest tests/ -q` |
 | Collection | 1145 tests, exit 0 | `pytest tests/ --collect-only` |
 | Anti-stub AST guard | **exit 0** — 124 files | `python test_rigor_guard.py` |
 | Environment validator | **10/10** capability checks | `scripts/validate_environment.py` |
 | CPU-profile validation | **5 passed** | `pytest tests/test_local_32gb_cpu_antigravity_validation.py` |
-| Lean theorems authored | **225** across 35 files | `grep -c theorem formal/ANSE/*.lean` |
+| Lean theorems authored | **226** across 35 files | `grep -c theorem formal/ANSE/*.lean` |
 |  Open proof obligations | **4**, tracked in a registry | `formal/ANSE/Blueprint.lean:155-183` |
 | Chroma corpora | 1,881 Mathlib premises + 315 paper chunks | `scripts/validate_environment.py` |
 | Verified research pipeline | **4/4 gates pass** | `scripts/phd_demo/run_experiment.py --check` |

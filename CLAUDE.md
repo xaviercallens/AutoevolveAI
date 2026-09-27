@@ -44,3 +44,13 @@ The `[PROOF_TOKEN]` / `.antigravity_attestation` flow belongs to Antigravity. In
 ## Evolution Lab
 Goals, the five use cases per phase, workflow and limitations: `docs/EVOLUTION_LAB.md`.
 Runners: `run_phase{1,2,3}_evolution.py` write `results/phase{N}_evolution/results.json`, shown in the web tab "Evolution Lab". Never hand-edit results; a failing gate is reported, not hidden.
+
+## Lessons learned — binding rules (see LL.md for the evidence)
+Read `LL.md` before starting research or proving work. Non-negotiables:
+- Lean verification goes through `anse/formal/lean_runner.py` only: compile + `#print axioms`, `sorryAx` rejected, axiom whitelist `{propext, Classical.choice, Quot.sound}`. `sorry` and smuggled axioms both exit 0.
+- Never emit `import Mathlib` — the local build is partial. Pin imports to built modules (header of `formal/ANSE/MasterMathTribunal.lean` is known-good).
+- Every experiment runs a positive and a negative control before its numbers are reported.
+- Prover: `DeepSeek-Prover-V2-7B` via Ollama (plain completion prompt). Goedel-Prover needs its chat template first. One model fits the T4; don't interleave embedding jobs with prover jobs.
+- Number theory ground truth: PARI/GP + Sage, never hand-rolled arithmetic.
+- Every LLM call is logged (APIExtractor default-ON → JSONL + Redis + Chroma `llm_calls`). Training rows need real verdicts; `scripts/ltm_learning_mix.py` enforces the ≤30% dilution cap for unverified signal.
+- Simulated agents (stubs returning canned results) are banned; a stage that cannot run reports BLOCKED.

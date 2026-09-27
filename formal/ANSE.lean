@@ -50,3 +50,5 @@ import ANSE.RiemannHypothesis
 import ANSE.NavierStokesSmoothness
 import ANSE.YangMills
 import ANSE.BSD_Conjecture
+import ANSE.Curve37a1
+import ANSE.BSD_RankStatement

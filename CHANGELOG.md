@@ -8,22 +8,51 @@ All notable changes to AutoevolveAI / SuperGravity are documented here.
 `main` inside commit `ca5f7cd`, swept in because `git commit` takes the whole index. The
 `v13.1.0` tag was never cut. This release supersedes it; nothing below is re-claimed.
 
-**Measured at this tag** (T4 host, run from a git worktree):
+**Measured at this tag** (T4 host, run from a git worktree; see the third correction
+below for the number that reproduces in the main checkout, which is the one README's
+badges quote):
 
-| Check | Result |
-|---|---|
-| `pytest tests/` | **1359 passed** / 21 failed / 49 skipped / 8 errors |
-| `test_rigor_guard.py` | exit 0 (141 files; it caught 5 violations in the merged branch's tests, all fixed) |
-| `antigravity_guard.py` | exit 1: 0 hallucinated imports; pre-existing Ruff debt only (2361, down from 2386) |
-| Lean theorems (`grep -c theorem formal/ANSE/*.lean`) | **250** across 36 files |
+| Check | Result (worktree, no `formal/.lake`) | Result (main checkout) |
+|---|---|---|
+| `pytest tests/` | 1359 passed / 21 failed / 49 skipped / 8 errors | **1371 passed** / 15 failed / 43 skipped / 8 errors |
+| `test_rigor_guard.py` | exit 0 (141 files; caught 5 violations in the merged branch's tests, all fixed) | exit 0 |
+| `antigravity_guard.py` | exit 1: 0 hallucinated imports; pre-existing Ruff debt only (2361, down from 2386) | exit 1, same |
+| Lean theorems (sound count, see correction below) | — | **229** across 36 files |
 
-The 21 failures are all pre-existing and environment-bound. Every one of the 22 that
-failed before this release's merges fails identically at the pre-session commit
+The worktree's extra failures are environment-bound, not code defects. Every one of the
+22 that failed before this release's merges fails identically at the pre-session commit
 `d8ded3c` in the same environment: Lean calls without `formal/.lake` in a worktree, the
 Laya model not loaded, Playwright unable to launch Chromium. The numbers differ from
-v13.1.0's 1080/14/43/8, which was measured in the main checkout. **Correction:** v13.1.0's
-"226 theorems across 35 files" does not reproduce under its own documented command.
-That tree gives 244, so it looks hand-incremented from v13.0.0's 225.
+v13.1.0's 1080/14/43/8, which was measured in the main checkout.
+
+**Third correction, on the same principle.** Re-run in the main checkout (the
+environment README's Quickstart actually puts a contributor in) rather than the
+release worktree: **1371 passed / 15 failed / 43 skipped / 8 errors.** One failure is
+new since the 14-failure baseline: `test_lean_mcts_prover.py::test_mcts_prover_successful_search`
+hits a hardcoded 25-second timeout on a `lake env lean` subprocess call, and it fails
+in complete isolation on this host at a load average of 3.3–4.7 (several parallel
+sessions compiling Lean concurrently) — 25s is tight for `lake env lean` even
+uncontended. Whether this is a flaky pre-existing test that this release's traffic
+finally exposed, or something that regressed, is **not established**; reporting the
+timeout and the load reading rather than picking whichever explanation is more
+convenient. `LL.md` already documents the same failure mode for a different timeout.
+
+**Second correction, to the correction above.** The documented reproduction command,
+`grep -c theorem formal/ANSE/*.lean`, is itself unsound: it counts every LINE
+containing the substring "theorem", not theorem declarations. On this tree that
+includes 33 lines of prose, docstrings and string literals — `Blueprint.lean` alone
+holds several planned-theorem *names* as data (`"SIMD vector alignment theorem"`,
+`"Hash table load-factor theorem"`, ...), each counted as if it were a proof. This is
+the same defect class as the original audit's "2,967 Lean proofs" vs. 218 authored
+declarations, just smaller (250 vs. 229, ~9% inflation instead of ~13×). So the "244
+vs. 226" comparison above was two runs of a flawed command on two different trees, not
+evidence either number was hand-incremented — both were undercounting comments as
+declarations differently by tree contents. The sound command, anchored to an actual
+declaration keyword at line start —
+`grep -cE '^(theorem|lemma|example) ' formal/ANSE/*.lean` — gives **229** on this tree,
+verified to miss no modified declaration (`private`/`protected`/`noncomputable`
+theorems all still start at column 0 here). README's badge and table, and this
+command, are corrected to match.
 
 ### New: flat-ΛCDM BAO consistency exercise (second end-to-end research run)
 

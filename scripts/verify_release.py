@@ -53,6 +53,19 @@ GATE_COMMANDS: dict[str, list[str]] = {
 PASS_WORDS = ("pass", "passes", "passing", "green", "all gates", "✅")
 FAIL_WORDS = ("fail", "fails", "failing", "exits 1", "exit 1", "nonzero", "❌")
 
+# Phrases that mark a card mention as a DISCLOSED GAP rather than a completion
+# claim. "P4-5 does not exist" and "P1-3 is not implemented" describe the absence
+# of work, honestly, in the same voice this project uses to report a failing test.
+# Demanding diff evidence for those sentences penalises exactly the disclosure this
+# gate exists to reward -- found the hard way, when this gate blocked its own
+# release notes' "Known issues, stated rather than hidden" section for naming a
+# card that a nearby sentence explicitly said does not exist.
+NEGATION_WORDS = (
+    "does not exist", "doesn't exist", "not implemented", "not yet implemented",
+    "no implementation", "not done", "never landed", "remains unmerged",
+    "still unmerged", "not merged", "is missing", "blocked", "unimplemented",
+)
+
 
 @dataclass
 class Finding:
@@ -140,9 +153,16 @@ def verify(base: str, head: str, notes_path: Path, run_gates: bool) -> Report:
     files = changed_files(base, head)
     report = Report(base=base, head=head, files_changed=len(files))
 
-    # 1. Card claims must be backed by the diff.
+    # 1. Card claims must be backed by the diff -- unless the note discloses the
+    # card as NOT done, which needs no evidence because it claims nothing.
     report.cards_claimed = sorted(set(CARD_PATTERN.findall(notes)))
+    card_lines = {
+        card: [ln for ln in notes.splitlines() if card in ln]
+        for card in report.cards_claimed
+    }
     for card in report.cards_claimed:
+        if any(w in ln.lower() for ln in card_lines[card] for w in NEGATION_WORDS):
+            continue
         if not card_is_supported(card, files, base, head):
             report.cards_unsupported.append(card)
             report.findings.append(

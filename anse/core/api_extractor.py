@@ -42,6 +42,9 @@ def _default_call_log() -> Path | None:
         return None
     if env:
         return Path(env)
+    # Mocked calls from the test suite must never land in long-term memory.
+    if "PYTEST_CURRENT_TEST" in os.environ:
+        return None
     if _DISK2_CALL_LOGS.parent.exists():
         return _DISK2_CALL_LOGS / "llm_calls.jsonl"
     return Path(__file__).resolve().parent.parent.parent / "data" / "call_logs" / "llm_calls.jsonl"

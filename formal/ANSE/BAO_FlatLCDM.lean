@@ -65,4 +65,12 @@ theorem distance_duality {z Dc : ℝ} (hz : z ≠ -1) :
   unfold D_L D_A
   field_simp
 
+-- Axiom footprint, checked as part of this file's own compilation (not a
+-- side channel): every theorem this file is gated on must show up here, per
+-- SocrateAI-Scientific-Elenchus's NO_FOOTPRINT rule (a clean compile with no
+-- #print axioms line asks nothing, so it proves nothing about axiom purity).
+#print axioms E_pos
+#print axioms E_strictMonoOn
+#print axioms distance_duality
+
 end ANSE.BAOFlatLCDM

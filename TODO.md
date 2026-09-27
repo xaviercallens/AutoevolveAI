@@ -38,10 +38,24 @@ move 8 points per item.
 - **Accept when:** ≥ 50 pairs written with provenance, 0 frozen-split leaks
   (checked with the same normalized-proposition match the trainer uses).
 
-### 5. Premise retrieval A/B (H2)
+### 5. Premise retrieval A/B (H2) -- PRIORITY, raised by the 2026-09-27 baseline
+Baseline result (`results/hardness/baseline.json`, 118/118 items, both models):
+T0 (Mathlib lemmas) DeepSeek 6/10, Goedel 8/10 pass. **T1/T2/T3 (curve facts):
+0/12 for both models, on every tier.** 0 false-item acceptances throughout --
+the gate held under real pressure, this is a real capability gap, not a
+harness bug (verified by hand: a T1 and a T2 failure both replay as a real
+Lean elaboration error, `rc=1`, confirmed live).
+
+**Root cause, read from the raw generations**: both models write a plausible
+generic tactic block (`simp [W, WeierstrassCurve.Δ] <;> norm_num <;> rfl`)
+but never reference the specific lemma names the proof needs
+(`WeierstrassCurve.b₂/b₄/b₆/b₈` to unfold Δ; similarly for
+`Affine.slope`/`addX`/`addY` on T3). They know Lean 4 syntax, not this API's
+vocabulary -- exactly what premise retrieval exists to fix.
 - Do: run the ladder with top-5 `lean_premises` hits prepended vs. without.
 - **Accept when:** a results file reports pass rate per tier for both arms,
-  same model, same seed, same items.
+  same model, same seed, same items. Expect T1-T3 to be where retrieval
+  either moves the number or definitively doesn't -- T0 is already saturated.
 
 ### 6. Embed the full premise corpus off-GPU
 82,280 signatures extracted; 1,000 embedded. Embedding on the T4 collides

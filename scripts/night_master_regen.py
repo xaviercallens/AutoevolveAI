@@ -19,7 +19,7 @@ import os
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -35,107 +35,48 @@ CALL_LOGS = DISK2 / "call_logs"
 RESULTS = DISK2 / "night_regen_results"
 
 
-def run_master_math_generation() -> dict[str, Any]:
-    """Run 20 master math problems with LLM call logging."""
-    logger.info("=== Phase 1: Regenerate solutions for 20 master math problems ===")
-    CALL_LOGS.mkdir(parents=True, exist_ok=True)
+MASTER = REPO / "scripts" / "master_math"
 
-    call_log_file = CALL_LOGS / f"master_math_{datetime.now(timezone.utc).isoformat()}.jsonl"
 
+def _run_step(step: str, argv: list[str], timeout_s: int) -> dict[str, Any]:
+    """Run one pipeline stage; its exit code is its verdict, never assumed."""
     start = time.time()
     try:
-        env = os.environ.copy()
-        env.update({
-            "PYTHONPATH": str(REPO),
-            "ANSE_CALL_LOG": str(call_log_file),
-            "AUTOEVOLVE_GPU_HINT": "t4",
-        })
-
-        result = subprocess.run(
-            [
-                sys.executable,
-                str(REPO / "scripts" / "regenerate_10_math_problems_dspy.py"),
-                "20",  # 20 master problems
-            ],
-            cwd=str(REPO),
-            capture_output=True,
-            text=True,
-            timeout=3600,  # 1 hour max
-            env=env,
-        )
-        elapsed = time.time() - start
-
-        logger.info(f"Master math generation completed in {elapsed:.1f}s")
-        logger.info(f"stdout: {result.stdout[-500:]}")  # Last 500 chars
-        if result.stderr:
-            logger.warning(f"stderr: {result.stderr[-500:]}")
-
-        return {
-            "step": "master_math_generation",
-            "status": "completed" if result.returncode == 0 else "failed",
-            "exit_code": result.returncode,
-            "elapsed_s": elapsed,
-            "call_log": str(call_log_file),
-            "call_log_exists": call_log_file.exists(),
-            "call_count": count_jsonl_lines(call_log_file) if call_log_file.exists() else 0,
-        }
+        result = subprocess.run(argv, cwd=str(REPO), capture_output=True, text=True,
+                                timeout=timeout_s, env={**os.environ, "PYTHONPATH": str(REPO)})
     except subprocess.TimeoutExpired:
-        logger.error("Master math generation timed out after 3600s")
-        return {
-            "step": "master_math_generation",
-            "status": "timeout",
-            "exit_code": -1,
-            "elapsed_s": 3600.0,
-        }
-    except Exception as e:
-        logger.error(f"Master math generation failed: {e}")
-        return {
-            "step": "master_math_generation",
-            "status": "error",
-            "error": str(e),
-        }
+        logger.error(f"{step} timed out after {timeout_s}s")
+        return {"step": step, "status": "timeout", "elapsed_s": float(timeout_s)}
+    elapsed = time.time() - start
+    logger.info(f"{step} exit {result.returncode} in {elapsed:.1f}s; tail: {result.stdout[-500:]}")
+    if result.stderr:
+        logger.warning(f"{step} stderr: {result.stderr[-500:]}")
+    return {"step": step, "status": "completed" if result.returncode == 0 else "failed",
+            "exit_code": result.returncode, "elapsed_s": elapsed, "stdout_tail": result.stdout[-1500:]}
+
+
+def run_master_math_generation() -> dict[str, Any]:
+    """Validate the locked master-math statements, then let the provers try them.
+
+    Replaces the run-one regenerator, which sent the model a bare title (the
+    model chose -- and could weaken -- its own statement) and took its verdict
+    from a canned auditor. Now: statements are fixed in problems.py, the
+    instrument's controls must pass first, and the Lean kernel is the only
+    judge (`scripts/master_math/run_master.py`; exit 1 = a false item was
+    accepted, i.e. the gate is broken).
+    """
+    logger.info("=== Phase 1: validate controls, then prove the master-math ladder ===")
+    CALL_LOGS.mkdir(parents=True, exist_ok=True)
+    val = _run_step("master_math_validate", [sys.executable, str(MASTER / "validate.py")], 3600)
+    if val["status"] != "completed":
+        return {**val, "step": "master_math_generation", "blocked_by": "control failure"}
+    return _run_step("master_math_generation", [sys.executable, str(MASTER / "run_master.py")], 6 * 3600)
 
 
 def harvest_episodes() -> dict[str, Any]:
-    """Harvest verified episodes from generated solutions."""
+    """Kernel-clean prover proofs -> PASSED lake rows; clean-vs-failed -> DPO pairs."""
     logger.info("=== Phase 2: Harvest verified episodes ===")
-
-    start = time.time()
-    try:
-        result = subprocess.run(
-            [
-                sys.executable,
-                str(REPO / "scripts" / "harvest_episodes.py"),
-                "--tasks",
-                "20",
-                "--samples",
-                "1",
-            ],
-            cwd=str(REPO),
-            capture_output=True,
-            text=True,
-            timeout=600,  # 10 minutes
-        )
-        elapsed = time.time() - start
-
-        logger.info(f"Episode harvest completed in {elapsed:.1f}s")
-        if result.returncode == 0:
-            # Parse output for statistics
-            lines = result.stdout.split("\n")
-            logger.info(f"Harvest output (last 10 lines): {lines[-10:]}")
-
-        return {
-            "step": "harvest_episodes",
-            "status": "completed" if result.returncode == 0 else "failed",
-            "exit_code": result.returncode,
-            "elapsed_s": elapsed,
-        }
-    except subprocess.TimeoutExpired:
-        logger.error("Episode harvest timed out after 600s")
-        return {"step": "harvest_episodes", "status": "timeout", "elapsed_s": 600.0}
-    except Exception as e:
-        logger.error(f"Episode harvest failed: {e}")
-        return {"step": "harvest_episodes", "status": "error", "error": str(e)}
+    return _run_step("harvest_episodes", [sys.executable, str(MASTER / "harvest.py")], 600)
 
 
 def run_night_training() -> dict[str, Any]:
@@ -187,12 +128,12 @@ def count_jsonl_lines(path: Path) -> int:
 
 def main() -> int:
     """Run the full pipeline and report results."""
-    logger.info(f"Starting night master regeneration pipeline at {datetime.now(timezone.utc)}")
+    logger.info(f"Starting night master regeneration pipeline at {datetime.now(UTC)}")
 
     RESULTS.mkdir(parents=True, exist_ok=True)
 
     results = {
-        "started_at": datetime.now(timezone.utc).isoformat(),
+        "started_at": datetime.now(UTC).isoformat(),
         "phases": [],
     }
 
@@ -215,7 +156,7 @@ def main() -> int:
     phase3 = run_night_training()
     results["phases"].append(phase3)
 
-    results["completed_at"] = datetime.now(timezone.utc).isoformat()
+    results["completed_at"] = datetime.now(UTC).isoformat()
     results["outcome"] = (
         "SUCCESS"
         if all(p.get("status") == "completed" for p in results["phases"])
@@ -229,7 +170,7 @@ def main() -> int:
 
 def save_results(results: dict[str, Any]) -> None:
     """Save results to disk for review."""
-    results_file = RESULTS / f"night_regen_{datetime.now(timezone.utc).isoformat()}.json"
+    results_file = RESULTS / f"night_regen_{datetime.now(UTC).isoformat()}.json"
     results_file.parent.mkdir(parents=True, exist_ok=True)
     with open(results_file, "w") as f:
         json.dump(results, f, indent=2)

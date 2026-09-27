@@ -1,0 +1,386 @@
+[
+ {
+  "id": "mm01_lagrange",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.GroupTheory.Index\nimport Mathlib.Algebra.Group.PUnit\nimport Mathlib.Data.Fintype.Card\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm01_lagrange {G : Type*} [Group G] [Finite G] (H : Subgroup G) :\n    Nat.card H * H.index = Nat.card G"
+ },
+ {
+  "id": "mm02_parallelogram",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Analysis.InnerProductSpace.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm02_parallelogram {E : Type*} [NormedAddCommGroup E] [InnerProductSpace \u211d E]\n    (x y : E) : \u2016x + y\u2016 ^ 2 + \u2016x - y\u2016 ^ 2 = 2 * (\u2016x\u2016 ^ 2 + \u2016y\u2016 ^ 2)"
+ },
+ {
+  "id": "mm03_banach",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Topology.MetricSpace.Contracting\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm03_banach {X : Type*} [MetricSpace X] [CompleteSpace X] [Nonempty X]\n    {c : NNReal} (hc : c < 1) {T : X \u2192 X} (hT : LipschitzWith c T) :\n    \u2203! x : X, T x = x"
+ },
+ {
+  "id": "mm04_cr_harmonic",
+  "tier": "proxy",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Data.Real.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm04_cr_harmonic (u_xx u_yy v_xy v_yx : \u211d) (hCR1 : u_xx = v_yx)\n    (hCR2 : u_yy = -v_xy) (hSym : v_yx = v_xy) : u_xx + u_yy = 0"
+ },
+ {
+  "id": "mm05_gauss_bonnet",
+  "tier": "proxy",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm05_gauss_bonnet (R : \u211d) (hR : 0 < R) :\n    (1 / R ^ 2) * (4 * Real.pi * R ^ 2) = 2 * Real.pi * 2"
+ },
+ {
+  "id": "mm06_d_squared",
+  "tier": "proxy",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Data.Real.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm06_d_squared (f\u2080 f\u2081 f\u2082 : \u211d) : (f\u2081 - f\u2080) + (f\u2082 - f\u2081) + (f\u2080 - f\u2082) = 0"
+ },
+ {
+  "id": "mm07_gronwall",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Data.Real.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm07_gronwall (E : \u2115 \u2192 \u211d) (\u03b1 : \u211d) (h\u03b1 : 0 \u2264 \u03b1) (hE : \u2200 n, 0 \u2264 E n)\n    (h_step : \u2200 n, E (n + 1) \u2264 (1 + \u03b1) * E n) : \u2200 n, E n \u2264 (1 + \u03b1) ^ n * E 0"
+ },
+ {
+  "id": "mm08_fermat",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.FieldTheory.Finite.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm08_fermat (p : \u2115) [Fact p.Prime] (a : ZMod p) (ha : a \u2260 0) :\n    a ^ (p - 1) = 1"
+ },
+ {
+  "id": "mm09_markov",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.MeasureTheory.Integral.Bochner.Basic\nimport Mathlib.MeasureTheory.Constructions.BorelSpace.Real\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm09_markov {\u03b1 : Type*} [MeasurableSpace \u03b1] (\u03bc : MeasureTheory.Measure \u03b1)\n    {f : \u03b1 \u2192 \u211d} (hf_nonneg : 0 \u2264\u1d50[\u03bc] f) (hf_int : MeasureTheory.Integrable f \u03bc)\n    (\u03b5 : \u211d) : \u03b5 * \u03bc.real {x | \u03b5 \u2264 f x} \u2264 \u222b x, f x \u2202\u03bc"
+ },
+ {
+  "id": "mm10a_cauchy_schwarz",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Analysis.InnerProductSpace.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm10a_cauchy_schwarz {E : Type*} [NormedAddCommGroup E] [InnerProductSpace \u211d E]\n    (x y : E) : @inner \u211d E _ x y \u2264 \u2016x\u2016 * \u2016y\u2016"
+ },
+ {
+  "id": "mm10b_cauchy_schwarz_abs",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Analysis.InnerProductSpace.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm10b_cauchy_schwarz_abs {E : Type*} [NormedAddCommGroup E]\n    [InnerProductSpace \u211d E] (x y : E) : |@inner \u211d E _ x y| \u2264 \u2016x\u2016 * \u2016y\u2016"
+ },
+ {
+  "id": "mm11_ivt",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Topology.Order.IntermediateValue\nimport Mathlib.Topology.Instances.Real.Lemmas\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm11_ivt (f : \u211d \u2192 \u211d) (a b y : \u211d) (hab : a \u2264 b)\n    (hf : ContinuousOn f (Set.Icc a b)) (hy : y \u2208 Set.Icc (f a) (f b)) :\n    \u2203 x \u2208 Set.Icc a b, f x = y"
+ },
+ {
+  "id": "mm12_cayley_hamilton",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm12_cayley_hamilton {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]\n    (M : Matrix n n R) : Polynomial.aeval M M.charpoly = 0"
+ },
+ {
+  "id": "mm13_zorn",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Order.Zorn\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm13_zorn {\u03b1 : Type*} [PartialOrder \u03b1]\n    (h : \u2200 c : Set \u03b1, IsChain (\u00b7 \u2264 \u00b7) c \u2192 \u2203 ub, \u2200 a \u2208 c, a \u2264 ub) :\n    \u2203 m : \u03b1, \u2200 a, m \u2264 a \u2192 a = m"
+ },
+ {
+  "id": "mm14_baire",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Topology.Baire.Lemmas\nimport Mathlib.Topology.Baire.CompleteMetrizable\nimport Mathlib.Topology.Instances.Real.Lemmas\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm14_baire {X : Type*} [MetricSpace X] [CompleteSpace X] (f : \u2115 \u2192 Set X)\n    (ho : \u2200 n, IsOpen (f n)) (hd : \u2200 n, Dense (f n)) : Dense (\u22c2 n, f n)"
+ },
+ {
+  "id": "mm15_cantor",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Logic.Function.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm15_cantor {\u03b1 : Type*} (f : \u03b1 \u2192 Set \u03b1) : \u00ac Function.Surjective f"
+ },
+ {
+  "id": "mm16_primes",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Data.Nat.Prime.Infinite\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm16_primes (n : \u2115) : \u2203 p, n \u2264 p \u2227 Nat.Prime p"
+ },
+ {
+  "id": "mm17_am_gm",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Analysis.SpecialFunctions.Sqrt\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm17_am_gm (x y : \u211d) (hx : 0 \u2264 x) (hy : 0 \u2264 y) :\n    Real.sqrt (x * y) \u2264 (x + y) / 2"
+ },
+ {
+  "id": "mm18_sqrt2",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.NumberTheory.Real.Irrational\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm18_sqrt2 : Irrational (Real.sqrt 2)"
+ },
+ {
+  "id": "mm19_liouville",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Analysis.Complex.Liouville\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm19_liouville (f : \u2102 \u2192 \u2102) (hf : Differentiable \u2102 f)\n    (hb : Bornology.IsBounded (Set.range f)) (z w : \u2102) : f z = f w"
+ },
+ {
+  "id": "mm20_triangle",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Topology.MetricSpace.Pseudo.Defs\nimport Mathlib.Topology.Instances.Real.Lemmas\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm20_triangle {X : Type*} [MetricSpace X] (x y z : X) :\n    dist x z \u2264 dist x y + dist y z"
+ },
+ {
+  "id": "mm21_fta",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Analysis.Complex.Polynomial.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm21_fta (p : Polynomial \u2102) (hp : 0 < p.degree) : \u2203 z : \u2102, p.IsRoot z"
+ },
+ {
+  "id": "mm22_picard_lindelof",
+  "tier": "faithful",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.Analysis.ODE.ExistUnique\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm22_picard_lindelof (v : \u211d \u2192 \u211d \u2192 \u211d) (K : NNReal)\n    (hv : \u2200 t, LipschitzWith K (v t)) (f g : \u211d \u2192 \u211d) (a b : \u211d)\n    (hf : \u2200 t, HasDerivAt f (v t (f t)) t) (hg : \u2200 t, HasDerivAt g (v t (g t)) t)\n    (ha : f a = g a) : Set.EqOn f g (Set.Icc a b)"
+ },
+ {
+  "id": "mm23_stokes_1d",
+  "tier": "special-case",
+  "truth": true,
+  "defs": "",
+  "header": "import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm23_stokes_1d (f f' : \u211d \u2192 \u211d) (a b : \u211d)\n    (hf : \u2200 x \u2208 Set.uIcc a b, HasDerivAt f (f' x) x)\n    (hint : IntervalIntegrable f' MeasureTheory.volume a b) :\n    \u222b x in a..b, f' x = f b - f a"
+ },
+ {
+  "id": "mm01_lagrange_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.GroupTheory.Index\nimport Mathlib.Algebra.Group.PUnit\nimport Mathlib.Data.Fintype.Card\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm01_lagrange_F : \u2200 (G : Type) [Group G] [Finite G] (H : Subgroup G), Nat.card H + H.index = Nat.card G"
+ },
+ {
+  "id": "mm02_parallelogram_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Analysis.InnerProductSpace.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm02_parallelogram_F : \u2200 x y : \u211d, \u2016x + y\u2016 ^ 2 + \u2016x - y\u2016 ^ 2 = \u2016x\u2016 ^ 2 + \u2016y\u2016 ^ 2"
+ },
+ {
+  "id": "mm03_banach_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Topology.MetricSpace.Contracting\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm03_banach_F : \u2200 T : \u211d \u2192 \u211d, LipschitzWith 1 T \u2192 \u2203! x : \u211d, T x = x"
+ },
+ {
+  "id": "mm04_cr_harmonic_F",
+  "tier": "proxy",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Data.Real.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm04_cr_harmonic_F : \u2200 u_xx u_yy v_xy v_yx : \u211d, u_xx = v_yx \u2192 u_yy = -v_xy \u2192 u_xx + u_yy = 0"
+ },
+ {
+  "id": "mm05_gauss_bonnet_F",
+  "tier": "proxy",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm05_gauss_bonnet_F : \u2200 R : \u211d, (1 / R ^ 2) * (4 * Real.pi * R ^ 2) = 4 * Real.pi"
+ },
+ {
+  "id": "mm06_d_squared_F",
+  "tier": "proxy",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Data.Real.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm06_d_squared_F : \u2200 f\u2080 f\u2081 f\u2082 : \u211d, (f\u2081 - f\u2080) + (f\u2082 - f\u2081) + (f\u2082 - f\u2080) = 0"
+ },
+ {
+  "id": "mm07_gronwall_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Data.Real.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm07_gronwall_F : \u2200 E : \u2115 \u2192 \u211d, (\u2200 n, 0 \u2264 E n) \u2192 (\u2200 n, E (n + 1) \u2264 2 * E n) \u2192 \u2200 n, E n \u2264 E 0"
+ },
+ {
+  "id": "mm08_fermat_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.FieldTheory.Finite.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm08_fermat_F : \u2200 a : ZMod 5, a ^ (5 - 1) = 1"
+ },
+ {
+  "id": "mm09_markov_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.MeasureTheory.Integral.Bochner.Basic\nimport Mathlib.MeasureTheory.Constructions.BorelSpace.Real\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm09_markov_F : \u2200 (f : \u211d \u2192 \u211d) (\u03b5 : \u211d), \u03b5 * (MeasureTheory.Measure.dirac (0 : \u211d)).real {x | \u03b5 \u2264 f x}\n    \u2264 (\u222b x, f x \u2202(MeasureTheory.Measure.dirac (0 : \u211d))) / 2"
+ },
+ {
+  "id": "mm10a_cauchy_schwarz_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Analysis.InnerProductSpace.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm10a_cauchy_schwarz_F : \u2200 x y : \u211d, @inner \u211d \u211d _ x y \u2264 \u2016x\u2016 * \u2016y\u2016 - 1"
+ },
+ {
+  "id": "mm10b_cauchy_schwarz_abs_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Analysis.InnerProductSpace.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm10b_cauchy_schwarz_abs_F : \u2200 x y : \u211d, |@inner \u211d \u211d _ x y| < \u2016x\u2016 * \u2016y\u2016"
+ },
+ {
+  "id": "mm11_ivt_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Topology.Order.IntermediateValue\nimport Mathlib.Topology.Instances.Real.Lemmas\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm11_ivt_F : \u2200 (f : \u211d \u2192 \u211d) (a b y : \u211d), a \u2264 b \u2192 y \u2208 Set.Icc (f a) (f b) \u2192\n    \u2203 x \u2208 Set.Icc a b, f x = y"
+ },
+ {
+  "id": "mm12_cayley_hamilton_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm12_cayley_hamilton_F : \u2200 M : Matrix (Fin 1) (Fin 1) \u2124, Polynomial.aeval M (Polynomial.X : Polynomial \u2124) = 0"
+ },
+ {
+  "id": "mm13_zorn_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Order.Zorn\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm13_zorn_F : \u2200 (\u03b1 : Type) [PartialOrder \u03b1], \u2203 m : \u03b1, \u2200 a, m \u2264 a \u2192 a = m"
+ },
+ {
+  "id": "mm14_baire_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Topology.Baire.Lemmas\nimport Mathlib.Topology.Baire.CompleteMetrizable\nimport Mathlib.Topology.Instances.Real.Lemmas\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm14_baire_F : \u2200 f : \u2115 \u2192 Set \u211d, (\u2200 n, IsOpen (f n)) \u2192 (\u2200 n, Dense (f n)) \u2192 (\u22c2 n, f n) = Set.univ"
+ },
+ {
+  "id": "mm15_cantor_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Logic.Function.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm15_cantor_F : \u2200 (\u03b1 : Type) (f : \u03b1 \u2192 \u03b1), \u00ac Function.Surjective f"
+ },
+ {
+  "id": "mm16_primes_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Data.Nat.Prime.Infinite\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm16_primes_F : \u2203 N : \u2115, \u2200 p, Nat.Prime p \u2192 p \u2264 N"
+ },
+ {
+  "id": "mm17_am_gm_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Analysis.SpecialFunctions.Sqrt\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm17_am_gm_F : \u2200 x y : \u211d, Real.sqrt (x * y) \u2264 (x + y) / 2"
+ },
+ {
+  "id": "mm18_sqrt2_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.NumberTheory.Real.Irrational\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm18_sqrt2_F : Irrational (Real.sqrt 4)"
+ },
+ {
+  "id": "mm19_liouville_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Analysis.Complex.Liouville\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm19_liouville_F : \u2200 f : \u2102 \u2192 \u2102, Differentiable \u2102 f \u2192 \u2200 z w : \u2102, f z = f w"
+ },
+ {
+  "id": "mm20_triangle_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Topology.MetricSpace.Pseudo.Defs\nimport Mathlib.Topology.Instances.Real.Lemmas\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm20_triangle_F : \u2200 x y z : \u211d, dist x z \u2264 dist x y"
+ },
+ {
+  "id": "mm21_fta_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Analysis.Complex.Polynomial.Basic\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm21_fta_F : \u2200 p : Polynomial \u211d, 0 < p.degree \u2192 \u2203 z : \u211d, p.IsRoot z"
+ },
+ {
+  "id": "mm22_picard_lindelof_F",
+  "tier": "faithful",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.Analysis.ODE.ExistUnique\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm22_picard_lindelof_F : \u2200 f g : \u211d \u2192 \u211d, (\u2200 t, HasDerivAt f 0 t) \u2192 (\u2200 t, HasDerivAt g 0 t) \u2192\n    Set.EqOn f g (Set.Icc 0 1)"
+ },
+ {
+  "id": "mm23_stokes_1d_F",
+  "tier": "special-case",
+  "truth": false,
+  "defs": "",
+  "header": "import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.NormNum\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.FieldSimp\n",
+  "statement": "theorem mm23_stokes_1d_F : \u2200 f f' : \u211d \u2192 \u211d, IntervalIntegrable f' MeasureTheory.volume 0 1 \u2192\n    \u222b x in (0 : \u211d)..1, f' x = f 1 - f 0"
+ }
+]

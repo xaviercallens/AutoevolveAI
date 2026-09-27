@@ -1,0 +1,98 @@
+{
+ "mm01_lagrange": {
+  "reference": "by exact Subgroup.card_mul_index H",
+  "refutation": "by\n  intro h\n  have := h PUnit \u22a4\n  simp at this"
+ },
+ "mm02_parallelogram": {
+  "reference": "by\n  have h := parallelogram_law_with_norm \u211d x y\n  simp only [sq]\n  linarith",
+  "refutation": "by\n  intro h\n  have := h 1 0\n  norm_num at this"
+ },
+ "mm03_banach": {
+  "reference": "by\n  have hK : ContractingWith c T := \u27e8hc, hT\u27e9\n  exact \u27e8ContractingWith.fixedPoint T hK, hK.fixedPoint_isFixedPt,\n    fun y hy => hK.fixedPoint_unique hy\u27e9",
+  "refutation": "by\n  intro h\n  obtain \u27e8x, -, hu\u27e9 := h id LipschitzWith.id\n  have h1 := hu (x + 1) rfl\n  linarith"
+ },
+ "mm04_cr_harmonic": {
+  "reference": "by rw [hCR1, hCR2, hSym]; ring",
+  "refutation": "by\n  intro h\n  have := h 1 0 0 1 rfl (by norm_num)\n  norm_num at this"
+ },
+ "mm05_gauss_bonnet": {
+  "reference": "by\n  have : R ^ 2 \u2260 0 := by positivity\n  field_simp\n  ring",
+  "refutation": "by\n  intro h\n  have h0 := h 0\n  have := Real.pi_pos\n  norm_num at h0 <;> linarith"
+ },
+ "mm06_d_squared": {
+  "reference": "by ring",
+  "refutation": "by\n  intro h\n  have := h 0 0 1\n  norm_num at this"
+ },
+ "mm07_gronwall": {
+  "reference": "by\n  intro n\n  induction n with\n  | zero => simp\n  | succ k ih =>\n    calc E (k + 1) \u2264 (1 + \u03b1) * E k := h_step k\n      _ \u2264 (1 + \u03b1) * ((1 + \u03b1) ^ k * E 0) :=\n          mul_le_mul_of_nonneg_left ih (by linarith)\n      _ = (1 + \u03b1) ^ (k + 1) * E 0 := by ring",
+  "refutation": "by\n  intro h\n  have := h (fun n => 2 ^ n) (fun n => by positivity)\n    (fun n => le_of_eq (by ring)) 1\n  norm_num at this"
+ },
+ "mm08_fermat": {
+  "reference": "by exact ZMod.pow_card_sub_one_eq_one ha",
+  "refutation": "by decide"
+ },
+ "mm09_markov": {
+  "reference": "by exact MeasureTheory.mul_meas_ge_le_integral_of_nonneg hf_nonneg hf_int \u03b5",
+  "refutation": "by\n  intro h\n  have := h (fun _ => 1) 1\n  simp at this\n  norm_num at this"
+ },
+ "mm10a_cauchy_schwarz": {
+  "reference": "by exact real_inner_le_norm x y",
+  "refutation": "by\n  intro h\n  have := h 0 0\n  simp at this\n  norm_num at this"
+ },
+ "mm10b_cauchy_schwarz_abs": {
+  "reference": "by exact abs_real_inner_le_norm x y",
+  "refutation": "by\n  intro h\n  have := h 0 0\n  simp at this"
+ },
+ "mm11_ivt": {
+  "reference": "by\n  obtain \u27e8x, hx, hfx\u27e9 := intermediate_value_Icc hab hf hy\n  exact \u27e8x, hx, hfx\u27e9",
+  "refutation": "by\n  intro h\n  obtain \u27e8x, -, hx\u27e9 := h (fun x => if x < 1 then 0 else 2) 0 1 1 (by norm_num)\n    (by norm_num)\n  split_ifs at hx <;> norm_num at hx"
+ },
+ "mm12_cayley_hamilton": {
+  "reference": "by exact Matrix.aeval_self_charpoly M",
+  "refutation": "by\n  intro h\n  have := h 1\n  simp at this"
+ },
+ "mm13_zorn": {
+  "reference": "by\n  obtain \u27e8m, hm\u27e9 := zorn_le (fun c hc => h c hc)\n  exact \u27e8m, fun a ha => le_antisymm (hm ha) ha\u27e9",
+  "refutation": "by\n  intro h\n  obtain \u27e8m, hm\u27e9 := h \u2115\n  have := hm (m + 1) (by omega)\n  omega"
+ },
+ "mm14_baire": {
+  "reference": "by exact dense_iInter_of_isOpen ho hd",
+  "refutation": "by\n  intro h\n  have hu := h (fun _ => ({0}\u1d9c : Set \u211d)) (fun _ => isOpen_compl_singleton)\n    (fun _ => dense_compl_singleton 0)\n  have h0 : (0 : \u211d) \u2208 \u22c2 _n : \u2115, ({0}\u1d9c : Set \u211d) := by rw [hu]; trivial\n  simp at h0"
+ },
+ "mm15_cantor": {
+  "reference": "by exact Function.cantor_surjective f",
+  "refutation": "by\n  intro h\n  exact h Unit id Function.surjective_id"
+ },
+ "mm16_primes": {
+  "reference": "by exact Nat.exists_infinite_primes n",
+  "refutation": "by\n  rintro \u27e8N, hN\u27e9\n  obtain \u27e8p, hp, hpp\u27e9 := Nat.exists_infinite_primes (N + 1)\n  have := hN p hpp\n  omega"
+ },
+ "mm17_am_gm": {
+  "reference": "by\n  have h := Real.sqrt_le_sqrt (show x * y \u2264 ((x + y) / 2) ^ 2 by\n    nlinarith [sq_nonneg (x - y)])\n  rwa [Real.sqrt_sq (by linarith)] at h",
+  "refutation": "by\n  intro h\n  have := h (-1) (-1)\n  norm_num at this"
+ },
+ "mm18_sqrt2": {
+  "reference": "by exact irrational_sqrt_two",
+  "refutation": "by\n  intro h\n  apply h\n  refine \u27e82, ?_\u27e9\n  rw [show (4 : \u211d) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]\n  norm_num"
+ },
+ "mm19_liouville": {
+  "reference": "by exact hf.apply_eq_apply_of_bounded hb z w",
+  "refutation": "by\n  intro h\n  have := h id differentiable_id 0 1\n  simp at this"
+ },
+ "mm20_triangle": {
+  "reference": "by exact dist_triangle x y z",
+  "refutation": "by\n  intro h\n  have := h 0 0 1\n  norm_num [Real.dist_eq] at this"
+ },
+ "mm21_fta": {
+  "reference": "by exact Complex.exists_root hp",
+  "refutation": "by\n  intro h\n  obtain \u27e8z, hz\u27e9 := h (Polynomial.X ^ 2 + Polynomial.C 1)\n    (by rw [Polynomial.degree_X_pow_add_C (by norm_num)]; norm_num)\n  simp at hz\n  nlinarith [sq_nonneg z]"
+ },
+ "mm22_picard_lindelof": {
+  "reference": "by\n  exact ODE_solution_unique hv (fun t _ => (hf t).continuousAt.continuousWithinAt)\n    (fun t _ => (hf t).hasDerivWithinAt)\n    (fun t _ => (hg t).continuousAt.continuousWithinAt)\n    (fun t _ => (hg t).hasDerivWithinAt) ha",
+  "refutation": "by\n  intro h\n  have := h (fun _ => 0) (fun _ => 1) (fun t => hasDerivAt_const t 0)\n    (fun t => hasDerivAt_const t 1) (by norm_num : (0 : \u211d) \u2208 Set.Icc 0 1)\n  norm_num at this"
+ },
+ "mm23_stokes_1d": {
+  "reference": "by exact intervalIntegral.integral_eq_sub_of_hasDerivAt hf hint",
+  "refutation": "by\n  intro h\n  have := h id (fun _ => 0) intervalIntegrable_const\n  simp at this"
+ }
+}

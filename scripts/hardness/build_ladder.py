@@ -23,6 +23,7 @@ Output: results/hardness/ladder.json + results/hardness/validation.json
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import time
@@ -32,7 +33,9 @@ REPO = Path(__file__).resolve().parents[2]
 FACTS = REPO / "results" / "hardness" / "curve_facts.json"
 OUT = REPO / "results" / "hardness"
 FORMAL = Path("/home/callensxavier_gmail_com/AutoevolveAI/formal")
-TMP = Path("/home/callensxavier_gmail_com/.claude/jobs/4d188676/tmp/ladder")
+# Scratch compile dir. Was hardcoded to one job's tmp dir (deleted with that
+# job); override with LADDER_TMP. `.scratchpad/` is gitignored.
+TMP = Path(os.environ.get("LADDER_TMP", str(REPO / ".scratchpad" / "ladder")))
 
 HEADER = """import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Formula
 import Mathlib.AlgebraicGeometry.EllipticCurve.Weierstrass
@@ -127,8 +130,32 @@ def build_items() -> list[dict]:
 
 
 def lean_file(item: dict, proof: str) -> str:
-    return (HEADER + item.get("extra_imports", "") + "\n" + item["defs"] + "\n\n"
+    return (item.get("header", HEADER) + item.get("extra_imports", "") + "\n" + item["defs"] + "\n\n"
             + f"{item['statement']} := {proof}\n\n#print axioms {item['id']}\n")
+
+
+def axioms_line_for(out: str, name: str) -> list[str] | None:
+    """Axioms Lean printed for `name`, or None if no such line exists.
+
+    Positive evidence is required: a missing line (a proof tail with `#exit`,
+    an elaboration abort) used to leave `axioms == []`, which read as clean.
+    """
+    m = re.search(r"'" + re.escape(name) + r"' depends on axioms: \[([^\]]*)\]", out)
+    if m:
+        return [a.strip() for a in m.group(1).split(",") if a.strip()]
+    if f"'{name}' does not depend on any axioms" in out:
+        return []
+    return None
+
+
+def verdict(src: str, rc: int, out: str) -> dict:
+    """Kernel verdict for one compiled file: rc 0, the file's own last
+    `#print axioms` target answered, no sorryAx, axioms within TRUSTED."""
+    printed = re.findall(r"^#print axioms (\S+)\s*$", src, re.MULTILINE)
+    axioms = axioms_line_for(out, printed[-1]) if printed else None
+    return {"axioms": axioms or [], "axioms_printed": axioms is not None,
+            "clean": (rc == 0 and axioms is not None and "sorryAx" not in out
+                      and set(axioms) <= TRUSTED)}
 
 
 def compile_one(src: str, tag: str) -> dict:
@@ -139,15 +166,9 @@ def compile_one(src: str, tag: str) -> dict:
     res = subprocess.run(["lake", "env", "lean", str(f)], cwd=str(FORMAL),
                          capture_output=True, text=True, timeout=900)
     out = res.stdout + res.stderr
-    axioms: list[str] = []
-    if "depends on axioms:" in out:
-        part = out.split("depends on axioms:")[1].split("\n")[0]
-        axioms = [a.strip() for a in part.strip(" []").split(",") if a.strip()]
-    elif "does not depend on any axioms" in out:
-        axioms = []
-    return {"rc": res.returncode, "axioms": axioms, "secs": round(time.time() - t0, 1),
-            "clean": res.returncode == 0 and "sorryAx" not in out and set(axioms) <= TRUSTED,
-            "tail": out[-300:]}
+    errors = "\n".join(ln for ln in out.splitlines() if "error" in ln.lower())[:1500]
+    return {"rc": res.returncode, "secs": round(time.time() - t0, 1),
+            "tail": out[-300:], "errors": errors, **verdict(src, res.returncode, out)}
 
 
 def main() -> int:

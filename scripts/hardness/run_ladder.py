@@ -38,7 +38,7 @@ MODELS = {
 
 
 def prompt_for(item: dict) -> str:
-    body = (bl.HEADER + item.get("extra_imports", "") + "\n" + item["defs"] + "\n\n"
+    body = (item.get("header", bl.HEADER) + item.get("extra_imports", "") + "\n" + item["defs"] + "\n\n"
             + item["statement"] + " := by\n  sorry")
     return ("Complete the following Lean 4 code. Replace `sorry` with a full proof. "
             "Do not use sorry or axioms.\n\n```lean4\n" + body + "\n```")
@@ -119,9 +119,10 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", nargs="+", default=list(MODELS))
     ap.add_argument("--out", default=str(bl.OUT / "baseline.json"))
+    ap.add_argument("--ladder", default=str(bl.OUT / "ladder.json"))
     args = ap.parse_args()
 
-    ladder = json.loads((bl.OUT / "ladder.json").read_text())
+    ladder = json.loads(Path(args.ladder).read_text())
     results = {"started": datetime.now(UTC).isoformat(), "n_items": len(ladder), "runs": []}
     # Resume: keep rows that actually ran (no infrastructure error).
     prev = Path(args.out)

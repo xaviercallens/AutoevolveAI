@@ -65,12 +65,22 @@ with proving/training (cudaMalloc OOM seen on 2026-09-27).
 - **Accept when:** `lean_premises` count = 82,280 (± dedup) and a query
   returns results.
 
-### 7. Replace the simulated auditor
-`anse/core/red_team.py` DeepThinkAuditor returns canned "Simulated PRM"
-strings; `regenerate_10_math_problems_dspy.py` still consults it.
-- Do: delete the canned branch; verdicts come from `lean_runner` only.
-- **Accept when:** `grep -n "Simulated PRM" anse/` returns nothing and the
-  regenerate script's verdict field is derived from `lean_runner` output.
+### 7. Replace the simulated auditor -- DONE 2026-09-27 (master-math run two)
+`anse/core/red_team.py` already refuses instead of fabricating (commit
+20da985); `grep -rn "Simulated PRM" anse/ scripts/` returns nothing.
+`regenerate_10_math_problems_dspy.py` (title-only prompts, auditor verdicts)
+is deleted; `night_master_regen.py` now runs `scripts/master_math/`
+(locked statements -> controls -> provers -> kernel gate -> harvest), whose
+verdict field is the `build_ladder.compile_one` kernel result.
+
+### 7b. Gate hole: a missing `#print axioms` line read as "no axioms" -- FIXED
+`compile_one` treated an absent axioms report as clean; `sorry` + `#exit`
+compiled rc 0 and scored clean (measured live). It now requires the report
+line naming the theorem (`build_ladder.verdict`), with tests. 0 of the 117
+logged hardness-baseline generations contained `#exit`.
+- Open: `anse/formal/lean_runner.py` parses "depends on axioms:" the same
+  lenient way; it imports a built module (no model-controlled tail), so it is
+  not exploitable the same way, but should share `verdict()`.
 
 ### 8. Clay-correct the Navier–Stokes statement (H9)
 - Do: add finite-energy / decay conditions to `NavierStokesSmoothness.lean`,

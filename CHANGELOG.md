@@ -4,6 +4,12 @@ All notable changes to AutoevolveAI / SuperGravity are documented here.
 
 ## [13.3.0] — Three preregistered cosmology problems, a synthesis paper, and a learning retrofit (2026-09-27)
 
+**Published:** Zenodo DOI [10.5281/zenodo.23003926](https://zenodo.org/records/23003926)
+(paper, results bundle, sha256 manifest) and Hugging Face dataset
+[`callensxavier/autoevolve-bao-cosmology-reproductions`](https://huggingface.co/datasets/callensxavier/autoevolve-bao-cosmology-reproductions)
+(same bundle, sha256 `6832307a…1217`, plus the 206 JEPA episodes). Lab copy:
+`/mnt/disks/disk-socrateai-local-1/SocrateAI-storage/lab-archive/cosmology_bao_2026-09/`.
+
 **Science (reproductions of published values, not new measurements).** One
 Workflow ran three problems through literature + preregistration (targets fetched
 from the papers) -> fit with controls -> Lean 4 -> Elenchus ledger -> paper ->

@@ -144,10 +144,26 @@ def main() -> int:
     ap.add_argument("--publish", action="store_true", help="make the Zenodo record public (mints the DOI)")
     ap.add_argument("--skip-zenodo", action="store_true")
     ap.add_argument("--skip-hf", action="store_true")
+    ap.add_argument("--no-rebuild", action="store_true",
+                    help="reuse the existing bundle so every upload carries the same sha256")
+    ap.add_argument("--publish-id", type=int,
+                    help="publish an existing Zenodo draft deposition by id (no new deposition)")
     args = ap.parse_args()
 
+    if args.publish_id:
+        toks = load_tokens(args.token_file)
+        dep = zenodo_request("POST", f"{ZENODO}/deposit/depositions/{args.publish_id}/actions/publish",
+                             toks["ZENODO_TOKEN"])
+        print(json.dumps({"id": dep.get("id"), "doi": dep.get("doi"), "state": dep.get("state"),
+                          "submitted": dep.get("submitted"), "html": dep.get("links", {}).get("html")}, indent=2))
+        return 0
+
     meta = json.loads(args.meta.read_text())
-    tar_path, manifest = build_bundle()
+    if args.no_rebuild:
+        tar_path = BUNDLE_DIR / "autoevolve_bao_cosmology_2026-09.tar.gz"
+        manifest = BUNDLE_DIR / "MANIFEST.json"
+    else:
+        tar_path, manifest = build_bundle()
     report: dict[str, Any] = {"bundle": str(tar_path), "bundle_sha256": sha256(tar_path),
                               "bundle_bytes": tar_path.stat().st_size, "manifest": str(manifest),
                               "files_in_manifest": len(json.loads(manifest.read_text())),

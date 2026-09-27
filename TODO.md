@@ -114,7 +114,9 @@ consumed. Every dilution-ratio report this session was decorative.
 - **Accept when:** a training run's DATA step log line names the file it
   actually read, and that file is the one the dilution cap was computed on.
 
-### 12. Adopt Elenchus's ledger.py for this run's claims
+### 12. Adopt Elenchus's ledger.py for this run's claims -- DONE 2026-09-27
+Ledgers now exist for `results/{bao_flcdm,desi_dr2_bao,bao_bbn_h0,eboss_vs_desi}/ledger/`.
+
 Surveyed and used `elenchus_check.py`; `ledger.py` (the tier-capped claim
 ledger, X<C<L<B<A) was not exercised.
 - Do: register this run's claims -- the 3 Lean theorems (Tier A), the numeric
@@ -128,6 +130,34 @@ present in the same local data directory (`desi_2024_eboss_gaussian_bao_*`,
 `sdss_DR16_*`, `sdss_DR12*`). Near-zero marginal cost.
 - **Accept when:** a joint or DR2-only fit result exists with its own
   external-validation comparison (DR2's own quoted values, arXiv:2503.14738).
+- **DONE 2026-09-27** (LL.md §12): `results/desi_dr2_bao`, `results/bao_bbn_h0`,
+  `results/eboss_vs_desi`, each with preregistration, controls, Lean, ledger, paper.
+
+### 14. Human statement audit of the cosmology Lean files
+Every Tier A ledger row (DR2-A-0001..6, BBNH0-A-0001..10, EVD-A-0001..9) carries a
+*model* referee's audit, labelled as such. A person must read
+`formal/ANSE/{DESI_DR2_wCDM,BAO_BBN_H0,BAO_Consistency}.lean` against the fit code.
+- **Accept when:** audit objects name a human auditor, are bound to the file sha256,
+  and `ledger.py` exits 0 with them.
+
+### 15. File-path mode for `anse/formal/lean_runner.py`
+It can only gate built modules and writes a temp file into the shared `formal/`.
+- Do: `lake env lean <path>` from `formal/`, parse in-file `#print axioms`, whitelist,
+  no shared temp file. Re-gate the three new modules through it.
+- **Accept when:** a worktree-staged file is gated by lean_runner with a sorry and a
+  smuggled-axiom negative control both rejected.
+
+### 16. Harden the Elenchus ledger builder against model audits
+- Audit objects must carry `auditor_kind` and the audited file's sha256; the builder
+  refuses a stale sha. A control shows a changed file yields `audit: null`.
+
+### 17. Subtle-bug negative control in the preregistration template
+Every BAO fit preregisters one realistic wrong-convention control (e.g. omega_nu
+dropped from omega_cdm) with its expected shift written before it runs.
+
+### 18. Commit preregistration files before the first fit
+- **Accept when:** the pipeline's prereg stage ends with a git commit of
+  `results/<run>/preregistration.json`, and the fit stage checks it is committed.
 
 ## User actions (cannot be done by the agent)
 

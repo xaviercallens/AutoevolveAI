@@ -1,0 +1,639 @@
+   -6.1603e-03, -1.6985e-01, -1.2520...-02,  8.0326e-01, -1.5695e-01,
+           1.7474e-02,  4.5468e-01, -3.0649e-02]]],
+       grad_fn=<UnsqueezeBackward0>)
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mforward[39;49;00m([96mself[39;49;00m, [96minput[39;49;00m: Tensor) -> Tensor:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""[39;49;00m
+    [33m    Runs the forward pass.[39;49;00m
+    [33m    """[39;49;00m[90m[39;49;00m
+>       [94mreturn[39;49;00m F.linear([96minput[39;49;00m, [96mself[39;49;00m.weight, [96mself[39;49;00m.bias)[90m[39;49;00m
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31mE       RuntimeError: Expected all tensors to be on the same device, but got mat1 is on cpu, different from other tensors on cuda:0 (when checking argument in method wrapper_CUDA_addmm)[0m
+
+[1m[31m../../../.venv/lib/python3.11/site-packages/torch/nn/modules/linear.py[0m:134: RuntimeError
+[31m[1m______________________ test_mcts_prover_successful_search ______________________[0m
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_mcts_prover_successful_search[39;49;00m():[90m[39;49;00m
+        prover = LeanMCTSProver(work_dir=[33m"[39;49;00m[33mformal[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+>       res = prover.search([90m[39;49;00m
+            theorem_name=[33m"[39;49;00m[33mmcts_test_linarith[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+            theorem_signature=[33m"[39;49;00m[33m(a b : ℝ) (h1 : a ≤ b) (h2 : b ≤ a) : a = b[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+            required_imports=[[33m"[39;49;00m[33mMathlib.Data.Real.Basic[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mMathlib.Tactic.Linarith[39;49;00m[33m"[39;49;00m],[90m[39;49;00m
+            max_iterations=[94m10[39;49;00m,[90m[39;49;00m
+            max_depth=[94m2[39;49;00m,[90m[39;49;00m
+        )[90m[39;49;00m
+
+[1m[31mtests/symbolic/test_lean_mcts_prover.py[0m:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <anse.symbolic.lean_mcts_prover.LeanMCTSProver object at 0x75d5affffa90>
+theorem_name = 'mcts_test_linarith'
+theorem_signature = '(a b : ℝ) (h1 : a ≤ b) (h2 : b ≤ a) : a = b'
+required_imports = ['Mathlib.Data.Real.Basic', 'Mathlib.Tactic.Linarith']
+max_iterations = 10, max_depth = 2, c_puct = 1.414
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92msearch[39;49;00m([90m[39;49;00m
+        [96mself[39;49;00m,[90m[39;49;00m
+        theorem_name: [96mstr[39;49;00m,[90m[39;49;00m
+        theorem_signature: [96mstr[39;49;00m,[90m[39;49;00m
+        required_imports: List[[96mstr[39;49;00m],[90m[39;49;00m
+        max_iterations: [96mint[39;49;00m = [94m15[39;49;00m,[90m[39;49;00m
+        max_depth: [96mint[39;49;00m = [94m4[39;49;00m,[90m[39;49;00m
+        c_puct: [96mfloat[39;49;00m = [94m1.414[39;49;00m,[90m[39;49;00m
+    ) -> [96mdict[39;49;00m[[96mstr[39;49;00m, Any]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""[39;49;00m
+    [33m    Runs Monte Carlo Tree Search to synthesize and verify a sound Lean 4 proof.[39;49;00m
+    [33m    """[39;49;00m[90m[39;49;00m
+        start_time = time.time()[90m[39;49;00m
+        logger.info([33mf[39;49;00m[33m"[39;49;00m[33mInitiating MCTS Proof Search for [39;49;00m[33m'[39;49;00m[33m{[39;49;00mtheorem_name[33m}[39;49;00m[33m'[39;49;00m[33m (max_iter=[39;49;00m[33m{[39;49;00mmax_iterations[33m}[39;49;00m[33m, depth=[39;49;00m[33m{[39;49;00mmax_depth[33m}[39;49;00m[33m)...[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+    [90m[39;49;00m
+        [90m# 1. Retrieve premises via Vector RAG[39;49;00m[90m[39;49;00m
+        rag_context = [96mself[39;49;00m.retriever.retrieve_mathlib_premises(theorem_signature, top_k=[94m5[39;49;00m)[90m[39;49;00m
+        retrieved_premises: List[[96mstr[39;49;00m] = [][90m[39;49;00m
+        [94mfor[39;49;00m line [95min[39;49;00m rag_context.splitlines():[90m[39;49;00m
+            line = line.strip()[90m[39;49;00m
+            [94mif[39;49;00m line [95mand[39;49;00m [95mnot[39;49;00m line.startswith([33m"[39;49;00m[33mUSEFUL[39;49;00m[33m"[39;49;00m) [95mand[39;49;00m [95mnot[39;49;00m line.startswith([33m"[39;49;00m[33mimport[39;49;00m[33m"[39;49;00m) [95mand[39;49;00m [95mnot[39;49;00m line.startswith([33m"[39;49;00m[33m--[39;49;00m[33m"[39;49;00m):[90m[39;49;00m
+                retrieved_premises.append(line)[90m[39;49;00m
+    [90m[39;49;00m
+        root = MCTSProofNode(tactic_sequence=[])[90m[39;49;00m
+        proven_node: Optional[MCTSProofNode] = [94mNone[39;49;00m[90m[39;49;00m
+        cheats_intercepted = [94m0[39;49;00m[90m[39;49;00m
+        nodes_explored = [94m1[39;49;00m[90m[39;49;00m
+    [90m[39;49;00m
+        [94mfor[39;49;00m it [95min[39;49;00m [96mrange[39;49;00m(max_iterations):[90m[39;49;00m
+            [90m# 1. SELECTION[39;49;00m[90m[39;49;00m
+            curr = root[90m[39;49;00m
+            [94mwhile[39;49;00m curr.children [95mand[39;49;00m [95mnot[39;49;00m curr.is_terminal [95mand[39;49;00m curr.depth < max_depth:[90m[39;49;00m
+                [90m# Prefer unvisited children[39;49;00m[90m[39;49;00m
+                unvisited = [c [94mfor[39;49;00m c [95min[39;49;00m curr.children [94mif[39;49;00m c.visits == [94m0[39;49;00m [95mand[39;49;00m [95mnot[39;49;00m c.is_cheat][90m[39;49;00m
+                [94mif[39;49;00m unvisited:[90m[39;49;00m
+                    curr = unvisited[[94m0[39;49;00m][90m[39;49;00m
+                    [94mbreak[39;49;00m[90m[39;49;00m
+                valid_children = [c [94mfor[39;49;00m c [95min[39;49;00m curr.children [94mif[39;49;00m [95mnot[39;49;00m c.is_cheat][90m[39;49;00m
+                [94mif[39;49;00m [95mnot[39;49;00m valid_children:[90m[39;49;00m
+                    [94mbreak[39;49;00m[90m[39;49;00m
+                curr = [96mmax[39;49;00m(valid_children, key=[94mlambda[39;49;00m c: c.ucb1_score(c_puct))[90m[39;49;00m
+    [90m[39;49;00m
+            [94mif[39;49;00m curr.is_terminal:[90m[39;49;00m
+                [94mif[39;49;00m curr.is_proven:[90m[39;49;00m
+                    proven_node = curr[90m[39;49;00m
+                    [94mbreak[39;49;00m[90m[39;49;00m
+                [94mcontinue[39;49;00m[90m[39;49;00m
+    [90m[39;49;00m
+            [90m# 2. EXPANSION (if needed)[39;49;00m[90m[39;49;00m
+            [94mif[39;49;00m [95mnot[39;49;00m curr.children [95mand[39;49;00m curr.depth < max_depth [95mand[39;49;00m [95mnot[39;49;00m curr.is_terminal:[90m[39;49;00m
+                candidate_tactics = [96mself[39;49;00m.generate_candidate_tactics([90m[39;49;00m
+                    curr, theorem_signature, retrieved_premises[90m[39;49;00m
+                )[90m[39;49;00m
+                [94mfor[39;49;00m tac [95min[39;49;00m candidate_tactics:[90m[39;49;00m
+                    new_seq = curr.tactic_sequence + [tac][90m[39;49;00m
+                    child = MCTSProofNode([90m[39;49;00m
+                        tactic_sequence=new_seq,[90m[39;49;00m
+                        parent=curr,[90m[39;49;00m
+                        depth=curr.depth + [94m1[39;49;00m,[90m[39;49;00m
+                    )[90m[39;49;00m
+                    curr.children.append(child)[90m[39;49;00m
+                    nodes_explored += [94m1[39;49;00m[90m[39;49;00m
+                [94mif[39;49;00m curr.children:[90m[39;49;00m
+                    curr = curr.children[[94m0[39;49;00m][90m[39;49;00m
+    [90m[39;49;00m
+            [90m# 3. EVALUATION[39;49;00m[90m[39;49;00m
+            [94mif[39;49;00m [95mnot[39;49;00m curr.is_terminal [95mand[39;49;00m curr.tactic_sequence:[90m[39;49;00m
+                is_proven, is_cheat, value, goals, msg = [96mself[39;49;00m.evaluate_tactic_sequence([90m[39;49;00m
+                    theorem_name, theorem_signature, required_imports, curr.tactic_sequence[90m[39;49;00m
+                )[90m[39;49;00m
+                curr.is_proven = is_proven[90m[39;49;00m
+                curr.is_cheat = is_cheat[90m[39;49;00m
+                curr.is_terminal = is_proven [95mor[39;49;00m is_cheat[90m[39;49;00m
+                curr.unsolved_goals = goals[90m[39;49;00m
+                curr.compiler_message = msg[90m[39;49;00m
+    [90m[39;49;00m
+                [94mif[39;49;00m is_cheat:[90m[39;49;00m
+                    cheats_intercepted += [94m1[39;49;00m[90m[39;49;00m
+    [90m[39;49;00m
+                [94mif[39;49;00m is_proven:[90m[39;49;00m
+                    proven_node = curr[90m[39;49;00m
+                    b_node: Optional[MCTSProofNode] = curr[90m[39;49;00m
+                    [94mwhile[39;49;00m b_node:[90m[39;49;00m
+                        b_node.visits += [94m1[39;49;00m[90m[39;49;00m
+                        b_node.total_value += [94m10.0[39;49;00m[90m[39;49;00m
+                        b_node = b_node.parent[90m[39;49;00m
+                    [94mbreak[39;49;00m[90m[39;49;00m
+    [90m[39;49;00m
+                [90m# 4. BACKPROPAGATION[39;49;00m[90m[39;49;00m
+                b_node = curr[90m[39;49;00m
+                [94mwhile[39;49;00m b_node:[90m[39;49;00m
+                    b_node.visits += [94m1[39;49;00m[90m[39;49;00m
+                    b_node.total_value += value[90m[39;49;00m
+                    b_node = b_node.parent[90m[39;49;00m
+>               b_node.total_value += value[90m[39;49;00m
+                ^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31mE               AttributeError: 'NoneType' object has no attribute 'total_value'[0m
+
+[1m[31manse/symbolic/lean_mcts_prover.py[0m:287: AttributeError
+[31m[1m_______________________ test_lean_compiler_repl_success ________________________[0m
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_lean_compiler_repl_success[39;49;00m():[90m[39;49;00m
+        repl = LeanCompilerREPL(work_dir=[33m"[39;49;00m[33mformal[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+        imports = [[33m"[39;49;00m[33mMathlib.Data.Real.Basic[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mMathlib.Tactic.Linarith[39;49;00m[33m"[39;49;00m][90m[39;49;00m
+        code = [33m"[39;49;00m[33mtheorem test_linarith (a b : ℝ) (h1 : a ≤ b) (h2 : b ≤ a) : a = b := by[39;49;00m[33m\n[39;49;00m[33m  linarith[39;49;00m[33m\n[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        success, msg, goals = repl.run_proof_attempt(imports, code)[90m[39;49;00m
+>       [94massert[39;49;00m success [95mis[39;49;00m [94mTrue[39;49;00m[90m[39;49;00m
+[1m[31mE       assert False is True[0m
+
+[1m[31mtests/symbolic/test_lean_rag_dojo.py[0m:19: AssertionError
+[31m[1m_________________ test_lean_compiler_repl_failure_gives_goals __________________[0m
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_lean_compiler_repl_failure_gives_goals[39;49;00m():[90m[39;49;00m
+        repl = LeanCompilerREPL(work_dir=[33m"[39;49;00m[33mformal[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+        imports = [[33m"[39;49;00m[33mMathlib.Data.Real.Basic[39;49;00m[33m"[39;49;00m][90m[39;49;00m
+        [90m# Missing linarith tactic import and step[39;49;00m[90m[39;49;00m
+        code = [33m"[39;49;00m[33mtheorem test_fail (a b : ℝ) (h1 : a ≤ b) (h2 : b ≤ a) : a = b := by[39;49;00m[33m\n[39;49;00m[33m  skip[39;49;00m[33m\n[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        success, msg, goals = repl.run_proof_attempt(imports, code)[90m[39;49;00m
+        [94massert[39;49;00m success [95mis[39;49;00m [94mFalse[39;49;00m[90m[39;49;00m
+>       [94massert[39;49;00m [96mlen[39;49;00m(goals) > [94m0[39;49;00m [95mor[39;49;00m [33m"[39;49;00m[33munsolved goals[39;49;00m[33m"[39;49;00m [95min[39;49;00m msg[90m[39;49;00m
+[1m[31mE       assert (0 > 0 or 'unsolved goals' in "info: mathlib: checking out revision '85e3a25e006c35636f0e53b0e9296caca2685bc0'\ninfo: stderr:\nerror: The following ...\n\tMathlib/CategoryTheory/Presentable/Comma.lean\n\tMathl\nAborting\nerror: external command 'git' exited with code 1")[0m
+[1m[31mE        +  where 0 = len([])[0m
+
+[1m[31mtests/symbolic/test_lean_rag_dojo.py[0m:29: AssertionError
+[31m[1m_______________________ test_evaluate_in_harness_success _______________________[0m
+
+tmp_path = PosixPath('/tmp/pytest-of-callensxavier_gmail_com/pytest-108/test_evaluate_in_harness_succe0')
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_evaluate_in_harness_success[39;49;00m(tmp_path: Path) -> [94mNone[39;49;00m:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""Verify that a passing test command yields E = 0.0 with proof token."""[39;49;00m[90m[39;49;00m
+        target = tmp_path / [33m"[39;49;00m[33msolution.py[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        code = [33m"[39;49;00m[33mdef add(a, b): return a + b[39;49;00m[33m\n[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        [90m# Test command returns 0[39;49;00m[90m[39;49;00m
+        test_cmd = [33m'[39;49;00m[33mpython -c [39;49;00m[33m"[39;49;00m[33mimport sys; sys.exit(0)[39;49;00m[33m"[39;49;00m[33m'[39;49;00m[90m[39;49;00m
+    [90m[39;49;00m
+        res = evaluate_in_harness(code, target, test_cmd)[90m[39;49;00m
+>       [94massert[39;49;00m res.is_valid [95mis[39;49;00m [94mTrue[39;49;00m[90m[39;49;00m
+[1m[31mE       AssertionError: assert False is True[0m
+[1m[31mE        +  where False = HarnessResult(energy=100.0, is_valid=False, duration_ms=5.2464329928625375, feedback='/bin/sh: 1: python: not found', returncode=127, proof_token=None, ast_violations=[]).is_valid[0m
+
+[1m[31mtests/test_symbiotic_and_accelerators.py[0m:27: AssertionError
+[31m[1m______________________ test_active_inference_copilot_flow ______________________[0m
+
+tmp_path = PosixPath('/tmp/pytest-of-callensxavier_gmail_com/pytest-108/test_active_inference_copilot_0')
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_active_inference_copilot_flow[39;49;00m(tmp_path: Path) -> [94mNone[39;49;00m:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""Verify that Active Co-Pilot converges and records golden DPO pair."""[39;49;00m[90m[39;49;00m
+        target = tmp_path / [33m"[39;49;00m[33msolution.py[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        prompt = [33m"[39;49;00m[33mWrite solve(nums) that handles empty lists and sums first and last element.[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        [90m# Harness test script asserts that empty list returns 0 and [1, 2] returns 3[39;49;00m[90m[39;49;00m
+        test_cmd = [33mf[39;49;00m[33m"[39;49;00m[33mpython -c [39;49;00m[33m\"[39;49;00m[33mimport sys; from pathlib import Path; import importlib.util; spec = importlib.util.spec_from_file_location([39;49;00m[33m'[39;49;00m[33mmod[39;49;00m[33m'[39;49;00m[33m, r[39;49;00m[33m'[39;49;00m[33m{[39;49;00mtarget[33m}[39;49;00m[33m'[39;49;00m[33m); m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m); assert m.solve([]) == 0; assert m.solve([1, 2]) == 3[39;49;00m[33m\"[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+    [90m[39;49;00m
+        summary = active_inference_copilot([90m[39;49;00m
+            prompt=prompt,[90m[39;49;00m
+            target_file=target,[90m[39;49;00m
+            test_command=test_cmd,[90m[39;49;00m
+            agent=FallbackMockAgent(),[90m[39;49;00m
+            max_attempts=[94m3[39;49;00m,[90m[39;49;00m
+        )[90m[39;49;00m
+>       [94massert[39;49;00m summary.converged [95mis[39;49;00m [94mTrue[39;49;00m[90m[39;49;00m
+[1m[31mE       AssertionError: assert False is True[0m
+[1m[31mE        +  where False = CoPilotSummary(task_prompt='Write solve(nums) that handles empty lists and sums first and last element.', target_file=..., feedback='/bin/sh: 1: python: not found', duration_ms=5.973574996460229)], proof_token=None, dpo_pair_recorded=False).converged[0m
+
+[1m[31mtests/test_symbiotic_and_accelerators.py[0m:57: AssertionError
+[31m[1m_______________________ test_latent_dreamer_grpo_search ________________________[0m
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_latent_dreamer_grpo_search[39;49;00m() -> [94mNone[39;49;00m:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""Verify that Latent Dreamer scores 16 branches in latent space and computes GRPO advantage."""[39;49;00m[90m[39;49;00m
+        dreamer = LatentDreamer(latent_dim=[94m32[39;49;00m, num_branches=[94m16[39;49;00m)[90m[39;49;00m
+>       _ = dreamer.dream_and_search([33m"[39;49;00m[33mwarmup[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+
+[1m[31mtests/test_symbiotic_and_accelerators.py[0m:78: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <anse.core.latent_dreamer.LatentDreamer object at 0x75d6f34e9350>
+prompt = 'warmup', seed_code_candidates = None, sandbox_baseline_ms = None
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mdream_and_search[39;49;00m([90m[39;49;00m
+        [96mself[39;49;00m,[90m[39;49;00m
+        prompt: [96mstr[39;49;00m,[90m[39;49;00m
+        seed_code_candidates: [96mlist[39;49;00m[[96mstr[39;49;00m] | [94mNone[39;49;00m = [94mNone[39;49;00m,[90m[39;49;00m
+        sandbox_baseline_ms: [96mfloat[39;49;00m | [94mNone[39;49;00m = [94mNone[39;49;00m,[90m[39;49;00m
+    ) -> GRPOTreeSearchResult:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""[39;49;00m
+    [33m    Branch into K=16 thought trajectories, score in latent space via JEPA in ~2ms,[39;49;00m
+    [33m    and compute GRPO relative advantages.[39;49;00m
+    [33m    """[39;49;00m[90m[39;49;00m
+        [94mif[39;49;00m [95mnot[39;49;00m [96mself[39;49;00m.predictor.is_loaded:[90m[39;49;00m
+>           [94mraise[39;49;00m SimulationRefusedError([90m[39;49;00m
+                [33mf[39;49;00m[33m"[39;49;00m[33mLatentDreamer has no trained JEPA predictor loaded; expected checkpoint [39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                [33mf[39;49;00m[33m"[39;49;00m[33mat [39;49;00m[33m{[39;49;00m[96mself[39;49;00m.expected_checkpoint[33m}[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+                component=[33m"[39;49;00m[33mLatentDreamer.dream_and_search[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+                remedy=([90m[39;49;00m
+                    [33mf[39;49;00m[33m"[39;49;00m[33mtrain FastJEPALatentPredictor and save its weights to [39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                    [33mf[39;49;00m[33m"[39;49;00m[33m{[39;49;00m[96mself[39;49;00m.expected_checkpoint[33m}[39;49;00m[33m before dreaming; scoring random vectors [39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                    [33m"[39;49;00m[33mthrough untrained weights is not a search[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                ),[90m[39;49;00m
+            )[90m[39;49;00m
+[1m[31mE           anse.infrastructure.fabrication.SimulationRefusedError: LatentDreamer has no trained JEPA predictor loaded; expected checkpoint at /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/checkpoints/latent_dreamer_jepa.pt [component=LatentDreamer.dream_and_search; remedy: train FastJEPALatentPredictor and save its weights to /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/checkpoints/latent_dreamer_jepa.pt before dreaming; scoring random vectors through untrained weights is not a search][0m
+
+[1m[31manse/core/latent_dreamer.py[0m:137: SimulationRefusedError
+[31m[1m________________________ test_hippocampal_replay_cycle _________________________[0m
+
+tmp_path = PosixPath('/tmp/pytest-of-callensxavier_gmail_com/pytest-108/test_hippocampal_replay_cycle0')
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_hippocampal_replay_cycle[39;49;00m(tmp_path: Path) -> [94mNone[39;49;00m:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""Verify that wake episodes are consolidated in REM sleep to prevent forgetting."""[39;49;00m[90m[39;49;00m
+        memory_file = tmp_path / [33m"[39;49;00m[33mhip_test.jsonl[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        engine = HippocampalReplayEngine(memory_file=memory_file)[90m[39;49;00m
+    [90m[39;49;00m
+        engine.log_wake_episode([33m"[39;49;00m[33mlean4[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mProve Fermat[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mApplied omega tactic[39;49;00m[33m"[39;49;00m, [94m0.0[39;49;00m, is_anchor=[94mTrue[39;49;00m)[90m[39;49;00m
+        engine.log_wake_episode([33m"[39;49;00m[33mcyber[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mSQL injection exploit[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mUsed parameterized query[39;49;00m[33m"[39;49;00m, [94m0.0[39;49;00m)[90m[39;49;00m
+    [90m[39;49;00m
+>       sleep_res = engine.execute_sleep_cycle(batch_size=[94m8[39;49;00m)[90m[39;49;00m
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+
+[1m[31mtests/test_symbiotic_and_accelerators.py[0m:96: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <anse.core.latent_dreamer.HippocampalReplayEngine object at 0x75d5a4c7a490>
+batch_size = 8
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mexecute_sleep_cycle[39;49;00m([96mself[39;49;00m, batch_size: [96mint[39;49;00m = [94m16[39;49;00m) -> [96mdict[39;49;00m[[96mstr[39;49;00m, Any]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""[39;49;00m
+    [33m    Sleep Phase (REM Replay): Consolidates diverse historical memories with recent ones,[39;49;00m
+    [33m    then measures retention by comparing predictor performance on a held-out set of[39;49;00m
+    [33m    traces before and after consolidation.[39;49;00m
+    [33m    """[39;49;00m[90m[39;49;00m
+        [94mif[39;49;00m [96mself[39;49;00m.predictor [95mis[39;49;00m [94mNone[39;49;00m [95mor[39;49;00m [95mnot[39;49;00m [96mgetattr[39;49;00m([96mself[39;49;00m.predictor, [33m"[39;49;00m[33mis_loaded[39;49;00m[33m"[39;49;00m, [94mFalse[39;49;00m):[90m[39;49;00m
+            checkpoint = [96mgetattr[39;49;00m([96mself[39;49;00m.predictor, [33m"[39;49;00m[33mcheckpoint_path[39;49;00m[33m"[39;49;00m, [94mNone[39;49;00m) [95mor[39;49;00m DEFAULT_JEPA_CHECKPOINT[90m[39;49;00m
+>           [94mraise[39;49;00m SimulationRefusedError([90m[39;49;00m
+                [33mf[39;49;00m[33m"[39;49;00m[33mHippocampalReplayEngine has no trained predictor loaded; expected checkpoint [39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                [33mf[39;49;00m[33m"[39;49;00m[33mat [39;49;00m[33m{[39;49;00mcheckpoint[33m}[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+                component=[33m"[39;49;00m[33mHippocampalReplayEngine.execute_sleep_cycle[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+                remedy=([90m[39;49;00m
+                    [33mf[39;49;00m[33m"[39;49;00m[33mtrain a predictor and load weights from [39;49;00m[33m{[39;49;00mcheckpoint[33m}[39;49;00m[33m before requesting [39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                    [33m"[39;49;00m[33ma sleep cycle; consolidating without a trained predictor cannot measure [39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                    [33m"[39;49;00m[33mretention[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                ),[90m[39;49;00m
+            )[90m[39;49;00m
+[1m[31mE           anse.infrastructure.fabrication.SimulationRefusedError: HippocampalReplayEngine has no trained predictor loaded; expected checkpoint at /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/checkpoints/latent_dreamer_jepa.pt [component=HippocampalReplayEngine.execute_sleep_cycle; remedy: train a predictor and load weights from /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/checkpoints/latent_dreamer_jepa.pt before requesting a sleep cycle; consolidating without a trained predictor cannot measure retention][0m
+
+[1m[31manse/core/latent_dreamer.py[0m:286: SimulationRefusedError
+[31m[1m_______________ test_validation_02_vllm_hot_reload_and_watermark _______________[0m
+
+tmp_path = PosixPath('/tmp/pytest-of-callensxavier_gmail_com/pytest-108/test_validation_02_vllm_hot_re0')
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_validation_02_vllm_hot_reload_and_watermark[39;49;00m(tmp_path: Path) -> [94mNone[39;49;00m:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""[PASS 2/5] Validates atomic Redis watermark advancement on successful vLLM reload."""[39;49;00m[90m[39;49;00m
+        mock_redis = MagicMock()[90m[39;49;00m
+        mock_pipe = MagicMock()[90m[39;49;00m
+        mock_redis.pipeline.return_value = mock_pipe[90m[39;49;00m
+    [90m[39;49;00m
+        req, resp = _create_mock_gemini_pair()[90m[39;49;00m
+        mock_redis.get.side_effect = [[90m[39;49;00m
+            [33mb[39;49;00m[33m"[39;49;00m[33m10.0[39;49;00m[33m"[39;49;00m,  [90m# previous watermark[39;49;00m[90m[39;49;00m
+            json.dumps({[33m"[39;49;00m[33mtimestamp[39;49;00m[33m"[39;49;00m: [94m50.0[39;49;00m, [33m"[39;49;00m[33mrequest_json[39;49;00m[33m"[39;49;00m: req, [33m"[39;49;00m[33mresponse_json[39;49;00m[33m"[39;49;00m: resp}).encode([33m"[39;49;00m[33mutf-8[39;49;00m[33m"[39;49;00m),[90m[39;49;00m
+        ][90m[39;49;00m
+        mock_redis.keys.return_value = [[33mb[39;49;00m[33m"[39;49;00m[33mantigravity:subtask:SUB-01:traces[39;49;00m[33m"[39;49;00m][90m[39;49;00m
+        mock_redis.lrange.return_value = [[33mb[39;49;00m[33m"[39;49;00m[33mtr_01[39;49;00m[33m"[39;49;00m][90m[39;49;00m
+        mock_redis.hgetall.return_value = {[33mb[39;49;00m[33m"[39;49;00m[33mverdict[39;49;00m[33m"[39;49;00m: [33mb[39;49;00m[33m"[39;49;00m[33mPASSED[39;49;00m[33m"[39;49;00m}[90m[39;49;00m
+    [90m[39;49;00m
+        mock_client = MagicMock(spec=httpx.Client)[90m[39;49;00m
+        mock_ok_resp = MagicMock(spec=httpx.Response)[90m[39;49;00m
+        mock_ok_resp.status_code = [94m200[39;49;00m[90m[39;49;00m
+        mock_client.post.return_value = mock_ok_resp[90m[39;49;00m
+    [90m[39;49;00m
+        success = run_cycle([90m[39;49;00m
+            redis_client=mock_redis,[90m[39;49;00m
+            min_samples=[94m1[39;49;00m,[90m[39;49;00m
+            dry_run=[94mTrue[39;49;00m,[90m[39;49;00m
+            http_client=mock_client,[90m[39;49;00m
+        )[90m[39;49;00m
+    [90m[39;49;00m
+>       [94massert[39;49;00m success [95mis[39;49;00m [94mTrue[39;49;00m[90m[39;49;00m
+[1m[31mE       assert False is True[0m
+
+[1m[31mtests/test_ten_hardening_validations.py[0m:130: AssertionError
+----------------------------- Captured stdout call -----------------------------
+
+=======================================================
+🚀 Starting LoRA Adaptation Cycle: 1790537679
+=======================================================
+📦 Harvester: Found 1 verified samples since watermark (10.0).
+🚀 Initializing LoRA training on: training_runs/datasets/delta_1790537679.jsonl
+📦 Dry-run adapter exported at: /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/adapters/checkpoint_v1790537679/final_adapter
+🔄 Unloading prior adapter alias 'antigravity-local'...
+✅ Successfully evicted old 'antigravity-local' from vLLM memory.
+🚀 Loading new adapter 'antigravity-local' from /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/adapters/checkpoint_v1790537679/final_adapter...
+✅ vLLM hot-reload succeeded: 'antigravity-local' is active.
+------------------------------ Captured log call -------------------------------
+[31m[1mERROR   [0m anse.daily_trainer_daemon:daily_trainer_daemon.py:127 Cycle 1790537679 produced no trained weights (Adapter at /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/adapters/checkpoint_v1790537679/final_adapter was produced by a DRY_RUN training job. [component=daily_trainer_daemon._record_successful_deployment; remedy: Run training with GPU/deps available so it produces real weights, then retry deployment.]). Watermark NOT advanced.
+[31m[1m_____________ TestSymbioticCoPilot.test_copilot_returns_final_code _____________[0m
+
+self = <tests.test_ui_features.TestSymbioticCoPilot object at 0x75d6dd4c6550>
+client = <starlette.testclient.TestClient object at 0x75d5a46fe790>
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_copilot_returns_final_code[39;49;00m([96mself[39;49;00m, client: TestClient) -> [94mNone[39;49;00m:[90m[39;49;00m
+        data = client.post([90m[39;49;00m
+            [33m"[39;49;00m[33m/api/symbiotic/copilot[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+            json={[33m"[39;49;00m[33mprompt[39;49;00m[33m"[39;49;00m: [33m"[39;49;00m[33mHello world[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mtest_command[39;49;00m[33m"[39;49;00m: [33m'[39;49;00m[33mpython -c [39;49;00m[33m"[39;49;00m[33mprint(1)[39;49;00m[33m"[39;49;00m[33m'[39;49;00m},[90m[39;49;00m
+        ).json()[90m[39;49;00m
+        [94massert[39;49;00m [33m"[39;49;00m[33mfinal_code[39;49;00m[33m"[39;49;00m [95min[39;49;00m data[90m[39;49;00m
+>       [94massert[39;49;00m data[[33m"[39;49;00m[33mfinal_code[39;49;00m[33m"[39;49;00m] [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m[90m[39;49;00m
+[1m[31mE       assert None is not None[0m
+
+[1m[31mtests/test_ui_features.py[0m:379: AssertionError
+[31m[1m_________ TestSymbioticCoPilot.test_latent_dreamer_returns_candidates __________[0m
+
+self = <tests.test_ui_features.TestSymbioticCoPilot object at 0x75d6dd4c7190>
+client = <starlette.testclient.TestClient object at 0x75d5a46fe790>
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_latent_dreamer_returns_candidates[39;49;00m([96mself[39;49;00m, client: TestClient) -> [94mNone[39;49;00m:[90m[39;49;00m
+        data = client.post([90m[39;49;00m
+            [33m"[39;49;00m[33m/api/accelerator/latent-dream[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+            json={[33m"[39;49;00m[33mprompt[39;49;00m[33m"[39;49;00m: [33m"[39;49;00m[33moptimize dense pass[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mbranches[39;49;00m[33m"[39;49;00m: [94m16[39;49;00m},[90m[39;49;00m
+        ).json()[90m[39;49;00m
+>       [94massert[39;49;00m data[[33m"[39;49;00m[33mstatus[39;49;00m[33m"[39;49;00m] == [33m"[39;49;00m[33msuccess[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+[1m[31mE       AssertionError: assert 'error' == 'success'[0m
+[1m[31mE         [0m
+[1m[31mE         [0m[91m- success[39;49;00m[90m[39;49;00m[0m
+[1m[31mE         [92m+ error[39;49;00m[90m[39;49;00m[0m
+
+[1m[31mtests/test_ui_features.py[0m:397: AssertionError
+------------------------------ Captured log call -------------------------------
+[31m[1mERROR   [0m anse.web:server.py:467 Error in latent dreamer
+Traceback (most recent call last):
+  File "/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/web/server.py", line 448, in run_latent_dreamer
+    res = dreamer.dream_and_search(req.prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/anse/core/latent_dreamer.py", line 137, in dream_and_search
+    raise SimulationRefusedError(
+anse.infrastructure.fabrication.SimulationRefusedError: LatentDreamer has no trained JEPA predictor loaded; expected checkpoint at /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/checkpoints/latent_dreamer_jepa.pt [component=LatentDreamer.dream_and_search; remedy: train FastJEPALatentPredictor and save its weights to /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/checkpoints/latent_dreamer_jepa.pt before dreaming; scoring random vectors through untrained weights is not a search]
+[31m[1m_____________ TestSymbioticCoPilot.test_latent_dreamer_grpo_stats ______________[0m
+
+self = <tests.test_ui_features.TestSymbioticCoPilot object at 0x75d6dd4c7810>
+client = <starlette.testclient.TestClient object at 0x75d5a46fe790>
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_latent_dreamer_grpo_stats[39;49;00m([96mself[39;49;00m, client: TestClient) -> [94mNone[39;49;00m:[90m[39;49;00m
+        data = client.post([90m[39;49;00m
+            [33m"[39;49;00m[33m/api/accelerator/latent-dream[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+            json={[33m"[39;49;00m[33mprompt[39;49;00m[33m"[39;49;00m: [33m"[39;49;00m[33mkernel[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mbranches[39;49;00m[33m"[39;49;00m: [94m8[39;49;00m},[90m[39;49;00m
+        ).json()[90m[39;49;00m
+>       [94massert[39;49;00m [33m"[39;49;00m[33mgroup_mean_energy[39;49;00m[33m"[39;49;00m [95min[39;49;00m data[90m[39;49;00m
+[1m[31mE       AssertionError: assert 'group_mean_energy' in {'status': 'error', 'error': 'LatentDreamer has no trained JEPA predictor loaded; expected checkpoint at /home/callens...checkpoints/latent_dreamer_jepa.pt before dreaming; scoring random vectors through untrained weights is not a search]'}[0m
+
+[1m[31mtests/test_ui_features.py[0m:406: AssertionError
+------------------------------ Captured log call -------------------------------
+[31m[1mERROR   [0m anse.web:server.py:467 Error in latent dreamer
+Traceback (most recent call last):
+  File "/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/web/server.py", line 448, in run_latent_dreamer
+    res = dreamer.dream_and_search(req.prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/anse/core/latent_dreamer.py", line 137, in dream_and_search
+    raise SimulationRefusedError(
+anse.infrastructure.fabrication.SimulationRefusedError: LatentDreamer has no trained JEPA predictor loaded; expected checkpoint at /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/checkpoints/latent_dreamer_jepa.pt [component=LatentDreamer.dream_and_search; remedy: train FastJEPALatentPredictor and save its weights to /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/checkpoints/latent_dreamer_jepa.pt before dreaming; scoring random vectors through untrained weights is not a search]
+[31m[1m_______ TestSymbioticCoPilot.test_latent_dreamer_best_thought_structure ________[0m
+
+self = <tests.test_ui_features.TestSymbioticCoPilot object at 0x75d6dd4c7f10>
+client = <starlette.testclient.TestClient object at 0x75d5a46fe790>
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_latent_dreamer_best_thought_structure[39;49;00m([96mself[39;49;00m, client: TestClient) -> [94mNone[39;49;00m:[90m[39;49;00m
+        data = client.post([90m[39;49;00m
+            [33m"[39;49;00m[33m/api/accelerator/latent-dream[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+            json={[33m"[39;49;00m[33mprompt[39;49;00m[33m"[39;49;00m: [33m"[39;49;00m[33mattention[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mbranches[39;49;00m[33m"[39;49;00m: [94m4[39;49;00m},[90m[39;49;00m
+        ).json()[90m[39;49;00m
+>       best = data[[33m"[39;49;00m[33mbest_thought[39;49;00m[33m"[39;49;00m][90m[39;49;00m
+               ^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31mE       KeyError: 'best_thought'[0m
+
+[1m[31mtests/test_ui_features.py[0m:415: KeyError
+------------------------------ Captured log call -------------------------------
+[31m[1mERROR   [0m anse.web:server.py:467 Error in latent dreamer
+Traceback (most recent call last):
+  File "/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/web/server.py", line 448, in run_latent_dreamer
+    res = dreamer.dream_and_search(req.prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/anse/core/latent_dreamer.py", line 137, in dream_and_search
+    raise SimulationRefusedError(
+anse.infrastructure.fabrication.SimulationRefusedError: LatentDreamer has no trained JEPA predictor loaded; expected checkpoint at /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/checkpoints/latent_dreamer_jepa.pt [component=LatentDreamer.dream_and_search; remedy: train FastJEPALatentPredictor and save its weights to /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/checkpoints/latent_dreamer_jepa.pt before dreaming; scoring random vectors through untrained weights is not a search]
+[31m[1m________ TestSymbioticCoPilot.test_latent_dreamer_speedup_over_sandbox _________[0m
+
+self = <tests.test_ui_features.TestSymbioticCoPilot object at 0x75d6dd4d0650>
+client = <starlette.testclient.TestClient object at 0x75d5a46fe790>
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_latent_dreamer_speedup_over_sandbox[39;49;00m([96mself[39;49;00m, client: TestClient) -> [94mNone[39;49;00m:[90m[39;49;00m
+        data = client.post([90m[39;49;00m
+            [33m"[39;49;00m[33m/api/accelerator/latent-dream[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+            json={[33m"[39;49;00m[33mprompt[39;49;00m[33m"[39;49;00m: [33m"[39;49;00m[33mmatmul[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mbranches[39;49;00m[33m"[39;49;00m: [94m16[39;49;00m},[90m[39;49;00m
+        ).json()[90m[39;49;00m
+>       [94massert[39;49;00m data[[33m"[39;49;00m[33mspeedup_vs_sandbox[39;49;00m[33m"[39;49;00m] > [94m1[39;49;00m, [33m"[39;49;00m[33mLatent dream should be faster than OS sandbox[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31mE       KeyError: 'speedup_vs_sandbox'[0m
+
+[1m[31mtests/test_ui_features.py[0m:427: KeyError
+------------------------------ Captured log call -------------------------------
+[31m[1mERROR   [0m anse.web:server.py:467 Error in latent dreamer
+Traceback (most recent call last):
+  File "/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/web/server.py", line 448, in run_latent_dreamer
+    res = dreamer.dream_and_search(req.prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/anse/core/latent_dreamer.py", line 137, in dream_and_search
+    raise SimulationRefusedError(
+anse.infrastructure.fabrication.SimulationRefusedError: LatentDreamer has no trained JEPA predictor loaded; expected checkpoint at /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/checkpoints/latent_dreamer_jepa.pt [component=LatentDreamer.dream_and_search; remedy: train FastJEPALatentPredictor and save its weights to /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/checkpoints/latent_dreamer_jepa.pt before dreaming; scoring random vectors through untrained weights is not a search]
+[31m[1m_____________________ test_dspy_pipeline_forward_execution _____________________[0m
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_dspy_pipeline_forward_execution[39;49;00m():[90m[39;49;00m
+        pipeline = DichotomyPipelineModule()[90m[39;49;00m
+        result = pipeline.forward([90m[39;49;00m
+            goal=[33m"[39;49;00m[33mKerr Symplectic Integrator and Formal Banach Contraction[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+            total_budget=[94m8000[39;49;00m,[90m[39;49;00m
+            max_depth=[94m1[39;49;00m,[90m[39;49;00m
+            leaf_code_generator=[94mlambda[39;49;00m leaf, rmap: [33m"[39;49;00m[33mdef compute(): return 100[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+        )[90m[39;49;00m
+    [90m[39;49;00m
+        [94massert[39;49;00m result[[33m"[39;49;00m[33mroot_task_id[39;49;00m[33m"[39;49;00m] == [33m"[39;49;00m[33mroot[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        [94massert[39;49;00m result[[33m"[39;49;00m[33mtotal_leaves[39;49;00m[33m"[39;49;00m] == [94m2[39;49;00m[90m[39;49;00m
+>       [94massert[39;49;00m result[[33m"[39;49;00m[33mleaves_verified[39;49;00m[33m"[39;49;00m] == [94m2[39;49;00m[90m[39;49;00m
+[1m[31mE       assert 1 == 2[0m
+
+[1m[31mtests/test_vendor_dichotomy_integrations.py[0m:72: AssertionError
+[31m[1m_______________ TestLayaSystemOne.test_laya_model_loaded_on_cpu ________________[0m
+
+self = <test_anse_v5.TestLayaSystemOne object at 0x75d6dc364110>
+laya_engine = <anse.v5.laya_system_one.LayaSystemOneDecisionEngine object at 0x75d6d0b7dd50>
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_laya_model_loaded_on_cpu[39;49;00m([96mself[39;49;00m, laya_engine: LayaSystemOneDecisionEngine):[90m[39;49;00m
+        [94massert[39;49;00m laya_engine.device == [33m"[39;49;00m[33mcpu[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+>       [94massert[39;49;00m laya_engine.is_loaded [95mis[39;49;00m [94mTrue[39;49;00m[90m[39;49;00m
+[1m[31mE       assert False is True[0m
+[1m[31mE        +  where False = <anse.v5.laya_system_one.LayaSystemOneDecisionEngine object at 0x75d6d0b7dd50>.is_loaded[0m
+
+[1m[31mtests/v5/test_anse_v5.py[0m:32: AssertionError
+------------------------------ Captured log setup ------------------------------
+[33mWARNING [0m anse.v5.laya_system_one:laya_system_one.py:38 Laya model weights not found at /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/checkpoints/laya. Fallback heuristics will be used.
+[31m[1m__________________ TestLayaSystemOne.test_laya_triage_choice ___________________[0m
+
+self = <test_anse_v5.TestLayaSystemOne object at 0x75d6dc364750>
+laya_engine = <anse.v5.laya_system_one.LayaSystemOneDecisionEngine object at 0x75d6d0b7dd50>
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_laya_triage_choice[39;49;00m([96mself[39;49;00m, laya_engine: LayaSystemOneDecisionEngine):[90m[39;49;00m
+        res = laya_engine.triage_hypothesis([90m[39;49;00m
+            [33m"[39;49;00m[33mTheorem: Given a closed differential 2-form omega on a symplectic manifold M, d(omega) = 0.[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+            choices=[[33m"[39;49;00m[33msound[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33munsound[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mneeds_proof[39;49;00m[33m"[39;49;00m],[90m[39;49;00m
+        )[90m[39;49;00m
+        [94massert[39;49;00m res[[33m"[39;49;00m[33mdecision_type[39;49;00m[33m"[39;49;00m] == [33m"[39;49;00m[33mchoice[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        [94massert[39;49;00m res[[33m"[39;49;00m[33mchoice[39;49;00m[33m"[39;49;00m] [95min[39;49;00m [[33m"[39;49;00m[33msound[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33munsound[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mneeds_proof[39;49;00m[33m"[39;49;00m][90m[39;49;00m
+        [94massert[39;49;00m [33m"[39;49;00m[33mprobabilities[39;49;00m[33m"[39;49;00m [95min[39;49;00m res[90m[39;49;00m
+>       [94massert[39;49;00m res[[33m"[39;49;00m[33mlatency_ms[39;49;00m[33m"[39;49;00m] > [94m0[39;49;00m[90m[39;49;00m
+[1m[31mE       assert 0.0 > 0[0m
+
+[1m[31mtests/v5/test_anse_v5.py[0m:42: AssertionError
+[31m[1m________________ TestAnseV5ApiEndpoints.test_laya_triage_choice ________________[0m
+
+self = <tests.web.test_anse_v5_ui.TestAnseV5ApiEndpoints object at 0x75d6dc3981d0>
+client = <starlette.testclient.TestClient object at 0x75d5bdfef250>
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_laya_triage_choice[39;49;00m([96mself[39;49;00m, client: TestClient):[90m[39;49;00m
+        payload = {[90m[39;49;00m
+            [33m"[39;49;00m[33mtext[39;49;00m[33m"[39;49;00m: [33m"[39;49;00m[33mTheorem: The exterior derivative satisfies d(d(omega)) = 0. The L2 norm is conserved.[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+            [33m"[39;49;00m[33mdecision_type[39;49;00m[33m"[39;49;00m: [33m"[39;49;00m[33mchoice[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+            [33m"[39;49;00m[33mcriteria[39;49;00m[33m"[39;49;00m: [33m"[39;49;00m[33msound, unsound, needs_proof[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        }[90m[39;49;00m
+        res = client.post([33m"[39;49;00m[33m/api/v5/laya/triage[39;49;00m[33m"[39;49;00m, json=payload)[90m[39;49;00m
+        [94massert[39;49;00m res.status_code == [94m200[39;49;00m[90m[39;49;00m
+        data = res.json()[90m[39;49;00m
+        [94massert[39;49;00m data[[33m"[39;49;00m[33mstatus[39;49;00m[33m"[39;49;00m] == [33m"[39;49;00m[33msuccess[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        [94massert[39;49;00m data[[33m"[39;49;00m[33mdecision_type[39;49;00m[33m"[39;49;00m] == [33m"[39;49;00m[33mchoice[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        [94massert[39;49;00m data[[33m"[39;49;00m[33mchoice[39;49;00m[33m"[39;49;00m] [95min[39;49;00m [[33m"[39;49;00m[33msound[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33munsound[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mneeds_proof[39;49;00m[33m"[39;49;00m][90m[39;49;00m
+        [94massert[39;49;00m [33m"[39;49;00m[33mprobabilities[39;49;00m[33m"[39;49;00m [95min[39;49;00m data[90m[39;49;00m
+        [94massert[39;49;00m [96msum[39;49;00m(data[[33m"[39;49;00m[33mprobabilities[39;49;00m[33m"[39;49;00m].values()) == pytest.approx([94m1.0[39;49;00m, rel=[94m1e-2[39;49;00m)[90m[39;49;00m
+>       [94massert[39;49;00m data[[33m"[39;49;00m[33mlatency_ms[39;49;00m[33m"[39;49;00m] > [94m0[39;49;00m[90m[39;49;00m
+[1m[31mE       assert 0.0 > 0[0m
+
+[1m[31mtests/web/test_anse_v5_ui.py[0m:63: AssertionError
+[31m[1m________________ TestAnseV5ApiEndpoints.test_laya_triage_score _________________[0m
+
+self = <tests.web.test_anse_v5_ui.TestAnseV5ApiEndpoints object at 0x75d6dc398810>
+client = <starlette.testclient.TestClient object at 0x75d5bdfe5710>
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_laya_triage_score[39;49;00m([96mself[39;49;00m, client: TestClient):[90m[39;49;00m
+        payload = {[90m[39;49;00m
+            [33m"[39;49;00m[33mtext[39;49;00m[33m"[39;49;00m: [33m"[39;49;00m[33mHypothesis: Topological invariants are preserved across continuous deformation.[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+            [33m"[39;49;00m[33mdecision_type[39;49;00m[33m"[39;49;00m: [33m"[39;49;00m[33mscore[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+            [33m"[39;49;00m[33mcriteria[39;49;00m[33m"[39;49;00m: [33m"[39;49;00m[33m1-5 rating[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        }[90m[39;49;00m
+        res = client.post([33m"[39;49;00m[33m/api/v5/laya/triage[39;49;00m[33m"[39;49;00m, json=payload)[90m[39;49;00m
+        [94massert[39;49;00m res.status_code == [94m200[39;49;00m[90m[39;49;00m
+        data = res.json()[90m[39;49;00m
+        [94massert[39;49;00m data[[33m"[39;49;00m[33mstatus[39;49;00m[33m"[39;49;00m] == [33m"[39;49;00m[33msuccess[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        [94massert[39;49;00m data[[33m"[39;49;00m[33mdecision_type[39;49;00m[33m"[39;49;00m] == [33m"[39;49;00m[33mscore[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        [94massert[39;49;00m [94m1.0[39;49;00m <= data[[33m"[39;49;00m[33mscore[39;49;00m[33m"[39;49;00m] <= [94m5.0[39;49;00m[90m[39;49;00m
+>       [94massert[39;49;00m data[[33m"[39;49;00m[33mlatency_ms[39;49;00m[33m"[39;49;00m] > [94m0[39;49;00m[90m[39;49;00m
+[1m[31mE       assert 0.0 > 0[0m
+
+[1m[31mtests/web/test_anse_v5_ui.py[0m:77: AssertionError
+[31m[1m_________________ TestAnseV5ApiEndpoints.test_laya_triage_noul _________________[0m
+
+self = <tests.web.test_anse_v5_ui.TestAnseV5ApiEndpoints object at 0x75d6dc398f50>
+client = <starlette.testclient.TestClient object at 0x75d6d0117650>
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_laya_triage_noul[39;49;00m([96mself[39;49;00m, client: TestClient):[90m[39;49;00m
+        payload = {[90m[39;49;00m
+            [33m"[39;49;00m[33mtext[39;49;00m[33m"[39;49;00m: [33m"[39;49;00m[33mHypothesis: Invariant energy conservation holds.[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+            [33m"[39;49;00m[33mdecision_type[39;49;00m[33m"[39;49;00m: [33m"[39;49;00m[33mnoul[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+            [33m"[39;49;00m[33mcriteria[39;49;00m[33m"[39;49;00m: [33m"[39;49;00m[33massertion truth[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        }[90m[39;49;00m
+        res = client.post([33m"[39;49;00m[33m/api/v5/laya/triage[39;49;00m[33m"[39;49;00m, json=payload)[90m[39;49;00m
+        [94massert[39;49;00m res.status_code == [94m200[39;49;00m[90m[39;49;00m
+        data = res.json()[90m[39;49;00m
+        [94massert[39;49;00m data[[33m"[39;49;00m[33mstatus[39;49;00m[33m"[39;49;00m] == [33m"[39;49;00m[33msuccess[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        [94massert[39;49;00m data[[33m"[39;49;00m[33mdecision_type[39;49;00m[33m"[39;49;00m] == [33m"[39;49;00m[33mnoul[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        [94massert[39;49;00m [94m0.0[39;49;00m <= data[[33m"[39;49;00m[33mtruth_probability[39;49;00m[33m"[39;49;00m] <= [94m1.0[39;49;00m[90m[39;49;00m
+>       [94massert[39;49;00m data[[33m"[39;49;00m[33mlatency_ms[39;49;00m[33m"[39;49;00m] > [94m0[39;49;00m[90m[39;49;00m
+[1m[31mE       assert 0.0 > 0[0m
+
+[1m[31mtests/web/test_anse_v5_ui.py[0m:91: AssertionError
+[33m=============================== warnings summary ===============================[0m
+../../../.venv/lib/python3.11/site-packages/torch/jit/_script.py:1491
+  /home/callensxavier_gmail_com/AutoevolveAI/.venv/lib/python3.11/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+../../../.venv/lib/python3.11/site-packages/starlette/testclient.py:53
+  /home/callensxavier_gmail_com/AutoevolveAI/.venv/lib/python3.11/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+tests/memory/test_document_store.py::test_ingest_real_pdf_carries_provenance
+tests/memory/test_document_store.py::test_reingest_is_idempotent_by_content_hash
+  /home/callensxavier_gmail_com/AutoevolveAI/.venv/lib/python3.11/site-packages/chromadb/api/collection_configuration.py:327: DeprecationWarning: legacy embedding function config: 'OllamaEmbeddingFunction' object has no attribute 'is_legacy'
+    return json.dumps(create_collection_configuration_to_json(config, metadata))
+
+tests/remediation/test_chroma_single_root.py::test_harvester_and_chroma_rag_share_persist_directory
+tests/remediation/test_chroma_single_root.py::test_harvester_and_chroma_rag_share_persist_directory
+tests/remediation/test_chroma_single_root.py::test_harvester_write_visible_through_chroma_rag_read
+tests/remediation/test_chroma_single_root.py::test_harvester_write_visible_through_chroma_rag_read
+  /home/callensxavier_gmail_com/AutoevolveAI/.venv/lib/python3.11/site-packages/chromadb/api/types.py:944: DeprecationWarning: The EmbeddingFunction class does not implement name(). This will be required in a future version.
+    self.name() is NotImplemented
+
+tests/remediation/test_chroma_single_root.py::test_harvester_and_chroma_rag_share_persist_directory
+tests/remediation/test_chroma_single_root.py::test_harvester_and_chroma_rag_share_persist_directory
+tests/remediation/test_chroma_single_root.py::test_harvester_write_visible_through_chroma_rag_read
+tests/remediation/test_chroma_single_root.py::test_harvester_write_visible_through_chroma_rag_read
+  /home/callensxavier_gmail_com/AutoevolveAI/.venv/lib/python3.11/site-packages/chromadb/api/collection_configuration.py:791: DeprecationWarning: The EmbeddingFunction class does not implement name(). This will be required in a future version.
+    embedding_function.name() != "default"
+
+tests/stronggravity/test_cov_prod_trace.py::test_options_and_marker_registered
+tests/stronggravity/test_cov_prod_trace.py::test_options_and_marker_registered
+tests/stronggravity/test_cov_prod_trace.py::test_real_call_passes
+tests/stronggravity/test_cov_prod_trace.py::test_phantom_test_fails
+tests/stronggravity/test_cov_prod_trace.py::test_calls_only_from_tests_dir_do_not_count
+tests/stronggravity/test_cov_prod_trace.py::test_opt_out_marker
+tests/stronggravity/test_cov_prod_trace.py::test_failing_test_not_masked
+tests/stronggravity/test_cov_prod_trace.py::test_min_prod_calls_and_ini_fallback
+  /home/callensxavier_gmail_com/AutoevolveAI/.venv/lib/python3.11/site-packages/pytest_asyncio/plugin.py:299: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+  The event loop scope for asynchronous fixtures will default to the "fixture" caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to "function" scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+  
+    warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+tests/test_mcp_gateway_integration.py::test_mcp_router_auto_routing
+  /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/anse/guard/mcp_router.py:155: FastMCPDeprecationWarning: Accessing `Tool.inputSchema` is deprecated; MCP SDK v2 renamed this field to `input_schema`. Update your code to read `.input_schema` instead.
+    "inputSchema": getattr(t, "input_schema", getattr(t, "inputSchema", {})),
+
+tests/v5/test_anse_v5.py::TestLayaSystemOne::test_laya_model_loaded_on_cpu
+  /home/callensxavier_gmail_com/AutoevolveAI/.venv/lib/python3.11/site-packages/_pytest/fixtures.py:1313: PytestRemovedIn10Warning: Class-scoped fixture defined as instance method is deprecated.
+  Instance attributes set in this fixture will NOT be visible to test methods,
+  as each test gets a new instance while the fixture runs only once per class.
+  Use @classmethod decorator and set attributes on cls instead.
+  See https://docs.pytest.org/en/stable/deprecations.html#class-scoped-fixture-as-instance-method
+    fixturefunc = resolve_fixture_function(fixturedef, request)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+[36m[1m=========================== short test summary info ============================[0m
+[31mFAILED[0m tests/algorithms/test_symplectic.py::[1mTestSymplecticHarmonicOscillator::test_harmonic_energy_conservation_rust[0m - AssertionError: assert 1001 == 1000
+[31mFAILED[0m tests/phase2/test_ml_sandbox.py::[1mTestMLSandboxExecutor::test_successful_training[0m - AssertionError: assert -1 == 0
+[31mFAILED[0m tests/phase3/test_autopoietic_agent.py::[1mtest_autopoietic_neural_auto_influencing_hotswap[0m - RuntimeError: Expected all tensors to be on the same device, but got mat1 i...
+[31mFAILED[0m tests/symbolic/test_lean_mcts_prover.py::[1mtest_mcts_prover_successful_search[0m - AttributeError: 'NoneType' object has no attribute 'total_value'
+[31mFAILED[0m tests/symbolic/test_lean_rag_dojo.py::[1mtest_lean_compiler_repl_success[0m - assert False is True
+[31mFAILED[0m tests/symbolic/test_lean_rag_dojo.py::[1mtest_lean_compiler_repl_failure_gives_goals[0m - assert (0 > 0 or 'unsolved goals' in "info: mathlib: checking out revision ...
+[31mFAILED[0m tests/test_symbiotic_and_accelerators.py::[1mtest_evaluate_in_harness_success[0m - AssertionError: assert False is True
+[31mFAILED[0m tests/test_symbiotic_and_accelerators.py::[1mtest_active_inference_copilot_flow[0m - AssertionError: assert False is True
+[31mFAILED[0m tests/test_symbiotic_and_accelerators.py::[1mtest_latent_dreamer_grpo_search[0m - anse.infrastructure.fabrication.SimulationRefusedError: LatentDreamer has n...
+[31mFAILED[0m tests/test_symbiotic_and_accelerators.py::[1mtest_hippocampal_replay_cycle[0m - anse.infrastructure.fabrication.SimulationRefusedError: HippocampalReplayEn...
+[31mFAILED[0m tests/test_ten_hardening_validations.py::[1mtest_validation_02_vllm_hot_reload_and_watermark[0m - assert False is True
+[31mFAILED[0m tests/test_ui_features.py::[1mTestSymbioticCoPilot::test_copilot_returns_final_code[0m - assert None is not None
+[31mFAILED[0m tests/test_ui_features.py::[1mTestSymbioticCoPilot::test_latent_dreamer_returns_candidates[0m - AssertionError: assert 'error' == 'success'
+[31mFAILED[0m tests/test_ui_features.py::[1mTestSymbioticCoPilot::test_latent_dreamer_grpo_stats[0m - AssertionError: assert 'group_mean_energy' in {'status': 'error', 'error': ...
+[31mFAILED[0m tests/test_ui_features.py::[1mTestSymbioticCoPilot::test_latent_dreamer_best_thought_structure[0m - KeyError: 'best_thought'
+[31mFAILED[0m tests/test_ui_features.py::[1mTestSymbioticCoPilot::test_latent_dreamer_speedup_over_sandbox[0m - KeyError: 'speedup_vs_sandbox'
+[31mFAILED[0m tests/test_vendor_dichotomy_integrations.py::[1mtest_dspy_pipeline_forward_execution[0m - assert 1 == 2
+[31mFAILED[0m tests/v5/test_anse_v5.py::[1mTestLayaSystemOne::test_laya_model_loaded_on_cpu[0m - assert False is True
+[31mFAILED[0m tests/v5/test_anse_v5.py::[1mTestLayaSystemOne::test_laya_triage_choice[0m - assert 0.0 > 0
+[31mFAILED[0m tests/web/test_anse_v5_ui.py::[1mTestAnseV5ApiEndpoints::test_laya_triage_choice[0m - assert 0.0 > 0
+[31mFAILED[0m tests/web/test_anse_v5_ui.py::[1mTestAnseV5ApiEndpoints::test_laya_triage_score[0m - assert 0.0 > 0
+[31mFAILED[0m tests/web/test_anse_v5_ui.py::[1mTestAnseV5ApiEndpoints::test_laya_triage_noul[0m - assert 0.0 > 0
+[31mERROR[0m tests/web/test_ascd_playwright_e2e.py::[1mTestDesktopE2E::test_desktop_hud_metrics_and_log_stream[0m - playwright._impl._errors.Error: BrowserType.launch: Failed to launch chromi...
+[31mERROR[0m tests/web/test_ascd_playwright_e2e.py::[1mTestDesktopE2E::test_desktop_deck1_the_forge_dag_physics_and_lean[0m - playwright._impl._errors.Error: BrowserType.launch: Failed to launch chromi...
+[31mERROR[0m tests/web/test_ascd_playwright_e2e.py::[1mTestDesktopE2E::test_desktop_deck2_proving_grounds_heatmap_and_diff[0m - playwright._impl._errors.Error: BrowserType.launch: Failed to launch chromi...
+[31mERROR[0m tests/web/test_ascd_playwright_e2e.py::[1mTestDesktopE2E::test_desktop_deck3_engine_room_rl_treemap_memory_mcp[0m - playwright._impl._errors.Error: BrowserType.launch: Failed to launch chromi...
+[31mERROR[0m tests/web/test_ascd_playwright_e2e.py::[1mTestDesktopE2E::test_desktop_god_mode_halt_and_steer[0m - playwright._impl._errors.Error: BrowserType.launch: Failed to launch chromi...
+[31mERROR[0m tests/web/test_ascd_playwright_e2e.py::[1mTestDesktopE2E::test_desktop_time_travel_replay[0m - playwright._impl._errors.Error: BrowserType.launch: Failed to launch chromi...
+[31mERROR[0m tests/web/test_ascd_playwright_e2e.py::[1mTestMobileE2E::test_mobile_responsive_carousel_and_bottom_nav[0m - playwright._impl._errors.Error: BrowserType.launch: Failed to launch chromi...
+[31mERROR[0m tests/web/test_ascd_playwright_e2e.py::[1mTestMobileE2E::test_mobile_emergency_fab_halt[0m - playwright._impl._errors.Error: BrowserType.launch: Failed to launch chromi...
+[31m[31m[1m22 failed[0m, [32m1358 passed[0m, [33m49 skipped[0m, [33m22 warnings[0m, [31m[1m8 errors[0m[31m in 1171.89s (0:19:31)[0m[0m
+rc=1

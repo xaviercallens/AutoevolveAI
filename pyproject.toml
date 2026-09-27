@@ -70,6 +70,13 @@ line-length = 100
 select = ["E", "F", "I", "N", "UP"]
 ignore = ["E501", "N812", "N999"]
 
+[tool.ruff.lint.per-file-ignores]
+# Frozen research scripts: their sha256 is pinned in results/<run>/ledger evidence and
+# preregistration files, so they are kept byte-identical to what produced the results.
+# Physics notation (Om, H0, D_M) trips N8xx; style-only rules are exempted, correctness
+# rules (F821, F811, E9) still apply.
+"scripts/{desi_dr2_bao,bao_bbn_h0,eboss_vs_desi}/*.py" = ["N803", "N806", "E702", "E731", "E741", "E402", "I001", "UP017", "UP035", "UP037", "UP031", "F401", "F841"]
+
 [tool.mypy]
 python_version = "3.11"
 strict = false

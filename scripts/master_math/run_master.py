@@ -27,6 +27,9 @@ sys.path.insert(0, str(HERE.parent / "hardness"))  # run_ladder's own flat impor
 from scripts.hardness import run_ladder as rl  # noqa: E402
 
 bl = rl.bl  # one build_ladder module object, shared with run_ladder
+# Lease identity is the holder *name*: sharing "autoevolveai" with the nightly
+# trainer (01:00 timer) would let both hold the T4 at once.
+rl.LEASE_HOLDER = "autoevolveai-mastermath"
 
 OUT_DIR = HERE.parents[1] / "results" / "master_math_run2"
 rl.CALL_LOG = Path("/mnt/disks/disk-socrateai-local-1/AutoevolveAI/call_logs/master_math_run2.jsonl")

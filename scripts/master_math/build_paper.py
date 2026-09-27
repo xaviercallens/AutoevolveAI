@@ -206,9 +206,29 @@ locked statements, controls, and what two 7--8B provers actually prove}
           f"on the same statement became {harvest.get('dpo_pairs', 0)} preference pairs. "
           f"Frozen-split leaks: {len(harvest.get('frozen_split_leaks', []))}. The reference proofs used as "
           f"controls were not used as training targets. ")
-    a("No retraining was run: the trainer's promotion gate still lacks a held-out pass@$k$ evaluation "
-      "(card P4-5) and has blocked promotion twice for that reason; a third run would reproduce a known "
-      "outcome, so the shared GPU time was not spent.\n\n")
+    retrain = REPO / "results" / "night_retrain_20260927" / "summary.json"
+    prover = RUN / "prover_training_full.json"
+    if prover.exists():
+        pj = json.loads(prover.read_text())
+        b, ad, tr = pj.get("eval_base", {}), pj.get("eval_adapter", {}), pj.get("train", {})
+        a("\\paragraph{Retraining the prover.} Nothing in the project trained the model that proves: the "
+          "nightly trainer fine-tunes Qwen2.5-Coder. We added a QLoRA fine-tune of DeepSeek-Prover-V2-7B "
+          f"(NF4, fp16 compute) on {pj.get('data', {}).get('lean_passed_rows', 0)} kernel-verified Lean rows "
+          f"({tr.get('steps', '?')} steps, loss {tr.get('loss_first', '?')} $\\to$ {tr.get('loss_last', '?')}, "
+          f"peak {tr.get('peak_mib', '?')}\\,MiB), and the held-out gate the project lacked: base and "
+          "adapter, same 4-bit harness, greedy, on the frozen hardness split, every proof through the "
+          f"kernel gate. Base: {b.get('true_pass', '?')}/{b.get('true_n', '?')} true items "
+          f"({tex(json.dumps(b.get('by_tier', {})))}), {b.get('false_accepted', '?')} false accepted. "
+          f"Adapter: {ad.get('true_pass', '?')}/{ad.get('true_n', '?')} "
+          f"({tex(json.dumps(ad.get('by_tier', {})))}), {ad.get('false_accepted', '?')} false accepted. "
+          f"Gate: {tex(str(pj.get('outcome', 'not reached')))}.\n\n")
+    if retrain.exists():
+        a("\\paragraph{Other retrains the same night.}\n\\begin{itemize}\n")
+        for m in json.loads(retrain.read_text())["models"]:
+            a(f"\\item {tex(m['model'])}: {tex(m['outcome'])}. {tex(m.get('detail', ''))}\n")
+        a("\\end{itemize}\n\n")
+    if not prover.exists() and not retrain.exists():
+        a("Retraining had not completed when this paper was generated.\n\n")
 
     a(r"\section{Threats to validity}" + "\n\\begin{itemize}\n"
       "\\item Most faithful statements here are single Mathlib lemmas; a pass shows the model can name "

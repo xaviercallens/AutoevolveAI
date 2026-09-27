@@ -2,18 +2,61 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [13.2.1] — Corrections to the published v13.2.0 release (2026-09-27)
+
+**Unlike v13.1.0 below, `v13.2.0` WAS tagged and published**
+(`https://github.com/xaviercallens/AutoevolveAI/releases/tag/v13.2.0`, commit
+`ea9633a`) before these corrections were found. It is not retagged or deleted —
+publishing then quietly rewriting a release is worse than publishing a fix. This
+version supersedes it for anyone consuming current numbers; the two defects below
+were real and are documented, not smoothed over.
+
+1. **The theorem-count badge was inflated by the exact defect class the original
+   audit found.** `v13.2.0` reported **250** theorems via
+   `grep -c theorem formal/ANSE/*.lean` — a command that counts every line
+   *containing the word* "theorem", including 33 lines of prose, docstrings and
+   string-literal theorem *names* (`Blueprint.lean` lists several planned theorems
+   as data, e.g. `"SIMD vector alignment theorem"`). Same shape as "2,967 Lean
+   proofs" vs. 218 authored declarations, just smaller: ~9% inflation instead of
+   ~13×. Sound count, anchored to an actual declaration keyword at line start and
+   verified to miss no modifier-prefixed declaration:
+   `grep -cE '^(theorem|lemma|example) ' formal/ANSE/*.lean` → **229**.
+2. **The published test numbers (1359/21/49/8) were measured in a release worktree
+   missing `formal/.lake`** (the Mathlib build cache) — a worse environment than
+   what README's own Quickstart puts a contributor in. Re-run in the main checkout:
+   **1371 passed / 15 failed / 43 skipped / 8 errors.** One failure is new since the
+   known 14-failure baseline — `test_mcts_prover_successful_search` hits a
+   hardcoded 25s `lake env lean` timeout, and it fails even in isolation on this
+   host under the current load (3.3–4.7, several parallel Lean-compiling sessions).
+   Whether that is a flaky pre-existing test or a real regression is **not
+   established**, and is reported as such rather than picked for convenience.
+3. `scripts/verify_release.py` itself **blocked these very notes** for naming
+   `P4-5` in an honest disclosure ("does not exist") as if it were an unsupported
+   completion claim. Fixed to exempt a card mention that discloses a gap, checked
+   line-by-line so an unrelated disclaimer elsewhere can't exempt a real claim.
+   Re-verified against both controls after the fix: still **BLOCKS** `v12.4.0`'s
+   fabricated claims; now **PASSES** on these real notes.
+
+README's badges and the `Test suite` row are corrected to the main-checkout numbers
+(1371/15/43/8, 229 theorems), since that is the environment users actually see.
+
+---
+
 ## [13.2.0] — A second research exercise, Elenchus rigor tooling, two stranded branches merged (2026-09-27)
 
 **About v13.1.0.** Its notes (below) were written by a parallel session and landed on
 `main` inside commit `ca5f7cd`, swept in because `git commit` takes the whole index. The
 `v13.1.0` tag was never cut. This release supersedes it; nothing below is re-claimed.
 
-**Measured at this tag** (T4 host, run from a git worktree):
+**Measured at this tag** (T4 host, run from a git worktree). **`v13.2.1` above found
+this measurement environment itself was non-representative and corrected the
+headline numbers** — see there for the reproducible-in-main-checkout figures; kept
+here unedited as the historical record of what this tag actually shipped with.
 
 | Check | Result |
 |---|---|
 | `pytest tests/` | **1359 passed** / 21 failed / 49 skipped / 8 errors |
-| `test_rigor_guard.py` | exit 0 (141 files; it caught 5 violations in the merged branch's tests, all fixed) |
+| `test_rigor_guard.py` | exit 0 (141 files; caught 5 violations in the merged branch's tests, all fixed) |
 | `antigravity_guard.py` | exit 1: 0 hallucinated imports; pre-existing Ruff debt only (2361, down from 2386) |
 | Lean theorems (`grep -c theorem formal/ANSE/*.lean`) | **250** across 36 files |
 
@@ -21,9 +64,17 @@ The 21 failures are all pre-existing and environment-bound. Every one of the 22 
 failed before this release's merges fails identically at the pre-session commit
 `d8ded3c` in the same environment: Lean calls without `formal/.lake` in a worktree, the
 Laya model not loaded, Playwright unable to launch Chromium. The numbers differ from
-v13.1.0's 1080/14/43/8, which was measured in the main checkout. **Correction:** v13.1.0's
-"226 theorems across 35 files" does not reproduce under its own documented command.
-That tree gives 244, so it looks hand-incremented from v13.0.0's 225.
+v13.1.0's 1080/14/43/8, which was measured in the main checkout.
+
+**Correction below, itself superseded by `v13.2.1` above:** the "244 vs 226"
+comparison two lines down turned out to be two runs of an unsound counting command
+on two different trees, not evidence either number was hand-incremented — see
+`v13.2.1` for why `grep -c theorem` overcounts and what the sound figure (229) is.
+The original correction text is kept as-written below for the historical record.
+
+**Correction:** v13.1.0's "226 theorems across 35 files" does not reproduce under its
+own documented command. That tree gives 244, so it looks hand-incremented from
+v13.0.0's 225.
 
 ### New: flat-ΛCDM BAO consistency exercise (second end-to-end research run)
 

@@ -49,6 +49,7 @@ RUNS = DISK2 / "training_runs"
 JOURNALS = RUNS / "journals"
 
 T4_TOTAL_MIB = 15360
+MIN_HELDOUT_N = 30  # below this, a per-model pass-rate difference is noise
 
 
 class Step(StrEnum):
@@ -180,6 +181,23 @@ def step_data(model: str, journal: ModelJournal, smoke: bool) -> list[dict] | No
             except json.JSONDecodeError:
                 continue
 
+    # Frozen test split: drop any row containing a held-out benchmark
+    # proposition (matched on the normalized proposition, so renamed copies
+    # are caught too). Without this the eval measures memorization.
+    frozen_path = Path(__file__).resolve().parent.parent / "results/hardness/frozen_split.json"
+    excluded = 0
+    if frozen_path.exists():
+        props = [f["prop"] for f in json.loads(frozen_path.read_text())]
+
+        def leaks(r: dict) -> bool:
+            text = " ".join(str(r.get(k, "")) for k in ("prompt", "completion", "response"))
+            text = " ".join(text.split())
+            return any(p in text for p in props)
+
+        kept = [r for r in rows if not leaks(r)]
+        excluded = len(rows) - len(kept)
+        rows = kept
+
     # Provenance gate. Card P4-2 makes this the single chokepoint for real
     # training; until it lands, only a smoke run may proceed, and only because
     # its output is never promotable.
@@ -205,7 +223,8 @@ def step_data(model: str, journal: ModelJournal, smoke: bool) -> list[dict] | No
             Outcome.OK,
             f"{len(use)} row(s)"
             + ("" if verified else " UNVERIFIED — smoke only, not promotable"),
-            data={"rows": len(rows), "verified": len(verified), "used": len(use)},
+            data={"rows": len(rows), "verified": len(verified), "used": len(use),
+                  "excluded_frozen_split": excluded},
             seconds=time.time() - t0,
         )
     )
@@ -404,11 +423,19 @@ def step_gate(model: str, journal: ModelJournal, fit: dict, metrics: dict, smoke
             )
         )
         return False
+    # Falling TRAINING loss is not evidence (14 rows x 200 steps memorizes).
+    # Promotion requires P4-5: pass@k on the frozen ladder split, base vs
+    # adapter, n >= MIN_HELDOUT_N. That harness does not exist yet, and the
+    # adapter here is Qwen2.5-Coder while the pipeline prover is DeepSeek-
+    # Prover — so no retrain of this model can improve proving. BLOCKED says
+    # that plainly instead of an OK that reads like progress.
     journal.record(
         StepRecord(
-            Step.GATE, Outcome.OK,
-            "candidate improved; promotion still requires the held-out eval in card P4-5",
-            data={"promoted": False, "reason": "awaiting P4-5 held-out eval"},
+            Step.GATE, Outcome.BLOCKED,
+            "not promotable: no frozen-split pass@k eval (P4-5), and the trained "
+            "model is not the prover; training-loss drop is not evidence",
+            data={"promoted": False, "reason": "P4-5 missing; trainer/prover mismatch",
+                  "min_heldout_n": MIN_HELDOUT_N},
             seconds=time.time() - t0,
         )
     )

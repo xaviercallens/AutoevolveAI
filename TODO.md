@@ -185,3 +185,17 @@ dropped from omega_cdm) with its expected shift written before it runs.
   task-level held-out split), and grow the corpus with failure-rich episodes.
 - **Accept when:** real-verdict training beats the shuffled control on the held-out split
   by a margin larger than seed-to-seed spread (3+ seeds).
+
+### 20. Re-tier the cosmology ledgers to Elenchus's own caps
+The synthesis paper's round-3 formal referee: Elenchus Tier B means an identity
+verified in exact rational arithmetic; floats, sampling and model output are X. Our 34
+"Tier B" rows (seeded floating-point / MCMC harness outputs) are X under the tool's caps,
+and the L rows resting on them follow by closure. Disclosed in the paper (Sec. 3.5).
+- **Accept when:** each ledger either uses Elenchus's kinds faithfully (numeric -> X) or
+  declares a named local extension that the gate enforces, and `ledger.py` agrees.
+
+### 21. Record the interpreter in every run record
+The H0 DR1 (T2) verdict is PARTIAL under venv-pta (Py 3.10, numpy 1.26) and PASS under
+venv-cosmo (Py 3.11, numpy 2.4); the committed run came from venv-pta. The preregistered
+verdict stands. Every `fit.json` must record interpreter, numpy/scipy/emcee versions and
+the command, and the preregistration must name the environment.

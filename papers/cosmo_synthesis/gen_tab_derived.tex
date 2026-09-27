@@ -1,0 +1,18 @@
+\begin{tabular}{p{6.3cm}cp{8.8cm}}
+\toprule
+Quantity & Value & Definition / source key \\
+\midrule
+DR1$\to$DR2 shift $\Delta\Omega_m$ (DR2 run, emcee means) & $\shDelta$ & \scriptsize \texttt{DR1\_to\_DR2\_shift.Delta\_Om} \\
+$\Delta\Omega_m/\sigma_{\rm nested}$ (own $\sigma_{\rm nested}=\shSigNestOwn$) & $\shRatioOwn$ & \scriptsize $\sigma_{\rm nested}^2=\sigma_{\rm DR1}^2-\sigma_{\rm DR2}^2$; \texttt{Delta\_over\_sigma\_nested\_own} \\
+$\Delta\Omega_m/\sigma_{\rm nested}$ (preregistered $\sigma=\shSigNestPre$) & $\shRatioPre$ & \scriptsize \texttt{Delta\_over\_sigma\_nested\_prereg} \\
+$\Delta\Omega_m/\sigma_{\rm indep}$ (wrong if nested; for comparison) & $\shRatioInd$ & \scriptsize \texttt{Delta\_over\_sigma\_independent\_own} \\
+$\Delta\Omega_m/|\sigma_{\rm DR1}-\sigma_{\rm DR2}|$ ($C=1$ bracket) & $\rcRatioCone$ & \scriptsize \texttt{round1\_response\_checks.json: dr1\_dr2\_conventions.ratio\_C1} \\
+SDSS--DESI DR2 tension, $(\Omega_m, h r_d)$, 2 dof & $N_\sigma=\ebNsig$ & \scriptsize $\chi^2=\ebChi$, PTE $=\ebPTE$; \texttt{tension.primary\_emcee\_moments} \\
+\quad same, grid / MAP+Laplace / KDE shift & $\ebNsigGrid$ / $\ebNsigMAP$ / $\ebNsigKDE$ & \scriptsize \texttt{tension.\{grid\_moments, MAP\_laplace, posterior\_parameter\_shift\_KDE\}} \\
+\quad same, with $X+X^{\rm T}$, $X=\rho\sqrt{C_S}\sqrt{C_D}$, subtracted, $\rho=0.57$ (illustration) & $N_\sigma=\roNsigFiftySeven$ & \scriptsize \texttt{round1\_response\_checks.json: overlap\_sensitivity} \\
+$H_0$ shift, exact CAMB $r_d$ minus fitting formula, DR2, MAP (deterministic; equals the propagated measured formula error, which exceeds Aubourg's stated 0.021\%; not new) & $\fsMapOne$ km/s/Mpc & \scriptsize \texttt{round3\_response\_checks.json}, key \texttt{formula\_shift}, \texttt{map\_diff} \\
+\quad same, DR1, MAP & $\fsMapTwo$ km/s/Mpc & \scriptsize \texttt{...T2\_DR1.map\_diff} \\
+\quad posterior-mean differences DR2 / DR1 (MC-noise dominated) & $\hzPmSOne\pm\fsMcOne$ / $\hzPmSTwo\pm\fsMcTwo$ & \scriptsize \texttt{measured\_formula\_systematic}; MC error from chain std/$\sqrt{\rm ESS}$ \\
+Wrong neutrino bookkeeping (N4), $\Delta H_0$ (MAP) & $\hzNfourD$ km/s/Mpc & \scriptsize $\Delta\chi^2=\hzNfourChi$; \texttt{controls/N4.json} \\
+\bottomrule
+\end{tabular}

@@ -1,0 +1,668 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage[hidelinks]{hyperref}
+\lstset{basicstyle=\footnotesize\ttfamily, columns=fullflexible, breaklines=true, keepspaces=true}
+\input{gen_numbers.tex}
+\emergencystretch=3em
+\newcommand{\kms}{km\,s$^{-1}$\,Mpc$^{-1}$}
+
+\title{An agent-executed, preregistered reproduction pipeline for BAO cosmology with kernel-checked model identities:\\
+three preregistered DESI/SDSS reproductions and one earlier reproduction as one methodology study}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Draft of 2026-09-27}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We describe and audit a reproduction pipeline for baryon acoustic oscillation (BAO) cosmology in which the analysis is executed by
+language-model agents, every number is produced by a script in the repository, targets and tolerances are preregistered, the
+algebraic skeleton of each closed-form model is stated and kernel-checked in Lean~4 (the fits and numerics are not machine-checked; for the $H_0$ run only the secondary fitting-formula $r_d$ has a Lean skeleton, the primary CAMB $r_d$ has none), claims are filed in a tier-capped ledger, and an adversarial
+model referee re-runs each preregistered analysis before a fix round. The pipeline was applied to four problems. (i) DESI DR1 flat $\Lambda$CDM
+(not preregistered): $\Omega_m=\dOneOm$, $h r_d=\dOneHrd$\,Mpc ($\chi^2$ minimum), matching DESI's printed best fit ($\rdPubOm$, $\rdPubHrd$\,Mpc);
+our $\chi^2_{\min}$ is higher than DESI's $\rdPubChi$ by $\rdMzero$, an offset we could not explain. (ii) DESI DR2: $\Omega_m=\dTwoLOm\pm\dTwoLOmS$, $hr_d=\dTwoLHrd\pm\dTwoLHrdS$\,Mpc, and $w$CDM
+$w=\dTwoWw\pm\dTwoWwS$; the largest of the four $|$pulls$|$ is $\dTwoMaxAbsPull$, and $\dTwoCritPass$ of $\dTwoCritN$ preregistered criteria hold. (iii) BAO+BBN inverse distance ladder:
+$H_0=\hzPOne\pm\hzPOneS$\,\kms{} (DR2, exact CAMB sound horizon, verdict \hzPOneV) against $\hzTOne\pm\hzTOneS$; the DR1 check gives
+$\hzPTwo\pm\hzPTwoS$ against $\hzTTwo\pm\hzTTwoS$, an offset of $\hzPTwoD$ that exceeds the preregistered strict window of $\hzStrict$
+(verdict \hzPTwoV{} in the recorded run). Re-executing the same frozen script with the same seeds under the project's other Python environment
+gives $|\Delta H_0|=\rePTwoD$, i.e.\ \rePTwoV; the two runs differ by $\reShiftMC$ Monte Carlo errors, so this label depends on the numerical
+environment and the strict boundary is not resolved. The preregistered BAO-only gate tolerance admits $H_0$ offsets larger than the strict window, so PASS versus PARTIAL
+does not isolate the BBN/$r_d$ step. (iv) SDSS/eBOSS vs DESI DR2: SDSS $\Omega_m=\ebSOm\pm\ebSOmS$ against $\ebSOmT\pm\ebSOmTS$. The cosmological values
+are reproductions, not new measurements. The pipeline also yields two simple functions of public inputs that we did not find quoted in the fetched DESI text: the DR1$\to$DR2 shift
+$\Delta\Omega_m=\shDelta$, which is $\shRatioOwn$ times the nested-sample uncertainty ($\rcRatioCone$ under a perfect-correlation bracket); and, for BAO-only
+$(\Omega_m, hr_d)$ with DESI's eq.~(18) statistic, an SDSS--DESI DR2 tension of $N_\sigma=\ebNsig$ (PTE $\ebPTE$) under the independent-survey assumption.
+Because the surveys overlap, $N_\sigma$ is a model-dependent lower bound (and the PTE an upper bound): an illustrative cross-covariance
+with $\rho=0.57$ raises it to $\roNsigFiftySeven$. We report the verification artifacts as well:
+$\lnTotal$ Lean theorems (7 of them short identities or positivity statements), all with whitelist-only axioms in the pinned build and $\lnCleanTwo$ of them re-checked against a fully built Mathlib
+(same Lean binary and Mathlib commit, so this tests independence from the partial build, not from the toolchain); a hash-locked, unread first fit that is reported next to the amended analysis; a wrong-convention control that the data cannot
+detect ($\Delta\chi^2=\hzNfourChi$) and that the external target only marginally catches; and a port to a Rust reimplementation of CVODE (rusty-SUNDIALS, not the
+LLNL library) that reproduces the DR2 fit and exposed defects in that reimplementation. Every audit of a Lean statement was done by a model of the same family as the
+analysis agent. No person has reviewed any component.
+\end{abstract}
+
+\paragraph{AI-use statement.}
+The analyses, code, Lean files, ledgers, referee reports, fixes and this manuscript were produced by Claude agents running in Claude
+Code under a workflow that the author designed and launched. The author chose the problems and the rules (preregistration, controls,
+Lean gate, ledger, referee). The only record of model tiers is an orchestrator status message (timeline, \tierTime; quote
+sha256 prefix \texttt{\tierShaShort}): ``\tierQuote'' The identity of the ``default model'' is not recorded in any artifact.
+This synthesis was drafted by a Claude agent in the same way. The adversarial referees are therefore Claude models reviewing Claude-written work:
+producer and verifier differ at most in model tier, not in vendor or training lineage, and automated review verdicts are known to depend on the
+reviewer's model family (Gemini and Claude reviewers agree at Spearman $\rho=0.907$, GPT-5.4 with either at $\rho\approx0.32$~\cite{ravideshik2026}).
+Each of the four problems was executed once by the agent pipeline (one \texttt{fit.json} per run); the DR2 bit-for-bit regeneration of
+Sec.~\ref{sec:referee} is a fixed-seed re-execution of the same scripts, not an independent agent run, so no run-to-run statistics exist. Every number produced by these analyses is a macro written by
+\texttt{papers/cosmo\_synthesis/gen\_numbers.py} from the result JSONs (and, for the Rust cross-check and guard logs, from the
+files named in Sec.~\ref{sec:rust} and Sec.~\ref{sec:limits}), and \texttt{number\_manifest.json} lists the file and key behind each one.
+Every JSON under \texttt{results/cosmo\_synthesis/} that feeds a macro is written by a script in that directory; the first version of
+\texttt{lean\_dual\_check.json} was hand-corrected and is kept, with its hash, as \texttt{lean\_dual\_check\_v1\_handedited.json} (Sec.~\ref{sec:lean}).
+Rule constants (thresholds such as $10^{-3}$ or $50\tau$), equation numbers and figures quoted from other papers are typed.
+\textbf{Human review status:} none documented for any component. The fits, controls, Lean statements, ledgers and this text have not
+been reviewed by a person. Where the text says ``audited'' or ``refereed'', the auditor or referee was a model.
+
+\section{Introduction}
+BAO distance ratios $D_M/r_d$, $D_H/r_d$ and $D_V/r_d$ are among the cleanest cosmological observables. In flat $\Lambda$CDM, BAO data alone
+constrain only $\Omega_m$ and $h r_d$, and adding a BBN prior on $\omega_b$ calibrates $r_d$ and hence $H_0$. DESI published
+DR1~\cite{desi2024vi} and DR2~\cite{desi2025dr2} results, and SDSS/eBOSS published its final compilation~\cite{eboss2021}. Public
+likelihood files for all three are available. That makes these results good test cases for an automated reproduction pipeline:
+the targets are precise, the data are public, and a failure cannot be blamed on missing inputs.
+
+This paper does not claim new cosmology. It asks whether an agent-executed pipeline can reproduce published BAO numbers under rules
+strict enough that a wrong result would have been caught and a lucky one would not count, and it lists what went wrong along the
+way. We treat four runs as one study: the earlier DESI DR1 exercise and three preregistered problems run in parallel.
+
+\section{The pipeline}\label{sec:pipeline}
+Each preregistered problem passed through the same stages. The DR1 run predates the workflow: it had a literature review but no preregistration (stage~1) and no referee (stage~6).
+\begin{enumerate}
+\item \textbf{Literature and preregistration.} Every target is taken from a fetched source (arXiv id plus equation or table) and recorded
+in \texttt{docs/literature/*\_LITERATURE\_REVIEW\_2026.md}. The preregistration JSON fixes data files (sha256), model, priors,
+estimator, targets, tolerances, controls and the planned Lean statements before any fit is run.
+\item \textbf{Fit with controls.} Positive controls (noiseless and noisy mocks, predictor cross-checks), negative controls (scrambled
+data, wrong model, label swaps, scrambled covariance) and, after review, a subtle-bug control. Results are written only by scripts under
+\texttt{scripts/<run>/} to \texttt{results/<run>/}.
+\item \textbf{Lean~4 formalization} of the algebraic skeleton (positivity, monotonicity, identities), with in-file
+\texttt{\#print axioms}, a \texttt{sorry} negative control and (added in revision) an axiom-smuggling control.
+\item \textbf{Elenchus ledger:} a tier-capped claim ledger with content-addressed evidence blobs~\cite{elenchus} (the author's own software,
+unpublished and not peer-reviewed).
+\item \textbf{Paper} built from generated macros.
+\item \textbf{Adversarial referee}, a model agent that re-runs the analysis, followed by a \textbf{fix round}.
+\end{enumerate}
+After the runs, two cross-checks were added: a dual-environment Lean re-check (Sec.~\ref{sec:lean}) and a Rust/CVODE port of the
+distance numerics (Sec.~\ref{sec:rust}).
+
+\section{Methods}
+\subsection{Data and model}
+All DESI fits use the public Gaussian BAO files, whose sha256 hashes are listed in Table~\ref{tab:data}. DR1 has $\dOneNdata$ data points.
+The model is flat $\Lambda$CDM or constant-$w$ $w$CDM. In the BAO-only runs, radiation is off in the primary model and enters as a
+sensitivity variant. For DR2 $\Lambda$CDM, adding radiation shifts $\Omega_m$ by $\dTwoRadOm$ published $\sigma$. Fitting the primary model to a
+noiseless CAMB data vector with $\sum m_\nu=\hzMnu$\,eV returns $\Omega_m$ higher than the CAMB input by $\dTwoCambOm\sigma$ (primary minus CAMB), so a
+CAMB-model analysis of the real data would sit lower by about that amount, in the same direction as the radiation variant. Applied to the DR2
+$\Omega_m$ pull of $\dTwoLOmP$, these offsets give $\rpCambPull$ (CAMB) and $\rpRadPull$ (radiation); both are negligible. The massless-neutrino CAMB background agrees with our distances to
+$\dTwoCambMassless$. The H0 run models radiation and one massive neutrino in the background, uses the DESI flat priors and the BBN prior
+$\omega_b=\hzBBNob\pm\hzBBNobS$, and computes $r_d$ with CAMB. The eBOSS run fits the SDSS DR16 compilation with its non-Gaussian
+likelihood tables and never combines SDSS with DESI.
+
+\subsection{Preregistration and the $H_0$ protocol amendment}\label{sec:h0prot}
+The H0 preregistration (timestamp \hzPreTime) named the Aubourg et al.\ eq.~16 fitting formula~\cite{aubourg2015} as the primary $r_d$.
+CAMB and CLASS were installed after it was written. Amendment~1 (\hzAmdTime), written by the orchestrating session rather than the fit agent,
+made an exact CAMB $r_d$ table primary and kept the fitting formula as the preregistered secondary. Targets, tolerances, controls and data
+did not change. A first fitting-formula fit had already been written (\hzLockWritten) by the fit agent. The amender did not read it,
+hash-locked it (sha256 prefix \texttt{\hzLockShaShort}; a local, mtime-timestamped instance of the pre-run commitment that TOPO~\cite{topo2024} timestamps publicly, Sec.~\ref{sec:new}) and renamed it
+\texttt{fit\_attempt1\_fittingformula\_UNREAD\_AT\_AMENDMENT.json}. The file's current hash still matches the amendment: \hzLockShaNowMatches.
+\textbf{Both results are reported} (Table~\ref{tab:h0}, Fig.~\ref{fig:h0}). The locked attempt gives $H_0=\hzLockOne\pm\hzLockOneS$
+(DR2) and $\hzLockTwo\pm\hzLockTwoS$ (DR1). The re-run secondary, in the recorded environment, is identical to it (difference $\hzLockDiff$). That identity is
+expected from fixed seeds, the same code path \emph{and the same numerical environment}: re-executed under the other interpreter on this machine
+(Sec.~\ref{sec:env}) the secondary differs from the locked file by $\reLockOne$ (DR2) and $\reLockTwo$ (DR1) in $H_0$. The comparison therefore shows
+same-environment reproducibility only, not independent correctness. The strict window
+$|\Delta H_0|\le\hzStrict$\,\kms{} was built in the preregistration as $\sqrt{\swFormula^2+\swMC^2}=0.148\to\hzStrict$, from a fitting-formula systematic of
+$\hzProxySys$\,\kms{} and a Monte Carlo and numerics allowance of $\swMC$\,\kms{} (the preregistration's own estimate of the MC noise was ``$\sim$0.02''). With the
+exact $r_d$ the formula term no longer applies. A post-hoc re-budget keeps the MC allowance and adds a CAMB-table interpolation term of $\swInterp$, giving
+$\hzRebudget$; it was \emph{not} used: the preregistered rule decides the verdict. The preregistered prior probability of a strict PASS was $\hzPsuccess$.
+
+\textbf{The preregistered tolerances are not mutually coherent.} The BAO-only gates G1/G2 accept $|hr_d-\text{target}|\le0.25\sigma$. With the
+measured slope $d\ln(hr_d)/d\ln h=\rgSlope$ (\texttt{fixround\_diagnostics.json}), a gate-admitted offset propagates to $|\Delta H_0|$ up to
+$\rgGOneMax$ (DR2) and $\rgGTwoMax$\,\kms{} (DR1), larger than the strict window of $\hzStrict$ in both cases and, for DR1, larger than the soft
+window of $\hzSoft$. The T2 PARTIAL is \emph{consistent with} this mechanism, but the numbers do not establish it: the G2 offset
+from DR1's Sec.~8 value $hr_d=\hzHrdQuoteEight$ is $\rgGTwoOff$\,Mpc (pull $\rgGTwoOffP$), which implies $\hzPostHocEight$\,\kms{}; from DR1's Sec.~6 value $\hzHrdQuoteSix$
+it implies $\hzPostHocSix$\,\kms; across the $\pm0.05$\,Mpc rounding interval of $\hzHrdQuoteEight$ alone it implies $\rtLo$--$\rtHi$\,\kms; and the
+$\rtGtwoSteps$-step G2 chain (ESS $\rtGtwoESS$) carries a Monte Carlo error of $\rtMChrd$\,Mpc on its mean, i.e.\ $\pm\rtMCH$\,\kms{} on the implied value
+(\texttt{round2\_response\_checks.json}, key \texttt{g2\_attribution}). The mechanism can therefore account for anywhere from about $\rtMin$ to $\rtMax$\,\kms{} of the observed
+$\hzPTwoD$, and the closeness of $\hzPostHocEight$ to $\hzPTwoD$ is not evidence for it. The T1 strict PASS is likewise only \emph{consistent with} G1 landing at $\rgGOneOff$\,Mpc (implied $\rgGOneOffH$\,\kms); we do not attribute it to that offset. PASS versus
+PARTIAL therefore does not isolate the BBN/$r_d$ step. No tolerance was changed after the fits; the verdicts are those the preregistered rule gives for the recorded
+run (computed by \texttt{results/cosmo\_synthesis/round1\_response\_checks.py}), and Sec.~\ref{sec:env} shows that the primary T2 label is not stable under
+re-execution. An independent DESI DR2 BAO+BBN analysis with a full BBN likelihood~\cite{akharman2026} finds $h=0.6833^{+0.0048}_{-0.0053}$ with the PRIMAT network and
+``a modest spread in $h$ across the three reaction networks considered here, up to roughly $0.5\sigma$'', noting that ``the DESI DR2 analysis uses a prior on the
+baryon density from just one reaction network''. A reaction-network systematic of that size is larger than our strict window ($\hzStrictSigOne\sigma$); it plays no
+role in our verdicts, which reproduce DESI's analysis with DESI's prior, but a systematic of that size is comparable to or larger than the distance between the PASS/PARTIAL boundary and our result (the two $\sigma$ units differ: theirs is their own $\sigma(h)$, ours DESI's).
+
+The DESI DR2 and eBOSS preregistrations were not amended after fitting. The eBOSS preregistration carries an amendment field
+(before any fit) whose recorded time is later than the file's mtime (Sec.~\ref{sec:limits}). None of the preregistration files was
+committed to git before its fit, so for all of them the file mtime is the only evidence of ordering.
+
+\subsection{Controls, including a subtle-bug control}
+\textbf{DESI DR2:} $\dTwoNPC$ preregistered positive controls (PC0--PC4; PC0 has quadrature and Gauss--Legendre entries, so
+\texttt{controls.json} has $\dTwoNPCkeys$ keys) and $\dTwoNNC$ negative controls. The noisy-mock control used $\dTwoPCn$ draws, with an $\Omega_m$
+pull mean of $\dTwoPCpullMeanOm$ and standard deviation of $\dTwoPCpullStdOm$. The wrong-model (EdS) control gave $\chi^2=\dTwoNCthreeChi$. The
+scrambled-covariance control passed its preregistered median-PTE rule (median $\dTwoNCfiveMed$), but $\dTwoNCfiveBad$ of $\dTwoNCfiveN$
+individual scrambles gave PTE $>10^{-3}$, so it tests covariance ordering only in aggregate.
+\textbf{H0:} noiseless mock (P1, $|\Delta H_0|=\hzPoneD$), $\hzPtwoN$ noisy mocks (P2, $H_0$ pull mean $\hzPtwoMean$, s.d.\ $\hzPtwoStd$; report-only, because the preregistered rule covers $H_0$ only: $\Omega_m$ pull mean $\hzPtwoOmMean$ with standard error $\hzPtwoOmSE$, s.d.\ $\hzPtwoOmStd$), gates
+G1/G2 (DESI BAO-only reproductions), predictor agreement (P4, $\hzPfour$), scrambled data (N1), EdS (N2, $\chi^2=\hzNtwoChi$) and no-BBN
+(N3, $\sigma(H_0)$ grows by a factor of $\hzNthree$).
+\textbf{eBOSS:} a grid-likelihood instrument check, an injection test over $\ebPosN$ realizations on the SDSS Gaussian-summary
+variant and DESI, and negative controls. An injected $\times\ebInjScale$ rescaling of all ratios gives $N_\sigma=\ebInjN$.
+
+Scrambled data and wrong models fail in any pipeline, so they do not show that a pipeline is right. After review, the H0 run added
+\textbf{N4}, a deliberately subtle convention error: $\omega_\nu$ not subtracted from $\omega_{\rm cdm}$ in the CAMB $r_d$. Its status is
+recorded as ``\hzNfourStatus''. It moves the MAP $H_0$ by $\hzNfourD$\,\kms{} while changing $\chi^2$ by only $\hzNfourChi$. The data cannot
+see this error (the wrong model even has the lower $\chi^2$). Only the external target can, and only marginally: the strict window of
+$\hzStrict$\,\kms{} is exceeded by $\hzNfourMargin$\,\kms{} ($\hzNfourMarginSig$ published $\sigma$), which is $\rnRatio$ times the T1 posterior-mean
+Monte Carlo error of $\rnMC$\,\kms. The shift is measured between MAP points, whereas the verdicts use posterior means. We think controls
+of this kind, which the likelihood cannot detect, are the important ones for agent-written analyses.
+
+\subsection{Lean~4 formalization and the dual-environment check}\label{sec:lean}
+Each run states the algebraic skeleton of its model in Lean~4: positivity and monotonicity of $E(z)$, the distance-duality identity,
+positivity and monotonicity of the Aubourg $r_d$ formula, a $(h, r_d)\to hr_d$ degeneracy identity, identifiability of $h$
+from $hr_d(h)$ for the fitting-formula $r_d$, and symmetry, nonnegativity and zero-iff properties of the tension statistic. These theorems are elementary; 7 of
+the $\lnTotal$ (\texttt{rd\_numerator\_pos}, \texttt{DH\_over\_rd\_eq\_hrd}, \texttt{DH\_over\_rd\_degenerate}, \texttt{gate\_reparam\_exact},
+\texttt{tension1D\_symm}, \texttt{tension1D\_nonneg}, \texttt{surveyTension\_symm}) are short identities or positivity statements (``short'' refers to their mathematical content; some proofs take three tactics), none vacuous. They check
+that stated properties of the formulas used hold. \textbf{They do not verify the fits, the data handling or the numerics.} The statements
+appear verbatim in Appendix~\ref{app:lean}; the docstrings, which carry the scope limits, are stripped there, so we state the limits here.
+For the $H_0$ run: the degeneracy theorems are proved for $D_H/r_d$ only and at fixed $E(z)$, whereas in the BBN fits $E$ depends on $h$ through
+radiation; the identifiability theorem (\texttt{hrd\_strictMonoOn\_h}, via \texttt{hrd\_mono\_generic}) covers only the \emph{secondary} Aubourg $r_d$,
+on the set $\omega_\nu\le(1-2a)\,\Omega_m h^2$, which excludes part of the sampled secondary prior (stated in the Lean file's header and measured in \texttt{fixround\_diagnostics.json}, key \texttt{omega\_m\_threshold}); nothing is proved about the CAMB $r_d$ behind the
+headline $H_0=\hzPOne$ PASS. For DR2, the preregistration planned the domain $z>-1$; the shipped statements use $z\ge0$ (Sec.~\ref{sec:referee}). In revision we tested the preregistered
+domain for the two positivity theorems: \texttt{E2\_pos} and \texttt{E\_pos} restated with hypothesis $-1<z$, with the \texttt{E2\_pos} tactic script byte-identical and
+the \texttt{E\_pos} script differing only in the name of the lemma it calls, compile in the pinned build (rc $\zgRc$) with whitelist-only axioms
+(\texttt{results/cosmo\_synthesis/dr2\_zgtm1\_check.lean}, sha256 prefix \texttt{\zgSha}). For these two theorems the preregistered domain is recoverable at no proof
+cost; the shipped file keeps $z\ge0$ only so that the model audit stays bound to the audited bytes. The monotonicity and $D_C$ theorems were not tested on $z>-1$ (the preregistration fixed no domain for them; its $z>-1$ applies to the positivity statement only).
+In \texttt{BAO\_FlatLCDM.lean}, the hypothesis $z\neq-1$ of \texttt{distance\_duality} is inert in Lean (both sides are $0$ at $z=-1$ because
+$x/0=0$), although its docstring suggests it is needed.
+
+The binding project rule routes Lean through \texttt{anse/formal/lean\_runner.py}, which could not gate a new file from a worktree. Every
+run therefore used \texttt{lake env lean <file>} plus in-file \texttt{\#print axioms}, which is a documented deviation. After the runs,
+all four files were re-checked in two environments (Table~\ref{tab:lean}); both report Lean $\lnLeanVersion$ (toolchain \texttt{\lnToolchain}) and
+Mathlib \texttt{\lnMathlibInput} at commit \texttt{\lnMathlibRev}, read from each environment's \texttt{lake-manifest.json}. Environment~1 is the
+project's pinned, partially built Mathlib ($\mbOne$ Mathlib \texttt{.olean} files for $\mbSrc$ sources). Environment~2 is the LeanMaster project's fully built copy of the same
+Mathlib commit ($\mbTwo$ \texttt{.olean} files). The two environments therefore share the Lean binary and the Mathlib version; the second check tests independence from the
+partial build, not from the compiler or the library. In environment~1, $\lnCleanOne$ of
+$\lnTotal$ axiom outputs list only \{\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}\}. In environment~2,
+$\lnCleanTwo$ were checked and clean. The remaining $\lnBlockedTwo$ (\texttt{DESI\_DR2\_wCDM.lean}) were not checked, because that file
+imports \texttt{ANSE.BAO\_FlatLCDM}, which environment~2 does not provide. Lean stopped with ``unknown module prefix 'ANSE''' before
+elaborating any declaration. This is BLOCKED\_ENV, not a proof failure. Accepted file$\times$environment pairs: $\lnPairs$ of $\lnPairsTotal$.
+\textbf{Negative controls:} (1) a copy of \texttt{BAO\_FlatLCDM.lean} with the proof of \texttt{E\_pos} replaced by \texttt{sorry} exited
+with rc $\lnNegRcOne$ / $\lnNegRcTwo$, while \texttt{\#print axioms} showed \texttt{sorryAx} (\lnNegSorry). (2) A copy that declares
+\texttt{axiom smuggled\_E\_pos\_fact : False} and proves \texttt{E\_pos} from it exited with rc $\lnAxRcOne$ / $\lnAxRcTwo$; the smuggled axiom
+appeared in the \texttt{\#print axioms} output (\lnAxSeen) and the whitelist rejected it (\lnAxRejected). An exit code alone would have accepted both.
+\textbf{Correction of a hand-edited record.} The first version of the checker counted the substring \texttt{\#print axioms} including a comment line,
+rejected \texttt{BAO\_FlatLCDM} in both environments, and the output JSON was then corrected by hand (keys added without a re-run; kept as
+\texttt{lean\_dual\_check\_v1\_handedited.json}, sha256 prefix \texttt{\lnVoneSha}). The round-1 formal referee found this. The checker now counts
+\texttt{\#print axioms} commands on comment-stripped source, computes every key the paper reads, adds the axiom-smuggling control and records the
+toolchain; all numbers in this section and Table~\ref{tab:lean} come from that re-run. All kernel checks are single-file \texttt{lake env lean} runs. The three new
+modules are not yet part of the project's \texttt{lake build}: the worktree's \texttt{formal/ANSE.lean} imports all four, but no build of that root is recorded, and the main
+checkout's \texttt{formal/ANSE.lean} imports \texttt{ANSE.BAO\_FlatLCDM} $\lrMainFlat$ times and none of the three new modules ($\lrMainNew$ imports). Wall times are single measurements on a shared machine
+(load average at the end of the run: \lnLoad) and are not benchmarks.
+
+\subsection{Elenchus tier-capped ledger}\label{sec:ledger}
+Claims are filed with tier X${<}$C${<}$L${<}$B${<}$A. A is kernel-checked Lean, L is a literature citation and C is a conjecture.
+\textbf{Our Tier~B is not Elenchus's Tier~B.} In the cited tool, B is an identity verified in exact rational ($\mathbb{Q}/\mathbb{Z}$) arithmetic, and floats, sampling and
+model output are filed at X, which ``may never support a claim''~\cite{elenchus}. All $\tierBTotal$ Tier~B rows in our four ledgers ($\lATB$/$\lBTB$/$\lCTB$/$\lDTB$) are
+seeded floating-point or Monte Carlo harness outputs on sha256-verified inputs (emcee posterior moments, CAMB/CLASS backgrounds, control $\chi^2$). Under the tool's own
+semantics they would be X, and by dependency closure so would the computed L comparison rows that rest on them. The gate cannot see this because \texttt{kind} is self-declared.
+The H0 and eBOSS ledger READMEs disclose the redefinition; the DR1 and DR2 ledger READMEs do not. No number changes; only the label ``B'' is borrowed from a ladder that
+would not grant it, and the round-1/2 closure mutation tests (tier inversion, refiling a B row at C) presuppose our redefinition. A claim's tier is capped by the tiers of its dependencies and by its evidence kind, and each evidence blob is
+addressed by its sha256. The gate (\texttt{ledger.py}) returns rc~1 on any block or flag. On a Tier~A row, ``flag'' means the kernel checked
+the proof but no one has certified that the statement means what its gloss says. \textbf{The gate only type-checks the audit field}, so a
+model-written audit turns rc~1 into rc~0. In every run the audits are the model referee's and are labelled as such, so rc~0 here means
+\emph{model-audited}, not human-audited (Table~\ref{tab:ledger}). The DR1 ledger keeps its three Tier~A rows unaudited (rc~1). The H0
+ledger has rc~1 because two theorems added in the fix round were never reviewed. Mutation controls were run against the three preregistered runs' ledgers:
+a tier inversion, a tampered blob and a kind overclaim. The gate caught each one. \textbf{What the gate does not check.} It binds each evidence digest
+to bytes, not a claim to its evidence: the round-1 formal referee pointed a Tier~A row's digest at a different, intact blob in the same evidence
+directory, and the gate returned rc $\mtMtwo$ (DR2/eBOSS); an empty audit object \texttt{\{\}} also cleared the flag (rc $\mtMfour$). The gate also never
+parses the content of a \texttt{lean\_axioms} blob: in a mutation control devised by the round-3 formal referee and re-run here on copies
+(\texttt{results/cosmo\_synthesis/round3\_m6\_sorry\_blob\_mutation.py}), rewriting one Tier~A row's own blob so that its axiom footprint lists \texttt{sorryAx}, re-hashing and
+repointing the row left the gate's rc unchanged in $\msixUndetected$ of $\msixN$ ledgers. The kernel-checked meaning of Tier~A therefore rests on whoever wrote the blob, not on
+the gate. Claim-to-blob correspondence is checked only by reading; the round-3 formal referee did that reading programmatically and found all $\lnTotal$ Tier~A blobs (one per theorem)
+content-consistent with the shipped Lean files. The three ledgers use three audit schemas (\texttt{auditor\_kind}, \texttt{auditor\_is\_person},
+free-text \texttt{by}); Table~\ref{tab:ledger} therefore counts an audit only if it is a non-empty object naming an auditor, and a further column
+counts audits whose recorded source hash equals the current Lean file. For DR2 the audited bytes are the current file. For eBOSS the audit is bound to
+an earlier hash, and the ledger records the current hash and the change (a docstring). For $H_0$, the $\rbAudited$ audits are bound to source hash
+\texttt{\rbAuditSha\ldots}, not the current \texttt{\rbCurSha\ldots}, and the ledger names neither the current hash nor the change, against the
+project rule that an audit is bound to the Lean file's hash. The audited bytes were never committed. In the only surviving pre-fix copy (a
+\texttt{sorry} scratch file, now kept as \texttt{results/cosmo\_synthesis/h0\_prefix\_scratch\_copy.lean}, not hash-linked to the audited bytes), $\rbSame$ of the $\rbAudited$ audited statements are textually identical to the current
+ones (\texttt{round1\_response\_checks.json}, key \texttt{h0\_audit\_binding}). The ledger lies outside this synthesis' write scope and was not changed.
+Some computed comparison rows (e.g.\ DR2-L-0006, BBNH0-L-0008, EVD-L-0006) are filed with kind \texttt{citation}; the tier cap is unaffected
+because it also follows from dependency closure, but the kind label does not describe how the claim was established.
+
+\subsection{Adversarial referee and fix round}\label{sec:referee}
+A model referee re-ran each preregistered analysis and read the Lean statements. DR2: verdict \dTwoRefVerdict{}, $\dTwoRefN$ issues. H0: verdict
+\hzRefVerdict{}, $\hzRefN$ issues. eBOSS: $\ebRefOneN$ issues in round~1 ($\ebFixOneFixed$ of $\ebFixOneN$ fix items fixed; the fix list has more items than
+the report because issue~7 was split into 7a/7b/7c) and $\ebRefTwoN$ in round~2 ($\ebFixTwoFixed$ of $\ebFixTwoN$ fixed). The eBOSS ledger's rc~0
+(Table~\ref{tab:ledger}) comes from fix item r2\_8b, which recorded the round-2 referee's statement audit on the Tier~A rows ``per the orchestrator's
+fix-round instruction''. The round-2 referee had described the reverted rc~1 state as ``the honest outcome''; rc~0 was therefore reached over the
+referee's stated preference. The referees found real problems:
+\begin{itemize}
+\item a citation overreach (DR1 does not apply its parameter-difference statistic to SDSS);
+\item a vacuous negative control (the SDSS-baseline EdS test passed because the likelihood returned $+\infty$);
+\item a combination guard that was only a filename substring match;
+\item a DR2 Lean statement that had drifted from the preregistered $z>-1$ to $z\ge0$ (left in the shipped file so that the audit stays bound to the
+audited bytes; in revision, $z>-1$ was tested for \texttt{E2\_pos} and \texttt{E\_pos} and proves with the same tactics, Sec.~\ref{sec:lean});
+\item a preregistered H0 monotonicity theorem that had been replaced by easier identities;
+\item unverifiable model attributions in bylines.
+\end{itemize}
+In the DR2 fix round, the chains were regenerated and compared bit for bit with the originals (identical: \dTwoRerunIdentical).
+
+\subsection{Cross-language cross-check in Rust/CVODE}\label{sec:rust}
+The distance integrals and the DR2 flat-$\Lambda$CDM $\chi^2$ fit were ported to the \texttt{qf-bao-distances} crate of rusty-SUNDIALS
+(commit \texttt{\rsPortCommit}; PR~\#61, recorded by \texttt{gh pr view} as merged at \rsPRMergedAt{} with merge commit \texttt{\rsPRMerge}),
+on that repository's own Rust reimplementation of CVODE (not the LLNL library). The CVODE path gives $\Omega_m=\rsCvOm\pm\rsCvOmS$ and
+$hr_d=\rsCvHrd\pm\rsCvHrdS$\,Mpc with $\chi^2_{\min}=\rsCvChi$. The quadrature path differs from our Python $\chi^2$ minimum by $\rsQdMinusPyOm$ in $\Omega_m$, which is at the README's
+printed precision. The CVODE path differs by $\rsCvMinusPyOm$. That is a real offset between the CVODE and quadrature integrators,
+larger than the rounding, but within the crate's own test bound of $1\%$ of $\sigma$ for CVODE versus quadrature. This comparison is between
+$\chi^2$ minima with Fisher errors, not the emcee posterior means of Table~\ref{tab:dr2}. The crate's tests report $\rsTestsPass$ passing
+and $\rsTestsIgn$ deliberately ignored.
+
+The port exposed defects in this Rust CVODE reimplementation. The README (last changed in \texttt{\rsPortCommit}) records these measurements:
+\begin{itemize}
+\item the Einstein--de Sitter closed-form bound of $10^{-7}$ is not met by CVODE BDF at rtol $10^{-7}$ (measured $\rsEdsErr$);
+\item many outputs from one BDF run lose accuracy;
+\item rtol $\le10^{-8}$ fails;
+\item \texttt{Method::Adams} never leaves order~1, because its coefficient routine is a placeholder (error $\rsAdamsErr$ at rtol $10^{-7}$).
+\end{itemize}
+The later commit \texttt{\rsFixCommit} (PR~\#60) identifies a cause: output-time truncation shifted the Nordsieck history instead of rescaling
+it. That commit reports a one-line fix and says rtol $\le10^{-8}$ now works. The README measurements predate that fix and were not repeated
+afterwards. The Adams order-1 defect is not addressed by \texttt{\rsFixCommit} and remains open.
+
+\section{Results}
+Pulls are $(\text{ours}-\text{published})/\sigma_{\rm published}$. Our fits use the same data, priors and estimator as the published analyses,
+so a pull is a measure of reproduction accuracy, not an independent-sample significance (the DR2 Monte Carlo error on the $\Omega_m$ mean is
+$\rmDRtwoMC\sigma$). Figure~\ref{fig:pulls} summarizes all targets. Each point's grey band is
+its own preregistered tolerance, not an error bar: $\ebTol\sigma$ for DR2 and eBOSS; $\hzOmTol\sigma$ for the H0 $\Omega_m$ targets and gates; and, for $H_0$,
+the absolute strict window of $\hzStrict$\,\kms, which is $\hzStrictSigOne\sigma$ (T1) or $\hzStrictSigTwo\sigma$ (T2).
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.92\textwidth]{fig_pulls.pdf}
+\caption{Pulls of every numeric target, from the result JSONs by \texttt{make\_figures.py}. Grey bands show each target's preregistered
+tolerance; they are tolerances, not error bars, and the pulls are not independent-sample significances (same data and priors on both sides). The DR1 run was not preregistered and has none. The hollow triangle (SDSS $hr_d$) marks a target taken from a secondary
+source, which is excluded from the eBOSS tolerance rule. H0 secondary (fitting-formula) pulls are omitted here. They are listed in
+Table~\ref{tab:h0} and shown in Fig.~\ref{fig:h0}.}\label{fig:pulls}
+\end{figure}
+
+\subsection{DESI DR1, flat $\Lambda$CDM}\label{sec:dr1}
+Table~\ref{tab:dr1}. Two independently coded predictors agree exactly, and a brute-force $\rgNgrid\times\rgNgrid$ grid (steps $\rgStepOm$ in $\Omega_m$ and $\rgStepHrd$\,Mpc in $hr_d$) gives
+$\Omega_m=\dOneGridOm$ and $hr_d=\dOneGridHrd$ ($\chi^2=\rgGridChi$), $\rgNodesOm$ and $\rgNodesHrd$ grid steps from the optimizer minimum along the degeneracy, i.e.\ within about one grid step. Table~\ref{tab:dr1} compares our $\chi^2$ minimum with DESI's posterior mean (eq.~4.1). The fetched DR1 paper also gives
+the \emph{matched} target, its best-fit model: $\Omega_m=\rdPubOm$ and $H_0r_d=\rdPubHrd\times100$\,km\,s$^{-1}$ (Fig.~1 caption), with
+$\chi^2=\rdPubChi$ for 10 degrees of freedom (Sec.~3.2)~\cite{desi2024vi}. Our $\Omega_m=\dOneOm$ and $hr_d=\dOneHrd$ agree with it to the printed
+precision. Our $\chi^2_{\min}=\dOneChi$ for $\dOneDof$ degrees of freedom is higher by $\rdMzero$ on the same public data vector and covariance
+(sha256 in Table~\ref{tab:data}). We tested background physics as the cause (\texttt{results/cosmo\_synthesis/dr1\_chi2\_offset\_check.py}): adding
+radiation, or replacing the analytic distances by a CAMB background with massless neutrinos or with one $0.06$\,eV neutrino, changes $\chi^2_{\min}$ by at
+most $\rdMaxChange$, leaving an offset of $\rdMthree$ in the DESI-like CAMB case. \textbf{The offset is unexplained}; it may come from a difference in the
+likelihood inputs or the minimizer used by DESI, which we cannot inspect. The DR2 run later re-fitted DR1 with the posterior-mean estimator and obtained
+$\Omega_m=\dTwoIOm$ (pull $\dTwoIOmP$) and $hr_d=\dTwoIHrd$ (pull $\dTwoIHrdP$).
+\begin{table}[h]\centering\caption{DESI DR1 flat $\Lambda$CDM. Source: \dOneSource{} (eq.~4.1).}\label{tab:dr1}
+\input{gen_tab_dr1.tex}\end{table}
+
+\subsection{DESI DR2, $\Lambda$CDM and $w$CDM}
+Table~\ref{tab:dr2}. Primary estimator: emcee posterior mean and standard deviation ($\dTwoNsteps$ steps per chain, converged under
+the $50\tau$ rule). The largest emcee-minus-grid difference is $\dTwoEmceeGrid$ emcee $\sigma$. The correlation
+$r(\Omega_m, hr_d)=\dTwoCorr$ compares with the published $\dTwoCorrT$, and the best-fit $\chi^2$ is $\dTwoChi$ for $\dTwoDof$ degrees of
+freedom. The $w$CDM $hr_d=\dTwoWHrd\pm\dTwoWHrdS$\,Mpc is report-only, because no published value was found.
+\begin{table}[h]\centering\small\caption{DESI DR2 BAO only (\texttt{results/desi\_dr2\_bao/fit.json}).}\label{tab:dr2}
+\resizebox{\textwidth}{!}{\input{gen_tab_dr2.tex}}\end{table}
+
+\subsection{BAO+BBN inverse distance ladder}
+Table~\ref{tab:h0}; sources in Table~\ref{tab:h0src}. The primary DR2 result passes every PASS condition. The DR1 check is
+\hzPTwoV: $|\Delta H_0|=\hzPTwoD$ exceeds the strict window by $\hzTTwoMargin$\,\kms, which is comparable to our posterior-mean Monte
+Carlo error of $\hzTTwoMC$. DESI's own posterior-mean sampling error is not published; its stated convergence floor (ESS $\gtrsim10^3$, \cite[Sec.~2.5]{desi2024vi})
+implies up to about $\rtDesiMC$ on the quoted $\hzTTwo$, plus $\pm0.005$ rounding. The combined resolution is then about $\rtComb$, so the margin is $\rtMarginComb$ of it and
+the strict/soft boundary is not statistically resolved (as the \texttt{T2\_boundary\_resolution} note in \texttt{fit.json} already states). The preregistered rule gives
+PARTIAL for the recorded run, and PARTIAL is what that run reports; re-execution under a different numerical environment gives PASS (next paragraph), so we do
+not present PARTIAL as a stable property of the analysis. A post-hoc diagnostic, which does
+\emph{not} change the verdict: DR1 quotes $hr_d=\hzHrdQuoteEight$ in one section and $\hzHrdQuoteSix$ in another. Propagating these gives implied $H_0$
+excesses of $\hzPostHocEight$ and $\hzPostHocSix$\,\kms{} ($\rtLo$--$\rtHi$ across the rounding of the first, $\pm\rtMCH$ from the G2 chain). The G2 gate used the first value. As shown in Sec.~\ref{sec:h0prot}, the gate tolerance itself admits
+offsets of this size. \emph{Code deviation:} \texttt{scripts/bao\_bbn\_h0/fit\_real.py} (line 262) passes gate G1 into \texttt{verdict\_T2}, although the
+preregistration defines gate G2 for the DR1 check. G2 \rgGTwoPassed{} (its \texttt{passed} field in \texttt{fit.json}), so the T2 verdict is unchanged;
+the script is frozen and outside this synthesis' write scope.
+
+\textbf{Numerical-environment dependence (found by the round-3 referee, confirmed here).}\label{sec:env}
+The machine has two Python environments: \texttt{venv-pta} (Python \evPtaPy, numpy \evPtaNp, scipy \evPtaSp) and \texttt{venv-cosmo} (Python \evCosPy, numpy \evCosNp,
+scipy \evCosSp), both with emcee \evEmcee. No run JSON records its interpreter. We re-ran the frozen \texttt{fit\_real.py} in isolated copies under both,
+changing only the chain output directory (\texttt{results/cosmo\_synthesis/round3\_env\_rerun\_setup.py}, \texttt{round3\_response\_checks.py}; the two re-run outputs are kept as \texttt{round3\_rerun\_fit\_venv\_\{pta,cosmo\}.json}, hashes in Table~\ref{tab:sha}). Under
+\texttt{venv-pta}, $\rePtaNdiff$ of $\rePtaNcomp$ numeric leaves of \texttt{fit.json} differ: the recorded H0 run was produced by \texttt{venv-pta}. Under
+\texttt{venv-cosmo}, $\reCosNdiff$ of $\reCosNcomp$ differ. MAP $H_0$ values agree to $\reMapMax$, but the posterior means move by up to $\reShiftMC$ Monte Carlo
+errors: primary T1 $H_0=\rePOneH$ (\rePOneV), \textbf{primary T2 $H_0=\rePTwoH$, $|\Delta H_0|=\rePTwoD$, i.e.\ \rePTwoV} instead of the recorded $\hzPTwoD$ (\hzPTwoV),
+secondary T1 \reSOneV{} and secondary T2 $|\Delta H_0|=\reSTwoD$ (\reSTwoV). Gate G2's $hr_d$ mean becomes $\reGTwoHrd$\,Mpc; the implied $H_0$ shift, computed as in Sec.~\ref{sec:h0prot}, becomes $\reGTwoImpl$\,\kms, inside the range quoted there.
+Integer leaves (chain lengths and burn-in) also differ, because the chains stop adaptively. The round-3 referee found the DR2 $\Lambda$CDM chain bit-identical under both interpreters; we did not repeat that check. The preregistration
+names no interpreter, so both executions are equally valid applications of the preregistered rule. The primary T2 label is therefore \textbf{PARTIAL in the
+recorded run and PASS on re-execution}; its margin over the strict window ($\hzTTwoMargin$) is about one Monte Carlo error, and chains of the recorded length cannot resolve
+it. A preregistered verdict whose margin can be one MC error should either fix a chain long enough that the MC error is much smaller than the margin, or be stated
+on a deterministic estimator (the MAP, or a posterior mean with a preregistered MC floor).
+
+\textbf{Formula-versus-CAMB shift.} Exact CAMB versus the fitting formula moves the MAP $H_0$ by $\fsMapOne$ (DR2) and $\fsMapTwo$ (DR1), stable to $10^{-7}$
+across both environments. The posterior-mean differences, $\hzPmSOne\pm\fsMcOne$ (DR2) and $\hzPmSTwo\pm\fsMcTwo$ (DR1) in the recorded run and $\fsCosOne$ / $\fsCosTwo$
+under \texttt{venv-cosmo}, are dominated by Monte Carlo noise; the smaller DR1 value is not a smaller systematic. The largest fitting-formula error measured against CAMB is $\hzAubCambMaxPct$\,\%.
+Aubourg et al.\ state 0.021\% accuracy for $N_{\rm eff}=3.046$ and parameters within $3\sigma$ of Planck~\cite{aubourg2015}; $\raNexceed$ of our
+$\raNpts$ validation points exceed that figure, including the largest one at $(\omega_b,\omega_{\rm cdm})=(\raWorstOb,\raWorstOc)$, which lies inside
+the proxy validity window used in the preregistration. Our CAMB table uses $N_{\rm eff}=3.044$, whereas Aubourg's statement assumes 3.046. Re-running CAMB (v\raCambVer)
+at $N_{\rm eff}=3.046$ for the same points (\texttt{round2\_response\_checks.json}, key \texttt{aubourg\_neff}) shows that $r_d$ at 3.044 exceeds $r_d$ at 3.046 by
+$(\raShiftLo$--$\raShiftHi)\times10^{-5}$, close to the $\raEqSeventeen\times10^{-5}$ of Aubourg's eq.~(17) factor. Against the 3.046 CAMB values, $\raNexceedSix$ of the $\raNpts$ points
+still exceeds 0.021\% (largest $\raMaxSixPct$\,\%). Part of the remainder is a convention in the validation code (found by the round-3 referee):
+\texttt{rd\_camb\_table.py} compares CAMB and eq.~(16) at equal $\Omega_m h^2$, which is what the fit samples, and so evaluates eq.~(16) at
+$\omega_{cb}=\omega_b+\omega_{\rm cdm}+(\omega_\nu^{\rm CAMB}-\omega_\nu^{\rm Aubourg})$, i.e.\ $\aoOffset$ above the CAMB grid point's $\omega_b+\omega_{\rm cdm}$.
+Aubourg's accuracy statement is at given $\omega_{cb}$. Evaluated at the grid point's own $\omega_b+\omega_{\rm cdm}$, the largest deviation from the $N_{\rm eff}=3.046$
+CAMB values is $\aoMatchedPct$\,\% ($\aoNexceed$ point above 0.021\%; \texttt{round3\_response\_checks.json}, key \texttt{aubourg\_omega\_cb}). The $N_{\rm eff}$ convention
+and this $\omega_{cb}$ convention together explain most of the excess; the residual of order $10^{-5}$ was not traced further. The preregistered comparison (against the 3.044 table) is the one reported above.
+The CAMB anchor at the Planck 2018 best fit gives $r_{\rm drag}=\hzCambAnchor$\,Mpc; the preregistration cites $\hzCambAnchorPre$.
+\begin{table}[h]\centering\small\caption{BAO+BBN $H_0$ (\texttt{results/bao\_bbn\_h0/fit.json}, key \texttt{pulls}; recorded run, \texttt{venv-pta}). Values in \kms{} for $H_0$
+and Mpc for $hr_d$. ``secondary'' is the preregistered fitting-formula analysis and is identical to the hash-locked first attempt in the same numerical environment. The
+``shared'' gate rows are BAO-only reproductions. $^\ddagger$Environment-dependent: re-executing the frozen script under \texttt{venv-cosmo} gives $|\Delta H_0|=\rePTwoD$
+(strict rule met); the boundary is within Monte Carlo resolution (Sec.~\ref{sec:env}).}\label{tab:h0}
+\resizebox{\textwidth}{!}{\input{gen_tab_h0.tex}}\end{table}
+\begin{table}[h]\centering\caption{H0 target sources, read from \texttt{preregistration.json} (not editable after the fit). For G2 the string names the DR1 abstract,
+but the fetched abstract quotes only $\Omega_m$ and $H_0$; $r_dh=101.8\pm1.3$ is in eq.~(4.1) and Sec.~8 of~\cite{desi2024vi}.}\label{tab:h0src}
+\resizebox{\textwidth}{!}{\input{gen_tab_h0_sources.tex}}\end{table}
+
+\begin{figure}[h]\centering
+\includegraphics[width=0.95\textwidth]{fig_h0.pdf}
+\caption{$H_0$ from BAO+BBN. The primary analysis uses the exact CAMB $r_d$ (amendment~1). The secondary analysis uses the preregistered
+fitting formula and, in the recorded environment, equals the hash-locked, unread first attempt. Filled symbols: recorded run (\texttt{venv-pta}); hollow diamond: the primary posterior mean
+when the same frozen script is re-executed under \texttt{venv-cosmo} (Sec.~\ref{sec:env}). The dark band is the strict window ($\pm\hzStrict$) and the light band
+the soft window ($\pm\hzSoft$) around the DESI value.}\label{fig:h0}
+\end{figure}
+
+\subsection{SDSS/eBOSS versus DESI DR2}
+Table~\ref{tab:eboss}. The SDSS $(\Omega_m, hr_d)$ correlation we find is $\ebSCorr$; SDSS does not publish it. The baseline and
+Gaussian-summary SDSS likelihoods differ by $\ebBaseVsGauss\sigma$ in $\Omega_m$. The DESI numbers here come from an independent re-fit
+with shorter chains, so they differ slightly from Table~\ref{tab:dr2}.
+\begin{table}[h]\centering\small\caption{eBOSS vs DESI (\texttt{results/eboss\_vs\_desi/fit.json}). $^\dagger$Taken from a secondary source
+(DR1 quoting SDSS). We did not find it in the fetched pages of the primary paper, so it is not counted toward the tolerance rule.}\label{tab:eboss}
+\resizebox{\textwidth}{!}{\input{gen_tab_eboss.tex}}\end{table}
+
+\subsection{Derived quantities not quoted in the fetched DESI text}
+Table~\ref{tab:derived}. DR2 does test consistency with DR1 and with SDSS, but at the level of distances. It compares DR1 and DR2
+bin by bin with a correlated joint uncertainty and a KS test, and compares SDSS with DESI per redshift bin in $\alpha_{\rm iso}$ and
+$\alpha_{\rm AP}$~\cite[Sec.~III.C]{desi2025dr2}. In the fetched text we found no parameter-level $(\Omega_m, hr_d)$ number for
+either comparison. The quantities below complement those checks and do not replace them.
+
+(a) DR1 and DR2 share data. We use the nested uncertainty on their difference,
+$\sigma_{\rm nested}^2=\sigma_{\rm DR1}^2-\sigma_{\rm DR2}^2$, which gives $\shRatioOwn\sigma_{\rm nested}$. DR2 describes its own DR1--DR2 comparison as
+assuming perfect correlation, but computes $\sigma^2=\sigma_{\rm DR2}^2+\sigma_{\rm DR1}^2-2C\sigma_{\rm DR1}\sigma_{\rm DR2}$ with $C=\sqrt{N_{\rm DR1}/N_{\rm DR2}}$
+per galaxy/quasar tracer ($C=0.61$ for Ly$\alpha$)~\cite[Sec.~III.C.1 and footnote~12]{desi2025dr2}; with $\sigma\propto N^{-1/2}$ this is the nested form for the galaxy and quasar bins, which is all the parameter-level argument needs. Taking $C=1$ literally at the
+parameter level gives $\sigma=|\sigma_{\rm DR1}-\sigma_{\rm DR2}|=\rcSigCone$ and $\rcRatioCone\sigma$, and the independent convention gives $\shRatioInd\sigma$.
+The $\sigma\propto N^{-1/2}$ step is only approximate: Kim, Mota \& Tamosiunas~\cite{kim2026}, who model the DR1-inside-DR2 nesting explicitly with a
+year-scaling decomposition (their Appendix~B.2), report that the published per-bin covariances ``straddle'' the ratio $C_{\rm DR2}=C_{\rm DR1}/3$ that pure year scaling
+implies, at 0.22--0.49 (median 0.32). Our $\sigma_{\rm nested}$ is therefore an approximation, bracketed by the $C=1$ and independent conventions.
+All three conventions agree that the shift is insignificant. The published means imply $\Delta\Omega_m=\shPub$.
+
+(b) The SDSS--DESI DR2 tension applies DESI's parameter-difference statistic (eq.~18 of~\cite{desi2025dr2}) to BAO-only $(\Omega_m, hr_d)$ under the
+independent-survey assumption. DR2 states that the two surveys are consistent but gives no number for this pair of parameters. For DR1, the DESI
+paper gives a qualitative parameter-level statement: ``no significant difference in $\Omega_m$ and a shift of just $\sim1\sigma$ in $r_dh$''~\cite[Sec.~3.3]{desi2024vi}.
+Two other papers compare SDSS and DESI and reach different-sounding conclusions because they ask different questions. Ghosh \&
+Bengaly~\cite{ghosh2024} reconstruct $H(z)$ and $q(z)$ non-parametrically (Gaussian processes) from $D_H/r_d$ alone, for DESI DR1, with a Planck
+$r_d$, and find the reconstructions ``significantly inconsistent''; this is not a parameter-level test in $(\Omega_m, hr_d)$. Ferri, Ruchika \&
+Melchiorri~\cite{ferri2026} compare SDSS DR16 and DESI DR2 combined with Planck in the CPL model and find offsets in $w_0$ and $q_0$ of about
+$1.1\sigma$. Our number is narrower: BAO alone, flat $\Lambda$CDM, $(\Omega_m, hr_d)$, eq.~(18). Before any fit, the preregistration had bounded $N_\sigma$ to
+$\ebLitLo$--$\ebLitHi$ from published means alone, so the value is an application of a known statistic, not a surprise. The 1D
+differences are $\ebOneDOm\sigma$ ($\Omega_m$) and $\ebOneDHrd\sigma$ ($hr_d$). Because the surveys overlap, the independent-survey $N_\sigma$ is a lower
+bound only under the assumption that the cross-covariance is positive; with $X+X^{\rm T}$, $X=\rho\sqrt{C_S}\sqrt{C_D}$, subtracted from $C_S+C_D$ (the covariance of a
+difference), $N_\sigma$ rises to
+$\roNsigFiftySeven$ at $\rho=0.57$ (PTE $\roPTEFiftySeven$). The value $0.57$ is DR2's estimate for one bin pair (LRG2 and eBOSS LRG), the only pair for which DR2 quotes $C$~\cite[Sec.~III.C.2]{desi2025dr2};
+applying it to the whole parameter-level covariance is an illustration, not an estimate. DR2 uses the same lower-bound logic for its own distance-level comparison:
+for that bin pair the discrepancy is $\sim2.6\sigma$ with $C\approx0.57$, and ``although the assumption of no correlation is less plausible, it sets a lower limit of the
+discrepancy at the $1.9\sigma$ level''~\cite[Sec.~III.C.2]{desi2025dr2} ($2.3\sigma$ and $1.5\sigma$ with DESI's reanalysis of SDSS; our eBOSS run uses the
+published SDSS DR16 likelihoods, to which the $1.9$--$2.6\sigma$ figures refer). Our parameter-level $N_\sigma=\ebNsig$ therefore does not mean that there is no tension anywhere: the
+LRG2/eBOSS-LRG bin pair (the one DR1 had flagged at $\sim3\sigma$) is at $1.9$--$2.6\sigma$ by DR2's own numbers, and the two-parameter BAO-only fit averages over bins.
+
+(c) The CAMB-versus-formula $H_0$ shift, measured deterministically between MAP points as $\fsMapOne$ (DR2) and $\fsMapTwo$\,\kms{} (DR1), equals the
+propagation of the \emph{measured} formula error near the posterior ($-\fpEpsPct$\,\% at the first validation point, which gives $\fpPredOne$ and $\fpPredTwo$ through
+$\Delta\ln h=-\epsilon/(d\ln hr_d/d\ln h)$ with the slopes of \texttt{fixround\_diagnostics.json}). Aubourg et al.'s stated 0.021\% would give only about $\fpStatedOne$.
+The shift therefore does not confirm the stated accuracy figure; it is consistent with the exceedances of 0.021\% reported in Sec.~\ref{sec:env}, and it is not a new quantity.
+\begin{table}[h]\centering\small\caption{Derived quantities.}\label{tab:derived}
+\resizebox{\textwidth}{!}{\input{gen_tab_derived.tex}}\end{table}
+
+\begin{table}[h]\centering\small\caption{Dual-environment Lean check (\texttt{results/cosmo\_synthesis/lean\_dual\_check.json}, revision~2 of the checker). ``\#print axioms'' counts
+commands in comment-stripped source. Wall times are single measurements on a shared machine.}\label{tab:lean}
+\resizebox{\textwidth}{!}{\input{gen_tab_lean.tex}}\end{table}
+\begin{table}[h]\centering\small\caption{Elenchus ledgers. ``A audited (model)'' counts Tier~A rows whose audit is a non-empty object naming an auditor (all are model referees).
+``Audit hash = current file'' counts those audits whose recorded source sha256 equals the current Lean file. rc is the
+gate exit code (DR1: from the DR2 run's parent-ledger control). Tier~B here means a seeded floating-point harness on sha256-verified inputs; Elenchus's own Tier~B is exact
+$\mathbb{Q}/\mathbb{Z}$ arithmetic and would file these rows at X (Sec.~\ref{sec:ledger}).}\label{tab:ledger}
+\resizebox{\textwidth}{!}{\input{gen_tab_ledger.tex}}\end{table}
+
+\section{What is and is not new}\label{sec:new}
+\textbf{Not new.} Every cosmological parameter here reproduces a published value from the same public likelihood files, using methods
+the DESI and SDSS papers describe. Nothing here is a new measurement or a new constraint.
+
+\textbf{Prior work we found.} The first draft's search used four alphaXiv queries (LLM agents reproducing cosmology analyses; formal verification of
+physics in Lean or other proof assistants; HepLean/PhysLean; benchmarks of agents reproducing astrophysics papers); their exact strings and dates
+were not recorded. For this revision we ran two further queries, on SDSS--DESI consistency and on blind analysis and preregistration for agents,
+and recorded them exactly (\texttt{literature\_search\_log\_round1.json} in \texttt{results/cosmo\_synthesis/}). Those queries missed two axes, pre-run cryptographic
+commitment of cosmological analyses and autonomous analysis agents with model review and an unblinding gate. The round-2 novelty referee supplied the papers below
+by arXiv id; we fetched and read each before citing it (\texttt{literature\_search\_log\_round2.json}). None of these searches covered agent-executed reproduction
+outside cosmology and HEP; the round-3 novelty referee's sweep without the word ``BAO'' found three such pipelines on its first page. For this revision we ran one
+recorded sweep on that axis and read those three papers and three further ones by arXiv id (\texttt{literature\_search\_log\_round3.json}). Only papers we read are cited.
+
+For agent-executed reproduction of a published result against numeric targets, the most direct precedent is SHARP~\cite{sharp2026}: a Claude Code
+pipeline (claude-opus-4.6) whose initiating prompt names the paper and the target metrics, with Paper Analyst, Code, Test, Statistician and Critic subagents and human
+review at checkpoints; it reports three independent runs against the published ParticleNet-Lite numbers, validates checkpoints with an external evaluation script written by
+a human expert, and records a truth-label-leakage failure that ``went undetected by automated tests'', the class of problem our N4 control targets. At scale,
+Huang~\cite{huang2026scrutiny} runs a fresh Claude Code/Opus~4.6 agent on each of 111 open-access Quantum ESPRESSO papers, with a four-tier verdict (T1--T4) and a 12-paper
+two-machine cross-check with no shared state, and matches 75.8\% of 571 claims within 5\% of the published value. A companion pipeline~\cite{huang2026grounded} reproduces
+$k=5$ published anchors before any new computation and uses fresh-context adversarial review ``prompted to find rather than confirm''; its no-pilot ablation had the anchor
+value in its own files yet never wrote the comparison, the failure mode that preregistered targets and tolerances address, and its note added reports that the anchor value itself
+was not converged, so that single-anchor calibration gives ``consistency with published literature, not truth''. Our targets (DESI posterior means, and our unexplained DR1
+$\chi^2$ offset) sit in the same epistemic position. For cosmology, the most direct precedent is cmbagent. Its 2024 workshop version~\cite{laverick2024} reproduced the published ACT DR6 lensing constraints with a human
+approving each step, and its authors note that such output cannot be confirmed without redoing the analysis independently. Its Planning \& Control
+mode~\cite{xu2025pc} runs ``with no human-in-the-loop at any point'' and serves as the analysis backend of Denario~\cite{denario2025}, an end-to-end
+research-assistant system. Related systems
+include agent-driven inference pipelines in which human redirection was decisive~\cite{borrett2026} (a competition entry, not a reproduction of a
+published result), agentic cosmology frameworks and their caveats~\cite{xu2026}, and DarkAgents~\cite{darkagents2026}, which audits assumptions and
+compares its results against a human analysis. The AI Cosmologist~\cite{moss2025} is an autonomous agentic system for cosmological and astronomical data analysis,
+demonstrated on machine-learning tasks (Galaxy Zoo~2, Quijote) rather than on reproductions of published parameter constraints. Gandhi, Bolliet \& Zubeldia~\cite{gandhi2025}
+extend cmbagent with plots treated as checkpoints that a vision-language model judges against generated rubrics, which also leaves auditable reasoning traces.
+The nearest precedents for a model referee are cosmology-native: Denario's Review module writes a referee report (\texttt{referee.md})~\cite[Sec.~3.7]{denario2025},
+and the VLM judge of~\cite{gandhi2025}; the AI Scientist~\cite{aiscientist} also uses an automated reviewer.
+The closest architectural precedent for our design is JFC (``Just Furnish Context'', Moreno et al.~\cite{moreno2026}): a Claude Code orchestrator delegates to executor
+and reviewer subagents, ``multi-agent review replaces the human feedback loop'', ``human oversight is concentrated at a single formal unblinding gate'', an append-only
+experiment log records every phase transition, and one of its analyses is checked against, and consistent with, a published CMS $H\to\tau\tau$ measurement. In the pages of JFC and cmbagent that we
+read we did not find preregistered numeric targets or hash-locked results; we do not claim that they lack them. SHARP's prompt does fix numeric targets, without
+tolerances, controls or a lock; that, rather than the targets themselves, is what differs here.
+Benchmark results on reproduction are mixed. Benchmarks built from whole papers report low scores: ReplicationBench~\cite{replicationbench} reports that the best model, Claude 4.5 Sonnet,
+scores 22\% (Sec.~5.1 and Table~2; its abstract says ``under 20\%''), and PRBench~\cite{prbench} reports a best overall score of 34\%, a zero end-to-end
+success rate, and fabricated outputs. Pipelines working from public inputs with a stated method report high agreement (SHARP; 75.8\% within 5\% in~\cite{huang2026scrutiny}),
+as do our four runs, which start from public summary likelihoods with a published estimator. Collider-Bench~\cite{colliderbench} has agents reproduce LHC analyses and uses an LLM provenance judge that flags
+FABRICATED runs whose values cannot be traced to an executed pipeline; this is the closest analogue of our re-running referee plus content-addressed evidence.
+On the formal side, HepLean (now Physlib)~\cite{heplean,toobysmith2026} formalizes high-energy physics in Lean~4, a Lean formalization found a genuine
+error in a widely cited 2HDM stability theorem~\cite{toobysmith2026}, and FormalScience~\cite{formalscience} autoformalizes physics in Lean with agents and
+gives a taxonomy of semantic drift (e.g.\ ``abstraction elevation''), the class of problem behind our DR2 $z>-1\to z\ge0$ drift.
+
+\textbf{Blind analysis.} The field's established safeguard against confirmation bias is blinding. Both target analyses were blind: DESI DR1 blinded
+catalogs (redshift shifts for galaxies and quasars, an additive BAO-peak shift for Ly$\alpha$) until a prescribed set of validation tests
+passed~\cite[Sec.~2.3.1]{desi2024vi}, with the scheme validated by Andrade et al.~\cite{andrade2024}, and DR2 applied ``strict catalog-level blinding'' with
+pre-specified unblinding criteria~\cite[Secs.~II.A.1 and IX]{desi2025dr2}. Grosso, Mikuni \& Heinrich~\cite{grosso2026} recommend a blind-analysis-like
+separation for agentic systems (optimize on simulation, reserve observed data for the final test) and note that ``No analogous verification infrastructure
+exists for physics analyses'' to the role Lean plays for mathematics. Our setup is \emph{weaker} than a blind analysis: the targets were published and
+visible to the agents, and the preregistrations were committed to git only after the fits. Preregistration and the hash-locked unread fit guard the
+decision rules, not the agents' knowledge of the answer. It is also weaker than JFC~\cite{moreno2026} in this respect: JFC blinds its agents in stages (Asimov data,
+then a 10\% subsample, then the full data) and requires a human to approve unblinding, whereas our pipeline has no blinding and no human gate at any point.
+The published cosmology instance of our hash-lock safeguard is TOPO~\cite{topo2024}: the analyst signs an Analysis-Hash of code commits and input files and publishes it on
+a timestamped medium (their example uses a public blockchain) before running, then publishes Merkle-tree roots over the time-ordered MCMC chain, so that a verifier can
+re-run part of the chain and check it; it is demonstrated with Cobaya and CLASS on BAO likelihoods that include SDSS DR16. Our hash-locked unread fit and sha256
+evidence blobs are a one-file instance of that idea, timestamped only by file mtime, and TOPO's timestamped commitment is exactly what our preregistrations lack.
+
+\textbf{What is new, within the limits of that search.}
+\begin{enumerate}
+\item \emph{The combination of safeguards} applied to agent-executed cosmology:
+  \begin{itemize}
+  \item preregistered targets and tolerances;
+  \item an amendment that hash-locks an unread earlier result and reports both analyses (a local version, timestamped only by file mtime, of the commitment that TOPO~\cite{topo2024} timestamps publicly);
+  \item a subtle-bug control that the likelihood cannot detect;
+  \item in-file, axiom-audited Lean statements of the model skeleton, checked in two environments (same toolchain) with \texttt{sorry} and axiom-smuggling controls;
+  \item a tier-capped claim ledger with mutation controls;
+  \item a re-running adversarial referee;
+  \item a second-language port.
+  \end{itemize}
+  Each item exists elsewhere, the closest combined precedents being JFC~\cite{moreno2026} and, for reproduction against numeric targets, SHARP~\cite{sharp2026}, and our combination is weaker than the blind analyses of the target papers and than
+  JFC's staged blinding and human gate in one respect (the answer was visible, and no person approved anything).
+  We did not find these items combined in the literature we searched, and we do not claim priority beyond that.
+\item \emph{Two derived consistency numbers} not quoted in the fetched text of~\cite{desi2025dr2,desi2024vi}: the DR1$\to$DR2 shift in
+nested $\sigma$, and the BAO-only $(\Omega_m, hr_d)$ SDSS--DESI DR2 $N_\sigma$ from eq.~(18). Each is a simple function of public inputs.
+\item \emph{Verification artifacts and an audit of the process}, including where it failed: a model audit clears the ledger gate, and the gate does
+not check claim-to-evidence correspondence; the project's Lean runner could not gate worktree files; preregistration files were untracked; one
+negative control was vacuous; one Lean statement drifted ($z>-1\to z\ge0$) and stays drifted in the shipped file for audit binding, although the preregistered domain
+was shown to prove with the same tactics for the two positivity theorems; the eBOSS preregistered module
+\texttt{BAO\_TensionStatistic.lean} (diagonal $\chi^2$) shipped as \texttt{BAO\_Consistency.lean} (full $2\times2$ covariance), a deviation disclosed in
+the eBOSS README and paper; the H0 script passes gate G1 where the preregistration names G2; the H0 statement audits are bound to a stale source hash;
+the first dual-check record was hand-corrected; the primary H0 DR1 verdict flips from PARTIAL to PASS when the frozen script is re-run under the project's other
+Python environment, and no run recorded its interpreter; the ledgers' Tier~B is a local redefinition of Elenchus's exact-arithmetic tier; and defects were found in a
+Rust reimplementation of CVODE.
+\end{enumerate}
+
+\section{Limitations}\label{sec:limits}
+\begin{itemize}
+\item \textbf{Partial result, environment-dependent.} The primary H0 DR1 check is PARTIAL ($|\Delta H_0|=\hzPTwoD$) in the recorded run (\texttt{venv-pta}) and PASS
+($\rePTwoD$) when the same frozen script is re-executed under \texttt{venv-cosmo}; the two differ by $\reShiftMC$ Monte Carlo errors, so the strict boundary is not resolved and
+neither label is a stable property of the analysis. The secondary DR1 check is PARTIAL in both. The gate-tolerance mechanism is consistent with the recorded PARTIAL but does not establish it: depending on which DR1 $hr_d$
+is the reference and on its rounding, the mechanism accounts for $\rtMin$--$\rtMax$\,\kms{} ($\pm\rtMCH$) of the observed $\hzPTwoD$, and the explanation is post-hoc. The SDSS $hr_d$ target comes
+from a secondary source.
+\item \textbf{Incoherent H0 tolerances.} The preregistered gate tolerance ($0.25\sigma$ on $hr_d$) admits $H_0$ offsets of up to $\rgGOneMax$ / $\rgGTwoMax$\,\kms{},
+beyond the strict window, so PASS versus PARTIAL does not isolate the BBN/$r_d$ step. A published BBN reaction-network systematic of up to $\sim0.5\sigma$ in $h$~\cite{akharman2026}
+is also larger than the strict window. No tolerance was changed after the fits. The H0 script uses gate G1
+in the T2 verdict where the preregistration names G2 (G2 passed; the verdict is unchanged; the frozen script was not edited).
+\item \textbf{DR1 $\chi^2$ offset.} Our DR1 $\chi^2_{\min}$ exceeds DESI's by $\rdMzero$ on the same data; radiation and neutrino background choices do
+not explain it. It remains open.
+\item \textbf{Tier~A is model-audited, by the same model family.} Every statement audit was done by a Claude model reviewing Claude-written work, so producer and
+verifier are not independent in vendor or training lineage, and automated review is reviewer-family dependent~\cite{ravideshik2026}. Two H0 theorems are unaudited. No person has checked
+that any Lean statement means what its gloss claims. The Lean theorems are elementary and do not certify any fit; the H0 degeneracy and
+identifiability theorems have the scope limits stated in Sec.~\ref{sec:lean}, and nothing is proved about the CAMB $r_d$.
+\item \textbf{Ledger binding and gate scope (not fixable here).} The H0 audits are bound to a stale, never-committed source hash, and the H0 ledger
+does not name the change; the three ledgers use three audit schemas; some computed rows carry kind \texttt{citation}; the gate does not check that
+an evidence blob belongs to its claim, an empty audit object clears the Tier~A flag, and a Tier~A blob that lists \texttt{sorryAx} passes the gate; all $\tierBTotal$
+Tier~B rows are floating-point outputs that Elenchus's own semantics would file at X, and the DR1/DR2 ledger READMEs do not disclose this. The ledgers (including their
+\texttt{kind} fields and READMEs) and the Elenchus tool are outside this synthesis' write scope; re-kinding the float rows (e.g.\ a \texttt{float\_harness} kind capped
+below B, or refiling at X) belongs in the ledgers themselves. A standard audit schema with \texttt{auditor\_kind}, the audited and current source hashes and the change since audit is
+needed in the ledgers themselves.
+\item \textbf{Lean statements not changed.} The DR2 domain drift ($z\ge0$ instead of the preregistered $z>-1$) and the inert $z\neq-1$ hypothesis of
+\texttt{distance\_duality} remain in the committed files, which are outside this synthesis' write scope. For \texttt{E2\_pos} and \texttt{E\_pos} the preregistered domain
+was tested and proves with the same tactics; the other DR2 theorems were not tested on $z>-1$, for which the preregistration fixed no domain.
+\item \textbf{Lean gate deviation.} \texttt{lean\_runner.py} was not used. Checks used \texttt{lake env lean} with in-file
+\texttt{\#print axioms}. One file could not be checked in environment~2, and both environments share the Lean binary and Mathlib commit. The three new modules are not
+yet part of the project's \texttt{lake build}.
+\item \textbf{Not a blind analysis.} The published targets were visible to the agents, and preregistrations were committed only after the fits.
+\item \textbf{Preregistration provenance.} The preregistration files were not committed before fitting, so mtime is the only evidence of
+ordering. In the eBOSS file, the amendment field's timestamp is later than the file's mtime. This is disclosed in its ledger README. The fix is a timestamped
+commitment made before the fit (for example a signed hash on a public timestamp service, as in TOPO~\cite{topo2024}), or at least a git commit pushed before the fit.
+\item \textbf{Radiation and neutrinos.} In the BAO-only runs, radiation is off in the primary model and the massive neutrino is not modelled.
+The sensitivity shifts are small ($\dTwoRadOm\sigma$ and $\dTwoCambOm\sigma$ for DR2) but not zero.
+\item \textbf{Overlap covariance unknown.} The SDSS--DESI statistic assumes independent surveys. Because the surveys overlap, $N_\sigma$ is
+a lower bound (and the PTE an upper bound) only if the parameter-level cross-covariance is positive; its size is model-dependent
+($N_\sigma=\roNsigFiftySeven$ for the illustrative $\rho=0.57$, which is DR2's value for one bin pair). At the distance level DR2 finds $1.9$--$2.6\sigma$ for the LRG2/eBOSS-LRG bin pair.
+\item \textbf{Controls.} The SDSS-baseline EdS control was vacuous as first coded. The fix gates it on the Gaussian summary instead. The
+eBOSS injection test does not exercise the SDSS baseline grid likelihood. The scrambled-covariance control discriminates only in aggregate.
+N4 is post-hoc and not part of the H0 verdict.
+\item \textbf{Estimators.} The DR1 run and the Rust port compare $\chi^2$ minima against DESI posterior means; for DR1 the matched best-fit
+comparison is also given (Sec.~\ref{sec:dr1}).
+\item \textbf{Project completion criteria not met.} The recorded logs of the three preregistered runs give:
+\texttt{antigravity\_guard.py} \gTwoAnti{} / \gHzAnti{} / \gEbAnti{} (DR2 / H0 / eBOSS), with findings that include missing optional
+packages and, for eBOSS, \texttt{camb} outside \texttt{venv-cosmo}; \texttt{test\_rigor\_guard.py} \gTwoRigor{} / \gHzRigor{} / \gEbRigor{};
+and \texttt{pytest tests/}: DR2 ``\gTwoPytest'', H0 collection interrupted (``\gHzPytest''), eBOSS ``\gEbPytest''. The eBOSS referee
+found that none of the failing tests mentions that problem. We therefore do not claim that the repository's completion checks pass.
+\texttt{pytest} was not re-run for this synthesis.
+\item \textbf{Solver.} The CVODE measurements quoted from the Rust README predate the PR~\#60 fix and were not repeated.
+\item \textbf{Unrecorded numerical environment (not fixable in the run files).} No result JSON records its interpreter or library versions. The environment of each recorded
+run is inferred from re-execution (Reproducibility). The note in \texttt{results/bao\_bbn\_h0/fit.json} that calls the secondary-versus-locked identity ``expected'', and the
+docstring of the DR1 fit script (\texttt{fit\_desi\_bao.py}), which names \texttt{venv-pta} although the script fails there, are outside this synthesis' write scope and were not changed.
+\item \textbf{Single execution per problem.} Each problem was run once by the agent pipeline; there are no repeat agent runs and no cross-model runs.
+\end{itemize}
+
+\section{Reproducibility}
+Code lives under \texttt{scripts/\{bao\_flcdm, desi\_dr2\_bao, bao\_bbn\_h0, eboss\_vs\_desi\}/}, results under \texttt{results/<run>/},
+Lean files under \texttt{formal/ANSE/}, and this paper under \texttt{papers/cosmo\_synthesis/}. Two Python environments were used, and the H0 result
+depends on which (Sec.~\ref{sec:env}): \texttt{PTA}\,=\,\nolinkurl{/mnt/disks/disk-socrateai-local-1/venv-pta/bin/python} (Python \evPtaPy, numpy \evPtaNp, scipy \evPtaSp, no CAMB) and
+\texttt{COSMO}\,=\,\nolinkurl{/mnt/disks/disk-socrateai-local-1/venv-cosmo/bin/python} (Python \evCosPy, numpy \evCosNp, scipy \evCosSp, CAMB, CLASS), both with emcee \evEmcee.
+No run JSON records its interpreter; the environment of each recorded result was established by re-execution. DR1 fit: \texttt{COSMO} (re-run reproduces the JSON
+leaf for leaf apart from its timestamp; the script cannot start under \texttt{PTA}, whose Python lacks \texttt{datetime.UTC}, although its docstring names \texttt{PTA}).
+H0 fit: \texttt{PTA} ($\rePtaNdiff$ differing leaves; $\reCosNdiff$ under \texttt{COSMO}). DR2 chains: bit-identical under both (round-3 referee), so the interpreter cannot be
+determined from the outputs; the scripts' docstrings and the DR2 preregistration's \texttt{parent\_import} note name \texttt{PTA}. eBOSS: \texttt{PTA} (the round-3
+referee reproduced its positive control leaf for leaf there). The CAMB table and the CAMB cross-checks need \texttt{COSMO}. Synthesis scripts: \texttt{COSMO}. Key commands, with the
+interpreter used for the recorded outputs (run from the repository root unless a \texttt{cd} is shown):
+\begin{lstlisting}
+COSMO scripts/bao_flcdm/fit_desi_bao.py
+PTA   scripts/desi_dr2_bao/controls.py; PTA scripts/desi_dr2_bao/mcmc_fit.py
+PTA   scripts/desi_dr2_bao/grid_posterior.py; PTA scripts/desi_dr2_bao/assemble_fit.py
+COSMO scripts/bao_bbn_h0/rd_camb_table.py; PTA scripts/bao_bbn_h0/fit_real.py
+cd scripts/bao_bbn_h0 && PTA control_n4.py run        # interpreter as named in its docstring
+PTA   scripts/eboss_vs_desi/fit_eboss_vs_desi.py; PTA scripts/eboss_vs_desi/negative_controls.py
+COSMO results/cosmo_synthesis/run_lean_dual_check.py  # no numerics; drives lake env lean
+COSMO results/cosmo_synthesis/dr1_chi2_offset_check.py
+COSMO results/cosmo_synthesis/round1_response_checks.py
+COSMO results/cosmo_synthesis/round2_response_checks.py
+COSMO results/cosmo_synthesis/round3_env_rerun_setup.py   # then fit_real.py in /tmp/r3resp/{cosmo,pta} under each
+COSMO results/cosmo_synthesis/round3_response_checks.py
+COSMO results/cosmo_synthesis/round3_m6_sorry_blob_mutation.py
+COSMO results/cosmo_synthesis/extract_provenance.py
+cd papers/cosmo_synthesis && COSMO gen_numbers.py && COSMO make_figures.py
+pdflatex cosmo_synthesis.tex; pdflatex cosmo_synthesis.tex
+cd rusty-SUNDIALS && cargo test -p qf-bao-distances -- --nocapture
+\end{lstlisting}
+Data: DESI DR1/DR2 Gaussian BAO files (Table~\ref{tab:data}), attributed to~\cite{desi2024vi,desi2025dr2}; SDSS DR16 BAO likelihoods from~\cite{eboss2021,dmdb2020},
+with sha256 hashes pinned in \texttt{results/eboss\_vs\_desi/preregistration.json}. Planck 2018~\cite{planck2018} supplies the CAMB anchor, and the
+BBN prior comes from~\cite{schoneberg2024}. Table~\ref{tab:sha} lists the hashes of the key JSONs. For each preregistration, it also
+checks the hash against the value pinned inside the corresponding fit.
+\begin{table}[h]\centering\caption{DESI data files.}\label{tab:data}\resizebox{\textwidth}{!}{\input{gen_tab_data.tex}}\end{table}
+\begin{table}[h]\centering\caption{sha256 of key JSONs, computed by \texttt{gen\_numbers.py} at build time.}\label{tab:sha}\resizebox{\textwidth}{!}{\input{gen_tab_sha.tex}}\end{table}
+
+\begin{thebibliography}{99}
+\bibitem{desi2024vi} DESI Collaboration, \emph{DESI 2024 VI: cosmological constraints from the measurements of baryon acoustic oscillations}, arXiv:2404.03002.
+\bibitem{desi2025dr2} DESI Collaboration, \emph{DESI DR2 Results II: measurements of baryon acoustic oscillations and cosmological constraints}, arXiv:2503.14738.
+\bibitem{eboss2021} S.~Alam et al.\ (eBOSS), \emph{Completed SDSS-IV extended Baryon Oscillation Spectroscopic Survey: cosmological implications from two decades of spectroscopic surveys at the Apache Point Observatory}, arXiv:2007.08991.
+\bibitem{dmdb2020} H.~du Mas des Bourboux et al., \emph{The Completed SDSS-IV Extended Baryon Oscillation Spectroscopic Survey: Baryon Acoustic Oscillations with Lyman-$\alpha$ Forests}, arXiv:2007.08995.
+\bibitem{aubourg2015} \'E.~Aubourg et al., \emph{Cosmological implications of baryon acoustic oscillation measurements}, arXiv:1411.1074.
+\bibitem{planck2018} Planck Collaboration, \emph{Planck 2018 results. VI. Cosmological parameters}, arXiv:1807.06209.
+\bibitem{schoneberg2024} N.~Sch\"oneberg, \emph{The 2024 BBN baryon abundance update}, arXiv:2401.15054.
+\bibitem{elenchus} X.~Callens, \emph{SocrateAI-Scientific-Elenchus} (software; the author's own, unpublished, not peer-reviewed), github.com/xaviercallens/SocrateAI-Scientific-Elenchus.
+\bibitem{laverick2024} A.~Laverick et al., \emph{Multi-Agent System for Cosmological Parameter Analysis}, arXiv:2412.00431.
+\bibitem{borrett2026} T.~Borrett et al., \emph{Competing with AI Scientists: Agent-Driven Approach to Astrophysics Research}, arXiv:2604.09621.
+\bibitem{xu2026} L.~Xu and T.~Borrett, \emph{Beyond AI as Assistants: Toward Autonomous Discovery in Cosmology}, arXiv:2605.14791.
+\bibitem{darkagents2026} M.~Lucente, S.~Pascoli, F.~Sala, M.~Zandi, \emph{DarkAgents: towards an agentic system for theoretical astroparticle physics}, arXiv:2606.11157.
+\bibitem{replicationbench} C.~Ye et al., \emph{ReplicationBench: Can AI Agents Replicate Astrophysics Research Papers?}, arXiv:2510.24591.
+\bibitem{prbench} S.~Qiu et al., \emph{PRBench: End-to-end Paper Reproduction in Physics Research}, arXiv:2603.27646.
+\bibitem{heplean} J.~Tooby-Smith, \emph{HepLean: Digitalising high energy physics}, arXiv:2405.08863.
+\bibitem{toobysmith2026} J.~Tooby-Smith, \emph{Formalizing the stability of the two Higgs doublet model potential into Lean: identifying an error in the literature}, arXiv:2603.08139 (states that PhysLean was renamed Physlib).
+\bibitem{xu2025pc} L.~Xu et al., \emph{Open Source Planning \& Control System with Language Agents for Autonomous Scientific Discovery}, arXiv:2507.07257.
+\bibitem{denario2025} F.~Villaescusa-Navarro, B.~Bolliet, P.~Villanueva-Domingo et al., \emph{The Denario project: Deep knowledge AI agents for scientific discovery}, arXiv:2510.26887.
+\bibitem{aiscientist} C.~Lu, C.~Lu, R.~T.~Lange, J.~Foerster, J.~Clune, D.~Ha, \emph{The AI Scientist: Towards Fully Automated Open-Ended Scientific Discovery}, arXiv:2408.06292.
+\bibitem{colliderbench} D.~A.~Faroughy, S.~Palacios Schweitzer, I.~Pang, S.~Mishra-Sharma, D.~Shih, \emph{Collider-Bench: Benchmarking AI Agents with Particle Physics Analysis Reproduction}, arXiv:2605.13950.
+\bibitem{formalscience} J.~Meadows, L.~Zhang, A.~Freitas, \emph{FormalScience: Scalable Human-in-the-Loop Autoformalisation of Science with Agentic Code Generation in Lean}, arXiv:2604.23002.
+\bibitem{andrade2024} U.~Andrade et al., \emph{Validating the Galaxy and Quasar Catalog-Level Blinding Scheme for the DESI 2024 analysis}, arXiv:2404.07282.
+\bibitem{grosso2026} G.~Grosso, V.~Mikuni, L.~Heinrich, \emph{Are We Ready for AI-Driven Discovery? AI Verification Before the Next Fundamental Physics Breakthrough}, arXiv:2607.10039.
+\bibitem{ghosh2024} B.~Ghosh, C.~Bengaly, \emph{Consistency tests between SDSS and DESI BAO measurements}, arXiv:2408.04432.
+\bibitem{ferri2026} A.~C.~Ferri, Ruchika, A.~Melchiorri, \emph{Present Day Cosmic Acceleration from SDSS and DESI BAO: A Call for Finer Tomography of the DESI Bright Galaxy Survey}, arXiv:2607.07348.
+\bibitem{topo2024} S.~Casas, C.~Fidler, \emph{TOPO: Time-Ordered Provable Outputs}, arXiv:2411.00072.
+\bibitem{moreno2026} E.~A.~Moreno, S.~Bright-Thonney, A.~Novak, D.~Garcia, Y.~Zhao, P.~Harris, \emph{AI Agents Can Already Autonomously Perform Experimental High Energy Physics}, arXiv:2603.20179.
+\bibitem{moss2025} A.~Moss, \emph{The AI Cosmologist I: An Agentic System for Automated Data Analysis}, arXiv:2504.03424.
+\bibitem{gandhi2025} K.~Gandhi, B.~Bolliet, I.~Zubeldia, \emph{Enhancing Agentic Autonomous Scientific Discovery with Vision-Language Model Capabilities}, arXiv:2511.14631.
+\bibitem{sharp2026} J.~Birk, G.~Kasieczka, S.~Mishra-Sharma, B.~Nachman, D.~Noll, T.~Wamorkar, \emph{A Scientific Human-Agent Reproduction Pipeline}, arXiv:2604.18752.
+\bibitem{huang2026scrutiny} H.~Huang, \emph{Grounded autonomous scrutiny at scale: emergent critique from reproduction of published computational physics papers}, arXiv:2604.12198.
+\bibitem{huang2026grounded} H.~Huang, \emph{Grounded autonomous research: a fault-tolerant LLM pipeline from corpus to manuscript in frontier computational physics}, arXiv:2607.02329.
+\bibitem{akharman2026} M.~Akharman, N.~DePorzio, C.~Giovanetti, H.~Liu, \emph{The Role of Big Bang Nucleosynthesis in Joint Cosmological Analyses}, arXiv:2609.12065.
+\bibitem{kim2026} J.~Kim, D.~F.~Mota, A.~Tamosiunas, \emph{A Sequentially-Valid Reanalysis of DESI's Dynamical Dark Energy Signal}, arXiv:2607.28918.
+\bibitem{ravideshik2026} V.~L.~Ravideshik, M.~Kejriwal, \emph{Can AI Evaluate AI Scientists? A Benchmarking Study of Autonomous Research Generation Systems Using Automated Multi-Model Review}, arXiv:2607.28631.
+\end{thebibliography}
+
+\appendix
+\section{Lean statements (verbatim) and axiom output}\label{app:lean}
+The statements below were extracted by \texttt{gen\_numbers.py} from the committed files. They are verbatim up to the
+typesetting of Unicode symbols (for example $\mathbb{R}$, $\le$, $\int$). The script checks that the appendix holds exactly
+$\lnAppendixN$ theorem blocks, whose names match the declarations in the dual-check axiom output. The file hashes match those recorded by the dual
+check; the script aborts if they do not. The environment-1 \texttt{\#print axioms} output for all $\lnTotal$ theorems follows the statements.
+\input{gen_lean_appendix.tex}
+\subsection*{\texttt{\#print axioms} output (environment 1)}
+\input{gen_axioms.tex}
+
+\end{document}

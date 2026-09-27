@@ -104,6 +104,31 @@ running baseline (112 wasted attempts, twice).
   AutoevolveAI's own jobs from each other, not from an uncoordinated
   `systemctl stop ollama` on the runux side.
 
+### 11. Wire ltm_learning_mix.py's output into the actual trainer
+`night_training_workflow.py::step_data` reads
+`LAKE/data/redis/redis_ltm_lora_dataset.jsonl` directly; `ltm_learning_mix.py`
+writes a separately-diluted `data/training/ltm_mix.jsonl` that is never
+consumed. Every dilution-ratio report this session was decorative.
+- Do: point `step_data` at `ltm_mix.jsonl` (regenerating it first each run),
+  or delete the mix builder if the raw-corpus filter is judged sufficient.
+- **Accept when:** a training run's DATA step log line names the file it
+  actually read, and that file is the one the dilution cap was computed on.
+
+### 12. Adopt Elenchus's ledger.py for this run's claims
+Surveyed and used `elenchus_check.py`; `ledger.py` (the tier-capped claim
+ledger, X<C<L<B<A) was not exercised.
+- Do: register this run's claims -- the 3 Lean theorems (Tier A), the numeric
+  fit (Tier B), DESI's quoted values (Tier L) -- as a real ledger entry.
+- **Accept when:** a ledger file/output exists naming these claims with
+  tiers and evidence paths, not just a citation in LL.md.
+
+### 13. Extend the BAO pipeline to DESI DR2 / eBOSS / SDSS
+Same code (`scripts/bao_flcdm/fit_desi_bao.py`), new mean/cov files already
+present in the same local data directory (`desi_2024_eboss_gaussian_bao_*`,
+`sdss_DR16_*`, `sdss_DR12*`). Near-zero marginal cost.
+- **Accept when:** a joint or DR2-only fit result exists with its own
+  external-validation comparison (DR2's own quoted values, arXiv:2503.14738).
+
 ## User actions (cannot be done by the agent)
 
 - **Rotate credentials.** The transcript scrubber redacted 1 Anthropic key,

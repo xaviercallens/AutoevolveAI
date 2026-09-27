@@ -23,6 +23,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from anse.config import MemoryConfig, get_config
+
 logger = logging.getLogger(__name__)
 
 
@@ -65,12 +67,25 @@ class ChromaRAG:
 
     def __init__(
         self,
-        persist_directory: str | Path = "data/chroma_db",
+        persist_directory: str | Path | None = None,
+        config: MemoryConfig | None = None,
         use_fast_embeddings: bool = True,
     ) -> None:
-        self.persist_dir = Path(persist_directory)
+        """
+        Args:
+            persist_directory: Explicit override for the ChromaDB store path.
+                When omitted, resolves to `config.persist_directory` — the same
+                store the Harvester writes to — so retrieval sees what the
+                harvester captured.
+            config: MemoryConfig to resolve the persist directory from when
+                `persist_directory` is not given. Defaults to the global config.
+        """
+        if persist_directory is not None:
+            self.persist_dir = Path(persist_directory)
+        else:
+            self.persist_dir = Path((config or get_config().memory).persist_directory)
         self.persist_dir.mkdir(parents=True, exist_ok=True)
-        
+
         self.client = chromadb.PersistentClient(path=str(self.persist_dir))
         self.embedding_fn = (
             FastDeterministicEmbeddingFunction(384)

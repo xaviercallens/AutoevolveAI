@@ -133,13 +133,26 @@ class Harvester:
             self._upsert_chroma(trace)
 
     def _append_jsonl(self, trace: LoopTrace) -> None:
-        """Append trace as a single line JSON."""
-        data = trace.to_dict()
-        line = json.dumps(data) + "\n"
-        with open(self.log_path, "a", encoding="utf-8") as f:
-            f.write(line)
-            f.flush()
-            os.fsync(f.fileno())
+        """Append trace as a single JSON line, atomically.
+
+        Write old content + new line to a temp file in the same directory,
+        fsync, then os.rename over the log: a crash leaves either the old file
+        or the new one, never a torn last line. Costs O(file size) per append.
+        """
+        line = json.dumps(trace.to_dict()) + "\n"
+        self.log_path.parent.mkdir(parents=True, exist_ok=True)
+        existing = self.log_path.read_bytes() if self.log_path.exists() else b""
+        tmp = self.log_path.with_name(f".{self.log_path.name}.{os.getpid()}.tmp")
+        try:
+            with open(tmp, "wb") as f:
+                f.write(existing)
+                f.write(line.encode("utf-8"))
+                f.flush()
+                os.fsync(f.fileno())
+            os.rename(tmp, self.log_path)
+        except BaseException:
+            tmp.unlink(missing_ok=True)
+            raise
 
     def _upsert_chroma(self, trace: LoopTrace) -> None:
         """Upsert trace vector and metadata into ChromaDB."""

@@ -40,22 +40,18 @@ def test_deep_think_auditor_accepts(mock_call_local):
 @patch("anse.core.red_team.call_local_r1_model")
 def test_deep_think_auditor_rejects(mock_call_local):
     """Verify that the deep think auditor correctly rejects impossible code."""
-    mock_call_local.side_effect = [
-        "<think>Algebraic tautology found.</think> REJECT",
-        "<think>Valid topological structure detected.</think> PASS"
-    ]
+    mock_call_local.return_value = "<think>Algebraic tautology found.</think> REJECT"
     mock_extractor = MockExtractor(reject=True)
     auditor = DeepThinkAuditor(extractor=mock_extractor)
-    
+
     result = auditor.invoke({
         "math_problem": "Test Problem",
-        "lean_code": "def invalid(): pass",
+        "lean_code": "theorem invalid : False := sorry",
         "python_metrics": {"error": 0.0, "latency_ms": 1.0},
         "thoughts": []
     })
-    
-    assert "ACCEPT" in result.get('verdict', '') or "REJECT" in result.get('verdict', '')
-    # The graph will backtrack to coder, coder changes status to RETRY, then epistemic returns PASS.
-    # Then it goes to physics which rejects it (mock_extractor(reject=True)), so final judgment is REJECT.
+
+    # There is no fake auto-correction retry anymore: a REJECT from the
+    # epistemic check flows straight through to physics_check and judge.
     assert "REJECT" in result['verdict']
-    assert mock_call_local.call_count == 2
+    assert mock_call_local.call_count == 1

@@ -3,16 +3,24 @@ Redis Bus: High-throughput event streaming, JSON state persistence, and Vector S
 Supports Redis Streams (subtasks, attestation receipts), Hash/JSON documents (traces),
 and Vector Embeddings for similarity lookup across lessons and failing patterns.
 Includes an in-memory fallback engine for isolated testing without an external Redis daemon.
+
+Note: Persistence is guaranteed only when connected to a live Redis instance. When Redis is
+unavailable, writes silently fall back to volatile in-memory storage (is_mock=True). Callers
+must inspect the is_mock flag in write method return values to distinguish durable from
+volatile writes.
 """
 
 from __future__ import annotations
 
 import json
+import logging
 import math
 import os
 import time
 from dataclasses import MISSING as dataclass_MISSING, asdict, dataclass, field, fields
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -137,22 +145,47 @@ class RedisBus:
             client.ping()
             self._client = client
             self.is_mock = False
-        except Exception:
-            # Fallback to in-memory backend
+        except (
+            ConnectionError,
+            ImportError,
+            TimeoutError,
+            OSError,
+        ) as e:
+            logger.error(
+                "Failed to connect to Redis at %s:%d, falling back to volatile in-memory storage: %s",
+                self.host,
+                self.port,
+                e,
+            )
+            self._client = InMemoryBusBackend()
+            self.is_mock = True
+        except Exception as e:
+            logger.error(
+                "Unexpected error connecting to Redis at %s:%d, falling back to volatile in-memory storage: %s",
+                self.host,
+                self.port,
+                e,
+            )
             self._client = InMemoryBusBackend()
             self.is_mock = True
 
     # ─── Event Streams ─────────────────────────────────────────────────────────
 
-    def publish_event(self, stream: str, payload: dict[str, Any]) -> str:
-        """Publish an event to a Redis Stream."""
+    def publish_event(self, stream: str, payload: dict[str, Any]) -> dict[str, Any]:
+        """
+        Publish an event to a Redis Stream.
+
+        Returns a dict with keys:
+        - 'value': the message ID (str)
+        - 'is_mock': True if write is volatile in-memory, False if persisted to Redis
+        """
         if self.is_mock:
-            return self._client.xadd(stream, payload)
+            return {"value": self._client.xadd(stream, payload), "is_mock": True}
 
         stringified = {
             k: json.dumps(v) if isinstance(v, (dict, list)) else str(v) for k, v in payload.items()
         }
-        return self._client.xadd(stream, stringified)
+        return {"value": self._client.xadd(stream, stringified), "is_mock": False}
 
     def consume_events(
         self, stream: str, last_id: str = "0", count: int = 10
@@ -181,8 +214,14 @@ class RedisBus:
 
     # ─── JSON & Trace Document Storage ────────────────────────────────────────
 
-    def record_trace(self, trace: TraceRecord) -> str:
-        """Persist a complete execution trace."""
+    def record_trace(self, trace: TraceRecord) -> dict[str, Any]:
+        """
+        Persist a complete execution trace.
+
+        Returns a dict with keys:
+        - 'value': the trace ID (str)
+        - 'is_mock': True if write is volatile in-memory, False if persisted to Redis
+        """
         trace_data = trace.to_dict()
         key = f"antigravity:trace:{trace.trace_id}"
 
@@ -196,7 +235,7 @@ class RedisBus:
         if trace.embedding is not None:
             self.store_vector(trace.trace_id, trace.embedding, metadata=trace_data)
 
-        return trace.trace_id
+        return {"value": trace.trace_id, "is_mock": self.is_mock}
 
     def get_trace(self, trace_id: str) -> TraceRecord | None:
         """Fetch an execution trace by ID."""
@@ -269,28 +308,45 @@ class RedisBus:
         """Executes vector searches for multiple query vectors in batch."""
         return [self.search_vectors(q, top_k=top_k) for q in queries]
 
-    def trim_stream(self, stream: str, max_len: int = 1000) -> int:
-        """Trims a stream to at most max_len entries to prevent memory flooding."""
+    def trim_stream(self, stream: str, max_len: int = 1000) -> dict[str, Any]:
+        """
+        Trims a stream to at most max_len entries to prevent memory flooding.
+
+        Returns a dict with keys:
+        - 'value': number of entries trimmed (int)
+        - 'is_mock': True if operation was on volatile in-memory storage, False if on Redis
+        """
         if self.is_mock:
+            trimmed = 0
             if stream in self._client.streams:
                 original_len = len(self._client.streams[stream])
                 if original_len > max_len:
                     self._client.streams[stream] = self._client.streams[stream][-max_len:]
-                    return original_len - max_len
-            return 0
+                    trimmed = original_len - max_len
+            return {"value": trimmed, "is_mock": True}
 
         try:
-            return int(self._client.xtrim(stream, maxlen=max_len))
-        except Exception:
-            return 0
+            trimmed = int(self._client.xtrim(stream, maxlen=max_len))
+            return {"value": trimmed, "is_mock": False}
+        except Exception as e:
+            logger.error("Failed to trim stream %s: %s", stream, e)
+            return {"value": 0, "is_mock": False}
 
-    def set_with_ttl(self, key: str, value: str, ttl_seconds: int = 3600) -> bool:
-        """Stores a key with time-to-live expiration."""
+    def set_with_ttl(self, key: str, value: str, ttl_seconds: int = 3600) -> dict[str, Any]:
+        """
+        Stores a key with time-to-live expiration.
+
+        Returns a dict with keys:
+        - 'value': True if write succeeded, False otherwise (bool)
+        - 'is_mock': True if write is volatile in-memory, False if persisted to Redis
+        """
         if self.is_mock:
             self._client.set(key, value)
-            return True
+            return {"value": True, "is_mock": True}
 
         try:
-            return bool(self._client.setex(key, ttl_seconds, value))
-        except Exception:
-            return False
+            success = bool(self._client.setex(key, ttl_seconds, value))
+            return {"value": success, "is_mock": False}
+        except Exception as e:
+            logger.error("Failed to set key %s with TTL: %s", key, e)
+            return {"value": False, "is_mock": False}

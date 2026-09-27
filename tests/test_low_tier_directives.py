@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -146,6 +146,13 @@ def _make_mock_extractor(responses: list[str]) -> MagicMock:
     return extractor
 
 
+# The adversarial red team (always on for sub-3B models) calls a local Ollama
+# model over HTTP. D3 tests early-stop logic, not the audit, so that external
+# call is mocked; red_team itself refuses rather than fabricate when unreachable.
+RED_TEAM_CALL = "anse.core.red_team.call_local_r1_model"
+RED_TEAM_PASS_REPLY = "<think>No semantic cheating found.</think> PASS"
+
+
 def _make_mock_sandbox(returncode: int = 1, stderr: str = "SyntaxError") -> MagicMock:
     sandbox = MagicMock(spec=SandboxExecutor)
     sandbox._cfg = MagicMock(timeout_seconds=5.0)
@@ -183,7 +190,8 @@ def test_d3_early_stop_on_catastrophic_e1(tmp_path: Path) -> None:
         max_retries=3,
     )
 
-    summary = loop.run("test task")
+    with patch(RED_TEAM_CALL, return_value=RED_TEAM_PASS_REPLY):
+        summary = loop.run("test task")
     assert summary.iterations == 1  # stopped after iteration 1, did not waste retries 2 & 3
     assert summary.traces[0].metadata.get("early_stop_reason") == "E1_catastrophic_failure"
 
@@ -221,7 +229,8 @@ def test_d3_early_stop_on_diverging_e2(tmp_path: Path) -> None:
         max_retries=3,
     )
 
-    summary = loop.run("test task")
+    with patch(RED_TEAM_CALL, return_value=RED_TEAM_PASS_REPLY):
+        summary = loop.run("test task")
     assert summary.iterations == 2  # stopped after iteration 2, skipped iteration 3
     assert summary.traces[1].metadata.get("early_stop_reason") == "E2_diverging_energy"
 

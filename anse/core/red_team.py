@@ -2,16 +2,36 @@ from typing import TypedDict, Annotated, List, Dict, Any
 from langgraph.graph import StateGraph, END
 import json
 import logging
+import re
 import requests
-from typing import TypedDict, Annotated, List, Dict, Any
-from langgraph.graph import StateGraph, END
 from anse.core.api_extractor import APIExtractor
 
 logger = logging.getLogger("DeepThinkRedTeam")
 
+
+class SimulationRefusedError(Exception):
+    """Raised when the adversarial audit's model backend cannot be reached.
+
+    An audit that cannot reach its model must fail loudly rather than fall
+    back to a canned PASS/REJECT string that looks like a real verdict.
+    """
+
+
+class LeanScanUnparseableError(Exception):
+    """Raised when the regex-based Lean scanner finds no declaration to anchor on."""
+
+
+_LEAN_DECL_PATTERN = re.compile(r"\b(theorem|lemma|def|example|instance)\b")
+
+OLLAMA_GENERATE_URL = "http://localhost:11434/api/generate"
+
+
 def call_local_r1_model(prompt: str) -> str:
-    """Appel du modèle local (deepseek-r1:14b) via l'API REST d'Ollama."""
-    url = "http://localhost:11434/api/generate"
+    """Appel du modèle local (deepseek-r1:14b) via l'API REST d'Ollama.
+
+    Raises SimulationRefusedError if the endpoint is unreachable or errors —
+    this function must never fabricate a verdict on the model's behalf.
+    """
     payload = {
         "model": "deepseek-r1:14b",
         "prompt": prompt,
@@ -21,24 +41,36 @@ def call_local_r1_model(prompt: str) -> str:
         }
     }
     try:
-        response = requests.post(url, json=payload, timeout=10)
-        if response.status_code == 200:
-            return response.json().get("response", "")
-        else:
-            logger.warning(f"Ollama API error: {response.status_code}")
+        response = requests.post(OLLAMA_GENERATE_URL, json=payload, timeout=10)
     except Exception as e:
-        logger.warning(f"Failed to reach local Ollama: {e}")
-    
-    # Fallback to simulated PRM response
-    if "u_xx" in prompt or "f_0" in prompt or "AST: [ConstantDecl" in prompt:
-        return "<think>Simulated PRM: Type ℝ detected instead of expected topological space. Algebraic tautology found.</think> REJECT"
-    return "<think>Simulated PRM: Valid topological structure detected.</think> PASS"
+        raise SimulationRefusedError(
+            f"cannot reach local Ollama endpoint {OLLAMA_GENERATE_URL}: {e}"
+        ) from e
 
-def extract_lean_ast(lean_code: str) -> str:
-    """Mock/Fallback for LeanDojo AST extraction on raw string."""
+    if response.status_code != 200:
+        raise SimulationRefusedError(
+            f"local Ollama endpoint {OLLAMA_GENERATE_URL} returned HTTP {response.status_code}"
+        )
+    return response.json().get("response", "")
+
+
+def scan_lean_declaration_heuristically(lean_code: str) -> str:
+    """Regex scan of Lean source text — NOT an AST parse.
+
+    This is a plain string/regex heuristic, not LeanDojo or Lean's own
+    parser. It exists only to give the epistemic auditor prompt a cheap
+    textual hint. Raises LeanScanUnparseableError instead of returning a
+    fake structure when the input has no recognizable Lean declaration.
+    """
+    if not lean_code or not lean_code.strip():
+        raise LeanScanUnparseableError("empty Lean code: nothing to scan")
+    if not _LEAN_DECL_PATTERN.search(lean_code):
+        raise LeanScanUnparseableError(
+            "no recognizable Lean declaration (theorem/lemma/def/example/instance) found in input"
+        )
     if "u_xx" in lean_code or "ℝ" in lean_code:
-        return "AST: [ConstantDecl: u_xx: ℝ], [Goal: A+B=0]"
-    return "AST: [TheoremDecl], [Goal: Topology]"
+        return "HEURISTIC_SCAN: [ConstantDecl: u_xx: ℝ], [Goal: A+B=0]"
+    return "HEURISTIC_SCAN: [TheoremDecl], [Goal: Topology]"
 
 class VerificationState(TypedDict):
     math_problem: str
@@ -46,57 +78,40 @@ class VerificationState(TypedDict):
     python_metrics: dict
     thoughts: list[str]
     verdict: str
+    confidence: float
     status: str
     feedback: str
 
 class DeepThinkAuditor:
-    def __init__(self, extractor: APIExtractor | None = None):
+    def __init__(self, extractor: APIExtractor | None = None) -> None:
         self.extractor = extractor or APIExtractor()
         
         workflow = StateGraph(VerificationState)
-        workflow.add_node("coder", self.mock_coder_auto_correction)
         workflow.add_node("epistemic_check", self.epistemic_deep_think_auditor)
         workflow.add_node("physics_check", self.physics_sandbox_thinker)
         workflow.add_node("judge", self.final_judgment)
 
-        workflow.set_entry_point("coder")
-        workflow.add_edge("coder", "epistemic_check")
-        
-        # Conditional edge from epistemic check to handle MCTS backtracking
-        def route_epistemic(state: VerificationState):
-            if state.get("status") == "BACKTRACK_TO_CODER":
-                return "coder"
-            return "physics_check"
-
-        workflow.add_conditional_edges(
-            "epistemic_check",
-            route_epistemic,
-            {"coder": "coder", "physics_check": "physics_check"}
-        )
-
+        # There used to be a "coder" node here that simulated re-generating
+        # the proof after a REJECT and always produced a canned "fix". That
+        # fabricated a fix instead of performing one, so it has been removed:
+        # a REJECT from the epistemic check now flows straight through to
+        # judgment instead of being laundered through a fake retry.
+        workflow.set_entry_point("epistemic_check")
+        workflow.add_edge("epistemic_check", "physics_check")
         workflow.add_edge("physics_check", "judge")
         workflow.add_edge("judge", END)
 
         self.app = workflow.compile()
-        
-    def mock_coder_auto_correction(self, state: VerificationState):
-        """Simulate the agent re-generating code after a REJECT from Red Team."""
-        if state.get("status") == "BACKTRACK_TO_CODER":
-            logger.info(f"Backtracking to Coder... Feedback: {state.get('feedback', '')}")
-            # The agent would generate new Lean code here. We simulate a fix.
-            state["lean_code"] = "-- Topologically sound proof via InnerProductSpace\ntheorem CauchyRiemann_Correct"
-            state["status"] = "RETRY"
-        return state
 
-    def epistemic_deep_think_auditor(self, state: VerificationState):
+    def epistemic_deep_think_auditor(self, state: VerificationState) -> dict:
         """ Ce nœud est exécuté par le modèle local (ex: DeepSeek-R1 via Ollama). Il force le modèle à déconstruire le code avant de l'accepter. """
-        ast_info = extract_lean_ast(state.get('lean_code', ''))
+        scan_info = scan_lean_declaration_heuristically(state.get('lean_code', ''))
         prompt = f"""
 Analyse ce théorème Lean 4 proposé :
 {state.get('lean_code', '')}
 
-AST extrait (via LeanDojo):
-{ast_info}
+Scan heuristique (regex, PAS un AST LeanDojo) :
+{scan_info}
 
 Tu es le 'Reviewer 2'. Tu dois trouver les triches sémantiques.
 Réfléchis dans <think> :
@@ -105,18 +120,15 @@ Réfléchis dans <think> :
 """
         logger.info("Executing Epistemic Deep Think Audit...")
         response = call_local_r1_model(prompt)
-        
+
         thoughts = state.get("thoughts", [])
         new_state = {"thoughts": thoughts + [response]}
-        if "REJECT" in response:
-            new_state["status"] = "BACKTRACK_TO_CODER"
+        new_state["status"] = "BACKTRACK_TO_CODER" if "REJECT" in response else "PASS"
+        if new_state["status"] == "BACKTRACK_TO_CODER":
             new_state["feedback"] = response
-        else:
-            new_state["status"] = "PASS"
-            
         return new_state
 
-    def physics_sandbox_thinker(self, state: VerificationState):
+    def physics_sandbox_thinker(self, state: VerificationState) -> dict:
         """Étape 2 : Vérification des illusions numériques du CAS Python."""
         prompt = f"""Métriques:
 {state['python_metrics']}
@@ -136,16 +148,35 @@ L'énergie physique E est-elle réaliste ? Faut-il du fuzzing sur les singularit
         thoughts = state.get("thoughts", [])
         return {"thoughts": thoughts + [response]}
 
-    def final_judgment(self, state: VerificationState):
-        """Étape 3 : Synthèse et verdict implacable."""
+    def final_judgment(self, state: VerificationState) -> dict:
+        """Étape 3 : Synthèse et verdict implacable.
+
+        HEURISTIC ONLY: this verdict is substring matching on free-text LLM
+        prose, not a formal proof check or a calibrated classifier. The
+        returned `confidence` is the fraction of the known rejection markers
+        that fired; it measures marker density in the prose, not the
+        probability that the proof is actually sound. Callers that need a
+        trustworthy verdict must not treat this as ground truth.
+        """
         t1 = state['thoughts'][0].lower() if len(state['thoughts']) > 0 else ""
         t2 = state['thoughts'][1].lower() if len(state['thoughts']) > 1 else ""
-        
+
+        t1_markers = [m for m in ("missing", "cheating", "reject") if m in t1]
+        t2_markers = [m for m in ("fuzzing", "tautology") if m in t2]
+        matched = t1_markers + t2_markers
+        total_markers = 5
+
         # We reject if the model found missing bounds, epistemic cheating, or required fuzzing.
-        if "missing" in t1 or "cheating" in t1 or "reject" in t1 or "fuzzing" in t2 or "tautology" in t2:
-            return {"verdict": "REJECT: INSUFFICIENT HARDNESS OR EPISTEMIC CHEATING"}
+        if matched:
+            return {
+                "verdict": "REJECT: INSUFFICIENT HARDNESS OR EPISTEMIC CHEATING",
+                "confidence": len(matched) / total_markers,
+            }
         else:
-            return {"verdict": "ACCEPT: ATTESTATION VERIFIED"}
+            return {
+                "verdict": "ACCEPT: ATTESTATION VERIFIED",
+                "confidence": 1.0 - (len(matched) / total_markers),
+            }
 
     def invoke(self, state: dict) -> dict:
         return self.app.invoke(state)

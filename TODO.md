@@ -177,3 +177,11 @@ dropped from omega_cdm) with its expected shift written before it runs.
 - Frozen split wired into the trainer; excludes the 2 contaminating rows.
 - GATE returns BLOCKED with the real reason instead of OK.
 - LeanMaster MCP server verified: `initialize` OK, 7 tools.
+
+### 19. Make JEPA learning measurable before claiming it
+`results/cosmo3_learning/`: real-verdict training matched the shuffled-energy control and
+`energy_accuracy` saturated at 1.00 for both.
+- Do: replace or fix the saturated metric (e.g. AUROC of predicted energy vs verdict on a
+  task-level held-out split), and grow the corpus with failure-rich episodes.
+- **Accept when:** real-verdict training beats the shuffled control on the held-out split
+  by a margin larger than seed-to-seed spread (3+ seeds).

@@ -412,3 +412,12 @@ PR #61, merged): DR2 fit from Rust Om 0.29743±0.00861, h·r_d 101.543±0.735, a
 with this repo's Python fit to 2e-4, exposed as the `bao_distances` MCP tool. The port
 found the cvode tout-rescale bug (fixed in PR #60) and that cvode's Adams method never
 exceeds order 1.
+
+### 12d. Learning retrofit: a negative result, reported as one
+
+8. **JEPA trained on the 206 real verdicts is indistinguishable from a shuffled-label
+   control** (val loss 21.87 vs 21.46; "energy_accuracy" 1.00 in both). The metric is
+   saturated, so it cannot show learning on this data, and the corpus is small and 84%
+   pass. The episodes are kept (real labels, on disk 2); no learning is claimed.
+   `results/cosmo3_learning/README.md`. Always train a shuffled-label control next to a
+   "learning" claim: without it this run would have read as 100% accuracy.

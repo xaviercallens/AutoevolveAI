@@ -56,9 +56,14 @@ model-emitted imports and substitute a pinned header
 
 - `DeepSeek-Prover-V2-7B` (Q8_0, Ollama, plain completion prompt): 2/3
   statements kernel-clean. Current pipeline prover.
-- `Goedel-Prover-V2-8B` (Q6_K): returned **empty completions** for 9/9 plain
-  prompts. That is a chat-template artifact, not a capability result. Apply
-  its documented template before judging it.
+- `Goedel-Prover-V2-8B` (Q6_K): the run-one "0/9, empty completions" was a
+  harness bug. Goedel-V2 is a thinking model and its GGUF never closes
+  `</think>`, so Ollama files the ENTIRE answer (complete proof included)
+  under `message.thinking`; `content`/`response` stay empty. Read
+  content + thinking and take the LAST Lean block (it writes a `sorry`
+  sketch first, then "Complete Lean 4 Proof"). `run_ladder.py` does this.
+  Also: the stop at ~800 tokens was the model's own end token
+  (`done_reason: stop`), not a cap.
 - pass@3 sampling (T=0.7) rescued nothing that greedy missed on these tasks.
 - One model at a time fits the T4 (MAX_LOADED_MODELS=1). Embedding jobs and
   prover jobs thrash each other through model swaps — serialize them, or move
@@ -68,6 +73,20 @@ model-emitted imports and substitute a pinned header
   OOM'd at FIT on 2026-09-27; while it held the card it also starved the
   embedder (cudaMalloc OOM in the literature ingest). With NF4 + fp16 compute
   (sm_75 has no bf16), the fit runs at ~8.1 GiB.
+
+## 4b. Hardness comes from generated, validated instances
+
+Three hand-picked theorems (run one) measured nothing. `scripts/hardness/`
+generates tiered statements from Sage's Cremona data, mixes TRUE facts with
+Sage-verified FALSE variants, and validates the instrument before any model
+runs: every statement elaborates with `sorry`, none is vacuous, reference
+proofs pass on true items (45/46) and fail on false items (12/12). The false
+variants caught their own generator bug: a y+1 bump can land on the conjugate
+point, so falsity must be re-checked, never assumed. Proofs are always
+compiled against OUR statement, so a model cannot weaken what it proves.
+The ladder is frozen as the held-out split; the trainer drops any row
+containing a frozen proposition (normalized, so renamed copies are caught —
+it found 2 such rows that run one had added).
 
 ## 5. Computational ground truth is cheap — use it first
 

@@ -15,7 +15,7 @@ import json
 import re
 import subprocess
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -64,7 +64,7 @@ def generate(model: str, statement: str, call_log: Path, temperature: float = 0.
     text = body.get("response", "")
     with open(call_log, "a") as f:
         f.write(json.dumps({
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "model": model,
             "input": {"prompt": prompt, "temperature": 0.0, "num_predict": 800},
             "output": {"text": text, "eval_count": body.get("eval_count", 0)},
@@ -129,7 +129,7 @@ def main() -> int:
     call_log = Path("/mnt/disks/disk-socrateai-local-1/AutoevolveAI/call_logs/prover_bakeoff.jsonl")
     call_log.parent.mkdir(parents=True, exist_ok=True)
 
-    results = {"started": datetime.now(timezone.utc).isoformat(), "runs": []}
+    results = {"started": datetime.now(UTC).isoformat(), "runs": []}
     attempts = [(0.0, "greedy"), (0.7, "sample1"), (0.7, "sample2")]  # pass@3
     for model in args.models:
         for name, stmt in STATEMENTS:
@@ -149,7 +149,7 @@ def main() -> int:
                 if run.get("verify", {}).get("verified_clean"):
                     break  # first clean proof settles this (model, theorem) pair
 
-    results["finished"] = datetime.now(timezone.utc).isoformat()
+    results["finished"] = datetime.now(UTC).isoformat()
     Path(args.out).write_text(json.dumps(results, indent=2))
     clean_by_model: dict[str, int] = {}
     for r in results["runs"]:

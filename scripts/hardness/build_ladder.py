@@ -94,26 +94,26 @@ def build_items() -> list[dict]:
         trues = [r for r in facts if key in r][:PER_TIER_TRUE]
         falses = [r for r in facts if f"false_{key}" in r][-PER_TIER_FALSE:]
         for r, truth in [(r, True) for r in trues] + [(r, False) for r in falses]:
-            W = "W_" + re.sub(r"\W", "_", r["label"])
+            w = "W_" + re.sub(r"\W", "_", r["label"])
             val = r[key] if truth else r[f"false_{key}"]
             tid = f"{tier.lower()}_{r['label']}_{'T' if truth else 'F'}"
             items.append({
                 "id": tid, "tier": tier, "truth": truth, "label": r["label"],
-                "defs": curve_def(W, r["a"]),
-                "statement": f"theorem {tid} : {make(W, r, val)}",
-                "reference": ref_tmpl.format(W=W),
+                "defs": curve_def(w, r["a"]),
+                "statement": f"theorem {tid} : {make(w, r, val)}",
+                "reference": ref_tmpl.format(W=w),
             })
 
     add_curve_tier("T1", "point",
-                   lambda W, r, v: f"{W}.toAffine.Equation {q(v[0])} {q(v[1])}", REF_T1)
+                   lambda w, r, v: f"{w}.toAffine.Equation {q(v[0])} {q(v[1])}", REF_T1)
     add_curve_tier("T2", "disc",
-                   lambda W, r, v: f"{W}.Δ = {q(v)}", REF_T2)
+                   lambda w, r, v: f"{w}.Δ = {q(v)}", REF_T2)
 
-    def dbl(W: str, r: dict, v: list[str]) -> str:
+    def dbl(w: str, r: dict, v: list[str]) -> str:
         x, y = q(r["point"][0]), q(r["point"][1])
-        ell = f"({W}.toAffine.slope {x} {x} {y} {y})"
-        return (f"{W}.toAffine.addX {x} {x} {ell} = {q(v[0])} ∧ "
-                f"{W}.toAffine.addY {x} {x} {y} {ell} = {q(v[1])}")
+        ell = f"({w}.toAffine.slope {x} {x} {y} {y})"
+        return (f"{w}.toAffine.addX {x} {x} {ell} = {q(v[0])} ∧ "
+                f"{w}.toAffine.addY {x} {x} {y} {ell} = {q(v[1])}")
 
     add_curve_tier("T3", "double", dbl, REF_T3)
 

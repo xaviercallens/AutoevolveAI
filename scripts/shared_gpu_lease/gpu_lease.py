@@ -39,8 +39,8 @@ import os
 import socket
 import sys
 import time
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator, Optional
 
 LEASE_DIR = Path("/mnt/disks/disk-socrateai-local-1/gpu_lease")
 LOCK_FILE = LEASE_DIR / "t4.lock"
@@ -56,7 +56,7 @@ def _pid_alive(pid: int) -> bool:
     return True
 
 
-def _read_state() -> Optional[dict]:
+def _read_state() -> dict | None:
     if not STATE_FILE.exists():
         return None
     try:
@@ -82,7 +82,7 @@ class _LockHandle:
             os.close(self.fd)
 
 
-def _flock(blocking: bool) -> Optional[_LockHandle]:
+def _flock(blocking: bool) -> _LockHandle | None:
     LEASE_DIR.mkdir(parents=True, exist_ok=True)
     fd = os.open(LOCK_FILE, os.O_CREAT | os.O_RDWR, 0o666)
     try:
@@ -105,7 +105,7 @@ def status() -> dict:
 
 
 def try_acquire(holder: str, purpose: str, ttl_s: int = DEFAULT_TTL_S,
-                 pid: Optional[int] = None) -> bool:
+                 pid: int | None = None) -> bool:
     """Non-blocking. Returns True iff the lease is now held by `holder`.
 
     Identity is the holder string, matching release() -- not the pid. Two
@@ -159,7 +159,7 @@ def release(holder: str) -> bool:
 
 def wait_and_acquire(holder: str, purpose: str, ttl_s: int = DEFAULT_TTL_S,
                       timeout_s: int = 3600, poll_s: int = 10,
-                      pid: Optional[int] = None) -> bool:
+                      pid: int | None = None) -> bool:
     t0 = time.time()
     while time.time() - t0 < timeout_s:
         if try_acquire(holder, purpose, ttl_s, pid=pid):

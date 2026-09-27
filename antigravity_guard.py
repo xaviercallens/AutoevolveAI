@@ -84,6 +84,9 @@ def _get_local_modules(file_path: Path) -> set[str]:
         "z3",
         "rl_common",
         "rl_agent_api",
+        # Real, verified modules outside this repo's venv:
+        "gpu_lease",  # shared T4 lease, /mnt/disks/disk-socrateai-local-1/gpu_lease/
+        "astropy",  # BAO fit runs under /mnt/disks/disk-socrateai-local-1/venv-pta
     }
     local_modules.update(known_optional)
     return local_modules

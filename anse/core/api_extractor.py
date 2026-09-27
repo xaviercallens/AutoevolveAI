@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -195,7 +195,7 @@ class APIExtractor:
         if not self._call_log_path:
             return
         call_record = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "model": self.api_model_name,
             "input": {"messages": messages, "max_tokens": max_tokens, "temperature": temperature},
             "output": {"text": output, "completion_tokens": token_count},

@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -143,7 +143,7 @@ def main() -> int:
     n_params = 2
 
     result = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "data_provenance": {
             "mean_file": str(MEAN_FILE),
             "mean_file_sha256": sha256(MEAN_FILE),

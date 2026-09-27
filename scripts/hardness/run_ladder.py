@@ -15,17 +15,15 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import sys
 import time
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-import httpx
-
 import build_ladder as bl
+import httpx
 
 sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
 from gpu_lease import release as lease_release  # noqa: E402
@@ -88,7 +86,7 @@ def generate(model: str, prompt: str) -> tuple[str, dict]:
     d = r.json()
     msg = d.get("message", {})
     text = (msg.get("content") or "") + "\n" + (msg.get("thinking") or "")
-    rec = {"timestamp": datetime.now(timezone.utc).isoformat(), "model": model,
+    rec = {"timestamp": datetime.now(UTC).isoformat(), "model": model,
            "input": {"messages": [{"role": "user", "content": prompt}], "temperature": 0.0},
            "output": {"text": msg.get("content") or "", "thinking": msg.get("thinking") or "",
                       "completion_tokens": d.get("eval_count", 0)},
@@ -124,7 +122,7 @@ def main() -> int:
     args = ap.parse_args()
 
     ladder = json.loads((bl.OUT / "ladder.json").read_text())
-    results = {"started": datetime.now(timezone.utc).isoformat(), "n_items": len(ladder), "runs": []}
+    results = {"started": datetime.now(UTC).isoformat(), "n_items": len(ladder), "runs": []}
     # Resume: keep rows that actually ran (no infrastructure error).
     prev = Path(args.out)
     if prev.exists():
@@ -181,7 +179,7 @@ def _run(args, ladder: list[dict], results: dict, done: set) -> int:
             s["true_n"] += 1
             s["true_pass"] += int(bool(r.get("clean")))
     results["summary"] = dict(summ)
-    results["finished"] = datetime.now(timezone.utc).isoformat()
+    results["finished"] = datetime.now(UTC).isoformat()
     Path(args.out).write_text(json.dumps(results, indent=1))
     print(json.dumps(results["summary"], indent=1))
     return 1 if any(s["false_accepted"] for s in summ.values()) else 0

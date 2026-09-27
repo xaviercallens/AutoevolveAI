@@ -61,7 +61,9 @@ def main() -> int:
         if ids:
             coll.upsert(ids=list(ids), documents=list(docs), metadatas=list(metas))
             added += len(ids)
-            ids.clear(); docs.clear(); metas.clear()
+            ids.clear()
+            docs.clear()
+            metas.clear()
 
     existing = set()
     got = coll.get(include=[])

@@ -22,7 +22,7 @@ import argparse
 import hashlib
 import json
 import random
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -115,7 +115,7 @@ def main() -> int:
         "new_pool_available": len(new),
         "effective_dilution": round(frac, 3),
         "dilution_cap": args.dilution,
-        "at": datetime.now(timezone.utc).isoformat(),
+        "at": datetime.now(UTC).isoformat(),
     }, indent=2))
     return 0
 

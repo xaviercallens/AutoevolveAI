@@ -317,10 +317,13 @@ axioms exactly the trusted set, Elenchus-reviewed clean after the fix in
   `verdict: PASSED` and provenance strings, matching run one's pattern.
 - `ltm_learning_mix.py` rerun: dilution cap held (29.4% <= 30%) against a
   grown new-signal pool (137, up from 20).
-- Full retrain re-run via `night_training_workflow.py` under the GPU lease
-  built in run one -- see the training journal for outcome; per LL.md §8,
-  a training-loss drop alone is not evidence of improvement without the
-  P4-5 held-out eval, which still does not exist (TODO item 2, still open).
+- Full retrain re-run via `night_training_workflow.py`: 15 verified rows (up
+  from 14; frozen-split exclusion held), 200 steps, loss 1.2844 -> 0.0646,
+  GATE correctly `BLOCKED` -- "no frozen-split pass@k eval (P4-5), and the
+  trained model is not the prover; training-loss drop is not evidence."
+  Consistent with run one: the gate has not once produced a false promotion
+  across two separate retrains. TODO item 2 (P4-5) is the one blocker that
+  has now been hit twice; it should be next run's first item, not last.
 
 ### 11f. A real disconnect found while re-running the retrofit
 

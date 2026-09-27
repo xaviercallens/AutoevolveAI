@@ -43,8 +43,10 @@ def test_module_default_prod_dir(tmp_path, monkeypatch):
 
 def test_options_and_marker_registered(pytester):
     res = pytester.runpytest_inprocess("--help", plugins=[ppt])
+    assert res.ret == 0
     res.stdout.fnmatch_lines(["*--prod-dir*", "*--min-prod-calls*", "*prod_dir*"])
     res = pytester.runpytest_inprocess("--markers", plugins=[ppt])
+    assert res.ret == 0
     res.stdout.fnmatch_lines(["*no_prod_trace*"])
 
 

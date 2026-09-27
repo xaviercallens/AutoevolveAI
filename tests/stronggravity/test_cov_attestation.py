@@ -66,7 +66,11 @@ def test_reconfigure_stdout_without_stderr_support(monkeypatch):
 
 
 def test_reconfigure_stdout_not_supported(monkeypatch):
-    _load_fresh(monkeypatch, io.StringIO(), io.StringIO())
+    # StringIO has no reconfigure(); the module must still import cleanly.
+    err = io.StringIO()
+    mod = _load_fresh(monkeypatch, io.StringIO(), err)
+    assert callable(mod.attest_execution)
+    assert err.getvalue() == ""
 
 
 def test_reconfigure_error_is_swallowed(monkeypatch):

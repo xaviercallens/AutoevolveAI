@@ -36,6 +36,7 @@ def _load_fresh(monkeypatch, out, err):
     spec = importlib.util.spec_from_file_location("ag_fresh", SRC)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
+    return mod
 
 
 @pytest.mark.parametrize("exc", [None, OSError("x"), ValueError("x"), RuntimeError("x")])
@@ -46,7 +47,14 @@ def test_stream_reconfigure_paths(monkeypatch, exc):
 
 
 def test_streams_without_reconfigure(monkeypatch):
-    _load_fresh(monkeypatch, io.StringIO(), io.StringIO())
+    # StringIO has no reconfigure(); the guard must still import and work.
+    import ast
+
+    mod = _load_fresh(monkeypatch, io.StringIO(), io.StringIO())
+    assert mod.extract_top_level_imports(ast.parse("import json\nfrom os import path")) == {
+        "json",
+        "os",
+    }
 
 
 # ── installed packages ──────────────────────────────────────────────────────

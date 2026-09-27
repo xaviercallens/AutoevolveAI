@@ -8,6 +8,7 @@ Lean 4 refs:
 """
 
 import json
+import math
 import tempfile
 from pathlib import Path
 
@@ -226,5 +227,5 @@ def test_trailing_single_sample_batch_does_not_poison_weights():
     trainer, _ = _create_trainer()
     ds = _create_dataset(18)
     summary = trainer.train(ds, epochs=2, batch_size=16, val_fraction=0.0)
-    assert summary.final_train_loss == summary.final_train_loss  # not NaN
+    assert math.isfinite(summary.final_train_loss)  # neither NaN nor inf
     assert all(torch.isfinite(p).all() for p in trainer.model.parameters())

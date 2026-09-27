@@ -13,7 +13,7 @@ All notable changes to AutoevolveAI / SuperGravity are documented here.
 | Check | Result |
 |---|---|
 | `pytest tests/` | **1359 passed** / 21 failed / 49 skipped / 8 errors |
-| `test_rigor_guard.py` | exit 0 (124 files) |
+| `test_rigor_guard.py` | exit 0 (141 files; it caught 5 violations in the merged branch's tests, all fixed) |
 | `antigravity_guard.py` | exit 1: 0 hallucinated imports; pre-existing Ruff debt only (2361, down from 2386) |
 | Lean theorems (`grep -c theorem formal/ANSE/*.lean`) | **250** across 36 files |
 

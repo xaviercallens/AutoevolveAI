@@ -206,8 +206,10 @@ def test_lazy_client_is_built_once(monkeypatch) -> None:
 
     monkeypatch.setattr(httpx, "Client", _Sentinel)
     ex = OllamaExtractor()
-    assert isinstance(ex.client, _Sentinel)
-    assert ex.client is ex.client
+    first = ex.client
+    second = ex.client
+    assert isinstance(first, _Sentinel)
+    assert first is second  # two property reads, one cached client
     assert len(built) == 1
 
 

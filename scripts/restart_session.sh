@@ -181,32 +181,38 @@ else
   skip "warm throughput" "--quick, or ollama unreachable"
 fi
 
-hdr "6. MCP configuration (takes effect NEXT session, not this one)"
-if [[ -f .mcp.json ]]; then
-  if grep -q ':-\.' .mcp.json; then
-    fail "mcp config" "\${CLAUDE_PROJECT_DIR:-.} found -- Claude Code does NOT expand \
-the ':-default' form; use \${CLAUDE_PROJECT_DIR}"
-  else
-    SERVERS="$("$PY" -c 'import json;print(" ".join(json.load(open(".mcp.json"))["mcpServers"]))' 2>/dev/null)"
-    pass "mcp config" "no unexpandable vars; servers: ${SERVERS:-none}"
-    # Prove each declared entrypoint exists once the variable is substituted.
-    for entry in $("$PY" - <<'PYEOF' 2>/dev/null
-import json, os
-cfg = json.load(open(".mcp.json"))["mcpServers"]
-root = os.getcwd()
-for name, s in cfg.items():
-    args = s.get("args") or []
-    target = (args[0] if args else s["command"]).replace("${CLAUDE_PROJECT_DIR}", root)
-    print(f"{name}={target}")
-PYEOF
-); do
-      NAME="${entry%%=*}"; TARGET="${entry#*=}"
-      [[ -f "$TARGET" ]] && pass "  mcp:$NAME" "entrypoint exists" \
-                         || fail "  mcp:$NAME" "entrypoint missing: $TARGET"
-    done
-  fi
-else
+hdr "6. MCP servers (health-checked by Claude Code itself; attach on the NEXT session)"
+# Ask Claude Code, don't infer. An earlier version of this section grepped
+# .mcp.json for "bad" patterns, and the pattern it rejected -- ${CLAUDE_PROJECT_DIR:-.}
+# -- was in fact the one that worked (24 of 24 logged sessions connected). The one
+# it recommended, a bare ${CLAUDE_PROJECT_DIR}, failed every session: that variable is
+# set for hooks but NOT for .mcp.json expansion, so without a default it expands to
+# nothing and posix_spawn gets '/.venv/bin/python'. `claude mcp list` spawns each
+# server exactly as a session would, so it cannot drift from reality that way.
+if [[ ! -f .mcp.json ]]; then
   fail "mcp config" ".mcp.json absent"
+elif command -v claude >/dev/null 2>&1; then
+  MCP_OUT="$(timeout 150 claude mcp list 2>&1)"
+  if echo "$MCP_OUT" | grep -q "Missing environment variables"; then
+    fail "mcp config" "$(echo "$MCP_OUT" | grep -o 'Missing environment variables: [A-Z_, ]*' \
+      | sort -u | head -1) -- give it a default, e.g. \${VAR:-.}"
+  fi
+  while IFS= read -r line; do
+    NAME="${line%%:*}"
+    if [[ "$line" == *"✔ Connected"* ]]; then
+      pass "  mcp:$NAME" "connected"
+    elif [[ "$line" == *"✘"* || "$line" == *"Failed"* ]]; then
+      fail "  mcp:$NAME" "$(echo "${line##* - }" | cut -c1-90)"
+    fi
+  done < <(echo "$MCP_OUT" | grep -E '^[A-Za-z0-9_.-]+: .* - (✔|✘)')
+  echo "$MCP_OUT" | grep -qE ' - (✔|✘)' || fail "mcp config" "claude mcp list reported no servers"
+else
+  # No CLI here (e.g. the Antigravity host). Flag the one form known to break.
+  if grep -qE '\$\{CLAUDE_PROJECT_DIR\}' .mcp.json; then
+    fail "mcp config" "bare \${CLAUDE_PROJECT_DIR} is unset for .mcp.json; use \${CLAUDE_PROJECT_DIR:-.}"
+  else
+    skip "mcp config" "claude CLI not on PATH; cannot health-check servers"
+  fi
 fi
 
 hdr "7. Environment profile (probed, never assumed)"

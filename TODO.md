@@ -70,6 +70,14 @@ The gate cannot see vacuous statements (`True := trivial`); 3 exist in
 - **Accept when:** each is either given real content or deleted, and
   `MasterMathTribunal*.lean` headers no longer claim "zero-sorry" falsely.
 
+### 10. GPU lease between sessions
+Two sessions contend for one T4; one stopped Ollama under the other's
+running baseline (2026-09-27, 112 wasted attempts).
+- Do: a file lease on disk 2 (`flock`, holder + purpose + expiry) that every
+  GPU job acquires before stopping/starting Ollama or loading weights.
+- **Accept when:** two concurrent GPU jobs serialize (second waits, logs the
+  holder) with no ConnectError rows in either job's results.
+
 ## User actions (cannot be done by the agent)
 
 - **Rotate credentials.** The transcript scrubber redacted 1 Anthropic key,

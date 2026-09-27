@@ -39,6 +39,21 @@ def prompt_for(item: dict) -> str:
             "Do not use sorry or axioms.\n\n```lean4\n" + body + "\n```")
 
 
+def wait_for_server(max_wait_s: int = 3600) -> bool:
+    """Block until Ollama answers. The T4 is shared: other sessions stop Ollama
+    to free the GPU (seen 2026-09-27), and a runner that keeps going logs a
+    wall of instant ConnectErrors that measure nothing. We never start Ollama
+    ourselves -- whoever stopped it may still need the card."""
+    t0 = time.time()
+    while time.time() - t0 < max_wait_s:
+        try:
+            httpx.get("http://localhost:11434/api/tags", timeout=5).raise_for_status()
+            return True
+        except Exception:
+            time.sleep(30)
+    return False
+
+
 def generate(model: str, prompt: str) -> tuple[str, dict]:
     t0 = time.time()
     r = httpx.post("http://localhost:11434/api/chat", timeout=1200, json={
@@ -87,10 +102,22 @@ def main() -> int:
 
     ladder = json.loads((bl.OUT / "ladder.json").read_text())
     results = {"started": datetime.now(timezone.utc).isoformat(), "n_items": len(ladder), "runs": []}
+    # Resume: keep rows that actually ran (no infrastructure error).
+    prev = Path(args.out)
+    if prev.exists():
+        old = json.loads(prev.read_text())
+        results["runs"] = [r for r in old.get("runs", []) if "error" not in r]
+    done = {(r["model"], r["id"]) for r in results["runs"]}
     for key in args.models:
         model = MODELS[key]
         for it in ladder:
+            if (key, it["id"]) in done:
+                continue
             row = {"model": key, "id": it["id"], "tier": it["tier"], "truth": it["truth"]}
+            if not wait_for_server():
+                print("ABORT: Ollama unavailable for 60 min; rerun to resume", flush=True)
+                Path(args.out).write_text(json.dumps(results, indent=1))
+                return 2
             try:
                 text, rec = generate(model, prompt_for(it))
                 proof = extract_proof(text, it)
@@ -100,7 +127,9 @@ def main() -> int:
                 else:
                     v = bl.compile_one(bl.lean_file(it, proof), f"run_{key}_{it['id']}")
                     row.update(extracted=True, clean=v["clean"], axioms=v["axioms"], compile_s=v["secs"])
-            except Exception as e:  # recorded, not hidden
+            except Exception as e:
+                # Recorded, not hidden; error rows are dropped on resume and
+                # the item retried (a dead server is not a prover failure).
                 row.update(error=f"{type(e).__name__}: {e}", clean=False)
             results["runs"].append(row)
             print(json.dumps(row), flush=True)

@@ -134,6 +134,18 @@ A proof of a wrong statement is worthless; review statements first.
   proof files, controls) must be copied into `results/<run>/` before the run
   ends, or the numbers in the report become unverifiable.
 
+## 8b. The T4 is shared with other sessions
+
+Mid-baseline, another Claude session on this machine ran
+`sudo systemctl stop ollama` to free the GPU for its own benchmark
+(`runux-ai-runtime/autoresearch_lowtier/bench.py`). The ladder runner kept
+going and logged 112 instant ConnectErrors that measured nothing. Runners
+must (a) wait for the server instead of burning items, (b) resume from
+completed rows, (c) never treat an infrastructure error as a prover result.
+`run_ladder.py` now does all three. Restart Ollama only after confirming the
+GPU is idle and the other job is finished. The durable fix is a GPU lease
+(TODO item 10).
+
 ## 9. Session mechanics that cost time
 
 - `EnterWorktree` branches from a stale base here (no fresh origin); always

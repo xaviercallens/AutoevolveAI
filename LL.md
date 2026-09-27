@@ -5,6 +5,25 @@ or near-misses in this run; none is theoretical. Companion evidence:
 `docs/literature/BSD_LITERATURE_REVIEW_2026.md`, memory `verification-traps`,
 `local-lean-assets`, and the run report artifact.
 
+## 0. Correction to the run-one record
+
+The night-regen run reported "20/20 master problems rejected — Qwen too small
+for formal math". That diagnosis was wrong. `regenerate_10_math_problems_dspy.py`
+built `APIExtractor(timeout_s=1.0)`: every call timed out, and the `except`
+branch wrote a fake `theorem X : True := by trivial`. The auditor then rejected
+the fake. No model output was ever judged, which is also why the call log stayed
+empty (`_log_call` runs only after a successful return). The pipeline's
+"SUCCESS" outcome only meant each stage exited 0. Fixed 2026-09-27: timeout
+900 s, failures return `GENERATION_FAILED`, no fabricated proof.
+
+Also removed from main on 2026-09-27, as simulated or invented output from
+earlier in the same session: `bsd_agent_swarm.py` (sleep stubs),
+`validate_approaches.py` (hardcoded scores), `millennium_*solver*.py` and
+`results/millennium/` (invented success probabilities),
+`bsd_literature_and_framework.py`, `results/bsd/`, `results/validation/`, and
+`rust_solver/` (rank hardcoded to 1). `anse/core/red_team.py` DeepThinkAuditor
+still returns canned "Simulated PRM" verdicts; treat them as non-evidence.
+
 ## 1. Validate the instrument before the experiment
 
 The first prover bake-off scored 0/6 for every model. The cause was not the

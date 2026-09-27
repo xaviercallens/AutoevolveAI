@@ -14,31 +14,37 @@ class DSPyLeanProver:
     def __init__(self, call_log_path: str | Path | None = None):
         # In a real environment, this connects to the GCP T4 Serverless Endpoint
         # or local Ollama (deepseek-r1:14b)
-        self.llm = APIExtractor(timeout_s=1.0, call_log_path=call_log_path) # Points to vLLM on GCP T4/Local
+        # timeout_s was 1.0 until 2026-09-27: every call timed out and the old
+        # except-branch substituted a fake `True := by trivial` proof, so the
+        # run-one "20/20 rejected" result measured the fallback, not the model.
+        self.llm = APIExtractor(timeout_s=900.0, call_log_path=call_log_path)
+        # NOTE: DeepThinkAuditor's PRM check is simulated (canned PASS/REJECT
+        # strings). Its verdicts are not evidence; use lean_runner for truth.
         self.auditor = DeepThinkAuditor(extractor=self.llm)
 
     def generate_proof(self, theorem_statement: str) -> dict:
         logger.info(f"Generating proof for: {theorem_statement}")
-        
-        # 1. LLM Generation (System 1 -> System 2 via <think>)
+
         prompt = f"Write a Lean 4 formal proof for the following theorem. Do not use 'sorry'. Provide topologically sound proof.\nTheorem: {theorem_statement}"
-        
+
         try:
-            # Simulated DSPy Predict call
             response, _ = self.llm.extract(prompt=prompt, system_prompt="You are an expert Lean 4 mathematician.")
-        except Exception:
-            # Mocked generation if endpoint is offline
-            response = f"theorem {theorem_statement.replace(' ', '_')} : True := by\n  trivial\n"
-            
-        # Improvement C: Automated RAG Self-Healing
-        # Simulate catching lake build error and querying RAG for missing imports
+        except Exception as exc:
+            logger.error("Generation failed for %s: %s", theorem_statement, exc)
+            return {
+                "theorem": theorem_statement,
+                "generated_code": "",
+                "audit_verdict": f"GENERATION_FAILED: {type(exc).__name__}",
+                "thoughts": [],
+            }
+
         if "unknown identifier" in response or "import" not in response:
-            logger.info("Semantic Typeclass Radar: Missing imports detected. Triggering RAG Self-Healing...")
+            logger.info("Missing imports detected; asking the model to repair them.")
             try:
                 rag_prompt = f"Compilation failed: unknown identifier. Search Mathlib4, find the missing import, add it to the header, and re-submit.\n{response}"
                 response, _ = self.llm.extract(prompt=rag_prompt, system_prompt="You are a RAG agent connected to LeanDojo.")
-            except Exception:
-                response = "import Mathlib.Topology.Basic\nimport Mathlib.Geometry.Manifold.Basic\n" + response
+            except Exception as exc:
+                logger.error("Import repair failed for %s: %s", theorem_statement, exc)
                 
         # Improvement A: Semantic Typeclass Radar (Anti-Cheat Gate)
         # Fast-fail before wasting tokens on Red Team

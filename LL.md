@@ -88,6 +88,41 @@ The ladder is frozen as the held-out split; the trainer drops any row
 containing a frozen proposition (normalized, so renamed copies are caught —
 it found 2 such rows that run one had added).
 
+## 4c. Baseline result: 2026-09-27, both provers, all 118 items
+
+DeepSeek-Prover-V2-7B and Goedel-Prover-V2-8B, greedy, against the full
+hardness ladder. Full data: `results/hardness/baseline.json`.
+
+| Tier | DeepSeek pass | Goedel pass | False accepted |
+|---|---|---|---|
+| T0 (Mathlib lemmas) | 6/10 | 8/10 | 0/0 |
+| T1 (point on curve) | 0/12 | 0/12 | 0/4 |
+| T2 (discriminant) | 0/12 | 0/12 | 0/4 |
+| T3 (group-law double) | 0/12 | 0/12 | 0/4 |
+| T4 (BSD sentinel) | 0/1 | 0/1 | -- |
+
+**Zero false-item acceptances across 118 attempts, under real model pressure
+(not just the reference-proof positive control).** The gate holds.
+
+**T1-T3 at exactly 0% is a real capability gap, not a harness bug** --
+verified by hand-replaying two failing attempts (`t1_11a1_T`, `t2_11a1_T`)
+live against `lake env lean`: both are genuine elaboration failures (`rc=1`,
+"tactic `rfl` failed"), not artifacts of the compile harness. Lean 4's error
+recovery still prints `#print axioms` with `sorryAx` for a *failed* tactic
+block (it inserts a placeholder so elaboration can continue past the error)
+-- so a naive check on `sorryAx` alone, without also checking `rc==0`, would
+have shown a green "no forbidden axioms" on a proof that never actually
+compiled. `build_ladder.py::compile_one` requires both; this is the same
+class of trap as the bare `sorry` check, one level deeper.
+
+**Root cause, read from the raw generations, not guessed:** both models
+write a plausible generic tactic (`simp [W, WeierstrassCurve.Δ] <;>
+norm_num <;> rfl`) but never name the specific lemmas the goal actually needs
+(`WeierstrassCurve.b₂/b₄/b₆/b₈`, `Affine.slope/addX/addY`). They
+know Lean 4 syntax fluently and fail identically on every curve -- this is a
+vocabulary gap, not a reasoning gap, which is exactly what premise retrieval
+(TODO item 5, `lean_premises` already has 1,000 signatures indexed) is for.
+
 ## 5. Computational ground truth is cheap — use it first
 
 PARI/GP (`ellanalyticrank`) plus Sage (`E.rank()`, 2-descent) verified BSD

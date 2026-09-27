@@ -41,6 +41,11 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
+from gpu_lease import gpu_lease  # noqa: E402
+
+LEASE_HOLDER = "autoevolveai"
+
 logger = logging.getLogger("night_train")
 
 DISK2 = Path("/mnt/disks/disk-socrateai-local-1/AutoevolveAI")
@@ -273,92 +278,103 @@ def step_fit(
         return None
 
     steps = 12 if smoke else 200
+    # Shared-GPU lease: on 2026-09-27 a concurrent runux-ai-runtime session
+    # stopped Ollama mid-run with no coordination. Held for the whole
+    # load+train+save; released on any exit, including a crash.
+    purpose = f"train {model}" + (" [smoke]" if smoke else "")
     try:
-        tok = AutoTokenizer.from_pretrained(base_id)
-        if tok.pad_token is None:
-            tok.pad_token = tok.eos_token
-        if smoke:
-            net = AutoModelForCausalLM.from_pretrained(
-                base_id, dtype=torch.float16, device_map={"": 0}
-            )
-            net.gradient_checkpointing_enable()
-            net.enable_input_require_grads()
-        else:
-            from peft import prepare_model_for_kbit_training
-            from transformers import BitsAndBytesConfig
+        with gpu_lease(LEASE_HOLDER, purpose, ttl_s=1800, timeout_s=3600):
+            tok = AutoTokenizer.from_pretrained(base_id)
+            if tok.pad_token is None:
+                tok.pad_token = tok.eos_token
+            if smoke:
+                net = AutoModelForCausalLM.from_pretrained(
+                    base_id, dtype=torch.float16, device_map={"": 0}
+                )
+                net.gradient_checkpointing_enable()
+                net.enable_input_require_grads()
+            else:
+                from peft import prepare_model_for_kbit_training
+                from transformers import BitsAndBytesConfig
 
-            net = AutoModelForCausalLM.from_pretrained(
-                base_id,
-                device_map={"": 0},
-                quantization_config=BitsAndBytesConfig(
-                    load_in_4bit=True,
-                    bnb_4bit_quant_type="nf4",
-                    bnb_4bit_compute_dtype=torch.float16,  # sm_75: no bf16
-                    bnb_4bit_use_double_quant=True,
+                net = AutoModelForCausalLM.from_pretrained(
+                    base_id,
+                    device_map={"": 0},
+                    quantization_config=BitsAndBytesConfig(
+                        load_in_4bit=True,
+                        bnb_4bit_quant_type="nf4",
+                        bnb_4bit_compute_dtype=torch.float16,  # sm_75: no bf16
+                        bnb_4bit_use_double_quant=True,
+                    ),
+                )
+                net = prepare_model_for_kbit_training(net, use_gradient_checkpointing=True)
+            net = get_peft_model(
+                net,
+                LoraConfig(
+                    r=8, lora_alpha=16, lora_dropout=0.05, bias="none",
+                    task_type="CAUSAL_LM",
+                    target_modules=["q_proj", "v_proj"],
                 ),
             )
-            net = prepare_model_for_kbit_training(net, use_gradient_checkpointing=True)
-        net = get_peft_model(
-            net,
-            LoraConfig(
-                r=8, lora_alpha=16, lora_dropout=0.05, bias="none",
-                task_type="CAUSAL_LM",
-                target_modules=["q_proj", "v_proj"],
-            ),
-        )
-        trainable = sum(p.numel() for p in net.parameters() if p.requires_grad)
-        opt = torch.optim.AdamW(
-            [p for p in net.parameters() if p.requires_grad], lr=2e-4
-        )
-
-        texts = [
-            (str(r.get("prompt", "")) + "\n" + str(r.get("completion", r.get("response", ""))))[:1024]
-            for r in rows
-        ]
-        texts = [t for t in texts if len(t.strip()) > 20] or ["hello world"]
-
-        losses: list[float] = []
-        net.train()
-        for i in range(steps):
-            batch = texts[i % len(texts)]
-            enc = tok(batch, return_tensors="pt", truncation=True, max_length=256).to("cuda")
-            out = net(**enc, labels=enc["input_ids"])
-            out.loss.backward()
-            opt.step()
-            opt.zero_grad()
-            losses.append(float(out.loss.item()))
-
-        peak = torch.cuda.max_memory_allocated() // 2**20
-        adapter_dir = RUNS / ("smoke" if smoke else "candidates") / model
-        adapter_dir.mkdir(parents=True, exist_ok=True)
-        net.save_pretrained(str(adapter_dir))
-        weights = adapter_dir / "adapter_model.safetensors"
-
-        result = {
-            "base_model": base_id,
-            "steps": steps,
-            "trainable_params": trainable,
-            "loss_first": losses[0],
-            "loss_last": losses[-1],
-            "loss_series": losses,
-            "peak_vram_mib": peak,
-            "adapter_dir": str(adapter_dir),
-            "weights_written": weights.exists(),
-            "weights_bytes": weights.stat().st_size if weights.exists() else 0,
-        }
-        journal.record(
-            StepRecord(
-                Step.FIT,
-                Outcome.OK,
-                f"{steps} steps on {desc}, loss {losses[0]:.4f} -> {losses[-1]:.4f}, "
-                f"peak {peak} MiB, weights={'yes' if weights.exists() else 'NO'}",
-                data=result,
-                seconds=time.time() - t0,
+            trainable = sum(p.numel() for p in net.parameters() if p.requires_grad)
+            opt = torch.optim.AdamW(
+                [p for p in net.parameters() if p.requires_grad], lr=2e-4
             )
+
+            texts = [
+                (str(r.get("prompt", "")) + "\n" + str(r.get("completion", r.get("response", ""))))[:1024]
+                for r in rows
+            ]
+            texts = [t for t in texts if len(t.strip()) > 20] or ["hello world"]
+
+            losses: list[float] = []
+            net.train()
+            for i in range(steps):
+                batch = texts[i % len(texts)]
+                enc = tok(batch, return_tensors="pt", truncation=True, max_length=256).to("cuda")
+                out = net(**enc, labels=enc["input_ids"])
+                out.loss.backward()
+                opt.step()
+                opt.zero_grad()
+                losses.append(float(out.loss.item()))
+
+            peak = torch.cuda.max_memory_allocated() // 2**20
+            adapter_dir = RUNS / ("smoke" if smoke else "candidates") / model
+            adapter_dir.mkdir(parents=True, exist_ok=True)
+            net.save_pretrained(str(adapter_dir))
+            weights = adapter_dir / "adapter_model.safetensors"
+
+            result = {
+                "base_model": base_id,
+                "steps": steps,
+                "trainable_params": trainable,
+                "loss_first": losses[0],
+                "loss_last": losses[-1],
+                "loss_series": losses,
+                "peak_vram_mib": peak,
+                "adapter_dir": str(adapter_dir),
+                "weights_written": weights.exists(),
+                "weights_bytes": weights.stat().st_size if weights.exists() else 0,
+            }
+            journal.record(
+                StepRecord(
+                    Step.FIT,
+                    Outcome.OK,
+                    f"{steps} steps on {desc}, loss {losses[0]:.4f} -> {losses[-1]:.4f}, "
+                    f"peak {peak} MiB, weights={'yes' if weights.exists() else 'NO'}",
+                    data=result,
+                    seconds=time.time() - t0,
+                )
+            )
+            del net
+            torch.cuda.empty_cache()
+            return result
+    except TimeoutError as exc:
+        journal.record(
+            StepRecord(Step.FIT, Outcome.BLOCKED, f"GPU lease: {exc}",
+                       seconds=time.time() - t0)
         )
-        del net
-        torch.cuda.empty_cache()
-        return result
+        return None
     except Exception as exc:
         journal.record(
             StepRecord(Step.FIT, Outcome.FAILED, f"{type(exc).__name__}: {exc}",

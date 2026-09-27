@@ -70,13 +70,25 @@ The gate cannot see vacuous statements (`True := trivial`); 3 exist in
 - **Accept when:** each is either given real content or deleted, and
   `MasterMathTribunal*.lean` headers no longer claim "zero-sorry" falsely.
 
-### 10. GPU lease between sessions
+### 10. GPU lease between sessions -- DONE 2026-09-27
 Two sessions contend for one T4; one stopped Ollama under the other's
-running baseline (2026-09-27, 112 wasted attempts).
-- Do: a file lease on disk 2 (`flock`, holder + purpose + expiry) that every
-  GPU job acquires before stopping/starting Ollama or loading weights.
-- **Accept when:** two concurrent GPU jobs serialize (second waits, logs the
-  holder) with no ConnectError rows in either job's results.
+running baseline (112 wasted attempts, twice).
+- Built: `/mnt/disks/disk-socrateai-local-1/gpu_lease/gpu_lease.py` (stdlib
+  only, `flock` + JSON state, holder-name identity, reclaim on TTL expiry or
+  dead pid). Snapshot + usage at `scripts/shared_gpu_lease/`.
+- Wired into: `run_ladder.py` (held for the whole run, renewed per item),
+  `night_training_workflow.py::step_fit` (held for load+train+save,
+  `TimeoutError` -> `BLOCKED` journal entry), `restart_session.sh` (both
+  ollama start and restart branches; restart skips entirely if the lease
+  can't be acquired, best-effort start proceeds anyway).
+- Proposed to runux-ai-runtime: `docs/SHARED_GPU_LEASE_PROPOSAL.md` in that
+  repo (doc only; nothing there edited without being asked).
+- **Verified:** cross-process contention blocked (not just in-process),
+  trap-based release, `kill -9` reclaimed via dead-pid detection before TTL,
+  missing-module best-effort degrade in the bash helper. Not yet verified:
+  whether runux actually adopts it -- until it does, the lease only protects
+  AutoevolveAI's own jobs from each other, not from an uncoordinated
+  `systemctl stop ollama` on the runux side.
 
 ## User actions (cannot be done by the agent)
 

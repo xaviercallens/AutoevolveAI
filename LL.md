@@ -144,7 +144,26 @@ must (a) wait for the server instead of burning items, (b) resume from
 completed rows, (c) never treat an infrastructure error as a prover result.
 `run_ladder.py` now does all three. Restart Ollama only after confirming the
 GPU is idle and the other job is finished. The durable fix is a GPU lease
-(TODO item 10).
+(TODO item 10, now built and wired into all three GPU touch points --
+`run_ladder.py`, `night_training_workflow.py`, `restart_session.sh` --
+`scripts/shared_gpu_lease/`).
+
+**The lease's own bugs, both caught by testing across real process
+boundaries, not just in-process:** (1) checking identity by pid instead of
+holder-name let one logical holder steal from another when they happened to
+share a pid; (2) a CLI `acquire` that records its own transient pid marks
+the lease dead the instant that helper process exits -- it must record the
+calling *shell's* pid (`getppid()`), which stays alive for the actual GPU
+work. Neither bug showed up testing inside one Python process; both showed
+up running the acquire/release/contend sequence as separate OS processes,
+which is the only way the lease is ever really used.
+
+**A second real project on the same T4 was found to have the identical
+problem.** `runux-ai-runtime`'s `require_exclusive_gpu()` only detects an
+already-running contender via `nvidia-smi`; it does not block one from
+starting. Its own `docs/CLAUDE_SESSION_GUIDE.md` already states the rule
+("stopping Ollama is disruptive -- flag it and get confirmation") that the
+lease now enforces mechanically instead of by instruction-following.
 
 ## 9. Session mechanics that cost time
 

@@ -15,7 +15,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import sys
 import time
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -25,6 +27,11 @@ import httpx
 
 import build_ladder as bl
 
+sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
+from gpu_lease import release as lease_release  # noqa: E402
+from gpu_lease import wait_and_acquire  # noqa: E402
+
+LEASE_HOLDER = "autoevolveai"
 CALL_LOG = Path("/mnt/disks/disk-socrateai-local-1/AutoevolveAI/call_logs/hardness_ladder.jsonl")
 MODELS = {
     "deepseek": "hf.co/unsloth/DeepSeek-Prover-V2-7B-GGUF:Q8_0",
@@ -52,6 +59,22 @@ def wait_for_server(max_wait_s: int = 3600) -> bool:
         except Exception:
             time.sleep(30)
     return False
+
+
+def acquire_gpu_lease(purpose: str, timeout_s: int = 3600) -> bool:
+    """Hold the shared T4 lease (/mnt/disks/disk-socrateai-local-1/gpu_lease)
+    for the run's duration. Fixes the actual root cause of 2026-09-27's
+    112 wasted rows: a runux-ai-runtime session stopped Ollama mid-baseline
+    with no coordination. This does not make Ollama itself exclusive-aware --
+    it only stops OUR side from racing a concurrent GPU job, and other jobs
+    must adopt the same lease for it to protect anyone."""
+    print(f"Waiting for shared T4 lease (holder={LEASE_HOLDER})...", flush=True)
+    ok = wait_and_acquire(LEASE_HOLDER, purpose, ttl_s=1800, timeout_s=timeout_s)
+    if ok:
+        print("Lease acquired.", flush=True)
+    else:
+        print(f"Could not acquire GPU lease within {timeout_s}s.", flush=True)
+    return ok
 
 
 def generate(model: str, prompt: str) -> tuple[str, dict]:
@@ -108,6 +131,16 @@ def main() -> int:
         old = json.loads(prev.read_text())
         results["runs"] = [r for r in old.get("runs", []) if "error" not in r]
     done = {(r["model"], r["id"]) for r in results["runs"]}
+
+    if not acquire_gpu_lease(f"hardness ladder ({','.join(args.models)})"):
+        return 2
+    try:
+        return _run(args, ladder, results, done)
+    finally:
+        lease_release(LEASE_HOLDER)
+
+
+def _run(args, ladder: list[dict], results: dict, done: set) -> int:
     for key in args.models:
         model = MODELS[key]
         for it in ladder:
@@ -118,6 +151,8 @@ def main() -> int:
                 print("ABORT: Ollama unavailable for 60 min; rerun to resume", flush=True)
                 Path(args.out).write_text(json.dumps(results, indent=1))
                 return 2
+            # Renew: a long ladder run can outlive the lease's 30-min TTL.
+            wait_and_acquire(LEASE_HOLDER, "hardness ladder (renew)", ttl_s=1800, timeout_s=60)
             try:
                 text, rec = generate(model, prompt_for(it))
                 proof = extract_proof(text, it)

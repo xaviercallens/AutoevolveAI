@@ -34,6 +34,13 @@ export PYTHONPATH="$REPO"
 export ANSE_LEAN_TESTS=0
 
 PY="$REPO/.venv/bin/python"
+LEASE=/mnt/disks/disk-socrateai-local-1/gpu_lease/gpu_lease.py
+# Stopping/restarting Ollama while another job is mid-inference wastes that
+# job's work (measured 2026-09-27: a runux-ai-runtime session's uncoordinated
+# `systemctl stop ollama` cost an AutoevolveAI prover baseline 112 rows).
+# Best-effort: absence of the lease module never blocks this script.
+lease_acquire() { [[ -f "$LEASE" ]] || return 0; "$PY" "$LEASE" acquire --holder autoevolveai --purpose "$1" --ttl 60 --wait --timeout 120 >/dev/null 2>&1; }
+lease_release() { [[ -f "$LEASE" ]] || return 0; "$PY" "$LEASE" release --holder autoevolveai >/dev/null 2>&1; true; }
 QUICK=0
 USE_SUDO=1
 for arg in "$@"; do
@@ -95,8 +102,15 @@ hdr "4. Ollama and GPU placement"
 if ! curl -sf http://localhost:11434/api/tags >/dev/null 2>&1; then
   if [[ $USE_SUDO -eq 1 ]]; then
     echo "  ollama not responding; starting..."
-    sudo systemctl start ollama 2>/dev/null
-    sleep 8
+    if lease_acquire "restart_session: start ollama"; then
+      sudo systemctl start ollama 2>/dev/null
+      sleep 8
+      lease_release
+    else
+      echo "  could not acquire shared GPU lease; starting anyway (best-effort)"
+      sudo systemctl start ollama 2>/dev/null
+      sleep 8
+    fi
   fi
 fi
 
@@ -113,10 +127,19 @@ if curl -sf http://localhost:11434/api/tags >/dev/null 2>&1; then
     # This is the regression the script exists for: loaded, but on CPU.
     fail "gpu placement" "model loaded but NOT on GPU -- restarting ollama so it re-probes"
     if [[ $USE_SUDO -eq 1 ]]; then
-      sudo systemctl restart ollama && sleep 8
-      ollama ps 2>/dev/null | grep -q "GPU" \
-        && { pass "gpu placement" "recovered after restart"; FAILED=$((FAILED - 1)); } \
-        || fail "gpu placement" "still on CPU after restart -- check driver load order"
+      # Restarting an already-running Ollama can kill someone else's
+      # in-flight generation, so unlike the start-when-idle case above,
+      # a failed lease acquisition here skips the restart rather than
+      # proceeding best-effort.
+      if lease_acquire "restart_session: fix GPU placement"; then
+        sudo systemctl restart ollama && sleep 8
+        lease_release
+        ollama ps 2>/dev/null | grep -q "GPU" \
+          && { pass "gpu placement" "recovered after restart"; FAILED=$((FAILED - 1)); } \
+          || fail "gpu placement" "still on CPU after restart -- check driver load order"
+      else
+        fail "gpu placement" "could not acquire shared GPU lease; another job may be using the GPU -- not restarting ollama"
+      fi
     fi
   fi
 

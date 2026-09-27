@@ -2,6 +2,112 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [13.2.0] — A second research exercise, Elenchus rigor tooling, two stranded branches merged (2026-09-27)
+
+**About v13.1.0.** Its notes (below) were written by a parallel session and landed on
+`main` inside commit `ca5f7cd`, swept in because `git commit` takes the whole index. The
+`v13.1.0` tag was never cut. This release supersedes it; nothing below is re-claimed.
+
+**Measured at this tag** (T4 host, run from a git worktree):
+
+| Check | Result |
+|---|---|
+| `pytest tests/` | **1359 passed** / 21 failed / 49 skipped / 8 errors |
+| `test_rigor_guard.py` | exit 0 (124 files) |
+| `antigravity_guard.py` | exit 1: 0 hallucinated imports; pre-existing Ruff debt only (2361, down from 2386) |
+| Lean theorems (`grep -c theorem formal/ANSE/*.lean`) | **250** across 36 files |
+
+The 21 failures are all pre-existing and environment-bound. Every one of the 22 that
+failed before this release's merges fails identically at the pre-session commit
+`d8ded3c` in the same environment: Lean calls without `formal/.lake` in a worktree, the
+Laya model not loaded, Playwright unable to launch Chromium. The numbers differ from
+v13.1.0's 1080/14/43/8, which was measured in the main checkout. **Correction:** v13.1.0's
+"226 theorems across 35 files" does not reproduce under its own documented command.
+That tree gives 244, so it looks hand-incremented from v13.0.0's 225.
+
+### New: flat-ΛCDM BAO consistency exercise (second end-to-end research run)
+
+Chosen from a survey of local assets as the one problem in the requested areas with a
+checkable, near-certain outcome. An independent re-fit of DESI DR1's public combined BAO
+data (`dualscale-data-r3/desi_sdss_bao/`, sha256-recorded) recovers **Ωm = 0.2939,
+r_d·h = 101.94 Mpc**, within **0.07σ / 0.11σ** of DESI's published 0.295 ± 0.015 /
+101.8 ± 1.3 Mpc (arXiv:2404.03002, quoted from the fetched paper). Two independently
+coded prediction methods (astropy vs. from-scratch `scipy.integrate.quad`) agree to
+<1e-4, cross-checked by a 141×141 grid search. χ²/dof = 1.27 (10 dof).
+
+- `formal/ANSE/BAO_FlatLCDM.lean`: 3 kernel-verified theorems (E(z) > 0, E strictly
+  increasing, distance duality D_L = (1+z)² D_A). Axioms are exactly the trusted set,
+  printed inside the file.
+- `papers/bao_flcdm/bao_flcdm_consistency.{tex,pdf}`: full write-up. The Limitations
+  section states it is a reproduction, not a new constraint.
+- It is a reproduction exercise by design. No new cosmology is claimed.
+
+### New: SocrateAI-Scientific-Elenchus integrated as the rigor layer
+
+Verified real before use: its own tests (298/299) and its ratchet self-tests. It then
+earned trust on this repo's content:
+
+- **`elenchus_check.py`** caught `NO_FOOTPRINT`: the Lean file compiled clean, but its
+  axiom check lived only in a scratch copy. Fixed in-file. A hand-built vacuous mutation
+  is correctly flagged, and the genuine theorem passes.
+- **`ledger.py`** holds 6 claims in `results/bao_flcdm/ledger/` with content-addressed
+  evidence. It caught a real **tier inversion**: a comparison claim filed at Tier B
+  while resting on a Tier L citation. The 3 Lean claims stay flagged
+  `UNAUDITED_TIER_A` (kernel-checked, statement not independently audited). They are
+  disclosed, not silenced.
+
+### Merged: `night/remediation-2026-09-25` (PR #2 had been closed unmerged)
+
+`git cherry` showed 8 of its 14 commits already in `main` under other SHAs. The 6 missing
+ones are merged:
+- P1-6: quarantine the DRY_RUN adapter receipts
+- P1-7: red_team refuses rather than fabricates a verdict
+- P1-8: silent memory fallbacks announce themselves
+- P1-9: `mcts_lean_solver` proof gate that passed almost anything
+- P3-4: unified Chroma roots
+- P4-1: harvester JSONL spec
+
+P4-1 shipped a test with no implementation. `Harvester._append_jsonl` now appends
+atomically (temp file, fsync, `os.rename`). P1-8's test read the main checkout by
+absolute path and now reads the code under test.
+
+### Merged: `origin/AIautoevolveClaudeGCP` (181 commits behind, never merged)
+
+This branch brings the Ollama extractor and LLM runners, the 42-card v2 low-tier workflow
+(`docs/v2/`, `tools/v2_tasks.py`, `v2_runners/`), a JEPA trainer fix and ~290 coverage
+tests. The conflicts were resolved hunk by hunk:
+
+- **Sandbox: kept main's fail-closed policy.** The branch always fell back to Tier-1,
+  which would have been a security regression.
+- **`web/server.py`:** took the branch's `latent_dim ≤ 32`. This fixes a real bug in
+  main, where 33..512 crashed with a 500.
+- **`neuro_surgeon`:** measured best-of-N timing replaces main's hardcoded CPU durations
+  (50/10 ms), which guaranteed the swap.
+
+18 of the branch's tests asserted behavior main had since changed on purpose. They were
+aligned to main's contracts: fail-closed sandbox, no silent zero-padding, refusal
+without a trained predictor. One test was removed because it targeted an API the phase-3
+redesign replaced.
+
+### Fixed in this release
+
+- The repo guard reported `gpu_lease` and `astropy` as hallucinated imports. Both are
+  real modules outside this repo's venv, and both are now allowlisted with their location.
+- A generated `sage_curve_facts.sage.py` was committed by mistake. It is untracked, and
+  `*.sage.py` is now gitignored.
+- The 25 Ruff findings in files authored this session are fixed. A `W→w` rename was
+  proven behavior-identical: all 59 ladder statements regenerate byte-for-byte.
+
+### Known issues, stated rather than hidden
+
+- `anse/core/red_team.py::physics_sandbox_thinker` still returns a canned verdict when
+  its model call fails. P1-7 fixed only `epistemic_check`.
+- `neuro_surgeon`'s CPU VRAM figures (16 vs 4 MB) are still modelled, not measured.
+- The P4-5 held-out eval does not exist, so GATE correctly blocked promotion on both of
+  today's retrains.
+- `ltm_learning_mix.py`'s diluted output is never read by the trainer (TODO item 11).
+- `deepseek-r1:14b`, the red team's model, is not pulled in Ollama, so audits refuse.
+
 ## [13.1.0] — Operational hardening, honest hardness baseline, BSD formalization (2026-09-27)
 
 Twenty-seven commits since `v13.0.0`, most from parallel Claude sessions running

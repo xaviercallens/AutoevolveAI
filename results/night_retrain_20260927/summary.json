@@ -1,0 +1,32 @@
+{
+ "night": "2026-09-27/28",
+ "note": "Every trainer the audit found to be real was run or skipped with a reason. Numbers are copied from the run journals named in each row.",
+ "models": [
+  {
+   "model": "DeepSeek-Prover-V2-7B QLoRA (scripts/master_math/train_prover.py)",
+   "outcome": "gate PROMOTE by rule, SUPERSEDED by a control: not promoted in substance",
+   "control": "Renaming only the Weierstrass namespace in the BASE model's T3 proofs gives 10/12 true, 0/4 false (results/master_math_run2/namefix_control.json) vs the adapter's 4/12: the gain is a naming effect a deterministic post-processor beats. Eval used max_new_tokens=1024, not the Ollama protocol's 4096.",
+   "detail": "25 kernel-verified Lean rows, 150 steps, loss 1.575 -> 0.0035 (memorised), peak 9296 MiB. Frozen split, same 4-bit HF harness, greedy: base 8/46 (T0 8/10, T1-T3 0/36), adapter 11/46 (T0 7/10, T3 4/12), 0/12 false accepted by either. Paired: 4 gained, 1 lost; exact McNemar two-sided p = 0.375 -- not significant. All 11 adapter proofs re-verified independently (prover_adapter_reverify.json). No local GGUF converter, so not exported to Ollama. Journal: results/master_math_run2/prover_training_full.json"
+  },
+  {
+   "model": "Qwen2.5-Coder-7B QLoRA (scripts/night_training_workflow.py)",
+   "outcome": "trained candidate, GATE BLOCKED",
+   "detail": "200 steps, loss 1.2844 -> 0.8147, peak 8423 MiB; gate: no frozen-split eval and this model is not the prover. Journal: training_runs/journals/qwen_lora.json on the data disk"
+  },
+  {
+   "model": "JEPA energy model (train_jepa.py, 3 verified phase-1 trace files, 20 tasks, CPU)",
+   "outcome": "trained candidate, no evidence of learning",
+   "detail": "best val loss 55.18 vs 54.58 for a shuffled-energy control trained identically; both diverge after the first epochs. Contains nothing from run two (its episodes have no hidden states)"
+  },
+  {
+   "model": "EnergyCriticPolicy (scripts/nightly_rl_train.py)",
+   "outcome": "skipped",
+   "detail": "reports accuracy on its own training data only, and its stock pairs use synthetic stub 'rejected' answers; a byte-level toy critic on 5 real pairs would measure nothing"
+  },
+  {
+   "model": "Stubs and orchestrators (train_qwen_lora, train_lora_local, train_grpo, nightly_dream_phase, train_dpo_critic, retrain_multidisciplinary_rl, nightly_retrain_at_5am, train_checkpoint, daily_trainer_daemon)",
+   "outcome": "skipped",
+   "detail": "no gradient step, adapter never saved, fabricated or templated preference data, or silent DRY_RUN fallback (audit, 2026-09-27)"
+  }
+ ]
+}

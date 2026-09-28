@@ -421,3 +421,85 @@ exceeds order 1.
    pass. The episodes are kept (real labels, on disk 2); no learning is claimed.
    `results/cosmo3_learning/README.md`. Always train a shuffled-label control next to a
    "learning" claim: without it this run would have read as 100% accuracy.
+
+## 13. Master-math run two + the first retrain of the prover (2026-09-27/28)
+
+Evidence: `results/master_math_run2/`, `results/night_retrain_20260927/`,
+`papers/master_math_run2/`, `formal/ANSE/MasterMathRun2.lean`.
+
+### 13a. Lock the statement; the model supplies only the proof
+Run one's regenerator sent a *title*; the model chose (and could weaken) its own
+statement, and a canned auditor judged it. Run two fixes 24 Lean statements in
+`scripts/master_math/problems.py` and validates each before any model runs:
+reference proof clean, the same proof rejected on a false variant, and the false
+variant's negation kernel-proved (falsity checked, not assumed). The refutation
+control caught a real instrument bug the negative control could not: a false
+variant that did not elaborate (`/ 2` bound to the measure) was "rejected" for the
+wrong reason. **A negative control that passes because the input is ill-formed
+proves nothing -- pair it with a refutation.**
+
+### 13b. A second gate hole, one level below `sorry`
+`compile_one` treated a *missing* `#print axioms` line as "no axioms". `sorry` +
+`#exit` compiles rc 0, prints no report, and scored clean (measured). Fixed:
+`build_ladder.verdict()` requires the report line naming the theorem. Rule:
+**absence of evidence of axioms is not evidence of their absence -- require the
+positive line.**
+
+### 13c. What the provers do (170 kernel-judged attempts)
+DeepSeek-Prover-V2-7B 12/24, Goedel-Prover-V2-8B 10/24 locked statements, greedy;
+13 by at least one model; 11 by neither (Lagrange, Banach, signed Cauchy-Schwarz,
+Cayley-Hamilton, Zorn, Baire, sqrt 2, Liouville, FTA, Picard-Lindelof, 1-D Stokes).
+0/48 false variants accepted. **One error-feedback repair round rescued 0 of 26**:
+repairs keep the failing approach (e.g. wrap the same failing `rw` in a `have`).
+Same pattern as Phase 3 (LL-memory): feedback gives local edits, not a new idea.
+Do not spend GPU time on single-round repair; try retrieval or sampling instead.
+
+### 13d. Retraining the model that proves -- first real P4-5 gate
+Nothing trained DeepSeek-Prover before. `scripts/master_math/train_prover.py`:
+QLoRA (NF4, fp16) on 25 kernel-verified Lean rows, frozen-split eval of base and
+adapter in the *same* HF harness. Result: base 8/46, adapter 11/46 (T3 group-law
+0/12 -> 4/12, T0 8 -> 7), 0/12 false accepted; gate PROMOTE by its rule, but
+**4 gained / 1 lost, exact McNemar p = 0.375: not significant**. Then the
+adversarial review found the real explanation, and a control confirmed it: on the
+gained items the BASE model had written the same `norm_num [W, addX, slope]`
+strategy and failed only on `Unknown constant WeierstrassCurve.addX`. **Renaming
+that one namespace in the base proofs proves 10/12 T3 (0/4 false accepted) vs the
+adapter's 4/12** (`scripts/master_math/namefix_control.py`). The fine-tune learned
+a name for some items; a deterministic post-processor dominates it. So the
+prover's reasoning on this tier was right and only its vocabulary was wrong --
+the strongest evidence yet for §4c / TODO #5 (name/premise retrieval). The
+adapter is not promoted in substance. Rules: **a gate should require
+significance, and every "the model learned X" claim needs the cheapest
+non-learning explanation tested as a control** (here: a rename).
+
+### 13b'. The first gate fix was itself forgeable
+The review broke 13b's fix: everything after `:=` is model text and Lean parses
+further top-level commands there, so `by admit` + `#print "'X' depends on
+axioms: [propext]"` + `#exit` compiles rc 0 and forges the report (reproduced
+live). `verdict()` now rejects any `#` command but the file's own final
+`#print axioms`, `sorry`/`admit`, `axiom`, `set_option` (it can disable the
+kernel check), macro/syntax/elab, the `declaration uses sorry` warning, and a
+report that is not printed exactly once. All 41 accepted proofs re-gated: none
+affected. **A model-controlled string must never share a file with the check
+that judges it unless the check rejects everything but the proof term.**
+Also: Goedel-V2 hit the 4096-token cap on 58/86 attempts, so its 10/24 partly
+measures the budget.
+
+### 13e. Traps paid for tonight
+- **transformers 5.x `AutoTokenizer` corrupts DeepSeek-Prover's tokenizer**: it
+  rebuilds a `LlamaTokenizer` that drops spaces and non-ASCII (`a b : ℕ` ->
+  `ab:`), silently. Use `PreTrainedTokenizerFast` + a round-trip assertion. The
+  smoke run's positive control (base must prove >= 1 of 2 T0) caught it before a
+  full run trained on mangled text. Qwen2Tokenizer round-trips fine.
+- **GPU lease identity is the holder name**: every AutoevolveAI job used
+  `autoevolveai`, so they never excluded each other (the 01:00 timer included).
+  Use one holder name per job.
+- **Ollama placement**: DeepSeek Q8 at num_ctx 12288 x 4 parallel slots = 30.9 GB,
+  12.9 GB in VRAM -- mostly CPU. KV cache per slot, not weights, decides fit.
+- **The shared box reaps background jobs under memory pressure** (26/29 GB used
+  by other sessions). Runners must resume from saved rows; chain long night work
+  with a free-RAM gate per step (`scripts/master_math/overnight.py`).
+- **JEPA on the 20-task verified traces = shuffled-label control** (best val
+  55.18 vs 54.58). No learning claimed; confirms §12d on a different corpus.
+- **Only 3 of ~20 "training" entry points train anything real**; the rest are
+  stubs, never save, or use templated "rejected" answers (summary.json lists them).

@@ -14,6 +14,12 @@ is DeepSeek-Prover-V2-7B in Ollama. No retrain can move the prover's numbers.
   adapter merged to GGUF for Ollama.
 - **Accept when:** the adapter loads in Ollama and answers a ladder prompt,
   and the FIT journal names the prover's base model.
+- **PARTIAL 2026-09-28:** `scripts/master_math/train_prover.py` trains a
+  DeepSeek-Prover-V2-7B QLoRA (HF weights on disk 2, journal names the base);
+  adapter at `training_runs/candidates/deepseek_prover_lora`. Open: GGUF
+  export -- no llama.cpp converter (`convert_hf_to_gguf.py`, `gguf` module) is
+  installed, so it does not load in Ollama yet. Use `PreTrainedTokenizerFast`
+  (AutoTokenizer corrupts this checkpoint under transformers 5.x, LL §13e).
 
 ### 2. P4-5: promotion by benchmark, not by training loss
 - Do: GATE runs `scripts/hardness/run_ladder.py` for base and adapter on the
@@ -21,6 +27,15 @@ is DeepSeek-Prover-V2-7B in Ollama. No retrain can move the prover's numbers.
 - **Accept when:** GATE promotes only if adapter pass@3 > base pass@3 on the
   frozen split with n ≥ 30 true items and 0 false-item acceptances; GATE
   returns BLOCKED below n = 30. Test with one real base-vs-adapter run.
+- **PARTIAL 2026-09-28:** `train_prover.py` implements this gate (pass@1
+  greedy, same HF 4-bit harness for both arms) and ran it once: base 8/46,
+  adapter 11/46, 0/12 false accepted -> PROMOTE by the rule, but 4 gained /
+  1 lost is McNemar p = 0.375. SUPERSEDED by a control: renaming the
+  Weierstrass namespace in the *base* proofs gives T3 10/12 vs the adapter's
+  4/12 (`results/master_math_run2/namefix_control.json`). Open: (a) pass@3 as
+  specified; (b) require significance, not just `>`; (c) run the cheapest
+  non-learning control (name repair) inside the gate; (d)
+  `night_training_workflow.py`'s own GATE still has no such eval.
 
 ### 3. Grow the ladder so tiers separate
 46 true items today (T0 10, T1/T2/T3 12 each). Per-tier rates on 12 items
@@ -39,6 +54,12 @@ move 8 points per item.
   (checked with the same normalized-proposition match the trainer uses).
 
 ### 5. Premise retrieval A/B (H2) -- PRIORITY, raised by the 2026-09-27 baseline
+**Stronger evidence 2026-09-28:** DeepSeek-Prover's failed T3 proofs are right
+except for the namespace -- renaming `WeierstrassCurve.addX` -> `...Affine.addX`
+alone proves 10/12 (`scripts/master_math/namefix_control.py`). A name-repair or
+retrieval pass is likely the cheapest capability gain available; measure it on
+the frozen split as its own arm (model + repair tool, reported separately).
+
 Baseline result (`results/hardness/baseline.json`, 118/118 items, both models):
 T0 (Mathlib lemmas) DeepSeek 6/10, Goedel 8/10 pass. **T1/T2/T3 (curve facts):
 0/12 for both models, on every tier.** 0 false-item acceptances throughout --

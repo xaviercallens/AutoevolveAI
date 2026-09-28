@@ -172,3 +172,21 @@ def test_reingest_is_idempotent_by_content_hash(tmp_path: Path) -> None:
     assert first > 0
     assert second == 0, "second ingest of identical content should write nothing"
     assert store.count() == count_after_first
+
+
+@requires_stack
+def test_supersede_removes_retracted_versions(tmp_path: Path) -> None:
+    """An edited document must not leave its retracted text retrievable."""
+    from anse.memory.document_store import DocumentStore
+
+    doc = tmp_path / "paper.md"
+    doc.write_text("The adapter is a demonstrated improvement on the frozen split. " * 20)
+    store = DocumentStore(tmp_path / "chroma", collection="test_supersede")
+    first = store.ingest_text_file(doc)
+    assert first > 0
+
+    doc.write_text("A rename control shows the adapter gain is a naming effect. " * 20)
+    assert store.supersede(doc) == first
+    second = store.ingest_text_file(doc)
+    assert store.count() == second
+    assert store.supersede(doc) == 0  # nothing older than the current version

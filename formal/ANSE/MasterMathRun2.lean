@@ -207,7 +207,7 @@ theorem mm10b_cauchy_schwarz_abs_F_refuted : ¬ (∀ x y : ℝ, |@inner ℝ ℝ 
     have := h 0 0
     simp at this
 
-/-- Intermediate value theorem [faithful]. Proof: deepseek prover, round 0. -/
+/-- Intermediate value theorem [faithful]. Proof: deepseek prover, round 0. One orientation only (f a <= y <= f b); the f b <= f a case is not stated. -/
 theorem mm11_ivt (f : ℝ → ℝ) (a b y : ℝ) (hab : a ≤ b)
     (hf : ContinuousOn f (Set.Icc a b)) (hy : y ∈ Set.Icc (f a) (f b)) :
     ∃ x ∈ Set.Icc a b, f x = y := by
@@ -352,7 +352,7 @@ theorem mm19_liouville_F_refuted : ¬ (∀ f : ℂ → ℂ, Differentiable ℂ f
     have := h id differentiable_id 0 1
     simp at this
 
-/-- Triangle inequality in metric spaces [faithful]. Proof: deepseek prover, round 0. -/
+/-- Triangle inequality in metric spaces [definitional]. Proof: deepseek prover, round 0. In Mathlib this is a field of the MetricSpace structure; a pass shows lookup, not proof. -/
 theorem mm20_triangle {X : Type*} [MetricSpace X] (x y z : X) :
     dist x z ≤ dist x y + dist y z := by
     have h₁ := dist_triangle x y z

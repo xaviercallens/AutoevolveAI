@@ -1,0 +1,125 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{booktabs,longtable,amssymb,hyperref}
+\usepackage[T1]{fontenc}
+\title{Twenty master-level problems, re-run under a kernel gate:\\
+locked statements, controls, and what two 7--8B provers actually prove}
+\author{AutoevolveAI / ANSE run two (generated from \texttt{results/master\_math\_run2/})}
+\date{2026-09-27}
+\begin{document}
+\sloppy
+\maketitle
+\begin{abstract}
+We re-ran the project's twenty ``master-level'' mathematics problems, whose earlier record consisted of a regenerator that sent the model only a title and a verdict taken from a canned auditor. Here each problem is a Lean~4 statement fixed in advance (24 statements: the twenty, with one split in two, plus three further titles the local Mathlib build can state; 7 titles are recorded as blocked). Before any model ran, every statement passed three kernel controls: a reference proof is accepted (24/24), the same proof is rejected on a false variant (24/24), and the false variant's negation is itself kernel-proved (24/24). A statement review marks 3 statements as arithmetic proxies, 1 as a special case and 1 as definitional (a structure field). Results: DeepSeek-Prover-V2-7B (Q8\_0) 12/24 greedy and 12/24 after one error-feedback repair; Goedel-Prover-V2-8B (Q6\_K) 10/24 greedy and 10/24 after one error-feedback repair. Across 95 measured attempts on the 48 (model, false variant) pairs, 0 were accepted -- a sanity check of the gate, since every false variant's negation is kernel-proved. One error-feedback repair round rescued no statement. A first QLoRA fine-tune of the prover passed the project's promotion rule on a held-out split, but a control shows the gain is a naming effect: renaming one namespace in the \emph{base} model's failed proofs does better than the fine-tune. We also report two holes in the project's own gate, found and closed during this run: a missing axiom report was read as ``no axioms'', and a proof body could forge the report with extra top-level commands.
+\end{abstract}
+
+\section{What the earlier record measured}
+The run-one receipts list 20 problems: 6 marked verified, 5 rejected by a ``red team'' audit and 9 unverified in Lean. Several statements for problems 11--20 were not well-formed Lean (e.g.\ problem 19 was the English sentence ``Bounded entire implies constant''). The later regenerator sent only a title; its model calls timed out after 1\,s and a fallback wrote \texttt{theorem X : True := by trivial}, which a canned auditor then rejected (LL.md \S0). Its geometry ``semantic radar'' demanded an import from \texttt{Mathlib.Geometry}, a directory with no module built on this machine, so no geometry answer could ever pass. None of that measured a model.
+
+\section{Instrument}
+Statements are ours and locked (\texttt{scripts/master\_math/problems.py}); a model supplies only the proof body, which is compiled against our statement with a pinned import header (never \texttt{import Mathlib}; the local build is partial). The gate accepts a proof only if \texttt{lake env lean} exits 0, the file's own \texttt{\#print axioms} line for that theorem is present, \texttt{sorryAx} is absent, and every axiom is in $\{\texttt{propext},\texttt{Classical.choice},\texttt{Quot.sound}\}$.
+
+\paragraph{A gate hole found in this run.} The previous gate parsed \emph{any} axioms line and treated a missing one as ``no axioms''. A file whose proof is \texttt{sorry} followed by \texttt{\#exit} compiles with exit code 0, prints only a warning, and never reaches the axiom report; the old gate scored it clean, measured live. The first fix required the report line naming the theorem. The adversarial review (Section~\ref{sec:review}) then broke that fix: everything after \texttt{:=} is model text, and Lean parses further top-level commands there, so \texttt{by admit} followed by \texttt{\#print "'X' depends on axioms: [propext]"} and \texttt{\#exit} compiles with exit code 0 and forges the report (reproduced live). The gate now also rejects any source containing a \texttt{\#} command other than the file's own final \texttt{\#print axioms}, \texttt{sorry}/\texttt{admit}, \texttt{axiom} declarations, \texttt{set\_option} (which can switch the kernel check off), macro/syntax/elab definitions, or the compiler's \emph{declaration uses sorry} warning, and it requires the axiom report to appear exactly once. All accepted proofs in this paper were re-checked under the hardened gate; none is affected. None of the 117 generations logged by the earlier hardness baseline contained \texttt{\#exit}.
+
+\paragraph{Controls and statement review.} All 24 statements elaborate and pass the three controls in the abstract. Table~\ref{tab:items} gives the fidelity of each statement: \emph{proxy} statements replace the named theorem by the arithmetic step a textbook proof ends with (e.g.\ Gauss--Bonnet becomes $K\cdot A = 4\pi$ with $K$ and $A$ inserted by hand) and prove nothing about the theorem they are named after. Markov's inequality was upgraded from run one's pointwise proxy to the Bochner-integral statement.
+
+\paragraph{Blocked titles.} These were not replaced by toys:
+\begin{itemize}
+\item Gromov-Witten invariants in algebraic geometry -- no Gromov-Witten definitions anywhere in Mathlib source.
+\item Elliptic regularity \& Sobolev space embedding -- Mathlib.Analysis.FunctionalSpaces.SobolevInequality exists in source but is not built locally; no elliptic regularity in Mathlib.
+\item Kähler-Einstein metrics \& Fano surfaces -- no Kähler manifolds in Mathlib (RingTheory.Kaehler is Kähler differentials); Geometry.Manifold not built.
+\item Intersection theory: Bézout's theorem -- no intersection multiplicity for plane curves in Mathlib.
+\item Morse theory: critical points \& homology -- no Morse theory in Mathlib.
+\item Stable homotopy \& cohomology operations -- no stable homotopy category or Steenrod operations in Mathlib.
+\item Derived categories \& homological algebra -- Mathlib.Algebra.Homology.DerivedCategory exists in source but is not built locally.
+\end{itemize}
+
+\section{Experiment}
+Two local provers via Ollama on one NVIDIA T4, one model at a time under the shared GPU lease: DeepSeek-Prover-V2-7B (Q8\_0), Goedel-Prover-V2-8B (Q6\_K). Round 0 reproduces the hardness-baseline protocol (greedy, temperature 0, \texttt{num\_ctx} 12288, the last Lean block of content plus thinking). Round 1, the new measurement, runs once after a round-0 failure and appends the failed attempt and Lean's error lines to the prompt. False variants receive the same two rounds. Generation is capped at 4096 tokens (\texttt{num\_predict}). That cap binds for Goedel-Prover-V2, a long chain-of-thought model: deepseek 0/83 attempts hit it; goedel 58/86 attempts hit it. Goedel's numbers therefore partly measure the budget, not the model. During the run Ollama's \texttt{api/ps} reported DeepSeek at 30.9\,GB with 12.9\,GB in VRAM (four parallel slots of a 12288-token KV cache), so most layers ran on the CPU; this reading was observed, not archived as an artifact. We kept the setting for comparability with the baseline.
+
+1 attempt(s) ended in an infrastructure error and are unmeasured, not counted as either outcome: deepseek mm08\_fermat\_F round 1 (ReadTimeout: timed out).
+
+\section{Results}
+{\footnotesize
+\begin{longtable}{llllcc}
+\caption{Per-statement outcome. \checkmark{} greedy proof accepted; repair: accepted after one error-feedback round; $\times$ both rejected. ``Run one'': status claimed in the run-one receipts (a different, partly malformed statement set; its \#9 was a pointwise proxy).}\label{tab:items}\\
+\toprule
+Id & Title & Fidelity & Run one & deepseek & goedel\\
+\midrule
+mm01 & Lagrange's theorem (index multiplicativi & faithful & verified & $\times$ & $\times$\\
+mm02 & Parallelogram law in real inner product  & faithful & verified & \checkmark & $\times$\\
+mm03 & Banach contraction principle (unique fix & faithful & verified & $\times$ & $\times$\\
+mm04 & Cauchy-Riemann implies harmonic (second- & proxy & rejected & \checkmark & \checkmark\\
+mm05 & Gauss-Bonnet on the round sphere (K * Ar & proxy & rejected & \checkmark & \checkmark\\
+mm06 & Coboundary nilpotency d\^{}2 = 0 on one ori & proxy & rejected & \checkmark & \checkmark\\
+mm07 & Discrete Gronwall inequality & faithful & verified & \checkmark & \checkmark\\
+mm08 & Fermat's little theorem in ZMod p & faithful & rejected & \checkmark & \checkmark\\
+mm09 & Markov's inequality (Bochner integral) & faithful & verified & \checkmark & $\times$\\
+mm10a & Cauchy-Schwarz, signed form & faithful & verified & $\times$ & $\times$\\
+mm10b & Cauchy-Schwarz, absolute form & faithful & verified & \checkmark & $\times$\\
+mm11 & Intermediate value theorem & faithful & unverified & \checkmark & \checkmark\\
+mm12 & Cayley-Hamilton theorem & faithful & unverified & $\times$ & $\times$\\
+mm13 & Zorn's lemma (maximal element form) & faithful & unverified & $\times$ & $\times$\\
+mm14 & Baire category theorem (complete metric  & faithful & rejected & $\times$ & $\times$\\
+mm15 & Cantor's theorem (no surjection onto the & faithful & unverified & $\times$ & \checkmark\\
+mm16 & Infinitude of primes & faithful & unverified & \checkmark & \checkmark\\
+mm17 & AM-GM inequality, two variables & faithful & unverified & \checkmark & \checkmark\\
+mm18 & Irrationality of sqrt 2 & faithful & unverified & $\times$ & $\times$\\
+mm19 & Liouville's theorem & faithful & unverified & $\times$ & $\times$\\
+mm20 & Triangle inequality in metric spaces & definitional & unverified & \checkmark & \checkmark\\
+mm21 & Fundamental theorem of algebra & faithful & -- & $\times$ & $\times$\\
+mm22 & Picard-Lindelof uniqueness for Lipschitz & faithful & -- & $\times$ & $\times$\\
+mm23 & Stokes' theorem in dimension one (fundam & special-case & -- & $\times$ & $\times$\\
+\bottomrule
+\end{longtable}}
+
+\begin{table}[h]\centering\begin{tabular}{lrrrrr}\toprule
+Model & true $n$ & greedy & +repair & false $n$ & false accepted\\\midrule
+DeepSeek-Prover-V2-7B (Q8\_0) & 24 & 12 & 12 & 24 & 0\\
+Goedel-Prover-V2-8B (Q6\_K) & 24 & 10 & 10 & 24 & 0\\
+\bottomrule\end{tabular}\caption{Summary. A false variant counts as accepted if either round passed the gate.}\end{table}
+
+At least one model proved 13 of the 24 statements. 2 accepted proofs rely on a library-search tactic (\texttt{exact?}/\texttt{apply?}); the kernel checks the term it finds, so they are valid, but they show retrieval by Lean's own search, not by the model. 
+
+\paragraph{How the rejected attempts failed} (all models, both rounds, true statements):
+\begin{itemize}
+\item hit the 4096-token generation cap: 16
+\item unknown identifier / constant: 13
+\item search tactic failed (exact?/apply?): 7
+\item type mismatch: 2
+\item unsolved goals: 7
+\item tactic failed (linarith/simp/rw/...): 6
+\item other elaboration error: 1
+\end{itemize}
+
+\section{What was learned, and what was fed back}
+Kernel-clean proofs written by the provers became 22 training rows with verdict \texttt{PASSED} and provenance; pairs of a clean and a kernel-rejected attempt on the same statement became 5 preference pairs. Frozen-split leaks: 0. The reference proofs used as controls were not used as training targets. \paragraph{Retraining the prover.} Nothing in the project trained the model that proves: the nightly trainer fine-tunes Qwen2.5-Coder. We added a QLoRA fine-tune of DeepSeek-Prover-V2-7B (NF4, fp16 compute) on 25 kernel-verified Lean rows (13 statements' proofs from this run plus the three BAO-run theorems) (150 steps, loss 1.575 $\to$ 0.0035, peak 9296\,MiB), and the held-out gate the project lacked: base and adapter, same 4-bit harness, greedy, at most 1024 new tokens (not the 4096 of the Ollama protocol, so these numbers are not comparable with the baseline's), on the frozen hardness split, every proof through the kernel gate. Base: 8/46 true items (\{"T0": "8/10", "T1": "0/12", "T2": "0/12", "T3": "0/12"\}), 0 false accepted. Adapter: 11/46 (\{"T0": "7/10", "T1": "0/12", "T2": "0/12", "T3": "4/12"\}), 0 false accepted. Gate: PROMOTE: adapter 11 > base 8 of 46. Paired on the same items: 4 gained (t3\_11a1\_T, t3\_26a1\_T, t3\_57a1\_T, t3\_61a1\_T), 1 lost (t0\_add\_comm); exact McNemar two-sided $p = 0.375$, so the gain is not statistically significant at this $n$ with one greedy sample. The gate's rule (adapter strictly above base) is weaker than a significance test. The training loss fell to near zero on these rows (memorisation), and no training row mentions any Weierstrass name.
+
+\paragraph{The control that explains the gain.} On the gained T3 items the base model had written the same strategy as the adapter and failed only on \emph{Unknown constant WeierstrassCurve.addX}: the right name, \texttt{WeierstrassCurve.Affine.addX}, is readable from the statement's own \texttt{.toAffine.addX}. Rewriting only that namespace in the \emph{base} model's T3 proofs (\texttt{scripts/master\_math/namefix\_control.py}) and re-running the hardened gate gives 10/12 true T3 items proved and 0/4 false ones accepted, against the adapter's 4/12. The fine-tune's gain is a naming effect, and a deterministic post-processor dominates it. The adapter is therefore \emph{not} promoted in substance; the finding is that on this tier the base model's reasoning was right and its vocabulary was wrong, which is what premise or name retrieval should fix.
+
+\paragraph{Other retrains the same night.}
+\begin{itemize}
+\item DeepSeek-Prover-V2-7B QLoRA (scripts/master\_math/train\_prover.py): gate PROMOTE by rule, SUPERSEDED by a control: not promoted in substance. 25 kernel-verified Lean rows, 150 steps, loss 1.575 -> 0.0035 (memorised), peak 9296 MiB. Frozen split, same 4-bit HF harness, greedy: base 8/46 (T0 8/10, T1-T3 0/36), adapter 11/46 (T0 7/10, T3 4/12), 0/12 false accepted by either. Paired: 4 gained, 1 lost; exact McNemar two-sided p = 0.375 -- not significant. All 11 adapter proofs re-verified independently (prover\_adapter\_reverify.json). No local GGUF converter, so not exported to Ollama. Journal: results/master\_math\_run2/prover\_training\_full.json
+\item Qwen2.5-Coder-7B QLoRA (scripts/night\_training\_workflow.py): trained candidate, GATE BLOCKED. 200 steps, loss 1.2844 -> 0.8147, peak 8423 MiB; gate: no frozen-split eval and this model is not the prover. Journal: training\_runs/journals/qwen\_lora.json on the data disk
+\item JEPA energy model (train\_jepa.py, 3 verified phase-1 trace files, 20 tasks, CPU): trained candidate, no evidence of learning. best val loss 55.18 vs 54.58 for a shuffled-energy control trained identically; both diverge after the first epochs. Contains nothing from run two (its episodes have no hidden states)
+\item EnergyCriticPolicy (scripts/nightly\_rl\_train.py): skipped. reports accuracy on its own training data only, and its stock pairs use synthetic stub 'rejected' answers; a byte-level toy critic on 5 real pairs would measure nothing
+\item Stubs and orchestrators (train\_qwen\_lora, train\_lora\_local, train\_grpo, nightly\_dream\_phase, train\_dpo\_critic, retrain\_multidisciplinary\_rl, nightly\_retrain\_at\_5am, train\_checkpoint, daily\_trainer\_daemon): skipped. no gradient step, adapter never saved, fabricated or templated preference data, or silent DRY\_RUN fallback (audit, 2026-09-27)
+\end{itemize}
+
+\section{Threats to validity}
+\begin{itemize}
+\item Most faithful statements here are single Mathlib lemmas; a pass shows the model can name the lemma, not that it can do the mathematics. These theorems and their Mathlib proofs are also likely present in the provers' training data.
+\item One greedy sample per round and one seed; per-model counts on 24 statements move by about 4 points per statement.
+\item Proxies are counted in the tables but prove nothing about their namesakes; mm20 is a structure field and mm11 states one orientation of the IVT only.
+\item Goedel-Prover's scores are bounded by the 4096-token cap (Section 3).
+\item The frozen-split leak check is an exact substring match; one frozen T0 item (\texttt{t0\_amgm}) is a near neighbour of a training row (mm17). No elliptic-curve content is in the training data.
+\item The references and false variants were written by the same agent that ran the experiment; the kernel checks them, but their choice is not independent.
+\end{itemize}
+
+\section{Adversarial review}\label{sec:review}
+An independent reviewer (a separate agent with no access to this analysis) recomputed every number in this paper from the raw artifacts; all measurement tables reproduced. It found the forgeable axiom report (fixed, Section 2), the namespace explanation of the retrain gain (confirmed by the control above), the Goedel token cap, the differing token budget of the retrain evaluation, and the fidelity notes; all are addressed in this version.
+
+\section*{Artifacts}
+\texttt{scripts/master\_math/} (statements, validator, runner, harvester, this generator); \texttt{results/master\_math\_run2/} (validation, runs with every proof and error, harvest report); \texttt{formal/ANSE/MasterMathRun2.lean} (all statements with a kernel-checked proof and in-file \texttt{\#print axioms}); call log \texttt{call\_logs/master\_math\_run2.jsonl} on the data disk.
+
+\end{document}

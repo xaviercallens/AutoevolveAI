@@ -174,6 +174,7 @@ PROBLEMS: list[dict] = [
     {
         "id": "mm11_ivt", "source": "receipts#11", "fidelity": "faithful",
         "title": "Intermediate value theorem", "domain": "Real analysis",
+        "note": "One orientation only (f a <= y <= f b); the f b <= f a case is not stated.",
         "header": header("Mathlib.Topology.Order.IntermediateValue", "Mathlib.Topology.Instances.Real.Lemmas"),
         "statement": "theorem mm11_ivt (f : ℝ → ℝ) (a b y : ℝ) (hab : a ≤ b)\n"
                      "    (hf : ContinuousOn f (Set.Icc a b)) (hy : y ∈ Set.Icc (f a) (f b)) :\n"
@@ -274,8 +275,9 @@ PROBLEMS: list[dict] = [
         "refutation": "by\n  intro h\n  have := h id differentiable_id 0 1\n  simp at this",
     },
     {
-        "id": "mm20_triangle", "source": "receipts#20", "fidelity": "faithful",
+        "id": "mm20_triangle", "source": "receipts#20", "fidelity": "definitional",
         "title": "Triangle inequality in metric spaces", "domain": "Metric spaces",
+        "note": "In Mathlib this is a field of the MetricSpace structure; a pass shows lookup, not proof.",
         "header": header("Mathlib.Topology.MetricSpace.Pseudo.Defs", "Mathlib.Topology.Instances.Real.Lemmas"),
         "statement": "theorem mm20_triangle {X : Type*} [MetricSpace X] (x y z : X) :\n"
                      "    dist x z ≤ dist x y + dist y z",

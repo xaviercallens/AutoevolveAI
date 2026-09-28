@@ -12,6 +12,7 @@ import json
 import re
 import sys
 from collections import Counter
+from math import comb
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -25,7 +26,10 @@ OUT = REPO / "papers" / "master_math_run2" / "master_math_run2.tex"
 RECEIPTS = REPO / "results" / "master_math_20_problems_closed_loop_receipts.json"
 MODEL_NAMES = {"deepseek": "DeepSeek-Prover-V2-7B (Q8\\_0)", "goedel": "Goedel-Prover-V2-8B (Q6\\_K)"}
 
+GEN_CAP = 4096  # num_predict in scripts/hardness/run_ladder.py::generate
+
 FAILURE_CLASSES = [
+    ("hit the 4096-token generation cap", lambda r: r.get("tokens", 0) >= GEN_CAP),
     ("no Lean block extracted", lambda r: not r.get("extracted")),
     ("unknown identifier / constant", lambda r: re.search(r"unknown (identifier|constant)|Unknown (identifier|constant)", r.get("errors", ""))),
     ("search tactic failed (exact?/apply?)", lambda r: re.search(r"exact\?|apply\?", r.get("proof") or "") and not r.get("clean")),
@@ -79,6 +83,11 @@ def main() -> int:
     search_clean = [r for r in runs if r.get("clean") and re.search(r"exact\?|apply\?", r.get("proof") or "")]
     false_acc = sum(v["false_accepted"] for v in summary.values())
     false_n = sum(v["false_n"] for v in summary.values())
+    false_attempts = sum(1 for r in runs if r["truth"] is False)
+    capped = {m: (sum(1 for r in runs if r["model"] == m and r.get("tokens", 0) >= GEN_CAP),
+                  sum(1 for r in runs if r["model"] == m)) for m in models}
+    namefix_p = RUN / "namefix_control.json"
+    namefix = json.loads(namefix_p.read_text())["summary"] if namefix_p.exists() else None
     fid = Counter(p["fidelity"] for p in PROBLEMS)
     v_items = val["items"]
     pos = sum(r["positive_clean"] for r in v_items)
@@ -96,6 +105,7 @@ locked statements, controls, and what two 7--8B provers actually prove}
 \author{AutoevolveAI / ANSE run two (generated from \texttt{results/master\_math\_run2/})}
 \date{2026-09-27}
 \begin{document}
+\sloppy
 \maketitle
 """)
     per_model = "; ".join(
@@ -111,10 +121,16 @@ locked statements, controls, and what two 7--8B provers actually prove}
       f"three kernel controls: a reference proof is accepted ({pos}/{len(v_items)}), the same proof is "
       f"rejected on a false variant ({neg}/{len(v_items)}), and the false variant's negation is itself "
       f"kernel-proved ({ref}/{len(v_items)}). A statement review marks {fid['proxy']} statements as "
-      f"arithmetic proxies and {fid['special-case']} as a special case. Results: {per_model}. "
-      f"Across {false_n} attempts on false variants, {false_acc} were accepted. We also report a hole "
-      f"in the project's own gate, found and closed during this run: a proof ending in "
-      f"\\texttt{{\\#exit}} suppressed the axiom report and was scored clean.\n")
+      f"arithmetic proxies, {fid['special-case']} as a special case and {fid['definitional']} as "
+      f"definitional (a structure field). Results: {per_model}. "
+      f"Across {false_attempts} measured attempts on the {false_n} (model, false variant) pairs, "
+      f"{false_acc} were accepted -- a sanity check of the gate, since every false variant's negation "
+      "is kernel-proved. One error-feedback repair round rescued no statement. A first QLoRA fine-tune "
+      "of the prover passed the project's promotion rule on a held-out split, but a control shows the "
+      "gain is a naming effect: renaming one namespace in the \\emph{base} model's failed proofs does "
+      "better than the fine-tune. We also report two holes in the project's own gate, found and closed "
+      "during this run: a missing axiom report was read as ``no axioms'', and a proof body could forge "
+      "the report with extra top-level commands.\n")
     a(r"\end{abstract}" + "\n\n")
 
     a(r"\section{What the earlier record measured}" + "\n")
@@ -140,9 +156,18 @@ locked statements, controls, and what two 7--8B provers actually prove}
     a(r"\paragraph{A gate hole found in this run.}" + " The previous gate parsed \\emph{any} axioms line "
       "and treated a missing one as ``no axioms''. A file whose proof is \\texttt{sorry} followed by "
       "\\texttt{\\#exit} compiles with exit code 0, prints only a warning, and never reaches the axiom "
-      "report; the old gate scored it clean, measured live. The gate now requires positive evidence "
-      "(the report line naming the theorem). None of the 117 generations logged by the earlier "
-      "hardness baseline contained \\texttt{\\#exit}, so that baseline is unaffected.\n\n")
+      "report; the old gate scored it clean, measured live. The first fix required the report line "
+      "naming the theorem. The adversarial review (Section~\\ref{sec:review}) then broke that fix: "
+      "everything after \\texttt{:=} is model text, and Lean parses further top-level commands there, "
+      "so \\texttt{by admit} followed by \\texttt{\\#print \"'X' depends on axioms: [propext]\"} and "
+      "\\texttt{\\#exit} compiles with exit code 0 and forges the report (reproduced live). The gate now "
+      "also rejects any source containing a \\texttt{\\#} command other than the file's own final "
+      "\\texttt{\\#print axioms}, \\texttt{sorry}/\\texttt{admit}, \\texttt{axiom} declarations, "
+      "\\texttt{set\\_option} (which can switch the kernel check off), macro/syntax/elab definitions, "
+      "or the compiler's \\emph{declaration uses sorry} warning, and it requires the axiom report to "
+      "appear exactly once. All accepted proofs in this paper were re-checked under the hardened gate; "
+      "none is affected. None of the 117 generations logged by the earlier hardness baseline contained "
+      "\\texttt{\\#exit}.\n\n")
     a(r"\paragraph{Controls and statement review.}" + f" All {len(v_items)} statements elaborate and "
       "pass the three controls in the abstract. Table~\\ref{tab:items} gives the fidelity of each "
       "statement: \\emph{proxy} statements replace the named theorem by the arithmetic step a textbook "
@@ -160,27 +185,35 @@ locked statements, controls, and what two 7--8B provers actually prove}
       "protocol (greedy, temperature 0, \\texttt{num\\_ctx} 12288, the last Lean block of content plus "
       "thinking). Round 1, the new measurement, runs once after a round-0 failure and appends the failed "
       "attempt and Lean's error lines to the prompt. False variants receive the same two rounds. "
-      "Placement was measured, not assumed: at \\texttt{num\\_ctx} 12288 with four parallel slots "
-      "Ollama sized DeepSeek at 30.9\\,GB with 12.9\\,GB in VRAM, so most layers ran on the CPU; "
-      "we kept the setting for comparability with the baseline.\n\n")
+      f"Generation is capped at {GEN_CAP} tokens (\\texttt{{num\\_predict}}). That cap binds for "
+      "Goedel-Prover-V2, a long chain-of-thought model: "
+      + "; ".join(f"{m} {c}/{n} attempts hit it" for m, (c, n) in capped.items())
+      + ". Goedel's numbers therefore partly measure the budget, not the model. During the run "
+      "Ollama's \\texttt{api/ps} reported DeepSeek at 30.9\\,GB with 12.9\\,GB in VRAM (four parallel "
+      "slots of a 12288-token KV cache), so most layers ran on the CPU; this reading was observed, not "
+      "archived as an artifact. We kept the setting for comparability with the baseline.\n\n")
     if infra:
         a(f"{len(infra)} attempt(s) ended in an infrastructure error and are unmeasured, not counted as "
           "either outcome: " + "; ".join(f"{tex(r['model'])} {tex(r['id'])} round {r['round']} "
                                          f"({tex(r['error'][:40])})" for r in infra) + ".\n\n")
 
     a(r"\section{Results}" + "\n")
-    a("\\begin{longtable}{llll" + "l" * len(models) + "}\n\\caption{Per-statement outcome. "
+    short = {"VERIFIED_SOUND": "verified", "REJECT": "rejected", "UNVERIFIED_IN_LEAN": "unverified"}
+    a("{\\footnotesize\n\\begin{longtable}{llll" + "c" * len(models) + "}\n\\caption{Per-statement outcome. "
       "\\checkmark{} greedy proof accepted; repair: accepted after one error-feedback round; "
-      "$\\times$ both rejected. Run-one status from the receipts file.}\\label{tab:items}\\\\\n\\toprule\n"
-      "Id & Title & Fidelity & Run one & " + " & ".join(m for m in models) + "\\\\\n\\midrule\n")
+      "$\\times$ both rejected. ``Run one'': status claimed in the run-one receipts (a different, "
+      "partly malformed statement set; its \\#9 was a pointwise proxy).}\\label{tab:items}\\\\\n"
+      "\\toprule\nId & Title & Fidelity & Run one & " + " & ".join(m for m in models)
+      + "\\\\\n\\midrule\n")
     for p in PROBLEMS:
         src = p["source"]
         r1 = "--"
         if src.startswith("receipts#"):
-            r1 = tex(str(receipts.get(src.split("#")[1], {}).get("status", "--")).split(":")[0])
-        a(f"{tex(p['id'].split('_')[0])} & {tex(p['title'][:48])} & {p['fidelity']} & {r1} & "
+            raw = str(receipts.get(src.split("#")[1], {}).get("status", "--")).split(":")[0].strip()
+            r1 = short.get(raw, tex(raw))
+        a(f"{tex(p['id'].split('_')[0])} & {tex(p['title'][:40])} & {p['fidelity']} & {r1} & "
           + " & ".join(cell(m, p["id"]) for m in models) + "\\\\\n")
-    a("\\bottomrule\n\\end{longtable}\n\n")
+    a("\\bottomrule\n\\end{longtable}}\n\n")
     a("\\begin{table}[h]\\centering\\begin{tabular}{lrrrrr}\\toprule\n"
       "Model & true $n$ & greedy & +repair & false $n$ & false accepted\\\\\\midrule\n")
     for m in models:
@@ -216,14 +249,42 @@ locked statements, controls, and what two 7--8B provers actually prove}
         a("\\paragraph{Retraining the prover.} Nothing in the project trained the model that proves: the "
           "nightly trainer fine-tunes Qwen2.5-Coder. We added a QLoRA fine-tune of DeepSeek-Prover-V2-7B "
           f"(NF4, fp16 compute) on {pj.get('data', {}).get('lean_passed_rows', 0)} kernel-verified Lean rows "
+          f"({sum(1 for t in pj.get('data', {}).get('tasks', []) if t.startswith('mm'))} statements' proofs "
+          "from this run plus the three BAO-run theorems) "
           f"({tr.get('steps', '?')} steps, loss {tr.get('loss_first', '?')} $\\to$ {tr.get('loss_last', '?')}, "
           f"peak {tr.get('peak_mib', '?')}\\,MiB), and the held-out gate the project lacked: base and "
-          "adapter, same 4-bit harness, greedy, on the frozen hardness split, every proof through the "
-          f"kernel gate. Base: {b.get('true_pass', '?')}/{b.get('true_n', '?')} true items "
+          "adapter, same 4-bit harness, greedy, at most 1024 new tokens (not the 4096 of the Ollama "
+          "protocol, so these numbers are not comparable with the baseline's), on the frozen hardness "
+          f"split, every proof through the kernel gate. Base: {b.get('true_pass', '?')}/{b.get('true_n', '?')} true items "
           f"({tex(json.dumps(b.get('by_tier', {})))}), {b.get('false_accepted', '?')} false accepted. "
           f"Adapter: {ad.get('true_pass', '?')}/{ad.get('true_n', '?')} "
           f"({tex(json.dumps(ad.get('by_tier', {})))}), {ad.get('false_accepted', '?')} false accepted. "
-          f"Gate: {tex(str(pj.get('outcome', 'not reached')))}.\n\n")
+          f"Gate: {tex(str(pj.get('outcome', 'not reached')))}. ")
+        rows_e = pj.get("eval_rows", [])
+        base_ok = {r["id"]: bool(r["clean"]) for r in rows_e if r["arm"] == "base" and r["truth"] is True}
+        ad_ok = {r["id"]: bool(r["clean"]) for r in rows_e if r["arm"] == "adapter" and r["truth"] is True}
+        gained = sorted(k for k in ad_ok if ad_ok[k] and not base_ok.get(k))
+        lost = sorted(k for k in ad_ok if base_ok.get(k) and not ad_ok[k])
+        n_disc, k_min = len(gained) + len(lost), min(len(gained), len(lost))
+        p_two = min(1.0, 2 * sum(comb(n_disc, i) for i in range(k_min + 1)) / 2 ** n_disc) if n_disc else 1.0
+        a(f"Paired on the same items: {len(gained)} gained ({tex(', '.join(gained))}), {len(lost)} lost "
+          f"({tex(', '.join(lost))}); exact McNemar two-sided $p = {p_two:.3f}$, so the gain is not "
+          "statistically significant at this $n$ with one greedy sample. The gate's rule (adapter strictly "
+          "above base) is weaker than a significance test. The training loss fell to near zero on "
+          "these rows (memorisation), and no training row mentions any Weierstrass name.\n\n")
+        if namefix:
+            a("\\paragraph{The control that explains the gain.} On the gained T3 items the base model "
+              "had written the same strategy as the adapter and failed only on \\emph{Unknown constant "
+              "WeierstrassCurve.addX}: the right name, \\texttt{WeierstrassCurve.Affine.addX}, is readable "
+              "from the statement's own \\texttt{.toAffine.addX}. Rewriting only that namespace in the "
+              "\\emph{base} model's T3 proofs (\\texttt{scripts/master\\_math/namefix\\_control.py}) and "
+              f"re-running the hardened gate gives {namefix['renamed_true_pass']}/{namefix['true_n']} true "
+              f"T3 items proved and {namefix['renamed_false_accepted']}/{namefix['false_n']} false ones "
+              f"accepted, against the adapter's {ad.get('by_tier', {}).get('T3', '?')}. The fine-tune's "
+              "gain is a naming effect, and a deterministic post-processor dominates it. The adapter is "
+              "therefore \\emph{not} promoted in substance; the finding is that on this tier the base "
+              "model's reasoning was right and its vocabulary was wrong, which is what premise or name "
+              "retrieval should fix.\n\n")
     if retrain.exists():
         a("\\paragraph{Other retrains the same night.}\n\\begin{itemize}\n")
         for m in json.loads(retrain.read_text())["models"]:
@@ -238,10 +299,21 @@ locked statements, controls, and what two 7--8B provers actually prove}
       "likely present in the provers' training data.\n"
       "\\item One greedy sample per round and one seed; per-model counts on "
       f"{n_true} statements move by about {100 / n_true:.0f} points per statement.\n"
-      "\\item Proxies are counted in the tables but prove nothing about their namesakes.\n"
+      "\\item Proxies are counted in the tables but prove nothing about their namesakes; mm20 is a "
+      "structure field and mm11 states one orientation of the IVT only.\n"
+      "\\item Goedel-Prover's scores are bounded by the 4096-token cap (Section 3).\n"
+      "\\item The frozen-split leak check is an exact substring match; one frozen T0 item "
+      "(\\texttt{t0\\_amgm}) is a near neighbour of a training row (mm17). No elliptic-curve content "
+      "is in the training data.\n"
       "\\item The references and false variants were written by the same agent that ran the experiment; "
       "the kernel checks them, but their choice is not independent.\n"
       "\\end{itemize}\n\n")
+    a(r"\section{Adversarial review}\label{sec:review}" + "\n"
+      "An independent reviewer (a separate agent with no access to this analysis) recomputed every "
+      "number in this paper from the raw artifacts; all measurement tables reproduced. It found the "
+      "forgeable axiom report (fixed, Section 2), the namespace explanation of the retrain gain "
+      "(confirmed by the control above), the Goedel token cap, the differing token budget of the "
+      "retrain evaluation, and the fidelity notes; all are addressed in this version.\n\n")
     a(r"\section*{Artifacts}" + "\n\\texttt{scripts/master\\_math/} (statements, validator, runner, "
       "harvester, this generator); \\texttt{results/master\\_math\\_run2/} (validation, runs with every "
       "proof and error, harvest report); \\texttt{formal/ANSE/MasterMathRun2.lean} (all statements with "

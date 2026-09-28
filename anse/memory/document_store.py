@@ -166,6 +166,24 @@ class DocumentStore:
         )
         return bool(existing.get("ids"))
 
+    def supersede(self, path: Path) -> int:
+        """Delete chunks of earlier versions of `path`: same source_path, other
+        content hash. Returns the number deleted.
+
+        Ingest is keyed on content hash, so re-ingesting an edited document
+        adds the new version and leaves the old one retrievable -- including
+        claims the edit retracted. Call this before re-ingesting a corrected
+        document.
+        """
+        digest = sha256_of(path)
+        old = self._collection.get(
+            where={"$and": [{"source_path": str(path)}, {"source_sha256": {"$ne": digest}}]}
+        )
+        ids = old.get("ids") or []
+        if ids:
+            self._collection.delete(ids=ids)
+        return len(ids)
+
     def ingest_pdf(self, path: Path, extra_metadata: dict[str, Any] | None = None) -> int:
         """Index one PDF. Returns the number of chunks written."""
         digest = sha256_of(path)

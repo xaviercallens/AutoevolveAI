@@ -148,13 +148,46 @@ def axioms_line_for(out: str, name: str) -> list[str] | None:
     return None
 
 
+# Constructs a proof body must never contain. A model controls everything after
+# `:=`, and Lean happily parses further top-level commands there: e.g.
+# `by admit` + `#print "'X' depends on axioms: [propext]"` + `#exit` compiled
+# rc 0 and forged the axiom report (adversarial review, 2026-09-28).
+# `set_option debug.skipKernelTC true` would switch the kernel check off.
+FORBIDDEN = re.compile(
+    r"\b(?:sorry|admit|set_option|macro_rules|macro|syntax|elab|notation|infixl?|infixr|"
+    r"run_cmd|run_tac|run_elab|unsafe|implemented_by|extern)\b"
+    r"|^\s*(?:private\s+|protected\s+)?axiom\b",
+    re.MULTILINE,
+)
+
+
+def forbidden_constructs(src: str) -> list[str]:
+    """Everything in a single-item file that could fake or bypass the gate.
+    The only `#` command allowed is the file's own final `#print axioms`."""
+    hits = [m.group(0).strip() for m in FORBIDDEN.finditer(src)]
+    commands = re.findall(r"(?m)^\s*#[A-Za-z_]+.*$", src)
+    if len(commands) != 1 or not re.fullmatch(r"#print axioms \S+", commands[0].strip()):
+        hits += [c.strip()[:40] for c in commands if not re.fullmatch(r"#print axioms \S+", c.strip())]
+        if len(commands) != 1:
+            hits.append(f"{len(commands)} '#' commands (expected exactly 1)")
+    inline = re.findall(r"#(?:print|exit|eval|check|reduce|guard_msgs|synth)\b", src)
+    if len(inline) != 1:
+        hits.append(f"{len(inline)} inline '#' commands")
+    return hits
+
+
 def verdict(src: str, rc: int, out: str) -> dict:
-    """Kernel verdict for one compiled file: rc 0, the file's own last
-    `#print axioms` target answered, no sorryAx, axioms within TRUSTED."""
+    """Kernel verdict for one compiled file: no forbidden construct in the
+    source, rc 0, no sorry warning, the file's own `#print axioms` target
+    answered exactly once, no sorryAx, axioms within TRUSTED."""
     printed = re.findall(r"^#print axioms (\S+)\s*$", src, re.MULTILINE)
-    axioms = axioms_line_for(out, printed[-1]) if printed else None
-    return {"axioms": axioms or [], "axioms_printed": axioms is not None,
-            "clean": (rc == 0 and axioms is not None and "sorryAx" not in out
+    name = printed[-1] if printed else None
+    axioms = axioms_line_for(out, name) if name else None
+    reports = len(re.findall(r"'" + re.escape(name) + r"' (?:depends on axioms|does not depend)", out)) if name else 0
+    bad = forbidden_constructs(src)
+    return {"axioms": axioms or [], "axioms_printed": axioms is not None, "forbidden": bad,
+            "clean": (rc == 0 and not bad and axioms is not None and reports == 1
+                      and "sorryAx" not in out and "declaration uses" not in out
                       and set(axioms) <= TRUSTED)}
 
 

@@ -39,6 +39,28 @@ def test_verdict_accepts_only_trusted_axioms_and_rc_zero() -> None:
     assert bl.verdict(SRC, 1, "'foo' depends on axioms: [propext]\n")["clean"] is False
 
 
+def test_verdict_rejects_forged_axiom_report() -> None:
+    # Measured live 2026-09-28: this compiles rc 0 and prints a forged line.
+    item = {"id": "spoof_t", "defs": "", "header": "", "statement": "theorem spoof_t (n : Nat) : n + 1 = n"}
+    proof = "by admit\n#print \"'spoof_t' depends on axioms: [propext]\"\n#exit"
+    src = bl.lean_file(item, proof)
+    forged_out = "'spoof_t' depends on axioms: [propext]\nwarning: declaration uses `sorry`\n"
+    v = bl.verdict(src, 0, forged_out)
+    assert v["clean"] is False
+    assert "admit" in v["forbidden"]
+    assert any("#exit" in f for f in v["forbidden"])
+
+
+def test_verdict_rejects_kernel_bypass_options() -> None:
+    item = {"id": "foo", "defs": "", "header": "", "statement": "theorem foo (n : Nat) : n + 0 = n"}
+    src = bl.lean_file(item, "by\n  set_option debug.skipKernelTC true in simp")
+    assert bl.verdict(src, 0, "'foo' depends on axioms: [propext]\n")["clean"] is False
+    ok = bl.lean_file(item, "by simp")
+    assert bl.verdict(ok, 0, "'foo' depends on axioms: [propext]\n")["clean"] is True
+    # the report must appear exactly once
+    assert bl.verdict(ok, 0, "'foo' depends on axioms: [propext]\n" * 2)["clean"] is False
+
+
 def test_axioms_line_for_parses_names() -> None:
     out = "'a.b' depends on axioms: [propext, Classical.choice]\n"
     assert bl.axioms_line_for(out, "a.b") == ["propext", "Classical.choice"]
@@ -74,7 +96,7 @@ def test_problem_set_is_locked_and_pinned() -> None:
         assert p["statement"].startswith(f"theorem {p['id']} ")
         assert "import Mathlib\n" not in p["header"]
         assert "sorry" not in p["reference"] and "sorry" not in p["refutation"]
-        assert p["fidelity"] in {"faithful", "proxy", "special-case"}
+        assert p["fidelity"] in {"faithful", "proxy", "special-case", "definitional"}
         # a proxy must say what it leaves out
         if p["fidelity"] != "faithful":
             assert p.get("note")

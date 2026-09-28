@@ -48,7 +48,9 @@ def main() -> int:
             return 1
         gloss = {"faithful": f"a faithful statement of {p['title']}",
                  "proxy": f"an arithmetic PROXY named after {p['title']} -- it does not prove that theorem",
-                 "special-case": f"a special case of {p['title']}"}[p["fidelity"]]
+                 "special-case": f"a special case of {p['title']}",
+                 "definitional": f"{p['title']}, which Mathlib provides as a structure field "
+                                 "(a pass is lookup, not proof)"}[p["fidelity"]]
         claims.append({
             "schema_version": 1, "id": f"MM2-A-{k:04d}", "tier": "A", "kind": "lean_axioms",
             "statement": (f"{full}, {gloss}, is kernel-verified with axioms within "

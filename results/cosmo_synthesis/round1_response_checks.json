@@ -1,0 +1,313 @@
+{
+  "script": "results/cosmo_synthesis/round1_response_checks.py",
+  "date": "2026-09-27",
+  "h0_gate_propagation": {
+    "gate_rule": "|Omega_m - 0.2975| <= 0.25*0.0086 and |hr_d - 101.54| <= 0.25*0.73 and posterior sigmas within +-15%, using posterior means from an (Omega_m, hr_d) run with DR1-Table-2 flat priors (hr_d U[10,1000]). If G1 fails, the H0 result is reported but labelled instrument-unvalidated.",
+    "gate_G2_rule": "same rule vs DR1 BAO-only (0.295+-0.015, 101.8+-1.3)",
+    "formula": "dH0 = H0_target * (d_hrd / hrd_target) / slope, slope = d ln(hr_d)/d ln h",
+    "G1": {
+      "hrd_target": 101.54,
+      "hrd_sigma": 0.73,
+      "slope": 0.4908682015194642,
+      "gate_tol_hrd_Mpc": 0.1825,
+      "max_H0_shift_admitted_by_gate": 0.250850388438051,
+      "observed_hrd_offset_Mpc": -0.01952573868214813,
+      "observed_offset_pull": -0.026747587235819357,
+      "implied_H0_shift_from_offset": -0.026838570591543764,
+      "gate_passed_field": true
+    },
+    "G2": {
+      "hrd_target": 101.8,
+      "hrd_sigma": 1.3,
+      "slope": 0.49154738617279303,
+      "gate_tol_hrd_Mpc": 0.325,
+      "max_H0_shift_admitted_by_gate": 0.4450931635359774,
+      "observed_hrd_offset_Mpc": 0.13358345743210975,
+      "observed_offset_pull": 0.10275650571700749,
+      "implied_H0_shift_from_offset": 0.18294487281394248,
+      "gate_passed_field": true
+    },
+    "strict": 0.15,
+    "soft": 0.33,
+    "G1_max_exceeds_strict": true,
+    "G2_max_exceeds_strict": true,
+    "G2_max_exceeds_soft": true,
+    "T2_observed_offset": 0.1669706683075134
+  },
+  "dr1_dr2_conventions": {
+    "Delta_Om": 0.002833848346248724,
+    "sd_DR1": 0.01468832829750455,
+    "sd_DR2": 0.008558137123478343,
+    "sigma_nested": 0.011937557419799693,
+    "ratio_nested": 0.2373892955311351,
+    "sigma_independent": 0.016999667620266317,
+    "ratio_independent": 0.1667002208249251,
+    "sigma_C1_perfect_correlation": 0.006130191174026207,
+    "ratio_C1": 0.46227731987475684,
+    "note": "DESI DR2 (arXiv:2503.14738 Sec. III.C.1, footnote 12) describes its DR1-DR2 comparison as assuming perfect correlation but computes sigma^2 = s2^2 + s1^2 - 2 C s1 s2 with C = sqrt(N_DR1/N_DR2) per distance, which equals the nested form when s is proportional to N^-1/2. C = 1 is the bracket."
+  },
+  "overlap_sensitivity": {
+    "model": "Cov(diff) = C_S + C_D - X - X^T, X = rho sqrtm(C_S) sqrtm(C_D); emcee moments of the baseline SDSS and DESI DR2 fits in results/eboss_vs_desi/fit.json",
+    "rho_0.57_source": "C ~ 0.57 is DR2's estimate for the LRG2 / eBOSS LRG pair only (arXiv:2503.14738 Sec. III.C.2); used here as an illustration, not an estimate of the parameter-level correlation",
+    "grid": [
+      {
+        "rho": 0.0,
+        "chi2": 1.9318242039628148,
+        "PTE": 0.3806358626354824,
+        "N_sigma": 0.876725297771431,
+        "min_eigenvalue": 7.15525769377382e-05,
+        "positive_definite": true
+      },
+      {
+        "rho": 0.1,
+        "chi2": 2.091753586995611,
+        "PTE": 0.35138359342260767,
+        "N_sigma": 0.9319089276647881,
+        "min_eigenvalue": 6.643021189512018e-05,
+        "positive_definite": true
+      },
+      {
+        "rho": 0.2,
+        "chi2": 2.2809210040758567,
+        "PTE": 0.31967177841053557,
+        "N_sigma": 0.9951325973436291,
+        "min_eigenvalue": 6.130739348387496e-05,
+        "positive_definite": true
+      },
+      {
+        "rho": 0.3,
+        "chi2": 2.508294912441496,
+        "PTE": 0.2853189914958871,
+        "N_sigma": 1.0684468540884853,
+        "min_eigenvalue": 5.6183962090277035e-05,
+        "positive_definite": true
+      },
+      {
+        "rho": 0.4,
+        "chi2": 2.7870144842012192,
+        "PTE": 0.24820326735386117,
+        "N_sigma": 1.1547244901170952,
+        "min_eigenvalue": 5.105967321361398e-05,
+        "positive_definite": true
+      },
+      {
+        "rho": 0.5,
+        "chi2": 3.1372051747747207,
+        "PTE": 0.20833611054486184,
+        "N_sigma": 1.258153880298073,
+        "min_eigenvalue": 4.5934132381123476e-05,
+        "positive_definite": true
+      },
+      {
+        "rho": 0.57,
+        "chi2": 3.441560323055726,
+        "PTE": 0.17892650187226666,
+        "N_sigma": 1.3440676811498422,
+        "min_eigenvalue": 4.23451633793969e-05,
+        "positive_definite": true
+      },
+      {
+        "rho": 0.6,
+        "chi2": 3.591517675580744,
+        "PTE": 0.16600143637686118,
+        "N_sigma": 1.3851669096248396,
+        "min_eigenvalue": 4.0806659334116684e-05,
+        "positive_definite": true
+      }
+    ],
+    "reproduces_fit_json_at_rho0": true
+  },
+  "n4_margin": {
+    "margin": 0.013672122623921729,
+    "T1_mc_error_H0": 0.01065188196986385,
+    "margin_over_mc": 1.2835405670662425,
+    "delta_chi2_wrong_minus_correct": -5.191742191357207e-05,
+    "shift_is_MAP_not_posterior_mean": true
+  },
+  "camb_shifted_pull": {
+    "pull_Om": 0.03656514662459105,
+    "primary_minus_camb_Om_sigma": 0.031756483352052535,
+    "pull_if_camb_model": 0.004808663272538517,
+    "radiation_shift_Om_sigma": -0.04603435956359179,
+    "pull_if_radiation": -0.009469212939000736,
+    "sign_convention": "camb_crosscheck.py: shift = primary fit - CAMB truth, so a CAMB-model analysis sits lower by that amount; radiation_sensitivity is (with radiation - without)"
+  },
+  "dr2_mc_error": {
+    "posterior_sd_Om": 0.008558137123478343,
+    "ess": 21169.756508903476,
+    "mc_error_Om_mean": 5.881949740791042e-05,
+    "target_sigma": 0.0086,
+    "mc_error_in_published_sigma": 0.006839476442780282
+  },
+  "aubourg_points": {
+    "points": [
+      {
+        "omega_b": 0.02218,
+        "omega_cdm": 0.119,
+        "h": 0.685,
+        "frac": -0.0002923963155054832
+      },
+      {
+        "omega_b": 0.02108,
+        "omega_cdm": 0.125,
+        "h": 0.66,
+        "frac": -0.00010175887007390916
+      },
+      {
+        "omega_b": 0.02328,
+        "omega_cdm": 0.115,
+        "h": 0.71,
+        "frac": -0.00018389301654542223
+      },
+      {
+        "omega_b": 0.02218,
+        "omega_cdm": 0.13,
+        "h": 0.64,
+        "frac": 6.070929797408198e-05
+      },
+      {
+        "omega_b": 0.022383,
+        "omega_cdm": 0.12011,
+        "h": 0.6732,
+        "frac": -0.0002722402514746536
+      }
+    ],
+    "worst": {
+      "omega_b": 0.02218,
+      "omega_cdm": 0.119,
+      "h": 0.685,
+      "frac": -0.0002923963155054832
+    },
+    "stated_accuracy_frac": 0.00021,
+    "n_exceeding_stated": 2,
+    "proxy_window_note": "literature review: proxy 3-sigma window omega_b in [0.02191, 0.02281]; Aubourg's statement is for N_eff = 3.046 while the CAMB table uses N_eff = 3.044"
+  },
+  "controls_count": {
+    "json_keys": [
+      "PC0_regression_quad",
+      "PC0_regression_gl",
+      "PC1_noiseless_LCDM",
+      "PC2_noiseless_wCDM",
+      "PC3_noisy_LCDM_draws",
+      "PC4_astropy_vs_quad"
+    ],
+    "distinct_ids": [
+      "PC0",
+      "PC1",
+      "PC2",
+      "PC3",
+      "PC4"
+    ],
+    "n_ids": 5,
+    "n_keys": 6
+  },
+  "rust_pr61": {
+    "command": "gh pr view 61 --json number,state,mergedAt,mergeCommit,title,headRefName",
+    "cwd": "/home/callensxavier_gmail_com/rusty-SUNDIALS-wt-cosmo",
+    "queried_utc": "2026-09-27T21:44:51+00:00",
+    "result": {
+      "headRefName": "feat/cosmo-bao-distances",
+      "mergeCommit": {
+        "oid": "7c9c3c3c7feb73fb290e8e824b398c4e00ba38df"
+      },
+      "mergedAt": "2026-09-27T17:29:02Z",
+      "number": 61,
+      "state": "MERGED",
+      "title": "feat(qf-bao-distances): BAO distance numerics on cvode + sundials-mcp bao_distances tool"
+    }
+  },
+  "h0_audit_binding": {
+    "current_source_sha256": "2b6530838efa0df9bfb475a5d8b25ee29aa121989cc83d04e07f595f5f616e38",
+    "rows": [
+      {
+        "id": "BBNH0-A-0001",
+        "theorem": "rd_numerator_pos",
+        "audited": true,
+        "audited_source_sha256": "c0663994721a6113ad4569c29298c516d659a97ffc93db91a2123fe113483689",
+        "bound_to_current_source": false,
+        "statement_in_prefix_scratch_copy_identical": true
+      },
+      {
+        "id": "BBNH0-A-0002",
+        "theorem": "rdAubourg_pos",
+        "audited": true,
+        "audited_source_sha256": "c0663994721a6113ad4569c29298c516d659a97ffc93db91a2123fe113483689",
+        "bound_to_current_source": false,
+        "statement_in_prefix_scratch_copy_identical": true
+      },
+      {
+        "id": "BBNH0-A-0003",
+        "theorem": "rdAubourg_strictAntiOn_cb",
+        "audited": true,
+        "audited_source_sha256": "c0663994721a6113ad4569c29298c516d659a97ffc93db91a2123fe113483689",
+        "bound_to_current_source": false,
+        "statement_in_prefix_scratch_copy_identical": true
+      },
+      {
+        "id": "BBNH0-A-0004",
+        "theorem": "rdAubourg_strictAntiOn_b",
+        "audited": true,
+        "audited_source_sha256": "c0663994721a6113ad4569c29298c516d659a97ffc93db91a2123fe113483689",
+        "bound_to_current_source": false,
+        "statement_in_prefix_scratch_copy_identical": true
+      },
+      {
+        "id": "BBNH0-A-0005",
+        "theorem": "rd_strictAntiOn_Om",
+        "audited": true,
+        "audited_source_sha256": "c0663994721a6113ad4569c29298c516d659a97ffc93db91a2123fe113483689",
+        "bound_to_current_source": false,
+        "statement_in_prefix_scratch_copy_identical": true
+      },
+      {
+        "id": "BBNH0-A-0006",
+        "theorem": "DH_over_rd_eq_hrd",
+        "audited": true,
+        "audited_source_sha256": "c0663994721a6113ad4569c29298c516d659a97ffc93db91a2123fe113483689",
+        "bound_to_current_source": false,
+        "statement_in_prefix_scratch_copy_identical": true
+      },
+      {
+        "id": "BBNH0-A-0007",
+        "theorem": "DH_over_rd_degenerate",
+        "audited": true,
+        "audited_source_sha256": "c0663994721a6113ad4569c29298c516d659a97ffc93db91a2123fe113483689",
+        "bound_to_current_source": false,
+        "statement_in_prefix_scratch_copy_identical": true
+      },
+      {
+        "id": "BBNH0-A-0008",
+        "theorem": "gate_reparam_exact",
+        "audited": true,
+        "audited_source_sha256": "c0663994721a6113ad4569c29298c516d659a97ffc93db91a2123fe113483689",
+        "bound_to_current_source": false,
+        "statement_in_prefix_scratch_copy_identical": true
+      },
+      {
+        "id": "BBNH0-A-0009",
+        "theorem": "hrd_mono_generic",
+        "audited": false,
+        "audited_source_sha256": null,
+        "bound_to_current_source": false,
+        "statement_in_prefix_scratch_copy_identical": null
+      },
+      {
+        "id": "BBNH0-A-0010",
+        "theorem": "hrd_strictMonoOn_h",
+        "audited": false,
+        "audited_source_sha256": null,
+        "bound_to_current_source": false,
+        "statement_in_prefix_scratch_copy_identical": null
+      }
+    ],
+    "committed_versions": [
+      {
+        "commit": "d58b63c",
+        "file_sha256": "2b6530838efa0df9bfb475a5d8b25ee29aa121989cc83d04e07f595f5f616e38"
+      }
+    ],
+    "prefix_scratch_copy": "results/cosmo_synthesis/h0_prefix_scratch_copy.lean",
+    "prefix_scratch_copy_sha256": "d0638cc23ad81217355ca30bde1cdd0f02f8d3f2b259bcab0fbae826bea8851e",
+    "note": "The scratch copy is the sorry negative-control file made from the pre-fix source; it is not hash-linked to the audited bytes. The audited source (sha prefix c0663994) was never committed. The ledger itself is outside this paper's write scope and was not modified."
+  }
+}

@@ -1,0 +1,16 @@
+{
+ "source": "referee report for problem bao_bbn_h0 (verdict 'minor', reproduced true), delivered to the fix-round agent by the workflow orchestrator on 2026-09-27; the referee is a model subagent, not a person",
+ "auditor_is_model": true,
+ "lean_file": "formal/ANSE/BAO_BBN_H0.lean",
+ "lean_source_sha256": "c0663994721a6113ad4569c29298c516d659a97ffc93db91a2123fe113483689",
+ "lean_statement_audit": [
+  {"theorem": "ANSE.BAOBBNH0.rd_numerator_pos", "faithful": true, "comment": "0 < 55.154 * exp(-72.3 (omegaNu+0.0006)^2) with omegaNu = 0.0107*0.06. True and matches common.rd_aubourg16's numerator, but it is the positivity of a numeric constant; lemma-level, no physics content. Not vacuous."},
+  {"theorem": "ANSE.BAOBBNH0.rdAubourg_pos", "faithful": true, "comment": "For 0 < wcb, 0 < wb: 0 < rdAubourg wcb wb, with rdAubourg defined verbatim as eq. 16 using Real.rpow. Faithful to common.rd_aubourg16 (numpy ** on positive floats). Hypotheses match the sampler mask omega_cb_of > 0 and the omega_b prior > 0.005. Non-trivial, non-vacuous."},
+  {"theorem": "ANSE.BAOBBNH0.rdAubourg_strictAntiOn_cb", "faithful": true, "comment": "StrictAntiOn (fun wcb => rdAubourg wcb wb) (Ioi 0) for wb > 0. Correct direction (exponent 0.25351 > 0), non-empty domain, correct quantifiers. Physically meaningful: r_d decreases with omega_cb."},
+  {"theorem": "ANSE.BAOBBNH0.rdAubourg_strictAntiOn_b", "faithful": true, "comment": "StrictAntiOn (rdAubourg wcb) (Ioi 0) for wcb > 0. Correct; the gloss 'direction along which the BBN prior moves r_d' is fair. Non-vacuous."},
+  {"theorem": "ANSE.BAOBBNH0.rd_strictAntiOn_Om", "faithful": true, "comment": "For h > 0, wb > 0: Om -> rdAubourg (Om h^2 - omegaNu) wb is StrictAntiOn on {Om | 0 < Om h^2 - omegaNu}. omegaCb matches common.omega_cb_of exactly and the set is exactly the make_logpost mask. Domain non-empty. This is the most substantive theorem; faithful."},
+  {"theorem": "ANSE.BAOBBNH0.DH_over_rd_eq_hrd", "faithful": true, "comment": "c / (100 h) / E / rd = c / (100 (h rd) E) for all reals. A pure field identity (ring_nf after div_div), true unconditionally thanks to Lean's x/0 = 0. Faithful to distances_manual_vec/obs_from_distances for the D_H observable only; E is a free real, so the physical 'depends only on h r_d' reading holds only at fixed E (E depends on h via radiation in the BBN fits). The paper discloses this. Trivial as mathematics; not vacuous."},
+  {"theorem": "ANSE.BAOBBNH0.DH_over_rd_degenerate", "faithful": true, "comment": "h rd = h' rd' implies DH_over_rd c h E rd = DH_over_rd c h' E rd'. Immediate corollary of the previous identity; correct but content-free beyond it. Same fixed-E caveat."},
+  {"theorem": "ANSE.BAOBBNH0.gate_reparam_exact", "faithful": true, "comment": "For hrad != 0: DH_over_rd c hrad E (hrd/hrad) = c / (100 hrd E). Correctly encodes make_logpost_hrd's substitution rd := hrd/h_rad at fixed h_rad = 0.6851 (radiation evaluated at that h, so E is indeed fixed there). Hypothesis hrad != 0 is necessary and satisfied. Faithful; covers D_H only, not D_M/D_V, though those scale the same way (D_M ~ c/(100 h) * integral, same 1/(h rd) factor)."}
+ ]
+}

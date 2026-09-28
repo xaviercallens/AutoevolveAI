@@ -1,0 +1,146 @@
+{
+  "problem": "eboss_vs_desi",
+  "title": "Cross-survey consistency: SDSS/eBOSS DR16 BAO vs DESI DR2 BAO under flat LCDM",
+  "stage": "preregistration (no fit output of this problem has been produced or inspected)",
+  "timestamp_utc": "2026-09-27T15:50:07Z",
+  "timestamp_last_amended_utc": "2026-09-27T15:58:00Z",
+  "git_head_at_prereg": "ea9633ac10d9c51f5ce8a6ae7b01aa81892ef3ff",
+  "literature_review": "docs/literature/EBOSS_VS_DESI_LITERATURE_REVIEW_2026.md",
+  "inputs_script": "scripts/eboss_vs_desi/prereg_inputs.py",
+  "inputs_json": "results/eboss_vs_desi/prereg_inputs.json",
+
+  "model": {
+    "name": "flat LCDM, BAO-only",
+    "E_of_z": "sqrt(Om*(1+z)^3 + 1 - Om)  (radiation neglected, <0.1% at z<=2.33; massive neutrinos absorbed into Om)",
+    "observables": "DM/rd = (c/(100 h rd)) * int_0^z dz'/E ; DH/rd = c/(100 h rd E(z)) ; DV/rd = (z DM^2 DH)^(1/3)/rd ; c = 299792.458 km/s",
+    "parameters": {"Om": "flat prior [0.05, 0.95]", "hrd_Mpc": "flat prior [60, 150]"},
+    "sampler": "emcee (32 walkers, >= 5000 steps, burn-in 1000; convergence: integrated autocorrelation time * 50 < chain length)",
+    "reported_summary": "posterior mean +- std (DESI convention, 2503.14738 Sec. V); MAP also reported",
+    "two_independent_prediction_codes": "astropy FlatLambdaCDM (Tcmb0=0) and a hand-coded scipy.integrate.quad implementation; required relative agreement < 1e-4 on every data point"
+  },
+
+  "datasets": {
+    "SDSS_eBOSS_DR16_BAO": {
+      "never_combined_with": "DESI_DR2",
+      "components": [
+        {"sample": "MGS", "z": 0.15, "file": "sdss_MGS_prob.txt", "form": "chi2 table on alpha in [0.8005,1.1985] (399 pts, linspace); alpha = (DV/rd)/4.29720761315; logL = -chi2/2 via cubic spline; outside bounds -> -inf"},
+        {"sample": "BOSS DR12 galaxies", "z": [0.38, 0.51], "files": ["sdss_DR12_LRG_BAO_DMDH.dat", "sdss_DR12_LRG_BAO_DMDH_covtot.txt"], "form": "Gaussian, 4x4 cov as distributed"},
+        {"sample": "eBOSS LRG", "z": 0.698, "files": ["sdss_DR16_LRG_BAO_DMDH.dat", "sdss_DR16_LRG_BAO_DMDH_covtot.txt"], "form": "Gaussian, 2x2 cov"},
+        {"sample": "eBOSS ELG", "z": 0.845, "file": "sdss_DR16_ELG_BAO_DVtable.txt", "form": "1D (DV/rd, likelihood) table on [14.878, 22.275]; logL = ln(L) via cubic spline; outside -> -inf"},
+        {"sample": "eBOSS QSO", "z": 1.48, "files": ["sdss_DR16_QSO_BAO_DMDH.txt", "sdss_DR16_QSO_BAO_DMDH_covtot.txt"], "form": "Gaussian, 2x2 cov"},
+        {"sample": "Lya auto", "z": 2.334, "file": "sdss_DR16_LYAUTO_BAO_DMDHgrid.txt", "form": "2D (DM/rd, DH/rd, likelihood ratio) grid; ln L via RectBivariateSpline kx=ky=3; explicit bounds check -> -inf outside"},
+        {"sample": "Lya x QSO", "z": 2.334, "file": "sdss_DR16_LYxQSO_BAO_DMDHgrid.txt", "form": "same as Lya auto; treated as independent of auto (2007.08991 p.14)"}
+      ],
+      "inter_sample_covariance": "none (as in 2007.08991 Sec. III.A)",
+      "gaussian_summary_variant": {
+        "purpose": "documented sensitivity variant + basis of the positive control; NOT the baseline",
+        "MGS": "DV/rd(0.15) = 4.47 +- 0.17 (2007.08991 Table III)",
+        "ELG": "DV/rd(0.845) = 18.33 +- 0.595 (Table III: +0.57/-0.62, symmetrised)",
+        "Lya": "joint auto+cross, 2007.08995 eq. (43): DH/rd = 8.99 +- 0.195, DM/rd = 37.5 +- 1.15, rho = -0.45, z = 2.334",
+        "Gaussian_pieces": "DR12, DR16 LRG, QSO files as distributed"
+      }
+    },
+    "DESI_DR2": {
+      "files": ["desi_bao_dr2/desi_gaussian_bao_ALL_GCcomb_mean.txt", "desi_bao_dr2/desi_gaussian_bao_ALL_GCcomb_cov.txt"],
+      "form": "Gaussian, 13 points, 13x13 block-diagonal cov"
+    },
+    "excluded_files": {
+      "desi_2024_eboss_gaussian_bao_Lya_GCcomb_{mean,cov}.txt": "DESI DR1 + eBOSS combined Lya (values = 2404.03002 eqs. 3.3-3.4); contains DESI data -> would combine surveys",
+      "sdss_DR12Consensus_bao.dat + BAO_consensus_covtot_dM_Hz.txt": "z=0.61 bin double-counts eBOSS LRG volume",
+      "*BAOplus*, *FS*, *final*": "contain RSD/full-shape information, not BAO-only",
+      "desi_2024_* (DR1)": "superseded by and a subset of DR2"
+    },
+    "data_dir": "/mnt/disks/disk-socrateai-local-1/dualscale-data-r3/desi_sdss_bao",
+    "sha256": {
+      "sdss_MGS_prob.txt": "c252e18fefc69b76e5918852944739b440c8fbbedffd4477cb72f532627de4db",
+      "sdss_DR12_LRG_BAO_DMDH.dat": "ccdbe5ad44016ea09e10e30f0178eb75b756417730b7b53c611ac896623c5f81",
+      "sdss_DR12_LRG_BAO_DMDH_covtot.txt": "fd2a67856f0ffa7267cff5245b579dcdb4b5cd461849377a2f8e9582a7679544",
+      "sdss_DR16_LRG_BAO_DMDH.dat": "b3317e7590799fad71a9a707023d0743c14d87399d6bb4129965d6a5732d91be",
+      "sdss_DR16_LRG_BAO_DMDH_covtot.txt": "1a45e106f8e2bbf8742a6c3d4a9c11bdc288801fc6824e0db8cfbab4290f6160",
+      "sdss_DR16_ELG_BAO_DVtable.txt": "ebbd6b7a2946cf1903bac9e699702e6aa57a631799bb70421c8e7a55cb3d2c1f",
+      "sdss_DR16_QSO_BAO_DMDH.txt": "9d3a43515d009d5c836728d4af1f1d02887fcdd874aba098c597f1f47693bbe6",
+      "sdss_DR16_QSO_BAO_DMDH_covtot.txt": "c0d8bab47132045139c5bbd0ebfd8464434e1354371ceeeca70bb90ecbcee383",
+      "sdss_DR16_LYAUTO_BAO_DMDHgrid.txt": "40cee3a1c9dc58616ba7151ab9d020b0014238249409cd1ace71af14674e37e0",
+      "sdss_DR16_LYxQSO_BAO_DMDHgrid.txt": "653e2cea43a742d12090e9b7eacaf74dc7af7d7f6153a1a4c696d6303a7fb952",
+      "desi_bao_dr2/desi_gaussian_bao_ALL_GCcomb_mean.txt": "9ac154ab583ce759c0f7eef3c978c7c70a6ead2d18774caceadf1a350a640585",
+      "desi_bao_dr2/desi_gaussian_bao_ALL_GCcomb_cov.txt": "252a143274c8a07c78694c119617d36594f6d7965d00319ca611c6ffb886e509",
+      "EXCLUDED desi_2024_eboss_gaussian_bao_Lya_GCcomb_mean.txt": "e6b09123521f91c209361c055c5ba6b7f2d50fd41ae5e000e1c5d1c18ccd98f7",
+      "EXCLUDED desi_2024_eboss_gaussian_bao_Lya_GCcomb_cov.txt": "afb75cc336706698d63df6a074e002cb9a8ecd190b34ed4cb140df7c0d584070"
+    },
+    "noted_file_vs_table_differences": "DR12 cov file sigma(DH,0.38)=0.73 vs Table III 0.76; sigma(DM,0.51)=0.204 vs 0.21. The file is used."
+  },
+
+  "targets": [
+    {"name": "SDSS_Om", "value": 0.299, "sigma": 0.016, "source": "arXiv:2007.08991 Table IV (BAO, flat LCDM): Omega_DE = 0.701 +0.017/-0.015 -> Om = 1-Omega_DE = 0.299 +0.015/-0.017; symmetric 0.016 also quoted by arXiv:2404.03002 Sec. 4.1", "status": "verified primary"},
+    {"name": "SDSS_hrd_Mpc", "value": 100.4, "sigma": 1.3, "source": "arXiv:2404.03002 Sec. 4.1 citing [139]=arXiv:2007.08991", "status": "secondary-sourced; not found in fetched pages of 2007.08991; pass/fail on it is reported but flagged"},
+    {"name": "DESI_DR2_Om", "value": 0.2975, "sigma": 0.0086, "source": "arXiv:2503.14738 eq. (17)", "status": "verified primary"},
+    {"name": "DESI_DR2_hrd_Mpc", "value": 101.54, "sigma": 0.73, "source": "arXiv:2503.14738 eq. (17); corr r = -0.92", "status": "verified primary"}
+  ],
+  "qualitative_targets": [
+    {"name": "DESI_DR2_vs_SDSS_consistency", "claim": "no significant discrepancy", "source": "arXiv:2503.14738 abstract ('consistent with DESI DR1 and SDSS'); Sec. III.C.2 (max 1.49 sigma alpha_iso, 1.69 sigma alpha_AP, KS p=0.39 / 0.15; LRG2 DM 1.5-2.6 sigma); Sec. VI after eq. (17)", "status": "verified primary, qualitative; no published (Om, hrd) tension number exists"}
+  ],
+
+  "tolerance_sigma": 0.5,
+  "tolerance_justification": "Same data vectors/likelihood files as the published analyses, so only sampler/prior/summary differences remain: eBOSS sampled (Om, H0, Ob) in CosmoMC 'background' parameterization, DESI used Cobaya+CAMB with radiation/neutrinos; we neglect radiation (<0.1% in E(z)). The prior DR1 exercise (LL.md Sec. 11d) reproduced DESI DR1 at 0.07/0.11 sigma with the same approach. 0.5 sigma is loose enough for prior/parameterization effects on the non-Gaussian SDSS posterior and tight enough to catch a wrong file, redshift, or rs rescaling (each of which shifts parameters by >~1 sigma).",
+
+  "success_criteria": {
+    "reproduction": "|fit - published| / sigma_published < 0.5 for SDSS_Om, DESI_DR2_Om, DESI_DR2_hrd (primary); SDSS_hrd checked at 0.5 sigma but flagged secondary",
+    "tension": "N_sigma (eq. 18 statistic, 2 dof, independent-survey assumption) < 2.0, matching DESI's 'no significant discrepancy'. Also report 1D differences, the SDSS (Om,hrd) correlation actually found, and the posterior parameter-shift cross-check.",
+    "literature_expectation_not_a_criterion": "From published means/errors only: 1D 0.083 sigma (Om), 0.765 sigma (hrd); 2D 0.32-1.56 sigma over unpublished SDSS corr in [-0.95,0.95] (0.43 at -0.5, 0.74 at -0.8, 1.10 at -0.9).",
+    "interpretation_rule": "N_sigma is a LOWER bound w.r.t. survey overlap (positive cross-survey correlation, e.g. C~0.57 for LRG2 vs eBOSS LRG per 2503.14738, would increase it). N_sigma >= 2 is reported as a failed replication of DESI's claim, not hidden."
+  },
+
+  "positive_control": {
+    "name": "injected-parameter recovery on synthetic Gaussian data",
+    "procedure": "For each dataset (SDSS Gaussian-summary variant, DESI DR2), set the data vector to the model prediction at injected (Om, hrd) = (0.2975, 101.54) and add noise drawn from the dataset covariance (numpy default_rng seed 20260927). N = 200 realizations, fit by MAP + Fisher/Laplace errors (emcee on a subset of 20).",
+    "pass_thresholds": {
+      "coverage_1sigma": "fraction of realizations with injected value inside +-1 sigma in [0.60, 0.76] for each parameter",
+      "mean_bias": "|mean(fit - injected)| / median(sigma) < 0.2",
+      "tension_calibration": "SDSS-like and DESI-like synthetic sets drawn from the same injected parameters: median N_sigma < 1.0 and KS test of PTE vs Uniform(0,1) p > 0.01",
+      "noiseless": "zero-noise data recover injected parameters to < 1e-3 relative"
+    },
+    "naming": "synthetic_/injected_ prefixes only (no mock_/dummy_ outside tests/)"
+  },
+
+  "instrument_check_grid_likelihoods": {
+    "purpose": "LL.md Sec. 1 applied to the new grid-likelihood code (no cosmology involved)",
+    "procedure": "for each interpolated table, locate the peak and the 68% interval (1D: Delta(-2lnL)=1; 2D: marginal widths and correlation from the normalised grid) and compare with the published summary",
+    "references": {
+      "MGS": "DV/rd = 4.465666824 +- 0.1681350461 (Cobaya sdss_dr7_mgs.yaml 'data' line)",
+      "ELG": "DV/rd = 18.33 +0.57/-0.62 (2007.08991 Table III)",
+      "Lya_auto": "DM/rd = 37.6 +-1.9, DH/rd = 8.93 +0.28/-0.27, rho = -0.49 (2007.08995 eq. 41)",
+      "Lya_cross": "DM/rd = 37.3 +1.7/-1.6, DH/rd = 9.08 +-0.34, rho = -0.43 (2007.08995 eq. 42)"
+    },
+    "pass_thresholds": "|location - reference| < 0.1 sigma_ref and |width/sigma_ref - 1| < 0.15 for every table (Lya widths: published values include a fastMC correction, so width tolerance for Lya is 0.25; correlation |d rho| < 0.1)",
+    "paired_negative": "dropping the MGS rs_rescale 4.29720761315 (i.e. treating the table as DV/rd directly) must FAIL the MGS location check"
+  },
+
+  "negative_controls": {
+    "wrong_model_no_Lambda": "Einstein-de Sitter (Om=1, fixed) best fit over hrd must raise chi2 (or -2 lnL) by > 25 relative to flat-LCDM best fit on EACH real dataset",
+    "scrambled_covariance_must_fail": "DESI DR2: swap DM/DH values within each anisotropic bin (e.g. Lya 38.99 <-> 8.63) keeping the covariance: chi2_min/dof must exceed 3. Also: DESI covariance scaled by 1/25 (errors /5): chi2_min/dof must exceed 3.",
+    "scrambled_covariance_report_only": "random row/column permutation of the Gaussian SDSS pieces' covariances (numpy default_rng seed 20260927): outcome reported, not a pass/fail gate (a permutation can lower chi2 by construction)",
+    "injected_scale_shift": "multiply every DESI DR2 distance ratio (DV, DM, DH) and its sigma by s = 0.93 (equivalent to hrd -> hrd/0.93 at fixed Om) and refit: DESI-vs-SDSS N_sigma must exceed 3. Literature-only expectation (prereg_inputs.json): min over SDSS corr in [-0.95,0.95] = 5.44 sigma, so failure to exceed 3 indicates a pipeline error.",
+    "combination_guard": "code must refuse (raise) if any DESI file is loaded into the SDSS likelihood (tested by passing the excluded DESI+eBOSS Lya file)"
+  },
+
+  "amendments": [
+    {"timestamp_utc": "2026-09-27T15:58:00Z", "note": "Before any fit of this problem was run: (a) injected-shift negative control changed from 'DM x 1.03' (runs along the DESI degeneracy, not guaranteed > 3 sigma) to 'all ratios x 0.93' with closed-form expectation computed in prereg_inputs.py; (b) SDSS covariance permutation demoted to report-only, deterministic DESI DM/DH swap and cov/25 kept as must-fail; (c) grid-likelihood instrument check added with paired negative; (d) qualitative DESI consistency claim moved out of numeric 'targets' into 'qualitative_targets'."}
+  ],
+
+  "cross_checks": [
+    "two independent prediction codes agree < 1e-4 relative",
+    "grid-search chi2 minimum within 0.1 sigma of MAP for each dataset",
+    "baseline (grid likelihoods) vs Gaussian-summary variant: report the shift in SDSS (Om, hrd) in units of sigma"
+  ],
+
+  "planned_outputs": [
+    "scripts/eboss_vs_desi/fit_eboss_vs_desi.py",
+    "results/eboss_vs_desi/fit_results.json",
+    "results/eboss_vs_desi/controls.json",
+    "papers/eboss_vs_desi/ (LaTeX, template papers/bao_flcdm/bao_flcdm_consistency.tex)",
+    "formal/ANSE/BAO_TensionStatistic.lean (1D Gaussian tension symmetric & nonnegative; diagonal chi2 >= 0 and = 0 iff equal; pinned imports; in-file #print axioms)"
+  ],
+
+  "p_success_estimate": 0.8,
+  "p_success_rationale": "DESI DR2 reproduction is near-certain (Gaussian, same pipeline as the successful DR1 exercise). Main risk: SDSS grid-likelihood handling (MGS alpha rescaling, ELG/Lya interpolation/bounds) and prior/parameterization differences vs CosmoMC; SDSS hrd target is secondary-sourced. The tension criterion (<2 sigma) is very likely given the literature band 0.32-1.56 sigma."
+}

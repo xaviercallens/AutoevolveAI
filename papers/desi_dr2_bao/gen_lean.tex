@@ -1,0 +1,25 @@
+\begin{lstlisting}
+noncomputable def E2 (Om w z : ℝ) : ℝ :=
+  Om * (1 + z) ^ 3 + (1 - Om) * (1 + z) ^ (3 * (1 + w))
+
+noncomputable def E (Om w z : ℝ) : ℝ := Real.sqrt (E2 Om w z)
+
+noncomputable def Dc (Om w z : ℝ) : ℝ := ∫ t in (0:ℝ)..z, (E Om w t)⁻¹
+
+theorem E2_pos {Om w z : ℝ} (hOm0 : 0 < Om) (hOm1 : Om < 1) (hz : 0 ≤ z) :
+    0 < E2 Om w z := ...
+
+theorem E_pos {Om w z : ℝ} (hOm0 : 0 < Om) (hOm1 : Om < 1) (hz : 0 ≤ z) :
+    0 < E Om w z := ...
+
+theorem E_w_neg_one (Om z : ℝ) : E Om (-1) z = ANSE.BAOFlatLCDM.E Om z := ...
+
+theorem E_strictMonoOn_of_neg_one_le {Om w : ℝ} (hOm0 : 0 < Om) (hOm1 : Om < 1)
+    (hw : -1 ≤ w) : StrictMonoOn (E Om w) (Set.Ici (0 : ℝ)) := ...
+
+theorem invE_continuousOn {Om w : ℝ} (hOm0 : 0 < Om) (hOm1 : Om < 1) :
+    ContinuousOn (fun t => (E Om w t)⁻¹) (Set.Ici (0 : ℝ)) := ...
+
+theorem Dc_strictMonoOn {Om w : ℝ} (hOm0 : 0 < Om) (hOm1 : Om < 1) :
+    StrictMonoOn (Dc Om w) (Set.Ici (0 : ℝ)) := ...
+\end{lstlisting}

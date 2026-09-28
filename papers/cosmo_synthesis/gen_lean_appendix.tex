@@ -1,0 +1,136 @@
+\subsection*{\texttt{formal/ANSE/BAO\_FlatLCDM.lean}}
+Namespace \texttt{ANSE.BAOFlatLCDM}; source sha256\\ {\scriptsize\texttt{c85c1e8abe28b2652efb2a35f91399034087450b8c7af4dc308530d72badd702}}.\\ Proof bodies replaced by \texttt{:= ...}; statements and definitions verbatim.
+\begin{lstlisting}[mathescape]
+noncomputable def E (Om z : $\mathbb{R}$) : $\mathbb{R}$ := Real.sqrt (Om * (1 + z) ^ 3 + (1 - Om))
+
+theorem E_pos {Om z : $\mathbb{R}$} (hOm0 : 0 < Om) (hOm1 : Om < 1) (hz : 0 $\le$ z) :
+    0 < E Om z := ...
+
+theorem E_strictMonoOn {Om : $\mathbb{R}$} (hOm0 : 0 < Om) (hOm1 : Om < 1) :
+    StrictMonoOn (E Om) (Set.Ici (0 : $\mathbb{R}$)) := ...
+
+noncomputable def D_L (z Dc : $\mathbb{R}$) : $\mathbb{R}$ := (1 + z) * Dc
+noncomputable def D_A (z Dc : $\mathbb{R}$) : $\mathbb{R}$ := Dc / (1 + z)
+
+theorem distance_duality {z Dc : $\mathbb{R}$} (hz : z $\neq$ -1) :
+    D_L z Dc = (1 + z) ^ 2 * D_A z Dc := ...
+\end{lstlisting}
+
+\subsection*{\texttt{formal/ANSE/DESI\_DR2\_wCDM.lean}}
+Namespace \texttt{ANSE.DESIDR2wCDM}; source sha256\\ {\scriptsize\texttt{3b451bd5a93d682cd05c99fad4681808cb5c18877aa6389dda545dbace5e5adc}}.\\ Proof bodies replaced by \texttt{:= ...}; statements and definitions verbatim.
+\begin{lstlisting}[mathescape]
+noncomputable def E2 (Om w z : $\mathbb{R}$) : $\mathbb{R}$ :=
+  Om * (1 + z) ^ 3 + (1 - Om) * (1 + z) ^ (3 * (1 + w))
+
+noncomputable def E (Om w z : $\mathbb{R}$) : $\mathbb{R}$ := Real.sqrt (E2 Om w z)
+
+noncomputable def Dc (Om w z : $\mathbb{R}$) : $\mathbb{R}$ := $\int$ t in (0:$\mathbb{R}$)..z, (E Om w t)$^{-1}$
+
+theorem E2_pos {Om w z : $\mathbb{R}$} (hOm0 : 0 < Om) (hOm1 : Om < 1) (hz : 0 $\le$ z) :
+    0 < E2 Om w z := ...
+
+theorem E_pos {Om w z : $\mathbb{R}$} (hOm0 : 0 < Om) (hOm1 : Om < 1) (hz : 0 $\le$ z) :
+    0 < E Om w z := ...
+
+theorem E_w_neg_one (Om z : $\mathbb{R}$) : E Om (-1) z = ANSE.BAOFlatLCDM.E Om z := ...
+
+theorem E_strictMonoOn_of_neg_one_le {Om w : $\mathbb{R}$} (hOm0 : 0 < Om) (hOm1 : Om < 1)
+    (hw : -1 $\le$ w) : StrictMonoOn (E Om w) (Set.Ici (0 : $\mathbb{R}$)) := ...
+
+theorem invE_continuousOn {Om w : $\mathbb{R}$} (hOm0 : 0 < Om) (hOm1 : Om < 1) :
+    ContinuousOn (fun t => (E Om w t)$^{-1}$) (Set.Ici (0 : $\mathbb{R}$)) := ...
+
+theorem Dc_strictMonoOn {Om w : $\mathbb{R}$} (hOm0 : 0 < Om) (hOm1 : Om < 1) :
+    StrictMonoOn (Dc Om w) (Set.Ici (0 : $\mathbb{R}$)) := ...
+\end{lstlisting}
+
+\subsection*{\texttt{formal/ANSE/BAO\_BBN\_H0.lean}}
+Namespace \texttt{ANSE.BAOBBNH0}; source sha256\\ {\scriptsize\texttt{2b6530838efa0df9bfb475a5d8b25ee29aa121989cc83d04e07f595f5f616e38}}.\\ Proof bodies replaced by \texttt{:= ...}; statements and definitions verbatim.
+\begin{lstlisting}[mathescape]
+noncomputable def omegaNu : $\mathbb{R}$ := 0.0107 * 0.06
+
+noncomputable def rdAubourg (wcb wb : $\mathbb{R}$) : $\mathbb{R}$ :=
+  55.154 * Real.exp (-72.3 * (omegaNu + 0.0006) ^ 2) /
+    (wcb ^ (0.25351 : $\mathbb{R}$) * wb ^ (0.12807 : $\mathbb{R}$))
+
+noncomputable def omegaCb (h Om : $\mathbb{R}$) : $\mathbb{R}$ := Om * h ^ 2 - omegaNu
+
+theorem rd_numerator_pos : 0 < 55.154 * Real.exp (-72.3 * (omegaNu + 0.0006) ^ 2) := ...
+
+theorem rdAubourg_pos {wcb wb : $\mathbb{R}$} (hcb : 0 < wcb) (hb : 0 < wb) :
+    0 < rdAubourg wcb wb := ...
+
+theorem rdAubourg_strictAntiOn_cb {wb : $\mathbb{R}$} (hb : 0 < wb) :
+    StrictAntiOn (fun wcb => rdAubourg wcb wb) (Set.Ioi (0 : $\mathbb{R}$)) := ...
+
+theorem rdAubourg_strictAntiOn_b {wcb : $\mathbb{R}$} (hcb : 0 < wcb) :
+    StrictAntiOn (rdAubourg wcb) (Set.Ioi (0 : $\mathbb{R}$)) := ...
+
+theorem rd_strictAntiOn_Om {h wb : $\mathbb{R}$} (hh : 0 < h) (hb : 0 < wb) :
+    StrictAntiOn (fun Om => rdAubourg (omegaCb h Om) wb) {Om : $\mathbb{R}$ | 0 < omegaCb h Om} := ...
+
+noncomputable def H0 (h : $\mathbb{R}$) : $\mathbb{R}$ := 100 * h
+
+noncomputable def DH_over_rd (c h E rd : $\mathbb{R}$) : $\mathbb{R}$ := c / H0 h / E / rd
+
+theorem DH_over_rd_eq_hrd (c h E rd : $\mathbb{R}$) :
+    DH_over_rd c h E rd = c / (100 * (h * rd) * E) := ...
+
+theorem DH_over_rd_degenerate {h rd h' rd' : $\mathbb{R}$} (c E : $\mathbb{R}$) (hprod : h * rd = h' * rd') :
+    DH_over_rd c h E rd = DH_over_rd c h' E rd' := ...
+
+theorem gate_reparam_exact {hrad : $\mathbb{R}$} (hne : hrad $\neq$ 0) (c E hrd : $\mathbb{R}$) :
+    DH_over_rd c hrad E (hrd / hrad) = c / (100 * hrd * E) := ...
+
+theorem hrd_mono_generic {a w Om h1 h2 : $\mathbb{R}$} (ha : 0 < a) (ha3 : a $\le$ 1 / 3) (hw : 0 < w)
+    (hOm : 0 < Om) (hh1 : 0 < h1) (h12 : h1 < h2) (hsupp : w $\le$ (1 - 2 * a) * (Om * h1 ^ 2)) :
+    h1 * (Om * h2 ^ 2 - w) ^ a < h2 * (Om * h1 ^ 2 - w) ^ a := ...
+
+theorem hrd_strictMonoOn_h {Om wb : $\mathbb{R}$} (hOm : 0 < Om) (hb : 0 < wb) :
+    StrictMonoOn (fun h => h * rdAubourg (omegaCb h Om) wb)
+      {h : $\mathbb{R}$ | 0 < h $\wedge$ omegaNu $\le$ (1 - 2 * 0.25351) * (Om * h ^ 2)} := ...
+\end{lstlisting}
+
+\subsection*{\texttt{formal/ANSE/BAO\_Consistency.lean}}
+Namespace \texttt{ANSE.BAOConsistency}; source sha256\\ {\scriptsize\texttt{560e3b5d8266a2e2286f17bc9fc4846853cb927c0259b231d403cef8dd343d8b}}.\\ Proof bodies replaced by \texttt{:= ...}; statements and definitions verbatim.
+\begin{lstlisting}[mathescape]
+noncomputable def tension1D ($\mu$1 $\sigma$1 $\mu$2 $\sigma$2 : $\mathbb{R}$) : $\mathbb{R}$ := ($\mu$1 - $\mu$2) ^ 2 / ($\sigma$1 ^ 2 + $\sigma$2 ^ 2)
+
+theorem tension1D_symm ($\mu$1 $\sigma$1 $\mu$2 $\sigma$2 : $\mathbb{R}$) :
+    tension1D $\mu$1 $\sigma$1 $\mu$2 $\sigma$2 = tension1D $\mu$2 $\sigma$2 $\mu$1 $\sigma$1 := ...
+
+theorem tension1D_nonneg ($\mu$1 $\sigma$1 $\mu$2 $\sigma$2 : $\mathbb{R}$) : 0 $\le$ tension1D $\mu$1 $\sigma$1 $\mu$2 $\sigma$2 := ...
+
+theorem tension1D_eq_zero_iff {$\mu$1 $\sigma$1 $\mu$2 $\sigma$2 : $\mathbb{R}$} (h$\sigma$ : 0 < $\sigma$1) :
+    tension1D $\mu$1 $\sigma$1 $\mu$2 $\sigma$2 = 0 $\leftrightarrow$ $\mu$1 = $\mu$2 := ...
+
+noncomputable def chi2 (a b c d1 d2 : $\mathbb{R}$) : $\mathbb{R}$ :=
+  (c * d1 ^ 2 - 2 * b * d1 * d2 + a * d2 ^ 2) / (a * c - b ^ 2)
+
+theorem chi2_eq_dotProduct_inv_mulVec (a b c d1 d2 : $\mathbb{R}$) (hdet : a * c - b ^ 2 $\neq$ 0) :
+    ![d1, d2] $\cdot_v$ ((!![a, b; b, c])$^{-1}$ $*_v$ ![d1, d2]) = chi2 a b c d1 d2 := ...
+
+theorem chi2_nonneg {a b c : $\mathbb{R}$} (ha : 0 < a) (hdet : 0 < a * c - b ^ 2) (d1 d2 : $\mathbb{R}$) :
+    0 $\le$ chi2 a b c d1 d2 := ...
+
+theorem chi2_eq_zero_iff {a b c : $\mathbb{R}$} (ha : 0 < a) (hdet : 0 < a * c - b ^ 2) (d1 d2 : $\mathbb{R}$) :
+    chi2 a b c d1 d2 = 0 $\leftrightarrow$ d1 = 0 $\wedge$ d2 = 0 := ...
+
+noncomputable def surveyTension (mS1 mS2 aS bS cS mD1 mD2 aD bD cD : $\mathbb{R}$) : $\mathbb{R}$ :=
+  chi2 (aS + aD) (bS + bD) (cS + cD) (mS1 - mD1) (mS2 - mD2)
+
+theorem surveyTension_symm (mS1 mS2 aS bS cS mD1 mD2 aD bD cD : $\mathbb{R}$) :
+    surveyTension mS1 mS2 aS bS cS mD1 mD2 aD bD cD
+      = surveyTension mD1 mD2 aD bD cD mS1 mS2 aS bS cS := ...
+
+theorem posdef_add {aS bS cS aD bD cD : $\mathbb{R}$}
+    (haS : 0 < aS) (hdS : 0 < aS * cS - bS ^ 2)
+    (haD : 0 < aD) (hdD : 0 < aD * cD - bD ^ 2) :
+    0 < aS + aD $\wedge$ 0 < (aS + aD) * (cS + cD) - (bS + bD) ^ 2 := ...
+
+theorem surveyTension_nonneg_and_zero_iff {mS1 mS2 aS bS cS mD1 mD2 aD bD cD : $\mathbb{R}$}
+    (haS : 0 < aS) (hdS : 0 < aS * cS - bS ^ 2)
+    (haD : 0 < aD) (hdD : 0 < aD * cD - bD ^ 2) :
+    0 $\le$ surveyTension mS1 mS2 aS bS cS mD1 mD2 aD bD cD $\wedge$
+      (surveyTension mS1 mS2 aS bS cS mD1 mD2 aD bD cD = 0 $\leftrightarrow$ mS1 = mD1 $\wedge$ mS2 = mD2) := ...
+\end{lstlisting}

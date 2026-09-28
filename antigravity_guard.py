@@ -87,6 +87,17 @@ def _get_local_modules(file_path: Path) -> set[str]:
         # Real, verified modules outside this repo's venv:
         "gpu_lease",  # shared T4 lease, /mnt/disks/disk-socrateai-local-1/gpu_lease/
         "astropy",  # BAO fit runs under /mnt/disks/disk-socrateai-local-1/venv-pta
+        # Boltzmann codes for the cosmology runs, installed 2026-09-27 in
+        # /mnt/disks/disk-socrateai-local-1/venv-cosmo (Planck-2018 r_drag check:
+        # CAMB 147.1027 Mpc, CLASS 147.0971 Mpc):
+        "camb",
+        "classy",
+        "cobaya",
+        "getdist",
+        "emcee",
+        "corner",
+        # Repo-local script module reused via sys.path (scripts/bao_flcdm/fit_desi_bao.py):
+        "fit_desi_bao",
     }
     local_modules.update(known_optional)
     return local_modules

@@ -1,0 +1,121 @@
+{
+ "problem": "bao_bbn_h0",
+ "stage": "Lean 4 formalization (referee fix round)",
+ "file": "formal/ANSE/BAO_BBN_H0.lean",
+ "namespace": "ANSE.BAOBBNH0",
+ "file_sha256_after_final_compile": "2b6530838efa0df9bfb475a5d8b25ee29aa121989cc83d04e07f595f5f616e38",
+ "previous_file_sha256": "c0663994721a6113ad4569c29298c516d659a97ffc93db91a2123fe113483689",
+ "regenerated_utc": "2026-09-27T19:05:17Z",
+ "fix_round_changes": [
+  "docstrings/header: 'depends on (h, r_d) only through h r_d' now says AT FIXED E (referee issue 1)",
+  "new theorems hrd_mono_generic and hrd_strictMonoOn_h: the preregistered identifiability statement 'h r_d(h) strictly increasing in h', with the hypothesis omega_nu <= (1-2a) Omega_m h^2 (referee issue 2)",
+  "import added: Mathlib.Analysis.Convex.SpecificFunctions.Basic (for Bernoulli's inequality rpow_one_add_le_one_add_mul_self; its .olean is present in the partial build)"
+ ],
+ "environment": "main checkout build: cd /home/callensxavier_gmail_com/AutoevolveAI/formal && timeout 1500 lake env lean <worktree file> (pinned imports; no 'import Mathlib', no lake build, LeanMaster fallback NOT used)",
+ "imports": [
+  "Mathlib.Analysis.Real.Sqrt",
+  "Mathlib.Analysis.SpecialFunctions.Pow.Real",
+  "Mathlib.Analysis.Convex.SpecificFunctions.Basic",
+  "Mathlib.Tactic.Positivity",
+  "Mathlib.Tactic.Linarith",
+  "Mathlib.Tactic.Ring"
+ ],
+ "theorems": [
+  "rd_numerator_pos",
+  "rdAubourg_pos",
+  "rdAubourg_strictAntiOn_cb",
+  "rdAubourg_strictAntiOn_b",
+  "rd_strictAntiOn_Om",
+  "DH_over_rd_eq_hrd",
+  "DH_over_rd_degenerate",
+  "gate_reparam_exact",
+  "hrd_mono_generic",
+  "hrd_strictMonoOn_h"
+ ],
+ "compile_runs": [
+  {
+   "log": "results/bao_bbn_h0/lean_compile_4_fixround_attempt1.txt",
+   "rc": 1,
+   "n_errors": 5,
+   "sorryAx_in": [
+    "hrd_mono_generic",
+    "hrd_strictMonoOn_h"
+   ],
+   "verdict": "fail"
+  },
+  {
+   "log": "results/bao_bbn_h0/lean_compile_5_fixround.txt",
+   "rc": 0,
+   "verdict": "pass"
+  }
+ ],
+ "axioms_per_theorem": {
+  "rd_numerator_pos": [
+   "propext",
+   "Classical.choice",
+   "Quot.sound"
+  ],
+  "rdAubourg_pos": [
+   "propext",
+   "Classical.choice",
+   "Quot.sound"
+  ],
+  "rdAubourg_strictAntiOn_cb": [
+   "propext",
+   "Classical.choice",
+   "Quot.sound"
+  ],
+  "rdAubourg_strictAntiOn_b": [
+   "propext",
+   "Classical.choice",
+   "Quot.sound"
+  ],
+  "rd_strictAntiOn_Om": [
+   "propext",
+   "Classical.choice",
+   "Quot.sound"
+  ],
+  "DH_over_rd_eq_hrd": [
+   "propext",
+   "Classical.choice",
+   "Quot.sound"
+  ],
+  "DH_over_rd_degenerate": [
+   "propext",
+   "Classical.choice",
+   "Quot.sound"
+  ],
+  "gate_reparam_exact": [
+   "propext",
+   "Classical.choice",
+   "Quot.sound"
+  ],
+  "hrd_mono_generic": [
+   "propext",
+   "Classical.choice",
+   "Quot.sound"
+  ],
+  "hrd_strictMonoOn_h": [
+   "propext",
+   "Classical.choice",
+   "Quot.sound"
+  ]
+ },
+ "sorryAx_present": false,
+ "accepted": true,
+ "negative_control": {
+  "log": "results/bao_bbn_h0/lean_negative_control_sorry_fixround.txt",
+  "mutation": "copy in /tmp with the proof of hrd_strictMonoOn_h replaced by `sorry`",
+  "rc": 0,
+  "theorems_with_sorryAx": [
+   "hrd_strictMonoOn_h"
+  ],
+  "discriminating": true
+ },
+ "elenchus": {
+  "log": "results/bao_bbn_h0/elenchus_check.txt",
+  "output": "no findings",
+  "rc": 0
+ },
+ "scope_note": "Theorems concern the SECONDARY (Aubourg eq. 16) r_d and the shared D_H/r_d and gate algebra as coded in scripts/bao_bbn_h0/common.py; nothing about the PRIMARY CAMB r_d or any fitted number. The CAMB-table analogue of hrd_strictMonoOn_h is checked numerically only (results/bao_bbn_h0/fixround_diagnostics.json)."
+}

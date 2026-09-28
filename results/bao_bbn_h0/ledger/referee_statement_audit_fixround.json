@@ -1,0 +1,25 @@
+{
+ "provenance": "Referee report supplied by the workflow orchestrator in the task text of the bao_bbn_h0 fix-round stage (2026-09-27). Produced by a MODEL referee, not a person. Transcribed here so that ledger audit fields have on-disk evidence. The audit covers the 8 theorems that existed when the referee read the file (source sha256 c0663994721a6113ad4569c29298c516d659a97ffc93db91a2123fe113483689); theorems added in the fix round (hrd_mono_generic, hrd_strictMonoOn_h) were NOT reviewed by it.",
+ "verdict": "minor",
+ "reproduced": true,
+ "issues": [
+  {"id": 1, "severity": "minor", "location": "formal/ANSE/BAO_BBN_H0.lean (DH_over_rd_eq_hrd, DH_over_rd_degenerate glosses); ledger rows BBNH0-A-0006/0007; lean block statement_english", "description": "English glosses say the observable depends on (h, r_d) only through h r_d; exact only at fixed E (E depends on h via radiation in the BBN fit, ~1e-4). Recommend adding 'at fixed E' to those glosses."},
+  {"id": 2, "severity": "minor", "location": "preregistration.json lean_plan vs formal/ANSE/BAO_BBN_H0.lean; fit.json deviations", "description": "Preregistered Lean plan promised 'h*r_d(h) strictly increasing in h for 1-2a>0' (the identifiability statement); replaced by field identities; four of eight theorems carry essentially no physics content and the substantive planned theorem is absent."},
+  {"id": 3, "severity": "minor", "location": "preregistration_amendment_1.json; paper Tolerances paragraph", "description": "Strict tolerance 0.15 derived with the 0.139 fitting-formula systematic, kept unchanged for the CAMB primary; not re-justified; paper should say the strict limit is now generous for the primary (residual budget ~0.05)."},
+  {"id": 4, "severity": "minor", "location": "results/bao_bbn_h0/controls/N1_*, N2_*, P1_*, P2_*", "description": "Negative controls have almost no discriminating power; 'all controls behave' should not be read as evidence of pipeline correctness beyond self-consistency."},
+  {"id": 5, "severity": "minor", "location": "common.py RdCambTable docstring ('~1e-7'); rd_camb_validation.json max_frac_h_dependence_over_nodes = 2.1e-4; \\HDep unused", "description": "Documentation of the table's h dependence is internally inconsistent; \\HDep macro generated but unused."},
+  {"id": 6, "severity": "minor", "location": "paper Second check paragraph; fit.json T2_boundary_resolution", "description": "T2 offset left unexplained; a propagation of the G2 h r_d (101.93) vs DR1's quoted 101.8 (Sec. 8) / 101.9 (Sec. 6) would account for ~0.18 / ~0.04 km/s/Mpc; the paper should say so."},
+  {"id": 7, "severity": "minor", "location": "paper author line; preregistration_amendment_1.json disclosure", "description": "Model attribution and the amendment's 'not read' statement cannot be verified from artifacts; label them as unverifiable statements."},
+  {"id": 8, "severity": "minor", "location": "guard_antigravity_ledger_stage.txt, pytest_ledger_stage.txt", "description": "antigravity_guard.py fails repository-wide (74 flags, 0 in scripts/bao_bbn_h0/); pytest tests/ BLOCKED (venv lacks extras); CLAUDE.md completion criterion not met for the worktree."}
+ ],
+ "lean_statement_audit": [
+  {"theorem": "ANSE.BAOBBNH0.rd_numerator_pos", "faithful": true, "comment": "True and matches common.rd_aubourg16's numerator, but trivial (a positive constant)."},
+  {"theorem": "ANSE.BAOBBNH0.rdAubourg_pos", "faithful": true, "comment": "Definition matches common.rd_aubourg16 exponents and constants exactly. Non-vacuous."},
+  {"theorem": "ANSE.BAOBBNH0.rdAubourg_strictAntiOn_cb", "faithful": true, "comment": "Correct physics direction; quantifiers right."},
+  {"theorem": "ANSE.BAOBBNH0.rdAubourg_strictAntiOn_b", "faithful": true, "comment": "Faithful to eq. 16 as coded."},
+  {"theorem": "ANSE.BAOBBNH0.rd_strictAntiOn_Om", "faithful": true, "comment": "Domain matches the make_logpost mask; non-vacuous; about the secondary r_d only."},
+  {"theorem": "ANSE.BAOBBNH0.DH_over_rd_eq_hrd", "faithful": true, "comment": "Trivial field identity matching distances_manual_vec/obs_from_distances. Gloss 'depends on (h, r_d) only through h r_d' is faithful only at fixed E."},
+  {"theorem": "ANSE.BAOBBNH0.DH_over_rd_degenerate", "faithful": true, "comment": "Immediate corollary; same 'at fixed E' caveat applies to the gloss."},
+  {"theorem": "ANSE.BAOBBNH0.gate_reparam_exact", "faithful": true, "comment": "Exactly what make_logpost_hrd does; E is evaluated at fixed h_rad in the code, so exactness is correct for the gate."}
+ ]
+}

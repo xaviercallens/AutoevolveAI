@@ -124,7 +124,9 @@ consumed. Every dilution-ratio report this session was decorative.
 - **Accept when:** a training run's DATA step log line names the file it
   actually read, and that file is the one the dilution cap was computed on.
 
-### 12. Adopt Elenchus's ledger.py for this run's claims
+### 12. Adopt Elenchus's ledger.py for this run's claims -- DONE 2026-09-27
+Ledgers now exist for `results/{bao_flcdm,desi_dr2_bao,bao_bbn_h0,eboss_vs_desi}/ledger/`.
+
 Surveyed and used `elenchus_check.py`; `ledger.py` (the tier-capped claim
 ledger, X<C<L<B<A) was not exercised.
 - Do: register this run's claims -- the 3 Lean theorems (Tier A), the numeric
@@ -138,6 +140,34 @@ present in the same local data directory (`desi_2024_eboss_gaussian_bao_*`,
 `sdss_DR16_*`, `sdss_DR12*`). Near-zero marginal cost.
 - **Accept when:** a joint or DR2-only fit result exists with its own
   external-validation comparison (DR2's own quoted values, arXiv:2503.14738).
+- **DONE 2026-09-27** (LL.md §12): `results/desi_dr2_bao`, `results/bao_bbn_h0`,
+  `results/eboss_vs_desi`, each with preregistration, controls, Lean, ledger, paper.
+
+### 14. Human statement audit of the cosmology Lean files
+Every Tier A ledger row (DR2-A-0001..6, BBNH0-A-0001..10, EVD-A-0001..9) carries a
+*model* referee's audit, labelled as such. A person must read
+`formal/ANSE/{DESI_DR2_wCDM,BAO_BBN_H0,BAO_Consistency}.lean` against the fit code.
+- **Accept when:** audit objects name a human auditor, are bound to the file sha256,
+  and `ledger.py` exits 0 with them.
+
+### 15. File-path mode for `anse/formal/lean_runner.py`
+It can only gate built modules and writes a temp file into the shared `formal/`.
+- Do: `lake env lean <path>` from `formal/`, parse in-file `#print axioms`, whitelist,
+  no shared temp file. Re-gate the three new modules through it.
+- **Accept when:** a worktree-staged file is gated by lean_runner with a sorry and a
+  smuggled-axiom negative control both rejected.
+
+### 16. Harden the Elenchus ledger builder against model audits
+- Audit objects must carry `auditor_kind` and the audited file's sha256; the builder
+  refuses a stale sha. A control shows a changed file yields `audit: null`.
+
+### 17. Subtle-bug negative control in the preregistration template
+Every BAO fit preregisters one realistic wrong-convention control (e.g. omega_nu
+dropped from omega_cdm) with its expected shift written before it runs.
+
+### 18. Commit preregistration files before the first fit
+- **Accept when:** the pipeline's prereg stage ends with a git commit of
+  `results/<run>/preregistration.json`, and the fit stage checks it is committed.
 
 ## User actions (cannot be done by the agent)
 
@@ -157,3 +187,25 @@ present in the same local data directory (`desi_2024_eboss_gaussian_bao_*`,
 - Frozen split wired into the trainer; excludes the 2 contaminating rows.
 - GATE returns BLOCKED with the real reason instead of OK.
 - LeanMaster MCP server verified: `initialize` OK, 7 tools.
+
+### 19. Make JEPA learning measurable before claiming it
+`results/cosmo3_learning/`: real-verdict training matched the shuffled-energy control and
+`energy_accuracy` saturated at 1.00 for both.
+- Do: replace or fix the saturated metric (e.g. AUROC of predicted energy vs verdict on a
+  task-level held-out split), and grow the corpus with failure-rich episodes.
+- **Accept when:** real-verdict training beats the shuffled control on the held-out split
+  by a margin larger than seed-to-seed spread (3+ seeds).
+
+### 20. Re-tier the cosmology ledgers to Elenchus's own caps
+The synthesis paper's round-3 formal referee: Elenchus Tier B means an identity
+verified in exact rational arithmetic; floats, sampling and model output are X. Our 34
+"Tier B" rows (seeded floating-point / MCMC harness outputs) are X under the tool's caps,
+and the L rows resting on them follow by closure. Disclosed in the paper (Sec. 3.5).
+- **Accept when:** each ledger either uses Elenchus's kinds faithfully (numeric -> X) or
+  declares a named local extension that the gate enforces, and `ledger.py` agrees.
+
+### 21. Record the interpreter in every run record
+The H0 DR1 (T2) verdict is PARTIAL under venv-pta (Py 3.10, numpy 1.26) and PASS under
+venv-cosmo (Py 3.11, numpy 2.4); the committed run came from venv-pta. The preregistered
+verdict stands. Every `fit.json` must record interpreter, numpy/scipy/emcee versions and
+the command, and the preregistration must name the environment.

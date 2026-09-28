@@ -1,0 +1,246 @@
+{
+  "problem": "bao_bbn_h0",
+  "title": "Inverse distance ladder: H0 from DESI DR2 BAO plus a BBN omega_b prior",
+  "stage": "preregistration (no fit of this problem has been run)",
+  "timestamp_utc": "2026-09-27T15:53:42Z",
+  "literature_review": "docs/literature/BAO_BBN_H0_LITERATURE_REVIEW_2026.md",
+  "prereg_helper": {
+    "script": "scripts/bao_bbn_h0/prereg_helpers.py",
+    "output": "results/bao_bbn_h0/prereg_helper_output.json",
+    "note": "Pure formula evaluation and file hashing; no BAO data are fitted."
+  },
+  "data_files": [
+    {
+      "path": "/mnt/disks/disk-socrateai-local-1/dualscale-data-r3/desi_sdss_bao/desi_bao_dr2/desi_gaussian_bao_ALL_GCcomb_mean.txt",
+      "sha256": "9ac154ab583ce759c0f7eef3c978c7c70a6ead2d18774caceadf1a350a640585",
+      "role": "primary (DR2, 13 points)"
+    },
+    {
+      "path": "/mnt/disks/disk-socrateai-local-1/dualscale-data-r3/desi_sdss_bao/desi_bao_dr2/desi_gaussian_bao_ALL_GCcomb_cov.txt",
+      "sha256": "252a143274c8a07c78694c119617d36594f6d7965d00319ca611c6ffb886e509",
+      "role": "primary covariance"
+    },
+    {
+      "path": "/mnt/disks/disk-socrateai-local-1/dualscale-data-r3/desi_sdss_bao/desi_2024_gaussian_bao_ALL_GCcomb_mean.txt",
+      "sha256": "dd2873a0b88459a491af3c0c0307ba059f62df9211d5b976760f310565a1be68",
+      "role": "second check (DR1, DESI only, 12 points)"
+    },
+    {
+      "path": "/mnt/disks/disk-socrateai-local-1/dualscale-data-r3/desi_sdss_bao/desi_2024_gaussian_bao_ALL_GCcomb_cov.txt",
+      "sha256": "bbafa9074b51cf1a45e0d10e4f37db8c0e80a5d1d1788857abb7fc49fb21abcc",
+      "role": "second check covariance"
+    },
+    {
+      "path": "/mnt/disks/disk-socrateai-local-1/dualscale-data-r3/desi_sdss_bao/README.md",
+      "sha256": "87444c7e5303c4fb8c4a8d1026c8f5e3bfaf9a8b54af512b9e81a7231ddca2ae",
+      "role": "provenance"
+    }
+  ],
+  "model": {
+    "cosmology": "flat LCDM",
+    "fixed": {
+      "N_eff": 3.044,
+      "sum_m_nu_eV": 0.06,
+      "massive_eigenstates": 1,
+      "T_cmb_K": 2.7255
+    },
+    "sampled": [
+      "H0",
+      "omega_b",
+      "Omega_m"
+    ],
+    "flat_priors": {
+      "H0": [
+        20,
+        100
+      ],
+      "omega_b": [
+        0.005,
+        0.1
+      ],
+      "Omega_m": [
+        0.01,
+        0.99
+      ]
+    },
+    "flat_prior_source": "arXiv:2404.03002 Table 2 (adopted by arXiv:2503.14738 Sec. V)",
+    "bbn_prior": {
+      "omega_b_mean": 0.02218,
+      "omega_b_sigma": 0.00055,
+      "source": "arXiv:2503.14738 eq. 14 = arXiv:2404.03002 eq. 2.8 = arXiv:2401.15054 eq. 5.1 (PRyMordial NACRE II, PDG abundances)"
+    },
+    "omega_m_convention": "Omega_m includes the massive neutrino (DESI/Planck convention). omega_cb = Omega_m h^2 - omega_nu, omega_nu = 0.0107*0.06 (Aubourg text below eq. 16). astropy Om0 = Omega_m - Onu0.",
+    "background": "astropy FlatLambdaCDM(H0, Om0=Omega_m-Onu0, Tcmb0=2.7255, Neff=3.044, m_nu=[0.06,0,0]) primary; independent manual integrator coded without astropy: photons (T=2.7255 K) + the massless-nu share of N_eff as radiation, the 0.06 eV nu treated as pure matter (inside Omega_m) at z<=2.33; must agree with astropy to <1e-4 fractional on all observables (if the matter approximation misses this, it is reported, not tuned away)",
+    "r_d_primary": "Aubourg et al. 2015 arXiv:1411.1074 eq. 16 (CAMB convention; stated accuracy 0.021% for N_eff=3.046, sum m_nu<0.6 eV, omega_b and omega_cb within 3 sigma of Planck)",
+    "r_d_sensitivity_variant": "DESI DR2 arXiv:2503.14738 eq. 2 power law (accuracy not stated in source); reported alongside, not used for PASS/FAIL",
+    "radiation_sensitivity_variant": "same fit with radiation removed from H(z); reported only",
+    "sampler": "emcee, 32 walkers, run until integrated autocorrelation time tau satisfies N_steps > 50*tau for all params, discard 5*tau burn-in; ESS >= 2000",
+    "reported_statistic": "posterior mean and standard deviation (matches arXiv:2503.14738 Table V caption); MAP also reported but not used for PASS/FAIL"
+  },
+  "targets": [
+    {
+      "id": "T1",
+      "name": "H0_DESI_DR2_BAO_plus_BBN",
+      "value": 68.51,
+      "sigma": 0.58,
+      "unit": "km/s/Mpc",
+      "source": "arXiv:2503.14738 eq. (19) and Table V row DESI+BBN (no CMB theta*)",
+      "headline": true,
+      "note": "Sec. IX text says 68.50; eq. 19/Table V value 68.51 used"
+    },
+    {
+      "id": "T1b",
+      "name": "Omega_m_DESI_DR2_BAO_plus_BBN",
+      "value": 0.2977,
+      "sigma": 0.0086,
+      "source": "arXiv:2503.14738 Table V"
+    },
+    {
+      "id": "T2",
+      "name": "H0_DESI_DR1_BAO_plus_BBN",
+      "value": 68.53,
+      "sigma": 0.8,
+      "unit": "km/s/Mpc",
+      "source": "arXiv:2404.03002 eq. (4.4), Table 3 (no CMB theta*)"
+    },
+    {
+      "id": "T2b",
+      "name": "Omega_m_DESI_DR1_BAO_plus_BBN",
+      "value": 0.295,
+      "sigma": 0.015,
+      "source": "arXiv:2404.03002 Table 3"
+    },
+    {
+      "id": "G1",
+      "name": "DR2_BAO_only_gate",
+      "Omega_m": [
+        0.2975,
+        0.0086
+      ],
+      "hrd_Mpc": [
+        101.54,
+        0.73
+      ],
+      "corr": -0.92,
+      "source": "arXiv:2503.14738 eq. (17)"
+    },
+    {
+      "id": "G2",
+      "name": "DR1_BAO_only_gate",
+      "Omega_m": [
+        0.295,
+        0.015
+      ],
+      "hrd_Mpc": [
+        101.8,
+        1.3
+      ],
+      "source": "arXiv:2404.03002 abstract/Sec. 8",
+      "note": "arXiv:2404.03002 gives r_d h = 101.8 +- 1.3 in Sec. 8 (p. 46) but 101.9 +- 1.3 in Sec. 6 (p. 36); 101.8 used (conclusions; same value as the prior bao_flcdm comparison); difference 0.08 sigma."
+    }
+  ],
+  "explicitly_not_targets": [
+    "DR2 DESI+BBN+theta* 68.45 +- 0.47 (2503.14738 eq. 20)",
+    "DR1 DESI+BBN+theta* 68.52 +- 0.62 (2404.03002 eq. 4.5; the DR1 abstract number)",
+    "DR1 BAO+r_d(CMB) 69.29 +- 0.87 (2404.03002 eq. 4.3)",
+    "DR1 (DESI+SDSS)+BBN 67.98 +- 0.75 (2404.03002 eq. A.2)"
+  ],
+  "systematic_budget": {
+    "rd_formula_strict_frac": 0.001,
+    "rd_formula_strict_justification": "Eq. 16 vs a sourced CAMB model (Planck 2018 Table 1 Plik best fit, r_drag=147.049): -0.020% (matches the stated 0.021%). Eq. 2 fed its pivot convention (nu-inclusive Omega_m h^2) at the same anchor: -0.016%. Eq. 2 vs eq. 16 at DESI's DR2 DESI+BBN centre: -0.053%. Anchor B hr_d offset (eq. 16) -0.077% (0.11 sigma of hr_d; loose, a function of means). Rounded up to 0.10% to cover the part of the BBN omega_b prior outside eq. 16's validity window (BBN +-2 sigma [0.02108,0.02328] exceeds the Planck-2018-proxy 3 sigma window [0.02191,0.02281]); this value is a PROXY, not a quoted accuracy.",
+    "rd_formula_conservative_frac": 0.00233,
+    "rd_formula_conservative_justification": "max |eq.2(omega_cb+omega_nu) - eq.16(omega_cb)|/eq.16 over omega_b in BBN +-3 sigma and omega_cb in [0.130,0.155] = 0.233%; box corners lie outside eq. 16's validity window and eq. 2's accuracy is not stated in any fetched source, so this is a deliberately conservative bound.",
+    "propagation": "dH0/H0 = -(d r_d/r_d)/0.493 (h r_d ~ h^(1-2*0.2535) at fixed Omega_m)",
+    "sigma_sys_H0_strict": 0.139,
+    "sigma_sys_H0_conservative": 0.324,
+    "sigma_mc_and_numerics_allowance": 0.05,
+    "sigma_mc_justification": "posterior-mean MC error ~0.58/sqrt(ESS~1000) = 0.02 for DESI and ours, rounding 0.005, background-model differences (<1e-4 fractional in distances), prior-volume treatment identical by construction"
+  },
+  "tolerance": {
+    "non_independence_note": "Same data vector, same BBN prior and same flat priors as DESI, so sigma_pub is NOT independent noise on the difference. The tolerance is therefore built from the systematic budget, not from sigma_pub.",
+    "strict_H0_km_s_Mpc": 0.15,
+    "strict_definition": "sqrt(sigma_sys_H0_strict^2 + sigma_mc^2) = sqrt(0.139^2+0.05^2) = 0.148 -> 0.15",
+    "strict_in_units_of_sigma_pub_T1": 0.26,
+    "soft_H0_km_s_Mpc": 0.33,
+    "soft_in_units_of_sigma_pub_T1": 0.57,
+    "verdicts": {
+      "PASS": "|H0 - 68.51| <= 0.15 AND |Omega_m - 0.2977| <= 0.25*0.0086 AND sigma(H0) within +-15% of 0.58 AND gate G1 passed AND all controls behave",
+      "PARTIAL": "0.15 < |H0 - 68.51| <= 0.33 (consistent only within the conservative formula systematic), other conditions as PASS",
+      "FAIL": "|H0 - 68.51| > 0.33, or sigma(H0) outside +-15%, or Omega_m condition fails, or gate G1 fails, or any control misbehaves"
+    },
+    "second_check_T2": "same strict/soft H0 thresholds (0.15/0.33 km/s/Mpc) against 68.53; sigma(H0) within +-15% of 0.80; |Omega_m - 0.295| <= 0.25*0.015. Reported separately; headline verdict is T1.",
+    "gate_G1": "|Omega_m - 0.2975| <= 0.25*0.0086 and |hr_d - 101.54| <= 0.25*0.73 and posterior sigmas within +-15%, using posterior means from an (Omega_m, hr_d) run with DR1-Table-2 flat priors (hr_d U[10,1000]). If G1 fails, the H0 result is reported but labelled instrument-unvalidated.",
+    "gate_G2": "same rule vs DR1 BAO-only (0.295+-0.015, 101.8+-1.3)",
+    "soft_definition": "sqrt(0.324^2 + 0.05^2) = 0.328 -> 0.33",
+    "strict_in_units_of_sigma_pub_T2": 0.19
+  },
+  "positive_controls": [
+    {
+      "id": "P1",
+      "description": "Noiseless mock: DR2 data vector generated by our own predictor at (H0=68.0, Omega_m=0.300, omega_b=0.02218) with DR2 covariance; full MCMC with BBN prior.",
+      "pass_if": "posterior mean H0 within 0.1 km/s/Mpc of 68.0 and Omega_m within 0.002 of 0.300 (noiseless => only prior-volume/projection offsets)"
+    },
+    {
+      "id": "P2",
+      "description": "100 noisy mocks drawn from N(model, C_DR2) at the same truth; MAP fit each (MCMC too costly for 100).",
+      "pass_if": "mean pull (H0_hat-68.0)/sigma_hat within +-0.2 and pull standard deviation in [0.8, 1.2]"
+    },
+    {
+      "id": "P3",
+      "description": "Gate G1: DR2 BAO-only reproduction of the published Omega_m and hr_d (external positive control against DESI's own CAMB pipeline).",
+      "pass_if": "see tolerance.gate_G1"
+    },
+    {
+      "id": "P4",
+      "description": "Predictor cross-check: astropy vs manual integrator on all 13 observables at 3 parameter points.",
+      "pass_if": "max fractional difference < 1e-4"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "N1",
+      "description": "Scrambled data vector: randomly permute the 13 DR2 values among (z, quantity) slots (fixed seed 20260927), keep covariance.",
+      "control_behaves_if": "scrambled data: best-fit chi2 PTE < 1e-3 (while the real data must give PTE > 0.01)"
+    },
+    {
+      "id": "N2",
+      "description": "Wrong model: matter-only Einstein-de Sitter (Omega_m=1, flat) with free H0 and BBN omega_b, on real DR2 data.",
+      "control_behaves_if": "EdS model on real data: best-fit chi2 PTE < 1e-3"
+    },
+    {
+      "id": "N3",
+      "description": "Degeneracy control: remove the BBN prior (omega_b flat U[0.005,0.1] only).",
+      "control_behaves_if": "without BBN prior: posterior sigma(H0) > 5x baseline sigma(H0) (H0 not identified without calibration)"
+    }
+  ],
+  "report_rules": [
+    "Controls P1-P4 and N1-N4 run and are reported before the T1/T2 comparison is shown.",
+    "Only real tool output is reported; a stage that cannot run is reported BLOCKED with reason.",
+    "No change to tolerance, priors, formula choice or statistic after the first fit output; any deviation is logged as a deviation with reason.",
+    "Fit code goes under scripts/bao_bbn_h0/, outputs under results/bao_bbn_h0/."
+  ],
+  "p_success_prior": {
+    "PASS_strict_full_conjunction": 0.55,
+    "PASS_or_PARTIAL": 0.8,
+    "reasoning": "PASS = H0 within 0.15 AND Omega_m within 0.25 sigma AND sigma(H0) within 15% AND G1 passes AND all controls behave. Same data/prior as DESI; the only new ingredient is the r_d formula (-0.020% vs CAMB at the Planck anchor; unmeasured over the low-omega_b part of the BBN prior and vs DESI's newer CAMB, which is not installed here). Residual risks: posterior-mean projection effects, sampler convergence, and the tight 0.25 sigma G1 gate."
+  },
+  "lean_plan": "formal/ANSE/BAO_BBN_H0.lean (later stage): positivity and strict antitonicity of A*x^(-a)*b^(-c) in x>0; H0 = 100 h; h*r_d(h) strictly increasing in h for 1-2a>0. In-file #print axioms; pinned imports as formal/ANSE/BAO_FlatLCDM.lean; gate via anse/formal/lean_runner.py.",
+  "revision_note": "Revised before any fit (15:50 -> 15:53 UTC): eq. 2 neutrino convention corrected (eq. 2 pivot 0.1432 is Omega_m h^2 incl. nu, verified at Planck 2018 Table 1 best fit: -0.016% vs CAMB); conservative box bound 0.32% -> 0.233%; soft tolerance 0.45 -> 0.33; controls relabelled.",
+  "sensitivity_demonstrations": [
+    {
+      "id": "S1",
+      "description": "r_d from Aubourg eq. 17 at N_eff=4.044 (wrong early-universe physics). Deterministic multi-km/s/Mpc shift expected; shows sensitivity to r_d physics but cannot catch a pipeline bug, so it is NOT counted as a negative control.",
+      "reported_only": true
+    },
+    {
+      "id": "S2",
+      "description": "r_d from DESI eq. 2 (nu-inclusive pivot) instead of eq. 16",
+      "reported_only": true
+    },
+    {
+      "id": "S3",
+      "description": "radiation removed from H(z)",
+      "reported_only": true
+    }
+  ]
+}

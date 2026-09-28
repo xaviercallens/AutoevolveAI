@@ -2,18 +2,122 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [13.3.0] — Three preregistered cosmology problems, a synthesis paper, and a learning retrofit (2026-09-27)
+
+**Published:** Zenodo DOI [10.5281/zenodo.23003926](https://zenodo.org/records/23003926)
+(paper, results bundle, sha256 manifest) and Hugging Face dataset
+[`callensxavier/autoevolve-bao-cosmology-reproductions`](https://huggingface.co/datasets/callensxavier/autoevolve-bao-cosmology-reproductions)
+(same bundle, sha256 `6832307a…1217`, plus the 206 JEPA episodes). Lab copy:
+`/mnt/disks/disk-socrateai-local-1/SocrateAI-storage/lab-archive/cosmology_bao_2026-09/`.
+
+**Science (reproductions of published values, not new measurements).** One
+Workflow ran three problems through literature + preregistration (targets fetched
+from the papers) -> fit with controls -> Lean 4 -> Elenchus ledger -> paper ->
+adversarial model referee that re-runs everything -> fix round (LL.md §12):
+
+| run | outcome | headline |
+|---|---|---|
+| `desi_dr2_bao` | SUCCESS, 14/14 preregistered criteria | Om 0.29781±0.00856 (+0.04σ), h·r_d 101.530±0.732 Mpc, wCDM w −0.9164±0.0787 |
+| `bao_bbn_h0` | SUCCESS on DR2; DR1 check PARTIAL | H0 68.545±0.594 vs 68.51±0.58 with an exact CAMB r_d; DR1 |ΔH0| 0.167 vs strict 0.15, and environment-dependent (PASS under the other Python env; preregistered PARTIAL kept) |
+| `eboss_vs_desi` | science PASS | SDSS Om 0.2987±0.0164 vs 0.299±0.016; SDSS–DESI DR2 tension 0.88σ |
+
+- The H0 run was amended (CAMB primary) **before any fit output was read**; the
+  pre-amendment output is hash-locked unread and both analyses are reported.
+- **Synthesis paper** `papers/cosmo_synthesis/` (26 pp.): every number generated
+  from the result JSONs; three rounds of three independent model referees (stats,
+  formal, novelty) with response letters in `reviews/`; no blocking issue in any
+  round. Novelty is claimed only for the combination of safeguards and three derived
+  consistency numbers.
+- **Lean:** 25 new theorems in `formal/ANSE/{DESI_DR2_wCDM,BAO_BBN_H0,BAO_Consistency}.lean`,
+  whitelist-only axioms; dual-environment check (pinned build 4/4 files; LeanMaster
+  full Mathlib 3/4, the 4th blocked by its repo import, not a proof failure).
+  Sound count: **254** theorems across 39 files.
+- **Learning retrofit** (`scripts/cosmo3_retrofit.py`): 84 literature chunks into
+  Chroma; 206 verdict-bearing episodes (173 pass / 33 fail) as JEPA rows on disk 2.
+  **Negative result:** JEPA trained on them is indistinguishable from a
+  shuffled-label control; no learning is claimed (TODO 19).
+- **Cross-project:** the BAO numerics were ported to rusty-SUNDIALS
+  (`crates/qf-bao-distances`, PR #61) and reproduce the DR2 fit; the port exposed a
+  cvode defect fixed in rusty-SUNDIALS PR #60.
+
+**Tooling.** `antigravity_guard.py` allowlists the venv-cosmo Boltzmann codes and the
+reused `fit_desi_bao` module (0 phantom imports under the main venv); a scoped ruff
+exemption keeps the hash-pinned research scripts byte-identical;
+`formal/ANSE.lean` imports the three modules (a duplicated import removed);
+`scripts/publish_cosmo_synthesis.py` (Zenodo + Hugging Face + lab-archive bundle).
+
+**Measured gates at this commit.**
+- `test_rigor_guard.py`: exit 0 (141 files).
+- `antigravity_guard.py`: exit 1 — phantom-import stage clean; the static-analysis
+  stage still fails on pre-existing Ruff debt. The new cosmology scripts are clean.
+- `pytest tests/` in the cosmo3 worktree (no `formal/.lake`, the same environment
+  class v13.2.1 flagged as weaker than the main checkout): 1358 passed / 22 failed /
+  49 skipped / 8 errors. Diffed by test id against v13.2.0's worktree set: one extra
+  failure, `tests/phase2/test_ml_sandbox.py::TestMLSandboxExecutor::test_successful_training`
+  (sandbox subprocess rc −1 under heavy concurrent CAMB/MCMC/Lean load), which passes
+  in isolation. README's test badge keeps v13.2.1's main-checkout measurement.
+
+**Open, disclosed.** No person has audited any Tier A Lean statement (all audits are a
+model referee's, labelled as such; TODO 14). Preregistrations were not git-committed
+before the fits (TODO 18). The ledgers' "Tier B" is not Elenchus's exact-arithmetic
+Tier B (TODO 20). After pulling, run `cd formal && lake build` once so the three new
+modules get oleans.
+
+## [13.2.1] — Corrections to the published v13.2.0 release (2026-09-27)
+
+**Unlike v13.1.0 below, `v13.2.0` WAS tagged and published**
+(`https://github.com/xaviercallens/AutoevolveAI/releases/tag/v13.2.0`, commit
+`ea9633a`) before these corrections were found. It is not retagged or deleted —
+publishing then quietly rewriting a release is worse than publishing a fix. This
+version supersedes it for anyone consuming current numbers; the two defects below
+were real and are documented, not smoothed over.
+
+1. **The theorem-count badge was inflated by the exact defect class the original
+   audit found.** `v13.2.0` reported **250** theorems via
+   `grep -c theorem formal/ANSE/*.lean` — a command that counts every line
+   *containing the word* "theorem", including 33 lines of prose, docstrings and
+   string-literal theorem *names* (`Blueprint.lean` lists several planned theorems
+   as data, e.g. `"SIMD vector alignment theorem"`). Same shape as "2,967 Lean
+   proofs" vs. 218 authored declarations, just smaller: ~9% inflation instead of
+   ~13×. Sound count, anchored to an actual declaration keyword at line start and
+   verified to miss no modifier-prefixed declaration:
+   `grep -cE '^(theorem|lemma|example) ' formal/ANSE/*.lean` → **229**.
+2. **The published test numbers (1359/21/49/8) were measured in a release worktree
+   missing `formal/.lake`** (the Mathlib build cache) — a worse environment than
+   what README's own Quickstart puts a contributor in. Re-run in the main checkout:
+   **1371 passed / 15 failed / 43 skipped / 8 errors.** One failure is new since the
+   known 14-failure baseline — `test_mcts_prover_successful_search` hits a
+   hardcoded 25s `lake env lean` timeout, and it fails even in isolation on this
+   host under the current load (3.3–4.7, several parallel Lean-compiling sessions).
+   Whether that is a flaky pre-existing test or a real regression is **not
+   established**, and is reported as such rather than picked for convenience.
+3. `scripts/verify_release.py` itself **blocked these very notes** for naming
+   `P4-5` in an honest disclosure ("does not exist") as if it were an unsupported
+   completion claim. Fixed to exempt a card mention that discloses a gap, checked
+   line-by-line so an unrelated disclaimer elsewhere can't exempt a real claim.
+   Re-verified against both controls after the fix: still **BLOCKS** `v12.4.0`'s
+   fabricated claims; now **PASSES** on these real notes.
+
+README's badges and the `Test suite` row are corrected to the main-checkout numbers
+(1371/15/43/8, 229 theorems), since that is the environment users actually see.
+
+---
+
 ## [13.2.0] — A second research exercise, Elenchus rigor tooling, two stranded branches merged (2026-09-27)
 
 **About v13.1.0.** Its notes (below) were written by a parallel session and landed on
 `main` inside commit `ca5f7cd`, swept in because `git commit` takes the whole index. The
 `v13.1.0` tag was never cut. This release supersedes it; nothing below is re-claimed.
 
-**Measured at this tag** (T4 host, run from a git worktree):
+**Measured at this tag** (T4 host, run from a git worktree). **`v13.2.1` above found
+this measurement environment itself was non-representative and corrected the
+headline numbers** — see there for the reproducible-in-main-checkout figures; kept
+here unedited as the historical record of what this tag actually shipped with.
 
 | Check | Result |
 |---|---|
 | `pytest tests/` | **1359 passed** / 21 failed / 49 skipped / 8 errors |
-| `test_rigor_guard.py` | exit 0 (141 files; it caught 5 violations in the merged branch's tests, all fixed) |
+| `test_rigor_guard.py` | exit 0 (141 files; caught 5 violations in the merged branch's tests, all fixed) |
 | `antigravity_guard.py` | exit 1: 0 hallucinated imports; pre-existing Ruff debt only (2361, down from 2386) |
 | Lean theorems (`grep -c theorem formal/ANSE/*.lean`) | **250** across 36 files |
 
@@ -21,9 +125,17 @@ The 21 failures are all pre-existing and environment-bound. Every one of the 22 
 failed before this release's merges fails identically at the pre-session commit
 `d8ded3c` in the same environment: Lean calls without `formal/.lake` in a worktree, the
 Laya model not loaded, Playwright unable to launch Chromium. The numbers differ from
-v13.1.0's 1080/14/43/8, which was measured in the main checkout. **Correction:** v13.1.0's
-"226 theorems across 35 files" does not reproduce under its own documented command.
-That tree gives 244, so it looks hand-incremented from v13.0.0's 225.
+v13.1.0's 1080/14/43/8, which was measured in the main checkout.
+
+**Correction below, itself superseded by `v13.2.1` above:** the "244 vs 226"
+comparison two lines down turned out to be two runs of an unsound counting command
+on two different trees, not evidence either number was hand-incremented — see
+`v13.2.1` for why `grep -c theorem` overcounts and what the sound figure (229) is.
+The original correction text is kept as-written below for the historical record.
+
+**Correction:** v13.1.0's "226 theorems across 35 files" does not reproduce under its
+own documented command. That tree gives 244, so it looks hand-incremented from
+v13.0.0's 225.
 
 ### New: flat-ΛCDM BAO consistency exercise (second end-to-end research run)
 

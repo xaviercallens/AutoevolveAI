@@ -354,3 +354,70 @@ output as if it constrains training until it does.
 9. DESI DR2 (arXiv:2503.14738) and the eBOSS/SDSS files sitting in the same
    local data directory are an obvious, near-zero-marginal-cost extension of
    this exact pipeline -- same code, new mean/cov files.
+
+## 12. Three cosmology problems via Workflow (2026-09-27)
+
+Three preregistered problems run in parallel through one pipeline
+(literature + preregistration -> fit with controls -> Lean -> Elenchus ledger
+-> paper -> adversarial Fable referee that re-runs everything -> fix round).
+Per-problem lessons are in each `results/<run>/` referee and fix records.
+
+### 12a. Results (all vs the published numbers fetched from the papers)
+
+| run | outcome | headline |
+|---|---|---|
+| `desi_dr2_bao` | SUCCESS, 14/14 criteria | Om 0.29781±0.00856 (+0.04σ), h·r_d 101.530±0.732 (−0.01σ); wCDM w −0.9164±0.0787 (−0.005σ); DR1→DR2 ΔOm 0.23σ; 6 Lean theorems |
+| `bao_bbn_h0` | SUCCESS (T1), PARTIAL (T2) | H0 68.545±0.594 vs 68.51±0.58 (|Δ| 0.035 ≤ 0.15) with exact CAMB r_d; DR1 check |Δ| 0.167 vs strict 0.15; 10 Lean theorems |
+| `eboss_vs_desi` | science PASS | SDSS Om 0.2987±0.0164 vs published 0.299±0.016; SDSS–DESI tension 0.88σ (PTE 0.38); 9 Lean theorems |
+
+Lean is kernel-checked with whitelist-only axioms in the pinned build, and the
+BAO module also in LeanMaster's full Mathlib on disk 2 (rc 0, 37 s once warm;
+a cold `import Mathlib` probe timed out at 20 min under load).
+
+### 12b. Lessons
+
+1. **Pre-register, then amend in the open.** CAMB was installed after the H0
+   preregistration. The amendment (CAMB primary, fitting formula secondary) was
+   written before any fit output was read, and the already-existing first fit was
+   hash-locked unread (`preregistration_amendment_1.json`). Both analyses are
+   reported. Commit preregistration files to git before the first fit next time:
+   an untracked file has only its mtime as evidence.
+2. **A model referee's audit clears the Elenchus gate.** `ledger.py` only
+   type-checks `audit`, so a model-written audit turns rc 1 into rc 0. All three
+   runs recorded the audit as the model's, labelled "NOT a person". rc 0 therefore
+   means "model-referee audited"; human statement audits remain open (TODO 14).
+   The audit must be bound to the Lean file's sha256 and name its auditor kind.
+3. **`lean_runner.py` cannot gate a new file from a worktree.** It imports a built
+   module and writes a temp file into the shared `formal/`. Every run used
+   `lake env lean <file>` from main's `formal/` plus in-file `#print axioms`
+   instead: a documented deviation from the binding rule until TODO 15 lands.
+4. **Negative controls must include a subtle bug.** Scrambled data and EdS fail in
+   any pipeline. A wrong-convention control (omega_nu left out of omega_cdm) moved
+   H0 by 0.164 with Δχ² = 5e-5: the data cannot see it, only the external target can.
+5. **State the theorem you planned, check it numerically first.** The H0 run had
+   swapped the preregistered monotonicity theorem for identities because it looked
+   hard; stated honestly it took one Mathlib lemma and revealed the preregistered
+   hypothesis was wrong in a corner of the prior. The DR2 statements drifted from
+   z > −1 to z ≥ 0; only the referee read caught it.
+6. **Frozen scripts stay frozen.** Script sha256 is pinned in ledger evidence, so the
+   new scripts get a scoped ruff per-file exemption instead of a reformat.
+7. **Workflow mechanics.** An agent that ends without its structured output drops the
+   item; resuming the workflow replays the cached prefix and re-runs only that item.
+   Prompt text for completed stages must stay byte-identical to keep the cache.
+
+### 12c. Synergy with rusty-SUNDIALS
+
+The BAO distance integrals were ported to `crates/qf-bao-distances` (rusty-SUNDIALS
+PR #61, merged): DR2 fit from Rust Om 0.29743±0.00861, h·r_d 101.543±0.735, agreeing
+with this repo's Python fit to 2e-4, exposed as the `bao_distances` MCP tool. The port
+found the cvode tout-rescale bug (fixed in PR #60) and that cvode's Adams method never
+exceeds order 1.
+
+### 12d. Learning retrofit: a negative result, reported as one
+
+8. **JEPA trained on the 206 real verdicts is indistinguishable from a shuffled-label
+   control** (val loss 21.87 vs 21.46; "energy_accuracy" 1.00 in both). The metric is
+   saturated, so it cannot show learning on this data, and the corpus is small and 84%
+   pass. The episodes are kept (real labels, on disk 2); no learning is claimed.
+   `results/cosmo3_learning/README.md`. Always train a shuffled-label control next to a
+   "learning" claim: without it this run would have read as 100% accuracy.

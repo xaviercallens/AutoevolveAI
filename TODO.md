@@ -206,3 +206,11 @@ The H0 DR1 (T2) verdict is PARTIAL under venv-pta (Py 3.10, numpy 1.26) and PASS
 venv-cosmo (Py 3.11, numpy 2.4); the committed run came from venv-pta. The preregistered
 verdict stands. Every `fit.json` must record interpreter, numpy/scipy/emcee versions and
 the command, and the preregistration must name the environment.
+
+### 22. Low-tier model intelligence: revised plan (2026-09-28)
+`docs/v2/IMPLEMENTATION_PLAN_2026-09-28.md` + roadmap §0. Card acceptance made runnable;
+7 cards added (V0-8, M-1, G-1, C-0, C-7, N-9, X-1). Sprint 0 = build `.venv-v2`, accept
+the cards already met on main (V0-4, V0-5, N-1, N-5a, N-6), then V0-3/V0-8 metrics.
+Sprint 1 = retrieval before training (M-1 premise A/B on the ladder, N-6 into Phase 1).
+- **Accept when:** `docs/v2/status.json` exists with ≥ 5 cards marked done by the driver,
+  and `results/hardness/retrieval_ab.json` reports both arms per tier.

@@ -15,10 +15,22 @@ rules:
   - "Commit with message 'v2(<id>): <title>'. Do not push. Do not stage files the card does not name."
 
 # Reusable acceptance blocks.
+# 2026-09-28: acc_v2 used to demand 100 % of ALL of anse/v2. Measured on main that day: 83.53 %
+# (13 tests pass; the uncovered lines are the ANSE-2.0 modules the merged GCP branch added, which no
+# card owns). So every acc_v2 card failed its gate before it started. Coverage is now scoped to the
+# modules the card itself creates or edits; card X-1 restores the whole-package 100 % afterwards.
 acc_v2: &acc_v2
-  - "source .venv-v2/bin/activate && python -m pytest tests/v2 -q -p no:cacheprovider --cov=anse/v2 --cov-branch --cov-report=term-missing --cov-fail-under=100"
+  - "source .venv-v2/bin/activate && python -m pytest tests/v2 -q -p no:cacheprovider --cov=anse/v2/<module(s) this card creates or edits, without .py> --cov-branch --cov-report=term-missing --cov-fail-under=100"
+  - "source .venv-v2/bin/activate && python test_rigor_guard.py"
+# 2026-09-28: acc_full used to run the WHOLE suite with --cov-fail-under=100. The suite has 22
+# environment-bound failures and repository coverage is far below 100 %, so every card failed its
+# gate regardless of its own work and no card was ever accepted. Card acceptance is now scoped to
+# the card: its named tests, tests/v2 at 100 % of anse/v2, the anti-stub rigor guard, and ruff on
+# the touched files. Repository-wide health is the RELEASE gate (scripts/verify_release.py).
 acc_full: &acc_full
-  - "source .venv-v2/bin/activate && python -m pytest tests -q -p no:cacheprovider --cov --cov-report=term-missing:skip-covered --cov-fail-under=100"
+  - "source .venv-v2/bin/activate && python -m pytest tests/v2 <the card's named test files> -q -p no:cacheprovider --cov=anse/v2/<module(s) this card creates or edits, without .py> --cov-branch --cov-report=term-missing --cov-fail-under=100"
+  - "source .venv-v2/bin/activate && python test_rigor_guard.py"
+  - "source .venv-v2/bin/activate && ruff check <the files the card edited or created>"
 
 cards:
 # ───────────────────────── Phase 0: evaluation integrity ─────────────────────────
@@ -588,3 +600,109 @@ cards:
     - "Read the current terms that apply to your Claude and Antigravity/Gemini plans about using outputs to train models. Write docs/v2/gates/N8.md with the decision and the date. Until this file exists, anse/v2/curator.py Policy.no_train_origins must keep 'claude_code' and 'antigravity' excluded."
     - "Also decide retention: how long raw spool files are kept (suggest 30 days) and confirm scrub tests (C-1) pass before any transcript reaches the store."
   accept: []
+
+# ───────────────────── Revision 2026-09-28: cards added from measured results ─────────────────────
+# Evidence and ordering: docs/v2/IMPLEMENTATION_PLAN_2026-09-28.md. Phase "R" = retrieval-first,
+# phase "G" = shared-GPU discipline, phase "X" = reconciliation of code that pre-empted the plan.
+
+- id: V0-8
+  title: "Shuffled-label control in every trainer report"
+  phase: 0
+  tier: low
+  depends_on: [V0-3]
+  read_first: [anse/jepa/trainer.py, scripts/cosmo3_retrofit.py, results/cosmo3_learning/README.md]
+  create: [anse/v2/label_control.py, tests/v2/test_label_control.py]
+  edit: [anse/jepa/trainer.py]
+  spec:
+    - "shuffled_copy(rows: list[dict], seed: int) -> list[dict]: same rows with the 'energy' values permuted across rows by random.Random(seed); input untouched; length-preserving; raises ValueError on an empty list."
+    - "control_report(real: dict, shuffled: dict, metric_keys: list[str]) -> dict with, per key, real, shuffled, delta, and 'informative': bool = abs(delta) > 0 (a metric equal on both is flagged SATURATED)."
+    - "JEPATrainer.train(..., label_control_seed: int | None = None): when set, the returned TrainingSummary.history[-1] carries 'label_control' = control_report(...) computed from a second fit on shuffled_copy(rows). Default None keeps behaviour byte-identical."
+  tests:
+    - "permutation is a bijection of the energies; deterministic per seed; empty raises; a metric that saturates (1.0 for both) is flagged SATURATED; default path unchanged."
+  accept: *acc_full
+
+- id: M-1
+  title: "Premise-retrieval A/B on the Lean hardness ladder (TODO 5, H2)"
+  phase: R
+  tier: mid
+  depends_on: []
+  read_first: [scripts/hardness/run_ladder.py, scripts/index_lean_signatures.py, results/hardness/baseline.json, LL.md]
+  create: [anse/v2/premise_prompt.py, tests/v2/test_premise_prompt.py, scripts/hardness/run_retrieval_ab.py]
+  spec:
+    - "premise_prompt.build(statement: str, hits: list[tuple[str, str]], k: int = 5) -> str prepends up to k '(name : signature)' lines under a fixed header before the statement; deterministic; k=0 returns the statement unchanged; never truncates a signature mid-token."
+    - "run_retrieval_ab.py: same 118 items, same model, same seed, two arms (k=0 and k=5 from the lean_premises Chroma collection, embedding via qwen3-embedding under the shared GPU lease); proofs compile against OUR statement via anse.formal.lean_runner.verify_file; writes results/hardness/retrieval_ab.json with per-tier pass rates per arm, per model, and per-item verdicts."
+    - "Report BLOCKED with the reason if the lease cannot be acquired or Ollama is absent. Never fabricate a verdict."
+  tests:
+    - "prompt construction: header present, k respected, k=0 identity, order of hits preserved; the runner's arm bookkeeping is unit-tested with an injected fake prover and fake retriever (pass counts add up, items identical across arms)."
+  accept: *acc_full
+
+- id: G-1
+  title: "Every GPU/Ollama runner must hold the shared lease"
+  phase: G
+  tier: low
+  depends_on: []
+  read_first: [scripts/night_training_workflow.py, scripts/cosmo3_retrofit.py, LL.md]
+  create: [anse/v2/gpu_discipline.py, tests/v2/test_gpu_discipline.py]
+  spec:
+    - "gpu_discipline.offenders(root: Path) -> list[Path]: files under scripts/ and v2_runners/ that reference 'localhost:11434', 'OLLAMA', 'cuda' or 'torch.device' but never import or call gpu_lease; pure function over file text, no I/O beyond reading."
+    - "A test asserts offenders(REPO) == [] once the known offenders are fixed; until then the test lists them and FAILS (a failing test is the point). Known 2026-09-28 offenders: scripts/nightly_dream_phase.py, scripts/nightly_retrain_at_5am.py."
+    - "Do not install any cron on this host; the nightly scripts are out of scope beyond adding the lease acquire/release around their GPU sections."
+  tests:
+    - "detector finds a synthetic offender and ignores a file that acquires the lease; ignores comments; repo scan test as above."
+  accept: *acc_full
+
+- id: C-0
+  title: "Trainer consumes ltm_learning_mix output (TODO 11)"
+  phase: C
+  tier: mid
+  depends_on: [C-2]
+  read_first: [scripts/ltm_learning_mix.py, scripts/night_training_workflow.py, LL.md]
+  edit: [scripts/night_training_workflow.py, scripts/ltm_learning_mix.py]
+  create: [tests/v2/test_mix_wiring.py]
+  spec:
+    - "step_data reads the file ltm_learning_mix.py wrote (path recorded in its report JSON) and refuses any corpus whose unverified share exceeds 30 %; the report records the measured share it trained on."
+    - "A negative control in tests: a corpus at 31 % unverified is refused with a BLOCKED outcome naming the share."
+  accept: *acc_full
+
+- id: C-7
+  title: "Held-out pass@k evaluation the promotion gate can consume (P4-5)"
+  phase: C
+  tier: mid
+  depends_on: [V0-3, V0-5]
+  read_first: [scripts/night_training_workflow.py, results/hardness/frozen_split.json, scripts/hardness/run_ladder.py]
+  create: [anse/v2/heldout_eval.py, tests/v2/test_heldout_eval.py]
+  spec:
+    - "heldout_eval.score(verdicts: dict[str, list[bool]], k: int) -> {pass_at_k, n_items, ci_low, ci_high} with the unbiased pass@k estimator and a Wilson interval; raises if any item has fewer than k samples."
+    - "compare(baseline, candidate, min_gain: float = 0.05, max_tier_regression: float = 0.02) -> {promote: bool, reasons: list[str]}; a candidate is promoted only if the gain clears min_gain AND no tier regresses more than max_tier_regression."
+    - "night_training_workflow GATE calls compare instead of returning BLOCKED, once a baseline file exists; otherwise it still returns BLOCKED naming the missing file."
+  tests:
+    - "pass@k estimator against hand-computed values; k > samples raises; promotion true/false on constructed baselines; tier regression blocks a net gain."
+  accept: *acc_full
+
+- id: N-9
+  title: "Transcript-derived rows cannot reach training until N-8 is written"
+  phase: N
+  tier: low
+  depends_on: []
+  read_first: [scripts/ltm_learning_mix.py, results/redis_ltm_lora_dataset.jsonl, docs/ROADMAP_V1_V2_COMPANION.md]
+  create: [anse/v2/origin_policy.py, tests/v2/test_origin_policy.py]
+  edit: [scripts/ltm_learning_mix.py]
+  spec:
+    - "origin_policy.allowed(row: dict, gate_file: Path) -> bool: rows whose 'origin' is in {'claude_code','antigravity','transcript'} are refused unless gate_file exists; rows without an 'origin' key are refused (unknown provenance is not allowed provenance)."
+    - "ltm_learning_mix.py tags rows from transcript_ltm / redis_ltm_lora_dataset.jsonl with origin='transcript' and applies allowed() with gate_file=docs/v2/gates/N8.md; the report lists how many rows were refused and why."
+  tests:
+    - "refused without the gate file, allowed with it (tmp_path), missing origin refused, verified sandbox rows allowed."
+  accept: *acc_full
+
+- id: X-1
+  title: "Measure or quarantine the ANSE-2.0 modules in anse/v2"
+  phase: X
+  tier: mid
+  depends_on: [V0-3, V0-8]
+  read_first: [anse/v2/engine_v2.py, anse/v2/mezo_optimizer.py, anse/v2/rem_consolidation.py, anse/v2/surrogate_cache.py, docs/ROADMAP_V1_V2_COMPANION.md]
+  spec:
+    - "Run MeZOOptimizer against a rejection-sampling SFT baseline on the SAME verified rows (cosmo3 episodes + harvest.jsonl) with the V0-3 metrics and the V0-8 shuffled control; write results/v2/x1_mezo_vs_sft.json."
+    - "If MeZO does not beat the control, move engine_v2/mezo_optimizer/rem_consolidation/surrogate_cache and their tests under anse/v2/experimental/ (imports updated, tests kept, nothing deleted) and remove them from anse/v2/__init__.py exports; surrogate_cache may only run in shadow mode (log, never filter) anywhere it is called."
+  tests:
+    - "results file present with both arms and the control; __init__ exports reflect the decision; a test asserts no call site filters on surrogate_cache output."
+  accept: *acc_full

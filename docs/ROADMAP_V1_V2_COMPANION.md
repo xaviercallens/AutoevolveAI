@@ -3,6 +3,43 @@
 Date: 2026-09-21. Based on the first runs of Phases 1-3 against a real open-weight model
 (`qwen3:8b` Q4_K_M + `qwen3-embedding:0.6b`, Ollama, Tesla T4 16 GB), not on mocks.
 
+## 0. Revision 2026-09-28 (read this first; §1–§5 below are the 2026-09-21 original)
+
+The card plan in [`v2/IMPLEMENTATION_PLAN_2026-09-28.md`](v2/IMPLEMENTATION_PLAN_2026-09-28.md)
+supersedes §5 "Order of work". What changed in one week, with the numbers:
+
+- **Zero of 42 cards were ever accepted** (`docs/v2/status.json` never created). Cause: both
+  acceptance blocks could not exit 0 on this host. `acc_full` (5 cards) demanded 100 %
+  repository coverage on a suite with 22 environment-bound failures; `acc_v2` (25 cards)
+  demanded 100 % of all of `anse/v2`, measured at **83.53 %** because the merged GCP branch
+  filled the package with modules no card owns. `.venv-v2` was never built. Fixed in
+  `tasks.yaml`: acceptance scoped to the card's own modules + `test_rigor_guard.py`; repo
+  health is the release gate.
+- **Low-tier models measured as executors, not discoverers.** Lean hardness ladder
+  (`results/hardness/baseline.json`, 118 items, two 7–8B provers): T0 6/10 and 8/10, **T1–T3
+  0/12 on every tier**, 0 false items accepted. The failure is a vocabulary gap (the models
+  never name the lemmas the goal needs), so **retrieval into the prompt is sprint 1**, ahead of
+  any weight update (new card M-1; TODO 5).
+- **No learned component has beaten a control yet.** Phase 2 surrogate r ≈ 0 (Sept 21); the
+  JEPA world model trained on 206 real cosmology verdicts is indistinguishable from a
+  shuffled-label control and the `energy_accuracy` metric saturates at 1.00 for both
+  (`results/cosmo3_learning/`). V0-3 (honest metrics) and new V0-8 (shuffled-label control in
+  every trainer report) come first. Nothing learned may gate or skip a verifier until GD.
+- **Verifiers arrived ahead of the plan.** `anse/formal/lean_runner.py::verify_file` gates a
+  Lean file from any worktree (PR #6); 254 kernel-checked theorems exist; the 2026-09-21
+  "Lean not needed yet" decision is reversed by cost (4–12 s per module on the pinned build).
+  The Elenchus claim ledger, the shared GPU lease and default-on LLM call logging also exist.
+- **The tiered agentic pipeline worked at problem scale**: three preregistered cosmology
+  problems all within tolerance (LL.md §12), default tier for fits and papers, top tier for
+  Lean and the adversarial referee. Tier routing becomes a design input for the cards.
+- **`anse/v2/` contains the design §3 argued against** (MeZO, surrogate filter, unvalidated
+  adversary, EWC consolidation; 1,460 lines from the merged GCP branch, 13 tests, no
+  measurement). Quarantined by new card X-1 until measured against SFT+DPO on the same data.
+- **Data volume is the binding constraint for GC**: ≈ 1.3 k rows exist, < 400 with a verifier
+  verdict, ≈ 200 preference pairs, against a GB gate of 5 k / 1 k. Transcript-derived rows
+  (`redis_ltm_lora_dataset.jsonl`, nightly-dream inputs) are being trained on de facto while
+  the N-8 decision is unwritten; new card N-9 quarantines them in code.
+
 ## 1. What the live runs actually showed
 
 | Phase | Measurement | Result | Verdict |

@@ -16,8 +16,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from anse.memory.transcript_ltm import (
     ScrubReport,
     TranscriptTurn,
@@ -183,3 +181,63 @@ def test_iter_transcripts_finds_jsonl(tmp_path: Path) -> None:
 def test_iter_transcripts_on_missing_root_is_empty() -> None:
     """A box with no Claude Code history must not raise."""
     assert list(iter_transcripts(Path("/nonexistent/claude/projects"))) == []
+
+
+def test_parse_antigravity_transcript(tmp_path: Path) -> None:
+    """An Antigravity session parses into user and assistant turns with tool extraction."""
+    session_dir = tmp_path / "brain" / "sess-1234" / ".system_generated" / "logs"
+    session_dir.mkdir(parents=True)
+    full_log = session_dir / "transcript_full.jsonl"
+    full_log.write_text(
+        "\n".join(
+            [
+                json.dumps({
+                    "step_index": 0,
+                    "source": "USER_EXPLICIT",
+                    "type": "USER_INPUT",
+                    "content": "solve navier stokes with sk-ant-api03-SECRET123456789012345",
+                    "created_at": "2026-09-28T12:00:00Z",
+                }),
+                json.dumps({
+                    "step_index": 1,
+                    "source": "MODEL",
+                    "type": "PLANNER_RESPONSE",
+                    "content": "Running verification on GPU cluster",
+                    "thinking": "Need to check conservation laws first",
+                    "tool_calls": [{"name": "run_command", "args": {"CommandLine": "lake build"}}],
+                    "created_at": "2026-09-28T12:00:05Z",
+                }),
+            ]
+        )
+        + "\n"
+    )
+
+    report = ScrubReport()
+    turns = parse_transcript(full_log, report)
+
+    assert len(turns) == 2
+    assert turns[0].session_id == "sess-1234"
+    assert turns[0].project_slug == "antigravity"
+    assert turns[0].role == "user"
+    assert "sk-ant" not in turns[0].text
+    assert "[REDACTED:anthropic_key]" in turns[0].text
+
+    assert turns[1].role == "assistant"
+    assert turns[1].tool_names == ["run_command"]
+    assert "[thinking]" in turns[1].text
+    assert "[tool_call:run_command]" in turns[1].text
+    assert turns[1].trainable is False
+    assert turns[1].usage == "retrieval_only"
+
+
+def test_iter_transcripts_antigravity_prefers_full(tmp_path: Path) -> None:
+    brain = tmp_path / "brain"
+    s1 = brain / "sess-1" / ".system_generated" / "logs"
+    s1.mkdir(parents=True)
+    (s1 / "transcript.jsonl").write_text("{}\n")
+    (s1 / "transcript_full.jsonl").write_text("{}\n")
+
+    found = list(iter_transcripts(brain))
+    assert len(found) == 1
+    assert found[0].name == "transcript_full.jsonl"
+

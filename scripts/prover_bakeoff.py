@@ -14,13 +14,19 @@ import argparse
 import json
 import re
 import subprocess
+import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
 
+sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
+
+from gpu_lease import gpu_lease  # noqa: E402
+
 TRUSTED_AXIOMS = {"propext", "Classical.choice", "Quot.sound"}
+LEASE_HOLDER = "autoevolve-prover-bakeoff"
 
 # `import Mathlib` is NOT available here: the local Mathlib build is partial
 # (3,431 oleans, no umbrella). This header is exactly what the already-built
@@ -131,23 +137,24 @@ def main() -> int:
 
     results = {"started": datetime.now(UTC).isoformat(), "runs": []}
     attempts = [(0.0, "greedy"), (0.7, "sample1"), (0.7, "sample2")]  # pass@3
-    for model in args.models:
-        for name, stmt in STATEMENTS:
-            for temp, tag in attempts:
-                run = {"model": model, "theorem": name, "attempt": tag}
-                print(f"[{model.split('/')[-1]}] {name} ({tag}) ...", flush=True)
-                try:
-                    text = generate(model, stmt, call_log, temperature=temp)
-                    code = extract_lean(text, stmt)
-                    run["verify"] = verify(name, code, Path(args.formal_dir), tmp_dir)
-                    print(f"  -> compiled={run['verify']['compiled']} clean={run['verify']['verified_clean']} axioms={run['verify']['axioms']}", flush=True)
-                except Exception as e:
-                    run["error"] = f"{type(e).__name__}: {e}"
-                    print(f"  -> ERROR {run['error']}", flush=True)
-                results["runs"].append(run)
-                Path(args.out).write_text(json.dumps(results, indent=2))
-                if run.get("verify", {}).get("verified_clean"):
-                    break  # first clean proof settles this (model, theorem) pair
+    with gpu_lease(LEASE_HOLDER, "prover bake-off: Ollama generation per theorem", ttl_s=3600, timeout_s=3600):
+        for model in args.models:
+            for name, stmt in STATEMENTS:
+                for temp, tag in attempts:
+                    run = {"model": model, "theorem": name, "attempt": tag}
+                    print(f"[{model.split('/')[-1]}] {name} ({tag}) ...", flush=True)
+                    try:
+                        text = generate(model, stmt, call_log, temperature=temp)
+                        code = extract_lean(text, stmt)
+                        run["verify"] = verify(name, code, Path(args.formal_dir), tmp_dir)
+                        print(f"  -> compiled={run['verify']['compiled']} clean={run['verify']['verified_clean']} axioms={run['verify']['axioms']}", flush=True)
+                    except Exception as e:
+                        run["error"] = f"{type(e).__name__}: {e}"
+                        print(f"  -> ERROR {run['error']}", flush=True)
+                    results["runs"].append(run)
+                    Path(args.out).write_text(json.dumps(results, indent=2))
+                    if run.get("verify", {}).get("verified_clean"):
+                        break  # first clean proof settles this (model, theorem) pair
 
     results["finished"] = datetime.now(UTC).isoformat()
     Path(args.out).write_text(json.dumps(results, indent=2))

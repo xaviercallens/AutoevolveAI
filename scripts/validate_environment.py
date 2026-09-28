@@ -25,13 +25,19 @@ import shutil
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DISK2 = Path("/mnt/disks/disk-socrateai-local-1")
+sys.path.insert(0, str(DISK2 / "gpu_lease"))
+
+from gpu_lease import gpu_lease  # noqa: E402
+
+LEASE_HOLDER = "autoevolve-validate-env"
 
 
 class Verdict(StrEnum):
@@ -205,12 +211,16 @@ def check_ollama_throughput(model: str = "qwen2.5-coder:7b-instruct") -> Check:
         "options": {"num_predict": 80, "temperature": 0.2},
     }
     try:
-        httpx.post("http://localhost:11434/api/generate", json=payload, timeout=900)
-        start = time.monotonic()
-        response = httpx.post(
-            "http://localhost:11434/api/generate", json=payload, timeout=900
-        )
-        wall = time.monotonic() - start
+        with gpu_lease(LEASE_HOLDER, "validate_environment: warm Ollama throughput probe",
+                       ttl_s=1800, timeout_s=600):
+            httpx.post("http://localhost:11434/api/generate", json=payload, timeout=900)
+            start = time.monotonic()
+            response = httpx.post(
+                "http://localhost:11434/api/generate", json=payload, timeout=900
+            )
+            wall = time.monotonic() - start
+    except TimeoutError as exc:
+        return Check("ollama_throughput", Verdict.SKIP, f"GPU lease held by another job: {exc}")
     except httpx.HTTPError as exc:
         return Check("ollama_throughput", Verdict.SKIP, f"ollama unreachable: {exc}")
 

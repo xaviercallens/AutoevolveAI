@@ -37,6 +37,11 @@ from typing import Any
 
 import httpx
 
+sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
+
+from gpu_lease import gpu_lease  # noqa: E402
+
+LEASE_HOLDER = "autoevolve-phd-peer-review"
 REPO = Path(__file__).resolve().parent.parent.parent
 PAPER = REPO / "papers" / "phd_demo_verlet" / "verlet_symplectic.tex"
 LEDGER = REPO / "results" / "phd_demo" / "artifacts.json"
@@ -68,7 +73,7 @@ LENSES: tuple[tuple[str, str], ...] = (
 )
 
 
-class ReviewerUnavailable(RuntimeError):
+class ReviewerUnavailable(RuntimeError):  # noqa: N818 - name is referenced by run records
     """No model could be reached. Never silently becomes an acceptance."""
 
 
@@ -271,68 +276,69 @@ def main(argv: list[str] | None = None) -> int:
     record: dict[str, Any] = {"model": args.model, "loops": [],
                               "negative_control": None, "positive_control": None}
 
-    if args.positive_control:
-        print("=== POSITIVE CONTROL: reviewer must ACCEPT a trivially-correct document ===")
-        try:
-            pos = positive_control(args.model)
-        except ReviewerUnavailable as exc:
-            print(f"REVIEWER UNAVAILABLE: {exc}", file=sys.stderr)
-            return 1
-        record["positive_control"] = pos
-        print(f"  accepted {pos['accepted']}/{pos['trials']} trials -> "
-              f"{'PASSED' if pos['passed'] else 'FAILED (reviewer rejects everything)'}\n")
-        if not pos["passed"]:
-            print("The reviewer cannot accept even a trivially-correct document; its "
-                  "rejections carry no information.")
-            (OUT / "review.json").write_text(json.dumps(record, indent=2) + "\n")
-            return 1
+    with gpu_lease(LEASE_HOLDER, "phd demo peer review: Ollama reviewer calls", ttl_s=3600, timeout_s=3600):
+        if args.positive_control:
+            print("=== POSITIVE CONTROL: reviewer must ACCEPT a trivially-correct document ===")
+            try:
+                pos = positive_control(args.model)
+            except ReviewerUnavailable as exc:
+                print(f"REVIEWER UNAVAILABLE: {exc}", file=sys.stderr)
+                return 1
+            record["positive_control"] = pos
+            print(f"  accepted {pos['accepted']}/{pos['trials']} trials -> "
+                  f"{'PASSED' if pos['passed'] else 'FAILED (reviewer rejects everything)'}\n")
+            if not pos["passed"]:
+                print("The reviewer cannot accept even a trivially-correct document; its "
+                      "rejections carry no information.")
+                (OUT / "review.json").write_text(json.dumps(record, indent=2) + "\n")
+                return 1
 
-    if args.negative_control:
-        print("=== NEGATIVE CONTROL: reviewer must REJECT a corrupted paper ===")
-        try:
-            controls = review_once(corrupt_paper(paper, ledger), ledger, args.model)
-        except ReviewerUnavailable as exc:
-            print(f"REVIEWER UNAVAILABLE: {exc}", file=sys.stderr)
-            return 1
-        rejected = [r for r in controls if r.rejects]
-        for r in controls:
-            print(f"  [{r.lens:12}] rejects={r.rejects} severity={r.severity} "
-                  f"found={len(r.unsupported_claims)}")
-        record["negative_control"] = {
-            "lenses": [r.as_dict() for r in controls],
-            "rejected_by": len(rejected),
-            "passed": len(rejected) > 0,
-        }
-        if not rejected:
-            print("\nFAILED: the reviewer accepted a knowingly-broken paper. "
-                  "Its approval of the real paper would be worthless.")
-            (OUT / "review.json").write_text(json.dumps(record, indent=2) + "\n")
-            return 1
-        print(f"  -> control PASSED: {len(rejected)}/{len(controls)} lenses rejected\n")
+        if args.negative_control:
+            print("=== NEGATIVE CONTROL: reviewer must REJECT a corrupted paper ===")
+            try:
+                controls = review_once(corrupt_paper(paper, ledger), ledger, args.model)
+            except ReviewerUnavailable as exc:
+                print(f"REVIEWER UNAVAILABLE: {exc}", file=sys.stderr)
+                return 1
+            rejected = [r for r in controls if r.rejects]
+            for r in controls:
+                print(f"  [{r.lens:12}] rejects={r.rejects} severity={r.severity} "
+                      f"found={len(r.unsupported_claims)}")
+            record["negative_control"] = {
+                "lenses": [r.as_dict() for r in controls],
+                "rejected_by": len(rejected),
+                "passed": len(rejected) > 0,
+            }
+            if not rejected:
+                print("\nFAILED: the reviewer accepted a knowingly-broken paper. "
+                      "Its approval of the real paper would be worthless.")
+                (OUT / "review.json").write_text(json.dumps(record, indent=2) + "\n")
+                return 1
+            print(f"  -> control PASSED: {len(rejected)}/{len(controls)} lenses rejected\n")
 
-    for loop in range(1, args.loops + 1):
-        print(f"=== REVIEW LOOP {loop}/{args.loops} ===")
-        try:
-            reviews = review_once(paper, ledger, args.model)
-        except ReviewerUnavailable as exc:
-            print(f"REVIEWER UNAVAILABLE: {exc}", file=sys.stderr)
-            return 1
-        rejecting = [r for r in reviews if r.rejects]
-        for r in reviews:
-            print(f"  [{r.lens:12}] rejects={r.rejects} severity={r.severity} "
-                  f"claims={len(r.unsupported_claims)}")
-            for c in r.unsupported_claims[:3]:
-                print(f"      - {c[:120]}")
-        record["loops"].append({
-            "loop": loop,
-            "reviews": [r.as_dict() for r in reviews],
-            "rejecting": len(rejecting),
-            "accepted": len(rejecting) == 0,
-        })
-        if not rejecting:
-            print(f"  -> all {len(reviews)} lenses accept at loop {loop}\n")
-            break
-        print(f"  -> {len(rejecting)}/{len(reviews)} lenses reject; issues recorded\n")
+        for loop in range(1, args.loops + 1):
+            print(f"=== REVIEW LOOP {loop}/{args.loops} ===")
+            try:
+                reviews = review_once(paper, ledger, args.model)
+            except ReviewerUnavailable as exc:
+                print(f"REVIEWER UNAVAILABLE: {exc}", file=sys.stderr)
+                return 1
+            rejecting = [r for r in reviews if r.rejects]
+            for r in reviews:
+                print(f"  [{r.lens:12}] rejects={r.rejects} severity={r.severity} "
+                      f"claims={len(r.unsupported_claims)}")
+                for c in r.unsupported_claims[:3]:
+                    print(f"      - {c[:120]}")
+            record["loops"].append({
+                "loop": loop,
+                "reviews": [r.as_dict() for r in reviews],
+                "rejecting": len(rejecting),
+                "accepted": len(rejecting) == 0,
+            })
+            if not rejecting:
+                print(f"  -> all {len(reviews)} lenses accept at loop {loop}\n")
+                break
+            print(f"  -> {len(rejecting)}/{len(reviews)} lenses reject; issues recorded\n")
 
     # --loops 0 runs the negative control alone, so there may be no review loop.
     final = record["loops"][-1] if record["loops"] else {"accepted": None}

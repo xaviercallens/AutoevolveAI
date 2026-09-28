@@ -14,7 +14,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
 import subprocess
 import sys
 import time
@@ -25,19 +24,26 @@ from typing import Any
 sys.stdout.reconfigure(line_buffering=True)
 sys.stderr.reconfigure(line_buffering=True)
 
-import torch
+import torch  # noqa: E402
+
 torch.set_num_threads(8)
 torch.set_num_interop_threads(4)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("LTM-LoRA")
 
-from anse.memory.redis_memory import ConversationTurn, RedisLongTermMemory
-from scripts.sync_conversations_to_redis import parse_transcript_file
+from gpu_lease import gpu_lease  # noqa: E402
+
+from scripts.sync_conversations_to_redis import parse_transcript_file  # noqa: E402
+
+# Same holder as scripts/nightly_retrain_at_5am.py, which launches this script while holding
+# the lease: gpu_lease re-enters only for an identical holder string.
+LEASE_HOLDER = "autoevolve-nightly"
 
 
 def ensure_redis_server(port: int = 6379) -> Any:
@@ -396,20 +402,21 @@ def main() -> int:
             f.write(json.dumps(ex) + "\n")
     logger.info("Saved dataset to %s (%d records)", ds_file, len(dataset))
 
-    # 3. Execute LoRA Training
-    train_report = execute_local_lora_training(
-        dataset=dataset,
-        model_id=args.model_id,
-        output_dir=args.output_dir,
-        max_steps=args.steps,
-        max_length=args.max_len,
-    )
+    with gpu_lease(LEASE_HOLDER, "Redis LTM: Qwen LoRA training + inference check", ttl_s=3600, timeout_s=3600):
+        # 3. Execute LoRA Training
+        train_report = execute_local_lora_training(
+            dataset=dataset,
+            model_id=args.model_id,
+            output_dir=args.output_dir,
+            max_steps=args.steps,
+            max_length=args.max_len,
+        )
 
-    # 4. Verify Inference
-    sample_output = verify_lora_inference(
-        adapter_path=args.output_dir,
-        base_model_id=args.model_id,
-    )
+        # 4. Verify Inference
+        sample_output = verify_lora_inference(
+            adapter_path=args.output_dir,
+            base_model_id=args.model_id,
+        )
 
     # 5. Output Final Report
     report = {

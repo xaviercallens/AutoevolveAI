@@ -1,18 +1,23 @@
-import os
 import sys
+from pathlib import Path
+
 import torch
 import torch.nn as nn
-from pathlib import Path
 
 # Add Laya checkpoint dir to path to import rl_common
 laya_dir = Path(__file__).resolve().parent.parent / "checkpoints" / "laya"
 sys.path.insert(0, str(laya_dir))
+sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
+
+from gpu_lease import gpu_lease  # noqa: E402
 
 try:
-    from rl_common import build_model, load_cfg, proper_reward
+    from rl_common import build_model, load_cfg, proper_reward  # noqa: F401
 except ImportError:
     print("Could not import Laya rl_common. Ensure you are running this from the repo root.")
     sys.exit(1)
+
+LEASE_HOLDER = "autoevolve-laya-lora-sim"
 
 def apply_lora_to_encoder(model, r=8, alpha=16, dropout=0.05):
     """
@@ -98,7 +103,7 @@ def simulate_finetuning():
     input_ids = torch.randint(0, 1000, (batch_size, seq_len), device=device)
     attention_mask = torch.ones(batch_size, seq_len, device=device)
     marker_pos = torch.tensor([[10, 20, 30], [10, 20, 30]], device=device)
-    marker_mask = torch.ones(batch_size, num_options, dtype=torch.bool, device=device)
+    marker_mask = torch.ones(batch_size, num_options, dtype=torch.bool, device=device)  # noqa: F841
     qtype = torch.zeros(batch_size, dtype=torch.long, device=device) # 0 = choice
     
     # Forward pass
@@ -137,4 +142,5 @@ def simulate_finetuning():
     print("Fine-tuning simulation complete! This proves Laya can be fine-tuned via LoRA / RLCD.")
 
 if __name__ == "__main__":
-    simulate_finetuning()
+    with gpu_lease(LEASE_HOLDER, "Laya LoRA fine-tuning simulation", ttl_s=1800, timeout_s=3600):
+        simulate_finetuning()

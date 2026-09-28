@@ -49,8 +49,12 @@ from typing import Any
 
 REPO = Path(__file__).resolve().parent.parent
 OUT = REPO / "data" / "episodes"
+sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
+
+from gpu_lease import gpu_lease  # noqa: E402
 
 OLLAMA = "http://localhost:11434"
+LEASE_HOLDER = "autoevolve-harvest-episodes"
 CODER_MODEL = "qwen2.5-coder:7b-instruct"
 
 
@@ -221,58 +225,59 @@ def main(argv: list[str] | None = None) -> int:
     episodes: list[dict[str, Any]] = []
     stats = {"attempted": 0, "fully_passed": 0, "partial": 0, "failed": 0}
 
-    for task in selected:
-        for sample in range(args.samples):
-            temperature = 0.2 if sample == 0 else 0.8
-            stats["attempted"] += 1
-            t0 = time.time()
-            try:
-                raw = call_coder(task.statement, temperature)
-            except Exception as exc:
-                print(f"  {task.task_id} s{sample}: model call failed: {exc}")
-                continue
-            code = extract_code(raw)
-            v = verify(code, task)
-            energy = energy_of(v)
+    with gpu_lease(LEASE_HOLDER, "harvest episodes: coder samples + embeddings", ttl_s=3600, timeout_s=3600):
+        for task in selected:
+            for sample in range(args.samples):
+                temperature = 0.2 if sample == 0 else 0.8
+                stats["attempted"] += 1
+                t0 = time.time()
+                try:
+                    raw = call_coder(task.statement, temperature)
+                except Exception as exc:
+                    print(f"  {task.task_id} s{sample}: model call failed: {exc}")
+                    continue
+                code = extract_code(raw)
+                v = verify(code, task)
+                energy = energy_of(v)
 
-            if v["tests_passed"] == v["tests_total"]:
-                stats["fully_passed"] += 1
-            elif v["tests_passed"] > 0:
-                stats["partial"] += 1
-            else:
-                stats["failed"] += 1
+                if v["tests_passed"] == v["tests_total"]:
+                    stats["fully_passed"] += 1
+                elif v["tests_passed"] > 0:
+                    stats["partial"] += 1
+                else:
+                    stats["failed"] += 1
 
-            hidden = embed(f"{task.statement}\n\n{code}")
-            episodes.append(
-                {
-                    "task": task.task_id,
-                    "prompt": task.statement,
-                    "code": code,
-                    "raw_response": raw[:4000],
-                    "energy": energy,
-                    "energy_category": "low" if energy < 1.0 else "high",
-                    "converged": v["tests_passed"] == v["tests_total"],
-                    "iteration": sample,
-                    "duration_ms": (time.time() - t0) * 1000.0,
-                    "returncode": v["returncode"],
-                    "execution_stdout": "",
-                    "execution_stderr": v["stderr"],
-                    "hidden_state": hidden,
-                    "trace_id": str(uuid.uuid4()),
-                    "timestamp": time.time(),
-                    # The contract anse/jepa/dataset.py actually enforces.
-                    "metadata": {
-                        "tests_total": v["tests_total"],
-                        "tests_passed": v["tests_passed"],
-                        "difficulty_tier": "trivial" if energy == 0 else "fixable",
-                        "verifier": "sandbox+hidden_assertions",
-                        "temperature": temperature,
-                        "peak_ram_mb": v["peak_ram_mb"],
-                    },
-                }
-            )
-            print(f"  {task.task_id} s{sample} T={temperature}: "
-                  f"{v['tests_passed']}/{v['tests_total']} energy={energy:.2f}")
+                hidden = embed(f"{task.statement}\n\n{code}")
+                episodes.append(
+                    {
+                        "task": task.task_id,
+                        "prompt": task.statement,
+                        "code": code,
+                        "raw_response": raw[:4000],
+                        "energy": energy,
+                        "energy_category": "low" if energy < 1.0 else "high",
+                        "converged": v["tests_passed"] == v["tests_total"],
+                        "iteration": sample,
+                        "duration_ms": (time.time() - t0) * 1000.0,
+                        "returncode": v["returncode"],
+                        "execution_stdout": "",
+                        "execution_stderr": v["stderr"],
+                        "hidden_state": hidden,
+                        "trace_id": str(uuid.uuid4()),
+                        "timestamp": time.time(),
+                        # The contract anse/jepa/dataset.py actually enforces.
+                        "metadata": {
+                            "tests_total": v["tests_total"],
+                            "tests_passed": v["tests_passed"],
+                            "difficulty_tier": "trivial" if energy == 0 else "fixable",
+                            "verifier": "sandbox+hidden_assertions",
+                            "temperature": temperature,
+                            "peak_ram_mb": v["peak_ram_mb"],
+                        },
+                    }
+                )
+                print(f"  {task.task_id} s{sample} T={temperature}: "
+                      f"{v['tests_passed']}/{v['tests_total']} energy={energy:.2f}")
 
     with args.out.open("w", encoding="utf-8") as fh:
         for e in episodes:

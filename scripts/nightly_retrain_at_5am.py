@@ -18,17 +18,25 @@ import argparse
 import datetime
 import json
 import logging
-import os
 import subprocess
 import sys
 import time
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
+
+from gpu_lease import gpu_lease  # noqa: E402
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("NightlyRetrainer")
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+# One lease for the whole training block. gpu_lease re-enters only for the SAME holder
+# string, so the child runners this script launches (nightly_dream_phase.py,
+# execute_local_redis_ltm_lora.py) use this exact name: a different name would make them
+# block behind their own parent until the timeout.
+LEASE_HOLDER = "autoevolve-nightly"
 LOG_DIR = REPO_ROOT / "results" / "nightly_training"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 RUN_LOG = LOG_DIR / "nightly_retrain_5am.log"
@@ -103,53 +111,54 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
 
     results: list[dict[str, Any]] = []
 
-    # 1. REM Sleep Dream Phase: Hippocampus Replay, Laya LoRA & Latent MCTS
-    results.append(
-        run_pipeline_step(
-            "Nightly REM Dream Consolidation & Laya LoRA",
-            ["uv", "run", "python", "scripts/nightly_dream_phase.py"],
+    with gpu_lease(LEASE_HOLDER, "nightly retrain: dream + LTM LoRA + RL + JEPA + v2 validation", ttl_s=6 * 3600, timeout_s=3600):
+        # 1. REM Sleep Dream Phase: Hippocampus Replay, Laya LoRA & Latent MCTS
+        results.append(
+            run_pipeline_step(
+                "Nightly REM Dream Consolidation & Laya LoRA",
+                ["uv", "run", "python", "scripts/nightly_dream_phase.py"],
+            )
         )
-    )
 
-    # 2. Sync brain transcripts to Redis LTM
-    results.append(
-        run_pipeline_step(
-            "Redis Long-Term Memory Sync",
-            ["uv", "run", "python", "scripts/sync_conversations_to_redis.py"],
+        # 2. Sync brain transcripts to Redis LTM
+        results.append(
+            run_pipeline_step(
+                "Redis Long-Term Memory Sync",
+                ["uv", "run", "python", "scripts/sync_conversations_to_redis.py"],
+            )
         )
-    )
 
-    # 3. Retrain Qwen LoRA on Redis LTM conversations
-    results.append(
-        run_pipeline_step(
-            "Qwen LoRA LTM Retraining",
-            ["uv", "run", "python", "scripts/execute_local_redis_ltm_lora.py", "--steps", str(lora_steps), "--max-len", "160"],
+        # 3. Retrain Qwen LoRA on Redis LTM conversations
+        results.append(
+            run_pipeline_step(
+                "Qwen LoRA LTM Retraining",
+                ["uv", "run", "python", "scripts/execute_local_redis_ltm_lora.py", "--steps", str(lora_steps), "--max-len", "160"],
+            )
         )
-    )
 
-    # 4. Retrain RL EnergyCriticPolicy & DPO on multi-domain cases
-    results.append(
-        run_pipeline_step(
-            "Reinforcement Learning Critic Retraining",
-            ["uv", "run", "python", "scripts/retrain_multidisciplinary_rl.py"],
+        # 4. Retrain RL EnergyCriticPolicy & DPO on multi-domain cases
+        results.append(
+            run_pipeline_step(
+                "Reinforcement Learning Critic Retraining",
+                ["uv", "run", "python", "scripts/retrain_multidisciplinary_rl.py"],
+            )
         )
-    )
 
-    # 5. Retrain JEPA World Model on Physics Systems
-    results.append(
-        run_pipeline_step(
-            "JEPA World Model Continual Learning",
-            ["uv", "run", "python", "-m", "anse.physics.advanced_world_models"],
+        # 5. Retrain JEPA World Model on Physics Systems
+        results.append(
+            run_pipeline_step(
+                "JEPA World Model Continual Learning",
+                ["uv", "run", "python", "-m", "anse.physics.advanced_world_models"],
+            )
         )
-    )
 
-    # 6. Run Autopoietic V2 Validation
-    results.append(
-        run_pipeline_step(
-            "ANSE V2 Autopoietic Engine Validation",
-            ["uv", "run", "python", "scripts/run_v2_autopoiesis.py"],
+        # 6. Run Autopoietic V2 Validation
+        results.append(
+            run_pipeline_step(
+                "ANSE V2 Autopoietic Engine Validation",
+                ["uv", "run", "python", "scripts/run_v2_autopoiesis.py"],
+            )
         )
-    )
 
     # 7. Deploy updated checkpoints & databases to GCP Data Lake
     if not skip_deploy:

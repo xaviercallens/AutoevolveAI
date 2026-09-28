@@ -28,8 +28,13 @@ from torch.utils.data import Dataset
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
+
+from gpu_lease import gpu_lease  # noqa: E402
 
 from anse.guard.critic import EnergyCriticPolicy, tokenize_string  # noqa: E402
+
+LEASE_HOLDER = "autoevolve-nightly-rl"
 
 # ─── Dataset ─────────────────────────────────────────────────────────────────
 
@@ -251,15 +256,16 @@ def main() -> None:
     parser.add_argument("--device", type=str, default="auto")
     args = parser.parse_args()
 
-    train_dpo_overnight(
-        dataset_path=args.dataset,
-        output_dir=args.output_dir,
-        epochs=args.epochs,
-        batch_size=args.batch_size,
-        lr=args.lr,
-        beta=args.beta,
-        device=args.device,
-    )
+    with gpu_lease(LEASE_HOLDER, "nightly RL: DPO critic training", ttl_s=3600, timeout_s=3600):
+        train_dpo_overnight(
+            dataset_path=args.dataset,
+            output_dir=args.output_dir,
+            epochs=args.epochs,
+            batch_size=args.batch_size,
+            lr=args.lr,
+            beta=args.beta,
+            device=args.device,
+        )
 
 
 if __name__ == "__main__":

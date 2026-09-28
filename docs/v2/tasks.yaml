@@ -706,3 +706,19 @@ cards:
   tests:
     - "results file present with both arms and the control; __init__ exports reflect the decision; a test asserts no call site filters on surrogate_cache output."
   accept: *acc_full
+
+- id: M-2
+  title: "Model x hardness router: capability matrix, sound-first routing, escalation"
+  phase: R
+  tier: mid
+  depends_on: []
+  read_first: [results/hardness/baseline.json, LL.md, docs/v2/IMPLEMENTATION_PLAN_2026-09-28.md]
+  create: [anse/v2/model_router.py, tests/v2/test_model_router.py, scripts/hardness/capability_matrix.py]
+  spec:
+    - "CapabilityMatrix of Cell(attempts, passes, false_items, false_accepted, source) per (domain, tier, model); unmeasured = None, never a guess."
+    - "route(domain, tier, matrix, available, budget) orders candidates by the Wilson lower bound of the pass rate, EXCLUDES any model that accepted a false item at that tier, allows one unmeasured exploration slot after the measured ones, and appends an escalation (top-tier or human) when the best measured lower bound is below budget.min_wilson_low. Pure and deterministic."
+    - "record_outcome folds one verifier-issued verdict (true item -> pass rate; false item -> soundness; unknown truth -> failures only) and returns a new matrix."
+    - "capability_matrix.py builds results/v2/capability_matrix.json from baseline.json, retrieval_ab.json (arm k5, model+'+premises') and phase1 results; prints the per-tier routing summary."
+  tests:
+    - "Wilson bound vs hand values; 1/1 never outranks 8/10; unsound model excluded despite a higher pass rate; T1 zero-pass escalates; determinism under input order; record_outcome is pure and flips soundness; property test that the bound is <= the point estimate."
+  accept: *acc_full

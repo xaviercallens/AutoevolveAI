@@ -2,6 +2,117 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [13.4.0] — lean_runner file-path mode, and the v2 low-tier-model program restarted on evidence (2026-09-28)
+
+**`lean_runner` gains a file-path mode (closes TODO 15).**
+`LeanKernelVerifier.verify_file` / `python -m anse.formal.lean_runner FILE.lean` gates a
+standalone Lean file from any worktree: compile must exit 0, every declared theorem must
+have a `#print axioms` line, none may depend on `sorryAx` or a non-whitelisted axiom. 13
+hermetic tests (plain `lean`, no Mathlib) cover the `sorry` and smuggled-axiom traps Lean
+itself accepts, plus a regression: Lean prints a primed name like `em'` as `'em'' depends
+on ...`, which the first regex silently dropped. `lake env` in an unbuilt directory starts
+cloning Mathlib (1.6 GB before it was stopped); the runner now refuses unless a real built
+Mathlib is present. A directory-exists check on `.lake/packages` was not enough: that same
+aborted clone leaves `.lake/packages/mathlib` behind as a real, checked-out git directory
+with source files but zero oleans anywhere under it (found and fixed the same day, in this
+worktree's own `formal/.lake`, before it shipped) — the check now looks for at least one
+built `.olean` under `.lake/build/lib/lean`, recursively (module oleans are nested by path,
+e.g. `Mathlib/GroupTheory/...`, never directly under that directory). It also cannot check
+for a `Mathlib.olean` umbrella file, because this project's own partial build (3,431 of
+~7,000 modules, imports pinned individually — CLAUDE.md) never produces one either; that
+would reject the real, working environment. Verified against both directories on this
+host: the main checkout's built `formal/` is accepted, this worktree's aborted clone is
+refused. All four cosmology Lean modules re-gated through it: 28 theorems, whitelist axioms
+only.
+
+**Transcript ingest fix.** `EMBED_CHUNK_CHARS` 6000 → 3500: a 6000-char chunk of agent
+transcript (hex hashes, JSON, Lean Unicode) exceeded qwen3-embedding's 4096-token runtime
+window and aborted the whole ingest. Re-run succeeded: 10,219 turns from 67 files across
+114 sessions, 8,940 secrets/paths scrubbed.
+
+**The v2 low-tier-model program is restarted on measured evidence**
+(`docs/v2/IMPLEMENTATION_PLAN_2026-09-28.md`, roadmap §0, `docs/v2/status.json`).
+
+*What was found.* Zero of the original 42 cards had ever been accepted
+(`docs/v2/status.json` did not exist). Both acceptance templates could not exit 0 on this
+host: `acc_full` (5 cards) demanded 100% coverage of the whole repository against a suite
+with 22 environment-bound failures; `acc_v2` (25 cards) demanded 100% coverage of all of
+`anse/v2`, measured at 83.53% because a merged branch had filled the package with
+1,460 lines of code (MeZO, EWC consolidation, a surrogate filter) that the 2026-09-21
+roadmap had argued against and that no card owned. Separately, `--cov=anse/v2/<module>`
+collects no data under pytest-cov 7, and the dotted module form segfaults once torch is
+imported. Acceptance is now scoped per card (`tools/v2_cov_check.py`, package-scope
+coverage + a per-file 100% check) and the environment builds cleanly (`.venv-v2`, py3.11).
+
+*What the hardware measured, reconciled against the card catalogue.* The Lean hardness
+ladder (`results/hardness/baseline.json`, 118 items, two provers): tier T0 (Mathlib
+lemmas) 6/10 and 8/10; **tiers T1-T3 (curve facts) 0/12 on every tier, for both models**,
+with zero false items accepted. Read from the raw generations, this is a vocabulary gap
+(the models never name the lemma the goal needs), not a reasoning gap — so retrieval into
+the prompt is the priority, ahead of any weight update. The JEPA world model trained on
+206 verified cosmology episodes is indistinguishable from a shuffled-label control
+(AUROC 0.39 real vs 0.55 shuffled across 3 seeds; the `energy_accuracy` metric saturates
+at 1.00 on both arms) — no learning is claimed from it.
+
+*Five cards accepted* (driver-verified, `docs/v2/status.json`):
+- **V0-3** — honest metrics for a zero-inflated target (AUROC, Spearman, bootstrap CI).
+- **V0-8** — a shuffled-label control built into every `JEPATrainer.train` report, with a
+  SATURATED/INFORMATIVE flag; the default training path stays byte-identical.
+- **M-2** — a model × hardness-tier router (`anse/v2/model_router.py`): candidates ranked
+  by the Wilson lower bound of the measured pass rate, any model that ever accepted a false
+  item at that tier is excluded outright regardless of fluency, one unmeasured model gets
+  an exploration slot, and routing escalates to the next tier when no measured model clears
+  the budget's threshold. `results/v2/capability_matrix.json` is built from the real result
+  files (currently: lean T0 → Goedel-Prover 8/10, Wilson-low 0.49, still escalates at the
+  default 0.5 threshold; T1-T4 → escalate).
+- **G-1** — every GPU/Ollama-touching script must hold the shared T4 lease. A faithful scan
+  found **nine** unleased runners, not the two originally suspected
+  (`nightly_dream_phase.py`, `nightly_retrain_at_5am.py`, `harvest_episodes.py`,
+  `prover_bakeoff.py`, `phd_demo/peer_review.py`, `nightly_rl_train.py`,
+  `simulate_laya_lora_finetuning.py`, `execute_local_redis_ltm_lora.py`,
+  `validate_environment.py`); all nine now acquire it around their GPU section. No cron is
+  installed on this host.
+- **N-9** — transcript-derived training rows are refused until a human writes the terms-of-
+  use decision (`docs/v2/gates/N8.md`, card N-8, still open). Measured on the real files
+  with the gate absent: **100 of 100 rows of `redis_ltm_lora_dataset.jsonl` refused**; the
+  existing 30% dilution cap is unchanged.
+
+Eight new cards added to the catalogue (50 total, graph validated, no cycles): V0-8, M-1
+(premise-retrieval A/B on the ladder — running), M-2, G-1, C-0 (wire the diluted mix into
+the trainer), C-7 (held-out pass@k for the promotion gate — running), N-9, and X-1 (measure
+or quarantine the pre-existing `anse/v2` modules against the SFT+DPO path). In progress at
+this release: M-1's retrieval A/B and C-7's held-out evaluator; neither is committed yet.
+
+**Measured gates at this commit.**
+- `test_rigor_guard.py`: exit 0 (149 files).
+- `antigravity_guard.py`: exit 1 at the phantom-import stage, so the static-analysis
+  (Ruff) stage was not reached this run. The one phantom-import finding is in an
+  in-flight, uncommitted file (`tests/v2/test_premise_prompt.py`, owned by the still-running
+  M-1 work, not part of this release) — with `uv sync --all-extras` run in this worktree
+  (a bare `uv venv` leaves fastapi/peft/datasets/trl/fastmcp/PIL/starlette absent and makes
+  the guard misreport ~50 phantom imports that are just a partial venv, not real debt),
+  nothing else in the shipped diff is flagged.
+- `pytest tests/`: **1477 passed / 21 failed / 49 skipped / 8 errors** (up from v13.3.0's
+  1358/22/49/8, measured under a different environment: this run's venv has `--all-extras`
+  installed, which lets previously-uncollectable fastapi/peft-dependent tests run — the
+  pass-count rise is not a like-for-like signal). Diffed by test id against v13.3.0's
+  worktree set: the 21 failures are the same known classes (Laya model not loaded, Lean
+  cache absent in a worktree); 8 additional Chromium-unavailable errors now surface because
+  `playwright` is installed and those tests can be collected, where before they were skipped
+  for a missing import — same pre-existing failure class (no Chromium binary on this host),
+  not a regression. Side-effect files (`data/chroma/chroma.sqlite3`, `results/factory/
+  missions.db`, `results/*_report.json`) the run touched were restored before this commit;
+  `uv.lock`'s diff is the one-line version bump only.
+
+**Also in this range, from another session, not reviewed here:** `f837350` ("resolve 200
+problems with GRPO advantage, Rosetta Stone triplets, and high-entropy DPO") and `6ecf6ee`
+(nightly dream/retrain cron scripts, now covered by card G-1 above). The 200-problem run's
+headline numbers (98.5% verification, an "832,975×" speedup) match the pattern this
+project's own 2026-09-26 audit found in the 200-benchmark suite — cases that embed their
+own reference solution and are executed, not generated — and should be read as an
+infrastructure smoke test, not a capability result, per
+`docs/v2/IMPLEMENTATION_PLAN_2026-09-28.md` §3.
+
 ## [13.3.0] — Three preregistered cosmology problems, a synthesis paper, and a learning retrofit (2026-09-27)
 
 **Published:** Zenodo DOI [10.5281/zenodo.23003926](https://zenodo.org/records/23003926)

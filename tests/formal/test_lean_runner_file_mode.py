@@ -122,12 +122,39 @@ def test_parse_axiom_lines_handles_wrapped_lists_and_empty() -> None:
     }
 
 
-def test_lake_mode_refuses_an_unbuilt_directory_and_writes_nothing(tmp_path: Path) -> None:
+def test_lake_mode_refuses_a_directory_with_no_lake_dir_at_all(tmp_path: Path) -> None:
     f = tmp_path / "X.lean"
     f.write_text("theorem t : 1 = 1 := rfl\n#print axioms t\n")
-    with pytest.raises(LeanEnvironmentError, match="no built Lean environment"):
+    with pytest.raises(LeanEnvironmentError, match="no built Mathlib"):
         LeanKernelVerifier(tmp_path).verify_file(f)
     assert not (tmp_path / ".lake").exists()  # lake was never started, so it fetched nothing
+
+
+def test_lake_mode_refuses_a_checked_out_but_unbuilt_mathlib(tmp_path: Path) -> None:
+    """Regression (2026-09-28): an aborted `lake env` clone leaves .lake/packages/mathlib
+    as a real, non-empty checked-out directory with source files but ZERO oleans anywhere
+    under it — a check that only asked ".lake/packages is a directory" would have called
+    this environment usable and let `lake env` resume the fetch/build. Reproduces the
+    exact shape found in the AutoevolveAI cosmo3-run worktree after that incident."""
+    mathlib = tmp_path / ".lake" / "packages" / "mathlib"
+    (mathlib / "Mathlib").mkdir(parents=True)
+    (mathlib / "Mathlib" / "Basic.lean").write_text("-- source only, never built\n")
+    (mathlib / ".git").mkdir()  # a real git checkout, just like the aborted clone
+    f = tmp_path / "X.lean"
+    f.write_text("theorem t : 1 = 1 := rfl\n#print axioms t\n")
+    with pytest.raises(LeanEnvironmentError, match="no built Mathlib"):
+        LeanKernelVerifier(tmp_path).verify_file(f)
+
+
+def test_lake_mode_accepts_a_build_dir_with_no_mathlib_olean_umbrella(tmp_path: Path) -> None:
+    """This project's own build never produces a Mathlib.olean umbrella (imports are
+    pinned to individual built modules — CLAUDE.md); checking for that file would reject
+    the real, working environment. At least one built module is what must be accepted."""
+    build = tmp_path / ".lake" / "packages" / "mathlib" / ".lake" / "build" / "lib" / "lean"
+    build.mkdir(parents=True)
+    (build / "Mathlib" / "Tactic" / "Ring").mkdir(parents=True)
+    (build / "Mathlib" / "Tactic" / "Ring" / "Basic.olean").write_bytes(b"\x00")
+    assert LeanKernelVerifier(tmp_path)._lake_env_cmd() == ["lake", "env", "lean"]
 
 
 @needs_lean

@@ -208,17 +208,34 @@ class LeanKernelVerifier:
         return results
 
     def _lake_env_cmd(self) -> list[str]:
-        """``lake env lean``, but only inside a directory whose packages are already built.
+        """``lake env lean``, but only inside a directory whose Mathlib is already BUILT.
 
         In a directory without ``.lake/packages`` (every fresh git worktree) ``lake env``
         does not fail fast: it starts cloning Mathlib (measured 2026-09-28: 1.6 GB written
-        into the worktree before it aborted). Refuse instead.
+        into the worktree before it aborted). Checking only that ``.lake/packages`` is a
+        directory is not enough: that same aborted clone leaves
+        ``.lake/packages/mathlib`` behind as a real, checked-out git worktree with source
+        files but ZERO oleans anywhere under it (measured 2026-09-28, this worktree,
+        after the incident above) — a directory-only check would call this environment
+        usable and let ``lake env`` resume the fetch/build.
+
+        There is no ``Mathlib.olean`` umbrella to check for even on a legitimate build:
+        this project's own partial build (3,431 of ~7,000 oleans, imports pinned to
+        individual built modules, see CLAUDE.md) never produces one either — checking for
+        it would reject the real, working environment. The signal that actually separates
+        the two, measured on both: the built lib directory holds 3,431 oleans; the aborted
+        clone holds 0. So the check is "at least one olean exists under
+        ``.lake/build/lib/lean``", not any specific file.
         """
-        if not (self.formal_dir / ".lake" / "packages").is_dir():
+        build_dir = self.formal_dir / ".lake" / "packages" / "mathlib" / ".lake" / "build" / "lib" / "lean"
+        # Oleans are nested by module path (e.g. Mathlib/GroupTheory/...olean), never directly
+        # under build_dir (measured: 0 at depth 1, 3,431 recursively) -- rglob, not glob.
+        if not build_dir.is_dir() or not any(build_dir.rglob("*.olean")):
             raise LeanEnvironmentError(
-                f"{self.formal_dir} has no built Lean environment (.lake/packages missing); "
-                "running `lake env` there would start fetching Mathlib. Point formal_dir "
-                "(or ANSE_FORMAL_DIR) at a checkout whose formal/.lake is built."
+                f"{self.formal_dir} has no built Mathlib ({build_dir} has no .olean files); "
+                "running `lake env` there could start fetching or building it. Point "
+                "formal_dir (or ANSE_FORMAL_DIR) at a checkout whose formal/.lake is "
+                "actually built."
             )
         return ["lake", "env", "lean"]
 

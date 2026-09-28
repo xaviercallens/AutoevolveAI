@@ -449,10 +449,14 @@ positive line.**
 DeepSeek-Prover-V2-7B 12/24, Goedel-Prover-V2-8B 10/24 locked statements, greedy;
 13 by at least one model; 11 by neither (Lagrange, Banach, signed Cauchy-Schwarz,
 Cayley-Hamilton, Zorn, Baire, sqrt 2, Liouville, FTA, Picard-Lindelof, 1-D Stokes).
-0/48 false variants accepted. **One error-feedback repair round rescued 0 of 26**:
-repairs keep the failing approach (e.g. wrap the same failing `rw` in a `have`).
-Same pattern as Phase 3 (LL-memory): feedback gives local edits, not a new idea.
-Do not spend GPU time on single-round repair; try retrieval or sampling instead.
+0/48 false variants accepted. **One error-feedback repair round rescued 0 of 26**,
+but split it before concluding: DeepSeek 0/12 (none truncated); Goedel 0/14, of
+which 8 hit the 4096-token cap and never finished. So the supported claim is
+narrow: *untruncated raw-error-text repair by DeepSeek rescued nothing* -- its
+repairs keep the failing approach (e.g. wrap the same failing `rw` in a `have`),
+the Phase 3 pattern. Repair with a larger budget, or with *targeted* feedback
+(the right name -- see §13d, where a rename alone fixes 10/12), is untested and
+looks promising. Don't repeat raw-error repair as-is; do test hinted repair.
 
 ### 13d. Retraining the model that proves -- first real P4-5 gate
 Nothing trained DeepSeek-Prover before. `scripts/master_math/train_prover.py`:
@@ -483,7 +487,10 @@ report that is not printed exactly once. All 41 accepted proofs re-gated: none
 affected. **A model-controlled string must never share a file with the check
 that judges it unless the check rejects everything but the proof term.**
 Also: Goedel-V2 hit the 4096-token cap on 58/86 attempts, so its 10/24 partly
-measures the budget.
+measures the budget. Side effect of the hardening: the gate now also rejects the
+harmless `set_option maxHeartbeats N in` that provers sometimes emit, so pass
+rates after 2026-09-28 are conservative relative to the old baseline (none of
+this run's 41 accepted proofs used it). Allowlist it deliberately if needed.
 
 ### 13e. Traps paid for tonight
 - **transformers 5.x `AutoTokenizer` corrupts DeepSeek-Prover's tokenizer**: it

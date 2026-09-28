@@ -59,7 +59,8 @@ def attempt(model_key: str, item: dict, prompt: str, rnd: int) -> dict:
     else:
         v = bl.compile_one(bl.lean_file(item, proof), f"mm_{model_key}_{item['id']}_r{rnd}")
         row.update(extracted=True, clean=v["clean"], axioms=v["axioms"], rc=v["rc"],
-                   axioms_printed=v["axioms_printed"], compile_s=v["secs"], errors=v["errors"])
+                   axioms_printed=v["axioms_printed"], compile_s=v["secs"], errors=v["errors"],
+                   forbidden=v["forbidden"])  # policy rejections are not proof failures
     return row
 
 

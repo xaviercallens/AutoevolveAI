@@ -313,7 +313,11 @@ locked statements, controls, and what two 7--8B provers actually prove}
       "number in this paper from the raw artifacts; all measurement tables reproduced. It found the "
       "forgeable axiom report (fixed, Section 2), the namespace explanation of the retrain gain "
       "(confirmed by the control above), the Goedel token cap, the differing token budget of the "
-      "retrain evaluation, and the fidelity notes; all are addressed in this version.\n\n")
+      "retrain evaluation, and the fidelity notes. Fixed: the gate hole (with regression tests and a "
+      "re-gate of every accepted proof) and the retrain interpretation (the rename control). Disclosed "
+      "but still open: pass@$k$ with more than one sample; re-running Goedel-Prover with a larger token "
+      "budget; a normalised (alpha-renamed) frozen-split leak check; an evaluation token budget matching "
+      "the Ollama protocol; an independent statement audit of the 24 Tier~A ledger claims.\n\n")
     a(r"\section*{Artifacts}" + "\n\\texttt{scripts/master\\_math/} (statements, validator, runner, "
       "harvester, this generator); \\texttt{results/master\\_math\\_run2/} (validation, runs with every "
       "proof and error, harvest report); \\texttt{formal/ANSE/MasterMathRun2.lean} (all statements with "

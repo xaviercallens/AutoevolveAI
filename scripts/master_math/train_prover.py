@@ -199,7 +199,8 @@ def evaluate(arm: str, items: list[dict], max_new: int) -> list[dict]:
             row.update(extracted=False, clean=False)
         else:
             v = bl.compile_one(bl.lean_file(it, proof), f"prover_{arm}_{it['id']}")
-            row.update(extracted=True, clean=v["clean"], rc=v["rc"], errors=v["errors"][:400])
+            row.update(extracted=True, clean=v["clean"], rc=v["rc"], errors=v["errors"][:400],
+                       forbidden=v["forbidden"])
         rows.append(row)
         print(json.dumps({k2: row.get(k2) for k2 in ("arm", "id", "truth", "clean", "gen_s")}), flush=True)
     del net

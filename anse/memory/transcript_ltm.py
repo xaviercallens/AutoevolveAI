@@ -183,10 +183,13 @@ def parse_transcript(path: Path, scrub_report: ScrubReport | None = None) -> lis
     return turns
 
 
-# Well under the 4096-token runtime window Ollama gives the embedding model
-# (~4 chars/token, so ~6000 chars is ~1500 tokens). Overlap keeps a sentence that
-# straddles a boundary retrievable from at least one window.
-EMBED_CHUNK_CHARS = 6000
+# Must stay under the 4096-token runtime window Ollama gives the embedding model.
+# ~4 chars/token holds for prose only: on 2026-09-28 a 6000-char chunk of agent
+# transcript (sha256 hex, JSON, Lean Unicode) exceeded the window ("input length
+# exceeds the context length") and aborted the whole ingest. 3500 chars stays under
+# 4096 tokens even at ~1 char/token. Overlap keeps a sentence that straddles a
+# boundary retrievable from at least one window.
+EMBED_CHUNK_CHARS = 3500
 EMBED_CHUNK_OVERLAP = 400
 
 

@@ -19,8 +19,12 @@ rules:
 # (13 tests pass; the uncovered lines are the ANSE-2.0 modules the merged GCP branch added, which no
 # card owns). So every acc_v2 card failed its gate before it started. Coverage is now scoped to the
 # modules the card itself creates or edits; card X-1 restores the whole-package 100 % afterwards.
+# Coverage is measured at package scope (the only form pytest-cov 7 collects without segfaulting
+# once torch is loaded) and then held to 100 % PER FILE for the card's own modules by
+# tools/v2_cov_check.py, so foreign modules in anse/v2 cannot fail or pass a card.
 acc_v2: &acc_v2
-  - "source .venv-v2/bin/activate && python -m pytest tests/v2 -q -p no:cacheprovider --cov=anse/v2/<module(s) this card creates or edits, without .py> --cov-branch --cov-report=term-missing --cov-fail-under=100"
+  - "source .venv-v2/bin/activate && python -m pytest tests/v2 -q -p no:cacheprovider --cov=anse/v2 --cov-branch --cov-report=json:.scratchpad/cov.json --cov-fail-under=0"
+  - "source .venv-v2/bin/activate && python tools/v2_cov_check.py .scratchpad/cov.json <the anse/v2 files this card creates or edits>"
   - "source .venv-v2/bin/activate && python test_rigor_guard.py"
 # 2026-09-28: acc_full used to run the WHOLE suite with --cov-fail-under=100. The suite has 22
 # environment-bound failures and repository coverage is far below 100 %, so every card failed its
@@ -28,7 +32,8 @@ acc_v2: &acc_v2
 # the card: its named tests, tests/v2 at 100 % of anse/v2, the anti-stub rigor guard, and ruff on
 # the touched files. Repository-wide health is the RELEASE gate (scripts/verify_release.py).
 acc_full: &acc_full
-  - "source .venv-v2/bin/activate && python -m pytest tests/v2 <the card's named test files> -q -p no:cacheprovider --cov=anse/v2/<module(s) this card creates or edits, without .py> --cov-branch --cov-report=term-missing --cov-fail-under=100"
+  - "source .venv-v2/bin/activate && python -m pytest tests/v2 <the card's named test files> -q -p no:cacheprovider --cov=anse/v2 --cov-branch --cov-report=json:.scratchpad/cov.json --cov-fail-under=0"
+  - "source .venv-v2/bin/activate && python tools/v2_cov_check.py .scratchpad/cov.json <the anse/v2 files this card creates or edits; omit this line if the card touches none>"
   - "source .venv-v2/bin/activate && python test_rigor_guard.py"
   - "source .venv-v2/bin/activate && ruff check <the files the card edited or created>"
 

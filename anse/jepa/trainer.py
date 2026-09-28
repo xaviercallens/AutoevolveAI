@@ -15,21 +15,27 @@ Algorithm per step:
 
 from __future__ import annotations
 
+import copy
 import logging
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
+from typing import Any
 
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, Subset
 
 from anse.config import JEPAConfig
 from anse.jepa.dataset import JEPADataset, train_val_split
 from anse.jepa.ema import cosine_ema_schedule, ema_update
 from anse.jepa.world_model import JEPAWorldModel
+from anse.v2.label_control import control_report, shuffled_copy
+from anse.v2.metrics import auroc, spearman
 
 logger = logging.getLogger("anse.jepa.trainer")
+
+LABEL_CONTROL_KEYS = ["energy_accuracy", "val_loss", "auroc", "spearman"]
 
 
 @dataclass
@@ -43,7 +49,23 @@ class TrainingSummary:
     total_steps: int = 0
     training_time_seconds: float = 0.0
     checkpoint_path: str | None = None
-    history: list[dict[str, float]] = field(default_factory=list)
+    history: list[dict[str, Any]] = field(default_factory=list)
+
+
+def shuffled_label_dataset(dataset: JEPADataset, seed: int) -> JEPADataset:
+    """A shallow copy of *dataset* whose state energies are permuted across states.
+
+    Items, transitions and the task split are untouched, so the control trains on
+    exactly the same inputs and the same held-out tasks as the real run; only the
+    labels no longer belong to their rows.
+    """
+    permuted = shuffled_copy([{"energy": s.energy} for s in dataset.states], seed)
+    clone = copy.copy(dataset)
+    clone.states = [
+        replace(state, energy=row["energy"])
+        for state, row in zip(dataset.states, permuted, strict=True)
+    ]
+    return clone
 
 
 @dataclass
@@ -166,6 +188,7 @@ class JEPATrainer:
         val_fraction: float = 0.2,
         seed: int = 42,
         energy_accuracy_threshold: float = 0.1,
+        label_control_seed: int | None = None,
     ) -> TrainingSummary:
         """Run the full training loop.
 
@@ -176,6 +199,11 @@ class JEPATrainer:
             val_fraction: Fraction of data for validation.
             seed: Random seed for reproducibility.
             energy_accuracy_threshold: Threshold for energy prediction accuracy.
+            label_control_seed: When set, a second fit from the same initial weights
+                on ``shuffled_label_dataset(dataset, label_control_seed)`` is run and
+                ``history[-1]['label_control']`` carries the real-vs-shuffled
+                comparison (card V0-8). The returned trainer state and checkpoint are
+                those of the real fit. ``None`` leaves the behaviour unchanged.
 
         Returns:
             TrainingSummary with metrics and checkpoint path.
@@ -198,7 +226,46 @@ class JEPATrainer:
         else:
             train_ds, val_ds = train_val_split(dataset, val_fraction, seed)
 
-        return self.fit(
+        if label_control_seed is None:
+            return self.fit(
+                train_ds,
+                val_ds,
+                epochs=epochs,
+                batch_size=batch_size,
+                seed=seed,
+                energy_accuracy_threshold=energy_accuracy_threshold,
+            )
+        return self._fit_with_label_control(
+            dataset,
+            train_ds,
+            val_ds,
+            epochs=epochs,
+            batch_size=batch_size,
+            seed=seed,
+            energy_accuracy_threshold=energy_accuracy_threshold,
+            label_control_seed=label_control_seed,
+        )
+
+    def _fit_with_label_control(
+        self,
+        dataset: JEPADataset,
+        train_ds: Dataset,
+        val_ds: Dataset,
+        epochs: int,
+        batch_size: int,
+        seed: int,
+        energy_accuracy_threshold: float,
+        label_control_seed: int,
+    ) -> TrainingSummary:
+        """Real fit, then a shuffled-label fit from the same initial weights (V0-8).
+
+        The control never checkpoints and never leaks into the returned model: the
+        real weights and optimiser state are restored before returning.
+        """
+        initial_model = copy.deepcopy(self.model.state_dict())
+        initial_optimizer = copy.deepcopy(self.optimizer.state_dict())
+
+        summary = self.fit(
             train_ds,
             val_ds,
             epochs=epochs,
@@ -206,6 +273,69 @@ class JEPATrainer:
             seed=seed,
             energy_accuracy_threshold=energy_accuracy_threshold,
         )
+        real_metrics = self._arm_metrics(summary, val_ds, batch_size)
+        real_model = copy.deepcopy(self.model.state_dict())
+        real_optimizer = copy.deepcopy(self.optimizer.state_dict())
+
+        shuffled = shuffled_label_dataset(dataset, label_control_seed)
+        shuffled_train: Dataset = (
+            Subset(shuffled, train_ds.indices) if isinstance(train_ds, Subset) else shuffled
+        )
+        shuffled_val: Dataset = (
+            Subset(shuffled, val_ds.indices) if isinstance(val_ds, Subset) else shuffled
+        )
+        self.model.load_state_dict(initial_model)
+        self.optimizer.load_state_dict(initial_optimizer)
+        control_summary = self.fit(
+            shuffled_train,
+            shuffled_val,
+            epochs=epochs,
+            batch_size=batch_size,
+            seed=seed,
+            energy_accuracy_threshold=energy_accuracy_threshold,
+            select_best_on_val=False,
+        )
+        shuffled_metrics = self._arm_metrics(control_summary, shuffled_val, batch_size)
+
+        self.model.load_state_dict(real_model)
+        self.optimizer.load_state_dict(real_optimizer)
+
+        report = control_report(real_metrics, shuffled_metrics, LABEL_CONTROL_KEYS)
+        report["seed"] = label_control_seed
+        report["val_items"] = len(val_ds)  # type: ignore[arg-type]
+        report["val_positives"] = sum(1 for e in real_metrics["actuals"] if e > 0.0)
+        summary.history[-1]["label_control"] = report
+        return summary
+
+    def _arm_metrics(self, summary: TrainingSummary, val_ds: Dataset, batch_size: int) -> dict[str, Any]:
+        """Metrics of one arm (real or shuffled) on its validation items.
+
+        ``auroc`` scores the energy head as a detector of non-zero energy (any
+        failure); ``spearman`` is its rank agreement with the graded energy. Both are
+        ``None`` when undefined (one class, constant predictions, < 3 items).
+        """
+        predictions, actuals = self._energy_predictions(DataLoader(val_ds, batch_size=batch_size))
+        labels = [1 if e > 0.0 else 0 for e in actuals]
+        return {
+            "energy_accuracy": summary.history[-1]["energy_accuracy"],
+            "val_loss": summary.final_val_loss,
+            "auroc": auroc(predictions, labels),
+            "spearman": spearman(predictions, actuals),
+            "actuals": actuals,
+        }
+
+    @torch.no_grad()
+    def _energy_predictions(self, loader: DataLoader) -> tuple[list[float], list[float]]:
+        """Energy-head predictions and actual energies, aligned, for every item of *loader*."""
+        self.model.eval()
+        predictions: list[float] = []
+        actuals: list[float] = []
+        for h_ctx, _h_tgt, energy_actual in loader:
+            z_ctx = self.model.ctx_encoder(self.model.prepare_input(h_ctx.to(self.device), "h_context"))  # type: ignore
+            energy_pred = self.model.energy_head(z_ctx)  # type: ignore
+            predictions.extend(float(v) for v in energy_pred.flatten().tolist())
+            actuals.extend(float(v) for v in energy_actual.flatten().tolist())
+        return predictions, actuals
 
     def fit(
         self,

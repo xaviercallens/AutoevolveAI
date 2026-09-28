@@ -432,3 +432,17 @@ exceeds order 1.
 10. Lean prints a primed theorem `em'` as `'em'' depends on ...`; a `[^']+` pattern silently
     lost it, which would have read as "no axioms line" (unchecked). Found by a test written
     before the code was trusted; regression test added.
+
+### 12f. Honest metrics change the JEPA verdict from "no signal" to "wrong signal" (2026-09-28)
+
+11. With AUROC on a task-held-out split (card V0-3) and the shuffled-label control run
+    inside the trainer (card V0-8), the 206-episode JEPA head scores **real-label AUROC
+    0.39 (seeds 0.35/0.49/0.34) vs shuffled 0.55**; Spearman −0.13 vs +0.06;
+    `energy_accuracy` 1.00 on both arms (SATURATED). Below-chance on all three seeds with
+    4–13 positives per split is overfitting to task identity, not learning.
+    `results/cosmo3_learning/retrofit_summary_v0_8.json`. A learning claim now needs a
+    real-vs-shuffled gap larger than the seed spread, on a held-out split, or it is not made.
+12. Acceptance tooling can lie by omission: `--cov=anse/v2/<module>` silently collected
+    nothing (0 %, exit 1 either way) and the dotted module form segfaulted once torch was
+    imported. Coverage is now measured at package scope and held per file by
+    `tools/v2_cov_check.py`; a check that cannot run must fail loudly, not report 0 %.

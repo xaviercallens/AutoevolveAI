@@ -153,8 +153,17 @@ Qwen3.5-9B for train+serve, 27B unmeasured. Two additions from this week:
 1. Build `.venv-v2` (`tools/setup_v2_env.sh`), run `tools/v2_tasks.py check` (passes: 42
    cards + this revision's additions, no cycles).
 2. Run the accept blocks of V0-4, V0-5, N-1, N-5a, N-6 as they now stand and mark the ones
-   that exit 0 with `tools/v2_tasks.py done`. Expected: 3–5 cards done on day one, with
-   evidence, none by assertion.
+   that exit 0 with `tools/v2_tasks.py done`. **Measured the same day: none of them is done
+   by the card's own criterion.** Their named modules (`anse/v2/benchmark_split.py`,
+   `anse/v2/capture/`, `anse/v2/verifiers/math_check.py`, `anse/v2/retrieval.py`,
+   `anse/v2/scrub.py`) do not exist; what exists on `main` solves the same problem under a
+   different contract (§3). "DONE-ELSEWHERE" therefore means *the work is not urgent*, not
+   *the card is done*: each needs either a thin adapter to the card's contract or a card
+   rewrite pointing at the existing module. V0-4's test bullet is also unmet (no batch-of-1
+   backward test). The first accepted cards are V0-3, V0-8 and M-2 (new this revision).
+   Also measured: `--cov=anse/v2/<module>` collects nothing under pytest-cov 7 and the
+   dotted form segfaults with torch loaded; acceptance now uses package-scope coverage plus
+   `tools/v2_cov_check.py` for the per-file 100 %.
 3. **V0-3** metrics (AUROC, Spearman, calibration on a few-valued target) and **V0-8**
    (new): every trainer report carries a shuffled-label control next to the real number.
    Exit: the cosmo3 retrofit re-run reports AUROC for real vs shuffled, and the two differ

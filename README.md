@@ -8,7 +8,7 @@
 
 [![Tests](https://img.shields.io/badge/tests-1371_passing-brightgreen?style=flat-square&logo=pytest)](#measured-status)
 [![Lean 4](https://img.shields.io/badge/Lean_4-254_theorems-blue?style=flat-square&logo=lean)](formal/ANSE)
-[![Release](https://img.shields.io/badge/release-v13.4.0-blueviolet?style=flat-square&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v13.4.0)
+[![Release](https://img.shields.io/badge/release-v13.4.1-blueviolet?style=flat-square&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v13.4.1)
 [![Python](https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python)](pyproject.toml)
 [![Rust](https://img.shields.io/badge/rust-1.96-000000?style=flat-square&logo=rust)](crates/)
 [![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)](LICENSE)

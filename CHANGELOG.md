@@ -2,6 +2,27 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [13.4.1] — Card C-7: a held-out pass@k gate replaces the unconditional BLOCKED (2026-09-28)
+
+`anse/v2/heldout_eval.py`: the unbiased pass@k estimator (Chen et al. 2021) with a Wilson
+CI, per-tier breakdown, and `compare(baseline, candidate)` — promotes only with >= 30
+held-out items, zero false-item acceptances, a >= 5-point gain, and no tier regressing more
+than 2 points. `night_training_workflow.py`'s GATE step now calls it instead of always
+returning BLOCKED; still blocks, naming exactly which file is missing, when either
+baseline or candidate evals are absent.
+
+`results/v2/heldout_baseline.json` generated from the real ladder files: deepseek T0 6/10,
+T1-T3 0/12 (pass@1 0.1304, Wilson [0.061, 0.257]); goedel T0 8/10, T1-T3 0/12 (0.1739,
+[0.091, 0.307]) — reproduces LL.md §4c exactly. The `deepseek+premises` arm is a
+**partial** snapshot (19 of an eventual ~58 items) of card M-1's retrieval A/B, which was
+still running at commit time; its sha256 is recorded so staleness is detectable, and TODO
+23 tracks regenerating it once M-1 finishes.
+
+Card marked done: `docs/v2/status.json` now 6/50 (C-7, G-1, M-2, N-9, V0-3, V0-8).
+22 tests, 100% line+branch on the new module, `test_rigor_guard.py` pass (149 files),
+ruff clean — all re-verified independently before this commit, not taken from the
+implementing agent's report.
+
 ## [13.4.0] — lean_runner file-path mode, and the v2 low-tier-model program restarted on evidence (2026-09-28)
 
 **`lean_runner` gains a file-path mode (closes TODO 15).**

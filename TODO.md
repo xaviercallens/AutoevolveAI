@@ -214,3 +214,11 @@ the cards already met on main (V0-4, V0-5, N-1, N-5a, N-6), then V0-3/V0-8 metri
 Sprint 1 = retrieval before training (M-1 premise A/B on the ladder, N-6 into Phase 1).
 - **Accept when:** `docs/v2/status.json` exists with ≥ 5 cards marked done by the driver,
   and `results/hardness/retrieval_ab.json` reports both arms per tier.
+
+### 23. Regenerate results/v2/heldout_baseline.json once M-1's retrieval A/B finishes
+Committed 2026-09-28 with a PARTIAL deepseek+premises arm (n=19 of ~58; sha256 provenance
+in the file makes this detectable). Re-run:
+  .venv-v2/bin/python scripts/night_training_workflow.py --write-heldout-baseline
+- **Accept when:** the file's `provenance.retrieval_ab` sha256 matches the finished
+  results/hardness/retrieval_ab.json, and deepseek+premises/goedel+premises both have
+  n_items matching the full T1-T3 (+T0 sanity) item count.

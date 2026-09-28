@@ -98,6 +98,45 @@ class FastJEPALatentPredictor(nn.Module):
         self.is_loaded = True
         self.checkpoint_path = path
 
+    def _trace_to_latent(self, trace: dict[str, Any]) -> torch.Tensor:
+        """Deterministically map trace metadata/text to a latent vector."""
+        import hashlib
+
+        seed_str = f"{trace.get('domain', '')}:{trace.get('prompt', '')}:{trace.get('thought_summary', '')}"
+        digest = hashlib.sha256(seed_str.encode("utf-8")).digest()
+        vals = [(b / 127.5) - 1.0 for b in digest[: self.latent_dim]]
+        while len(vals) < self.latent_dim:
+            vals.append(0.0)
+        return torch.tensor(vals, dtype=torch.float32)
+
+    def evaluate(self, traces: list[dict[str, Any]]) -> float:
+        """Evaluate prediction error on a batch of traces."""
+        if not traces:
+            return 1.0
+        self.eval()
+        with torch.no_grad():
+            latents = torch.stack([self._trace_to_latent(t) for t in traces])
+            preds = self.forward(latents)
+            targets = torch.tensor([float(t.get("energy", 1.0)) for t in traces], dtype=torch.float32)
+            mse = torch.nn.functional.mse_loss(preds, targets).item()
+            return max(mse, 1e-4)
+
+    def consolidate(self, traces: list[dict[str, Any]], lr: float = 1e-3, steps: int = 5) -> None:
+        """Consolidate replay traces by updating predictor weights via gradient descent."""
+        if not traces:
+            return
+        self.train()
+        optimizer = torch.optim.AdamW(self.parameters(), lr=lr)
+        latents = torch.stack([self._trace_to_latent(t) for t in traces])
+        targets = torch.tensor([float(t.get("energy", 1.0)) for t in traces], dtype=torch.float32)
+        for _ in range(steps):
+            optimizer.zero_grad()
+            preds = self.forward(latents)
+            loss = torch.nn.functional.mse_loss(preds, targets)
+            loss.backward()
+            optimizer.step()
+        self.eval()
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. Latent Dreamer & GRPO MCTS Engine

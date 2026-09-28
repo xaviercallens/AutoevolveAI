@@ -1,7 +1,7 @@
 # 🗺️ SocrateAI / ANSE Google Cloud Data Lake Cartography
 
 **GCP Project:** `gen-lang-client-0625573011` (`SocrateAI`)
-**Generated At:** `2026-09-26T04:25:54Z`
+**Generated At:** `2026-09-28T05:27:20Z`
 
 ---
 
@@ -46,13 +46,13 @@ gs://socrateai-datalake-gen-lang-client-0625573011/
 ## 📦 Bucket Inventory & Topology
 
 ### 🪣 `gs://socrateai-datalake-gen-lang-client-0625573011`
-- **Total Objects:** `1,405`
-- **Total Volume:** `13.231 GB` (14,206,519,939 bytes)
+- **Total Objects:** `1,413`
+- **Total Volume:** `13.254 GB` (14,231,363,594 bytes)
 
 | Prefix / Subdirectory | Objects | Size (MB) | Purpose & Key Artifacts |
 | :--- | :--- | :--- | :--- |
 | `audit/` | `2` | `0.01 MB` | Quality gate audits, verification receipts, and security reviews |
-| `autoevolve_anse_datalake/` | `46` | `2,893.8 MB` | Complete ANSE Neuro-Symbolic Suite, JEPA, Qwen, RL, Redis LTM, Chroma, and VM bootstrap |
+| `autoevolve_anse_datalake/` | `46` | `2,912.39 MB` | Complete ANSE Neuro-Symbolic Suite, JEPA, Qwen, RL, Redis LTM, Chroma, and VM bootstrap |
 | `checkpoints/` | `304` | `2.6 MB` | Historical evolutionary checkpoints from 300+ scientific simulations |
 | `dark_matter/` | `687` | `3.59 MB` | N-body dark matter simulation halos and velocity dispersion profiles |
 | `dualscale_r3/` | `159` | `9,749.56 MB` | Scientific and neural model artifacts |
@@ -64,6 +64,7 @@ gs://socrateai-datalake-gen-lang-client-0625573011/
 | `planck_2018/` | `24` | `6.72 MB` | Planck 2018 CMB temperature and polarization power spectra |
 | `publications/` | `14` | `6.01 MB` | Scientific whitepapers, formal dossiers, and publication PDFs |
 | `root/` | `2` | `0.02 MB` | Scientific and neural model artifacts |
+| `runux-boot-images/` | `8` | `5.11 MB` | Scientific and neural model artifacts |
 | `stream2_cy4_ml/` | `14` | `87.29 MB` | Calabi-Yau 4-fold neural geometry and topological Hodge diamond tensors |
 | `stream3_desi_dr1/` | `58` | `57.93 MB` | DESI DR1 cosmological data, baryon acoustic oscillations, and redshift surveys |
 | `stream3_euclid_q2/` | `19` | `0.07 MB` | Euclid Space Telescope Q2 gravitational lensing and galaxy cluster catalogs |
@@ -71,7 +72,7 @@ gs://socrateai-datalake-gen-lang-client-0625573011/
 
 ### 🪣 `gs://symbrain-v2-models`
 - **Total Objects:** `82`
-- **Total Volume:** `2.888 GB` (3,100,945,738 bytes)
+- **Total Volume:** `2.888 GB` (3,100,946,467 bytes)
 
 | Prefix / Subdirectory | Objects | Size (MB) | Purpose & Key Artifacts |
 | :--- | :--- | :--- | :--- |

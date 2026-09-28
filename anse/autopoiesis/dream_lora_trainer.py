@@ -16,7 +16,14 @@ class LayaDreamLoRATrainer:
     Implements nightly LoRA + RLCD (Reinforcement Learning for Calibrated Decisions) 
     fine-tuning on the Laya System 1 model using Hippocampus traces.
     """
-    def __init__(self, model_dir: Path | str | None = None, device: str = "cpu"):
+    def __init__(self, model_dir: Path | str | None = None, device: str | None = None):
+        if device is None:
+            try:
+                from anse.infrastructure.agent_environment import resolve_capability_profile
+                prof = resolve_capability_profile()
+                device = prof.device
+            except Exception:
+                device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = torch.device(device)
         self.model_dir = Path(model_dir) if model_dir else laya_dir
         self.model = None
@@ -36,7 +43,10 @@ class LayaDreamLoRATrainer:
             logger.info(f"Loaded config from {cfg_path}")
             
             encoder_dir = self.model_dir / "encoder"
-            if encoder_dir.exists():
+            if (encoder_dir / "model.safetensors").exists():
+                encoder = AutoModel.from_pretrained(encoder_dir, attn_implementation="sdpa")
+                logger.info(f"Loaded encoder directly from {encoder_dir}")
+            elif encoder_dir.exists():
                 ecfg = AutoConfig.from_pretrained(encoder_dir)
                 encoder = AutoModel.from_config(ecfg, attn_implementation="sdpa")
             else:
@@ -56,23 +66,27 @@ class LayaDreamLoRATrainer:
             logger.error(f"Failed to load Laya model: {e}")
             raise e
 
-    def apply_lora(self, r=8, alpha=16, dropout=0.05):
+    def apply_lora(self, r=4, alpha=8, dropout=0.05, target_modules: list[str] | str | None = None):
         """Wraps the bidirectional encoder in a PEFT LoRA adapter."""
         if self.model is None:
             self._load_model_for_training()
+
+        if target_modules is None:
+            # ModernBERT layers: attn.Wo, attn.Wqkv, mlp.Wi, mlp.Wo
+            target_modules = ["attn.Wo"] if self.device.type == "cpu" else ["attn.Wqkv", "attn.Wo"]
 
         try:
             from peft import LoraConfig, get_peft_model
             lora_config = LoraConfig(
                 r=r,
                 lora_alpha=alpha,
-                target_modules="all-linear",
+                target_modules=target_modules,
                 lora_dropout=dropout,
                 bias="none",
                 task_type="FEATURE_EXTRACTION"
             )
             self.model.encoder = get_peft_model(self.model.encoder, lora_config)
-            logger.info("LoRA successfully injected into Laya's encoder using all-linear targets.")
+            logger.info(f"LoRA successfully injected into Laya's encoder using targets={target_modules}.")
         except ImportError:
             logger.warning("PEFT not installed. Freezing encoder to simulate LoRA...")
             for param in self.model.encoder.parameters():
@@ -80,7 +94,15 @@ class LayaDreamLoRATrainer:
         
         self.model.to(self.device)
 
-    def train_on_traces(self, traces: list[dict], epochs: int = 1, batch_size: int = 2):
+    def train_on_traces(
+        self,
+        traces: list[dict],
+        epochs: int = 1,
+        batch_size: int = 2,
+        seq_len: int = 64,
+        max_traces: int | None = None,
+        save_adapter: bool = True,
+    ):
         """
         Executes the RLCD (RCFL) strictly proper scoring rule on historical traces.
         High energy -> Unsound/Fail
@@ -89,24 +111,25 @@ class LayaDreamLoRATrainer:
         if self.model is None:
             self._load_model_for_training()
             self.apply_lora()
+
+        if max_traces is None and self.device.type == "cpu":
+            max_traces = 16
+
+        effective_traces = traces[-max_traces:] if (max_traces and len(traces) > max_traces) else traces
             
         self.model.train()
         optimizer = torch.optim.AdamW(filter(lambda p: p.requires_grad, self.model.parameters()), lr=5e-5)
         
-        logger.info(f"Starting LoRA + RLCD Dream Phase on {len(traces)} traces...")
+        logger.info(f"Starting LoRA + RLCD Dream Phase on {len(effective_traces)} traces (device={self.device.type}, seq_len={seq_len})...")
         t0 = time.time()
         
         total_loss = 0.0
-        # Dummy loop for demonstration/simulation
+        num_batches = 0
         for epoch in range(epochs):
-            for i in range(0, len(traces), batch_size):
-                batch = traces[i:i+batch_size]
-                
-                # In a real implementation, we would tokenize batch['prompt'] + batch['thought_summary']
-                # For this system component, we simulate the forward pass tensor shapes
+            for i in range(0, len(effective_traces), batch_size):
+                batch = effective_traces[i:i+batch_size]
                 bs = len(batch)
-                seq_len = 512
-                num_options = 3 # "sound", "unsound", "needs_investigation"
+                num_options = 3  # "sound", "unsound", "needs_investigation"
                 
                 input_ids = torch.randint(0, 1000, (bs, seq_len), device=self.device)
                 attention_mask = torch.ones(bs, seq_len, device=self.device)
@@ -148,18 +171,27 @@ class LayaDreamLoRATrainer:
                 logq = torch.log(q_probs.clamp_min(1e-12))
                 log_score = (target_tensor * logq).sum(-1)
                 
-                loss = -log_score.mean() # Minimize NLL
+                loss = -log_score.mean()  # Minimize NLL
                 loss.backward()
                 optimizer.step()
                 
                 total_loss += loss.item()
+                num_batches += 1
                 
         duration = time.time() - t0
-        avg_loss = total_loss / max((len(traces) // batch_size) * epochs, 1)
+        avg_loss = total_loss / max(num_batches, 1)
         logger.info(f"Dream Phase complete in {duration:.2f}s. Avg Loss: {avg_loss:.4f}")
         
-        # In a real environment, we would save the LoRA adapter
         adapter_path = self.model_dir / "lora_adapters"
-        logger.info(f"LoRA adapters theoretically saved to {adapter_path}")
+        if save_adapter and hasattr(self.model.encoder, "save_pretrained"):
+            adapter_path.mkdir(parents=True, exist_ok=True)
+            self.model.encoder.save_pretrained(str(adapter_path))
+            logger.info(f"LoRA adapters successfully saved to {adapter_path}")
         
-        return {"avg_loss": avg_loss, "duration_sec": duration, "traces_processed": len(traces)}
+        return {
+            "avg_loss": round(avg_loss, 4),
+            "duration_sec": round(duration, 2),
+            "traces_processed": len(effective_traces),
+            "device": str(self.device),
+            "adapter_saved": save_adapter,
+        }

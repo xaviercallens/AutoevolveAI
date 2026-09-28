@@ -3,13 +3,13 @@
 Autonomous Nightly Model Retraining Pipeline (Scheduled after 05:00 AM).
 
 Orchestrates the complete overnight retraining of:
-1. Redis Long-Term Memory (LTM) Sync from brain transcripts
-2. Qwen2.5-0.5B LoRA Adapter fine-tuning on Redis LTM conversations
-3. RL EnergyCriticPolicy multi-disciplinary DPO / reward retraining
-4. System 1.5 EB-JEPA World Model closed-loop physics training
-5. Autonomous Phase 2 JEPA evolution validation
-6. Automated synchronization of updated checkpoints to SocrateAI GCP Data Lake
-7. Regeneration of Google Cloud Storage Data Lake Cartography
+1. Nightly REM Dream Consolidation (Hippocampus Replay, Laya LoRA, Latent MCTS)
+2. Redis Long-Term Memory (LTM) Sync from brain transcripts
+3. Qwen2.5-0.5B LoRA Adapter fine-tuning on Redis LTM conversations
+4. RL EnergyCriticPolicy multi-disciplinary DPO / reward retraining
+5. System 1.5 EB-JEPA World Model continual physics training
+6. Autonomous ANSE V2 Autopoietic Engine validation
+7. Automated synchronization of updated checkpoints to SocrateAI GCP Data Lake & Cartography
 """
 
 from __future__ import annotations
@@ -94,7 +94,7 @@ def wait_until_target_time(target_hour: int = 5, target_minute: int = 5) -> None
     log_both("⏰ Target time reached! Commencing Nightly Model Retraining Pipeline...")
 
 
-def execute_nightly_retraining() -> dict[str, Any]:
+def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) -> dict[str, Any]:
     """Execute all phases of model retraining, database snapshotting, and cloud deployment."""
     pipeline_start = time.time()
     log_both("=" * 80)
@@ -103,7 +103,15 @@ def execute_nightly_retraining() -> dict[str, Any]:
 
     results: list[dict[str, Any]] = []
 
-    # 1. Sync brain transcripts to Redis LTM
+    # 1. REM Sleep Dream Phase: Hippocampus Replay, Laya LoRA & Latent MCTS
+    results.append(
+        run_pipeline_step(
+            "Nightly REM Dream Consolidation & Laya LoRA",
+            ["uv", "run", "python", "scripts/nightly_dream_phase.py"],
+        )
+    )
+
+    # 2. Sync brain transcripts to Redis LTM
     results.append(
         run_pipeline_step(
             "Redis Long-Term Memory Sync",
@@ -111,15 +119,15 @@ def execute_nightly_retraining() -> dict[str, Any]:
         )
     )
 
-    # 2. Retrain Qwen LoRA on Redis LTM conversations
+    # 3. Retrain Qwen LoRA on Redis LTM conversations
     results.append(
         run_pipeline_step(
             "Qwen LoRA LTM Retraining",
-            ["uv", "run", "python", "scripts/execute_local_redis_ltm_lora.py", "--steps", "60", "--max-len", "256"],
+            ["uv", "run", "python", "scripts/execute_local_redis_ltm_lora.py", "--steps", str(lora_steps), "--max-len", "160"],
         )
     )
 
-    # 3. Retrain RL EnergyCriticPolicy & DPO on multi-domain cases
+    # 4. Retrain RL EnergyCriticPolicy & DPO on multi-domain cases
     results.append(
         run_pipeline_step(
             "Reinforcement Learning Critic Retraining",
@@ -127,7 +135,7 @@ def execute_nightly_retraining() -> dict[str, Any]:
         )
     )
 
-    # 4. Retrain JEPA World Model on Physics Systems
+    # 5. Retrain JEPA World Model on Physics Systems
     results.append(
         run_pipeline_step(
             "JEPA World Model Continual Learning",
@@ -135,7 +143,7 @@ def execute_nightly_retraining() -> dict[str, Any]:
         )
     )
 
-    # 5. Run Autopoietic V2 Validation
+    # 6. Run Autopoietic V2 Validation
     results.append(
         run_pipeline_step(
             "ANSE V2 Autopoietic Engine Validation",
@@ -143,13 +151,14 @@ def execute_nightly_retraining() -> dict[str, Any]:
         )
     )
 
-    # 6. Deploy updated checkpoints & databases to GCP Data Lake
-    results.append(
-        run_pipeline_step(
-            "GCP Data Lake Synchronization & Cartography",
-            ["uv", "run", "python", "scripts/deploy_models_and_datalake.py"],
+    # 7. Deploy updated checkpoints & databases to GCP Data Lake
+    if not skip_deploy:
+        results.append(
+            run_pipeline_step(
+                "GCP Data Lake Synchronization & Cartography",
+                ["uv", "run", "python", "scripts/deploy_models_and_datalake.py"],
+            )
         )
-    )
 
     total_elapsed = time.time() - pipeline_start
     all_success = all(r["success"] for r in results)
@@ -177,6 +186,8 @@ def main() -> int:
     parser.add_argument("--now", action="store_true", help="Run immediately without waiting")
     parser.add_argument("--hour", type=int, default=5, help="Target hour (default 5)")
     parser.add_argument("--minute", type=int, default=5, help="Target minute (default 5)")
+    parser.add_argument("--lora-steps", type=int, default=10, help="Number of LoRA steps for Qwen LTM on CPU (default 10)")
+    parser.add_argument("--skip-deploy", action="store_true", help="Skip deployment to GCP Data Lake")
     args = parser.parse_args()
 
     if args.wait:
@@ -187,7 +198,7 @@ def main() -> int:
         if now.hour != args.hour:
             wait_until_target_time(target_hour=args.hour, target_minute=args.minute)
 
-    summary = execute_nightly_retraining()
+    summary = execute_nightly_retraining(lora_steps=args.lora_steps, skip_deploy=args.skip_deploy)
     return 0 if summary["status"] == "SUCCESS" else 1
 
 

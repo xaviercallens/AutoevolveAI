@@ -36,13 +36,17 @@ import logging
 import sys
 import time
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
+REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO))
 sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
 from gpu_lease import gpu_lease  # noqa: E402
+
+from anse.v2 import heldout_eval  # noqa: E402
 
 LEASE_HOLDER = "autoevolveai"
 
@@ -52,6 +56,12 @@ DISK2 = Path("/mnt/disks/disk-socrateai-local-1/AutoevolveAI")
 LAKE = DISK2 / "datalake"
 RUNS = DISK2 / "training_runs"
 JOURNALS = RUNS / "journals"
+
+# Held-out set (card C-7 / P4-5): the frozen hardness ladder scored per prover and per tier.
+# Built from results/hardness/baseline.json by --write-heldout-baseline; GATE consumes it.
+HELDOUT_BASELINE = REPO / "results/v2/heldout_baseline.json"
+HARDNESS_DIR = REPO / "results/hardness"
+CANDIDATE_EVAL_NAME = "heldout_eval.json"  # written next to the adapter by a ladder run
 
 T4_TOTAL_MIB = 15360
 MIN_HELDOUT_N = 30  # below this, a per-model pass-rate difference is noise
@@ -78,7 +88,7 @@ class StepRecord:
     detail: str
     data: dict[str, Any] = field(default_factory=dict)
     seconds: float = 0.0
-    at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 @dataclass
@@ -110,7 +120,7 @@ class ModelJournal:
                 {
                     "model": self.model,
                     "smoke": self.smoke,
-                    "updated": datetime.now(timezone.utc).isoformat(),
+                    "updated": datetime.now(UTC).isoformat(),
                     "last_ok_step": self.last_ok,
                     "steps": [asdict(s) for s in self.steps],
                 },
@@ -441,21 +451,99 @@ def step_gate(model: str, journal: ModelJournal, fit: dict, metrics: dict, smoke
         return False
     # Falling TRAINING loss is not evidence (14 rows x 200 steps memorizes).
     # Promotion requires P4-5: pass@k on the frozen ladder split, base vs
-    # adapter, n >= MIN_HELDOUT_N. That harness does not exist yet, and the
-    # adapter here is Qwen2.5-Coder while the pipeline prover is DeepSeek-
-    # Prover — so no retrain of this model can improve proving. BLOCKED says
-    # that plainly instead of an OK that reads like progress.
+    # adapter, n >= MIN_HELDOUT_N. anse/v2/heldout_eval.py (card C-7) is that
+    # harness; it needs two files, and GATE names whichever is missing.
+    return _heldout_gate(journal, fit, t0)
+
+
+def _heldout_gate(journal: ModelJournal, fit: dict, t0: float) -> bool:
+    """Promote only by heldout_eval.compare on the frozen ladder; BLOCKED names what is missing."""
+    if not HELDOUT_BASELINE.exists():
+        journal.record(
+            StepRecord(
+                Step.GATE, Outcome.BLOCKED,
+                f"not promotable: held-out baseline missing at {HELDOUT_BASELINE} "
+                "(run --write-heldout-baseline); training-loss drop is not evidence",
+                data={"promoted": False, "reason": "P4-5: heldout baseline file missing",
+                      "missing_file": str(HELDOUT_BASELINE), "min_heldout_n": MIN_HELDOUT_N},
+                seconds=time.time() - t0,
+            )
+        )
+        return False
+    candidate_path = Path(str(fit.get("adapter_dir", ""))) / CANDIDATE_EVAL_NAME
+    if not candidate_path.is_file():
+        journal.record(
+            StepRecord(
+                Step.GATE, Outcome.BLOCKED,
+                f"not promotable: adapter has no frozen-ladder eval at {candidate_path} "
+                "(run the ladder with the adapter, same k as the baseline)",
+                data={"promoted": False, "reason": "P4-5: candidate heldout eval missing",
+                      "missing_file": str(candidate_path),
+                      "baseline_file": str(HELDOUT_BASELINE)},
+                seconds=time.time() - t0,
+            )
+        )
+        return False
+    baseline_doc = json.loads(HELDOUT_BASELINE.read_text())
+    candidate = json.loads(candidate_path.read_text())
+    prover = str(candidate.get("prover", ""))
+    baseline = baseline_doc.get("models", {}).get(prover)
+    if baseline is None:
+        journal.record(
+            StepRecord(
+                Step.GATE, Outcome.BLOCKED,
+                f"not promotable: candidate names prover {prover!r}, baseline has "
+                f"{sorted(baseline_doc.get('models', {}))}; a Qwen adapter cannot be "
+                "compared against a DeepSeek baseline (trainer/prover mismatch)",
+                data={"promoted": False, "reason": "P4-5: prover not in baseline",
+                      "prover": prover},
+                seconds=time.time() - t0,
+            )
+        )
+        return False
+    verdict = heldout_eval.compare(baseline, candidate, min_items=MIN_HELDOUT_N)
     journal.record(
         StepRecord(
-            Step.GATE, Outcome.BLOCKED,
-            "not promotable: no frozen-split pass@k eval (P4-5), and the trained "
-            "model is not the prover; training-loss drop is not evidence",
-            data={"promoted": False, "reason": "P4-5 missing; trainer/prover mismatch",
-                  "min_heldout_n": MIN_HELDOUT_N},
+            Step.GATE, Outcome.OK,
+            ("PROMOTE" if verdict["promote"] else "rejected")
+            + f": gain {verdict['gain']:+.4f} on {candidate.get('n_items')} frozen items; "
+            + "; ".join(verdict["reasons"]),
+            data={"promoted": verdict["promote"], "gain": verdict["gain"],
+                  "reasons": verdict["reasons"], "prover": prover,
+                  "baseline_file": str(HELDOUT_BASELINE),
+                  "candidate_file": str(candidate_path)},
             seconds=time.time() - t0,
         )
     )
-    return False
+    return bool(verdict["promote"])
+
+
+def write_heldout_baseline(out: Path | None = None, k: int = 1) -> dict:
+    """Build results/v2/heldout_baseline.json from the real ladder results (no GPU)."""
+    out = HELDOUT_BASELINE if out is None else out
+    doc = heldout_eval.build_heldout_baseline(
+        HARDNESS_DIR / "baseline.json",
+        HARDNESS_DIR / "retrieval_ab.json",
+        HARDNESS_DIR / "frozen_split.json",
+        k=k,
+    )
+    doc["written"] = datetime.now(UTC).isoformat()
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
+    for name, s in doc["models"].items():
+        tiers = ", ".join(
+            f"{t} {round(v['pass_at_k'] * v['n_items'])}/{v['n_items']}"
+            for t, v in s["tiers"].items()
+        )
+        logger.info(
+            "heldout %-20s pass@%d %.4f [%.3f, %.3f] n=%d false_accepted=%d/%d | %s",
+            name, k, s["pass_at_k"], s["ci_low"], s["ci_high"], s["n_items"],
+            s["false_accepted"], s["false_n"], tiers,
+        )
+    for name, why in doc["skipped"].items():
+        logger.info("heldout %-20s SKIPPED: %s", name, why)
+    logger.info("wrote %s", out)
+    return doc
 
 
 # -------------------------------------------------------------------- driver
@@ -487,10 +575,19 @@ def main(argv: list[str] | None = None) -> int:
         "--smoke", action="store_true",
         help="tiny end-to-end fit to validate the machinery; never promotable",
     )
+    parser.add_argument(
+        "--write-heldout-baseline", action="store_true",
+        help="build results/v2/heldout_baseline.json from results/hardness/*.json and exit "
+             "(no GPU; this is the file GATE compares against)",
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(message)s",
                         datefmt="%H:%M:%S")
+
+    if args.write_heldout_baseline:
+        write_heldout_baseline()
+        return 0
 
     ok, desc, free = gpu_state()
     logger.info("GPU: %s (%s MiB free)", desc if ok else "unavailable", free)

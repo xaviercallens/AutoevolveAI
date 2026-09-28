@@ -140,7 +140,14 @@ Every Tier A ledger row (DR2-A-0001..6, BBNH0-A-0001..10, EVD-A-0001..9) carries
 - **Accept when:** audit objects name a human auditor, are bound to the file sha256,
   and `ledger.py` exits 0 with them.
 
-### 15. File-path mode for `anse/formal/lean_runner.py`
+### 15. File-path mode for `anse/formal/lean_runner.py` -- DONE 2026-09-28
+`LeanKernelVerifier.verify_file(path)` / `python -m anse.formal.lean_runner FILE.lean`
+(`--formal-dir` or `$ANSE_FORMAL_DIR` = a checkout with a built `formal/.lake`). All four
+cosmology modules re-gated through it: 28 theorems clean, whitelist axioms only
+(`results/cosmo_synthesis/lean_runner_regate.json`); `tests/formal/` (13 tests) covers the
+`sorry` and smuggled-axiom negative controls. It refuses to run `lake env` where
+`.lake/packages` is missing (that fetched 1.6 GB of Mathlib into a worktree).
+Original spec, for the record:
 It can only gate built modules and writes a temp file into the shared `formal/`.
 - Do: `lake env lean <path>` from `formal/`, parse in-file `#print axioms`, whitelist,
   no shared temp file. Re-gate the three new modules through it.

@@ -421,3 +421,14 @@ exceeds order 1.
    pass. The episodes are kept (real labels, on disk 2); no learning is claimed.
    `results/cosmo3_learning/README.md`. Always train a shuffled-label control next to a
    "learning" claim: without it this run would have read as 100% accuracy.
+
+### 12e. lean_runner file mode (2026-09-28)
+
+9. `lake env` in a directory without `.lake/packages` (any fresh git worktree) does not fail
+   fast: it starts cloning Mathlib (1.6 GB written into the worktree before it aborted).
+   `LeanKernelVerifier.verify_file` now raises `LeanEnvironmentError` there and needs an
+   explicit built `formal_dir` / `$ANSE_FORMAL_DIR`. Tests use the plain `lean` binary on
+   import-free files so they can never trigger a fetch.
+10. Lean prints a primed theorem `em'` as `'em'' depends on ...`; a `[^']+` pattern silently
+    lost it, which would have read as "no axioms line" (unchecked). Found by a test written
+    before the code was trusted; regression test added.

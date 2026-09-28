@@ -6,9 +6,14 @@ Strictly enforces zero-trust: any compilation failure or presence of 'sorryAx' a
 
 from __future__ import annotations
 
+import argparse
+import json
 import logging
+import os
+import re
 import subprocess
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -41,8 +46,14 @@ class LeanVerificationResult:
 
 
 class LeanKernelVerifier:
-    def __init__(self, formal_dir: Path | None = None):
-        self.formal_dir = formal_dir or FORMAL_DIR
+    def __init__(
+        self,
+        formal_dir: Path | None = None,
+        lean_cmd: Sequence[str] | None = None,
+    ):
+        self.formal_dir = Path(formal_dir) if formal_dir else FORMAL_DIR
+        # None -> `lake env lean` (needs a built formal_dir). Tests pass ["lean"] for import-free files.
+        self.lean_cmd = list(lean_cmd) if lean_cmd else None
 
     def compile_formal_specs(self) -> tuple[bool, str, float]:
         """Runs 'lake build' in the formal directory and measures duration."""
@@ -126,3 +137,165 @@ class LeanKernelVerifier:
         finally:
             if temp_check_file.exists():
                 temp_check_file.unlink()
+
+    def verify_file(
+        self, lean_file: Path | str, timeout_s: float = 1800.0
+    ) -> list[LeanVerificationResult]:
+        """Gate a standalone ``.lean`` file that lives anywhere (e.g. a git worktree).
+
+        ``verify_theorem_axioms`` imports a module, so the module must already be built
+        into an olean, and it writes a temp file into the shared ``formal/`` directory.
+        Neither is possible for a file staged in an isolated worktree. This mode instead
+        compiles the file in place with ``lean_cmd`` (default ``lake env lean``, run from
+        an existing built environment) and reads the kernel's own ``#print axioms``
+        output that the file must contain for every ``theorem``/``lemma`` it declares.
+
+        One result is returned per declared theorem. A file is only clean when the
+        compile exits 0 AND every declared theorem has an axioms line AND none of those
+        depends on ``sorryAx`` or a non-whitelisted axiom. A missing axioms line is a
+        failure (a theorem nobody printed is a theorem nobody checked), and so is a
+        file that declares no theorem at all.
+        """
+        path = Path(lean_file).resolve()
+        t0 = time.perf_counter()
+        source = path.read_text(encoding="utf-8")
+        declared = declared_theorems(source)
+
+        cmd = list(self.lean_cmd) if self.lean_cmd else self._lake_env_cmd()
+        try:
+            res = subprocess.run(
+                [*cmd, str(path)],
+                cwd=str(self.formal_dir),
+                capture_output=True,
+                text=True,
+                timeout=timeout_s,
+            )
+        except subprocess.TimeoutExpired:
+            return [_failed(path.name, -1, (time.perf_counter() - t0) * 1000.0,
+                            f"lean timed out after {timeout_s:.0f}s")]
+        elapsed = (time.perf_counter() - t0) * 1000.0
+        raw = (res.stdout + "\n" + res.stderr).strip()
+        if res.returncode != 0:
+            return [_failed(path.name, res.returncode, elapsed, raw)]
+        if not declared:
+            return [_failed(path.name, 0, elapsed,
+                            "file declares no theorem/lemma: nothing was verified\n" + raw)]
+
+        printed = parse_axiom_lines(raw)
+        results: list[LeanVerificationResult] = []
+        for name in declared:
+            axioms = _lookup_axioms(name, printed)
+            if axioms is None:
+                results.append(_failed(name, 0, elapsed,
+                                       f"no '#print axioms' line for {name}: unchecked\n" + raw))
+                continue
+            has_sorry = "sorryAx" in axioms
+            untrusted = [a for a in axioms if a not in TRUSTED_AXIOMS and a != "sorryAx"]
+            clean = not has_sorry and not untrusted
+            if untrusted:
+                logger.error("Untrusted axioms in %s: %s -- rejecting", name, untrusted)
+            results.append(LeanVerificationResult(
+                theorem_name=name,
+                compiled_successfully=True,
+                returncode=0,
+                elapsed_ms=elapsed,
+                axioms=axioms,
+                has_sorry=has_sorry,
+                energy_score=0.05 + elapsed / 1000.0 if clean else 1000000.0,
+                output=raw,
+                untrusted_axioms=untrusted,
+            ))
+        return results
+
+    def _lake_env_cmd(self) -> list[str]:
+        """``lake env lean``, but only inside a directory whose packages are already built.
+
+        In a directory without ``.lake/packages`` (every fresh git worktree) ``lake env``
+        does not fail fast: it starts cloning Mathlib (measured 2026-09-28: 1.6 GB written
+        into the worktree before it aborted). Refuse instead.
+        """
+        if not (self.formal_dir / ".lake" / "packages").is_dir():
+            raise LeanEnvironmentError(
+                f"{self.formal_dir} has no built Lean environment (.lake/packages missing); "
+                "running `lake env` there would start fetching Mathlib. Point formal_dir "
+                "(or ANSE_FORMAL_DIR) at a checkout whose formal/.lake is built."
+            )
+        return ["lake", "env", "lean"]
+
+
+class LeanEnvironmentError(RuntimeError):
+    """No usable, already-built Lean environment to compile against."""
+
+
+_BLOCK_COMMENT = re.compile(r"/-.*?-/", re.S)
+_LINE_COMMENT = re.compile(r"--[^\n]*")
+_DECL = re.compile(
+    r"^[ \t]*(?:@\[[^\]\n]*\][ \t]*)*(?:(?:private|protected|noncomputable|unsafe)[ \t]+)*"
+    r"(?:theorem|lemma)[ \t]+([^\s:({\[]+)",
+    re.M,
+)
+# The name is quoted but may itself contain `'` (a theorem called `em'` prints as `'em''`), so
+# anchor on the phrase that follows it instead of on the next quote.
+_AXIOMS_LINE = re.compile(
+    r"^'([^\n]+?)' (?:depends on axioms: \[(.*?)\]|does not depend on any axioms)", re.S | re.M
+)
+
+
+def declared_theorems(source: str) -> list[str]:
+    """Names of every ``theorem``/``lemma`` declared outside comments and docstrings."""
+    code = _LINE_COMMENT.sub("", _BLOCK_COMMENT.sub("", source))
+    return [m.group(1) for m in _DECL.finditer(code)]
+
+
+def parse_axiom_lines(output: str) -> dict[str, list[str]]:
+    """Map fully qualified declaration name -> axioms, from ``#print axioms`` output."""
+    found: dict[str, list[str]] = {}
+    for m in _AXIOMS_LINE.finditer(output):
+        body = m.group(2)
+        found[m.group(1)] = (
+            [a.strip() for a in body.replace("\n", " ").split(",") if a.strip()] if body else []
+        )
+    return found
+
+
+def _lookup_axioms(declared: str, printed: dict[str, list[str]]) -> list[str] | None:
+    """Find the printed axioms for a declared (possibly namespace-relative) name."""
+    if declared in printed:
+        return printed[declared]
+    hits = [k for k in printed if k.endswith("." + declared)]
+    return printed[hits[0]] if len(hits) == 1 else None
+
+
+def _failed(name: str, returncode: int, elapsed_ms: float, output: str) -> LeanVerificationResult:
+    return LeanVerificationResult(
+        theorem_name=name,
+        compiled_successfully=False,
+        returncode=returncode,
+        elapsed_ms=elapsed_ms,
+        axioms=[],
+        has_sorry=True,
+        energy_score=1000000.0,
+        output=output,
+    )
+
+
+def main(argv: list[str] | None = None) -> int:
+    """``python -m anse.formal.lean_runner FILE.lean``: exit 0 only if every theorem is clean."""
+    ap = argparse.ArgumentParser(description="Gate a standalone Lean file (compile + axiom whitelist).")
+    ap.add_argument("lean_file", type=Path)
+    ap.add_argument("--formal-dir", type=Path, default=None,
+                    help="built Lean environment (default: $ANSE_FORMAL_DIR or <repo>/formal)")
+    args = ap.parse_args(argv)
+    formal = args.formal_dir or (Path(os.environ["ANSE_FORMAL_DIR"]) if os.environ.get("ANSE_FORMAL_DIR") else None)
+    results = LeanKernelVerifier(formal).verify_file(args.lean_file)
+    ok = all(r.compiled_successfully and not r.has_sorry and not r.untrusted_axioms for r in results)
+    print(json.dumps([
+        {"theorem": r.theorem_name, "compiled": r.compiled_successfully, "axioms": r.axioms,
+         "has_sorry": r.has_sorry, "untrusted": r.untrusted_axioms}
+        for r in results
+    ], indent=2))
+    return 0 if ok else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

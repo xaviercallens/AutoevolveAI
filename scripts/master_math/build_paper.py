@@ -164,7 +164,9 @@ locked statements, controls, and what two 7--8B provers actually prove}
       "Ollama sized DeepSeek at 30.9\\,GB with 12.9\\,GB in VRAM, so most layers ran on the CPU; "
       "we kept the setting for comparability with the baseline.\n\n")
     if infra:
-        a(f"{len(infra)} attempts ended in an infrastructure error and were retried; none is counted.\n\n")
+        a(f"{len(infra)} attempt(s) ended in an infrastructure error and are unmeasured, not counted as "
+          "either outcome: " + "; ".join(f"{tex(r['model'])} {tex(r['id'])} round {r['round']} "
+                                         f"({tex(r['error'][:40])})" for r in infra) + ".\n\n")
 
     a(r"\section{Results}" + "\n")
     a("\\begin{longtable}{llll" + "l" * len(models) + "}\n\\caption{Per-statement outcome. "

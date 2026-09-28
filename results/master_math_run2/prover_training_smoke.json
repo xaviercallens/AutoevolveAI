@@ -1,0 +1,119 @@
+{
+ "started": "2026-09-28T04:40:19.632027+00:00",
+ "mode": "smoke",
+ "base": "/mnt/disks/disk-socrateai-local-1/AutoevolveAI/models/DeepSeek-Prover-V2-7B",
+ "data": {
+  "lean_passed_rows": 25,
+  "excluded_frozen_split": 2,
+  "tasks": [
+   "bao_flcdm_E_pos",
+   "bao_flcdm_E_strictMonoOn",
+   "bao_flcdm_distance_duality",
+   "mm02_parallelogram",
+   "mm04_cr_harmonic",
+   "mm05_gauss_bonnet",
+   "mm06_d_squared",
+   "mm07_gronwall",
+   "mm08_fermat",
+   "mm09_markov",
+   "mm10b_cauchy_schwarz_abs",
+   "mm11_ivt",
+   "mm15_cantor",
+   "mm16_primes",
+   "mm17_am_gm",
+   "mm20_triangle"
+  ]
+ },
+ "free_mib_at_start": 14806,
+ "train": {
+  "steps": 10,
+  "rows": 25,
+  "lr": 0.0001,
+  "loss_first": 1.575,
+  "loss_last": 0.2721,
+  "losses": [
+   1.575,
+   1.5514,
+   1.4897,
+   0.0546,
+   0.0878,
+   0.2013,
+   0.071,
+   0.2101,
+   0.0949,
+   0.2721
+  ],
+  "peak_mib": 9296,
+  "adapter": "/mnt/disks/disk-socrateai-local-1/AutoevolveAI/training_runs/candidates/deepseek_prover_lora"
+ },
+ "eval_base": {
+  "true_n": 2,
+  "true_pass": 2,
+  "false_n": 0,
+  "false_accepted": 0,
+  "by_tier": {
+   "T0": "2/2"
+  }
+ },
+ "eval_adapter": {
+  "true_n": 2,
+  "true_pass": 1,
+  "false_n": 0,
+  "false_accepted": 0,
+  "by_tier": {
+   "T0": "1/2"
+  }
+ },
+ "eval_rows": [
+  {
+   "arm": "base",
+   "id": "t0_add_comm",
+   "tier": "T0",
+   "truth": true,
+   "gen_s": 5.0,
+   "proof": "by\n  induction a with\n  | zero => simp_all [Nat.add_comm]\n  | succ a ih =>\n    simp_all [Nat.add_comm, Nat.add_left_comm]\n    <;> omega",
+   "extracted": true,
+   "clean": true,
+   "rc": 0,
+   "errors": ""
+  },
+  {
+   "arm": "base",
+   "id": "t0_mul_comm",
+   "tier": "T0",
+   "truth": true,
+   "gen_s": 5.3,
+   "proof": "by\n  apply Int.mul_comm\n  <;> simp_all\n  <;> linarith",
+   "extracted": true,
+   "clean": true,
+   "rc": 0,
+   "errors": ""
+  },
+  {
+   "arm": "adapter",
+   "id": "t0_add_comm",
+   "tier": "T0",
+   "truth": true,
+   "gen_s": 11.2,
+   "proof": "by\n  induction a with\n  | zero => simp\n  | succ a ih =>\n    induction b with\n    | zero => simp\n    | succ b ih' =>\n      simp_all [Nat.add_assoc, Nat.add_comm, Nat.add_left_comm]\n      <;> linarith",
+   "extracted": true,
+   "clean": false,
+   "rc": 1,
+   "errors": "/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/master-math-regen2/.scratchpad/ladder/prover_adapter_t0_add_comm.lean:19:6: error: Tactic `simp` failed with a nested error:"
+  },
+  {
+   "arm": "adapter",
+   "id": "t0_mul_comm",
+   "tier": "T0",
+   "truth": true,
+   "gen_s": 5.4,
+   "proof": "by\n  apply Int.mul_comm\n  <;> simp_all\n  <;> linarith",
+   "extracted": true,
+   "clean": true,
+   "rc": 0,
+   "errors": ""
+  }
+ ],
+ "outcome": "SMOKE (not a gate decision)",
+ "finished": "2026-09-28T04:47:49.729335+00:00"
+}

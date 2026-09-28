@@ -112,9 +112,15 @@ def target_for(row: dict) -> str:
 
 def load(adapter: bool):
     import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+    from transformers import AutoModelForCausalLM, BitsAndBytesConfig, PreTrainedTokenizerFast
 
-    tok = AutoTokenizer.from_pretrained(str(BASE))
+    # NOT AutoTokenizer: under transformers 5.x it rebuilds this checkpoint as a
+    # LlamaTokenizer that silently drops spaces and non-ASCII ("a b : ℕ" ->
+    # "ab:"), measured 2026-09-28; the smoke run's 0/2 was this, not the model.
+    tok = PreTrainedTokenizerFast.from_pretrained(str(BASE))
+    probe = "theorem x (a b : ℕ) : a + b = b + a := by\n  omega"
+    if tok.decode(tok.encode(probe, add_special_tokens=False)) != probe:
+        raise RuntimeError("tokenizer does not round-trip Lean text; refusing to train/evaluate")
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
     # Checkpoint is stored bf16; sm_75 has no bf16, so non-quantized layers

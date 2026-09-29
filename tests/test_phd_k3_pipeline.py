@@ -114,3 +114,29 @@ def test_peer_review_tribunal_mock():
     assert r1["score"] >= 9.0
     assert r2["score"] >= 9.0
     assert r3["score"] >= 9.0
+
+
+def test_10_problems_suite_all_improved():
+    """Verify that all 10 PhD problems achieve Delta E < 0."""
+    from scripts.phd_k3_pipeline.k3_10_problems_suite import run_all_10_problems
+
+    suite = run_all_10_problems()
+    assert suite["total_problems"] == 10
+    assert suite["all_improved"] is True
+    assert suite["global_reduction_pct"] > 50.0
+    for prob in suite["problems"]:
+        assert prob["delta_energy"] < 0.0
+
+
+def test_remote_center_configuration():
+    """Verify RemoteCenterManager loads configuration and checks boundaries."""
+    from anse.infrastructure.remote_center import RemoteCenterManager
+
+    mgr = RemoteCenterManager()
+    status = mgr.get_center_status()
+    assert status["center_id"] == "anse_remote_gpu_center"
+    assert status["provider"] == "runpod"
+    assert mgr.verify_local_security_boundary() is True
+    tunnel_cmd = mgr.build_tunnel_command(pod_ip="192.168.1.100", ssh_port=2222)
+    assert "ssh" in tunnel_cmd[0]
+    assert "8000:127.0.0.1:8000" in tunnel_cmd[3]

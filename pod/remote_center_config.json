@@ -1,0 +1,34 @@
+{
+  "center_id": "anse_remote_gpu_center",
+  "provider": "runpod",
+  "cloud_type": "secure_cloud",
+  "gpu_profile": {
+    "recommended_models": ["RTX 3090", "RTX 4090", "A40", "A100"],
+    "min_vram_gb": 24,
+    "cuda_version_min": "12.2"
+  },
+  "network": {
+    "ssh_port": 22,
+    "tunnel_local_port": 8000,
+    "tunnel_remote_port": 8000,
+    "bind_address": "127.0.0.1"
+  },
+  "storage": {
+    "volume_mount": "/workspace",
+    "weights_cache_dir": "/workspace/models",
+    "lora_output_dir": "/workspace/adapters",
+    "quarantine_sync_dir": "results/quarantine_pod"
+  },
+  "security": {
+    "fail_closed": true,
+    "execute_code_on_pod": false,
+    "bearer_auth_required": true,
+    "secrets_policy": "no_repo_secrets_on_remote_pod"
+  },
+  "capabilities": [
+    "7b_fp16_inference",
+    "hidden_state_extraction",
+    "unsloth_lora_distillation",
+    "k3_donaldson_gpu_acceleration"
+  ]
+}

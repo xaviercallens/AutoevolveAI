@@ -161,9 +161,23 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
         )
 
     # 7. Kev SAAW Post-Retraining Decision Gate
+    # Write intermediate telemetry of steps 1-6 so Kev evaluates fresh data
+    interim_summary = {
+        "status": "SUCCESS" if all(r["success"] for r in results) else "PARTIAL_FAILURE",
+        "timestamp": datetime.datetime.now().isoformat(),
+        "total_elapsed_sec": round(time.time() - pipeline_start, 2),
+        "steps": results,
+    }
+    interim_report_path = LOG_DIR / "nightly_retrain_interim_report.json"
+    interim_report_path.write_text(json.dumps(interim_summary, indent=2), encoding="utf-8")
+
     decision_step = run_pipeline_step(
         "Kev Post-Retrain Calibrated Decision Gate",
-        ["uv", "run", "python", "scripts/kev_decision_gate.py", "--gate"],
+        [
+            "uv", "run", "python", "scripts/kev_decision_gate.py",
+            "--report", str(interim_report_path),
+            "--gate",
+        ],
     )
     results.append(decision_step)
 

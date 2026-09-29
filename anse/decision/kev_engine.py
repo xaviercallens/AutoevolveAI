@@ -2,6 +2,14 @@
 ANSE Kev Decision Engine.
 Integrates Kev (laptop-scale open-source Jev / TypeSafe System One architecture)
 for post-training decision making in SAAW (SocrateAI Autonomous Agent Workflow).
+
+Antigravity Linux CPU improvements (v3):
+- CC <= 10 per method across all routines
+- Zero Bandit warnings (no silent exception swallowing)
+- Profile-aware temperature scaling via resolve_capability_profile()
+- Diagnostic provenance: extracts failed steps into decision reasoning
+- Fine-grained failure taxonomy: QUARANTINED for invariant violations vs REJECTED for crashes
+- Dual-tier LTM persistence: Redis LTM + ChromaDB ResultsStore ingestion
 """
 
 from __future__ import annotations
@@ -101,12 +109,45 @@ except ImportError:
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
+# CPU-profile temperature offset: on float32 CPU arithmetic, widen distributions
+# slightly relative to GPU bf16 to account for precision loss.
+_CPU_TEMPERATURE_OFFSET = 0.08
+
+
+def _resolve_profile_temperature(base_temperature: float) -> float:
+    """Return temperature adjusted for the current capability profile.
+
+    On the Antigravity Linux CPU 31 GB profile (no GPU, float32), we raise
+    the temperature by _CPU_TEMPERATURE_OFFSET so that the softmax distributions
+    are slightly wider — reflecting the higher effective uncertainty of CPU
+    float32 versus GPU bf16 calibration.
+    """
+    try:
+        from anse.infrastructure.agent_environment import resolve_capability_profile
+        profile = resolve_capability_profile()
+        if profile.device == "cpu":
+            return base_temperature + _CPU_TEMPERATURE_OFFSET
+    except Exception as exc:
+        logger.debug("Profile detection failed, using base temperature: %s", exc)
+    return base_temperature
+
+
+def _load_report_safe(path: Path, label: str) -> dict[str, Any] | None:
+    """Load a JSON report file; return None and log on any error (no silent swallow)."""
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.debug("Could not load %s report at %s: %s", label, path, exc)
+        return None
+
 
 @dataclass
 class SAAWRetrainDecision:
     """Post-retraining calibrated decision synthesized by Kev."""
 
-    status: str  # "APPROVED", "REJECTED", "QUARANTINED"
+    status: str  # "APPROVED", "REJECTED", "QUARANTINED", "STAGED_LOCAL"
     promote_checkpoint: bool
     promote_probability: float
     deployment_strategy: str
@@ -118,16 +159,118 @@ class SAAWRetrainDecision:
     adaptation_confidence: float
     summary_reasoning: str
     raw_answers: dict[str, Any]
+    profile_id: str = "unknown"
+    failed_steps: list[str] = field(default_factory=list)
     timestamp: str = field(default_factory=lambda: datetime.datetime.now().isoformat())
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
+# ---------------------------------------------------------------------------
+# Internal logit builders — extracted to keep CC <= 10 per block
+# ---------------------------------------------------------------------------
+
+def _failure_logits(
+    is_invariant_violation: bool,
+) -> tuple[float, dict[str, float], list[float], dict[str, float]]:
+    """Return (p_promote, choice_logits, score_logits, next_logits) for failed runs.
+
+    Differentiates between numerical invariant divergence (quarantine for audit)
+    and outright runtime process crashes (rollback to parent).
+    """
+    p_promote = 0.015
+    if is_invariant_violation:
+        choice_logits = {
+            "deploy_full_stack": -5.0,
+            "local_staging_only": -1.0,
+            "rollback_to_parent": 2.2,
+            "quarantine_for_investigation": 4.8,
+        }
+        score_logits = [3.0, 2.5, -0.5, -4.0]
+        next_logits = {
+            "standard_schedule": -1.0,
+            "deepen_mcts_exploration": 0.5,
+            "prioritize_physics_invariants": 5.0,
+            "scale_lora_learning_rate": 1.5,
+        }
+    else:
+        choice_logits = {
+            "deploy_full_stack": -5.0,
+            "local_staging_only": 0.5,
+            "rollback_to_parent": 4.8,
+            "quarantine_for_investigation": 2.2,
+        }
+        score_logits = [4.0, 1.5, -1.0, -4.0]
+        next_logits = {
+            "standard_schedule": -1.0,
+            "deepen_mcts_exploration": 0.0,
+            "prioritize_physics_invariants": 2.0,
+            "scale_lora_learning_rate": 3.0,
+        }
+    return p_promote, choice_logits, score_logits, next_logits
+
+
+def _hard_failure_logits() -> tuple[float, dict[str, float], list[float], dict[str, float]]:
+    """Backwards-compatible alias for runtime crash failure logits."""
+    return _failure_logits(is_invariant_violation=False)
+
+
+def _healthy_logits(
+    retention: float,
+    qwen_gain: float,
+    rl_margin: float,
+    rl_loss_gain: float,
+    phys_gain: float,
+    mcts_adv: float,
+    temperature: float,
+) -> tuple[float, dict[str, float], list[float], dict[str, float]]:
+    """Return (p_promote, choice_logits, score_logits, next_logits) for healthy run."""
+    import math
+
+    health_score = 2.0
+    if retention >= 0.98:
+        health_score += 1.2
+    if qwen_gain > 10.0:
+        health_score += 1.0
+    if rl_margin > 2.0 and rl_loss_gain > 20.0:
+        health_score += 1.2
+    if phys_gain > 10.0:
+        health_score += 0.8
+
+    p_promote = 1.0 / (1.0 + math.exp(-health_score / temperature))
+
+    choice_logits = {
+        "deploy_full_stack": 4.2 + (1.0 if health_score >= 5.0 else 0.0),
+        "local_staging_only": -0.5,
+        "rollback_to_parent": -4.0,
+        "quarantine_for_investigation": -3.5,
+    }
+
+    if health_score >= 5.5:
+        score_logits: list[float] = [-4.0, -2.5, 1.5, 4.5]
+    elif health_score >= 4.0:
+        score_logits = [-3.0, -1.0, 3.5, 1.8]
+    else:
+        score_logits = [-1.0, 2.5, 1.5, -1.0]
+
+    next_logits = {
+        "standard_schedule": 3.2,
+        "deepen_mcts_exploration": 2.5 if mcts_adv > 1.5 else 1.0,
+        "prioritize_physics_invariants": 1.2,
+        "scale_lora_learning_rate": 1.0,
+    }
+
+    return p_promote, choice_logits, score_logits, next_logits
+
+
 class KevDecisionEngine:
     """
     Kev Decision Engine for SAAW (SocrateAI Autonomous Agent Workflow).
     Evaluates overnight multi-model retraining and provides calibrated decisions.
+
+    Profile-aware: automatically adjusts calibration temperature for the
+    current Antigravity Linux CPU profile (float32 vs GPU bf16).
     """
 
     def __init__(
@@ -135,10 +278,23 @@ class KevDecisionEngine:
         base_url: str | None = None,
         model_name: str = "kev-latest",
         temperature: float = 1.0,
+        profile_aware: bool = True,
     ) -> None:
         self.base_url = base_url or os.environ.get("KEV_BASE_URL")
         self.model_name = model_name
-        self.temperature = max(0.01, float(temperature))
+        raw_temp = max(0.01, float(temperature))
+        self.temperature = _resolve_profile_temperature(raw_temp) if profile_aware else raw_temp
+        self._base_temperature = raw_temp
+        self.profile_aware = profile_aware
+        self.profile_id = self._detect_profile_id()
+
+    def _detect_profile_id(self) -> str:
+        try:
+            from anse.infrastructure.agent_environment import resolve_capability_profile
+            return resolve_capability_profile().profile_id
+        except Exception as exc:
+            logger.debug("Could not detect profile_id: %s", exc)
+            return "unknown"
 
     def build_saaw_request(self, telemetry: dict[str, Any]) -> SystemOneRequest:
         """
@@ -217,68 +373,60 @@ class KevDecisionEngine:
             "pipeline_status": telemetry.get("status", "UNKNOWN"),
             "total_elapsed_sec": telemetry.get("total_elapsed_sec", 0.0),
             "timestamp": telemetry.get("timestamp", datetime.datetime.now().isoformat()),
+            "profile_id": self.profile_id,
         }
 
-        # 1. Step summaries
         steps = telemetry.get("steps", [])
         summary_state["steps_count"] = len(steps)
-        summary_state["all_steps_succeeded"] = all(s.get("success", False) for s in steps) if steps else False
+        failed_steps = [s.get("step", "Unknown") for s in steps if not s.get("success", False)]
+        summary_state["failed_steps"] = failed_steps
+        summary_state["all_steps_succeeded"] = (
+            len(failed_steps) == 0 if steps else (telemetry.get("status") == "SUCCESS")
+        )
 
-        # 2. Enrich from detailed reports if present
+        # Enrich from detailed sub-reports (error-logged, not silently swallowed)
         dream_path = REPO_ROOT / "results" / "nightly_training" / "nightly_dream_report.json"
-        if dream_path.exists():
-            try:
-                dream_data = json.loads(dream_path.read_text(encoding="utf-8"))
-                summary_state["dream_phase"] = {
-                    "retention_score": dream_data.get("sleep_consolidation", {}).get("retention_score", 0.0),
-                    "laya_lora_loss": dream_data.get("laya_lora_training", {}).get("avg_loss", 0.0),
-                    "latent_mcts_advantage": dream_data.get("latent_mcts", {}).get("best_advantage", 0.0),
-                    "best_predicted_energy": dream_data.get("latent_mcts", {}).get("best_predicted_energy", 0.0),
-                }
-            except Exception:
-                pass
+        dream_data = _load_report_safe(dream_path, "dream")
+        if dream_data is not None:
+            summary_state["dream_phase"] = {
+                "retention_score": dream_data.get("sleep_consolidation", {}).get("retention_score", 0.0),
+                "laya_lora_loss": dream_data.get("laya_lora_training", {}).get("avg_loss", 0.0),
+                "latent_mcts_advantage": dream_data.get("latent_mcts", {}).get("best_advantage", 0.0),
+                "best_predicted_energy": dream_data.get("latent_mcts", {}).get("best_predicted_energy", 0.0),
+            }
 
         redis_lora_path = REPO_ROOT / "results" / "redis_lora_execution_report.json"
-        if redis_lora_path.exists():
-            try:
-                lora_data = json.loads(redis_lora_path.read_text(encoding="utf-8"))
-                train_rep = lora_data.get("train_report", {})
-                summary_state["qwen_lora"] = {
-                    "initial_loss": train_rep.get("initial_loss", 0.0),
-                    "final_loss": train_rep.get("final_loss", 0.0),
-                    "loss_reduction_pct": train_rep.get("loss_reduction_pct", 0.0),
-                }
-            except Exception:
-                pass
+        lora_data = _load_report_safe(redis_lora_path, "redis_lora")
+        if lora_data is not None:
+            train_rep = lora_data.get("train_report", {})
+            summary_state["qwen_lora"] = {
+                "initial_loss": train_rep.get("initial_loss", 0.0),
+                "final_loss": train_rep.get("final_loss", 0.0),
+                "loss_reduction_pct": train_rep.get("loss_reduction_pct", 0.0),
+            }
 
         rl_path = REPO_ROOT / "results" / "rl_multidisciplinary_improvement_report.json"
-        if rl_path.exists():
-            try:
-                rl_data = json.loads(rl_path.read_text(encoding="utf-8"))
-                summary_state["rl_critic"] = {
-                    "initial_loss": rl_data.get("initial_loss", 0.0),
-                    "final_loss": rl_data.get("final_loss", 0.0),
-                    "loss_reduction_pct": rl_data.get("loss_reduction_pct", 0.0),
-                    "margin_gain": rl_data.get("margin_gain", 0.0),
-                    "avg_energy_reduction_pct": rl_data.get("avg_energy_reduction_pct", 0.0),
-                }
-            except Exception:
-                pass
+        rl_data = _load_report_safe(rl_path, "rl_critic")
+        if rl_data is not None:
+            summary_state["rl_critic"] = {
+                "initial_loss": rl_data.get("initial_loss", 0.0),
+                "final_loss": rl_data.get("final_loss", 0.0),
+                "loss_reduction_pct": rl_data.get("loss_reduction_pct", 0.0),
+                "margin_gain": rl_data.get("margin_gain", 0.0),
+                "avg_energy_reduction_pct": rl_data.get("avg_energy_reduction_pct", 0.0),
+            }
 
         physics_path = REPO_ROOT / "results" / "advanced_physics_world_models_report.json"
-        if physics_path.exists():
-            try:
-                phys_data = json.loads(physics_path.read_text(encoding="utf-8"))
-                summary_state["physics_world_model"] = {
-                    "total_cases": phys_data.get("total_cases", 0),
-                    "passed_invariants": phys_data.get("passed_invariants", 0),
-                    "loss_reduction": phys_data.get("loss_reduction", 0.0),
-                    "invariant_pass_rate": (
-                        phys_data.get("passed_invariants", 0) / max(1, phys_data.get("total_cases", 1))
-                    ),
-                }
-            except Exception:
-                pass
+        phys_data = _load_report_safe(physics_path, "physics")
+        if phys_data is not None:
+            summary_state["physics_world_model"] = {
+                "total_cases": phys_data.get("total_cases", 0),
+                "passed_invariants": phys_data.get("passed_invariants", 0),
+                "loss_reduction": phys_data.get("loss_reduction", 0.0),
+                "invariant_pass_rate": (
+                    phys_data.get("passed_invariants", 0) / max(1, phys_data.get("total_cases", 1))
+                ),
+            }
 
         return summary_state
 
@@ -312,7 +460,6 @@ class KevDecisionEngine:
 
         state = req.state if isinstance(req.state, dict) else {}
         all_succeeded = state.get("all_steps_succeeded", False)
-        status_ok = state.get("pipeline_status") == "SUCCESS"
 
         dream = state.get("dream_phase", {})
         retention = dream.get("retention_score", 0.95)
@@ -329,61 +476,24 @@ class KevDecisionEngine:
         invariant_rate = phys.get("invariant_pass_rate", 1.0)
         phys_gain = phys.get("loss_reduction", 0.0)
 
-        # 1. Determine base health logit
-        is_healthy = all_succeeded and status_ok and (invariant_rate >= 0.999)
-        hard_failure = (not all_succeeded) or (invariant_rate < 0.90) or (retention < 0.85)
+        is_invariant_violation = (invariant_rate < 0.90) or (retention < 0.85)
+        is_failed = (not all_succeeded) or is_invariant_violation
 
-        if hard_failure:
-            p_promote = 0.015
-            choice_logits = {
-                "deploy_full_stack": -5.0,
-                "local_staging_only": 0.5,
-                "rollback_to_parent": 4.5,
-                "quarantine_for_investigation": 3.8,
-            }
-            score_logits = [3.5, 2.0, -1.0, -4.0]
-            next_logits = {
-                "standard_schedule": -1.0,
-                "deepen_mcts_exploration": 0.0,
-                "prioritize_physics_invariants": 4.5,
-                "scale_lora_learning_rate": 2.0,
-            }
+        if is_failed:
+            p_promote, choice_logits, score_logits, next_logits = _failure_logits(
+                is_invariant_violation=is_invariant_violation
+            )
         else:
-            # Positive signal integration
-            health_score = 2.0
-            if retention >= 0.98:
-                health_score += 1.2
-            if qwen_gain > 10.0:
-                health_score += 1.0
-            if rl_margin > 2.0 and rl_loss_gain > 20.0:
-                health_score += 1.2
-            if phys_gain > 10.0:
-                health_score += 0.8
+            p_promote, choice_logits, score_logits, next_logits = _healthy_logits(
+                retention=retention,
+                qwen_gain=qwen_gain,
+                rl_margin=rl_margin,
+                rl_loss_gain=rl_loss_gain,
+                phys_gain=phys_gain,
+                mcts_adv=mcts_adv,
+                temperature=self.temperature,
+            )
 
-            p_promote = 1.0 / (1.0 + math.exp(-health_score / self.temperature))
-
-            choice_logits = {
-                "deploy_full_stack": 4.2 + (1.0 if health_score >= 5.0 else 0.0),
-                "local_staging_only": -0.5,
-                "rollback_to_parent": -4.0,
-                "quarantine_for_investigation": -3.5,
-            }
-
-            if health_score >= 5.5:
-                score_logits = [-4.0, -2.5, 1.5, 4.5]
-            elif health_score >= 4.0:
-                score_logits = [-3.0, -1.0, 3.5, 1.8]
-            else:
-                score_logits = [-1.0, 2.5, 1.5, -1.0]
-
-            next_logits = {
-                "standard_schedule": 3.2,
-                "deepen_mcts_exploration": 2.5 if mcts_adv > 1.5 else 1.0,
-                "prioritize_physics_invariants": 1.2,
-                "scale_lora_learning_rate": 1.0,
-            }
-
-        # Softmax helper
         def softmax(d: dict[str, float]) -> dict[str, float]:
             max_v = max(d.values())
             exps = {k: math.exp((v - max_v) / self.temperature) for k, v in d.items()}
@@ -461,25 +571,36 @@ class KevDecisionEngine:
         adaptation = adapt_ans.get("choice", "standard_schedule")
         adapt_conf = adapt_ans.get("confidence", 0.0)
 
+        steps = telemetry.get("steps", [])
+        failed_steps = [s.get("step", "Unknown") for s in steps if not s.get("success", False)]
+        failed_note = f" Failed steps: {failed_steps}." if failed_steps else ""
+
         if promote and strategy == "deploy_full_stack":
             status = "APPROVED"
             reasoning = (
                 f"Kev Decision APPROVED (Confidence {strat_conf:.2f}, Promote Probability {noul_val:.4f}): "
                 f"All multidisciplinary models converged with quality score {quality_score:.2f}/3.0. "
-                f"Deploying full stack to SocrateAI GCP Data Lake."
+                f"Deploying full stack to SocrateAI GCP Data Lake. [Profile: {self.profile_id}]"
             )
-        elif strategy in ("rollback_to_parent", "quarantine_for_investigation"):
+        elif strategy == "quarantine_for_investigation":
+            status = "QUARANTINED"
+            reasoning = (
+                f"Kev Decision QUARANTINED (Confidence {strat_conf:.2f}, Promote P={noul_val:.4f}): "
+                f"Invariant degradation or retention failure detected.{failed_note} "
+                f"Checkpoints quarantined for scientific audit. [Profile: {self.profile_id}]"
+            )
+        elif strategy == "rollback_to_parent":
             status = "REJECTED"
             reasoning = (
-                f"Kev Decision REJECTED (Strategy: {strategy}, Confidence {strat_conf:.2f}): "
-                f"Invariants or losses did not satisfy the promotion threshold (Promote P={noul_val:.4f}). "
-                f"Halting cloud deployment to protect production data lake."
+                f"Kev Decision REJECTED (Strategy: rollback_to_parent, Confidence {strat_conf:.2f}): "
+                f"Runtime or loss criteria failed (Promote P={noul_val:.4f}).{failed_note} "
+                f"Halting cloud deployment to protect production data lake. [Profile: {self.profile_id}]"
             )
         else:
             status = "STAGED_LOCAL"
             reasoning = (
                 f"Kev Decision STAGED_LOCAL (Promote P={noul_val:.4f}, Score {quality_score:.2f}/3.0): "
-                f"Weights verified locally but withheld from cloud production overwrite."
+                f"Weights verified locally but withheld from cloud production overwrite. [Profile: {self.profile_id}]"
             )
 
         return SAAWRetrainDecision(
@@ -495,17 +616,48 @@ class KevDecisionEngine:
             adaptation_confidence=adapt_conf,
             summary_reasoning=reasoning,
             raw_answers=answers,
+            profile_id=self.profile_id,
+            failed_steps=failed_steps,
         )
 
     def save_decision(
         self, decision: SAAWRetrainDecision, output_path: Path | None = None
     ) -> Path:
-        """Persist decision report to disk."""
+        """Persist decision report to disk, Redis LTM, and ChromaDB ResultsStore."""
         target = output_path or (REPO_ROOT / "results" / "nightly_training" / "kev_retrain_decision.json")
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(json.dumps(decision.to_dict(), indent=2), encoding="utf-8")
+        payload = json.dumps(decision.to_dict(), indent=2)
+        target.write_text(payload, encoding="utf-8")
         logger.info("Saved Kev SAAW Retrain Decision to %s", target)
+
+        self._persist_to_redis_ltm(decision)
+        self._persist_to_results_store(target)
+
         return target
+
+    def _persist_to_redis_ltm(self, decision: SAAWRetrainDecision) -> None:
+        """Write decision receipt to Redis LTM under key kev:decision:<timestamp>."""
+        try:
+            import redis  # type: ignore
+            redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+            r = redis.from_url(redis_url, socket_connect_timeout=2)
+            key = f"kev:decision:{decision.timestamp}"
+            r.set(key, json.dumps(decision.to_dict()), ex=60 * 60 * 24 * 90)  # 90 days TTL
+            logger.info("Kev decision persisted to Redis LTM at key %s", key)
+        except Exception as exc:
+            logger.debug("Redis LTM persistence skipped (non-critical): %s", exc)
+
+    def _persist_to_results_store(self, target: Path) -> None:
+        """Ingest decision report into dual-tier ResultsStore (Redis + ChromaDB)."""
+        try:
+            from anse.memory.results_store import ResultsStore
+
+            chroma_dir = REPO_ROOT / ".anse" / "chroma"
+            store = ResultsStore(persist_directory=chroma_dir, enable_chroma=True)
+            store.ingest_result_file(target)
+            logger.info("Kev decision ingested into ResultsStore (Redis + Chroma)")
+        except Exception as exc:
+            logger.debug("ResultsStore dual-persistence skipped (non-critical): %s", exc)
 
 
 def evaluate_retraining_decision(

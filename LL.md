@@ -446,3 +446,33 @@ exceeds order 1.
     nothing (0 %, exit 1 either way) and the dotted module form segfaulted once torch was
     imported. Coverage is now measured at package scope and held per file by
     `tools/v2_cov_check.py`; a check that cannot run must fail loudly, not report 0 %.
+
+## 13. Laya System-1 model: a real, licensed model that was just never fetched (2026-09-29)
+
+`anse/v5/laya_system_one.py::LayaSystemOneDecisionEngine` has existed since before v13.2.0,
+correctly wired to `from rl_agent_api import RLAgent` at `checkpoints/laya/`, but that
+directory was always empty -- `is_loaded` was `False` and 5 tests
+(`tests/v5/test_anse_v5.py::TestLayaSystemOne::{test_laya_model_loaded_on_cpu,
+test_laya_triage_choice}`, 3 in `tests/web/test_anse_v5_ui.py::TestAnseV5ApiEndpoints`)
+failed the same way in every release this session recorded. The cause was never a code bug:
+Laya is a real, public, Apache-2.0 model by Convai Innovations
+(`huggingface.co/convaiinnovations/laya`; the Node/TS runtime and export script live
+separately at `github.com/receptron/laya`, MIT). The Python reference implementation this
+repo's wrapper already imports (`rl_agent_api.py`, `rl_common.py`) ships INSIDE the
+Hugging Face repo next to the checkpoint, not as a pip package -- nobody had run
+`scripts/setup_laya_checkpoint.py` (new) / the equivalent `snapshot_download` call.
+`checkpoints/` is gitignored (804 MiB of weights), which is correct, but nothing pointed at
+what should fill it.
+
+**Verified 2026-09-29, CPU, real inference (not a stub):** `triage_hypothesis` on a
+symplectic-form theorem statement -> choice "sound" at p=0.8163 in 873 ms;
+`score_hypothesis` on a SIMD kernel description -> 2.97/4 ("optimized") in 551 ms. All 7
+Laya tests pass.
+
+**Apply:** when a component reports "model not loaded" / "weights not found", check whether
+the model is a real, nameable, licensed artifact before assuming the wrapper code is wrong
+or the feature is aspirational -- a `git log` / test-history check ("has this always
+failed?") plus one web/HF lookup settled this in minutes. TODO 24 tracks turning this into
+a fast-decision layer trained on this project's own verified results (the hardness ladder,
+cosmo3 episodes, the model router's capability matrix), using ANSE's own verifiers as the
+label source rather than any hand-labeling.

@@ -222,3 +222,24 @@ in the file makes this detectable). Re-run:
 - **Accept when:** the file's `provenance.retrieval_ab` sha256 matches the finished
   results/hardness/retrieval_ab.json, and deepseek+premises/goedel+premises both have
   n_items matching the full T1-T3 (+T0 sanity) item count.
+
+### 24. Fine-tune Laya on this project's own verified decisions
+`checkpoints/laya/` now holds the real English checkpoint (`scripts/setup_laya_checkpoint.py`,
+LL.md §13); the wrapper (`anse/v5/laya_system_one.py`) loads it for real and all 7 tests pass.
+Laya answers three typed questions in one forward pass (choice / score / noul) -- exactly the
+shape of many decisions this project already makes and verifies: is this Lean proof sound
+(noul), which tier should a task route to (choice, cf. `anse/v2/model_router.py`), how good is
+this candidate (score).
+- Do: a labeled-dataset builder that turns EXISTING verified results (`results/hardness/
+  baseline.json` + `retrieval_ab.json`, `results/v2/capability_matrix.json`,
+  `results/v2/heldout_baseline.json`, the cosmo3 episodes) into Laya's
+  `{state, questions: {type, instructions, criteria}, labels}` schema -- the label is always
+  a real verifier verdict (kernel, sandbox, `compare()`), never a model's own opinion.
+  Then a light fine-tune of `rl_common.build_model`'s head (CPU is fine for a head-only tune
+  given the encoder is frozen-ish; only use the GPU lease if that proves too slow) on a
+  train/held-out split by task, with a shuffled-label control (V0-8/C-7 pattern) reported
+  next to the real result -- no improvement claim without one.
+- **Accept when:** a report shows real-vs-shuffled accuracy/AUROC per question type on a
+  held-out split, and the fine-tuned checkpoint is versioned separately from the base
+  download (never overwrite `checkpoints/laya/model.safetensors` from the upstream download
+  in place) so a regression can be rolled back to the base checkpoint.

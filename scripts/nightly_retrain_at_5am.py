@@ -160,14 +160,51 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
             )
         )
 
-    # 7. Deploy updated checkpoints & databases to GCP Data Lake
-    if not skip_deploy:
-        results.append(
-            run_pipeline_step(
-                "GCP Data Lake Synchronization & Cartography",
-                ["uv", "run", "python", "scripts/deploy_models_and_datalake.py"],
+    # 7. Kev SAAW Post-Retraining Decision Gate
+    decision_step = run_pipeline_step(
+        "Kev Post-Retrain Calibrated Decision Gate",
+        ["uv", "run", "python", "scripts/kev_decision_gate.py", "--gate"],
+    )
+    results.append(decision_step)
+
+    # Inspect Kev decision to decide deployment
+    decision_file = LOG_DIR / "kev_retrain_decision.json"
+    approved_for_deploy = False
+    if decision_file.exists():
+        try:
+            d_data = json.loads(decision_file.read_text(encoding="utf-8"))
+            approved_for_deploy = (
+                d_data.get("status") == "APPROVED"
+                and d_data.get("deployment_strategy") == "deploy_full_stack"
             )
-        )
+            log_both(
+                f"⚖️ Kev Post-Retrain Decision: Status={d_data.get('status')}, "
+                f"Strategy={d_data.get('deployment_strategy')}, "
+                f"P(Promote)={d_data.get('promote_probability')}, "
+                f"Quality={d_data.get('retraining_quality_score')}/3.0"
+            )
+        except Exception as e:
+            log_both(f"⚠️ Could not parse Kev decision: {e}")
+
+    # 8. Deploy updated checkpoints & databases to GCP Data Lake (conditioned on Kev Decision)
+    if not skip_deploy:
+        if approved_for_deploy:
+            results.append(
+                run_pipeline_step(
+                    "GCP Data Lake Synchronization & Cartography",
+                    ["uv", "run", "python", "scripts/deploy_models_and_datalake.py"],
+                )
+            )
+        else:
+            log_both("🛑 Kev Decision Gate withheld deployment: Checkpoint not approved for cloud overwrite.")
+            results.append({
+                "step": "GCP Data Lake Synchronization & Cartography",
+                "success": False,
+                "returncode": 1,
+                "elapsed_sec": 0.0,
+                "stdout_tail": "",
+                "stderr_tail": "Deployment aborted by Kev Decision Gate: Checkpoint not approved for cloud overwrite.",
+            })
 
     total_elapsed = time.time() - pipeline_start
     all_success = all(r["success"] for r in results)

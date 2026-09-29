@@ -1,7 +1,7 @@
 # 🗺️ SocrateAI / ANSE Google Cloud Data Lake Cartography
 
 **GCP Project:** `gen-lang-client-0625573011` (`SocrateAI`)
-**Generated At:** `2026-09-28T21:14:34Z`
+**Generated At:** `2026-09-29T03:25:09Z`
 
 ---
 
@@ -47,12 +47,12 @@ gs://socrateai-datalake-gen-lang-client-0625573011/
 
 ### 🪣 `gs://socrateai-datalake-gen-lang-client-0625573011`
 - **Total Objects:** `1,413`
-- **Total Volume:** `13.274 GB` (14,252,991,688 bytes)
+- **Total Volume:** `13.274 GB` (14,253,202,558 bytes)
 
 | Prefix / Subdirectory | Objects | Size (MB) | Purpose & Key Artifacts |
 | :--- | :--- | :--- | :--- |
 | `audit/` | `2` | `0.01 MB` | Quality gate audits, verification receipts, and security reviews |
-| `autoevolve_anse_datalake/` | `46` | `2,933.01 MB` | Complete ANSE Neuro-Symbolic Suite, JEPA, Qwen, RL, Redis LTM, Chroma, and VM bootstrap |
+| `autoevolve_anse_datalake/` | `46` | `2,933.21 MB` | Complete ANSE Neuro-Symbolic Suite, JEPA, Qwen, RL, Redis LTM, Chroma, and VM bootstrap |
 | `checkpoints/` | `304` | `2.6 MB` | Historical evolutionary checkpoints from 300+ scientific simulations |
 | `dark_matter/` | `687` | `3.59 MB` | N-body dark matter simulation halos and velocity dispersion profiles |
 | `dualscale_r3/` | `159` | `9,749.56 MB` | Scientific and neural model artifacts |

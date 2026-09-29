@@ -505,3 +505,24 @@ the actual work (detached background `python` processes they had already launche
 running unaffected -- the orchestrator picked up the finished artifacts and ran the final
 evaluation/report step directly. Losing a subagent's own turn does not lose the compute it
 already started; check `ps aux` for the real process before assuming work is lost.
+
+## 15. Premise retrieval works for one prover, not the other (2026-09-29, TODO 5 / card M-1)
+
+222 real runs settle the oldest open question in this project's Lean work (§4c/TODO 5):
+retrieval helps **DeepSeek-Prover-V2-7B** dramatically on T3 (group-law doubling, 0/12 ->
+10/12) and modestly on T1 (0/12 -> 2/12), and **does nothing for Goedel-Prover-V2-8B on any
+tier**, despite both models receiving the identical retrieved premises (16/16 needed lemmas
+for T1/T2, 8/16 for T3). A shuffled-premise control on T1 stays at the no-retrieval baseline
+(0/5), so the DeepSeek gain is the retrieved content, not just longer context. Zero false
+items accepted across all 222 runs. T2 stayed flat (0/0) for both models even with every
+needed lemma retrieved -- a sign T2's gap is not a vocabulary problem the way T1/T3's was.
+
+This fed straight into the model router (card M-2): T3 is now the FIRST tier in the whole
+project where a local model (`deepseek+premises`) clears the routing threshold (Wilson-low
+0.552) without escalating to a stronger tier. The router and the retrieval hypothesis were
+built independently and validated each other on first contact with real data.
+
+**Apply:** "premise retrieval fixes a vocabulary gap" is true only of the model that actually
+attends to the retrieved context; measuring the SAME intervention on multiple models can
+reveal that one model benefits and another doesn't, from identical inputs -- don't generalize
+a retrieval result across models without testing each one.

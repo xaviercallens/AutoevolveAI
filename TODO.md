@@ -38,7 +38,18 @@ move 8 points per item.
 - **Accept when:** ≥ 50 pairs written with provenance, 0 frozen-split leaks
   (checked with the same normalized-proposition match the trainer uses).
 
-### 5. Premise retrieval A/B (H2) -- PRIORITY, raised by the 2026-09-27 baseline
+### 5. Premise retrieval A/B (H2) -- DONE 2026-09-29, model-dependent result
+222 real runs (`results/hardness/retrieval_ab.json`, `results/hardness/RETRIEVAL_AB_FINDINGS.md`),
+both provers, k=0 vs k=5 vs k=5-shuffled control. **DeepSeek-Prover-V2-7B: T1 0/12->2/12,
+T3 0/12->10/12 with retrieval; T2 stays 0/12.** Goedel-Prover-V2-8B: no change on any tier.
+Shuffled-premise control stays at baseline (0/5) -- the gain is real, not "any text helps."
+Zero false items accepted across all 222 runs. Fed into `anse/v2/model_router.py` via
+`scripts/hardness/capability_matrix.py`: T3 now routes to `deepseek+premises` with
+Wilson-low 0.552, **the first tier that clears the routing threshold without escalating**.
+Next: why doesn't retrieval help Goedel; why is T2 flat even with 16/16 needed lemmas
+retrieved (read the raw generations before assuming it's a reasoning gap).
+
+Original framing, for the record:
 Baseline result (`results/hardness/baseline.json`, 118/118 items, both models):
 T0 (Mathlib lemmas) DeepSeek 6/10, Goedel 8/10 pass. **T1/T2/T3 (curve facts):
 0/12 for both models, on every tier.** 0 false-item acceptances throughout --

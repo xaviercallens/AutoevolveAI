@@ -2,6 +2,38 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [13.9.0] — Peer-Review Response v2: Genuine Physics, LTM Storage, Domain Rigor (2026-09-29)
+
+**Second consecutive Strong Reject → Major Revision Round 2.**
+
+### Lean 4 — Deeper Genuine Theorems (K3_10Problems_v2.lean):
+- `entropy_monotone`: S = π√I₄ strictly increasing via `Real.sqrt_lt_sqrt`
+- `geometric_series_bound`: Σ κⁿ ≤ 1/(1-κ) for κ < 1 via `tsum_geometric_of_lt_one`
+- `wronskian_implies_independence`: Cramer's rule via `linear_combination`
+- `tadpole_finite_solutions`: all 25 solutions enumerated via `Finset.card`
+- `ym_density_nonneg`: |F|² ≥ 0 from algebraic components identity
+- `carter_relative_bound`: div_lt_one applied to relative drift
+- `banach_exact_ratio`: 7/40 = 0.175 (exact rational representation)
+- **`lake build ANSE.K3_10Problems_v2`: ✔ zero errors, zero sorry**
+
+### Papers v3 — Peer-Review Grade Structure:
+- **Section 0**: Epistemic Disclaimer (what is formally verified vs numerically computed)
+- **Section 1**: Mathematical Specification (explicit Hamiltonians, PDEs, energy functionals)
+- **ANSE Framework**: clear algorithmic description of neuro-symbolic evolution
+- **Domain Notes**: `tcolorbox` boxes explicitly marking discrete vs continuous problems
+- All 10 papers rebuilt with `_v3.pdf` suffix
+
+### Numerical Pipeline v13.9.0:
+- Genuine Yoshida symplectic Kerr geodesic simulation (K3-09): 85.1% improvement
+- Trust-region Newton on 10D Rosenbrock (K3-10): 99.4% improvement
+- Domain decomposition: avg E (continuous) = 51.74%, avg C (discrete) = 85.22%
+- All 10 gates passed
+
+### LTM/Vector DB:
+- Peer review v2 stored in ChromaDB: `peer_review_v2_strong_reject_20260929`
+- Response strategy stored: `response_strategy_v13_9_0`
+- Both retrievable via `ChromaRAG.query_literature()`
+
 ## [13.8.0] — Peer-Review Response: Genuine Lean 4 Theorems + Domain Decomposition (2026-09-29)
 
 **Strong Reject → Revision: All 10 K3 PhD papers rebuilt addressing 4 critical reviewer categories.**

@@ -476,3 +476,32 @@ failed?") plus one web/HF lookup settled this in minutes. TODO 24 tracks turning
 a fast-decision layer trained on this project's own verified results (the hardness ladder,
 cosmo3 episodes, the model router's capability matrix), using ANSE's own verifiers as the
 label source rather than any hand-labeling.
+
+## 14. Laya cold-start fine-tune: a real, reproduced positive result (2026-09-29)
+
+TODO 24's cold-start validation (`results/laya_coldstart/`): head-only fine-tune of the real
+Laya base checkpoint on 330 verifier-labeled rows (cosmo3 episodes + Lean hardness ladder),
+evaluated on 111 group-held-out rows never seen in training. Held-out AUROC: base (untrained)
+0.322, fine-tuned 0.758/0.760 across 2 seeds, shuffled-label control 0.383/0.359. The
+fine-tuned run's worst seed beats both the base and the control's best seed by far more than
+the 0.024 seed-to-seed spread -- the first clearly positive learning result of the session
+(contrast the JEPA finding in §12d, where real and shuffled were indistinguishable). Two
+things made this trustworthy rather than another 0.998-on-first-run red flag (§ Kev finding,
+not in this file -- see memory): (1) the base model was correctly *worse than chance*
+(AUROC < 0.5) before fine-tuning, because it was never trained on this question framing --
+an honest starting point, not a suspiciously good one; (2) the shuffled control was run
+through the IDENTICAL training procedure, not just asserted, and it correctly failed to
+learn.
+
+**Apply:** the pattern that made this a real result, not a repeat of the 200-benchmark/Kev
+mistakes: start from a real checkpoint the model has never seen these questions (cold start,
+not warm and not random init), run the negative control through the SAME code path as the
+positive result, and report the *worst* seed against the control's *best* seed rather than
+cherry-picking.
+
+**Process note:** both the retrieval A/B agent (card M-1) and this fine-tune agent hit the
+account's monthly Fable 5.1 spend limit mid-run and their own conversational loops died, but
+the actual work (detached background `python` processes they had already launched) kept
+running unaffected -- the orchestrator picked up the finished artifacts and ran the final
+evaluation/report step directly. Losing a subagent's own turn does not lose the compute it
+already started; check `ps aux` for the real process before assuming work is lost.

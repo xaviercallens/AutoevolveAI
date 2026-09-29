@@ -223,7 +223,18 @@ in the file makes this detectable). Re-run:
   results/hardness/retrieval_ab.json, and deepseek+premises/goedel+premises both have
   n_items matching the full T1-T3 (+T0 sanity) item count.
 
-### 24. Fine-tune Laya on this project's own verified decisions
+### 24. Fine-tune Laya on this project's own verified decisions -- COLD-START VALIDATED 2026-09-29
+`results/laya_coldstart/` (README.md, report.json): head-only fine-tune from the real base
+checkpoint on 330 verifier-labeled rows (cosmo3 episodes + Lean hardness ladder), evaluated
+on 111 group-held-out rows, 2 seeds, with a shuffled-label control. **Real signal**: held-out
+AUROC 0.758/0.760 (fine-tuned) vs 0.322 (untrained base) vs 0.383/0.359 (shuffled control);
+accuracy 0.712/0.703 vs 0.297 vs 0.360/0.324. The fine-tuned run's worst seed clears both the
+base and the control's best seed by far more than the 0.024 seed spread. Limitations: driven
+mostly by the cosmo3 slice (best-balanced source); the hardness-baseline held-out split has
+zero positives (T1-T3 pass at 0%, AUROC undefined there); only 2 epochs, head-only, CPU.
+Fine-tuned weights at `checkpoints/laya_coldstart_v1/` (gitignored, NOT promoted, NOT wired
+into `anse/v5/laya_system_one.py`'s serving path).
+Original scope, still open (this run used only 2 of 4 named sources):
 `checkpoints/laya/` now holds the real English checkpoint (`scripts/setup_laya_checkpoint.py`,
 LL.md §13); the wrapper (`anse/v5/laya_system_one.py`) loads it for real and all 7 tests pass.
 Laya answers three typed questions in one forward pass (choice / score / noul) -- exactly the

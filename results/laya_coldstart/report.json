@@ -1,0 +1,601 @@
+{
+ "what": "Laya cold-start validation (TODO 24): head-only fine-tune from the real base checkpoint, group-held-out evaluation, shuffled-label control. CPU only.",
+ "dataset_counts": {
+  "cosmo3_episode": {
+   "rows": 206,
+   "pos": 173,
+   "neg": 33,
+   "groups": 68
+  },
+  "hardness_baseline": {
+   "rows": 92,
+   "pos": 14,
+   "neg": 78,
+   "groups": 28
+  },
+  "hardness_retrieval_ab": {
+   "rows": 143,
+   "pos": 26,
+   "neg": 117,
+   "groups": 28
+  }
+ },
+ "train_counts": {
+  "cosmo3_episode": {
+   "rows": 153,
+   "pos": 130,
+   "neg": 23,
+   "groups": 51
+  },
+  "hardness_baseline": {
+   "rows": 72,
+   "pos": 14,
+   "neg": 58,
+   "groups": 24
+  },
+  "hardness_retrieval_ab": {
+   "rows": 105,
+   "pos": 24,
+   "neg": 81,
+   "groups": 24
+  }
+ },
+ "heldout_counts": {
+  "cosmo3_episode": {
+   "rows": 53,
+   "pos": 43,
+   "neg": 10,
+   "groups": 17
+  },
+  "hardness_baseline": {
+   "rows": 20,
+   "pos": 0,
+   "neg": 20,
+   "groups": 4
+  },
+  "hardness_retrieval_ab": {
+   "rows": 38,
+   "pos": 2,
+   "neg": 36,
+   "groups": 4
+  }
+ },
+ "split": {
+  "seed": 0,
+  "fraction": 0.2,
+  "heldout_groups": {
+   "cosmo3": [
+    "bao_bbn_h0:build_paper.py",
+    "bao_bbn_h0:fit_real.py",
+    "bao_bbn_h0:rd_camb_table.py",
+    "desi_dr2_bao:camb_crosscheck.py",
+    "desi_dr2_bao:compare_rerun.py",
+    "desi_dr2_bao:desi_dr2_bao.tex",
+    "desi_dr2_bao:elenchus_check.py",
+    "desi_dr2_bao:ledger.audit_binding_control",
+    "desi_dr2_bao:referee_issue.2_z_domain_narrower",
+    "desi_dr2_bao:referee_issue.6_antigravity_guard",
+    "desi_dr2_bao:referee_issue.8_dr1_wcdm_hrd_not_refetched",
+    "desi_dr2_bao:test_rigor_guard.py",
+    "eboss_vs_desi:BAO_Consistency.lean",
+    "eboss_vs_desi:eboss_vs_desi.tex",
+    "eboss_vs_desi:ledger_gate_check.py",
+    "eboss_vs_desi:referee_round1_issue.4_prereg_amendment_timestamp",
+    "eboss_vs_desi:referee_round2_issue.r2_9_informational_ks_elg"
+   ],
+   "hardness": [
+    "11a1",
+    "15a1",
+    "24a1",
+    "26a1"
+   ]
+  }
+ },
+ "n_train_rows": 330,
+ "n_heldout_rows": 111,
+ "training_runs": {
+  "real_s0": {
+   "run_name": "real_s0",
+   "labels": "real",
+   "seed": 0,
+   "epochs": 2,
+   "batch_size": 8,
+   "lr": 0.0001,
+   "n_train_rows": 330,
+   "trainable_params": 26248193,
+   "total_params": 421293827,
+   "loss_curve": [
+    {
+     "epoch": 1,
+     "train_loss": 0.4945,
+     "train_acc": 0.397,
+     "seconds": 838.5
+    },
+    {
+     "epoch": 2,
+     "train_loss": 0.3263,
+     "train_acc": 0.5788,
+     "seconds": 646.1
+    }
+   ],
+   "seconds_feature_cache": 1.0,
+   "seconds_train_epochs": 1484.6,
+   "seconds_total": 1571.8,
+   "trainable_keys": [
+    "head.layers.0.self_attn.in_proj_weight",
+    "head.layers.0.self_attn.in_proj_bias",
+    "head.layers.0.self_attn.out_proj.weight",
+    "head.layers.0.self_attn.out_proj.bias",
+    "head.layers.0.linear1.weight",
+    "head.layers.0.linear1.bias",
+    "head.layers.0.linear2.weight",
+    "head.layers.0.linear2.bias",
+    "head.layers.0.norm1.weight",
+    "head.layers.0.norm1.bias",
+    "head.layers.0.norm2.weight",
+    "head.layers.0.norm2.bias",
+    "head.layers.1.self_attn.in_proj_weight",
+    "head.layers.1.self_attn.in_proj_bias",
+    "head.layers.1.self_attn.out_proj.weight",
+    "head.layers.1.self_attn.out_proj.bias",
+    "head.layers.1.linear1.weight",
+    "head.layers.1.linear1.bias",
+    "head.layers.1.linear2.weight",
+    "head.layers.1.linear2.bias",
+    "head.layers.1.norm1.weight",
+    "head.layers.1.norm1.bias",
+    "head.layers.1.norm2.weight",
+    "head.layers.1.norm2.bias",
+    "type_emb.weight",
+    "scorer.0.weight",
+    "scorer.0.bias",
+    "scorer.1.weight",
+    "scorer.1.bias",
+    "scorer.3.weight",
+    "scorer.3.bias"
+   ]
+  },
+  "real_s1": {
+   "run_name": "real_s1",
+   "labels": "real",
+   "seed": 1,
+   "epochs": 2,
+   "batch_size": 8,
+   "lr": 0.0001,
+   "n_train_rows": 330,
+   "trainable_params": 26248193,
+   "total_params": 421293827,
+   "loss_curve": [
+    {
+     "epoch": 1,
+     "train_loss": 0.4896,
+     "train_acc": 0.4333,
+     "seconds": 843.4
+    },
+    {
+     "epoch": 2,
+     "train_loss": 0.3296,
+     "train_acc": 0.5848,
+     "seconds": 526.4
+    }
+   ],
+   "seconds_feature_cache": 0.7,
+   "seconds_train_epochs": 1369.8,
+   "seconds_total": 1450.5,
+   "trainable_keys": [
+    "head.layers.0.self_attn.in_proj_weight",
+    "head.layers.0.self_attn.in_proj_bias",
+    "head.layers.0.self_attn.out_proj.weight",
+    "head.layers.0.self_attn.out_proj.bias",
+    "head.layers.0.linear1.weight",
+    "head.layers.0.linear1.bias",
+    "head.layers.0.linear2.weight",
+    "head.layers.0.linear2.bias",
+    "head.layers.0.norm1.weight",
+    "head.layers.0.norm1.bias",
+    "head.layers.0.norm2.weight",
+    "head.layers.0.norm2.bias",
+    "head.layers.1.self_attn.in_proj_weight",
+    "head.layers.1.self_attn.in_proj_bias",
+    "head.layers.1.self_attn.out_proj.weight",
+    "head.layers.1.self_attn.out_proj.bias",
+    "head.layers.1.linear1.weight",
+    "head.layers.1.linear1.bias",
+    "head.layers.1.linear2.weight",
+    "head.layers.1.linear2.bias",
+    "head.layers.1.norm1.weight",
+    "head.layers.1.norm1.bias",
+    "head.layers.1.norm2.weight",
+    "head.layers.1.norm2.bias",
+    "type_emb.weight",
+    "scorer.0.weight",
+    "scorer.0.bias",
+    "scorer.1.weight",
+    "scorer.1.bias",
+    "scorer.3.weight",
+    "scorer.3.bias"
+   ]
+  },
+  "shuffled_s0": {
+   "run_name": "shuffled_s0",
+   "labels": "shuffled",
+   "seed": 0,
+   "epochs": 2,
+   "batch_size": 8,
+   "lr": 0.0001,
+   "n_train_rows": 330,
+   "trainable_params": 26248193,
+   "total_params": 421293827,
+   "loss_curve": [
+    {
+     "epoch": 1,
+     "train_loss": 0.4768,
+     "train_acc": 0.5091,
+     "seconds": 843.3
+    },
+    {
+     "epoch": 2,
+     "train_loss": 0.3532,
+     "train_acc": 0.5,
+     "seconds": 653.3
+    }
+   ],
+   "seconds_feature_cache": 0.7,
+   "seconds_train_epochs": 1496.6,
+   "seconds_total": 1579.4,
+   "trainable_keys": [
+    "head.layers.0.self_attn.in_proj_weight",
+    "head.layers.0.self_attn.in_proj_bias",
+    "head.layers.0.self_attn.out_proj.weight",
+    "head.layers.0.self_attn.out_proj.bias",
+    "head.layers.0.linear1.weight",
+    "head.layers.0.linear1.bias",
+    "head.layers.0.linear2.weight",
+    "head.layers.0.linear2.bias",
+    "head.layers.0.norm1.weight",
+    "head.layers.0.norm1.bias",
+    "head.layers.0.norm2.weight",
+    "head.layers.0.norm2.bias",
+    "head.layers.1.self_attn.in_proj_weight",
+    "head.layers.1.self_attn.in_proj_bias",
+    "head.layers.1.self_attn.out_proj.weight",
+    "head.layers.1.self_attn.out_proj.bias",
+    "head.layers.1.linear1.weight",
+    "head.layers.1.linear1.bias",
+    "head.layers.1.linear2.weight",
+    "head.layers.1.linear2.bias",
+    "head.layers.1.norm1.weight",
+    "head.layers.1.norm1.bias",
+    "head.layers.1.norm2.weight",
+    "head.layers.1.norm2.bias",
+    "type_emb.weight",
+    "scorer.0.weight",
+    "scorer.0.bias",
+    "scorer.1.weight",
+    "scorer.1.bias",
+    "scorer.3.weight",
+    "scorer.3.bias"
+   ]
+  },
+  "shuffled_s1": {
+   "run_name": "shuffled_s1",
+   "labels": "shuffled",
+   "seed": 1,
+   "epochs": 2,
+   "batch_size": 8,
+   "lr": 0.0001,
+   "n_train_rows": 330,
+   "trainable_params": 26248193,
+   "total_params": 421293827,
+   "loss_curve": [
+    {
+     "epoch": 1,
+     "train_loss": 0.4404,
+     "train_acc": 0.4758,
+     "seconds": 863.7
+    },
+    {
+     "epoch": 2,
+     "train_loss": 0.3434,
+     "train_acc": 0.5182,
+     "seconds": 521.9
+    }
+   ],
+   "seconds_feature_cache": 0.8,
+   "seconds_train_epochs": 1385.6,
+   "seconds_total": 1469.1,
+   "trainable_keys": [
+    "head.layers.0.self_attn.in_proj_weight",
+    "head.layers.0.self_attn.in_proj_bias",
+    "head.layers.0.self_attn.out_proj.weight",
+    "head.layers.0.self_attn.out_proj.bias",
+    "head.layers.0.linear1.weight",
+    "head.layers.0.linear1.bias",
+    "head.layers.0.linear2.weight",
+    "head.layers.0.linear2.bias",
+    "head.layers.0.norm1.weight",
+    "head.layers.0.norm1.bias",
+    "head.layers.0.norm2.weight",
+    "head.layers.0.norm2.bias",
+    "head.layers.1.self_attn.in_proj_weight",
+    "head.layers.1.self_attn.in_proj_bias",
+    "head.layers.1.self_attn.out_proj.weight",
+    "head.layers.1.self_attn.out_proj.bias",
+    "head.layers.1.linear1.weight",
+    "head.layers.1.linear1.bias",
+    "head.layers.1.linear2.weight",
+    "head.layers.1.linear2.bias",
+    "head.layers.1.norm1.weight",
+    "head.layers.1.norm1.bias",
+    "head.layers.1.norm2.weight",
+    "head.layers.1.norm2.bias",
+    "type_emb.weight",
+    "scorer.0.weight",
+    "scorer.0.bias",
+    "scorer.1.weight",
+    "scorer.1.bias",
+    "scorer.3.weight",
+    "scorer.3.bias"
+   ]
+  }
+ },
+ "heldout_table": {
+  "base": {
+   "overall": {
+    "n": 111,
+    "pos": 45,
+    "accuracy": 0.2973,
+    "majority_class_accuracy": 0.5946,
+    "auroc": 0.3222,
+    "ece": 0.5252,
+    "heldout_loss": 1.1378,
+    "mean_p_true": 0.669
+   },
+   "cosmo3_episode": {
+    "n": 53,
+    "pos": 43,
+    "accuracy": 0.4528,
+    "majority_class_accuracy": 0.8113,
+    "auroc": 0.3512,
+    "ece": 0.3341,
+    "heldout_loss": 0.7527,
+    "mean_p_true": 0.5516
+   },
+   "hardness_baseline": {
+    "n": 20,
+    "pos": 0,
+    "accuracy": 0.3,
+    "majority_class_accuracy": 1.0,
+    "auroc": NaN,
+    "ece": 0.6108,
+    "heldout_loss": 1.2119,
+    "mean_p_true": 0.673
+   },
+   "hardness_retrieval_ab": {
+    "n": 38,
+    "pos": 2,
+    "accuracy": 0.0789,
+    "majority_class_accuracy": 0.9474,
+    "auroc": 1.0,
+    "ece": 0.7779,
+    "heldout_loss": 1.6361,
+    "mean_p_true": 0.8305
+   }
+  },
+  "finetuned:real_s0": {
+   "overall": {
+    "n": 111,
+    "pos": 45,
+    "accuracy": 0.7117,
+    "majority_class_accuracy": 0.5946,
+    "auroc": 0.7582,
+    "ece": 0.1657,
+    "heldout_loss": 0.2752,
+    "mean_p_true": 0.4605
+   },
+   "cosmo3_episode": {
+    "n": 53,
+    "pos": 43,
+    "accuracy": 0.4906,
+    "majority_class_accuracy": 0.8113,
+    "auroc": 0.614,
+    "ece": 0.1312,
+    "heldout_loss": 0.3566,
+    "mean_p_true": 0.4884
+   },
+   "hardness_baseline": {
+    "n": 20,
+    "pos": 0,
+    "accuracy": 0.85,
+    "majority_class_accuracy": 1.0,
+    "auroc": NaN,
+    "ece": 0.3036,
+    "heldout_loss": 0.2308,
+    "mean_p_true": 0.4567
+   },
+   "hardness_retrieval_ab": {
+    "n": 38,
+    "pos": 2,
+    "accuracy": 0.9474,
+    "majority_class_accuracy": 0.9474,
+    "auroc": 0.0,
+    "ece": 0.3711,
+    "heldout_loss": 0.185,
+    "mean_p_true": 0.4237
+   },
+   "reference_path": {
+    "n": 111,
+    "pos": 45,
+    "accuracy": 0.7117,
+    "majority_class_accuracy": 0.5946,
+    "auroc": 0.7586,
+    "ece": 0.1657,
+    "heldout_loss": 0.2752,
+    "mean_p_true": 0.4605
+   },
+   "reference_vs_cached_max_dlogit": 0.00010538101196289062
+  },
+  "finetuned:real_s1": {
+   "overall": {
+    "n": 111,
+    "pos": 45,
+    "accuracy": 0.7027,
+    "majority_class_accuracy": 0.5946,
+    "auroc": 0.7603,
+    "ece": 0.1753,
+    "heldout_loss": 0.2841,
+    "mean_p_true": 0.466
+   },
+   "cosmo3_episode": {
+    "n": 53,
+    "pos": 43,
+    "accuracy": 0.4717,
+    "majority_class_accuracy": 0.8113,
+    "auroc": 0.6163,
+    "ece": 0.0914,
+    "heldout_loss": 0.3559,
+    "mean_p_true": 0.489
+   },
+   "hardness_baseline": {
+    "n": 20,
+    "pos": 0,
+    "accuracy": 0.85,
+    "majority_class_accuracy": 1.0,
+    "auroc": NaN,
+    "ece": 0.3103,
+    "heldout_loss": 0.248,
+    "mean_p_true": 0.4639
+   },
+   "hardness_retrieval_ab": {
+    "n": 38,
+    "pos": 2,
+    "accuracy": 0.9474,
+    "majority_class_accuracy": 0.9474,
+    "auroc": 0.0833,
+    "ece": 0.414,
+    "heldout_loss": 0.203,
+    "mean_p_true": 0.4349
+   }
+  },
+  "shuffled_control:shuffled_s0": {
+   "overall": {
+    "n": 111,
+    "pos": 45,
+    "accuracy": 0.3604,
+    "majority_class_accuracy": 0.5946,
+    "auroc": 0.3828,
+    "ece": 0.1516,
+    "heldout_loss": 0.3533,
+    "mean_p_true": 0.5005
+   },
+   "cosmo3_episode": {
+    "n": 53,
+    "pos": 43,
+    "accuracy": 0.4528,
+    "majority_class_accuracy": 0.8113,
+    "auroc": 0.3698,
+    "ece": 0.0626,
+    "heldout_loss": 0.3552,
+    "mean_p_true": 0.4965
+   },
+   "hardness_baseline": {
+    "n": 20,
+    "pos": 0,
+    "accuracy": 0.5,
+    "majority_class_accuracy": 1.0,
+    "auroc": NaN,
+    "ece": 0.0094,
+    "heldout_loss": 0.3413,
+    "mean_p_true": 0.5005
+   },
+   "hardness_retrieval_ab": {
+    "n": 38,
+    "pos": 2,
+    "accuracy": 0.1579,
+    "majority_class_accuracy": 0.9474,
+    "auroc": 0.1389,
+    "ece": 0.3507,
+    "heldout_loss": 0.3569,
+    "mean_p_true": 0.5061
+   }
+  },
+  "shuffled_control:shuffled_s1": {
+   "overall": {
+    "n": 111,
+    "pos": 45,
+    "accuracy": 0.3243,
+    "majority_class_accuracy": 0.5946,
+    "auroc": 0.3589,
+    "ece": 0.1975,
+    "heldout_loss": 0.3665,
+    "mean_p_true": 0.5074
+   },
+   "cosmo3_episode": {
+    "n": 53,
+    "pos": 43,
+    "accuracy": 0.4528,
+    "majority_class_accuracy": 0.8113,
+    "auroc": 0.3628,
+    "ece": 0.0735,
+    "heldout_loss": 0.3561,
+    "mean_p_true": 0.4995
+   },
+   "hardness_baseline": {
+    "n": 20,
+    "pos": 0,
+    "accuracy": 0.4,
+    "majority_class_accuracy": 1.0,
+    "auroc": NaN,
+    "ece": 0.1157,
+    "heldout_loss": 0.3605,
+    "mean_p_true": 0.5074
+   },
+   "hardness_retrieval_ab": {
+    "n": 38,
+    "pos": 2,
+    "accuracy": 0.1053,
+    "majority_class_accuracy": 0.9474,
+    "auroc": 0.5972,
+    "ece": 0.4134,
+    "heldout_loss": 0.3842,
+    "mean_p_true": 0.5183
+   }
+  }
+ },
+ "base_reference_vs_cached_path_max_dlogit": 0.00019872188568115234,
+ "timings_s": {
+  "base_full_forward_s": 185.2,
+  "heldout_encoder_cache_s": 106.3,
+  "eval_real_s0_s": 64.8,
+  "promoted_checkpoint_write_and_reference_eval_s": 192.6,
+  "eval_real_s1_s": 37.5,
+  "eval_shuffled_s0_s": 47.7,
+  "eval_shuffled_s1_s": 84.0,
+  "evaluate_total_s": 733.3
+ },
+ "verdict": {
+  "finetuned_auroc": [
+   0.7582,
+   0.7603
+  ],
+  "shuffled_auroc": [
+   0.3828,
+   0.3589
+  ],
+  "base_auroc": 0.3222,
+  "finetuned_accuracy": [
+   0.7117,
+   0.7027
+  ],
+  "shuffled_accuracy": [
+   0.3604,
+   0.3243
+  ],
+  "base_accuracy": 0.2973,
+  "seed_spread_auroc_or_acc": 0.0239,
+  "n_seeds": 2,
+  "finetuned_beats_base_and_control_on_auroc": true,
+  "finetuned_beats_base_and_control_on_accuracy": true,
+  "signal": "YES"
+ }
+}

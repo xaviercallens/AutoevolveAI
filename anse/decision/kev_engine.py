@@ -3,11 +3,13 @@ ANSE Kev Decision Engine.
 Integrates Kev (laptop-scale open-source Jev / TypeSafe System One architecture)
 for post-training decision making in SAAW (SocrateAI Autonomous Agent Workflow).
 
-Antigravity Linux CPU improvements (v2):
-- CC <= 10 per method (extracted _hard_failure_logits / _healthy_logits / _load_report_safe)
-- Bandit B110 resolved: silent except-pass replaced with logger.debug
+Antigravity Linux CPU improvements (v3):
+- CC <= 10 per method across all routines
+- Zero Bandit warnings (no silent exception swallowing)
 - Profile-aware temperature scaling via resolve_capability_profile()
-- Redis LTM persistence in save_decision() (opt-in, fails gracefully)
+- Diagnostic provenance: extracts failed steps into decision reasoning
+- Fine-grained failure taxonomy: QUARANTINED for invariant violations vs REJECTED for crashes
+- Dual-tier LTM persistence: Redis LTM + ChromaDB ResultsStore ingestion
 """
 
 from __future__ import annotations
@@ -145,7 +147,7 @@ def _load_report_safe(path: Path, label: str) -> dict[str, Any] | None:
 class SAAWRetrainDecision:
     """Post-retraining calibrated decision synthesized by Kev."""
 
-    status: str  # "APPROVED", "REJECTED", "QUARANTINED"
+    status: str  # "APPROVED", "REJECTED", "QUARANTINED", "STAGED_LOCAL"
     promote_checkpoint: bool
     promote_probability: float
     deployment_strategy: str
@@ -158,6 +160,7 @@ class SAAWRetrainDecision:
     summary_reasoning: str
     raw_answers: dict[str, Any]
     profile_id: str = "unknown"
+    failed_steps: list[str] = field(default_factory=list)
     timestamp: str = field(default_factory=lambda: datetime.datetime.now().isoformat())
 
     def to_dict(self) -> dict[str, Any]:
@@ -168,24 +171,49 @@ class SAAWRetrainDecision:
 # Internal logit builders — extracted to keep CC <= 10 per block
 # ---------------------------------------------------------------------------
 
-def _hard_failure_logits() -> tuple[float, dict[str, float], list[float], dict[str, float]]:
-    """Return (p_promote, choice_logits, score_logits, next_logits) for hard failure."""
-    return (
-        0.015,
-        {
+def _failure_logits(
+    is_invariant_violation: bool,
+) -> tuple[float, dict[str, float], list[float], dict[str, float]]:
+    """Return (p_promote, choice_logits, score_logits, next_logits) for failed runs.
+
+    Differentiates between numerical invariant divergence (quarantine for audit)
+    and outright runtime process crashes (rollback to parent).
+    """
+    p_promote = 0.015
+    if is_invariant_violation:
+        choice_logits = {
+            "deploy_full_stack": -5.0,
+            "local_staging_only": -1.0,
+            "rollback_to_parent": 2.2,
+            "quarantine_for_investigation": 4.8,
+        }
+        score_logits = [3.0, 2.5, -0.5, -4.0]
+        next_logits = {
+            "standard_schedule": -1.0,
+            "deepen_mcts_exploration": 0.5,
+            "prioritize_physics_invariants": 5.0,
+            "scale_lora_learning_rate": 1.5,
+        }
+    else:
+        choice_logits = {
             "deploy_full_stack": -5.0,
             "local_staging_only": 0.5,
-            "rollback_to_parent": 4.5,
-            "quarantine_for_investigation": 3.8,
-        },
-        [3.5, 2.0, -1.0, -4.0],
-        {
+            "rollback_to_parent": 4.8,
+            "quarantine_for_investigation": 2.2,
+        }
+        score_logits = [4.0, 1.5, -1.0, -4.0]
+        next_logits = {
             "standard_schedule": -1.0,
             "deepen_mcts_exploration": 0.0,
-            "prioritize_physics_invariants": 4.5,
-            "scale_lora_learning_rate": 2.0,
-        },
-    )
+            "prioritize_physics_invariants": 2.0,
+            "scale_lora_learning_rate": 3.0,
+        }
+    return p_promote, choice_logits, score_logits, next_logits
+
+
+def _hard_failure_logits() -> tuple[float, dict[str, float], list[float], dict[str, float]]:
+    """Backwards-compatible alias for runtime crash failure logits."""
+    return _failure_logits(is_invariant_violation=False)
 
 
 def _healthy_logits(
@@ -258,7 +286,6 @@ class KevDecisionEngine:
         self.temperature = _resolve_profile_temperature(raw_temp) if profile_aware else raw_temp
         self._base_temperature = raw_temp
         self.profile_aware = profile_aware
-        # Resolve profile_id once for stamping decisions
         self.profile_id = self._detect_profile_id()
 
     def _detect_profile_id(self) -> str:
@@ -351,8 +378,10 @@ class KevDecisionEngine:
 
         steps = telemetry.get("steps", [])
         summary_state["steps_count"] = len(steps)
+        failed_steps = [s.get("step", "Unknown") for s in steps if not s.get("success", False)]
+        summary_state["failed_steps"] = failed_steps
         summary_state["all_steps_succeeded"] = (
-            all(s.get("success", False) for s in steps) if steps else False
+            len(failed_steps) == 0 if steps else (telemetry.get("status") == "SUCCESS")
         )
 
         # Enrich from detailed sub-reports (error-logged, not silently swallowed)
@@ -426,13 +455,11 @@ class KevDecisionEngine:
         - Noul: logistic temperature-scaled sigmoid
         - Choice: temperature-scaled softmax with choice confidence
         - Score: expected level calculation with score confidence
-        CC reduced via _hard_failure_logits() and _healthy_logits() helpers.
         """
         import math
 
         state = req.state if isinstance(req.state, dict) else {}
         all_succeeded = state.get("all_steps_succeeded", False)
-        status_ok = state.get("pipeline_status") == "SUCCESS"
 
         dream = state.get("dream_phase", {})
         retention = dream.get("retention_score", 0.95)
@@ -449,10 +476,13 @@ class KevDecisionEngine:
         invariant_rate = phys.get("invariant_pass_rate", 1.0)
         phys_gain = phys.get("loss_reduction", 0.0)
 
-        hard_failure = (not all_succeeded) or (invariant_rate < 0.90) or (retention < 0.85)
+        is_invariant_violation = (invariant_rate < 0.90) or (retention < 0.85)
+        is_failed = (not all_succeeded) or is_invariant_violation
 
-        if hard_failure:
-            p_promote, choice_logits, score_logits, next_logits = _hard_failure_logits()
+        if is_failed:
+            p_promote, choice_logits, score_logits, next_logits = _failure_logits(
+                is_invariant_violation=is_invariant_violation
+            )
         else:
             p_promote, choice_logits, score_logits, next_logits = _healthy_logits(
                 retention=retention,
@@ -541,6 +571,10 @@ class KevDecisionEngine:
         adaptation = adapt_ans.get("choice", "standard_schedule")
         adapt_conf = adapt_ans.get("confidence", 0.0)
 
+        steps = telemetry.get("steps", [])
+        failed_steps = [s.get("step", "Unknown") for s in steps if not s.get("success", False)]
+        failed_note = f" Failed steps: {failed_steps}." if failed_steps else ""
+
         if promote and strategy == "deploy_full_stack":
             status = "APPROVED"
             reasoning = (
@@ -548,11 +582,18 @@ class KevDecisionEngine:
                 f"All multidisciplinary models converged with quality score {quality_score:.2f}/3.0. "
                 f"Deploying full stack to SocrateAI GCP Data Lake. [Profile: {self.profile_id}]"
             )
-        elif strategy in ("rollback_to_parent", "quarantine_for_investigation"):
+        elif strategy == "quarantine_for_investigation":
+            status = "QUARANTINED"
+            reasoning = (
+                f"Kev Decision QUARANTINED (Confidence {strat_conf:.2f}, Promote P={noul_val:.4f}): "
+                f"Invariant degradation or retention failure detected.{failed_note} "
+                f"Checkpoints quarantined for scientific audit. [Profile: {self.profile_id}]"
+            )
+        elif strategy == "rollback_to_parent":
             status = "REJECTED"
             reasoning = (
-                f"Kev Decision REJECTED (Strategy: {strategy}, Confidence {strat_conf:.2f}): "
-                f"Invariants or losses did not satisfy the promotion threshold (Promote P={noul_val:.4f}). "
+                f"Kev Decision REJECTED (Strategy: rollback_to_parent, Confidence {strat_conf:.2f}): "
+                f"Runtime or loss criteria failed (Promote P={noul_val:.4f}).{failed_note} "
                 f"Halting cloud deployment to protect production data lake. [Profile: {self.profile_id}]"
             )
         else:
@@ -576,20 +617,21 @@ class KevDecisionEngine:
             summary_reasoning=reasoning,
             raw_answers=answers,
             profile_id=self.profile_id,
+            failed_steps=failed_steps,
         )
 
     def save_decision(
         self, decision: SAAWRetrainDecision, output_path: Path | None = None
     ) -> Path:
-        """Persist decision report to disk and optionally to Redis LTM."""
+        """Persist decision report to disk, Redis LTM, and ChromaDB ResultsStore."""
         target = output_path or (REPO_ROOT / "results" / "nightly_training" / "kev_retrain_decision.json")
         target.parent.mkdir(parents=True, exist_ok=True)
         payload = json.dumps(decision.to_dict(), indent=2)
         target.write_text(payload, encoding="utf-8")
         logger.info("Saved Kev SAAW Retrain Decision to %s", target)
 
-        # Redis LTM persistence (opt-in, non-blocking failure)
         self._persist_to_redis_ltm(decision)
+        self._persist_to_results_store(target)
 
         return target
 
@@ -604,6 +646,16 @@ class KevDecisionEngine:
             logger.info("Kev decision persisted to Redis LTM at key %s", key)
         except Exception as exc:
             logger.debug("Redis LTM persistence skipped (non-critical): %s", exc)
+
+    def _persist_to_results_store(self, target: Path) -> None:
+        """Ingest decision report into dual-tier ResultsStore (Redis + ChromaDB)."""
+        try:
+            from anse.memory.results_store import ResultsStore
+            store = ResultsStore(enable_chroma=True)
+            store.ingest_result_file(target)
+            logger.info("Kev decision ingested into ResultsStore (Redis + Chroma)")
+        except Exception as exc:
+            logger.debug("ResultsStore dual-persistence skipped (non-critical): %s", exc)
 
 
 def evaluate_retraining_decision(

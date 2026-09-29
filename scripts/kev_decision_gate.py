@@ -31,13 +31,25 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("KevDecisionGate")
 
 
+def _resolve_default_report_path() -> Path | None:
+    """Find the freshest report among interim and final nightly reports."""
+    interim = REPO_ROOT / "results" / "nightly_training" / "nightly_retrain_interim_report.json"
+    final_rep = REPO_ROOT / "results" / "nightly_training" / "nightly_retrain_5am_report.json"
+
+    candidates = [p for p in (interim, final_rep) if p.exists()]
+    if not candidates:
+        return None
+    # Pick the newest by modification time
+    return max(candidates, key=lambda p: p.stat().st_mtime)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Kev SAAW Retrain Decision Gate")
     parser.add_argument(
         "--report",
         type=str,
         default=None,
-        help="Path to nightly retraining report JSON (default: results/nightly_training/nightly_retrain_5am_report.json)",
+        help="Path to nightly retraining report JSON",
     )
     parser.add_argument(
         "--out",
@@ -64,37 +76,33 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    report_path = Path(args.report) if args.report else None
+    report_path = Path(args.report) if args.report else _resolve_default_report_path()
     out_path = Path(args.out) if args.out else None
 
     logger.info("================================================================================")
     logger.info("⚖️  KEV SAAW POST-RETRAIN CALIBRATED DECISION GATE")
     logger.info("================================================================================")
 
-    engine = KevDecisionEngine(base_url=args.url, temperature=args.temp)
+    if not report_path or not report_path.exists():
+        logger.error("No retraining report found (checked --report, interim, and final paths)")
+        return 2
 
-    # Load telemetry
-    if report_path:
-        if not report_path.exists():
-            logger.error("Specified report does not exist: %s", report_path)
-            return 2
-        telemetry = json.loads(report_path.read_text(encoding="utf-8"))
-    else:
-        default_path = Path("results/nightly_training/nightly_retrain_5am_report.json")
-        if not default_path.exists():
-            logger.error("Default report does not exist: %s", default_path)
-            return 2
-        telemetry = json.loads(default_path.read_text(encoding="utf-8"))
+    logger.info("Evaluating telemetry report : %s", report_path)
+    engine = KevDecisionEngine(base_url=args.url, temperature=args.temp)
+    telemetry = json.loads(report_path.read_text(encoding="utf-8"))
 
     decision = engine.evaluate_saaw_retraining(telemetry)
     saved_path = engine.save_decision(decision, output_path=out_path)
 
     # Print formatted decision briefing
+    logger.info("Profile ID                  : %s", decision.profile_id)
     logger.info("Status                      : %s", decision.status)
     logger.info("Promote Checkpoint (Noul)   : %s (P = %.4f)", decision.promote_checkpoint, decision.promote_probability)
     logger.info("Deployment Strategy (Choice): %s (Conf = %.4f)", decision.deployment_strategy, decision.deployment_confidence)
     logger.info("Quality Score (Score)       : %.2f / 3.00 (Conf = %.4f)", decision.retraining_quality_score, decision.retraining_quality_confidence)
     logger.info("Next Cycle Adaptation       : %s (Conf = %.4f)", decision.next_cycle_adaptation, decision.adaptation_confidence)
+    if decision.failed_steps:
+        logger.info("Failed Steps                : %s", decision.failed_steps)
     logger.info("Summary Reasoning           : %s", decision.summary_reasoning)
     logger.info("Report Saved To             : %s", saved_path)
     logger.info("================================================================================")

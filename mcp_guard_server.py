@@ -610,5 +610,50 @@ def detect_renamed_symbols(
     }
 
 
+@mcp.tool()
+def evaluate_kev_decision(
+    report_path: str | None = None,
+    enforce_gate: bool = True,
+    temperature: float = 1.0,
+) -> dict[str, Any]:
+    """
+    Evaluates nightly model retraining telemetry with the Kev Decision Engine.
+    Returns status (APPROVED/REJECTED/QUARANTINED), promote probability,
+    deployment strategy, quality score, and profile metadata.
+    """
+    from anse.decision.kev_engine import KevDecisionEngine
+
+    path = Path(report_path) if report_path else None
+    if path and not path.exists():
+        return {
+            "success": False,
+            "error": f"Report not found at {path}",
+            "status": "MISSING_REPORT",
+        }
+
+    if not path:
+        from scripts.kev_decision_gate import _resolve_default_report_path
+
+        path = _resolve_default_report_path()
+        if not path or not path.exists():
+            return {
+                "success": False,
+                "error": "No retraining report found in results/nightly_training/",
+                "status": "MISSING_REPORT",
+            }
+
+    telemetry = json.loads(path.read_text(encoding="utf-8"))
+    engine = KevDecisionEngine(temperature=temperature)
+    decision = engine.evaluate_saaw_retraining(telemetry)
+    engine.save_decision(decision)
+
+    passed_gate = decision.status == "APPROVED" if enforce_gate else True
+    return {
+        "success": True,
+        "gate_passed": passed_gate,
+        "decision": decision.to_dict(),
+    }
+
+
 if __name__ == "__main__":
     mcp.run()

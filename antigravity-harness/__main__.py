@@ -122,12 +122,62 @@ def cmd_triage(args: argparse.Namespace) -> int:
     return 1
 
 
+def cmd_decision(args: argparse.Namespace) -> int:
+    import json
+    from anse.decision.kev_engine import KevDecisionEngine
+
+    report_path = Path(args.report) if args.report else None
+    out_path = Path(args.out) if args.out else None
+    engine = KevDecisionEngine(base_url=args.url, temperature=args.temp)
+
+    if report_path:
+        if not report_path.exists():
+            print(f"❌ Specified report does not exist: {report_path}")
+            return 2
+        telemetry = json.loads(report_path.read_text(encoding="utf-8"))
+    else:
+        from scripts.kev_decision_gate import _resolve_default_report_path
+        resolved = _resolve_default_report_path()
+        if not resolved or not resolved.exists():
+            print("❌ No retraining report found in results/nightly_training/")
+            return 2
+        telemetry = json.loads(resolved.read_text(encoding="utf-8"))
+
+    decision = engine.evaluate_saaw_retraining(telemetry)
+    saved = engine.save_decision(decision, output_path=out_path)
+    print(f"==> Kev SAAW Retrain Decision: {decision.status}")
+    print(f"    Profile ID       : {decision.profile_id}")
+    print(f"    Promote (Noul)   : {decision.promote_checkpoint} (P = {decision.promote_probability:.4f})")
+    print(f"    Strategy (Choice): {decision.deployment_strategy} (Conf = {decision.deployment_confidence:.4f})")
+    print(f"    Quality (Score)  : {decision.retraining_quality_score:.2f} / 3.00 (Conf = {decision.retraining_quality_confidence:.4f})")
+    print(f"    Next Adaptation  : {decision.next_cycle_adaptation}")
+    if decision.failed_steps:
+        print(f"    Failed Steps     : {decision.failed_steps}")
+    print(f"    Saved Report     : {saved}")
+
+    if args.gate and decision.status != "APPROVED":
+        print(f"❌ Gate failed: status={decision.status}")
+        return 1
+    print("✅ Gate passed: Retraining approved.")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="antigravity-harness",
         description="Antigravity Autonomous Neuro-Symbolic Execution & Hardening Harness CLI",
     )
     subparsers = parser.add_subparsers(dest="command", help="Harness command to run")
+
+    # decision
+    p_decision = subparsers.add_parser(
+        "decision", help="Evaluate Kev post-retraining calibrated decision gate"
+    )
+    p_decision.add_argument("--report", default=None, help="Path to telemetry report JSON")
+    p_decision.add_argument("--out", default=None, help="Output path for decision JSON")
+    p_decision.add_argument("--gate", action="store_true", help="Enforce pass/fail gate")
+    p_decision.add_argument("--url", default=None, help="Remote Kev / TypeSafe URL")
+    p_decision.add_argument("--temp", type=float, default=1.0, help="Calibration temperature")
 
     # audit
     p_audit = subparsers.add_parser(
@@ -175,7 +225,9 @@ def main() -> int:
         parser.print_help()
         return 0
 
-    if args.command == "audit":
+    if args.command == "decision":
+        return cmd_decision(args)
+    elif args.command == "audit":
         return cmd_audit(args)
     elif args.command == "triage":
         return cmd_triage(args)

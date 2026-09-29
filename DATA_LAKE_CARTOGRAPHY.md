@@ -1,7 +1,7 @@
 # 🗺️ SocrateAI / ANSE Google Cloud Data Lake Cartography
 
 **GCP Project:** `gen-lang-client-0625573011` (`SocrateAI`)
-**Generated At:** `2026-09-28T05:27:20Z`
+**Generated At:** `2026-09-29T03:25:09Z`
 
 ---
 
@@ -47,12 +47,12 @@ gs://socrateai-datalake-gen-lang-client-0625573011/
 
 ### 🪣 `gs://socrateai-datalake-gen-lang-client-0625573011`
 - **Total Objects:** `1,413`
-- **Total Volume:** `13.254 GB` (14,231,363,594 bytes)
+- **Total Volume:** `13.274 GB` (14,253,202,558 bytes)
 
 | Prefix / Subdirectory | Objects | Size (MB) | Purpose & Key Artifacts |
 | :--- | :--- | :--- | :--- |
 | `audit/` | `2` | `0.01 MB` | Quality gate audits, verification receipts, and security reviews |
-| `autoevolve_anse_datalake/` | `46` | `2,912.39 MB` | Complete ANSE Neuro-Symbolic Suite, JEPA, Qwen, RL, Redis LTM, Chroma, and VM bootstrap |
+| `autoevolve_anse_datalake/` | `46` | `2,933.21 MB` | Complete ANSE Neuro-Symbolic Suite, JEPA, Qwen, RL, Redis LTM, Chroma, and VM bootstrap |
 | `checkpoints/` | `304` | `2.6 MB` | Historical evolutionary checkpoints from 300+ scientific simulations |
 | `dark_matter/` | `687` | `3.59 MB` | N-body dark matter simulation halos and velocity dispersion profiles |
 | `dualscale_r3/` | `159` | `9,749.56 MB` | Scientific and neural model artifacts |
@@ -63,7 +63,7 @@ gs://socrateai-datalake-gen-lang-client-0625573011/
 | `nanograv_15yr/` | `3` | `26.0 MB` | NANOGrav 15-year stochastic gravitational wave background timing residuals |
 | `planck_2018/` | `24` | `6.72 MB` | Planck 2018 CMB temperature and polarization power spectra |
 | `publications/` | `14` | `6.01 MB` | Scientific whitepapers, formal dossiers, and publication PDFs |
-| `root/` | `2` | `0.02 MB` | Scientific and neural model artifacts |
+| `root/` | `2` | `0.03 MB` | Scientific and neural model artifacts |
 | `runux-boot-images/` | `8` | `5.11 MB` | Scientific and neural model artifacts |
 | `stream2_cy4_ml/` | `14` | `87.29 MB` | Calabi-Yau 4-fold neural geometry and topological Hodge diamond tensors |
 | `stream3_desi_dr1/` | `58` | `57.93 MB` | DESI DR1 cosmological data, baryon acoustic oscillations, and redshift surveys |
@@ -72,7 +72,7 @@ gs://socrateai-datalake-gen-lang-client-0625573011/
 
 ### 🪣 `gs://symbrain-v2-models`
 - **Total Objects:** `82`
-- **Total Volume:** `2.888 GB` (3,100,946,467 bytes)
+- **Total Volume:** `2.888 GB` (3,100,947,059 bytes)
 
 | Prefix / Subdirectory | Objects | Size (MB) | Purpose & Key Artifacts |
 | :--- | :--- | :--- | :--- |

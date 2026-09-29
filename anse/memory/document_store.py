@@ -25,9 +25,11 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import os
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from anse.memory.ollama_embeddings import OllamaEmbeddingFunction
 
@@ -73,7 +75,12 @@ def sha256_of(path: Path) -> str:
 
 def extract_pdf_pages(path: Path) -> list[tuple[int, str]]:
     """Return (page_number, text) for pages that carry an extractable text layer."""
+    import warnings
+
     from pypdf import PdfReader
+
+    logging.getLogger("pypdf").setLevel(logging.ERROR)
+    warnings.filterwarnings("ignore", module="pypdf")
 
     reader = PdfReader(str(path))
     pages: list[tuple[int, str]] = []
@@ -130,18 +137,36 @@ def chunk_text(
 
 
 class DocumentStore:
-    """Chroma-backed store for PDF corpora, embedded with a real model."""
+    """Chroma-backed and Redis-backed store for PDF and document corpora."""
 
     def __init__(
         self,
         persist_directory: Path | str,
         collection: str,
         embedding_function: OllamaEmbeddingFunction | None = None,
+        redis_url: str | None = None,
+        enable_redis: bool = True,
     ) -> None:
         self.persist_directory = Path(persist_directory)
         self.collection_name = collection
         self.embedding_function = embedding_function or OllamaEmbeddingFunction()
         self.persist_directory.mkdir(parents=True, exist_ok=True)
+        self.redis_url = redis_url or os.environ.get(
+            "ANSE_REDIS_URL", "redis://localhost:6379/0"
+        )
+
+        self._redis = None
+        if enable_redis:
+            try:
+                import redis
+
+                self._redis = redis.Redis.from_url(
+                    self.redis_url, decode_responses=True
+                )
+                self._redis.ping()
+            except Exception as exc:
+                logger.debug("Redis connection optional for DocumentStore: %s", exc)
+                self._redis = None
 
         import chromadb
 
@@ -201,14 +226,47 @@ class DocumentStore:
         if not documents:
             raise ValueError(f"{path.name}: text layer present but no chunk met the minimum length")
 
-        # Batch the upsert; Chroma embeds via our function, which raises rather
-        # than substituting a placeholder if Ollama is unreachable.
-        BATCH = 32
-        for start in range(0, len(documents), BATCH):
+        # 1. Dual-store to Redis
+        if self._redis is not None:
+            doc_key = f"anse:ltm:doc:{digest}"
+            self._redis.hset(
+                doc_key,
+                mapping={
+                    "source_path": str(path),
+                    "source_name": path.name,
+                    "source_sha256": digest,
+                    "collection": self.collection_name,
+                    "total_chunks": str(len(documents)),
+                    "total_pages": str(len(pages)),
+                    "file_type": "pdf",
+                    "corpus": (extra_metadata or {}).get("corpus", self.collection_name),
+                },
+            )
+            self._redis.sadd("anse:ltm:docs", digest)
+            self._redis.sadd(f"anse:ltm:docs:{self.collection_name}", digest)
+
+            for meta, doc in zip(metadatas, documents):
+                c_idx = meta["chunk_index"]
+                chunk_key = f"anse:ltm:doc:{digest}:chunk:{c_idx}"
+                self._redis.hset(
+                    chunk_key,
+                    mapping={
+                        "source_sha256": digest,
+                        "page": str(meta.get("page", 1)),
+                        "chunk_index": str(c_idx),
+                        "text": doc,
+                        "source_name": path.name,
+                        "collection": self.collection_name,
+                    },
+                )
+
+        # 2. Store to Chroma
+        batch_size = 32
+        for start in range(0, len(documents), batch_size):
             self._collection.upsert(
-                ids=ids[start : start + BATCH],
-                documents=documents[start : start + BATCH],
-                metadatas=metadatas[start : start + BATCH],
+                ids=ids[start : start + batch_size],
+                documents=documents[start : start + batch_size],
+                metadatas=metadatas[start : start + batch_size],
             )
         return len(documents)
 
@@ -251,19 +309,54 @@ class DocumentStore:
                 metadata.update(extra_metadata)
             metadatas.append(metadata)
 
-        BATCH = 32
-        for start in range(0, len(documents), BATCH):
+        # 1. Dual-store to Redis
+        if self._redis is not None:
+            doc_key = f"anse:ltm:doc:{digest}"
+            self._redis.hset(
+                doc_key,
+                mapping={
+                    "source_path": str(path),
+                    "source_name": path.name,
+                    "source_sha256": digest,
+                    "collection": self.collection_name,
+                    "total_chunks": str(len(documents)),
+                    "total_pages": "1",
+                    "file_type": path.suffix.lstrip("."),
+                    "corpus": (extra_metadata or {}).get("corpus", self.collection_name),
+                },
+            )
+            self._redis.sadd("anse:ltm:docs", digest)
+            self._redis.sadd(f"anse:ltm:docs:{self.collection_name}", digest)
+
+            for meta, doc in zip(metadatas, documents):
+                c_idx = meta["chunk_index"]
+                chunk_key = f"anse:ltm:doc:{digest}:chunk:{c_idx}"
+                self._redis.hset(
+                    chunk_key,
+                    mapping={
+                        "source_sha256": digest,
+                        "page": "1",
+                        "chunk_index": str(c_idx),
+                        "text": doc,
+                        "source_name": path.name,
+                        "collection": self.collection_name,
+                    },
+                )
+
+        # 2. Store to Chroma
+        batch_size = 32
+        for start in range(0, len(documents), batch_size):
             self._collection.upsert(
-                ids=ids[start : start + BATCH],
-                documents=documents[start : start + BATCH],
-                metadatas=metadatas[start : start + BATCH],
+                ids=ids[start : start + batch_size],
+                documents=documents[start : start + batch_size],
+                metadatas=metadatas[start : start + batch_size],
             )
         return len(documents)
 
     def ingest_directory(
         self,
         directory: Path | str,
-        pattern: str = "*.pdf",
+        pattern: str | Iterable[str] = ("*.pdf", "*.md", "*.txt", "*.rst"),
         extra_metadata: dict[str, Any] | None = None,
     ) -> IngestReport:
         """Index every matching file under `directory`, reporting skips honestly.
@@ -277,10 +370,15 @@ class DocumentStore:
             embedding_model=self.embedding_function.model,
         )
 
-        TEXT_SUFFIXES = {".md", ".txt", ".rst"}
-        for path in sorted(directory.rglob(pattern)):
+        patterns = [pattern] if isinstance(pattern, str) else list(pattern)
+        matched_paths: set[Path] = set()
+        for pat in patterns:
+            matched_paths.update(directory.rglob(pat))
+
+        text_suffixes = {".md", ".txt", ".rst"}
+        for path in sorted(matched_paths):
             try:
-                if path.suffix.lower() in TEXT_SUFFIXES:
+                if path.suffix.lower() in text_suffixes:
                     written = self.ingest_text_file(path, extra_metadata=extra_metadata)
                 else:
                     written = self.ingest_pdf(path, extra_metadata=extra_metadata)
@@ -325,22 +423,34 @@ class DocumentStore:
 def ingest_project_corpora(
     persist_directory: Path | str,
     papers_dir: Path | str = "papers",
-    literature_dirs: Iterable[Path | str] = ("docs",),
+    literature_dirs: Iterable[Path | str] = ("docs", "vendor"),
+    results_dir: Path | str | None = "results",
+    redis_url: str | None = None,
 ) -> dict[str, dict[str, Any]]:
-    """Ingest this project's own papers and its literature into separate collections."""
+    """Ingest this project's own papers, literature, and generated dossiers."""
     reports: dict[str, dict[str, Any]] = {}
 
-    own = DocumentStore(persist_directory, "own_papers")
+    own = DocumentStore(persist_directory, "own_papers", redis_url=redis_url)
     reports["own_papers"] = own.ingest_directory(
         papers_dir, extra_metadata={"corpus": "own_papers"}
     ).as_dict()
 
-    lit = DocumentStore(persist_directory, "literature")
+    if results_dir is not None and Path(results_dir).exists():
+        res_report = own.ingest_directory(
+            results_dir, pattern="*.pdf", extra_metadata={"corpus": "own_papers"}
+        )
+        reports["own_papers"]["files_indexed"] += len(res_report.indexed)
+        reports["own_papers"]["chunks_written"] += res_report.chunks_written
+        reports["own_papers"]["indexed"].extend(res_report.indexed)
+
+    lit = DocumentStore(persist_directory, "literature", redis_url=redis_url)
     combined = IngestReport(
         collection="literature", embedding_model=lit.embedding_function.model
     )
     for directory in literature_dirs:
-        partial = lit.ingest_directory(directory, extra_metadata={"corpus": "literature"})
+        dir_path = Path(directory)
+        pat = "*.pdf" if dir_path.name == "vendor" else ("*.pdf", "*.md", "*.txt", "*.rst")
+        partial = lit.ingest_directory(dir_path, pattern=pat, extra_metadata={"corpus": "literature"})
         combined.indexed.extend(partial.indexed)
         combined.skipped.extend(partial.skipped)
         combined.chunks_written += partial.chunks_written

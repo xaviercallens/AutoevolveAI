@@ -42,7 +42,14 @@ import time
 from collections.abc import Iterator
 from pathlib import Path
 
-LEASE_DIR = Path("/mnt/disks/disk-socrateai-local-1/gpu_lease")
+_DEFAULT_DIR = Path("/mnt/disks/disk-socrateai-local-1/gpu_lease")
+if not _DEFAULT_DIR.exists():
+    try:
+        _DEFAULT_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        _DEFAULT_DIR = Path("/tmp/gpu_lease")
+
+LEASE_DIR = Path(os.environ.get("ANSE_GPU_LEASE_DIR", str(_DEFAULT_DIR)))
 LOCK_FILE = LEASE_DIR / "t4.lock"
 STATE_FILE = LEASE_DIR / "t4.json"
 DEFAULT_TTL_S = 1800  # 30 min; a job that needs longer should re-acquire

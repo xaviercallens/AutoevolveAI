@@ -26,14 +26,46 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 import httpx
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_OLLAMA_HOST = "http://localhost:11434"
-DEFAULT_EMBEDDING_MODEL = "qwen3-embedding:0.6b"
+DEFAULT_EMBEDDING_MODEL = "qwen2.5-coder:1.5b"
+
+
+def resolve_embedding_model(host: str = DEFAULT_OLLAMA_HOST) -> str:
+    """Determine the best available Ollama embedding model.
+
+    Checks ANSE_EMBEDDING_MODEL env first. If unset, queries Ollama's /api/tags
+    to choose an installed model (preferring dedicated embedding models or
+    installed models like qwen2.5-coder:1.5b), falling back cleanly.
+    """
+    env_model = os.environ.get("ANSE_EMBEDDING_MODEL")
+    if env_model:
+        return env_model
+    try:
+        resp = httpx.get(f"{host.rstrip('/')}/api/tags", timeout=3.0)
+        if resp.status_code == 200:
+            models = [m.get("name", "") for m in resp.json().get("models", [])]
+            for pref in (
+                "qwen3-embedding:0.6b",
+                "bge-m3",
+                "nomic-embed-text",
+                "all-minilm",
+                "qwen2.5-coder:1.5b",
+            ):
+                for m in models:
+                    if m == pref or m.startswith(pref):
+                        return m
+            if models:
+                return models[0]
+    except Exception:
+        pass
+    return DEFAULT_EMBEDDING_MODEL
 
 
 class EmbeddingUnavailableError(RuntimeError):
@@ -53,6 +85,11 @@ class OllamaEmbeddingFunction:
     where chromadb is not installed.
     """
 
+    supported_spaces: list[str] = ["cosine", "l2", "ip"]
+
+    def is_legacy(self) -> bool:
+        return False
+
     def __init__(
         self,
         model: str | None = None,
@@ -60,15 +97,24 @@ class OllamaEmbeddingFunction:
         timeout_s: float = 120.0,
         max_retries: int = 3,
     ) -> None:
-        self.model = model or os.environ.get(
-            "ANSE_EMBEDDING_MODEL", DEFAULT_EMBEDDING_MODEL
-        )
         self.host = (host or os.environ.get("OLLAMA_HOST", DEFAULT_OLLAMA_HOST)).rstrip(
             "/"
         )
+        self.model = model or resolve_embedding_model(self.host)
         self.timeout_s = timeout_s
         self.max_retries = max_retries
         self._dimension: int | None = None
+        self._client: httpx.Client | None = None
+
+    @property
+    def client(self) -> httpx.Client:
+        if self._client is None or self._client.is_closed:
+            self._client = httpx.Client(timeout=self.timeout_s)
+        return self._client
+
+    def close(self) -> None:
+        if self._client is not None and not self._client.is_closed:
+            self._client.close()
 
     @property
     def dimension(self) -> int | None:
@@ -87,10 +133,9 @@ class OllamaEmbeddingFunction:
         last_error: Exception | None = None
         for attempt in range(1, self.max_retries + 1):
             try:
-                response = httpx.post(
+                response = self.client.post(
                     f"{self.host}/api/embeddings",
                     json={"model": self.model, "prompt": text},
-                    timeout=self.timeout_s,
                 )
             except httpx.HTTPError as exc:
                 last_error = exc

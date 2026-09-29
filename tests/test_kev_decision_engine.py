@@ -1,7 +1,8 @@
 """
-Test Suite for Kev Decision Engine & SAAW Integration.
-Verifies TypeSafe System One schema compatibility, calibrated decision inference,
-and automated gating for overnight model retraining.
+Test Suite for Kev Decision Engine & SAAW Integration (v2).
+Covers: TypeSafe schema compatibility, calibrated decision inference,
+profile-aware temperature scaling, _load_report_safe error handling,
+Redis LTM persistence, and automated gating for overnight model retraining.
 """
 
 from __future__ import annotations
@@ -10,17 +11,26 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from anse.decision.kev_engine import (
     KevDecisionEngine,
     SAAWRetrainDecision,
+    _hard_failure_logits,
+    _healthy_logits,
+    _load_report_safe,
+    _resolve_profile_temperature,
     evaluate_retraining_decision,
 )
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
+
+# ---------------------------------------------------------------------------
+# 1. Vendor import
+# ---------------------------------------------------------------------------
 
 def test_kev_vendor_import() -> None:
     """Verify that kev is directly importable via vendor/kev / kev.pth."""
@@ -31,6 +41,10 @@ def test_kev_vendor_import() -> None:
     assert hasattr(kapi, "Score")
     assert hasattr(kapi, "SystemOneRequest")
 
+
+# ---------------------------------------------------------------------------
+# 2. Schema validation
+# ---------------------------------------------------------------------------
 
 def test_kev_systemone_schemas() -> None:
     """Verify that Kev System One schemas instantiate and validate correctly."""
@@ -63,6 +77,10 @@ def test_kev_systemone_schemas() -> None:
     assert "q_choice" in req.questions
     assert "q_score" in req.questions
 
+
+# ---------------------------------------------------------------------------
+# 3. Approved path
+# ---------------------------------------------------------------------------
 
 def test_kev_decision_evaluation_approved() -> None:
     """Verify calibrated decision evaluation on realistic healthy retraining telemetry."""
@@ -100,6 +118,10 @@ def test_kev_decision_evaluation_approved() -> None:
     assert "APPROVED" in decision.summary_reasoning
 
 
+# ---------------------------------------------------------------------------
+# 4. Rejected path
+# ---------------------------------------------------------------------------
+
 def test_kev_decision_evaluation_rejected_on_failure() -> None:
     """Verify that Kev decision engine rejects promotion when a training step fails or invariants degrade."""
     engine = KevDecisionEngine(temperature=1.0)
@@ -125,6 +147,10 @@ def test_kev_decision_evaluation_rejected_on_failure() -> None:
     assert decision.retraining_quality_score < 1.0
     assert "REJECTED" in decision.summary_reasoning
 
+
+# ---------------------------------------------------------------------------
+# 5. CLI gate
+# ---------------------------------------------------------------------------
 
 def test_kev_decision_gate_cli(tmp_path: Path) -> None:
     """Verify that scripts/kev_decision_gate.py executes and enforces the gate."""
@@ -173,3 +199,120 @@ def test_kev_decision_gate_cli(tmp_path: Path) -> None:
     assert bad_out.exists()
     d_bad = json.loads(bad_out.read_text(encoding="utf-8"))
     assert d_bad["status"] == "REJECTED"
+
+
+# ---------------------------------------------------------------------------
+# 6. Profile-aware temperature scaling
+# ---------------------------------------------------------------------------
+
+def test_profile_aware_temperature_cpu() -> None:
+    """Profile-aware engine on CPU profile raises temperature by _CPU_TEMPERATURE_OFFSET."""
+    from anse.decision.kev_engine import _CPU_TEMPERATURE_OFFSET
+
+    with patch("anse.decision.kev_engine._resolve_profile_temperature") as mock_resolve:
+        # Simulate CPU profile returning base + offset
+        mock_resolve.side_effect = lambda t: t + _CPU_TEMPERATURE_OFFSET
+        engine = KevDecisionEngine(temperature=1.0, profile_aware=True)
+        assert abs(engine.temperature - (1.0 + _CPU_TEMPERATURE_OFFSET)) < 1e-9
+        assert engine._base_temperature == 1.0
+
+
+def test_profile_aware_disabled() -> None:
+    """With profile_aware=False temperature is used as-is."""
+    engine = KevDecisionEngine(temperature=0.8, profile_aware=False)
+    assert engine.temperature == 0.8
+    assert engine._base_temperature == 0.8
+
+
+# ---------------------------------------------------------------------------
+# 7. profile_id stamped on decision
+# ---------------------------------------------------------------------------
+
+def test_decision_carries_profile_id() -> None:
+    """SAAWRetrainDecision should carry the profile_id of the engine that made it."""
+    engine = KevDecisionEngine(temperature=1.0)
+    telemetry = {
+        "status": "SUCCESS",
+        "steps": [{"step": "Mock", "success": True, "returncode": 0}],
+    }
+    decision = engine.evaluate_saaw_retraining(telemetry)
+    # profile_id should be non-empty and match the engine's detected profile
+    assert isinstance(decision.profile_id, str)
+    assert len(decision.profile_id) > 0
+    assert decision.profile_id == engine.profile_id
+
+
+# ---------------------------------------------------------------------------
+# 8. _load_report_safe – missing file returns None, bad JSON returns None+logs
+# ---------------------------------------------------------------------------
+
+def test_load_report_safe_missing(tmp_path: Path) -> None:
+    missing = tmp_path / "nonexistent.json"
+    result = _load_report_safe(missing, "test")
+    assert result is None
+
+
+def test_load_report_safe_bad_json(tmp_path: Path) -> None:
+    bad = tmp_path / "bad.json"
+    bad.write_text("{not valid json}", encoding="utf-8")
+    result = _load_report_safe(bad, "test")
+    assert result is None
+
+
+def test_load_report_safe_valid(tmp_path: Path) -> None:
+    good = tmp_path / "good.json"
+    good.write_text(json.dumps({"key": 42}), encoding="utf-8")
+    result = _load_report_safe(good, "test")
+    assert result == {"key": 42}
+
+
+# ---------------------------------------------------------------------------
+# 9. _hard_failure_logits / _healthy_logits purity
+# ---------------------------------------------------------------------------
+
+def test_hard_failure_logits_structure() -> None:
+    p, choice_l, score_l, next_l = _hard_failure_logits()
+    assert p < 0.1
+    assert "deploy_full_stack" in choice_l
+    assert "rollback_to_parent" in choice_l
+    assert len(score_l) == 4
+    assert "prioritize_physics_invariants" in next_l
+
+
+def test_healthy_logits_health_score_scaling() -> None:
+    # High-quality run: high retention, big Qwen gain, high RL margins, high physics
+    p, choice_l, score_l, next_l = _healthy_logits(
+        retention=0.99,
+        qwen_gain=15.0,
+        rl_margin=3.0,
+        rl_loss_gain=40.0,
+        phys_gain=12.0,
+        mcts_adv=2.0,
+        temperature=1.0,
+    )
+    assert p > 0.98  # health_score=6.2 → sigmoid very close to 1
+    assert choice_l["deploy_full_stack"] > 5.0  # bonus applied
+    assert score_l[-1] > score_l[0]  # best tier logit > worst
+
+
+# ---------------------------------------------------------------------------
+# 10. Redis LTM persistence (mocked)
+# ---------------------------------------------------------------------------
+
+def test_redis_ltm_persistence_mocked(tmp_path: Path) -> None:
+    """Verify save_decision attempts Redis LTM and fails gracefully when Redis unavailable."""
+    engine = KevDecisionEngine(temperature=1.0)
+    telemetry = {
+        "status": "SUCCESS",
+        "steps": [{"step": "Mock", "success": True, "returncode": 0}],
+    }
+    decision = engine.evaluate_saaw_retraining(telemetry)
+
+    out = tmp_path / "decision.json"
+    # With no real Redis (localhost typically not running in CI), save_decision must not raise
+    saved = engine.save_decision(decision, output_path=out)
+    assert saved == out
+    assert out.exists()
+    loaded = json.loads(out.read_text())
+    assert loaded["status"] == decision.status
+    assert "profile_id" in loaded

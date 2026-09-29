@@ -56,3 +56,4 @@ import ANSE.BAO_FlatLCDM
 import ANSE.DESI_DR2_wCDM
 import ANSE.BAO_BBN_H0
 import ANSE.BAO_Consistency
+import ANSE.K3Astrophysics

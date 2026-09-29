@@ -669,3 +669,51 @@ def test_temperature_probability_bounds(temp: float) -> None:
 
     probs_sum = sum(decision.deployment_probabilities.values())
     assert abs(probs_sum - 1.0) < 0.02, f"Probabilities do not sum to 1.0 at temp={temp}: {probs_sum}"
+
+
+# ---------------------------------------------------------------------------
+# 20. Target precision tests for >=99% coverage
+# ---------------------------------------------------------------------------
+
+def test_profile_aware_temperature_cuda() -> None:
+    """When detected profile device is not cpu (e.g. cuda), base temperature is unchanged."""
+    mock_profile = MagicMock(device="cuda")
+    with patch("anse.infrastructure.agent_environment.resolve_capability_profile", return_value=mock_profile):
+        temp = _resolve_profile_temperature(1.5)
+        assert temp == 1.5
+
+
+def test_remote_kev_with_api_key() -> None:
+    """Verify Authorization header is attached when KEV_API_KEY environment variable is set."""
+    import os
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = {"answers": {}}
+    mock_resp.raise_for_status = MagicMock()
+    with patch.dict(os.environ, {"KEV_API_KEY": "test-key-123"}):
+        with patch("httpx.post", return_value=mock_resp) as mock_post:
+            engine = KevDecisionEngine(base_url="http://remote.test")
+            req = engine.build_saaw_request({"status": "SUCCESS", "steps": []})
+            engine._call_remote_kev(req)
+            headers = mock_post.call_args[1]["headers"]
+            assert headers["Authorization"] == "Bearer test-key-123"
+
+
+def test_persist_to_results_store_success(tmp_path: Path) -> None:
+    """Verify ResultsStore ingestion is invoked and executes clean path."""
+    engine = KevDecisionEngine()
+    target = tmp_path / "decision.json"
+    target.write_text("{}", encoding="utf-8")
+    mock_store = MagicMock()
+    with patch("anse.memory.results_store.ResultsStore", return_value=mock_store):
+        engine._persist_to_results_store(target)
+        mock_store.ingest_result_file.assert_called_once_with(target)
+
+
+def test_kev_decision_gate_runpy_main() -> None:
+    """Execute scripts/kev_decision_gate.py via runpy with __name__ == '__main__' to cover entrypoint."""
+    import runpy
+    with patch.object(sys, "argv", ["kev_decision_gate.py", "--gate"]):
+        with pytest.raises(SystemExit) as exc_info:
+            runpy.run_path(str(REPO_ROOT / "scripts" / "kev_decision_gate.py"), run_name="__main__")
+        assert exc_info.value.code == 0
+

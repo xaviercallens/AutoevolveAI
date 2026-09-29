@@ -651,7 +651,9 @@ class KevDecisionEngine:
         """Ingest decision report into dual-tier ResultsStore (Redis + ChromaDB)."""
         try:
             from anse.memory.results_store import ResultsStore
-            store = ResultsStore(enable_chroma=True)
+
+            chroma_dir = REPO_ROOT / ".anse" / "chroma"
+            store = ResultsStore(persist_directory=chroma_dir, enable_chroma=True)
             store.ingest_result_file(target)
             logger.info("Kev decision ingested into ResultsStore (Redis + Chroma)")
         except Exception as exc:

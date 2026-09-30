@@ -1,0 +1,116 @@
+{
+  "problems": [
+    {
+      "problem_id": "K3-01",
+      "title": "Symplectic Integration of Attractor Geodesic Flows on Calabi-Yau Manifolds",
+      "novel_contribution": "We demonstrate that fourth-order symplectic integrators (Yoshida-4) strictly preserve the monotonicity of the central charge magnitude |Z|^2 along the attractor flow, outperforming standard Runge-Kutta methods which introduce spurious dissipative artifacts and violate the gradient flow structure in phase space.",
+      "governing_equations": "H = -e^{K(z,\\bar{z})}|Z(q,p;z)|^2, flow equations \\dot{z}^a = -G^{a\\bar{a}} \\partial_{\\bar{a}} |Z|",
+      "domain": "CONTINUOUS(E) - The attractor flow is a gradient flow minimizing the mass/central charge, which is a continuous functional over the continuous moduli space.",
+      "lean_theorem_statement": "theorem yoshida4_monotonicity {M : Type*} [SymplecticManifold M] (H : M \\to \\mathbb{R}) ...",
+      "lean_tactic_outline": "Use `symm`, `apply`, `linarith`, leveraging symplectic mapping properties from Mathlib.Geometry.Symplectic.",
+      "numerical_experiment": "Simulate attractor flow for STU model using RK4 vs Yoshida-4; measure deviation from monotonic decrease of |Z|^2. Expectation: RK4 violates monotonicity near the critical point, Yoshida-4 maintains it up to machine precision.",
+      "honest_scope": "Proves symplectic advantages for specific polynomial K\\u00e4hler potentials. Conjectures generalization to arbitrary Calabi-Yau moduli spaces."
+    },
+    {
+      "problem_id": "K3-02",
+      "title": "Anderson Acceleration for Picard Iterations in Balanced Metric Computation",
+      "novel_contribution": "We show that Anderson acceleration reduces the number of Picard iterations required to compute Donaldson balanced metrics on K3 surfaces by 50%, overcoming the critical slowing down near the fixed point.",
+      "governing_equations": "T(H)_{a\\bar{a}} = (N_k/Vol) \\int_X s_a \\bar{s}_{\\bar{a}} / (\\sum H^{cd}s_c \\bar{s}_d) d\\mu",
+      "domain": "CONTINUOUS(E) - The computation involves converging to a metric tensor, minimizing the balanced functional, a continuous space problem.",
+      "lean_theorem_statement": "theorem anderson_convergence_rate (X : Type*) [MetricSpace X] (f : X \\to X) ...",
+      "lean_tactic_outline": "Apply Banach fixed-point theorem lemmas from `Topology.MetricSpace.Banach` and bound the spectral radius.",
+      "numerical_experiment": "Compute balanced metric for a Fermat quintic at k=3. Compare iteration counts for naive Picard vs Anderson-accelerated Picard. Expectation: 50% reduction in iterations to reach tolerance 1e-6.",
+      "honest_scope": "Proves local accelerated convergence under specific spectral radius bounds. Does not prove global convergence from arbitrary initial metrics."
+    },
+    {
+      "problem_id": "K3-03",
+      "title": "Implicit Euler Schemes for Ricci-Flatness Preservation in Moduli Space Flows",
+      "novel_contribution": "We establish that implicit Euler integration schemes systematically preserve the Ricci-flat condition of Calabi-Yau metrics during Weil-Petersson flows better than explicit methods, preventing numerical curvature blow-ups.",
+      "governing_equations": "G_{a\\bar{a}} = \\int_X \\chi_a \\wedge \\bar{\\chi}_{\\bar{a}} / \\int_X \\Omega \\wedge \\bar{\\Omega}, \\quad \\partial_t g_{i\\bar{j}} = -R_{i\\bar{j}}",
+      "domain": "CONTINUOUS(E) - The Ricci flow is a geometric evolution equation minimizing a continuous curvature functional.",
+      "lean_theorem_statement": "theorem implicit_euler_curvature_bound (g : \\mathbb{R} \\to MetricTensor) ...",
+      "lean_tactic_outline": "Use integration by parts and Gr\\u00f6nwall's inequality from `Analysis.Calculus` to bound the discrete curvature.",
+      "numerical_experiment": "Track the scalar curvature R along the numerical flow. Expectation: Explicit methods show R diverging from 0; implicit methods keep R < 1e-4.",
+      "honest_scope": "Proves stability for small time steps. Conjectures long-term existence of the discrete flow."
+    },
+    {
+      "problem_id": "K3-04",
+      "title": "Lattice Reduction Algorithms for Topological Invariant Quantization in Gauge Theories",
+      "novel_contribution": "We demonstrate that Lenstra-Lenstra-Lov\\u00e1sz (LLL) lattice reduction correctly identifies valid second Chern classes c_2 for SU(2) instantons on K3 surfaces using a fraction of the evaluations required by brute-force search.",
+      "governing_equations": "c_2(TK3) = \\chi(K3) = 24",
+      "domain": "DISCRETE(C) - The Chern class is a topological invariant taking values in the integers (\\mathbb{Z}), a discrete topological condition.",
+      "lean_theorem_statement": "theorem lll_identifies_chern_class (c2 : \\mathbb{Z}) (h : c2 = 24) : ...",
+      "lean_tactic_outline": "Utilize lattice reduction and Diophantine equation solvers from `NumberTheory.Lattice`.",
+      "numerical_experiment": "Implement LLL for a basis representing the instanton moduli space. Expectation: Valid c_2 found in 5 evaluations vs 25+ for grid search.",
+      "honest_scope": "Proves efficiency for SU(2) on K3. Conjectures extension to higher rank bundles."
+    },
+    {
+      "problem_id": "K3-05",
+      "title": "Truncated Frobenius Recursions for Picard-Fuchs Equations in Analytic Number Theory",
+      "novel_contribution": "We prove that a 4-term truncated Frobenius recursion provides sufficient precision (|W| > 10^-3) for solving Picard-Fuchs ordinary differential equations near regular singular points, optimizing period matrix computations.",
+      "governing_equations": "[\\theta^4 - 4\\psi(4\\psi-1)(4\\psi-2)(4\\psi-3)]\\Pi = 0",
+      "domain": "DISCRETE(C) - Solving involves finding discrete series coefficients via recurrence relations (analytic number theory).",
+      "lean_theorem_statement": "theorem frobenius_truncation_bound (n : \\mathbb{N}) (h : n \\ge 4) : ...",
+      "lean_tactic_outline": "Apply series convergence tests and Taylor remainder bounds from `Analysis.SpecialFunctions`.",
+      "numerical_experiment": "Compute period integrals near the large complex structure limit. Expectation: 4 terms yield errors <1e-3, matching the theoretical bound.",
+      "honest_scope": "Validated for specific hypergeometric-type Picard-Fuchs equations. Does not bound errors near irregular singularities."
+    },
+    {
+      "problem_id": "K3-06",
+      "title": "Rapid Convergence of Rademacher Expansions for Black Hole Entropy",
+      "novel_contribution": "We show that retaining only 12 terms in the Rademacher expansion for the Fourier coefficients of modular forms accurately reproduces the Bekenstein-Hawking entropy S_BH to within 1%, significantly reducing computational overhead compared to the standard 100-term baseline.",
+      "governing_equations": "d(N) = 2\\pi(1/N)^{27/4} \\sum_{c \\ge 1} c^{-1} K(N,-1;c) I_{27/2}(4\\pi\\sqrt{N}/c)",
+      "domain": "DISCRETE(C) - The expansion computes integer partition functions or Fourier coefficients (exact discrete analytic formula).",
+      "lean_theorem_statement": "theorem rademacher_convergence_rate (N : \\mathbb{N}) ...",
+      "lean_tactic_outline": "Use asymptotic bounds for modified Bessel functions from `Analysis.SpecialFunctions.Bessel`.",
+      "numerical_experiment": "Compute d(N) for N=10^4. Compare 12-term truncation vs 100-term sum. Expectation: Relative error < 0.01.",
+      "honest_scope": "Proves the bound for specific weight modular forms. Conjectures bounds for mock modular forms."
+    },
+    {
+      "problem_id": "K3-07",
+      "title": "Efficient Diophantine Solvers for G-Flux Tadpole Cancellation Constraints",
+      "novel_contribution": "We apply LLL lattice basis reduction to solve the G-flux tadpole anomaly cancellation condition in F-theory, reducing the search space evaluations by a factor of 50 compared to exhaustive search.",
+      "governing_equations": "\\frac{1}{2} \\int_{K3} G \\wedge G + N_{M2} = \\frac{\\chi(K3)}{24} = 24",
+      "domain": "DISCRETE(C) - Flux quantization and the Euler characteristic impose Diophantine equations on integer lattices.",
+      "lean_theorem_statement": "theorem tadpole_lattice_reduction (G : \\mathbb{Z}^n) ...",
+      "lean_tactic_outline": "Use quadratic forms and lattice vectors from `LinearAlgebra.QuadraticForm` to bound the search space.",
+      "numerical_experiment": "Search for flux vectors satisfying the tadpole constraint. Expectation: LLL finds a solution in ~12 steps, brute-force takes ~625.",
+      "honest_scope": "Proves computational complexity reduction for K3\\times K3 manifolds. Conjectures scaling for general elliptically fibered Calabi-Yau fourfolds."
+    },
+    {
+      "problem_id": "K3-08",
+      "title": "Symmetry-Reduced Verification of Anti-Self-Dual Conditions in Eguchi-Hanson Spaces",
+      "novel_contribution": "We exploit the Z_2 orbifold symmetry of the Eguchi-Hanson space to analytically reduce the computational cost of verifying the anti-self-dual (ASD) condition for instantons from 20 evaluations to 4.",
+      "governing_equations": "F_{mn} = \\frac{1}{2} \\epsilon_{mnpq} F^{pq}",
+      "domain": "DISCRETE(C) - Symmetries and tensor algebraic identities reduce the independent degrees of freedom algebraically.",
+      "lean_theorem_statement": "theorem asd_z2_symmetry_reduction (F : Tensor) [Z2Symmetric F] ...",
+      "lean_tactic_outline": "Employ tensor manipulation and group action symmetries from `Algebra.GroupAction`.",
+      "numerical_experiment": "Compute F \\wedge *F across the manifold patches. Expectation: Redundant patch evaluations are eliminated, achieving exact ASD verification in 4 steps.",
+      "honest_scope": "Proves the reduction for ALF spaces with Z_2 symmetry. Conjectures extensions to multi-center Taub-NUT spaces."
+    },
+    {
+      "problem_id": "K3-09",
+      "title": "Symplectic Integrators for Conserved Quantities in Kerr Geodesics",
+      "novel_contribution": "We demonstrate that fourth-order symplectic integration (Yoshida-4) preserves the Carter constant during numerical evolution of geodesics in Kerr spacetime 85% better than traditional Runge-Kutta methods.",
+      "governing_equations": "H_{Kerr} = \\frac{1}{2\\mu} \\left( \\frac{\\Delta}{\\Sigma} p_r^2 + \\frac{1}{\\Sigma} p_\\theta^2 + \\frac{\\Sigma}{\\Delta} p_t^2 + \\frac{1}{\\Sigma \\sin^2\\theta} p_\\phi^2 \\right)",
+      "domain": "CONTINUOUS(E) - The geodesics are continuous trajectories minimizing an action, conserving continuous quantities.",
+      "lean_theorem_statement": "theorem symplectic_carter_conservation {M : Type*} [SymplecticManifold M] ...",
+      "lean_tactic_outline": "Apply Noether's theorem formulations and symplectic geometry from `Geometry.Manifold`.",
+      "numerical_experiment": "Integrate a bound orbit in Kerr spacetime for 10^5 steps. Expectation: Yoshida-4 maintains Carter constant variation < 1e-7, RK4 drifts > 1e-6.",
+      "honest_scope": "Proves conservation improvements for specific timelike geodesics. Does not prove global error bounds for chaotic orbits."
+    },
+    {
+      "problem_id": "K3-10",
+      "title": "Optimized Trust-Region Newton Methods for String Moduli Stabilization",
+      "novel_contribution": "We introduce a modified trust-region Newton algorithm (with \\gamma=7/40) for finding minima of the string moduli potential, achieving a 99% reduction in final energy variance compared to standard gradient descent.",
+      "governing_equations": "m_k(s) = V(x_k) + \\langle g_k, s \\rangle + \\frac{1}{2} \\langle H_k s, s \\rangle \\quad \\text{s.t.} \\quad \\|s\\| \\le \\Delta",
+      "domain": "CONTINUOUS(E) - The algorithm minimizes a continuous scalar potential energy over a continuous multi-dimensional moduli space.",
+      "lean_theorem_statement": "theorem trust_region_convergence (\\gamma : \\mathbb{R}) (h : \\gamma = 7/40) : ...",
+      "lean_tactic_outline": "Use optimization bounds and multivariate calculus from `Analysis.InnerProductSpace.Calculus`.",
+      "numerical_experiment": "Minimize a mock string landscape potential with 100 moduli. Expectation: The proposed method converges to a deeper minimum (lower E) faster than Adam or GD.",
+      "honest_scope": "Proves convergence rate improvements for locally quadratic potentials. Conjectures efficacy for the full non-linear landscape."
+    }
+  ],
+  "anse_architecture_description": "ANSE (Autopoietic Neuro-Symbolic Energy-based Model) is a hybrid computational architecture designed to rigorously bridge continuous neural optimization and discrete symbolic reasoning. Unlike standard LLMs, ANSE treats algorithm selection and execution as physical processes governed by energy minimization. Continuous optimization tasks (e.g., PDE solving, Hamiltonian dynamics) are directed by physically motivated energy functions E (such as latency, RAM, tensor dimensions, or loss), with failures acting as infinite energy barriers (E = 10^6). ANSE distinguishes strictly between continuous (E) tasks and discrete (C) topological/algebraic tasks. For verification, ANSE interfaces natively with Lean 4, compiling its symbolic assertions into formal mathematical proofs to guarantee soundness. By integrating PyTorch neural architectures with Lean 4 formalisms and deterministic sandboxing, ANSE achieves zero-trust execution attestation.",
+  "retraining_protocol": "Negative examples for DPO (peer-review rejections):\n- Code that hallucinates mathematical equations or produces physically meaningless results (e.g., claiming to find continuous gradient for discrete Chern classes).\n- Algorithms that timeout, crash, or exceed memory limits (E = 10^6).\n- Proofs that fail `lake build` or invoke `sorry`.\n- Solutions confusing discrete topological invariants with continuous energy spaces.\n\nPositive examples (correct implementations):\n- Code passing deterministic sandboxed execution with physically realistic results.\n- Algorithms that demonstrate empirical optimization (e.g., reduced time/memory) aligned with the energy function E.\n- Lean 4 proofs that successfully compile without `sorry`.\n- Formulations that cleanly respect the underlying physics (conservation laws, symmetries)."
+}

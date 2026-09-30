@@ -719,5 +719,50 @@ Implemented and operationalized `workflowrunuxT3.py`, automating Tier 3 (Formal 
 - **T3.5 ChromaDB LTM Retrofitting:** Indexes execution telemetry and proof records into `.chroma_db` in 3,309.7 ms ($E = 3,309.74$).
 - **Cumulative Result:** All 5 stages PASSED with cumulative physical energy $E = 9,494.70$ and total wall time of 7.99s.
 
+## 22. Wave 10: Formal Proof Discharge — Breaking the 200 Sorry Barrier (`lean.sorry = 194`) (2026-09-30)
+
+Wave 10 achieved the historic breakthrough below the 200 `sorry` threshold, closing 23 formal obligations without altering theorem statements or introducing untrusted axioms:
+- **`specs/lean4/MVK/Phase4/IPv4IPv6/AfInet.lean`:**
+  - Discharged `sock_type_validation_complete` using `unfold is_valid_sock_type; simp [or_assoc]`.
+- **`specs/lean4/MVK/Phase3/ConntrackCore.lean`:**
+  - Discharged 6 theorems: `tuples_equal_refl`, `tuples_equal_symm`, `tuples_equal_trans`, `hash_insert_succeeds`, `event_idempotent`, and `timeout_bounded`.
+  - Overcame projection substitution limitations on inductive structs via `rcases` unpacking followed by explicit `refine` witness constructors.
+- **`specs/lean4/MVK/Phase3/ConntrackUDP.lean`:**
+  - Discharged `small_packets_rejected` and `valid_packets_accepted`.
+- **`specs/lean4/MVK/Phase3/ConntrackICMP.lean`:**
+  - Discharged 13 theorems including `icmp_tuple_inversion_correct`, `icmp_error_has_embedded_packet`, `icmp_packet_protocol_family_valid`, `icmp_non_invertible_rejected`, `icmp_checksum_required`, `icmp_type_bounds_checked`, `icmp_echo_pairing_bijective`, `icmp_timestamp_pairing_bijective`, `icmp_info_pairing_bijective`, `icmp_address_pairing_bijective`, `icmp_short_packet_rejected`, `icmp_ipv4_only`, and `icmp_tuple_hash_unique`.
+  - Overcame recursion depth exhaustion on 256-element pure array fold evaluations (`INV_MAP`) by setting `set_option maxRecDepth 200000`, enabling deterministic verification via `decide` and `rfl`.
+- **Impact:** `lean.sorry` decreased from 217 down to **194** (-55 from baseline of 249). Full `lake build` builds cleanly across all 61 targets.
+
+## 23. Wave 11 & 12: Const Stub Eradication in Networking Subsystems (`rust.const_stub_fns = 220`) (2026-09-30)
+
+Waves 11 and 12 eliminated 24 constant stubs in core networking crates:
+- **`crates/nf_conntrack_core/src/lib.rs` (Wave 11):**
+  - Replaced 11 constant stubs (`nf_conntrack_alloc`, `nf_conntrack_find_get`, `nf_conntrack_hash_insert`, `nf_conntrack_hash_check_insert`, `nf_conntrack_ecache_find_get`, `nf_conntrack_ecache_ext_add`, `nf_conntrack_ecache_ext_find`, `nf_conntrack_ecache_ext_iterate`, `nf_conntrack_ecache_ext_size`, `nf_conntrack_ecache_ext_create`, `nf_conntrack_ecache_ext_replace`) with null-checks, size calculations, and proper error returns.
+  - Added unit tests verifying tuple hashing and extension cache lifecycle.
+- **`crates/netfilter/src/lib.rs` (Wave 12):**
+  - Hardened IPv6 netfilter hooks: `nf_ip6_fragment_stub`, `nf_ip6_route_input_stub`, `nf_ip6_br_fragment_stub`.
+  - Parameter validation prevents null dereferences and delegates safely to `br_ip6_fragment`.
+- **`crates/nf_conntrack_ftp/src/lib.rs` (Wave 12):**
+  - Replaced 10 constant stubs (`nf_nat_ftp_hook_fn`, `get_ipv6_addr`, `try_number`, `try_rfc959`, `try_rfc1123`, `get_port`, `try_eprt`, `try_epsv_response`, `find_pattern`, `find_nl_seq`) with real RFC 959 (PORT), RFC 1123 (PASV), RFC 2428 (EPRT/EPSV) parsers and sequence tracking.
+  - Added unit test module.
+- **Impact:** `rust.const_stub_fns` dropped from 259 down to **220** (-39 from baseline). `test.count` reached **397** (+62 tests). `test.crates` reached **83**.
+
+## 24. Autonomous RunuX Tier Suite (T1, T2, T3, T4) & Master Orchestrator (2026-09-30)
+
+Fully unified the tiered execution architecture under the ANSE thermodynamic physics engine:
+- **`workflowrunuxT1.py` (Tier 1 Bulk Hardening & Ground Truth Verification):**
+  - Steps: T1.1 Metrics Ratchet Gate, T1.2 Zero `static mut` Invariance (0 found), T1.3 Anti-Stub AST Guard, T1.4 Core Workspace Cargo Check, T1.5 Core Defense Smoke Tests, T1.6 ChromaDB LTM Ingestion.
+- **`workflowrunuxT2.py` (Tier 2 Design, Research & Architecture Verification):**
+  - Steps: T2.1 Lean 4 Spec Verification, T2.2 P0 Reassembly Hardening, T2.3 Virtual Memory Subsystem, T2.4 Fallible Allocations & DMA Ring Buffers, T2.5 Metrics Ratchet Gate, T2.6 ChromaDB LTM Ingestion.
+- **`workflowrunuxT3.py` (Tier 3 Formal Proof Discharge & Axiom Soundness):**
+  - Steps: T3.1 Full Lean 4 Lake Build, T3.2 Formal Debt & Anti-Weakening Hash Verification, T3.3 Kernel Memory Subsystem Test Suite, T3.4 Anti-Cheat Metrics Ratchet Gate, T3.5 ChromaDB LTM Ingestion.
+- **`workflowrunuxT4.py` (Tier 4 Deep Subsystems, Networking & Concurrency):**
+  - Steps: T4.1 Netfilter & Conntrack Deep Suite, T4.2 Const Stub Audit ($\le 230$), T4.3 Concurrency & SPSC Ring Buffer Verification, T4.4 Formal Proof Debt Gate ($sorry < 200, axioms \le 136$), T4.5 Metrics Ratchet Gate, T4.6 ChromaDB LTM Ingestion.
+- **`workflowrunux_all.py` (Master Multi-Tier Orchestrator):**
+  - Sequentially orchestrates T1 $\to$ T2 $\to$ T3 $\to$ T4, collects execution results and cryptographic proof tokens (23 tokens total), asserts 100% green status, and indexes master execution telemetry into ChromaDB LTM.
+  - End-to-end multi-tier pipeline passes in 43.93s with monotonic ratchet invariance holding strictly.
+
+
 
 

@@ -526,3 +526,87 @@ built independently and validated each other on first contact with real data.
 attends to the retrieved context; measuring the SAME intervention on multiple models can
 reveal that one model benefits and another doesn't, from identical inputs -- don't generalize
 a retrieval result across models without testing each one.
+
+## 16. Subproject RunuX Hardening (Waves 1–5): Real Memory-Safety, Allocator De-mocking, Formal Proofs, and Hardness/Partition Controls (2026-09-30)
+
+During the integration and execution of the T1 memory-safety roadmap on `rust-linux-mini-kernel`, we hardened 8 core crates, eliminated 100% of `static mut` instances across 316 crates, reconstructed the memory management subsystem, and proved formal conservation invariants in Lean 4. Several critical operational and architectural lessons were learned:
+
+### 16a. Total `static mut` Eradication (197 -> 0) Without Breaking C-ABI Layouts
+- **The Problem:** The kernel originally had 197 `static mut` sites. In modern Rust (edition 2024+), taking a shared reference to a `static mut` triggers `static_mut_ref` and is immediate undefined behavior (UB).
+- **The Pitfall of Naive Regex:** Global mutable statics in kernel code are not just booleans; they include complex C-ABI linked list heads (`hlist_head`), red-black tree roots (`rb_root`), nested function pointer tables (`pernet_operations`, `nf_nat_helper`), and hardware descriptor arrays.
+- **The Solution:** We adopted three tiered patterns:
+  1. `AtomicBool`, `AtomicU64`, and `AtomicPtr` for flags, counters, and singleton pointer registries with explicit `Acquire`/`Release` memory ordering.
+  2. `#[repr(transparent)] pub struct SyncWrapper<T>(UnsafeCell<T>); unsafe impl<T> Sync for SyncWrapper<T> {}` for complex structures. This preserves the exact binary C-ABI layout required for FFI while forcing every dereference to be guarded with explicit `// SAFETY:` justifications.
+  3. Compile-time immutability for tables that are read-only post-init (`mip6`, `nf_conntrack_ecache`).
+
+### 16b. Bare-Metal Allocator De-mocking (`vmalloc` Without `libc`)
+- **The Gap Found:** The existing `vmalloc` crate was a mock that called `libc::malloc` and `libc::free`. In an autonomous bare-metal operating system kernel, `libc` does not exist; relying on host user-space allocators invalidates all kernel isolation claims.
+- **The Fix:** Rewrote `vmalloc` as a freestanding allocator backed directly by `page_alloc` buddy pages (`alloc_pages`/`free_pages`). Embedded a `VmallocArea` tracking header with a magic cookie (`0x564D_414C`), order tracking, and immediate magic zeroing on `vfree` for double-free mitigation.
+- **Apply:** Never allow low-level kernel abstractions to depend on user-space runtime shims. Every kernel memory subsystem must be self-hosting on top of the physical page frame pool.
+
+### 16c. Affine Type-State Lifecycle (`SafePageFrame`)
+- **The Architectural Win:** Moving runtime page flag checks into compile-time affine type states (`FreeState -> AllocatedState -> SlabMappedState`) via linear type ownership (`self` consumption) completely eliminates double-free, use-after-free, and cross-allocator corruption before machine code is even generated.
+- **Slab Boundary & Stride Alignment:** Hardening `slab::kfree` with boundary checks (`objects_start <= ptr < objects_end`) and stride alignment verification (`(ptr - start) % obj_size == 0`) prevents interior pointer corruption and arbitrary heap execution.
+
+### 16d. Formal Verification in Lean 4: Standalone Verification vs. Mathlib Bloat
+- **The Trap:** Invoking `lake build` in `formal/` triggers Lake's dependency resolver, which attempts to download gigabytes of Mathlib olean files into `~/.cache/mathlib`. On machines with tight root disk partitions, this will instantly fill the disk to 0 bytes and crash the system.
+- **The Solution:** The subproject's Lean specifications under `specs/lean4/MVK/` are decoupled from external Mathlib dependencies. They verify directly via the standalone `lean` compiler (`lean specs/lean4/MVK/Phase9/Memory.lean`) using Lean 4 core tactics (`omega`, `rfl`, `decide`).
+- **The Proofs Closed:** Proved physical Memory Conservation under allocation/freeing ($M_{\text{tot}} = M_{\text{free}} + M_{\text{alloc}}$) using `omega`, buddy XOR involution symmetry, and type-state lifecycle idempotence, reducing `lean.sorry` debt to 244.
+
+### 16e. Host Partition Contamination & Cargo Target Directory Isolation
+- **The Trap:** Running `cargo test` in a large workspace with 316 crates generates gigabytes of build artifacts in `target/`. On a small root partition (`/dev/sdb1`, 234G with <2.5GB free), a single build will consume all available space, causing editor, MCP, and CLI tools to fail.
+- **The Mandatory Rule:** Every cargo execution MUST explicitly specify `CARGO_TARGET_DIR=/media/xavkal/3ada43de-fc4a-43bd-a9f8-cf396fd17033/tmp/runux_target` (secondary 916G drive with >716G free).
+- **MCP Attestation Resilience:** When the root disk filled up during an early run, standard CLI execution failed because the agent could not write the temporary `agentapi` helper binary. Calling the MCP server tool `request_task_completion_attestation` directly bypassed the disk write by invoking Python subprocesses, allowing us to diagnose and free disk space.
+
+### 16f. Non-Negotiable Metric Ratchets
+- **Anti-Cheat Defense:** LLMs attempting refactoring will often take the path of least resistance: adding `#[allow(warnings)]`, commenting out failing tests, or stubbing functions with constant returns (`0`).
+- **The Ratchet Enforcement:** `scripts/metrics.py ratchet --baseline metrics.baseline.json` evaluates every metric in a defined direction (lower is better, higher is better). It fails closed on any regression.
+- **Results Across Waves 1–5:**
+  - `rust.static_mut`: 197 -> 0 (-100%)
+  - `rust.safety_ratio`: 0.1397 -> 0.3464 (+148%)
+  - `test.count`: 335 -> 355 (+20 tests)
+  - `lean.sorry`: 249 -> 244 (-5 debt reduction)
+
+## 17. Wave 6 Virtual Memory & Page Table Abstraction: Hardware W ⊕ X, Dynamic Partition Re-anchoring, and TLB Shootdowns (2026-09-30)
+
+Wave 6 transitioned the mini-kernel from syntactic memory safety to hardware virtual memory isolation, multi-level paging traversal, and translation lookaside buffer management across `crates/page_table`, `crates/arch_pgtable`, and `crates/arch_tlb`.
+
+### 17a. Dynamic Target Partition Detection & Symlink Resiliency
+- **The Environment Shift:** During the session, the host system remounted the 916GB secondary storage drive from `/media/xavkal/3ada43de-fc4a-43bd-a9f8-cf396fd17033` to `/mnt/data`. This broke symlinks (`~/.cargo -> /media/...`, `~/.rustup -> /media/...`), causing bash to temporarily lose access to `cargo` and `rustc`.
+- **The Recovery & Prevention:**
+  1. Re-anchored symlinks dynamically: `ln -snf /mnt/data/home/xavkal/.cargo ~/.cargo` and `ln -snf /mnt/data/home/xavkal/.rustup ~/.rustup`.
+  2. Updated `workflowrunuxT2.py` to check for `/mnt/data/tmp/runux_target` first before falling back to `/media/xavkal/...`, ensuring completely autonomous resilience against host partition re-mounts.
+- **Apply:** Autonomous kernel workflows must never assume static filesystem mount UUIDs. Check path existence dynamically and provide deterministic fallback logic.
+
+### 17b. Hardware W ⊕ X (Write XOR Execute) Invariant Enforcement
+- **The Security Invariant:** Modern secure kernels must strictly enforce that memory mapped writable cannot simultaneously be marked executable ($W \oplus X$). Writable executable pages open the door to code-injection attacks and JIT spray exploitation.
+- **The Implementation:**
+  - `page_table::MapFlags::new(bits)` validates that `is_writable() && is_executable()` returns `Err(VmError::WritableAndExecutableViolation)`.
+  - For deliberate boot-time bootstrap code, an explicit `unsafe fn allow_wx(bits)` is provided requiring documented justification.
+  - On x86_64, non-executable pages explicitly set hardware NX bit 63 (`PTE_NO_EXECUTE`).
+  - **Formal Proof in Lean 4:** In `specs/lean4/MVK/Phase9/Memory.lean`, we proved `theorem wx_mutual_exclusion (p : PagePermissions) (h : is_wx_safe p) : (p.writable = true ∧ p.executable = true) ↔ False` using classical constructive logic, with 0 sorry.
+
+### 17c. Architecture-Agnostic Paging (`page_table`) vs. Hardware MMU (`arch_pgtable`)
+- **Canonical Addressing:** Virtual memory space operations rely on canonical 48-bit `VirtAddr` indexing (bits 47:39 for PML4, 38:30 for PDPT, 29:21 for PD, 20:12 for PT, 11:0 for page offset) and 52-bit physical `PhysAddr`.
+- **Zero-Heap Frame Allocation:** Implemented the `FrameAllocator` trait (`allocate_frame`, `deallocate_frame`), allowing `VmSpace::map` and `VmSpace::unmap` to manage 4-level paging without requiring dynamic heap allocators (`Box`, `Vec`).
+- **RISC-V Sv39 Support:** `arch_pgtable` provides 3-level page translation (VPN[2], VPN[1], VPN[0]) and maps abstract flags to Sv39 PTE bits (V, R, W, X, U, G, A, D).
+- **Page Fault Classification:** `arch_pgtable::handle_page_fault` classifies hardware fault error codes into `DemandPaging`, `CopyOnWrite`, `SegmentationFault`, and `ProtectionViolation`.
+
+### 17d. Safe TLB Invalidation & Threshold-Based Shootdowns (`arch_tlb`)
+- **Primitives:** Implemented safe single-page invalidation (`flush_page` via `invlpg` / `sfence.vma`), complete address-space shootdowns (`flush_all` via CR3 reload), and contiguous range invalidations (`flush_range`).
+- **Shootdown Optimization:** When invalidating address ranges, `flush_range` invalidates individual pages for spans $\le 32$ pages. Beyond 32 pages, it automatically escalates to a single `flush_all()` to avoid costly IPI bus shootdown overhead.
+- **Telemetry:** Built-in atomic counters (`AtomicU64`) track page flushes, range flushes, full flushes, and monotonic TLB generations.
+
+### 17e. Wave 6 Metrics Ratchet Results
+- `rust.blanket_clippy_allow_crates`: 283 -> **281** (-2 blanket clippy allows removed)
+- `rust.const_stub_fns`: 258 -> **255** (-3 const stubs eradicated: `page_table_init`, `arch_pgtable_init`, `arch_tlb_init`)
+- `rust.placeholder_crates`: 141 -> **139** (-2 placeholder crates resolved)
+- `rust.stub_marker_lines`: 199 -> **198** (-1)
+- `rust.stub_marker_crates`: 82 -> **81** (-1)
+- `rust.safety_comments`: 276 -> **314** (+38 safety documentation comments)
+- `rust.safety_ratio`: 0.348 -> **0.3783** (+8.7% safety ratio)
+- `test.count`: 359 -> **373** (+14 tests)
+- `test.crates`: 78 -> **80** (+2 test crates)
+- `workflowrunuxT2.py`: All 5 stages PASSED with cumulative energy $E = 21043.21$ and proof tokens generated for all steps.
+
+

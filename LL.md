@@ -609,4 +609,57 @@ Wave 6 transitioned the mini-kernel from syntactic memory safety to hardware vir
 - `test.crates`: 78 -> **80** (+2 test crates)
 - `workflowrunuxT2.py`: All 5 stages PASSED with cumulative energy $E = 21043.21$ and proof tokens generated for all steps.
 
+## 18. Wave 7: 100% Fallible Allocations & Zero-Copy Circular DMA Buffers (2026-09-30)
+
+Wave 7 eliminated nullable pointer failure modes across all kernel memory allocators (`page_alloc`, `slab`, `vmalloc`), introduced zero-copy `NetBuf` packet buffer primitives in `kernel_types`, and converted `crates/buffer` from an empty stub into a high-performance circular DMA ring buffer with formal Lean 4 soundness proofs.
+
+### 18a. Eradication of Nullable Pointers via 100% Fallible Allocation (`AllocError`)
+- **The Classical Failure Mode:** Traditional C and early kernel allocators return raw nullable pointers (`*mut c_void` or `NULL`). This creates implicit failure modes, causes kernel panics upon blind dereferencing, and fails to communicate *why* an allocation failed (OOM vs. invalid alignment vs. bad buddy order vs. uninitialized allocator).
+- **The Modern Rust Kernel Paradigm:** We introduced `Result<NonNull<u8>, AllocError>` as the primary allocation return type across `page_alloc` (`try_alloc_pages`), `slab` (`try_kmalloc`), and `vmalloc` (`try_vmalloc`). `NonNull<u8>` guarantees at the type level that a successful allocation is non-zero, while `AllocError` explicitly enumerates failure modes:
+  - `OutOfMemory`
+  - `InvalidAlignment`
+  - `InvalidOrder`
+  - `InvalidSize`
+  - `NotInitialized`
+- **Zero-Breakage C-ABI Preservation:** Existing external C-ABI entry points (`alloc_pages`, `kmalloc`, `vmalloc`) were retained as zero-cost wrappers calling their respective `try_*` routines and mapping `Err(_)` to `core::ptr::null_mut()`. This ensures 100% backwards compatibility for external C linkers and legacy drivers while providing modern safety to Rust callers.
+
+### 18b. Zero-Copy `NetBuf` Packet Buffers & Borrow-Checker Scope Discipline
+- **Memory Layout:** `NetBuf` models Linux `sk_buff` semantics:
+  `[ Headroom | Payload (len) | Tailroom ]`
+  where `head` marks the allocation base, `data` points to active packet payload, `tail` points to payload end, and `end` bounds the physical capacity.
+- **In-Place Protocol Transformations:** Headers can be prepended (`push`) or stripped (`pull`) without copying packet data. Slices are extended into tailroom via `put` and truncated via `trim`. Zero-copy packet sharing across network layers is supported via atomic reference counting (`clone_zerocopy`).
+- **Borrow-Checker Block-Scoping Pattern:** In Rust, calling `buf.put(len)` returns `&mut [u8]`, which holds an exclusive mutable borrow on `buf`. Attempting to inspect `buf.len()` while that slice is in scope causes compiler error E0502. The canonical pattern is explicit lexical scoping:
+  ```rust
+  {
+      let payload = netbuf.put(48).expect("put failed");
+      payload.fill(0x55);
+  } // Mutable slice borrow dropped here
+  assert_eq!(netbuf.len(), 48); // Now safe to query metadata
+  ```
+
+### 18c. Circular DMA Buffer Transformation (`crates/buffer`)
+- **Stub Elimination:** `crates/buffer` was previously a 23-line stub containing `pub static BUFFER_INITIALIZED: bool = false;` and `#![allow(clippy::all, clippy::pedantic)]` and an unused `libc = "0.2"` dependency.
+- **High-Performance Ring Buffer:**
+  - Removed `libc = "0.2"` and replaced blanket allows with `#![deny(clippy::all)]` and `#![warn(clippy::pedantic)]`.
+  - Implemented `DmaDescriptor` (16-byte C-ABI struct: `addr: u64`, `len: u32`, `flags: u32`) with bitflags for device ownership, end-of-packet framing, error signaling, and interrupt generation.
+  - Implemented `CircularDmaBuffer<const CAP: usize>` requiring power-of-two capacity for zero-division bitwise masking (`tail & (CAP - 1)`).
+  - Integrated `NetBuf` via `enqueue_netbuf`, allowing zero-copy submission of network buffers directly into hardware DMA descriptor rings.
+  - Provided lockless atomic tracking and spinlock-backed protection with 8 comprehensive unit tests covering wrapping, full/empty detection, peek, and reset.
+
+### 18d. Formal Verification in Lean 4 (`specs/lean4/MVK/Phase9/Memory.lean`)
+- Added formal specifications for `AllocError`, `AllocResult α`, and `NonNullPtr`.
+- **Proved `fallible_alloc_soundness`:** Proved that any successful fallible allocation result strictly produces a positive pointer address (`p.addr > 0`).
+- **Proved `circular_buffer_index_bounds`:** Proved that for any transaction index `idx` and positive capacity `cap`, modular indexing satisfies `idx % cap < cap`.
+- **Proved `circular_buffer_capacity_invariant` & `circular_buffer_next_slot_bound`:** Proved active element count bounds and slot progression safety under modulo arithmetic.
+- Compiled with standalone `lean specs/lean4/MVK/Phase9/Memory.lean` with 0 sorry, 0 warnings, and 0 errors.
+
+### 18e. Wave 7 Metrics Ratchet & T2 Workflow Telemetry
+- `rust.blanket_clippy_allow_crates`: 281 -> **280** (-1 blanket clippy allow removed)
+- `rust.const_stub_fns`: 255 -> **254** (-1 const stub eliminated: `buffer_init`)
+- `rust.placeholder_crates`: 139 -> **138** (-1 placeholder crate resolved: `crates/buffer`)
+- `rust.safety_ratio`: 0.3783 -> **0.3970** (+4.9% safety comment density)
+- `test.count`: 373 -> **391** (+18 passing tests)
+- `test.crates`: 80 -> **81** (+1 test-covered crate)
+- `workflowrunuxT2.py`: All 6 stages (`T2.1` to `T2.6`) PASSED with cumulative physical energy $E = 19486.89$ and full ChromaDB LTM indexing complete.
+
 

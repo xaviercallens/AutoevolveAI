@@ -315,9 +315,57 @@ mod tests {
         logger.info(f"T2.3 Status: {status} | E = {energy:.2f} | Token: {token}")
         return metric
 
-    def step_t2_4_run_ratchet_gate(self) -> ANSEPhysicsMetrics:
-        """T2.4: Anti-Cheat Metrics Ratchet Enforcement."""
-        logger.info("--- Executing T2.4: Static Metrics Ratchet Gate ---")
+    def step_t2_4_verify_fallible_allocations_and_buffers(self) -> ANSEPhysicsMetrics:
+        """T2.4: Fallible Allocations & Zero-Copy Circular DMA Buffers (Wave 7)."""
+        logger.info("--- Executing T2.4: Verifying Fallible Allocations & DMA Ring Buffers ---")
+        
+        # Verify anti-stub invariants on Wave 7 crates
+        alloc_files = [
+            self.subproject_dir / "crates" / "kernel_types" / "src" / "lib.rs",
+            self.subproject_dir / "crates" / "page_alloc" / "src" / "lib.rs",
+            self.subproject_dir / "crates" / "slab" / "src" / "lib.rs",
+            self.subproject_dir / "crates" / "vmalloc" / "src" / "lib.rs",
+            self.subproject_dir / "crates" / "buffer" / "src" / "lib.rs",
+        ]
+        violations = []
+        for af in alloc_files:
+            violations.extend(self.anti_stub.inspect_file(af))
+        if violations:
+            logger.warning(f"Anti-stub violations in allocation subsystem: {violations}")
+
+        cmd = [
+            "cargo", "test", "--lib",
+            "-p", "kernel_types",
+            "-p", "page_alloc",
+            "-p", "slab",
+            "-p", "vmalloc",
+            "-p", "buffer",
+            "--", "--test-threads=1"
+        ]
+        ret, stdout, stderr, dur_ms, ram_mb = self.run_command(cmd)
+
+        failed = (ret != 0 or bool(violations))
+        energy = self.physics.calculate_energy(dur_ms, ram_mb, failed=failed)
+        status = "PASSED" if not failed else "FAILED"
+        err = stderr if failed else None
+        token = self.physics.mint_proof_token(f"T2.4_ALLOC_{ret}") if not failed else None
+
+        metric = ANSEPhysicsMetrics(
+            step_name="T2.4_Verify_Fallible_Allocations_And_Buffers",
+            duration_ms=dur_ms,
+            peak_rss_mb=ram_mb,
+            energy=energy,
+            status=status,
+            proof_token=token,
+            error_message=err,
+        )
+        self.metrics_history.append(metric)
+        logger.info(f"T2.4 Status: {status} | E = {energy:.2f} | Token: {token}")
+        return metric
+
+    def step_t2_5_run_ratchet_gate(self) -> ANSEPhysicsMetrics:
+        """T2.5: Anti-Cheat Metrics Ratchet Enforcement."""
+        logger.info("--- Executing T2.5: Static Metrics Ratchet Gate ---")
         # Measure
         ret_m, out_m, err_m, dur_m, ram_m = self.run_command(["uv", "run", "python", "scripts/metrics.py", "measure"])
         if ret_m != 0:
@@ -332,10 +380,10 @@ mod tests {
         energy = self.physics.calculate_energy(dur_ms, ram_mb, failed=failed)
         status = "PASSED" if not failed else "FAILED"
         err = stderr if failed else None
-        token = self.physics.mint_proof_token(f"T2.4_RATCHET_{ret}") if not failed else None
+        token = self.physics.mint_proof_token(f"T2.5_RATCHET_{ret}") if not failed else None
 
         metric = ANSEPhysicsMetrics(
-            step_name="T2.4_Metrics_Ratchet_Gate",
+            step_name="T2.5_Metrics_Ratchet_Gate",
             duration_ms=dur_ms,
             peak_rss_mb=ram_mb,
             energy=energy,
@@ -344,15 +392,15 @@ mod tests {
             error_message=err,
         )
         self.metrics_history.append(metric)
-        logger.info(f"T2.4 Status: {status} | E = {energy:.2f} | Token: {token}")
+        logger.info(f"T2.5 Status: {status} | E = {energy:.2f} | Token: {token}")
         if stdout:
             for line in stdout.strip().splitlines()[-8:]:
                 logger.info(f"  {line}")
         return metric
 
-    def step_t2_5_retrofit_ltm(self) -> ANSEPhysicsMetrics:
-        """T2.5: Retrofit T2 Verified Telemetry into ChromaDB LTM."""
-        logger.info("--- Executing T2.5: Retrofitting Telemetry into ChromaDB LTM ---")
+    def step_t2_6_retrofit_ltm(self) -> ANSEPhysicsMetrics:
+        """T2.6: Retrofit T2 Verified Telemetry into ChromaDB LTM."""
+        logger.info("--- Executing T2.6: Retrofitting Telemetry into ChromaDB LTM ---")
         start_time = time.perf_counter()
         rusage_before = resource.getrusage(resource.RUSAGE_CHILDREN)
 
@@ -394,10 +442,10 @@ mod tests {
         ram_mb = (rusage_after.ru_maxrss - rusage_before.ru_maxrss) / 1024.0
         energy = self.physics.calculate_energy(dur_ms, ram_mb, failed=failed)
         status = "PASSED" if not failed else "FAILED"
-        token = self.physics.mint_proof_token(f"T2.5_LTM_{status}") if not failed else None
+        token = self.physics.mint_proof_token(f"T2.6_LTM_{status}") if not failed else None
 
         metric = ANSEPhysicsMetrics(
-            step_name="T2.5_ChromaDB_LTM_Retrofit",
+            step_name="T2.6_ChromaDB_LTM_Retrofit",
             duration_ms=dur_ms,
             peak_rss_mb=ram_mb,
             energy=energy,
@@ -427,15 +475,20 @@ mod tests {
             logger.error("T2.3 failed. Halting workflow.")
             return False
 
+        m4 = self.step_t2_4_verify_fallible_allocations_and_buffers()
+        if m4.status != "PASSED":
+            logger.error("T2.4 failed. Halting workflow.")
+            return False
+
         if not pilot_mode:
-            m4 = self.step_t2_4_run_ratchet_gate()
-            if m4.status != "PASSED":
-                logger.error("T2.4 Ratchet Gate failed. Halting workflow.")
+            m5 = self.step_t2_5_run_ratchet_gate()
+            if m5.status != "PASSED":
+                logger.error("T2.5 Ratchet Gate failed. Halting workflow.")
                 return False
 
-            m5 = self.step_t2_5_retrofit_ltm()
-            if m5.status != "PASSED":
-                logger.error("T2.5 LTM Retrofit failed.")
+            m6 = self.step_t2_6_retrofit_ltm()
+            if m6.status != "PASSED":
+                logger.error("T2.6 LTM Retrofit failed.")
                 return False
 
         total_wall_s = time.perf_counter() - start_wall

@@ -28,14 +28,27 @@ except ImportError:
 import shutil as _shutil
 
 _chrome_available = bool(_shutil.which("google-chrome") or Path("/usr/bin/google-chrome").exists())
-pytestmark = pytest.mark.skipif(
-    not _playwright_available or not _chrome_available,
-    reason="Skipped: E2E tests require playwright + Google Chrome. "
-           "Install: uv run playwright install chromium"
-)
 
 BASE_URL = "http://127.0.0.1:5000/#ascd"
 CHROME_PATH = "/usr/bin/google-chrome"
+
+
+def _server_is_running(host: str = "127.0.0.1", port: int = 5000) -> bool:
+    """Return True if the web server is accepting connections on host:port."""
+    import socket
+    try:
+        with socket.create_connection((host, port), timeout=1.0):
+            return True
+    except OSError:
+        return False
+
+
+_server_available = _server_is_running()
+pytestmark = pytest.mark.skipif(
+    not _playwright_available or not _chrome_available or not _server_available,
+    reason="Skipped: E2E tests require playwright + Chrome + ANSE server running at 127.0.0.1:5000. "
+           "Start with: PORT=5000 uv run python web/server.py"
+)
 
 
 @pytest.fixture(scope="module")

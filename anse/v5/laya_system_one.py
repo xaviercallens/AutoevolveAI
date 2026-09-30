@@ -182,7 +182,7 @@ class LayaSystemOneDecisionEngine:
                 }
             }
             res = self._agent.system_one(hypothesis, questions)
-            duration_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+            duration_ms = max(round((time.perf_counter() - t0) * 1000.0, 3), 0.001)
             ans = res.get("answers", {}).get("triage", {})
             return {
                 "decision_type": "choice",
@@ -230,7 +230,7 @@ class LayaSystemOneDecisionEngine:
                 }
             }
             res = self._agent.system_one(hypothesis, questions)
-            duration_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+            duration_ms = max(round((time.perf_counter() - t0) * 1000.0, 3), 0.001)
             ans = res.get("answers", {}).get("score", {})
             return {
                 "decision_type": "score",
@@ -271,7 +271,7 @@ class LayaSystemOneDecisionEngine:
                 }
             }
             res = self._agent.system_one(hypothesis, questions)
-            duration_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+            duration_ms = max(round((time.perf_counter() - t0) * 1000.0, 3), 0.001)
             ans = res.get("answers", {}).get("truth", {})
             return {
                 "decision_type": "noul",
@@ -282,7 +282,7 @@ class LayaSystemOneDecisionEngine:
                 "model": "laya-system-one-cpu",
             }
 
-        duration_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+        duration_ms = max(round((time.perf_counter() - t0) * 1000.0, 3), 0.001)
         lower = hypothesis.lower()
         p_true = 0.05 if ("falsified" in lower or "contradiction" in lower or "violation" in lower) else 0.95
 
@@ -328,7 +328,7 @@ class LayaSystemOneDecisionEngine:
             model_used = "laya-microservice-node"
 
         if ans:
-            duration_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+            duration_ms = max(round((time.perf_counter() - t0) * 1000.0, 3), 0.001)
             return {
                 "thermodynamic_violation": ans.get("thermodynamic_violation", {}).get("noul", 0.5),
                 "human_viability_threat": ans.get("human_viability_threat", {}).get("noul", 0.5),
@@ -340,5 +340,5 @@ class LayaSystemOneDecisionEngine:
                 "model": model_used,
             }
 
-        duration_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+        duration_ms = max(round((time.perf_counter() - t0) * 1000.0, 3), 0.001)
         return _evaluate_heuristic_axioms(text, PHYSICAL_MANIFOLDS, duration_ms)

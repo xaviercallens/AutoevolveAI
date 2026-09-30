@@ -7,9 +7,9 @@ RUNUX_V12_VERIFIED_CORE_PLAN.md and BUSINESS_CASE_PRIORITIZED_PLAN.md for RunuX:
 1. ANSE Physics of Computation: E = w_t * duration_ms + w_m * peak_rss_mb, penalty 10^6 on failure.
 2. Hardness Harness & Anti-Stub Guard: fail-closed zero-trust verification.
 3. T4.1: Netfilter & Conntrack Core Deep Subsystem Verification (nf_conntrack_core, nf_conntrack_ftp, netfilter).
-4. T4.2: Const Stub Reduction Audit (rust.const_stub_fns <= 230, currently 220).
-5. T4.3: Concurrency & Lock-Free SPSC Ring Buffer Verification (ai_bridge, buffer).
-6. T4.4: Formal Proof Debt Hard Threshold Gate (lean.sorry < 200, lean.axiom <= 136).
+4. T4.2: Const Stub Reduction Audit (rust.const_stub_fns <= 180, currently 172).
+5. T4.3: Concurrency & Lock-Free SPSC Ring Buffer Verification (ai_bridge, buffer, vmalloc).
+6. T4.4: Formal Proof Debt Hard Threshold Gate (lean.sorry < 150, lean.axiom <= 136).
 7. T4.5: Anti-Cheat Metrics Ratchet Enforcement (metrics.py ratchet).
 8. T4.6: ChromaDB VectorDB & LTM Telemetry Retrofit (ChromaRAG in .chroma_db).
 """
@@ -186,12 +186,12 @@ class RunuxT4WorkflowRunner:
             stats = rust_tools.analyze_workspace(crates_dir)
             count_const_stubs = sum(s.const_stub_fns for s in stats)
 
-            # Strict threshold: must be <= 200 (baseline was 259)
-            if count_const_stubs > 200:
+            # Strict threshold: must be <= 180 (baseline was 259)
+            if count_const_stubs > 180:
                 failed = True
-                err = f"Const stub regression or target missed: found {count_const_stubs} > 200"
+                err = f"Const stub regression or target missed: found {count_const_stubs} > 180"
             else:
-                logger.info(f"Const stub count audit passed: {count_const_stubs} <= 200 (baseline 259)")
+                logger.info(f"Const stub count audit passed: {count_const_stubs} <= 180 (baseline 259)")
         except Exception as e:
             failed = True
             err = f"Failed to execute const stub audit: {e}"
@@ -223,6 +223,7 @@ class RunuxT4WorkflowRunner:
             "cargo", "test", "--lib", "--target", "x86_64-unknown-linux-gnu",
             "-p", "ai_bridge",
             "-p", "buffer",
+            "-p", "vmalloc",
             "--", "--test-threads=1"
         ]
         ret, stdout, stderr, dur_ms, ram_mb = self.run_command(cmd, timeout=120.0)
@@ -247,7 +248,7 @@ class RunuxT4WorkflowRunner:
         return metric
 
     def step_t4_4_formal_proof_debt_gate(self) -> ANSEPhysicsMetrics:
-        """T4.4: Formal Proof Debt Hard Threshold Gate (lean.sorry < 190, lean.axiom <= 136)."""
+        """T4.4: Formal Proof Debt Hard Threshold Gate (lean.sorry < 150, lean.axiom <= 136)."""
         logger.info("--- Executing T4.4: Formal Proof Debt Threshold Gate ---")
         start_time = time.perf_counter()
         rusage_before = resource.getrusage(resource.RUSAGE_CHILDREN)
@@ -266,15 +267,15 @@ class RunuxT4WorkflowRunner:
             total_sorry = sum(f.sorry for f in tree_stats)
             total_axioms = sum(len(f.axioms) for f in tree_stats)
 
-            # Strict historic milestone: must break below 190 sorry (baseline 249)
-            if total_sorry >= 190:
+            # Strict historic milestone: must break below 150 sorry (baseline 249)
+            if total_sorry >= 150:
                 failed = True
-                err = f"Formal sorry threshold violation: found {total_sorry} >= 190 (must be < 190)"
+                err = f"Formal sorry threshold violation: found {total_sorry} >= 150 (must be < 150)"
             elif total_axioms > 136:
                 failed = True
                 err = f"Formal axiom threshold violation: found {total_axioms} > 136"
             else:
-                logger.info(f"Formal proof debt audit passed: sorry={total_sorry} < 190, axioms={total_axioms} <= 136")
+                logger.info(f"Formal proof debt audit passed: sorry={total_sorry} < 150, axioms={total_axioms} <= 136")
         except Exception as e:
             failed = True
             err = f"Failed to execute formal proof debt gate: {e}"

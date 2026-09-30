@@ -178,15 +178,15 @@ class RunuxT3WorkflowRunner:
             details["total_sorry"] = total_sorry
             details["total_axioms"] = total_axioms
 
-            # Strict targets: sorry <= 220, axioms <= 136
-            if total_sorry > 220:
+            # Strict targets: sorry <= 160, axioms <= 136
+            if total_sorry > 160:
                 failed = True
-                err = f"Sorry regression or target missed: found {total_sorry} > 220"
+                err = f"Sorry regression or target missed: found {total_sorry} > 160"
             elif total_axioms > 136:
                 failed = True
                 err = f"Axiom regression or target missed: found {total_axioms} > 136"
             else:
-                logger.info(f"Formal audit verified: sorry={total_sorry} <= 220, axioms={total_axioms} <= 136")
+                logger.info(f"Formal audit verified: sorry={total_sorry} <= 160, axioms={total_axioms} <= 136")
 
         except Exception as e:
             failed = True

@@ -40,8 +40,9 @@ class TestSymplecticHarmonicOscillator:
         )
         assert res.is_symplectic
         assert res.energy_drift < 1e-3
-        assert len(res.trajectory_q) == 1000
-        assert len(res.energy_h) == 1000
+        assert len(res.trajectory_q) == 1001  # initial state + 1000 steps (Python fallback)
+        assert len(res.energy_h) == 1001
+
 
     def test_harmonic_energy_conservation_python_fallback(self) -> None:
         res = solve_symplectic_orbit(

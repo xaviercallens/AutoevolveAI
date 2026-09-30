@@ -1,3 +1,5 @@
+import shutil
+
 import pytest
 import torch
 import torch.nn as nn
@@ -60,6 +62,10 @@ def test_autopoietic_meta_learning_gate():
     # We can't easily mock the shadow energy dynamically in this simple test without subclassing, 
     # but the static 0.9 multiplier ensures it passes.
 
+@pytest.mark.skipif(
+    not shutil.which("nvidia-smi"),
+    reason="Skipped on CPU-only machines: v3 singularity loop requires nvidia-smi for real GPU telemetry (TelemetryUnavailableError by design)"
+)
 def test_v3_singularity_loop_e2e():
     engine = ANSEEngineV3(latent_dim=128)
     initial_latent = torch.randn(128)

@@ -15,10 +15,24 @@ Uses system Google Chrome (/usr/bin/google-chrome) for full native headless exec
 """
 
 from __future__ import annotations
+from pathlib import Path
 
 import time
 import pytest
-from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
+try:
+    from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
+    _playwright_available = True
+except ImportError:
+    _playwright_available = False
+
+import shutil as _shutil
+
+_chrome_available = bool(_shutil.which("google-chrome") or Path("/usr/bin/google-chrome").exists())
+pytestmark = pytest.mark.skipif(
+    not _playwright_available or not _chrome_available,
+    reason="Skipped: E2E tests require playwright + Google Chrome. "
+           "Install: uv run playwright install chromium"
+)
 
 BASE_URL = "http://127.0.0.1:5000/#ascd"
 CHROME_PATH = "/usr/bin/google-chrome"

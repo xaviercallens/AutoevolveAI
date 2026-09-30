@@ -287,7 +287,10 @@ def _load_workflow() -> ModuleType:
     assert spec is not None and spec.loader is not None
     mod = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = mod
-    spec.loader.exec_module(mod)
+    try:
+        spec.loader.exec_module(mod)
+    except ModuleNotFoundError as exc:
+        pytest.skip(f"night_training_workflow.py dependency unavailable: {exc}")
     return mod
 
 

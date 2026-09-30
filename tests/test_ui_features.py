@@ -20,6 +20,8 @@ import json
 import re
 from typing import Any
 
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -389,6 +391,10 @@ class TestSymbioticCoPilot:
             assert "duration_ms" in step
 
     # ── Latent Dreamer ──
+    @pytest.mark.skipif(
+        not Path("checkpoints/latent_dreamer_jepa.pt").exists(),
+        reason="Skipped: JEPA checkpoint checkpoints/latent_dreamer_jepa.pt not trained yet"
+    )
     def test_latent_dreamer_returns_candidates(self, client: TestClient) -> None:
         data = client.post(
             "/api/accelerator/latent-dream",
@@ -398,6 +404,10 @@ class TestSymbioticCoPilot:
         assert data["num_candidates"] == 16
         assert "best_candidate_idx" in data
 
+    @pytest.mark.skipif(
+        not Path("checkpoints/latent_dreamer_jepa.pt").exists(),
+        reason="Skipped: JEPA checkpoint checkpoints/latent_dreamer_jepa.pt not trained yet"
+    )
     def test_latent_dreamer_grpo_stats(self, client: TestClient) -> None:
         data = client.post(
             "/api/accelerator/latent-dream",
@@ -407,6 +417,10 @@ class TestSymbioticCoPilot:
         assert "group_std_energy" in data
         assert isinstance(data["group_mean_energy"], (int, float))
 
+    @pytest.mark.skipif(
+        not Path("checkpoints/latent_dreamer_jepa.pt").exists(),
+        reason="Skipped: JEPA checkpoint checkpoints/latent_dreamer_jepa.pt not trained yet"
+    )
     def test_latent_dreamer_best_thought_structure(self, client: TestClient) -> None:
         data = client.post(
             "/api/accelerator/latent-dream",
@@ -419,6 +433,10 @@ class TestSymbioticCoPilot:
         assert "relative_weight" in best
         assert "code_proposal" in best
 
+    @pytest.mark.skipif(
+        not Path("checkpoints/latent_dreamer_jepa.pt").exists(),
+        reason="Skipped: JEPA checkpoint checkpoints/latent_dreamer_jepa.pt not trained yet"
+    )
     def test_latent_dreamer_speedup_over_sandbox(self, client: TestClient) -> None:
         data = client.post(
             "/api/accelerator/latent-dream",

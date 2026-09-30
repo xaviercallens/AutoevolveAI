@@ -26,7 +26,11 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 # Set CPU threading
 torch.set_num_threads(8)
-torch.set_num_interop_threads(4)
+try:
+    torch.set_num_interop_threads(4)
+except RuntimeError:
+    pass  # already set or parallel work started (e.g. pytest collection)
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s")
 logger = logging.getLogger("ServerlessEndpoint")

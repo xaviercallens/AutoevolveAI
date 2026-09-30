@@ -27,7 +27,11 @@ sys.stderr.reconfigure(line_buffering=True)
 import torch  # noqa: E402
 
 torch.set_num_threads(8)
-torch.set_num_interop_threads(4)
+try:
+    torch.set_num_interop_threads(4)
+except RuntimeError:
+    pass  # already set or parallel work started
+
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:

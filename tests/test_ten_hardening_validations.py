@@ -120,12 +120,15 @@ def test_validation_02_vllm_hot_reload_and_watermark(tmp_path: Path) -> None:
     mock_ok_resp.status_code = 200
     mock_client.post.return_value = mock_ok_resp
 
-    success = run_cycle(
-        redis_client=mock_redis,
-        min_samples=1,
-        dry_run=True,
-        http_client=mock_client,
-    )
+    # Patch _verify_trained_adapter to allow dry-run adapters through:
+    # the test validates Redis pipeline mechanics, not adapter verification.
+    with patch("daily_trainer_daemon._verify_trained_adapter"):
+        success = run_cycle(
+            redis_client=mock_redis,
+            min_samples=1,
+            dry_run=True,
+            http_client=mock_client,
+        )
 
     assert success is True
     assert mock_pipe.set.call_count >= 3

@@ -182,7 +182,10 @@ class TestLean4Build:
             lines = content.splitlines()
             for i, line in enumerate(lines, 1):
                 stripped = line.strip()
-                if not stripped.startswith("--") and "sorry" in stripped:
+                # Skip comment lines (-- or /- docstrings) and list items explaining sorry usage
+                if stripped.startswith("--") or stripped.startswith("/-") or stripped.startswith("-"):
+                    continue
+                if "sorry" in stripped:
                     pytest.fail(f"{lean_file.name}:{i}: contains sorry: {line!r}")
 
 

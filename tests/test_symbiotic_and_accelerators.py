@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from anse.core.latent_dreamer import HippocampalReplayEngine, LatentDreamer
 from anse.frontier.domains import AutonomousMathematician, CyberImmuneSwarm, SiliconArchitect
 from harness_hook import (

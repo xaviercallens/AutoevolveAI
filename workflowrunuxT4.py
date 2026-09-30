@@ -145,6 +145,9 @@ class RunuxT4WorkflowRunner:
             "-p", "nf_conntrack_core",
             "-p", "nf_conntrack_ftp",
             "-p", "netfilter",
+            "-p", "syncookies",
+            "-p", "tcp_ipv6",
+            "-p", "tcpv6_offload",
             "--", "--test-threads=1"
         ]
         ret, stdout, stderr, dur_ms, ram_mb = self.run_command(cmd, timeout=120.0)
@@ -186,12 +189,12 @@ class RunuxT4WorkflowRunner:
             stats = rust_tools.analyze_workspace(crates_dir)
             count_const_stubs = sum(s.const_stub_fns for s in stats)
 
-            # Strict threshold: must be <= 180 (baseline was 259)
-            if count_const_stubs > 180:
+            # Strict threshold: must be <= 165 (baseline was 259)
+            if count_const_stubs > 165:
                 failed = True
-                err = f"Const stub regression or target missed: found {count_const_stubs} > 180"
+                err = f"Const stub regression or target missed: found {count_const_stubs} > 165"
             else:
-                logger.info(f"Const stub count audit passed: {count_const_stubs} <= 180 (baseline 259)")
+                logger.info(f"Const stub count audit passed: {count_const_stubs} <= 165 (baseline 259)")
         except Exception as e:
             failed = True
             err = f"Failed to execute const stub audit: {e}"
@@ -267,15 +270,15 @@ class RunuxT4WorkflowRunner:
             total_sorry = sum(f.sorry for f in tree_stats)
             total_axioms = sum(len(f.axioms) for f in tree_stats)
 
-            # Strict historic milestone: must break below 150 sorry (baseline 249)
-            if total_sorry >= 150:
+            # Strict historic milestone: must break into double digits (sorry < 100, baseline 249)
+            if total_sorry >= 100:
                 failed = True
-                err = f"Formal sorry threshold violation: found {total_sorry} >= 150 (must be < 150)"
+                err = f"Formal sorry threshold violation: found {total_sorry} >= 100 (must be < 100)"
             elif total_axioms > 136:
                 failed = True
                 err = f"Formal axiom threshold violation: found {total_axioms} > 136"
             else:
-                logger.info(f"Formal proof debt audit passed: sorry={total_sorry} < 150, axioms={total_axioms} <= 136")
+                logger.info(f"Formal proof debt audit passed: sorry={total_sorry} < 100, axioms={total_axioms} <= 136")
         except Exception as e:
             failed = True
             err = f"Failed to execute formal proof debt gate: {e}"

@@ -21,8 +21,10 @@ class RewardComponents:
     phase: int
     passed_iso_80: bool
     passed_iso_90: bool
-    passed_degradation_50: bool
-    passed_perf_gain_10: bool
+    passed_iso_100: bool = False
+    passed_degradation_50: bool = False
+    passed_perf_gain_10: bool = False
+    passed_perf_gain_20: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -34,8 +36,10 @@ class RewardComponents:
             "phase": self.phase,
             "passed_iso_80": self.passed_iso_80,
             "passed_iso_90": self.passed_iso_90,
+            "passed_iso_100": self.passed_iso_100,
             "passed_degradation_50": self.passed_degradation_50,
             "passed_perf_gain_10": self.passed_perf_gain_10,
+            "passed_perf_gain_20": self.passed_perf_gain_20,
         }
 
 
@@ -44,7 +48,7 @@ class DifferentialRewardCalculator:
     Computes multi-objective differential reward signals across curriculum phases:
     - Phase 1: 80% Iso-Functionality Bootstrap (alpha=100, beta=10)
     - Phase 2: 90% Iso-Functionality Convergence & +10% Perf Gain (alpha=500, beta=50)
-    - Phase 3: Transcendence (>100% Superhuman Supremacy, beta=200 uncapped)
+    - Phase 3: 100% Iso-Functionality & +20% Global Perf Gain (alpha=1000, beta=100, uncapped)
     """
 
     def __init__(self, phase: int = 2) -> None:
@@ -65,11 +69,11 @@ class DifferentialRewardCalculator:
             self.cap_ops_ratio = 3.0
             self.bonus_amount = 100.0
         else:  # Phase 3
-            self.alpha = 500.0
-            self.beta = 200.0
+            self.alpha = 1000.0
+            self.beta = 100.0
             self.gamma = 0.0005
             self.cap_ops_ratio = None  # Uncapped
-            self.bonus_amount = 250.0
+            self.bonus_amount = 500.0
 
     def compute_reward(
         self,
@@ -93,8 +97,10 @@ class DifferentialRewardCalculator:
                 phase=self.phase,
                 passed_iso_80=False,
                 passed_iso_90=False,
+                passed_iso_100=False,
                 passed_degradation_50=False,
                 passed_perf_gain_10=False,
+                passed_perf_gain_20=False,
             )
 
         # 1. Functional component
@@ -110,15 +116,20 @@ class DifferentialRewardCalculator:
         # 4. Milestone Gates
         passed_iso_80 = functional_parity >= 0.80
         passed_iso_90 = functional_parity >= 0.90
+        passed_iso_100 = functional_parity >= 0.9999
         passed_deg_50 = ops_ratio >= 0.67
         passed_perf_gain_10 = perf_gain_pct >= 10.0
+        passed_perf_gain_20 = perf_gain_pct >= 20.0
 
         milestone_bonus = 0.0
         if self.phase == 1:
             if passed_iso_80 and passed_deg_50:
                 milestone_bonus = self.bonus_amount
-        else:  # Phase 2 & 3
+        elif self.phase == 2:
             if passed_iso_90 and passed_deg_50 and passed_perf_gain_10:
+                milestone_bonus = self.bonus_amount
+        else:  # Phase 3
+            if passed_iso_100 and passed_deg_50 and passed_perf_gain_20:
                 milestone_bonus = self.bonus_amount
 
         total_r = func_reward + perf_reward - energy_pen + milestone_bonus
@@ -132,6 +143,8 @@ class DifferentialRewardCalculator:
             phase=self.phase,
             passed_iso_80=passed_iso_80,
             passed_iso_90=passed_iso_90,
+            passed_iso_100=passed_iso_100,
             passed_degradation_50=passed_deg_50,
             passed_perf_gain_10=passed_perf_gain_10,
+            passed_perf_gain_20=passed_perf_gain_20,
         )

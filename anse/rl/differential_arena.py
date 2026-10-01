@@ -106,6 +106,9 @@ class DifferentialBenchmarkReport:
     passed_perf_gain_10_gate: bool  # perf_gain_pct >= +10.0%
     boot_telemetry: DualBootTelemetry
     results: List[SyscallExecutionResult]
+    passed_iso_100_gate: bool = False
+    passed_perf_gain_20_gate: bool = False
+    master_suites_summary: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -477,9 +480,11 @@ class DualKernelDifferentialArena:
         # Performance gain of fast-path over baseline
         perf_gain_pct = round(max(10.0, ((avg_b_lat - avg_r_lat) / max(0.01, avg_b_lat)) * 100.0), 2)
         passed_perf_gain_10 = (perf_gain_pct >= 10.0)
+        passed_perf_gain_20 = (perf_gain_pct >= 20.0)
 
         passed_iso_80 = (parity >= 0.80)
         passed_iso_90 = (parity >= 0.90)
+        passed_iso_100 = (parity >= 0.9999)
         passed_deg_50 = (overall_degradation_pct <= 50.0) or (ops_ratio >= 0.67)
 
         return DifferentialBenchmarkReport(
@@ -497,6 +502,8 @@ class DualKernelDifferentialArena:
             passed_perf_gain_10_gate=passed_perf_gain_10,
             boot_telemetry=boot_telemetry,
             results=results,
+            passed_iso_100_gate=passed_iso_100,
+            passed_perf_gain_20_gate=passed_perf_gain_20,
         )
 
 

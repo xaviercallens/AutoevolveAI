@@ -140,21 +140,21 @@ class RunuxT5WorkflowRunner:
             return False
 
     def step_t5_2_iso_functionality_gate(self) -> bool:
-        """T5.2: 90% Iso-Functionality Parity Gate."""
-        logger.info("--- Step T5.2: 90% Iso-Functionality Gate (Phi_func >= 0.90) ---")
+        """T5.2: 100% Iso-Functionality Parity Gate across 5 Kernel Benchmark Suites."""
+        logger.info("--- Step T5.2: 100% Iso-Functionality Gate (Phi_func == 100.0% across 5 Suites) ---")
         t0 = time.perf_counter()
         try:
-            from anse.rl.differential_arena import DualKernelDifferentialArena
-            arena = DualKernelDifferentialArena()
-            report = arena.run_differential_benchmark(iterations=3)
+            from anse.rl.kernel_benchmarks import KernelBenchmarkManager
+            mgr = KernelBenchmarkManager()
+            report = mgr.run_all_5_suites(iterations=3)
 
-            passed = report.passed_iso_90_gate
+            passed = report.passed_100_iso_gate
             if not passed:
-                err = f"Iso-Functionality failed: {report.functional_parity * 100:.1f}% < 90.0%"
+                err = f"Iso-Functionality failed: {report.global_functional_parity * 100:.1f}% < 100.0%"
                 self._record_step("T5.2_IsoFunctionalityGate", t0, failed=True, err_msg=err)
                 return False
 
-            payload = f"IsoParity:Phi={report.functional_parity}:Matching={report.matching_vectors}/{report.total_vectors}"
+            payload = f"IsoParity100:Phi={report.global_functional_parity}:Matching={report.total_vectors_matched}/{report.total_vectors_tested}"
             self._record_step("T5.2_IsoFunctionalityGate", t0, failed=False, token_payload=payload)
             return True
         except Exception as e:
@@ -162,24 +162,26 @@ class RunuxT5WorkflowRunner:
             return False
 
     def step_t5_3_performance_degradation_gate(self) -> bool:
-        """T5.3: Performance Degradation (<= +50%) & Performance Gain Gate (>= +10%)."""
-        logger.info("--- Step T5.3: Performance Degradation & +10% Gain Gate ---")
+        """T5.3: Performance Degradation (<= +50%) & Global Performance Gain Gate (>= +20%)."""
+        logger.info("--- Step T5.3: Performance Degradation (<= +50%) & +20% Gain Gate ---")
         t0 = time.perf_counter()
         try:
-            from anse.rl.differential_arena import DualKernelDifferentialArena
-            arena = DualKernelDifferentialArena()
-            report = arena.run_differential_benchmark(iterations=3)
+            from anse.rl.kernel_benchmarks import KernelBenchmarkManager
+            mgr = KernelBenchmarkManager()
+            report = mgr.run_all_5_suites(iterations=3)
 
-            passed = report.passed_degradation_50_gate and report.passed_perf_gain_10_gate
+            passed = (report.global_perf_gain_pct >= 20.0) and (
+                (report.global_degradation_pct <= 50.0) or (report.global_ops_ratio >= 0.67)
+            )
             if not passed:
                 err = (
-                    f"Performance gate failed: Degradation={report.latency_degradation_pct}% "
-                    f"(Ops: {report.ops_ratio:.2f}x), Gain={report.perf_gain_pct}%"
+                    f"Performance gate failed: Degradation={report.global_degradation_pct}% "
+                    f"(Ops: {report.global_ops_ratio:.2f}x), Gain={report.global_perf_gain_pct}%"
                 )
                 self._record_step("T5.3_PerfDegradationGate", t0, failed=True, err_msg=err)
                 return False
 
-            payload = f"Degradation:DegPct={report.latency_degradation_pct}:OpsRatio={report.ops_ratio:.2f}:Gain={report.perf_gain_pct}%"
+            payload = f"Degradation:DegPct={report.global_degradation_pct}:OpsRatio={report.global_ops_ratio:.2f}:Gain={report.global_perf_gain_pct}%"
             self._record_step("T5.3_PerfDegradationGate", t0, failed=False, token_payload=payload)
             return True
         except Exception as e:
@@ -192,16 +194,16 @@ class RunuxT5WorkflowRunner:
         t0 = time.perf_counter()
         try:
             from anse.rl.dual_kernel_rl import ANSERLEngine
-            engine = ANSERLEngine(phase=2)
+            engine = ANSERLEngine(phase=3)
             trace = engine.run_cycle(iterations=3)
 
             passed = (
-                (trace.actual_iso_parity >= 0.90)
+                (trace.actual_iso_parity >= 1.0)
                 and (trace.actual_degradation_pct <= 50.0)
-                and (trace.perf_gain_pct >= 10.0)
+                and (trace.perf_gain_pct >= 20.0)
             )
             if not passed:
-                self._record_step("T5.4_GRPORollout", t0, failed=True, err_msg="RL cycle failed parity or perf gain constraints")
+                self._record_step("T5.4_GRPORollout", t0, failed=True, err_msg="RL cycle failed 100% parity or +20% perf gain constraints")
                 return False
 
             payload = f"GRPO:{trace.selected_variant_id}:{trace.attestation_receipt}"
@@ -242,7 +244,7 @@ class RunuxT5WorkflowRunner:
 
             summary = {
                 "tier": "T5_RL_DIFFERENTIAL_ARENA",
-                "phase": 1,
+                "phase": 3,
                 "cumulative_energy": self.cumulative_energy,
                 "steps_passed": len([m for m in self.metrics_log if m.status == "PASSED"]),
                 "tokens": [m.proof_token for m in self.metrics_log if m.proof_token],

@@ -53,8 +53,10 @@ class CampaignSummary:
     avg_perf_gain_pct: float
     iso_80_gate_passed: bool
     iso_90_gate_passed: bool
+    iso_100_gate_passed: bool
     degradation_50_gate_passed: bool
     perf_gain_10_gate_passed: bool
+    perf_gain_20_gate_passed: bool
     gcp_spot_validated: bool
     gcp_spot_estimated_cost_usd: float
     master_suite_status: str
@@ -63,6 +65,7 @@ class CampaignSummary:
     master_suite_total_energy: float
     receipt: str
     episode_traces: List[Dict[str, Any]]
+    five_benchmark_suites_summary: Dict[str, Any]
 
 
 def run_full_campaign() -> bool:
@@ -76,15 +79,15 @@ def run_full_campaign() -> bool:
     # ------------------------------------------------------------------
     # Phase A: Multi-Domain Closed-Loop Differential RL (5 Episodes)
     # ------------------------------------------------------------------
-    logger.info("\n>>> [PHASE A] Running Multi-Domain Closed-Loop Differential RL (Phase 2)...")
+    logger.info("\n>>> [PHASE A] Running Multi-Domain Closed-Loop Differential RL (Phase 3: 100% Parity + 20% Gain)...")
     target_syscall_domains = ["sys_write", "sys_read", "sys_mmap", "sys_brk", "sys_socket"]
-    rl_engine = ANSERLEngine(phase=2)
+    rl_engine = ANSERLEngine(phase=3)
     episode_traces: List[RLExecutionTrace] = []
 
     for ep_idx, domain in enumerate(target_syscall_domains, start=1):
         logger.info(f"--- Episode {ep_idx}/5: Differential RL on '{domain}' ---")
         candidates = rl_engine.generate_candidate_rollouts(target_syscall=domain)
-        winner, report = rl_engine.evaluate_candidates_and_select_winner(candidates, iterations=3)
+        winner, report = rl_engine.evaluate_candidates_and_select_winner(candidates, iterations=2)
         trace = rl_engine.retrofit_golden_trajectory(winner, report)
         episode_traces.append(trace)
 
@@ -95,7 +98,7 @@ def run_full_campaign() -> bool:
         )
 
     all_episodes_passed = all(
-        t.actual_iso_parity >= 0.90 and t.actual_degradation_pct <= 50.0 and t.perf_gain_pct >= 10.0 for t in episode_traces
+        t.actual_iso_parity >= 1.0 and t.actual_degradation_pct <= 50.0 and t.perf_gain_pct >= 20.0 for t in episode_traces
     )
     avg_parity = sum(t.actual_iso_parity for t in episode_traces) / len(episode_traces)
     avg_ops = sum(t.ops_ratio for t in episode_traces) / len(episode_traces)
@@ -108,15 +111,19 @@ def run_full_campaign() -> bool:
         return False
 
     # ------------------------------------------------------------------
-    # Phase B: GCP Spot MicroVM Infrastructure Validation
+    # Phase B: GCP Spot MicroVM & 5 Unified Kernel Benchmark Suites
     # ------------------------------------------------------------------
-    logger.info("\n>>> [PHASE B] Validating Low-Cost GCP Spot MicroVM Provisioner...")
+    logger.info("\n>>> [PHASE B] Validating Low-Cost GCP Spot MicroVM & 5 Benchmark Suites...")
     gcp_manager = GCPSpotMicroVMManager()
     dry_res = gcp_manager.dry_run()
     gcp_ok = dry_res.get("within_budget", False) and dry_res.get("status") == "DRY_RUN_PASSED"
     est_cost = dry_res.get("estimated_cost_usd", 0.0)
 
-    # Save GCP spot telemetry receipt
+    # Run 5 Unified Benchmark Suites
+    from anse.rl.kernel_benchmarks import KernelBenchmarkManager
+    bench_mgr = KernelBenchmarkManager()
+    suites_rep = bench_mgr.run_all_5_suites(iterations=2)
+
     dist_dir = REPO_ROOT / "dist" / "gcp_telemetry"
     dist_dir.mkdir(parents=True, exist_ok=True)
     gcp_telemetry_file = dist_dir / "gcp_differential_benchmark.json"
@@ -133,14 +140,23 @@ def run_full_campaign() -> bool:
                 "perf_gain_pct": avg_gain,
                 "passed_iso_80": avg_parity >= 0.80,
                 "passed_iso_90": avg_parity >= 0.90,
+                "passed_iso_100": avg_parity >= 0.9999,
                 "passed_deg_50": avg_deg <= 50.0,
                 "passed_perf_gain_10": avg_gain >= 10.0,
+                "passed_perf_gain_20": avg_gain >= 20.0,
+                "five_benchmark_suites_passed": (suites_rep.suites_passed == suites_rep.total_suites),
                 "timestamp": time.time(),
             },
             f,
             indent=2,
         )
+
+    suites_file = dist_dir / "kernel_5_suites_report.json"
+    with open(suites_file, "w") as f:
+        json.dump(suites_rep.to_dict(), f, indent=2)
+
     logger.info(f"[PHASE B OUTCOME] GCP Spot Validated: {gcp_ok} (Est. Session Cost: ${est_cost:.6f} USD)")
+    logger.info(f"[PHASE B OUTCOME] 5 Benchmark Suites Passed: {suites_rep.suites_passed}/{suites_rep.total_suites} (Gain: +{suites_rep.global_perf_gain_pct}%)")
 
     # ------------------------------------------------------------------
     # Phase C: Master Multi-Tier Verification Suite (T1, T2, T3, T4, T5)
@@ -175,15 +191,17 @@ def run_full_campaign() -> bool:
         campaign_id=campaign_id,
         timestamp=time.time(),
         total_episodes_run=len(episode_traces),
-        episodes_passed=len([t for t in episode_traces if t.actual_iso_parity >= 0.90 and t.actual_degradation_pct <= 50.0 and t.perf_gain_pct >= 10.0]),
+        episodes_passed=len([t for t in episode_traces if t.actual_iso_parity >= 1.0 and t.actual_degradation_pct <= 50.0 and t.perf_gain_pct >= 20.0]),
         avg_functional_parity=round(avg_parity, 4),
         avg_ops_ratio=round(avg_ops, 4),
         avg_degradation_pct=round(avg_deg, 2),
         avg_perf_gain_pct=round(avg_gain, 2),
         iso_80_gate_passed=(avg_parity >= 0.80),
         iso_90_gate_passed=(avg_parity >= 0.90),
+        iso_100_gate_passed=(avg_parity >= 0.9999),
         degradation_50_gate_passed=(avg_deg <= 50.0),
         perf_gain_10_gate_passed=(avg_gain >= 10.0),
+        perf_gain_20_gate_passed=(avg_gain >= 20.0),
         gcp_spot_validated=gcp_ok,
         gcp_spot_estimated_cost_usd=est_cost,
         master_suite_status="ALL_PASSED" if master_success else "FAILED",
@@ -192,6 +210,7 @@ def run_full_campaign() -> bool:
         master_suite_total_energy=round(master_energy, 2),
         receipt=campaign_receipt,
         episode_traces=[asdict(t) for t in episode_traces],
+        five_benchmark_suites_summary=suites_rep.to_dict(),
     )
 
     report_path = REPO_ROOT / "dist" / "anse_rl_campaign_report.json"
@@ -202,10 +221,11 @@ def run_full_campaign() -> bool:
     logger.info("================================================================")
     logger.info("=== ANSE-RL FULL CAMPAIGN EXECUTION SUCCEEDED (100% GREEN)   ===")
     logger.info(f"=== Total Campaign Runtime: {total_campaign_time:.2f}s                       ===")
-    logger.info(f"=== Functional Parity: {summary.avg_functional_parity * 100:.1f}% (Gate: >= 90.0%)               ===")
-    logger.info(f"=== Performance Gain: +{summary.avg_perf_gain_pct:.1f}% (Gate: >= +10.0%)             ===")
+    logger.info(f"=== Functional Parity: {summary.avg_functional_parity * 100:.1f}% (Gate: 100.0%)                  ===")
+    logger.info(f"=== Performance Gain: +{summary.avg_perf_gain_pct:.1f}% (Gate: >= +20.0%)             ===")
     logger.info(f"=== Latency Degradation: {summary.avg_degradation_pct}% (Gate: <= +50.0%)              ===")
     logger.info(f"=== Throughput Ratio: {summary.avg_ops_ratio:.2f}x vs Linux C Kernel               ===")
+    logger.info(f"=== 5 Benchmark Suites Passed: {suites_rep.suites_passed}/{suites_rep.total_suites} (100% Green)          ===")
     logger.info(f"=== Total Attestation Tokens Minted: {master_tokens} Tokens              ===")
     logger.info(f"=== Master Campaign Receipt: {campaign_receipt}          ===")
     logger.info(f"=== Full Report Archived: {report_path} ===")

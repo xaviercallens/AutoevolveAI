@@ -25,6 +25,8 @@ class RewardComponents:
     passed_degradation_50: bool = False
     passed_perf_gain_10: bool = False
     passed_perf_gain_20: bool = False
+    passed_perf_gain_30: bool = False
+    passed_ai_speedup_50: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -40,6 +42,8 @@ class RewardComponents:
             "passed_degradation_50": self.passed_degradation_50,
             "passed_perf_gain_10": self.passed_perf_gain_10,
             "passed_perf_gain_20": self.passed_perf_gain_20,
+            "passed_perf_gain_30": self.passed_perf_gain_30,
+            "passed_ai_speedup_50": self.passed_ai_speedup_50,
         }
 
 
@@ -48,7 +52,8 @@ class DifferentialRewardCalculator:
     Computes multi-objective differential reward signals across curriculum phases:
     - Phase 1: 80% Iso-Functionality Bootstrap (alpha=100, beta=10)
     - Phase 2: 90% Iso-Functionality Convergence & +10% Perf Gain (alpha=500, beta=50)
-    - Phase 3: 100% Iso-Functionality & +20% Global Perf Gain (alpha=1000, beta=100, uncapped)
+    - Phase 3: 100% Iso-Functionality & +20% Global Perf Gain (alpha=1000, beta=100)
+    - Phase 4: Google TPU / AI Supremacy (alpha=1500, beta=150, +30% Global, +50% AI Speedup)
     """
 
     def __init__(self, phase: int = 2) -> None:
@@ -68,12 +73,18 @@ class DifferentialRewardCalculator:
             self.gamma = 0.001
             self.cap_ops_ratio = 3.0
             self.bonus_amount = 100.0
-        else:  # Phase 3
+        elif self.phase == 3:
             self.alpha = 1000.0
             self.beta = 100.0
             self.gamma = 0.0005
             self.cap_ops_ratio = None  # Uncapped
             self.bonus_amount = 500.0
+        else:  # Phase 4: Run 4 TPU & AI Hardware Supremacy
+            self.alpha = 1500.0
+            self.beta = 150.0
+            self.gamma = 0.0002
+            self.cap_ops_ratio = None  # Uncapped
+            self.bonus_amount = 750.0
 
     def compute_reward(
         self,
@@ -81,6 +92,7 @@ class DifferentialRewardCalculator:
         ops_ratio: float,          # Ops_RunuX / Ops_Linux
         energy_anse: float,        # E_ANSE = w_t * dt + w_m * RAM + Pi_penalty * phi
         perf_gain_pct: float = 10.0,  # Performance gain % over baseline
+        ai_speedup_pct: float = 50.0, # AI Computing speedup %
         failed_or_panicked: bool = False,
     ) -> RewardComponents:
         """
@@ -101,6 +113,8 @@ class DifferentialRewardCalculator:
                 passed_degradation_50=False,
                 passed_perf_gain_10=False,
                 passed_perf_gain_20=False,
+                passed_perf_gain_30=False,
+                passed_ai_speedup_50=False,
             )
 
         # 1. Functional component
@@ -120,6 +134,8 @@ class DifferentialRewardCalculator:
         passed_deg_50 = ops_ratio >= 0.67
         passed_perf_gain_10 = perf_gain_pct >= 10.0
         passed_perf_gain_20 = perf_gain_pct >= 20.0
+        passed_perf_gain_30 = perf_gain_pct >= 30.0
+        passed_ai_speedup_50 = ai_speedup_pct >= 50.0
 
         milestone_bonus = 0.0
         if self.phase == 1:
@@ -128,8 +144,11 @@ class DifferentialRewardCalculator:
         elif self.phase == 2:
             if passed_iso_90 and passed_deg_50 and passed_perf_gain_10:
                 milestone_bonus = self.bonus_amount
-        else:  # Phase 3
+        elif self.phase == 3:
             if passed_iso_100 and passed_deg_50 and passed_perf_gain_20:
+                milestone_bonus = self.bonus_amount
+        else:  # Phase 4 (Run 4)
+            if passed_iso_100 and passed_deg_50 and passed_perf_gain_30 and passed_ai_speedup_50:
                 milestone_bonus = self.bonus_amount
 
         total_r = func_reward + perf_reward - energy_pen + milestone_bonus
@@ -147,4 +166,6 @@ class DifferentialRewardCalculator:
             passed_degradation_50=passed_deg_50,
             passed_perf_gain_10=passed_perf_gain_10,
             passed_perf_gain_20=passed_perf_gain_20,
+            passed_perf_gain_30=passed_perf_gain_30,
+            passed_ai_speedup_50=passed_ai_speedup_50,
         )

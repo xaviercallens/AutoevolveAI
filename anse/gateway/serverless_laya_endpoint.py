@@ -40,6 +40,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from anse.laya.integration import LayaANSEDispatcher, ANSERole
 from anse.laya.model import LayaCodingCompanion, LayaDecision
+from anse.laya.assistant import LayaDualProcessAssistant, CodeAuditReport
+
 
 # CPU Threading Optimization
 torch.set_num_threads(8)
@@ -67,6 +69,7 @@ class ServerlessLayaManager:
         self.idle_timeout = idle_timeout
         self.state: str = "DORMANT"  # "DORMANT" | "LOADING" | "ACTIVE"
         self.dispatcher: LayaANSEDispatcher | None = None
+        self.assistant: LayaDualProcessAssistant | None = None
         self.last_activity_time: float = 0.0
         self.total_requests: int = 0
         self.active_requests: int = 0
@@ -94,6 +97,11 @@ class ServerlessLayaManager:
             checkpoint_path=ckpt_path,
             noul_threshold=0.3,
         )
+        self.assistant = LayaDualProcessAssistant(
+            checkpoint_path=ckpt_path,
+            noul_threshold=0.3,
+            dispatcher=self.dispatcher,
+        )
 
         load_duration = time.perf_counter() - t0
         self.state = "ACTIVE"
@@ -113,8 +121,11 @@ class ServerlessLayaManager:
         t0 = time.perf_counter()
         logger.info("[Scale-to-Zero] Inactivity detected. Evicting Laya from memory (Cost -> $0.00)...")
 
+        del self.assistant
+        self.assistant = None
         del self.dispatcher
         self.dispatcher = None
+
 
         gc.collect()
         if torch.cuda.is_available():
@@ -322,7 +333,118 @@ async def laya_decision_endpoint(request: Request) -> Response:
         manager.active_requests = max(0, manager.active_requests - 1)
 
 
+@app.post("/v1/audit/anti-hallucination")
+async def anti_hallucination_endpoint(request: Request) -> Response:
+    """Lightweight microsecond parallel audit for code stubs, hallucinations, and security risks."""
+    body = await request.json()
+    code_text = body.get("code") or body.get("text") or ""
+    if not code_text:
+        raise HTTPException(status_code=400, detail="Missing required field 'code'")
+
+    manager.active_requests += 1
+    try:
+        was_cold, cold_start_dur = await manager.ensure_active()
+        manager.total_requests += 1
+        manager.last_activity_time = time.time()
+
+        loop = asyncio.get_running_loop()
+
+        def audit_fn():
+            assert manager.assistant is not None
+            return manager.assistant.audit_code_safety_and_stubs(code_text)
+
+        audit: CodeAuditReport = await loop.run_in_executor(None, audit_fn)
+
+        res = {
+            "passed": audit.passed,
+            "blocked": audit.blocked,
+            "noul_score": round(audit.noul_score, 4),
+            "gate_score": round(audit.gate_score, 4),
+            "energy": round(audit.energy, 4),
+            "detected_stubs": audit.detected_stubs,
+            "security_flags": audit.security_flags,
+            "recommended_role": audit.recommended_role,
+            "reasoning": audit.reasoning,
+            "audit_latency_ms": round(audit.latency_ms, 2),
+            "serverless_telemetry": {
+                "was_cold_start": was_cold,
+                "cold_start_duration_ms": round(cold_start_dur * 1000, 2),
+                "model_state": manager.state,
+            },
+        }
+        return JSONResponse(
+            content=res,
+            headers={
+                "X-Audit-Status": "PASSED" if audit.passed else "BLOCKED",
+                "X-Model-State": manager.state,
+            },
+        )
+    finally:
+        manager.active_requests = max(0, manager.active_requests - 1)
+
+
+@app.post("/v1/assist")
+async def dual_process_assist_endpoint(request: Request) -> Response:
+    """Dual-process assistant endpoint: System 1 reflex pre-filter + optional System 2 escalation."""
+    body = await request.json()
+    prompt = body.get("prompt") or ""
+    code_context = body.get("code") or body.get("context")
+    force_system2 = bool(body.get("force_system2", False))
+
+    if not prompt and not code_context:
+        raise HTTPException(status_code=400, detail="Missing required 'prompt' or 'code'")
+
+    manager.active_requests += 1
+    try:
+        was_cold, cold_start_dur = await manager.ensure_active()
+        manager.total_requests += 1
+        manager.last_activity_time = time.time()
+
+        loop = asyncio.get_running_loop()
+
+        def assist_fn():
+            assert manager.assistant is not None
+            return manager.assistant.assist(prompt, code_context, force_system2=force_system2)
+
+        dual_resp = await loop.run_in_executor(None, assist_fn)
+
+        res = {
+            "content": dual_resp.content,
+            "resolved_by": dual_resp.resolved_by,
+            "specialist_pillar": dual_resp.specialist_pillar.value,
+            "latency_ms": round(dual_resp.latency_ms, 2),
+            "energy_wh": round(dual_resp.energy_wh, 5),
+            "escalated_to_system2": dual_resp.escalated_to_system2,
+            "audit": {
+                "passed": dual_resp.audit.passed,
+                "blocked": dual_resp.audit.blocked,
+                "noul_score": round(dual_resp.audit.noul_score, 4),
+                "gate_score": round(dual_resp.audit.gate_score, 4),
+                "energy": round(dual_resp.audit.energy, 4),
+                "stubs": dual_resp.audit.detected_stubs,
+                "security": dual_resp.audit.security_flags,
+                "reasoning": dual_resp.audit.reasoning,
+            },
+            "serverless_telemetry": {
+                "was_cold_start": was_cold,
+                "cold_start_duration_ms": round(cold_start_dur * 1000, 2),
+                "model_state": manager.state,
+            },
+        }
+        return JSONResponse(
+            content=res,
+            headers={
+                "X-Resolved-By": dual_resp.resolved_by,
+                "X-Specialist": dual_resp.specialist_pillar.value,
+                "X-Model-State": manager.state,
+            },
+        )
+    finally:
+        manager.active_requests = max(0, manager.active_requests - 1)
+
+
 @app.post("/v1/chat/completions")
+
 async def chat_completions_endpoint(request: Request) -> Response:
     """OpenAI-compatible chat completions interface wrapping Laya triage."""
     body = await request.json()

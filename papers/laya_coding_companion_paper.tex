@@ -729,13 +729,19 @@ When coupled with Qwen3.8-27B (System~2) on GCP serverless infrastructure, the d
 % ====================================================================
 \section*{Data Availability}
 
-All datasets, training receipts (SHA-256 verified), and model checkpoints are stored in the
-Socrate~AI GCP data lake (\texttt{gs://socrate-ai-datalake/}, private; reviewer access
-available upon request at \texttt{xavkal@autoevolveai.dev}).
-The three provenance JSON receipts are additionally published as a GitHub release artifact
-at the AutoevolveAI repository (\texttt{github.com/xavkal/AutoevolveAI},
-tag \texttt{laya-coding-companion-v1.0}) to enable independent SHA-256 verification:
+To ensure complete, zero-trust scientific reproducibility and longitudinal permanence, all empirical artifacts, formal verification specifications, curriculum datasets, and trained model weights are openly accessible via permanent digital object identifiers and public repositories:
+
 \begin{itemize}
+  \item \textbf{Zenodo Archival Deposition:} The complete reproducibility package (including camera-ready manuscript, XeLaTeX source, cryptographic benchmark receipts, Lean~4 formal verification proofs, and adapter weights) is deposited on Zenodo under DOI: \href{https://doi.org/10.5281/zenodo.23076256}{\texttt{10.5281/zenodo.23076256}} (\url{https://zenodo.org/record/23076256}).
+  \item \textbf{Hugging Face Curriculum Dataset:} The unified 10-dataset curriculum comprising 78{,}503 structured records across three stages is available at: \url{https://huggingface.co/datasets/callensxavier/laya-coding-curriculum-78k}.
+  \item \textbf{Hugging Face Model \& Adapter:} The trained ModernBERT LoRA adapter ($r=8, \alpha=16$) and four multi-task task heads (578{,}353 parameters) are available at: \url{https://huggingface.co/callensxavier/laya-lora-modernbert-r8}.
+  \item \textbf{Source Code \& Formal Verification:} The open-source code, deterministic sandbox, and Lean~4 formal verification invariants are maintained at: \url{https://github.com/xaviercallens/AutoevolveAI}.
+  \item \textbf{GCP Cold Backup:} Raw checkpoints and telemetry are mirrored in the Socrate~AI GCP data lake (\texttt{gs://socrateai-datalake-gen-lang-client-0625573011/}).
+\end{itemize}
+
+The cryptographic SHA-256 provenance receipts enable independent mathematical verification:
+\begin{itemize}
+  \item \texttt{dual\_process\_results.json} SHA-256: \texttt{1c1af2dc6742a1efe4270eaf6be7a0695cc8e0db1e98a48d23213bcb1f7bcc41}
   \item \texttt{download\_receipt.json} SHA-256: \texttt{91662a050d4a501ce2ad82fd5bbdf047922d1463bb3e5a4f14b9796afb116faf}
   \item \texttt{training\_summary.json} SHA-256: \texttt{00333acc7ea5711c0040cd678dd5704aabc6596b7cb07756a7f07d72403e22bd}
   \item \texttt{coding\_benchmark\_and\_comparison.json} SHA-256: \texttt{ff546521cef3565203c08470d2aa765f3ac683fa326b0aacb069884b6fc717d4}

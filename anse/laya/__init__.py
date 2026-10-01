@@ -7,10 +7,21 @@ ModernBERT-base + LoRA rank-8, with noul/choice/score multi-task heads.
 from anse.laya.model import LayaCodingCompanion, LayaDecision
 from anse.laya.inference import LayaInference
 from anse.laya.integration import LayaANSEDispatcher
+from anse.laya.assistant import (
+    LayaDualProcessAssistant,
+    SpecialistPillar,
+    CodeAuditReport,
+    DualProcessResponse,
+)
 
 __all__ = [
     "LayaCodingCompanion",
     "LayaDecision",
     "LayaInference",
     "LayaANSEDispatcher",
+    "LayaDualProcessAssistant",
+    "SpecialistPillar",
+    "CodeAuditReport",
+    "DualProcessResponse",
 ]
+

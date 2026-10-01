@@ -99,3 +99,29 @@ def test_manual_unload_scale_to_zero():
     assert resp.status_code == 200
     assert resp.json()["status"] == "unloaded"
     assert manager.state == "DORMANT"
+
+
+def test_anti_hallucination_endpoint():
+    client = TestClient(app)
+    # Stub should be flagged and blocked
+    resp = client.post("/v1/audit/anti-hallucination", json={"code": "def process_data():\n    pass"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["blocked"] is True
+    assert data["passed"] is False
+    assert len(data["detected_stubs"]) > 0
+    assert data["energy"] == 1e6
+    assert resp.headers.get("X-Audit-Status") == "BLOCKED"
+
+
+def test_assist_endpoint_reflex():
+    client = TestClient(app)
+    resp = client.post("/v1/assist", json={"prompt": "audit code smell", "code": "x = 10"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "resolved_by" in data
+    assert data["resolved_by"] == "System 1 (Laya Reflex)"
+    assert "specialist_pillar" in data
+    assert "energy_wh" in data
+    assert resp.headers.get("X-Resolved-By") == "System 1 (Laya Reflex)"
+

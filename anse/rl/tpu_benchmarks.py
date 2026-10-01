@@ -41,6 +41,7 @@ class TPUMicrobenchmarkResult:
     speedup_gain_pct: float
     ops_ratio: float
     passed_50_ai_gate: bool
+    is_simulated: bool = True  # All benchmarks are Python simulations; no real TPU hardware attached
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -104,7 +105,7 @@ class GoogleTPUBenchmarkSuite:
         avg_l = sum(linux_lats) / len(linux_lats)
         avg_r = sum(runux_lats) / len(runux_lats)
 
-        gain = round(max(50.0, ((avg_l - avg_r) / max(0.01, avg_l)) * 100.0), 2)
+        gain = round(((avg_l - avg_r) / max(0.01, avg_l)) * 100.0, 2)
         ops = round(avg_l / max(0.05, avg_r), 4)
 
         l_gbps = round((data_bytes / (avg_l * 1e-6)) / 1e9, 2)
@@ -151,7 +152,7 @@ class GoogleTPUBenchmarkSuite:
         avg_l = sum(linux_lats) / len(linux_lats)
         avg_r = sum(runux_lats) / len(runux_lats)
 
-        gain = round(max(50.0, ((avg_l - avg_r) / max(0.01, avg_l)) * 100.0), 2)
+        gain = round(((avg_l - avg_r) / max(0.01, avg_l)) * 100.0, 2)
         ops = round(avg_l / max(0.05, avg_r), 4)
 
         l_gbps = round((tile_bytes / (avg_l * 1e-6)) / 1e9, 2)
@@ -197,7 +198,7 @@ class GoogleTPUBenchmarkSuite:
         avg_l = sum(linux_lats) / len(linux_lats)
         avg_r = sum(runux_lats) / len(runux_lats)
 
-        gain = round(max(50.0, ((avg_l - avg_r) / max(0.01, avg_l)) * 100.0), 2)
+        gain = round(((avg_l - avg_r) / max(0.01, avg_l)) * 100.0, 2)
         ops = round(avg_l / max(0.05, avg_r), 4)
 
         return TPUMicrobenchmarkResult(
@@ -240,7 +241,7 @@ class GoogleTPUBenchmarkSuite:
         avg_l = sum(linux_lats) / len(linux_lats)
         avg_r = sum(runux_lats) / len(runux_lats)
 
-        gain = round(max(50.0, ((avg_l - avg_r) / max(0.01, avg_l)) * 100.0), 2)
+        gain = round(((avg_l - avg_r) / max(0.01, avg_l)) * 100.0, 2)
         ops = round(avg_l / max(0.05, avg_r), 4)
 
         l_gbps = round((burst_bytes / (avg_l * 1e-6)) / 1e9, 2)

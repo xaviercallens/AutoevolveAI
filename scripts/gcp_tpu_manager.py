@@ -16,7 +16,6 @@ import argparse
 import json
 import logging
 import os
-import subprocess
 import sys
 import time
 from dataclasses import asdict, dataclass
@@ -37,9 +36,20 @@ logging.basicConfig(
 logger = logging.getLogger("gcp_tpu_manager")
 
 
+def _resolve_project_id() -> str:
+    """Read GCP project ID from environment — never hard-coded in source."""
+    pid = os.environ.get("GCP_PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT", "")
+    if not pid:
+        raise ValueError(
+            "GCP_PROJECT_ID environment variable is not set. "
+            "Export it before running: export GCP_PROJECT_ID=<your-project>"
+        )
+    return pid
+
+
 @dataclass
 class GCPSpotTPUConfig:
-    project_id: str = "gen-lang-client-0625573011"
+    project_id: str = ""  # Populated from GCP_PROJECT_ID env var at runtime
     zone: str = "us-central1-a"
     accelerator_type: str = "v5litepod-1"  # Cloud TPU v5e
     runtime_version: str = "v2-alpha-tpuv5-lite"
@@ -54,6 +64,8 @@ class GCPSpotTPUManager:
 
     def __init__(self, config: Optional[GCPSpotTPUConfig] = None) -> None:
         self.config = config or GCPSpotTPUConfig()
+        if not self.config.project_id:
+            self.config.project_id = _resolve_project_id()
         self.instance_name = f"{self.config.ephemeral_prefix}-{int(time.time())}"
 
     def estimate_session_cost(self, duration_seconds: Optional[int] = None) -> float:
@@ -114,10 +126,23 @@ class GCPSpotTPUManager:
     def execute_dual_tpu_benchmark(self, iterations: int = 5) -> Dict[str, Any]:
         """
         Executes the dual TPU benchmark suite and archives GCP Spot telemetry.
+        Raises ValueError if projected session cost exceeds the budget cap before execution.
         """
+        # Budget enforcement before execution (F-20)
+        projected_cost = self.estimate_session_cost()
+        if projected_cost > self.config.max_budget_usd:
+            raise ValueError(
+                f"Projected session cost ${projected_cost:.6f} exceeds budget cap "
+                f"${self.config.max_budget_usd:.2f}. Aborting to avoid overspend."
+            )
+
         logger.info("Executing Google TPU & TensorFlow Dual-Side Microbenchmark Suite...")
-        suite = GoogleTPUBenchmarkSuite()
-        tpu_report = suite.run_all_tpu_benchmarks(iterations=iterations)
+        try:
+            suite = GoogleTPUBenchmarkSuite()
+            tpu_report = suite.run_all_tpu_benchmarks(iterations=iterations)
+        except Exception as exc:
+            logger.error(f"TPU benchmark suite failed: {exc}")
+            raise RuntimeError(f"GoogleTPUBenchmarkSuite execution failed: {exc}") from exc
 
         cost = self.estimate_session_cost()
         dist_dir = REPO_ROOT / "dist" / "gcp_telemetry"

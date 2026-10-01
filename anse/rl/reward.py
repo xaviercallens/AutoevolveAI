@@ -94,6 +94,7 @@ class DifferentialRewardCalculator:
         perf_gain_pct: float = 10.0,  # Performance gain % over baseline
         ai_speedup_pct: float = 50.0, # AI Computing speedup %
         failed_or_panicked: bool = False,
+        **kwargs: float,           # Optional: degradation_pct= for direct deg-50 gate check
     ) -> RewardComponents:
         """
         Calculates the differential reward signal.
@@ -131,7 +132,11 @@ class DifferentialRewardCalculator:
         passed_iso_80 = functional_parity >= 0.80
         passed_iso_90 = functional_parity >= 0.90
         passed_iso_100 = functional_parity >= 0.9999
-        passed_deg_50 = ops_ratio >= 0.67
+        # F-10 fix: align with differential_arena.py — accept either criterion.
+        # ops_ratio >= 0.67 means RunuX is at most 1.49x slower (50% degradation proxy).
+        # degradation_pct (if provided as kwargs) allows the direct check.
+        _deg_pct = kwargs.get("degradation_pct", None) if kwargs else None
+        passed_deg_50 = (ops_ratio >= 0.67) or (_deg_pct is not None and _deg_pct <= 50.0)
         passed_perf_gain_10 = perf_gain_pct >= 10.0
         passed_perf_gain_20 = perf_gain_pct >= 20.0
         passed_perf_gain_30 = perf_gain_pct >= 30.0

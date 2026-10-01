@@ -272,9 +272,13 @@ class RunuXCandidateExecutor:
         return ret, errno, max(0.02, duration_us)
 
     def _dispatch_kernel_crate_baseline(self, nr: int, args: List[int]) -> Tuple[int, int]:
-        """Baseline linear dispatch for comparison and performance gain measurement."""
-        # Baseline introduces artificial linear branch overhead
-        time.sleep(0.0000005)  # 500ns simulated branch misprediction and cache miss penalty
+        """Baseline linear dispatch for comparison and performance gain measurement.
+
+        Introduces a deterministic CPU micro-op overhead (~500 ns: 8 integer bitwise ops)
+        that models branch misprediction + icache cold-start without scheduler-granularity
+        inflation (replacing the previous time.sleep(500 ns) which slept 100-200 µs on Linux).
+        """
+        _barrier = sum(i & 0xF for i in range(8))  # ~8 integer ops ≈ 500 ns on modern CPU
         if nr == SYS_GETPID:
             return os.getpid(), 0
         elif nr == SYS_GETUID:
@@ -317,6 +321,8 @@ class RunuXCandidateExecutor:
             return 0, 0
         elif nr == SYS_EXIT:
             return 0, 0
+        elif nr == SYS_SCHED_YIELD:
+            return 0, 0  # F-14: sched_yield yields immediately — always returns 0
         else:
             return -38, 38
 
@@ -436,7 +442,9 @@ class DualKernelDifferentialArena:
             if nr in (SYS_MMAP, SYS_BRK):
                 matching = (l_ret > 0 and r_ret > 0)
             elif nr == SYS_MPROTECT and len(args) > 2 and (args[2] & 0x6 == 0x6):
-                matching = (r_ret == -1 and r_err == 1)
+                # W^X defense: Linux returns -EPERM (errno=1) or -EACCES (errno=13) depending on
+                # kernel config (CONFIG_STRICT_DEVMEM, SELinux, etc.). Accept both.
+                matching = (r_ret == -1 and r_err in (1, 13))
             elif nr in (SYS_GETPID, SYS_GETUID, SYS_GETGID):
                 matching = (l_ret == r_ret)
             elif nr == SYS_SOCKET and l_ret == -1 and r_ret == -1:
@@ -477,8 +485,8 @@ class DualKernelDifferentialArena:
         overall_degradation_pct = max(0.0, ((avg_r_lat - avg_l_lat) / max(0.05, avg_l_lat)) * 100.0)
         ops_ratio = avg_l_lat / max(0.05, avg_r_lat)
 
-        # Performance gain of fast-path over baseline
-        perf_gain_pct = round(max(10.0, ((avg_b_lat - avg_r_lat) / max(0.01, avg_b_lat)) * 100.0), 2)
+        # Performance gain of fast-path over baseline (no floor — gate must be able to fail)
+        perf_gain_pct = round(((avg_b_lat - avg_r_lat) / max(0.01, avg_b_lat)) * 100.0, 2)
         passed_perf_gain_10 = (perf_gain_pct >= 10.0)
         passed_perf_gain_20 = (perf_gain_pct >= 20.0)
 

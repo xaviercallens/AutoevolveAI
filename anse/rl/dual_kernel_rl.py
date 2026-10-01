@@ -263,11 +263,12 @@ pub fn sys_xla_lockfree_barrier(token: u64) -> Result<u64, i32> {
             report.perf_gain_pct = master_rep.global_perf_gain_pct
             report.ops_ratio = master_rep.global_ops_ratio
             report.latency_degradation_pct = master_rep.global_degradation_pct
-            report.passed_iso_80_gate = True
-            report.passed_iso_90_gate = True
+            # Gates derived from measured master-suite values (no force-overrides)
+            report.passed_iso_80_gate = (master_rep.global_functional_parity >= 0.80)
+            report.passed_iso_90_gate = (master_rep.global_functional_parity >= 0.90)
             report.passed_iso_100_gate = master_rep.passed_100_iso_gate
             report.passed_degradation_50_gate = (master_rep.global_degradation_pct <= 50.0) or (master_rep.global_ops_ratio >= 0.67)
-            report.passed_perf_gain_10_gate = True
+            report.passed_perf_gain_10_gate = (master_rep.global_perf_gain_pct >= 10.0)
             report.passed_perf_gain_20_gate = master_rep.passed_20_gain_gate
             report.master_suites_summary = master_rep.to_dict()
 

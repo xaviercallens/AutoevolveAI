@@ -221,49 +221,62 @@ def run_full_campaign(phase: int = 4) -> bool:
         logger.error("Master multi-tier verification suite failed!")
         return False
 
-    # ------------------------------------------------------------------
     # Phase D: 5 Literature-Backed Auto-Research Hypotheses
+    # Gains are derived from actual benchmark outputs — not pre-baked literals.
     # ------------------------------------------------------------------
+    _hyp_gate = 50.0  # Hypothesis validated only if measured gain >= 50%
+
+    def _hyp_status(gain: float) -> str:
+        return "VALIDATED" if gain >= _hyp_gate else "BELOW_GATE"
+
+    # Map each hypothesis to the actual TPU sub-benchmark result for its domain
+    _tpu_results_by_workload = {r.workload_type: r for r in tpu_rep.results}
+    _ingest_gain = _tpu_results_by_workload.get("INGEST", tpu_rep.results[0]).speedup_gain_pct if tpu_rep.results else 0.0
+    _systolic_gain = _tpu_results_by_workload.get("SYSTOLIC_TILE", tpu_rep.results[1] if len(tpu_rep.results) > 1 else tpu_rep.results[0]).speedup_gain_pct if tpu_rep.results else 0.0
+    _barrier_gain = _tpu_results_by_workload.get("BARRIER", tpu_rep.results[2] if len(tpu_rep.results) > 2 else tpu_rep.results[0]).speedup_gain_pct if tpu_rep.results else 0.0
+    _burst_gain = _tpu_results_by_workload.get("BURST_STREAM", tpu_rep.results[3] if len(tpu_rep.results) > 3 else tpu_rep.results[0]).speedup_gain_pct if tpu_rep.results else 0.0
+    _fmer_gain = round(avg_gain, 2)  # HYP-05: FMER-AK uses the RL episode avg gain
+
     auto_hypotheses = [
         {
             "id": "HYP-01",
             "title": "Kernel-Bypassed Direct Systolic Staging (K-DSS)",
             "grounding": "Jouppi et al. (ISCA 2023), TPU v4 / TPU v5e Architecture",
             "hypothesis": "Pinning DMA memory directly into TPU XLA ring buffers eliminates page table traversal, yielding >= 40% reduction in first-token latency.",
-            "status": "VALIDATED_IN_RUN4",
-            "measured_gain_pct": 98.64,
+            "measured_gain_pct": round(_ingest_gain, 2),
+            "status": _hyp_status(_ingest_gain),
         },
         {
             "id": "HYP-02",
             "title": "Zero-Allocation Tensor Slab Partitioning (ZA-TSP)",
-            "grounding": "Dean et al., Large-Scale Machine Learning on TPU Systems (CACM 2020)",
+            "grounding": "Dean et al., Large-Scale Distributed Deep Networks (CACM 2012)",
             "hypothesis": "Pre-partitioning contiguous buddy pages aligned to 4KB boundaries prevents heap allocator lock contention during multi-host all-reduce.",
-            "status": "VALIDATED_IN_RUN4",
-            "measured_gain_pct": 99.07,
+            "measured_gain_pct": round(_systolic_gain, 2),
+            "status": _hyp_status(_systolic_gain),
         },
         {
             "id": "HYP-03",
             "title": "Lock-Free Asynchronous Cross-Core XLA Barrier (LF-XLA)",
-            "grounding": "Barham et al., Pathological Synchronizations in Accelerator Fabrics (OSDI 2022)",
+            "grounding": "Barham et al., Pathways: Asynchronous Distributed Machine Learning (OSDI 2022)",
             "hypothesis": "Replacing OS futex sleep synchronization with cacheline atomic ticket polling cuts multi-stream barrier jitter by > 80%.",
-            "status": "VALIDATED_IN_RUN4",
-            "measured_gain_pct": 99.10,
+            "measured_gain_pct": round(_barrier_gain, 2),
+            "status": _hyp_status(_barrier_gain),
         },
         {
             "id": "HYP-04",
             "title": "Predictive Zero-Copy Burst Deserialization (P-ZCBD)",
             "grounding": "Chen et al., TVM / Ansor: Tensor Program Optimization (OSDI 2020)",
             "hypothesis": "Co-locating tensor descriptors with memory page flags in L1 cache eliminates cacheline evictions during streaming tensor ingestion.",
-            "status": "VALIDATED_IN_RUN4",
-            "measured_gain_pct": 98.88,
+            "measured_gain_pct": round(_burst_gain, 2),
+            "status": _hyp_status(_burst_gain),
         },
         {
             "id": "HYP-05",
             "title": "Formal Monotonic Energy Relaxation in Autopoietic Kernels (FMER-AK)",
             "grounding": "Friston, The Free Energy Principle (Nature Neuroscience 2010); ANSE Lean 4 specs",
             "hypothesis": "Enforcing delta E = E_child - E_parent < 0 as a compile-time invariant guarantees zero kernel regression under continuous self-evolution.",
-            "status": "VALIDATED_IN_RUN4",
-            "measured_gain_pct": 36.40,
+            "measured_gain_pct": _fmer_gain,
+            "status": _hyp_status(_fmer_gain),
         },
     ]
 

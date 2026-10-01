@@ -64,7 +64,7 @@ class RunuxMasterTierOrchestrator:
     """Coordinates execution across all RunuX Tiers under ANSE thermodynamic laws."""
 
     def __init__(self, tiers: Optional[List[str]] = None):
-        self.tiers_to_run = tiers or ["T1", "T2", "T3", "T4"]
+        self.tiers_to_run = tiers or ["T1", "T2", "T3", "T4", "T5"]
         self.results: List[TierExecutionResult] = []
         SECONDARY_TARGET_DIR.mkdir(parents=True, exist_ok=True)
         os.environ["CARGO_TARGET_DIR"] = str(SECONDARY_TARGET_DIR)
@@ -151,7 +151,7 @@ class RunuxMasterTierOrchestrator:
 
             summary = {
                 "doc_id": f"master_multi_tier_runux_report_{int(time.time())}",
-                "task_prompt": "RunuX Master Multi-Tier (T1, T2, T3, T4) Full Execution & Hardening Suite.",
+                "task_prompt": "RunuX Master Multi-Tier (T1, T2, T3, T4, T5) Full Execution & Hardening Suite.",
                 "language": "python",
                 "energy": total_system_energy,
                 "metadata": {

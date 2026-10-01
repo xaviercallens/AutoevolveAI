@@ -50,8 +50,11 @@ class CampaignSummary:
     avg_functional_parity: float
     avg_ops_ratio: float
     avg_degradation_pct: float
+    avg_perf_gain_pct: float
     iso_80_gate_passed: bool
+    iso_90_gate_passed: bool
     degradation_50_gate_passed: bool
+    perf_gain_10_gate_passed: bool
     gcp_spot_validated: bool
     gcp_spot_estimated_cost_usd: float
     master_suite_status: str
@@ -73,9 +76,9 @@ def run_full_campaign() -> bool:
     # ------------------------------------------------------------------
     # Phase A: Multi-Domain Closed-Loop Differential RL (5 Episodes)
     # ------------------------------------------------------------------
-    logger.info("\n>>> [PHASE A] Running Multi-Domain Closed-Loop Differential RL...")
+    logger.info("\n>>> [PHASE A] Running Multi-Domain Closed-Loop Differential RL (Phase 2)...")
     target_syscall_domains = ["sys_write", "sys_read", "sys_mmap", "sys_brk", "sys_socket"]
-    rl_engine = ANSERLEngine(phase=1)
+    rl_engine = ANSERLEngine(phase=2)
     episode_traces: List[RLExecutionTrace] = []
 
     for ep_idx, domain in enumerate(target_syscall_domains, start=1):
@@ -87,18 +90,19 @@ def run_full_campaign() -> bool:
 
         logger.info(
             f"  * Episode {ep_idx} Completed -> Parity: {trace.actual_iso_parity * 100:.1f}%, "
-            f"Degradation: {trace.actual_degradation_pct}%, Ops: {trace.ops_ratio:.2f}x, "
+            f"Perf Gain: +{trace.perf_gain_pct:.1f}%, Ops: {trace.ops_ratio:.2f}x, "
             f"Winner: {trace.selected_variant_id}, Receipt: {trace.attestation_receipt}"
         )
 
     all_episodes_passed = all(
-        t.actual_iso_parity >= 0.80 and t.actual_degradation_pct <= 50.0 for t in episode_traces
+        t.actual_iso_parity >= 0.90 and t.actual_degradation_pct <= 50.0 and t.perf_gain_pct >= 10.0 for t in episode_traces
     )
     avg_parity = sum(t.actual_iso_parity for t in episode_traces) / len(episode_traces)
     avg_ops = sum(t.ops_ratio for t in episode_traces) / len(episode_traces)
     avg_deg = sum(t.actual_degradation_pct for t in episode_traces) / len(episode_traces)
+    avg_gain = sum(t.perf_gain_pct for t in episode_traces) / len(episode_traces)
 
-    logger.info(f"\n[PHASE A OUTCOME] 5/5 Episodes Completed -> Avg Parity: {avg_parity * 100:.1f}%, Avg Ops: {avg_ops:.2f}x")
+    logger.info(f"\n[PHASE A OUTCOME] 5/5 Episodes Completed -> Avg Parity: {avg_parity * 100:.1f}%, Avg Gain: +{avg_gain:.1f}%, Avg Ops: {avg_ops:.2f}x")
     if not all_episodes_passed:
         logger.error("Phase A RL episodes failed the target gates!")
         return False
@@ -126,8 +130,11 @@ def run_full_campaign() -> bool:
                 "functional_parity": avg_parity,
                 "ops_ratio": avg_ops,
                 "degradation_pct": avg_deg,
+                "perf_gain_pct": avg_gain,
                 "passed_iso_80": avg_parity >= 0.80,
+                "passed_iso_90": avg_parity >= 0.90,
                 "passed_deg_50": avg_deg <= 50.0,
+                "passed_perf_gain_10": avg_gain >= 10.0,
                 "timestamp": time.time(),
             },
             f,
@@ -160,7 +167,7 @@ def run_full_campaign() -> bool:
     # Phase D: Final Campaign Summary & Receipt Minting
     # ------------------------------------------------------------------
     total_campaign_time = time.perf_counter() - campaign_start
-    sig_raw = f"{campaign_id}:{avg_parity}:{avg_ops}:{master_energy}:{master_tokens}"
+    sig_raw = f"{campaign_id}:{avg_parity}:{avg_ops}:{avg_gain}:{master_energy}:{master_tokens}"
     campaign_hash = hashlib.sha256(sig_raw.encode("utf-8")).hexdigest()[:16]
     campaign_receipt = f"PROOF_RECEIPT:CAMPAIGN_{campaign_hash}"
 
@@ -168,12 +175,15 @@ def run_full_campaign() -> bool:
         campaign_id=campaign_id,
         timestamp=time.time(),
         total_episodes_run=len(episode_traces),
-        episodes_passed=len([t for t in episode_traces if t.actual_iso_parity >= 0.80 and t.actual_degradation_pct <= 50.0]),
+        episodes_passed=len([t for t in episode_traces if t.actual_iso_parity >= 0.90 and t.actual_degradation_pct <= 50.0 and t.perf_gain_pct >= 10.0]),
         avg_functional_parity=round(avg_parity, 4),
         avg_ops_ratio=round(avg_ops, 4),
         avg_degradation_pct=round(avg_deg, 2),
+        avg_perf_gain_pct=round(avg_gain, 2),
         iso_80_gate_passed=(avg_parity >= 0.80),
+        iso_90_gate_passed=(avg_parity >= 0.90),
         degradation_50_gate_passed=(avg_deg <= 50.0),
+        perf_gain_10_gate_passed=(avg_gain >= 10.0),
         gcp_spot_validated=gcp_ok,
         gcp_spot_estimated_cost_usd=est_cost,
         master_suite_status="ALL_PASSED" if master_success else "FAILED",
@@ -192,7 +202,8 @@ def run_full_campaign() -> bool:
     logger.info("================================================================")
     logger.info("=== ANSE-RL FULL CAMPAIGN EXECUTION SUCCEEDED (100% GREEN)   ===")
     logger.info(f"=== Total Campaign Runtime: {total_campaign_time:.2f}s                       ===")
-    logger.info(f"=== Functional Parity: {summary.avg_functional_parity * 100:.1f}% (Gate: >= 80.0%)               ===")
+    logger.info(f"=== Functional Parity: {summary.avg_functional_parity * 100:.1f}% (Gate: >= 90.0%)               ===")
+    logger.info(f"=== Performance Gain: +{summary.avg_perf_gain_pct:.1f}% (Gate: >= +10.0%)             ===")
     logger.info(f"=== Latency Degradation: {summary.avg_degradation_pct}% (Gate: <= +50.0%)              ===")
     logger.info(f"=== Throughput Ratio: {summary.avg_ops_ratio:.2f}x vs Linux C Kernel               ===")
     logger.info(f"=== Total Attestation Tokens Minted: {master_tokens} Tokens              ===")

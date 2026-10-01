@@ -6,7 +6,7 @@ echo "Laya Coding Companion - Full Retrain Pipeline"
 echo "================================================="
 
 CHECKPOINT_DIR="/mnt/data/home/xavkal/laya_coding_checkpoints/v2/"
-GCS_BACKUP_PATH="gs://autoevolve-backups/laya_v2_checkpoints/"
+GCS_BACKUP_PATH="gs://socrateai-datalake-gen-lang-client-0625573011/checkpoints/v2/"
 
 echo ">>> Phase 1: Training Stage 1"
 uv run python scripts/train_laya_coding.py --stage 1 --full_scale --checkpoint_dir "$CHECKPOINT_DIR"

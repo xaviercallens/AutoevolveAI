@@ -33,12 +33,24 @@ if callable(reconf_out):
 class ImplementationAuditor(ast.NodeVisitor):
     def __init__(self, filename: str):
         self.filename = filename.replace("\\", "/")
+        p = Path(self.filename)
         self.is_test_file = (
-            "/tests/" in self.filename
-            or self.filename.startswith("tests/")
-            or Path(self.filename).name.startswith("test_")
+            self.filename.startswith("tests/")
+            or "/tests/" in self.filename
+            or p.name.startswith("test_")
+            or p.name.endswith("_test.py")
         )
         self.violations: list[str] = []
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        if not self.is_test_file:
+            name_lower = node.name.lower()
+            if any(name_lower.startswith(pfx) for pfx in ("dummy", "mock", "fake", "stub")):
+                self.violations.append(
+                    f"{self.filename}:{node.lineno} Class '{node.name}': "
+                    f"Synthetic/dummy class definition detected in production code."
+                )
+        self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self._audit_callable(node)
@@ -92,7 +104,11 @@ class ImplementationAuditor(ast.NodeVisitor):
             if not self.is_test_file:
                 for subnode in ast.walk(stmt):
                     if isinstance(subnode, ast.Name):
-                        if subnode.id.startswith("mock_") or subnode.id.startswith("fake_") or subnode.id in ("Mock", "MagicMock"):
+                        name_lower = subnode.id.lower()
+                        if (
+                            any(name_lower.startswith(pfx) for pfx in ("mock_", "fake_", "dummy_", "sample_", "test_data_"))
+                            or subnode.id in ("Mock", "MagicMock", "PropertyMock")
+                        ):
                             self.violations.append(
                                 f"{self.filename}:{getattr(subnode, 'lineno', node.lineno)} '{name}': "
                                 f"Mock/synthetic token '{subnode.id}' detected in production body."
@@ -102,6 +118,11 @@ class ImplementationAuditor(ast.NodeVisitor):
                             self.violations.append(
                                 f"{self.filename}:{getattr(subnode, 'lineno', node.lineno)} '{name}': "
                                 f"Mock call '{subnode.attr}' detected."
+                            )
+                        elif subnode.attr == "sleep" and isinstance(subnode.value, ast.Name) and subnode.value.id == "time":
+                            self.violations.append(
+                                f"{self.filename}:{getattr(subnode, 'lineno', node.lineno)} '{name}': "
+                                f"Detected 'time.sleep' simulation in production code."
                             )
 
 
@@ -211,7 +232,7 @@ def _get_git_diff_files() -> list[str]:
 def _get_untracked_files() -> list[str]:
     """Retrieve untracked or newly staged Python files from git status."""
     try:
-        status_output = subprocess.check_output(["git", "status", "--porcelain"], text=True)
+        status_output = subprocess.check_output(["git", "status", "--porcelain", "-uall"], text=True)
     except (subprocess.CalledProcessError, FileNotFoundError):
         return []
 

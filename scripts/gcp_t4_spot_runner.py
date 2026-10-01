@@ -34,12 +34,12 @@ class GCPExperimentResult:
     sha256_train_py: str        # SHA-256 of train.py submitted
 
 class GCPSpotRunner:
-    PROJECT = "socrate-ai"
+    PROJECT = "gen-lang-client-0625573011"
     ZONES = ["us-central1-a", "us-central1-b", "us-east1-b"]  # fallback zones
     MACHINE_TYPE = "n1-standard-4"
     ACCELERATOR = "nvidia-tesla-t4"
     COST_PER_HOUR = 0.11  # T4 preemptible USD/hr
-    GCS_BUCKET = "gs://socrate-ai-datalake/xautoresearch"
+    GCS_BUCKET = "gs://socrateai-datalake-gen-lang-client-0625573011/xautoresearch"
     
     def __init__(self, dry_run: bool = False, max_retries: int = 3):
         self.dry_run = dry_run

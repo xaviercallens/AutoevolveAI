@@ -4,8 +4,15 @@ import time
 import math
 import hashlib
 import urllib.request
-import urllib.error
+import sys
 from pathlib import Path
+
+# Ensure project root is in sys.path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from scripts.benchmark_laya_coding import CODING_BENCHMARK_CASES
 
 def wilson_ci(p, n, z=1.96):
     if n == 0: return 0.0, 0.0
@@ -15,12 +22,7 @@ def wilson_ci(p, n, z=1.96):
     return (center - spread) / denominator, (center + spread) / denominator
 
 def main():
-    cases_file = Path('/home/xavkal/.gemini/antigravity/worktrees/AutoevolveAI/sub_project_management/cases_50.json')
-    if not cases_file.exists():
-        print("Cases not found!")
-        return
-    with open(cases_file, 'r') as f:
-        cases = json.load(f)
+    cases = CODING_BENCHMARK_CASES
 
     results = []
     latencies = []

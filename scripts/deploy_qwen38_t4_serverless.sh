@@ -4,7 +4,7 @@
 
 set -e
 
-PROJECT_ID="${GCP_PROJECT_ID:-autoevolve-ai}"
+PROJECT_ID="${GCP_PROJECT_ID:-gen-lang-client-0625573011}"
 REGION="${GCP_REGION:-us-central1}"
 SERVICE_NAME="qwen38-27b-t4-serverless"
 IMAGE_TAG="us-central1-docker.pkg.dev/${PROJECT_ID}/llm-repo/qwen38-27b-t4:latest"

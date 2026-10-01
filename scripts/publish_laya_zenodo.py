@@ -2,11 +2,11 @@
 """
 scripts/publish_laya_zenodo.py
 ==============================
-Automated Zenodo archival deposition publisher for Laya-LoRA Coding Companion.
+Automated Zenodo archival deposition publisher for Laya-LoRA Coding Companion & GWAYA AI.
 Uploads:
   1. Camera-ready academic manuscript: papers/laya_coding_companion_paper.pdf
   2. Full Reproducibility Archive: laya_coding_companion_reproducibility_bundle.zip
-     - LaTeX source, benchmarks, Lean 4 formal invariants, model weights, SHA-256 manifest.
+     - LaTeX source, benchmarks, Lean 4 formal invariants, model weights, GWAYA verifier/advisor code, SHA-256 manifest.
   3. Registers open-access metadata, links Hugging Face assets, and publishes deposition.
 """
 from __future__ import annotations
@@ -21,15 +21,15 @@ import urllib.error
 import urllib.request
 import zipfile
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 ZENODO_API_URL = "https://zenodo.org/api/deposit/depositions"
 
-ABSTRACT_HTML = """<p>We present the <strong>Laya-LoRA Coding Companion</strong>, an open-weight, parameter-efficient System 1/System 2 dual-process architecture for autonomous code intelligence and quality assurance. Operating over a 149M-parameter <em>ModernBERT-base</em> encoder adapted via Low-Rank Adaptation (LoRA, rank <em>r</em>=8, &alpha;=16) on fused query-key-value projections and four multi-task task heads (578,353 trainable parameters, 0.388% of backbone), Laya achieves microsecond non-autoregressive decision inference (&sim;45 ms CPU latency).</p>
+ABSTRACT_HTML = """<p>We present the <strong>Laya-LoRA Coding Companion</strong> and <strong>GWAYA</strong> dual-process architecture, an open-weight, parameter-efficient System 1/System 2 compound AI system for autonomous code intelligence, quality assurance, and zero-trust anti-hallucination verification. Operating over a 149M-parameter <em>ModernBERT-base</em> encoder adapted via Low-Rank Adaptation (LoRA, rank <em>r</em>=8, &alpha;=16) on fused query-key-value projections and four multi-task task heads (578,353 trainable parameters, 0.388% of backbone), Laya achieves microsecond non-autoregressive decision inference (&sim;45 ms CPU latency).</p>
 <p>Formally verified under Lean 4 (<code>lake build ANSE</code>) ensuring parameter budget compliance (|&Theta;| &le; 600,000, Invariant I2), the model was trained across an exhaustive 10-dataset curriculum comprising 78,503 structured records spanning security vulnerabilities (PyCode-Vul), code smells (SmellBench), unit testing (CodeRM-UnitTest), execution efficiency (EffiBench-X, SWE-Perf, RAPL Joules), formal theorem proving (Lean-Workbook, miniF2F), and execution trace alignment (CRUXEval, Magpie).</p>
-<p>Coupled with <em>Qwen3.8-27B</em> in an asymmetric dual-process configuration, the system achieves <strong>96.0% overall gate accuracy</strong> (Wilson 95% CI: [86.5%, 98.9%]), <strong>100.0% threat recall</strong> (25/25 malicious patterns blocked, zero false negatives), and resolves 54.0% of incoming queries on the fast reflex path, yielding an aggregate energy consumption of 11.48 Wh per 1,000 queries (&mdash;53.2% energy reduction compared to standalone 27B autoregressive generation at 24.50 Wh).</p>
-<p>This reproducibility package includes the camera-ready 12-page camera-ready manuscript, full XeLaTeX source code, verified benchmark receipts, formal Lean 4 verification proofs, model weights, and complete SHA-256 cryptographic manifests.</p>
+<p>Coupled with <em>Qwen3.8-27B</em> and serving as a parallel verifier for frontier agent outputs (Gemini 3.1 Pro & 3.8 Flash), the system achieves <strong>96.0% overall gate accuracy</strong> (Wilson 95% CI: [86.5%, 98.9%]), <strong>100.0% threat recall</strong> (25/25 malicious patterns blocked, zero false negatives), and resolves 54.0% of incoming queries on the fast reflex path, yielding an aggregate energy consumption of 11.48 Wh per 1,000 queries (&mdash;53.2% energy reduction compared to standalone 27B autoregressive generation at 24.50 Wh).</p>
+<p>This reproducibility package includes the camera-ready 12-page manuscript (incorporating Reviewer 4 Meta-Assessment resolutions), full XeLaTeX source code, verified benchmark receipts, formal Lean 4 verification proofs, GWAYA verifier & advisor integration code, model weights, and complete SHA-256 cryptographic manifests.</p>
 """
 
 
@@ -116,34 +116,77 @@ def prepare_bundle(project_root: Path, output_dir: Path) -> tuple[Path, Path]:
     if (stage3_dir / "encoder_lora" / "adapter_model.safetensors").exists():
         shutil.copy2(stage3_dir / "encoder_lora" / "adapter_model.safetensors", model_dir / "adapter_model.safetensors")
 
-    # Staged heads safetensors
     staged_heads = Path("/mnt/data/home/xavkal/laya_packaging/model/laya_heads.safetensors")
     if staged_heads.exists():
         shutil.copy2(staged_heads, model_dir / "laya_heads.safetensors")
     elif Path("/mnt/data/home/xavkal/test_laya_heads.safetensors").exists():
         shutil.copy2(Path("/mnt/data/home/xavkal/test_laya_heads.safetensors"), model_dir / "laya_heads.safetensors")
 
-    # 5. README & Instructions
-    readme_text = f"""# Laya-LoRA Coding Companion Reproducibility Archive
+    # Add standalone modeling_laya.py
+    modeling_script = project_root / "anse" / "laya" / "modeling_laya.py"
+    if modeling_script.exists():
+        shutil.copy2(modeling_script, model_dir / "modeling_laya.py")
 
-This archive contains the complete empirical evaluation artifacts, formal Lean 4 verification proofs, benchmark receipts, and model weights for:
+    # 5. GWAYA Integration Code
+    gwaya_dir = zip_staging / "anse" / "gwaya"
+    gwaya_dir.mkdir(parents=True)
+    for py_file in (project_root / "anse" / "gwaya").glob("*.py"):
+        shutil.copy2(py_file, gwaya_dir / py_file.name)
+
+    # 6. Laya Assistant & Distiller Code
+    laya_dir = zip_staging / "anse" / "laya"
+    laya_dir.mkdir(parents=True)
+    for py_file in (project_root / "anse" / "laya").glob("*.py"):
+        shutil.copy2(py_file, laya_dir / py_file.name)
+
+    # 7. Gateway & Serverless Endpoint
+    gw_dir = zip_staging / "anse" / "gateway"
+    gw_dir.mkdir(parents=True)
+    endpoint_file = project_root / "anse" / "gateway" / "serverless_laya_endpoint.py"
+    if endpoint_file.exists():
+        shutil.copy2(endpoint_file, gw_dir / endpoint_file.name)
+
+    # 8. Scripts (Benchmarks, GCP deployers, Nightly retrain)
+    scripts_dir = zip_staging / "scripts"
+    scripts_dir.mkdir(parents=True)
+    for s_name in [
+        "benchmark_laya_coding.py",
+        "benchmark_qwen38_coding.py",
+        "deploy_serverless_laya.sh",
+        "deploy_laya_qwen_dual.sh",
+        "gcp_nightly_retrain.sh",
+        "nightly_retrain_runner.py",
+    ]:
+        p = project_root / "scripts" / s_name
+        if p.exists():
+            shutil.copy2(p, scripts_dir / s_name)
+
+    # 9. README & Instructions
+    readme_text = f"""# Laya-LoRA Coding Companion & GWAYA AI Reproducibility Archive
+
+This archive contains the complete empirical evaluation artifacts, formal Lean 4 verification proofs, benchmark receipts, model weights, and integration code for:
 "Laya-LoRA Coding Companion: Asymmetric Dual-Process Test-Time Compute, Full-Scale Curriculum on 10 Structured Coding Datasets, and Serverless Multi-Tier Inference Infrastructure on GCP"
 
 ## Contents:
-- `paper/`: Camera-ready 12-page manuscript PDF and LaTeX source.
+- `paper/`: Camera-ready 12-page manuscript PDF and LaTeX source (incorporating Reviewer 4 Meta-Assessment resolution).
 - `results/`: Cryptographic benchmark receipts (dual_process_results.json, Qwen3.8, CRUXEval MCTS ratchet).
 - `formal/`: Lean 4 proofs verifying parameter budget Invariant I2 (578,353 <= 600,000).
-- `model/`: LoRA adapter weights (540,672 params) and multi-task heads (37,681 params).
+- `model/`: LoRA adapter weights (540,672 params), multi-task heads (37,681 params), configs, and modeling script.
+- `anse/gwaya/`: GWAYA parallel advisor & anti-hallucination verifier for frontier LLMs (Gemini 3.1 Pro & 3.8 Flash).
+- `anse/laya/`: Laya dual-process assistant, curriculum datasets, and LTM conversational distiller.
+- `anse/gateway/`: Serverless endpoint with scale-to-zero Cloud Run deployment.
+- `scripts/`: 50-case benchmark runners, GCP Spot nightly retraining launcher, and serverless deployers.
 - `CHECKSUMS.sha256`: Cryptographic provenance manifest.
 
 ## Online Repositories:
 - Hugging Face Model: https://huggingface.co/callensxavier/laya-lora-modernbert-r8
 - Hugging Face Dataset: https://huggingface.co/datasets/callensxavier/laya-coding-curriculum-78k
 - Source Code: https://github.com/xaviercallens/AutoevolveAI
+- Permanent DOI: https://doi.org/10.5281/zenodo.23076256
 """
     (zip_staging / "README.md").write_text(readme_text)
 
-    # 6. Generate CHECKSUMS.sha256 for all staging files
+    # 10. Generate CHECKSUMS.sha256 for all staging files
     checksums = []
     for item in sorted(zip_staging.rglob("*")):
         if item.is_file():
@@ -152,7 +195,7 @@ This archive contains the complete empirical evaluation artifacts, formal Lean 4
             checksums.append(f"{sha}  {rel}")
     (zip_staging / "CHECKSUMS.sha256").write_text("\n".join(checksums) + "\n")
 
-    # 7. Create ZIP bundle
+    # 11. Create ZIP bundle
     print(f"📦 Creating reproducibility ZIP archive: {bundle_zip_path}...")
     with zipfile.ZipFile(bundle_zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
         for item in sorted(zip_staging.rglob("*")):
@@ -205,20 +248,45 @@ def upload_zenodo_bucket_file(bucket_url: str, file_path: Path, token: str) -> N
         raise
 
 
-def create_and_publish_deposition(
+def create_or_update_and_publish_deposition(
     token: str,
     bundle_zip: Path,
     paper_pdf: Path,
+    deposition_id: Optional[int] = None,
     publish: bool = True,
 ) -> Dict[str, Any]:
-    print("\n🏛️  [Step 1/4] Creating new deposition draft on Zenodo...")
-    dep = zenodo_request(ZENODO_API_URL, token, method="POST", data=json.dumps({}).encode("utf-8"))
-    dep_id = dep["id"]
-    bucket_url = dep["links"]["bucket"]
-    reserved_doi = dep.get("metadata", {}).get("prereserve_doi", {}).get("doi", f"10.5281/zenodo.{dep_id}")
-    print(f"  ✓ Deposition ID: {dep_id}")
-    print(f"  ✓ Reserved DOI:  {reserved_doi}")
-    print(f"  ✓ Bucket URL:    {bucket_url}")
+    if deposition_id:
+        print(f"\n🏛️  [Step 1/4] Using existing deposition draft ID {deposition_id}...")
+        get_url = f"{ZENODO_API_URL}/{deposition_id}"
+        dep = zenodo_request(get_url, token, method="GET")
+        dep_id = dep["id"]
+        bucket_url = dep["links"]["bucket"]
+        reserved_doi = dep.get("metadata", {}).get("prereserve_doi", {}).get("doi", f"10.5281/zenodo.{dep_id}")
+        print(f"  ✓ Deposition ID: {dep_id}")
+        print(f"  ✓ Concept DOI:   {dep.get('conceptdoi')}")
+        print(f"  ✓ Reserved DOI:  {reserved_doi}")
+        print(f"  ✓ Bucket URL:    {bucket_url}")
+
+        # Delete old files if present to ensure clean upload
+        for f in dep.get("files", []):
+            fid = f["id"]
+            fname = f["filename"]
+            del_url = f"{ZENODO_API_URL}/{dep_id}/files/{fid}"
+            print(f"  Removing stale file {fname} ({fid})...")
+            try:
+                zenodo_request(del_url, token, method="DELETE")
+                print(f"  ✓ Removed {fname}")
+            except Exception as e:
+                print(f"  ⚠️ Could not remove {fname}: {e}")
+    else:
+        print("\n🏛️  [Step 1/4] Creating new deposition draft on Zenodo...")
+        dep = zenodo_request(ZENODO_API_URL, token, method="POST", data=json.dumps({}).encode("utf-8"))
+        dep_id = dep["id"]
+        bucket_url = dep["links"]["bucket"]
+        reserved_doi = dep.get("metadata", {}).get("prereserve_doi", {}).get("doi", f"10.5281/zenodo.{dep_id}")
+        print(f"  ✓ Deposition ID: {dep_id}")
+        print(f"  ✓ Reserved DOI:  {reserved_doi}")
+        print(f"  ✓ Bucket URL:    {bucket_url}")
 
     print("\n📤 [Step 2/4] Uploading files to Zenodo deposition bucket...")
     upload_zenodo_bucket_file(bucket_url, bundle_zip, token)
@@ -227,7 +295,7 @@ def create_and_publish_deposition(
     print("\n📝 [Step 3/4] Registering deposition metadata...")
     metadata = {
         "metadata": {
-            "title": "Laya-LoRA Coding Companion: Asymmetric Dual-Process Test-Time Compute, Full-Scale Curriculum on 10 Structured Coding Datasets, and Serverless Multi-Tier Inference Infrastructure on GCP",
+            "title": "Laya-LoRA Coding Companion: Asymmetric Dual-Process Test-Time Compute, Full-Scale Curriculum on 10 Structured Coding Datasets, and Serverless Multi-Tier Inference Infrastructure on GCP (Version 2)",
             "upload_type": "publication",
             "publication_type": "preprint",
             "description": ABSTRACT_HTML.strip(),
@@ -248,9 +316,12 @@ def create_and_publish_deposition(
                 "Lean 4",
                 "Green AI",
                 "Code Intelligence",
-                "Non-Autoregressive Models"
+                "Non-Autoregressive Models",
+                "GWAYA",
+                "Qwen",
+                "Serverless Inference"
             ],
-            "notes": "Full reproducibility package including Lean 4 machine-verified invariants, 50-case dual-process benchmark receipts, and LoRA adapter weights.",
+            "notes": "Version 2: Full reproducibility package incorporating Reviewer 4 Meta-Assessment resolution, GWAYA parallel advisor & anti-hallucination verifier, 5 Hugging Face verifier datasets, Lean 4 machine-verified invariants, 50-case dual-process benchmark receipts, and LoRA adapter weights.",
             "related_identifiers": [
                 {
                     "identifier": "https://huggingface.co/callensxavier/laya-lora-modernbert-r8",
@@ -288,6 +359,7 @@ def create_and_publish_deposition(
         print("=======================================================")
         return {
             "id": dep_id,
+            "concept_doi": pub_result.get("conceptdoi", dep.get("conceptdoi")),
             "doi": final_doi,
             "doi_url": f"https://doi.org/{final_doi}",
             "record_url": record_url,
@@ -301,6 +373,7 @@ def create_and_publish_deposition(
         print("=======================================================")
         return {
             "id": dep_id,
+            "concept_doi": dep.get("conceptdoi"),
             "doi": reserved_doi,
             "doi_url": f"https://doi.org/{reserved_doi}",
             "record_url": f"https://zenodo.org/deposit/{dep_id}",
@@ -312,6 +385,7 @@ def main():
     parser = argparse.ArgumentParser(description="Publish Laya-LoRA reproducibility bundle to Zenodo")
     parser.add_argument("--project_root", default=Path(__file__).resolve().parent.parent, type=Path)
     parser.add_argument("--output_dir", default=Path("/mnt/data/home/xavkal/laya_zenodo_bundle"), type=Path)
+    parser.add_argument("--deposition_id", type=int, default=None, help="Existing draft deposition ID to update and publish")
     parser.add_argument("--draft", action="store_true", help="Keep as draft without final publishing")
     args = parser.parse_args()
 
@@ -321,9 +395,15 @@ def main():
     # Step 1: Prepare bundle
     bundle_zip, paper_pdf = prepare_bundle(args.project_root, args.output_dir)
 
-    # Step 2: Create and publish deposition
+    # Step 2: Create/update and publish deposition
     publish = not args.draft
-    result = create_and_publish_deposition(token, bundle_zip, paper_pdf, publish=publish)
+    result = create_or_update_and_publish_deposition(
+        token=token,
+        bundle_zip=bundle_zip,
+        paper_pdf=paper_pdf,
+        deposition_id=args.deposition_id,
+        publish=publish
+    )
 
     # Save receipt to results/zenodo_publication_receipt.json
     receipt_path = args.project_root / "results" / "zenodo_publication_receipt.json"

@@ -17,19 +17,16 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import os
-import subprocess
 import sys
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from anse.rl.differential_arena import DualKernelDifferentialArena
 from anse.rl.dual_kernel_rl import ANSERLEngine, RLExecutionTrace
 from anse.rl.tpu_benchmarks import GoogleTPUBenchmarkSuite
 from scripts.gcp_spot_manager import GCPSpotMicroVMManager
@@ -72,10 +69,10 @@ class CampaignSummary:
     master_suite_wall_time_s: float
     master_suite_total_energy: float
     receipt: str
-    episode_traces: List[Dict[str, Any]]
-    five_benchmark_suites_summary: Dict[str, Any]
-    tpu_benchmark_summary: Dict[str, Any]
-    auto_research_hypotheses: List[Dict[str, Any]]
+    episode_traces: list[dict[str, Any]]
+    five_benchmark_suites_summary: dict[str, Any]
+    tpu_benchmark_summary: dict[str, Any]
+    auto_research_hypotheses: list[dict[str, Any]]
 
 
 def run_full_campaign(phase: int = 4) -> bool:
@@ -93,7 +90,7 @@ def run_full_campaign(phase: int = 4) -> bool:
     logger.info(f"\n>>> [PHASE A] Running Multi-Domain Closed-Loop Differential RL (Phase {phase}: 100% Parity + {target_gain_threshold:.0f}% Gain)...")
     target_syscall_domains = ["sys_write", "sys_read", "sys_mmap", "sys_brk", "sys_socket"]
     rl_engine = ANSERLEngine(phase=phase)
-    episode_traces: List[RLExecutionTrace] = []
+    episode_traces: list[RLExecutionTrace] = []
 
     for ep_idx, domain in enumerate(target_syscall_domains, start=1):
         logger.info(f"--- Episode {ep_idx}/5: Differential RL on '{domain}' ---")
@@ -284,7 +281,14 @@ def run_full_campaign(phase: int = 4) -> bool:
     # Phase E: Final Campaign Summary & Receipt Minting
     # ------------------------------------------------------------------
     total_campaign_time = time.perf_counter() - campaign_start
-    sig_raw = f"{campaign_id}:{avg_parity}:{avg_ops}:{avg_gain}:{tpu_rep.global_ai_speedup_pct}:{master_energy}:{master_tokens}"
+    # F-18 fix: sig_raw now includes phase, episode count, and timestamp so
+    # different campaigns cannot produce the same receipt hash.
+    campaign_ts = int(time.time())
+    sig_raw = (
+        f"{campaign_id}:phase={phase}:episodes={len(episode_traces)}"
+        f":ts={campaign_ts}:{avg_parity}:{avg_ops}:{avg_gain}"
+        f":{tpu_rep.global_ai_speedup_pct}:{master_energy}:{master_tokens}"
+    )
     campaign_hash = hashlib.sha256(sig_raw.encode("utf-8")).hexdigest()[:16]
     campaign_receipt = f"PROOF_RECEIPT:CAMPAIGN_RUN{phase}_{campaign_hash}"
 

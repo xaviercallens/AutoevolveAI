@@ -8,7 +8,7 @@ R_diff = (\u03b1 \u22c5 \u03a6_func) + (\u03b2 \u22c5 min(Ops_RunuX / Ops_Linux,
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 @dataclass
@@ -28,7 +28,7 @@ class RewardComponents:
     passed_perf_gain_30: bool = False
     passed_ai_speedup_50: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "functional_reward": round(self.functional_reward, 3),
             "performance_reward": round(self.performance_reward, 3),
@@ -79,12 +79,21 @@ class DifferentialRewardCalculator:
             self.gamma = 0.0005
             self.cap_ops_ratio = None  # Uncapped
             self.bonus_amount = 500.0
-        else:  # Phase 4: Run 4 TPU & AI Hardware Supremacy
+        elif self.phase == 4:
             self.alpha = 1500.0
             self.beta = 150.0
             self.gamma = 0.0002
             self.cap_ops_ratio = None  # Uncapped
             self.bonus_amount = 750.0
+        else:  # Phase 5+: Audit-hardened full campaign
+            # F-22 fix: Phase 5 was silently using Phase 4 weights.
+            # cap_ops_ratio=50.0 prevents 37–104x ops ratios from producing
+            # meaningless reward magnitudes (beta * 104 = 15,600 >> any gate bonus).
+            self.alpha = 2000.0
+            self.beta = 200.0
+            self.gamma = 0.0001
+            self.cap_ops_ratio = 50.0
+            self.bonus_amount = 1000.0
 
     def compute_reward(
         self,

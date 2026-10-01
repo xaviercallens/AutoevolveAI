@@ -18,9 +18,9 @@ import os
 import subprocess
 import sys
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -49,7 +49,7 @@ class GCPSpotConfig:
 class GCPSpotMicroVMManager:
     """Manages ephemeral low-cost spot microVM lifecycle on GCP."""
 
-    def __init__(self, config: Optional[GCPSpotConfig] = None) -> None:
+    def __init__(self, config: GCPSpotConfig | None = None) -> None:
         self.config = config or self._detect_default_config()
         self.vm_name = f"runux-spot-{int(time.time())}"
         self.telemetry_dir = REPO_ROOT / "dist" / "gcp_telemetry"
@@ -65,13 +65,19 @@ class GCPSpotMicroVMManager:
                     text=True,
                     check=False,
                 )
-                project_id = proc.stdout.strip()
+                project_id = proc.stdout.strip() or None
             except Exception:
-                project_id = "gen-lang-client-0625573011"
+                project_id = None
         if not project_id:
-            project_id = "gen-lang-client-0625573011"
+            # S-01b fix: Never fall back to a hardcoded project ID.
+            # Require explicit GCP_PROJECT_ID env var or gcloud active config.
+            raise ValueError(
+                "GCP project ID not found. Set GCP_PROJECT_ID env var or run "
+                "'gcloud config set project <PROJECT_ID>' before invoking GCPSpotMicroVMManager."
+            )
 
         return GCPSpotConfig(project_id=project_id)
+
 
     def calculate_estimated_cost(self, duration_seconds: int) -> float:
         hours = duration_seconds / 3600.0
@@ -105,10 +111,10 @@ class GCPSpotMicroVMManager:
             "--quiet",
         ]
 
-    def dry_run(self) -> Dict[str, Any]:
+    def dry_run(self) -> dict[str, Any]:
         """Validates configuration and outputs cost estimation without calling GCP APIs."""
         est_cost_10m = self.calculate_estimated_cost(600)
-        logger.info(f"--- GCP SPOT MICRO-VM DRY RUN ---")
+        logger.info("--- GCP SPOT MICRO-VM DRY RUN ---")
         logger.info(f"VM Name: {self.vm_name}")
         logger.info(f"Project: {self.config.project_id} | Zone: {self.config.zone}")
         logger.info(f"Machine Type: {self.config.machine_type} (SPOT)")

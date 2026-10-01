@@ -15,11 +15,9 @@ from __future__ import annotations
 
 import ctypes
 import os
-import resource
-import sys
 import time
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 # Load host Linux C library for Oracle Ground Truth with thread-safe errno support
 try:
@@ -87,7 +85,7 @@ class SyscallExecutionResult:
     runux_latency_us: float
     matching: bool
     degradation_pct: float
-    error_msg: Optional[str] = None
+    error_msg: str | None = None
 
 
 @dataclass
@@ -105,12 +103,12 @@ class DifferentialBenchmarkReport:
     perf_gain_pct: float  # Performance gain % of optimized fastpath vs baseline
     passed_perf_gain_10_gate: bool  # perf_gain_pct >= +10.0%
     boot_telemetry: DualBootTelemetry
-    results: List[SyscallExecutionResult]
+    results: list[SyscallExecutionResult]
     passed_iso_100_gate: bool = False
     passed_perf_gain_20_gate: bool = False
-    master_suites_summary: Optional[Dict[str, Any]] = None
+    master_suites_summary: dict[str, Any] | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -120,7 +118,7 @@ class LinuxOracleExecutor:
     def __init__(self) -> None:
         self.libc = LIBC if HAS_LIBC else None
 
-    def execute_syscall(self, nr: int, *args: int) -> Tuple[int, int, float]:
+    def execute_syscall(self, nr: int, *args: int) -> tuple[int, int, float]:
         """
         Executes a syscall against the host Linux C kernel.
         Returns: (ret_value, errno_value, duration_us)
@@ -154,7 +152,7 @@ class LinuxOracleExecutor:
         duration_us = (t1 - t0) / 1000.0
         return ret, errno, max(0.05, duration_us)
 
-    def _mock_linux_syscall(self, nr: int, *args: int) -> Tuple[int, int, float]:
+    def _mock_linux_syscall(self, nr: int, *args: int) -> tuple[int, int, float]:
         t0 = time.perf_counter_ns()
         if nr == SYS_GETPID:
             ret, errno = os.getpid(), 0
@@ -235,14 +233,14 @@ class RunuXCandidateExecutor:
             SYS_GETPPID: lambda args: (os.getppid(), 0),
         }
 
-    def _handle_brk(self, args: List[int]) -> Tuple[int, int]:
+    def _handle_brk(self, args: list[int]) -> tuple[int, int]:
         req = args[0]
         if req == 0:
             return self.simulated_heap_brk, 0
         self.simulated_heap_brk = req
         return self.simulated_heap_brk, 0
 
-    def execute_syscall(self, nr: int, *args: int, fastpath: Optional[bool] = None) -> Tuple[int, int, float]:
+    def execute_syscall(self, nr: int, *args: int, fastpath: bool | None = None) -> tuple[int, int, float]:
         """
         Executes a syscall through RunuX dispatch.
         Returns: (ret_value, errno_value, duration_us)
@@ -271,7 +269,7 @@ class RunuXCandidateExecutor:
         duration_us = (t1 - t0) / 1000.0
         return ret, errno, max(0.02, duration_us)
 
-    def _dispatch_kernel_crate_baseline(self, nr: int, args: List[int]) -> Tuple[int, int]:
+    def _dispatch_kernel_crate_baseline(self, nr: int, args: list[int]) -> tuple[int, int]:
         """Baseline linear dispatch for comparison and performance gain measurement.
 
         Introduces a deterministic CPU micro-op overhead (~500 ns: 8 integer bitwise ops)
@@ -404,7 +402,7 @@ class DualKernelDifferentialArena:
             ("sys_sched_yield", SYS_SCHED_YIELD, []),
         ]
 
-        results: List[SyscallExecutionResult] = []
+        results: list[SyscallExecutionResult] = []
         matching_count = 0
         total_linux_lat = 0.0
         total_runux_lat = 0.0

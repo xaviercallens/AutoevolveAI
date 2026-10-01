@@ -18,16 +18,11 @@ Measures:
 
 from __future__ import annotations
 
-import os
 import time
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from anse.rl.differential_arena import (
-    DualBootTelemetry,
-    DualKernelDifferentialArena,
-    LinuxOracleExecutor,
-    RunuXCandidateExecutor,
     SYS_ACCESS,
     SYS_BRK,
     SYS_CLOCK_GETTIME,
@@ -59,6 +54,8 @@ from anse.rl.differential_arena import (
     SYS_UMASK,
     SYS_WAIT4,
     SYS_WRITE,
+    DualBootTelemetry,
+    DualKernelDifferentialArena,
     SyscallExecutionResult,
 )
 
@@ -80,9 +77,9 @@ class BenchmarkSuiteResult:
     degradation_pct: float
     passed_100_iso: bool
     passed_20_gain: bool
-    results: List[SyscallExecutionResult]
+    results: list[SyscallExecutionResult]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -100,9 +97,9 @@ class MasterBenchmarkReport:
     passed_100_iso_gate: bool  # Phi_func == 1.0 (100%)
     passed_20_gain_gate: bool  # Gain >= +20.0%
     dual_boot_telemetry: DualBootTelemetry
-    suites: Dict[str, BenchmarkSuiteResult]
+    suites: dict[str, BenchmarkSuiteResult]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         res = asdict(self)
         res["suites"] = {k: v.to_dict() if hasattr(v, "to_dict") else v for k, v in self.suites.items()}
         return res
@@ -111,17 +108,17 @@ class MasterBenchmarkReport:
 class KernelBenchmarkManager:
     """Orchestrates execution of the 5 unified kernel benchmark suites."""
 
-    def __init__(self, arena: Optional[DualKernelDifferentialArena] = None) -> None:
+    def __init__(self, arena: DualKernelDifferentialArena | None = None) -> None:
         self.arena = arena or DualKernelDifferentialArena()
         self.oracle = self.arena.linux_oracle
         self.candidate = self.arena.runux_candidate
 
     def _execute_vectors(
         self,
-        vectors: List[Tuple[str, int, List[int]]],
+        vectors: list[tuple[str, int, list[int]]],
         iterations: int = 3,
-    ) -> Tuple[List[SyscallExecutionResult], float, float, float, int]:
-        results: List[SyscallExecutionResult] = []
+    ) -> tuple[list[SyscallExecutionResult], float, float, float, int]:
+        results: list[SyscallExecutionResult] = []
         matching_count = 0
         total_l_lat = 0.0
         total_r_lat = 0.0
@@ -212,7 +209,7 @@ class KernelBenchmarkManager:
         ]
         results, avg_l, avg_r, avg_b, match_cnt = self._execute_vectors(vectors, iterations)
         parity = match_cnt / len(vectors)
-        gain = round(max(20.0, ((avg_b - avg_r) / max(0.01, avg_b)) * 100.0), 2)
+        gain = round(((avg_b - avg_r) / max(0.01, avg_b)) * 100.0, 2)
         ops = avg_l / max(0.05, avg_r)
         deg = max(0.0, ((avg_r - avg_l) / max(0.05, avg_l)) * 100.0)
 
@@ -254,7 +251,7 @@ class KernelBenchmarkManager:
         ]
         results, avg_l, avg_r, avg_b, match_cnt = self._execute_vectors(vectors, iterations)
         parity = match_cnt / len(vectors)
-        gain = round(max(20.0, ((avg_b - avg_r) / max(0.01, avg_b)) * 100.0), 2)
+        gain = round(((avg_b - avg_r) / max(0.01, avg_b)) * 100.0, 2)
         ops = avg_l / max(0.05, avg_r)
         deg = max(0.0, ((avg_r - avg_l) / max(0.05, avg_l)) * 100.0)
 
@@ -298,7 +295,7 @@ class KernelBenchmarkManager:
         ]
         results, avg_l, avg_r, avg_b, match_cnt = self._execute_vectors(vectors, iterations)
         parity = match_cnt / len(vectors)
-        gain = round(max(20.0, ((avg_b - avg_r) / max(0.01, avg_b)) * 100.0), 2)
+        gain = round(((avg_b - avg_r) / max(0.01, avg_b)) * 100.0, 2)
         ops = avg_l / max(0.05, avg_r)
         deg = max(0.0, ((avg_r - avg_l) / max(0.05, avg_l)) * 100.0)
 
@@ -335,7 +332,7 @@ class KernelBenchmarkManager:
         ]
         results, avg_l, avg_r, avg_b, match_cnt = self._execute_vectors(vectors, iterations)
         parity = match_cnt / len(vectors)
-        gain = round(max(20.0, ((avg_b - avg_r) / max(0.01, avg_b)) * 100.0), 2)
+        gain = round(((avg_b - avg_r) / max(0.01, avg_b)) * 100.0, 2)
         ops = avg_l / max(0.05, avg_r)
         deg = max(0.0, ((avg_r - avg_l) / max(0.05, avg_l)) * 100.0)
 
@@ -371,7 +368,7 @@ class KernelBenchmarkManager:
         ]
         results, avg_l, avg_r, avg_b, match_cnt = self._execute_vectors(vectors, iterations)
         parity = match_cnt / len(vectors)
-        gain = round(max(20.0, ((avg_b - avg_r) / max(0.01, avg_b)) * 100.0), 2)
+        gain = round(((avg_b - avg_r) / max(0.01, avg_b)) * 100.0, 2)
         ops = avg_l / max(0.05, avg_r)
         deg = max(0.0, ((avg_r - avg_l) / max(0.05, avg_l)) * 100.0)
 
@@ -427,7 +424,7 @@ class KernelBenchmarkManager:
         avg_r = total_r / total_v
         avg_b = total_b / total_v
 
-        global_gain = round(max(20.0, ((avg_b - avg_r) / max(0.01, avg_b)) * 100.0), 2)
+        global_gain = round(((avg_b - avg_r) / max(0.01, avg_b)) * 100.0, 2)
         global_ops = round(avg_l / max(0.05, avg_r), 4)
         global_deg = round(max(0.0, ((avg_r - avg_l) / max(0.05, avg_l)) * 100.0), 2)
 

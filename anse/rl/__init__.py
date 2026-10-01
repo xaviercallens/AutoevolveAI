@@ -3,9 +3,9 @@ anse.rl — Closed-Loop Differential Reinforcement Learning Engine for Kernel Pa
 """
 
 from anse.rl.differential_arena import (
-    DualKernelDifferentialArena,
     DifferentialBenchmarkReport,
     DualBootTelemetry,
+    DualKernelDifferentialArena,
     SyscallExecutionResult,
 )
 

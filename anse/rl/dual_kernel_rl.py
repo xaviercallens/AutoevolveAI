@@ -14,14 +14,12 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import json
 import logging
-import os
 import sys
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(REPO_ROOT) not in sys.path:
@@ -52,7 +50,7 @@ class RLMutationCandidate:
     target_syscall: str
     code_snippet: str
     passed_safety_shield: bool
-    reward: Optional[RewardComponents] = None
+    reward: RewardComponents | None = None
     advantage: float = 0.0
 
 
@@ -69,7 +67,7 @@ class RLExecutionTrace:
     selected_variant_id: str
     winning_reward: float
     attestation_receipt: str
-    report: Dict[str, Any]
+    report: dict[str, Any]
 
 
 class ANSERLEngine:
@@ -78,14 +76,14 @@ class ANSERLEngine:
     toward Linux C kernel functional and performance parity.
     """
 
-    def __init__(self, phase: int = 2, persist_dir: Optional[Path] = None) -> None:
+    def __init__(self, phase: int = 2, persist_dir: Path | None = None) -> None:
         self.phase = phase
         self.arena = DualKernelDifferentialArena()
         self.reward_calc = DifferentialRewardCalculator(phase=phase)
         self.persist_dir = persist_dir or (REPO_ROOT / ".chroma_db")
         self.rag = ChromaRAG(persist_directory=str(self.persist_dir))
 
-    def retrieve_kernel_state(self, query: str = "POSIX syscall dispatch") -> Dict[str, Any]:
+    def retrieve_kernel_state(self, query: str = "POSIX syscall dispatch") -> dict[str, Any]:
         """Retrieves active specification and state vectors from ChromaDB LTM."""
         logger.info(f"Retrieving state from ChromaDB LTM for query: '{query}'...")
         results = self.rag.query_code(problem_description=query, n_results=2)
@@ -95,7 +93,7 @@ class ANSERLEngine:
             "state_context": [r.get("metadata", {}).get("task_prompt_preview", "") for r in results],
         }
 
-    def generate_candidate_rollouts(self, target_syscall: str = "sys_write") -> List[RLMutationCandidate]:
+    def generate_candidate_rollouts(self, target_syscall: str = "sys_write") -> list[RLMutationCandidate]:
         """
         Actor (System 1): Generates N=5 diverse architectural mutation vectors.
         """
@@ -247,8 +245,8 @@ pub fn sys_xla_lockfree_barrier(token: u64) -> Result<u64, i32> {
         return candidates
 
     def evaluate_candidates_and_select_winner(
-        self, candidates: List[RLMutationCandidate], iterations: int = 3
-    ) -> Tuple[RLMutationCandidate, DifferentialBenchmarkReport]:
+        self, candidates: list[RLMutationCandidate], iterations: int = 3
+    ) -> tuple[RLMutationCandidate, DifferentialBenchmarkReport]:
         """
         Critic: Executes differential shadow benchmarks and applies Group Relative Policy Optimization (GRPO).
         """
@@ -284,11 +282,18 @@ pub fn sys_xla_lockfree_barrier(token: u64) -> Result<u64, i32> {
         # Baseline energy for safe execution
         base_energy = report.avg_runux_latency_us * 1.0 + (report.boot_telemetry.runux_rss_mb * 2.0)
 
-        # Evaluate reward for each candidate variant
+        # F-07 fix: Gaussian-perturbed noise with per-call entropy.
+        # Seed = (variant_id_hash XOR candidate_index XOR nanosecond_timestamp)
+        # This gives genuine stochasticity across calls while still being
+        # deterministic within a single evaluation loop iteration.
+        import random as _rnd
+        import time as _time
+        _call_entropy = _time.perf_counter_ns() & 0xFFFF  # 16-bit ns component
         rewards = []
         for i, cand in enumerate(candidates):
-            # Variant variation in simulated ops ratio for diverse rollout evaluation
-            factor = 1.0 + (i * 0.05) if cand.action_type in ("A_optim", "A_ai_feature") else 1.0
+            _rnd.seed(hash(cand.variant_id) ^ i ^ _call_entropy)
+            _noise = max(-0.15, min(0.15, _rnd.gauss(0.0, 0.05)))
+            factor = 1.0 + _noise
             variant_ops = report.ops_ratio * factor
             cand_reward = self.reward_calc.compute_reward(
                 functional_parity=report.functional_parity,
@@ -358,7 +363,7 @@ pub fn sys_xla_lockfree_barrier(token: u64) -> Result<u64, i32> {
         self.rag.index_code_solution(
             doc_id=session_id,
             code_content=winner.code_snippet,
-            task_prompt=f"Differential Parity Optimization for {winner.target_syscall}",
+            task_prompt=doc_text,  # F841 fix: use doc_text as richer LTM task_prompt
             language="rust",
             energy=winner.reward.energy_penalty if winner.reward else 0.0,
             metadata={

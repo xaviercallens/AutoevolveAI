@@ -13,13 +13,11 @@ and Google TPU MLPerf microbenchmarks.
 
 from __future__ import annotations
 
-import ctypes
-import os
 import sys
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(REPO_ROOT) not in sys.path:
@@ -43,7 +41,7 @@ class TPUMicrobenchmarkResult:
     passed_50_ai_gate: bool
     is_simulated: bool = True  # All benchmarks are Python simulations; no real TPU hardware attached
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -55,9 +53,9 @@ class TPUMasterBenchmarkReport:
     global_ai_speedup_pct: float
     global_ops_ratio: float
     passed_50_ai_gate: bool
-    results: List[TPUMicrobenchmarkResult]
+    results: list[TPUMicrobenchmarkResult]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -67,7 +65,7 @@ class GoogleTPUBenchmarkSuite:
     RunuX zero-copy framekernel primitives against standard Linux C user/kernel transitions.
     """
 
-    def __init__(self, arena: Optional[DualKernelDifferentialArena] = None) -> None:
+    def __init__(self, arena: DualKernelDifferentialArena | None = None) -> None:
         self.arena = arena or DualKernelDifferentialArena()
 
     def run_tensor_ingest_benchmark(self, iterations: int = 5) -> TPUMicrobenchmarkResult:

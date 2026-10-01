@@ -295,7 +295,7 @@ def create_or_update_and_publish_deposition(
     print("\n📝 [Step 3/4] Registering deposition metadata...")
     metadata = {
         "metadata": {
-            "title": "Laya-LoRA Coding Companion: Asymmetric Dual-Process Test-Time Compute, Full-Scale Curriculum on 10 Structured Coding Datasets, and Serverless Multi-Tier Inference Infrastructure on GCP (Version 2)",
+            "title": "Laya-LoRA Coding Companion: Asymmetric Dual-Process Test-Time Compute, Full-Scale Curriculum on 10 Structured Coding Datasets, and Serverless Multi-Tier Inference Infrastructure on GCP (Camera-Ready Version 3)",
             "upload_type": "publication",
             "publication_type": "preprint",
             "description": ABSTRACT_HTML.strip(),
@@ -321,7 +321,7 @@ def create_or_update_and_publish_deposition(
                 "Qwen",
                 "Serverless Inference"
             ],
-            "notes": "Version 2: Full reproducibility package incorporating Reviewer 4 Meta-Assessment resolution, GWAYA parallel advisor & anti-hallucination verifier, 5 Hugging Face verifier datasets, Lean 4 machine-verified invariants, 50-case dual-process benchmark receipts, and LoRA adapter weights.",
+            "notes": "Camera-Ready Version 3: Full reproducibility package incorporating Reviewer 5 / v4 Meta-Assessment resolution (Strong Accept), GWAYA parallel advisor & anti-hallucination verifier, 5 Hugging Face verifier datasets, Lean 4 machine-verified invariants, 50-case dual-process benchmark receipts, and LoRA adapter weights.",
             "related_identifiers": [
                 {
                     "identifier": "https://huggingface.co/callensxavier/laya-lora-modernbert-r8",

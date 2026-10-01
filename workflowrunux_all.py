@@ -7,6 +7,7 @@ Orchestrates all verified RunuX Tiers (T1, T2, T3, T4) under ANSE Thermodynamic 
 - Tier 2: Design, Research & Architecture Verification (workflowrunuxT2.py)
 - Tier 3: Formal Proof Discharge & Axiom Soundness Verification (workflowrunuxT3.py)
 - Tier 4: Deep Subsystems, Networking & Concurrency Integration (workflowrunuxT4.py)
+- Tier 5: ANSE-RL Differential Shadow Execution & Parity Gate (workflowrunuxT5_rl.py)
 
 Enforces:
 1. Physical Energy Minimization: E = w_t * duration_ms + w_m * peak_rss_mb (Penalty 10^6 on failure).
@@ -185,6 +186,7 @@ class RunuxMasterTierOrchestrator:
             "T2": "workflowrunuxT2.py",
             "T3": "workflowrunuxT3.py",
             "T4": "workflowrunuxT4.py",
+            "T5": "workflowrunuxT5_rl.py",
         }
 
         all_success = True
@@ -218,7 +220,7 @@ class RunuxMasterTierOrchestrator:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="RunuX Master Multi-Tier Workflow Orchestrator")
-    parser.add_argument("--tiers", nargs="+", choices=["T1", "T2", "T3", "T4"], help="Specific tiers to run")
+    parser.add_argument("--tiers", nargs="+", choices=["T1", "T2", "T3", "T4", "T5"], help="Specific tiers to run")
     args = parser.parse_args()
 
     orchestrator = RunuxMasterTierOrchestrator(tiers=args.tiers)

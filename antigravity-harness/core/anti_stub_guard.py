@@ -50,7 +50,29 @@ class ASTStubVisitor(ast.NodeVisitor):
 
     def __init__(self, filename: str) -> None:
         self.filename = filename.replace("\\", "/")
+        p = Path(self.filename)
+        self.is_test_file = (
+            self.filename.startswith("tests/")
+            or "/tests/" in self.filename
+            or p.name.startswith("test_")
+            or p.name.endswith("_test.py")
+        )
         self.violations: list[Violation] = []
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        if not self.is_test_file:
+            name_lower = node.name.lower()
+            if any(name_lower.startswith(pfx) for pfx in ("dummy", "mock", "fake", "stub")):
+                self.violations.append(
+                    Violation(
+                        filename=self.filename,
+                        lineno=node.lineno,
+                        rule="SYNTHETIC_MOCK_CLASS",
+                        symbol_name=node.name,
+                        message=f"Synthetic/dummy class '{node.name}' detected in production code.",
+                    )
+                )
+        self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self._check_callable(node)
@@ -172,7 +194,7 @@ class ASTStubVisitor(ast.NodeVisitor):
                     )
 
     def visit_Try(self, node: ast.Try) -> None:
-        if "test" not in self.filename.lower():
+        if not self.is_test_file:
             for handler in node.handlers:
                 real_hbody = self._strip_docstring(handler.body)
                 if len(real_hbody) == 1 and isinstance(real_hbody[0], ast.Pass):
@@ -189,7 +211,7 @@ class ASTStubVisitor(ast.NodeVisitor):
 
     def _check_assignment(self, node: ast.Assign) -> None:
         # Check variable naming for mock/synthetic data in non-test code
-        if "test" in self.filename.lower():
+        if self.is_test_file:
             return
 
         for target in node.targets:
@@ -209,7 +231,7 @@ class ASTStubVisitor(ast.NodeVisitor):
 
     def _check_suspicious_calls(self, node: ast.Call) -> None:
         # Detect time.sleep or mock instantiation in non-test logic
-        if "test" in self.filename.lower():
+        if self.is_test_file:
             return
 
         func = node.func
@@ -237,7 +259,7 @@ class ASTStubVisitor(ast.NodeVisitor):
             )
 
     def _check_subtraction_identity(self, node: ast.BinOp) -> None:
-        if "test" in self.filename.lower():
+        if self.is_test_file:
             return
         if isinstance(node.op, ast.Sub):
             # Check for constant subtraction c - c
@@ -265,7 +287,7 @@ class ASTStubVisitor(ast.NodeVisitor):
                     )
 
     def _check_tautological_compare(self, node: ast.Compare) -> None:
-        if "test" in self.filename.lower():
+        if self.is_test_file:
             return
         for op, comp in zip(node.ops, node.comparators):
             if isinstance(op, ast.Eq):
@@ -341,7 +363,7 @@ class AntiStubGuard:
         for p in path.rglob("*.py"):
             if any(part in ignored_dirs for part in p.parts):
                 continue
-            if exclude_tests and ("test" in p.name.lower() or "tests" in p.parts):
+            if exclude_tests and (p.name.startswith("test_") or p.name.endswith("_test.py") or "tests" in p.parts):
                 continue
             res = self.audit_file(p)
             all_violations.extend(res.violations)

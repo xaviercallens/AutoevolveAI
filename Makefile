@@ -24,3 +24,16 @@ test-factory:
 	# 5. PR Factory : API tests & dispatch script validation
 	uv run pytest tests/web/ -v
 	bash -n nightly_dispatch.sh
+
+# Sub-project management shortcuts
+subproject-create:
+	uv run python scripts/manage_sub_project.py create $(NAME)
+
+subproject-audit:
+	uv run python scripts/manage_sub_project.py audit $(NAME)
+
+subproject-verify:
+	uv run python scripts/manage_sub_project.py verify $(NAME)
+
+subproject-attest:
+	uv run python scripts/manage_sub_project.py attest $(NAME)

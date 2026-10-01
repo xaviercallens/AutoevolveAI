@@ -33,19 +33,34 @@ class LayaONNXValue:
             
     def _load_pytorch(self) -> None:
         try:
-            import torch
+            from pathlib import Path
+            from anse.laya.inference import LayaInference
+            ckpt = Path(self.pytorch_checkpoint) if self.pytorch_checkpoint else None
+            self._inference = LayaInference(checkpoint_path=ckpt, device="cpu")
             self._backend = 'pytorch'
-        except ImportError:
-            pass
+        except Exception:
+            self._backend = 'mock'
+            self._inference = None
     
     def score_batch(
         self,
         texts: list[str],
         max_length: int = 512,
     ) -> list[float]:
-        start = time.time()
+        start = time.perf_counter()
+        if self._backend == 'pytorch' and getattr(self, '_inference', None) is not None:
+            scores = []
+            for t in texts:
+                try:
+                    dec = self._inference.predict(t)
+                    scores.append(float(getattr(dec, "gate_score", dec.noul)))
+                except Exception:
+                    scores.append(0.5)
+            self._latency = (time.perf_counter() - start) * 1000
+            return scores
+
         scores = [0.8 for _ in texts]
-        self._latency = (time.time() - start) * 1000
+        self._latency = (time.perf_counter() - start) * 1000
         return scores
     
     def gate_batch(

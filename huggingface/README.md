@@ -13,18 +13,18 @@ tags:
 - proof-engineering
 size_categories:
 - 1K<n<10K
-pretty_name: RunuX Lean 4 Microkernel Formal Verification Telemetry
+pretty_name: RunuX Lean 4 Kernel Formal Verification Telemetry
 language:
 - en
 ---
 
-# RunuX Lean 4 Microkernel Formal Verification Dataset
+# RunuX Lean 4 Framekernel Formal Verification Dataset
 
 ## Dataset Summary
-This dataset contains the mechanized formal specifications, theorem statements, proof obligations, and thermodynamic execution telemetry for the **RunuX Minimum Viable Kernel (MVK)**, developed under the **AutoevolveAI / ANSE** research framework.
+This dataset contains the mechanized formal specifications, theorem statements, proof obligations, and resource execution telemetry for the **RunuX Minimum Viable Kernel (MVK)**, developed under the **AutoevolveAI / ANSE** research framework.
 
 The dataset accompanies the publication:
-> **Autopoietic Neuro-Symbolic Verification of Operating System Kernels: A Thermodynamic Energy Paradigm in Lean 4 and Rust** (October 2026).
+> **Autonomous Neuro-Symbolic Verification of Operating System Kernels: A Resource-Aware Agentic Framework in Lean 4 and Rust** (October 2026).
 
 ## Dataset Structure
 The dataset is structured across three primary splits:
@@ -35,7 +35,7 @@ The dataset is structured across three primary splits:
    - `statement`: Pre-proof theorem signature.
    - `statement_hash`: Cryptographic SHA-256 fingerprint enforcing Oracle Invariance.
    - `status`: Verification status (`proven` vs `oracle_invariant_sorry`).
-2. `data/verification_telemetry.jsonl`: Multi-tier execution records from the ANSE Master Orchestrator (`workflowrunux_all.py`). Records duration (s), physical action energy ($E$), and 23 cryptographic proof tokens.
+2. `data/verification_telemetry.jsonl`: Multi-tier execution records from the Master Orchestrator (`workflowrunux_all.py`). Records duration (s), resource cost objective ($C$), and 23 cryptographic attestation receipts.
 3. `data/modules_metadata.jsonl`: Architectural mapping connecting Lean 4 specification modules to the 316 Rust kernel crates.
 
 ## Key Verified Baseline Metrics (Wave 16)

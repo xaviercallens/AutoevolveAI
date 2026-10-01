@@ -86,16 +86,16 @@ def generate_tier_energy_plot():
     
     ax2 = ax1.twinx()
     color = "tab:purple"
-    ax2.set_ylabel("Thermodynamic Action Energy ($E$)", color=color)
-    bars2 = ax2.bar(x + width/2, energy, width, label="System Energy ($E$)", color=color, alpha=0.85)
+    ax2.set_ylabel("Resource Cost Objective ($C$)", color=color)
+    bars2 = ax2.bar(x + width/2, energy, width, label="Cost Objective ($C$)", color=color, alpha=0.85)
     ax2.tick_params(axis="y", labelcolor=color)
     ax2.set_ylim(0, 30000)
     
-    # Add proof token badges on top of bars
+    # Add proof attestation receipts on top of bars
     for i, tok in enumerate(tokens):
-        ax1.text(x[i] - width/2, wall_time[i] + 0.8, f"{tok} Tokens", ha="center", fontsize=9, fontweight="bold")
+        ax1.text(x[i] - width/2, wall_time[i] + 0.8, f"{tok} Receipts", ha="center", fontsize=9, fontweight="bold")
     
-    plt.title("RunuX Master Orchestrator: Multi-Tier Thermodynamic Performance (100% Green)")
+    plt.title("RunuX Master Orchestrator: Multi-Tier Resource Performance (100% Green)")
     ax1.set_xticks(x)
     ax1.set_xticklabels(tiers)
     

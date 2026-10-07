@@ -266,13 +266,20 @@ this candidate (score).
   download (never overwrite `checkpoints/laya/model.safetensors` from the upstream download
   in place) so a regression can be rolled back to the base checkpoint.
 
-### 25. openai_math D0: clone and index github.com/openai/math
-Plan and stages D0-D5: `docs/OPENAI_MATH_STUDY.md`. `git clone` was refused in-session by
-the permission mode (`git push` to origin worked), so it is a user action first:
-  git clone --depth 1 https://github.com/openai/math /mnt/disks/disk-socrateai-local-1/callensxavier_home_data/SocrateAI-Scientific-Agora-LeanMaster/lean4basesource/openai-math
-  python3 scripts/openai_math/index_corpus.py
-- **Accept when:** `results/openai_math/corpus_index.json` exists with `clone_head` set,
-  and every challenge flagged in `challenges_with_problems` is triaged in the study doc.
+### 25. openai_math D0: clone and index github.com/openai/math -- DONE 2026-10-07
+Plan and stages D0-D5: `docs/OPENAI_MATH_STUDY.md`. The user cloned it (HEAD adc7f124);
+`results/openai_math/corpus_index.json` has 722 preprints, 235 scope notes, 405 challenges,
+0 defects, 10 review notes, all triaged in the study's section 2b.
+
+### 28. openai_math D1: body-check the nine definition-hole challenges
+Comparator does not compare definition-hole bodies (study section 2b). For Brenier,
+DefocusingNLS, ElementaryPositivity, EuclideanFiveColor, KServer, Naimark,
+OccupiedOverlap, Rokhlin and SpinAngle, compare each hole's body in the challenge with the
+solution's definition (KServer `MainStatement` already matches by eye, up to bound-variable
+names).
+- **Accept when:** each hole has a recorded verdict (matches / differs / sorried in the
+  challenge), by elaborated-`Expr` comparison once D2 builds, or by eye before that and
+  labelled as such.
 
 ### 26. openai_math D2: independent Comparator re-run (needs user approval)
 Separate Lake project on disk 2 (v4.34.1, `lake exe cache get`, mmap workaround), with

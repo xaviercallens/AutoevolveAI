@@ -74,6 +74,8 @@ def clone(tmp_path: Path) -> Path:
     paper.mkdir(parents=True)
     (paper / "paper.pdf").write_bytes(b"%PDF-1.5\n")
     (root / "preprints" / "No-pdf-yet").mkdir()
+    (root / "preprints" / "Main-pdf-name").mkdir()
+    (root / "preprints" / "Main-pdf-name" / "main.pdf").write_bytes(b"%PDF-1.5\n")
     (root / "reasoning_traces").mkdir()
     (root / "reasoning_traces" / "trace.pdf").write_bytes(b"%PDF-1.5\n")
     (root / "lean" / "docs" / "005.md").write_text(
@@ -118,14 +120,71 @@ def test_negative_control_undeclared_theorem_name_is_flagged(clone: Path) -> Non
     assert audit.declared_theorems == ["OAI.InternalCatalan.catalan_irrational"]
 
 
-def test_negative_control_proof_inside_challenge_and_axiom_are_flagged(clone: Path) -> None:
-    proved = GOOD_LEAN.replace("  sorry", "  exact cheat").replace(
-        "namespace OAI\n", "namespace OAI\n\naxiom cheat : False\n", 1
-    )
+def test_negative_control_proof_inside_challenge_is_flagged(clone: Path) -> None:
+    proved = GOOD_LEAN.replace("  sorry", "  norm_num")
     _write_challenge(clone, "Proved", proved, _config("Proved", ["OAI.InternalCatalan.catalan_irrational"]))
     audit = {a.name: a for a in ic.audit_challenges(clone / "lean")}["Proved"]
-    assert "challenge file has no sorry (expected a statement-only file)" in audit.problems
-    assert "challenge file declares an axiom" in audit.problems
+    assert audit.problems == ["challenge file has no sorry (expected a statement-only file)"]
+    assert audit.notes == []
+
+
+AXIOM_POSED = """import Mathlib
+namespace OAI
+namespace HarmonicCounterexample
+def MainClaim : Prop := ∃ n : ℕ, 8 ≤ n
+axiom mainStatement : MainClaim
+theorem main : MainClaim := mainStatement
+end HarmonicCounterexample
+end OAI
+"""
+
+
+def test_axiom_posed_statement_is_a_note_when_axiom_not_permitted(clone: Path) -> None:
+    # Pattern found upstream in HarmonicGrowth.lean (2026-10-07 clone).
+    _write_challenge(clone, "Harmonic", AXIOM_POSED, _config("Harmonic", ["OAI.HarmonicCounterexample.main"]))
+    audit = {a.name: a for a in ic.audit_challenges(clone / "lean")}["Harmonic"]
+    assert audit.problems == []
+    assert audit.declared_axioms == ["mainStatement"]
+    assert audit.notes == ["statement posed via axiom ['mainStatement'] (not permitted to the solution)"]
+
+
+def test_negative_control_axiom_posed_statement_with_permitted_axiom_is_a_defect(clone: Path) -> None:
+    axioms = ["propext", "OAI.HarmonicCounterexample.mainStatement"]
+    _write_challenge(
+        clone, "Leaky", AXIOM_POSED, _config("Leaky", ["OAI.HarmonicCounterexample.main"], axioms)
+    )
+    audit = {a.name: a for a in ic.audit_challenges(clone / "lean")}["Leaky"]
+    assert "challenge axiom is in permitted_axioms: ['mainStatement']" in audit.problems
+    assert any("untrusted" in p for p in audit.problems)
+
+
+def test_definition_hole_is_a_note_not_a_problem(clone: Path) -> None:
+    # Pattern found upstream in ElementaryPositivity.json (2026-10-07 clone).
+    config = _config("Hole", [])
+    config["definition_names"] = ["OAI.elementaryPositivityWitness"]
+    _write_challenge(clone, "Hole", "import Mathlib\nnamespace OAI\ndef elementaryPositivityWitness : ℕ := sorry\nend OAI\n", config)
+    audit = {a.name: a for a in ic.audit_challenges(clone / "lean")}["Hole"]
+    assert audit.problems == []
+    assert audit.notes == ["definition hole ['OAI.elementaryPositivityWitness']: needs an additional verifier"]
+    empty = _config("Empty", [])
+    _write_challenge(clone, "Empty", GOOD_LEAN, empty)
+    empty_audit = {a.name: a for a in ic.audit_challenges(clone / "lean")}["Empty"]
+    assert empty_audit.problems == ["theorem_names and definition_names are both empty"]
+
+
+def test_universe_parameters_are_stripped_from_theorem_names() -> None:
+    # Pattern found upstream in MatroidProphet.lean / MatroidSecretary.lean.
+    src = (
+        "namespace OAI\nnamespace MatroidProphet.Assigned\n"
+        "theorem one_sample.{u} : MatroidProphet.OneSampleChallenge.{u} := by\n  sorry\n"
+        "theorem hidden_vector : MatroidProphet.HiddenVectorChallenge := by\n  sorry\n"
+        "end MatroidProphet.Assigned\nend OAI\n"
+    )
+    assert ic.declared_theorem_names(src) == [
+        "OAI.MatroidProphet.Assigned.one_sample",
+        "OAI.MatroidProphet.Assigned.hidden_vector",
+    ]
+    assert ic.declared_theorem_names("theorem t.{u, v} : True := trivial\n") == ["t"]
 
 
 def test_sorry_inside_a_comment_does_not_count(clone: Path) -> None:
@@ -148,8 +207,9 @@ def test_missing_lean_file_and_bad_json_are_reported(clone: Path) -> None:
 def test_build_index_recounts_from_disk(clone: Path) -> None:
     index = ic.build_index(clone)
     counts = index["counts"]
-    assert counts["preprint_dirs"] == 2
-    assert counts["preprint_dirs_with_pdf"] == 1
+    assert counts["preprint_dirs"] == 3
+    assert counts["preprint_dirs_with_pdf"] == 2
+    assert counts["preprint_dirs_with_paper_pdf"] == 1
     assert counts["formalization_docs"] == 2
     assert counts["comparator_challenges"] == 1
     assert counts["reasoning_traces"] == 1

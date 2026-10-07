@@ -56,12 +56,13 @@ EXIT_BLOCKED = 2
 _DECL_RE = re.compile(
     r"^\s*(?:@\[[^\]]*\]\s*)*"
     r"(?:(?:private|protected|noncomputable|nonrec)\s+)*"
-    r"(?:theorem|lemma)\s+([^\s:({\[]+)",
+    r"(?:theorem|lemma)\s+([^\s:(\[{.]+(?:\.[^\s:(\[{.]+)*(?:\.\{[^}]*\})?)",
     re.M,
 )
 _NAMESPACE_RE = re.compile(r"^\s*(namespace|end)\s+([^\s]+)\s*$", re.M)
 _IMPORT_RE = re.compile(r"^\s*import\s+([^\s]+)", re.M)
-_AXIOM_RE = re.compile(r"^\s*axiom\s+", re.M)
+_AXIOM_RE = re.compile(r"^\s*axiom\s+([^\s:({\[]+)", re.M)
+_UNIVERSE_SUFFIX_RE = re.compile(r"\.\{[^}]*\}$")
 _SORRY_RE = re.compile(r"\bsorry\b")
 _COMMENT_RE = re.compile(r"/-.*?-/|--[^\n]*", re.S)
 
@@ -81,6 +82,10 @@ class ChallengeAudit:
     declared_theorems: list[str]
     sorry_count: int
     problems: list[str] = field(default_factory=list)
+    definition_names: list[str] = field(default_factory=list)
+    declared_axioms: list[str] = field(default_factory=list)
+    # Not defects, but things a reviewer must look at (e.g. definition holes).
+    notes: list[str] = field(default_factory=list)
 
 
 def strip_lean_comments(source: str) -> str:
@@ -102,7 +107,8 @@ def declared_theorem_names(source: str) -> list[str]:
     for m in _NAMESPACE_RE.finditer(text):
         events.append((m.start(), m.group(1), m.group(2)))
     for m in _DECL_RE.finditer(text):
-        events.append((m.start(), "decl", m.group(1)))
+        # `theorem foo.{u}` declares `foo` with universe parameter u.
+        events.append((m.start(), "decl", _UNIVERSE_SUFFIX_RE.sub("", m.group(1))))
     events.sort(key=lambda e: e[0])
     stack: list[str] = []
     names: list[str] = []
@@ -124,20 +130,40 @@ def untrusted_axioms(permitted: list[str]) -> list[str]:
     return sorted(set(permitted) - TRUSTED_AXIOMS)
 
 
+def _str_list(config: dict[str, object], key: str) -> list[str]:
+    value = config.get(key) or []
+    return [str(v) for v in value] if isinstance(value, list) else [str(value)]
+
+
 def audit_challenge(name: str, config: dict[str, object], lean_source: str | None) -> ChallengeAudit:
+    """Audit one Comparator challenge.
+
+    ``problems`` are defects (the check cannot mean what it claims). ``notes`` are
+    legitimate-but-review-worthy patterns:
+    * a definition hole (``definition_names``) -- the Comparator README says these
+      "must always be checked with an additional (potentially human) verifier";
+    * a statement posed as ``axiom X : P`` + ``theorem main : P := X`` instead of
+      ``sorry``. That is sound under Comparator only because the solution may use no
+      axiom outside ``permitted_axioms``; if a declared axiom is permitted, it is a defect.
+    """
     problems: list[str] = []
+    notes: list[str] = []
     missing = [k for k in REQUIRED_CONFIG_KEYS if k not in config]
     if missing:
         problems.append(f"config missing keys: {missing}")
-    theorem_names = [str(t) for t in config.get("theorem_names", []) or []]  # type: ignore[union-attr]
-    permitted = [str(a) for a in config.get("permitted_axioms", []) or []]  # type: ignore[union-attr]
+    theorem_names = _str_list(config, "theorem_names")
+    definition_names = _str_list(config, "definition_names")
+    permitted = _str_list(config, "permitted_axioms")
     bad_axioms = untrusted_axioms(permitted)
     if bad_axioms:
         problems.append(f"permits untrusted axioms: {bad_axioms}")
-    if not theorem_names:
-        problems.append("theorem_names is empty")
+    if not theorem_names and not definition_names:
+        problems.append("theorem_names and definition_names are both empty")
+    if definition_names:
+        notes.append(f"definition hole {definition_names}: needs an additional verifier")
     imports: list[str] = []
     declared: list[str] = []
+    axioms: list[str] = []
     sorry_count = 0
     if lean_source is None:
         problems.append("challenge .lean file missing")
@@ -145,14 +171,20 @@ def audit_challenge(name: str, config: dict[str, object], lean_source: str | Non
         stripped = strip_lean_comments(lean_source)
         imports = lean_imports(lean_source)
         declared = declared_theorem_names(lean_source)
+        axioms = _AXIOM_RE.findall(stripped)
         sorry_count = len(_SORRY_RE.findall(stripped))
         undeclared = [t for t in theorem_names if t not in declared]
         if undeclared:
             problems.append(f"theorem_names not declared in challenge file: {undeclared}")
-        if sorry_count == 0:
+        permitted_declared = [
+            a for a in axioms if any(p == a or p.endswith("." + a) for p in permitted)
+        ]
+        if permitted_declared:
+            problems.append(f"challenge axiom is in permitted_axioms: {permitted_declared}")
+        if axioms:
+            notes.append(f"statement posed via axiom {axioms} (not permitted to the solution)")
+        if sorry_count == 0 and not axioms and theorem_names:
             problems.append("challenge file has no sorry (expected a statement-only file)")
-        if _AXIOM_RE.search(stripped):
-            problems.append("challenge file declares an axiom")
     return ChallengeAudit(
         name=name,
         challenge_module=str(config.get("challenge_module", "")),
@@ -163,6 +195,9 @@ def audit_challenge(name: str, config: dict[str, object], lean_source: str | Non
         declared_theorems=declared,
         sorry_count=sorry_count,
         problems=problems,
+        definition_names=definition_names,
+        declared_axioms=axioms,
+        notes=notes,
     )
 
 
@@ -243,10 +278,15 @@ def build_index(clone: Path) -> dict[str, object]:
         "readme_sha256": hashlib.sha256((clone / "README.md").read_bytes()).hexdigest(),
         "counts": {
             "preprint_dirs": len(preprint_dirs),
-            "preprint_dirs_with_pdf": sum(1 for p in preprint_dirs if (p / "paper.pdf").is_file()),
+            # PDF names vary upstream (paper.pdf, main.pdf, manuscript.pdf, article.pdf, ...).
+            "preprint_dirs_with_pdf": sum(1 for p in preprint_dirs if any(p.glob("*.pdf"))),
+            "preprint_dirs_with_paper_pdf": sum(1 for p in preprint_dirs if (p / "paper.pdf").is_file()),
             "formalization_docs": len(doc_entries),
             "comparator_challenges": len(audits),
             "challenges_with_problems": sum(1 for a in audits if a.problems),
+            "challenges_with_notes": sum(1 for a in audits if a.notes),
+            "definition_hole_challenges": sum(1 for a in audits if a.definition_names),
+            "axiom_posed_challenges": sum(1 for a in audits if a.declared_axioms),
             "oai_lean_files": len(lean_files),
             "reasoning_traces": len(list((clone / "reasoning_traces").glob("*.pdf")))
             if (clone / "reasoning_traces").is_dir()

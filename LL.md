@@ -537,7 +537,8 @@ the Lean statement, not its fidelity to the paper.
 - **Summarised web reads are not counts.** The study was done through WebFetch (`git clone`
   and `git ls-remote` were refused in-session; `git push` to origin worked). Its summariser reported "100 challenge files" while
   listing ~54 names, "150 docs" while listing ~138, and tagged a family "Lean" that has no
-  scope note. Every count goes through `scripts/openai_math/index_corpus.py` on a real clone.
+  scope note. The clone then measured 405 challenges and 235 notes: both web numbers were
+  far too low. Every count goes through `scripts/openai_math/index_corpus.py`.
 - **Toolchains do not mix.** Upstream is Lean v4.34.1 + a pinned full Mathlib + 30 pinned
   dependencies (23 patched for v4.34.1), and the challenge read (`Catalan.lean`) starts with
   `import Mathlib`. `formal/` is v4.34.0-rc2 with a
@@ -548,6 +549,16 @@ the Lean statement, not its fidelity to the paper.
   forgery class. The run-two `#exit` guard lives only on unmerged branch
   `worktree-master-math-regen2`; main's `lean_runner.py` file mode is likely still forgeable
   (untested).
+
+- **A Comparator pass does not cover definition holes.** Comparator's
+  `definitionHoleMatches` compares a hole's name, levels, type and safety, not its body.
+  Upstream lists fully defined statement-carrying definitions as holes (KServer's theorem
+  is `main_theorem : MainStatement`, and `MainStatement` is a hole), so a solution with
+  `MainStatement := True` would pass (read from source, not executed). 9 of 405 challenges
+  have holes. Their bodies need our own comparison.
+- **The indexer's first flags were mostly its own bugs.** 3 of 4 first-run flags were
+  indexer limitations (universe-polymorphic names, definition-only configs). A clean audit
+  on real data only counted after planted defects in a real challenge were all caught.
 
 **Apply:** before using any upstream theorem as a premise or target, (1) recount it from the
 clone, (2) review the challenge statement against the paper, (3) re-run Comparator ourselves

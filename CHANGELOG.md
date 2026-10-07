@@ -10,11 +10,15 @@ All notable changes to AutoevolveAI / SuperGravity are documented here.
 - `scripts/openai_math/index_corpus.py`: recounts and audits a local clone (permitted
   axioms, declared theorem names, statement-only challenges, toolchain match). Fails closed:
   exits 2 with BLOCKED when the clone is absent. The clone itself is pending (TODO 25).
-- `tests/openai_math/`: 13 tests with positive and negative controls (pass under system
+- `tests/openai_math/`: 17 tests with positive and negative controls (pass under system
   python3), plus Hypothesis property tests that have not run yet (Hypothesis is not
   installed in any interpreter this session could use).
-- LL.md §16; TODO 25-27 (clone + index, independent Comparator re-run, merge the `#exit`
-  forgery guard into main).
+- D0 run on the user's clone (HEAD adc7f124): `results/openai_math/corpus_index.json`
+  with 722 preprints, 235 scope notes, 405 Comparator challenges, 0 defects, 10 review
+  notes. Finding: Comparator does not compare definition-hole bodies, and 9 challenges
+  carry statement-bearing definitions as holes (study section 2b).
+- LL.md §16; TODO 25-28 (clone + index done, independent Comparator re-run, merge the
+  `#exit` forgery guard into main, body-check the definition holes).
 
 ## [14.0.0] — Tiered Pro/Flash Agent Architecture: Genuine Scientific Rigor (2026-09-30)
 

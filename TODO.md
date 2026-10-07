@@ -265,3 +265,24 @@ this candidate (score).
   held-out split, and the fine-tuned checkpoint is versioned separately from the base
   download (never overwrite `checkpoints/laya/model.safetensors` from the upstream download
   in place) so a regression can be rolled back to the base checkpoint.
+
+### 25. openai_math D0: clone and index github.com/openai/math
+Plan and stages D0-D5: `docs/OPENAI_MATH_STUDY.md`. The clone was refused in-session
+(network git), so it is a user action first:
+  git clone --depth 1 https://github.com/openai/math /mnt/disks/disk-socrateai-local-1/callensxavier_home_data/SocrateAI-Scientific-Agora-LeanMaster/lean4basesource/openai-math
+  python3 scripts/openai_math/index_corpus.py
+- **Accept when:** `results/openai_math/corpus_index.json` exists with `clone_head` set,
+  and every challenge flagged in `challenges_with_problems` is triaged in the study doc.
+
+### 26. openai_math D2: independent Comparator re-run (needs user approval)
+Separate Lake project on disk 2 (v4.34.1, `lake exe cache get`, mmap workaround), with
+`comparator`, `landrun`, `lean4export` installed. Start with `Catalan.json`.
+- **Accept when:** one challenge passes Comparator on this machine AND a perturbed copy of
+  the same challenge (negative control) fails it, both recorded under `results/openai_math/`.
+
+### 27. Merge the `#exit` forgery guard into main
+The guard written in master-math run two (`build_ladder.verdict`) is only on branch
+`worktree-master-math-regen2`. `anse/formal/lean_runner.py` file mode has no equivalent.
+- **Accept when:** a test feeds `lean_runner.verify_file` a proof with a forged
+  `#print "... depends on axioms: [propext]"` + `#exit` and it is rejected; or the gate moves
+  to a Comparator-style statement/solution split.

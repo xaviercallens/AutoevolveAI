@@ -526,3 +526,28 @@ built independently and validated each other on first contact with real data.
 attends to the retrieved context; measuring the SAME intervention on multiple models can
 reveal that one model benefits and another doesn't, from identical inputs -- don't generalize
 a retrieval result across models without testing each one.
+
+## 16. openai/math: another model's manuscripts are claims, not results (2026-10-07)
+
+Study of github.com/openai/math for the `openai_math` discovery sub-project
+(`docs/OPENAI_MATH_STUDY.md`). Upstream itself says some unformalized results "could have
+issues"; only its Comparator-checked Lean theorems are its verified tier, and those certify
+the Lean statement, not its fidelity to the paper.
+
+- **Summarised web reads are not counts.** The study was done through WebFetch (network
+  `git clone` was refused in-session). Its summariser reported "100 challenge files" while
+  listing ~54 names, "150 docs" while listing ~138, and tagged a family "Lean" that has no
+  scope note. Every count goes through `scripts/openai_math/index_corpus.py` on a real clone.
+- **Toolchains do not mix.** Upstream is Lean v4.34.1 + a pinned full Mathlib + ~30 patched
+  dependencies, with `import Mathlib` in every challenge. `formal/` is v4.34.0-rc2 with a
+  partial Mathlib. Never copy an upstream file into `formal/`; building `OAI` needs its own
+  Lake project and a user decision on the downloads.
+- **Adopt the Comparator split.** Statement module (reviewed) + solution module (untrusted)
+  + environment-level type/axiom comparison in a sandbox closes the in-file `#print`/`#exit`
+  forgery class. The run-two `#exit` guard lives only on unmerged branch
+  `worktree-master-math-regen2`; main's `lean_runner.py` file mode is likely still forgeable
+  (untested).
+
+**Apply:** before using any upstream theorem as a premise or target, (1) recount it from the
+clone, (2) review the challenge statement against the paper, (3) re-run Comparator ourselves
+(producer != verifier). Re-verifying is the instrument check, not discovery.

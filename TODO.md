@@ -267,8 +267,8 @@ this candidate (score).
   in place) so a regression can be rolled back to the base checkpoint.
 
 ### 25. openai_math D0: clone and index github.com/openai/math
-Plan and stages D0-D5: `docs/OPENAI_MATH_STUDY.md`. The clone was refused in-session
-(network git), so it is a user action first:
+Plan and stages D0-D5: `docs/OPENAI_MATH_STUDY.md`. `git clone` was refused in-session by
+the permission mode (`git push` to origin worked), so it is a user action first:
   git clone --depth 1 https://github.com/openai/math /mnt/disks/disk-socrateai-local-1/callensxavier_home_data/SocrateAI-Scientific-Agora-LeanMaster/lean4basesource/openai-math
   python3 scripts/openai_math/index_corpus.py
 - **Accept when:** `results/openai_math/corpus_index.json` exists with `clone_head` set,

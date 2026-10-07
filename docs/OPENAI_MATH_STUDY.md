@@ -1,8 +1,9 @@
 # openai/math — study and the `openai_math` discovery sub-project
 
 Status 2026-10-07: **study done from the public GitHub pages; local clone not yet made.**
-The session that wrote this could not run `git clone` (network git was refused by the
-permission mode), so everything below was read through GitHub's web pages and API via
+The session that wrote this could not run `git clone` or `git ls-remote` (refused by the
+permission mode; `git push` to this repo's origin did work), so everything below was read
+through GitHub's web pages and API via
 WebFetch, which passes pages through a summarising model. Numbers marked
 **[recount]** came from that path and are not trusted; `scripts/openai_math/index_corpus.py`
 recounts them from disk once the clone exists. Numbers marked **[README]** are quoted from
@@ -39,10 +40,11 @@ never be cited as results.
   `d13f23b723b8a846827a245b89c10fc7d3f11612`, plus ~30 pinned git dependencies
   (PrimeNumberTheoremAnd, StrongPNT, carleson, sphere-eversion, ClassFieldTheory,
   PrimeCert, leancert, a family of `lana-agents/*` libraries such as `iut`,
-  `elliptic-curves`, `heights`, `belyi`, ...). Eleven of them get compatibility patches
-  from `lean/patches/*-lean4341.patch`, applied by a `run_cmd` hook *before* Lake resolves
-  dependencies. One `lean_lib` per area: `OAI.NumberTheory`, `OAI.Combinatorics`,
-  `OAI.Analysis`, ... 23 in all.
+  `elliptic-curves`, `heights`, `belyi`, ...; 30 `require` lines counted in the verbatim
+  lakefile). 23 of them get compatibility patches from `lean/patches/<dep>-lean4341.patch`:
+  the 11 `lana-agents/*` packages via a `run_cmd` hook *before* Lake resolves dependencies,
+  and 12 more (PrimeNumberTheoremAnd, carleson, SphereEversion, ...) in `post_update`. One
+  `lean_lib` per area: `OAI.NumberTheory`, `OAI.Combinatorics`, `OAI.Analysis`, ... 23 in all.
 - Upstream warns the full library may hit Linux `vm.max_map_count`; workaround is a Lean
   built with `-DMMAP=OFF` or `GLIBC_TUNABLES=glibc.malloc.mmap_max=0:glibc.malloc.arena_max=1`.
 - `lean/docs/NNN.md`: one scope note per formalized family (~140–150 files [recount]),
@@ -81,8 +83,18 @@ end OAI
 
 Run with `comparator`, `landrun` (sandbox) and `lean4export` on PATH:
 `lake update && lake exe cache get && lake env comparator ComparatorChallenges/<X>.json`.
-Comparator checks that the solution module's theorem has *exactly* the challenge's type and
-uses only the permitted axioms, working on the exported environment inside a sandbox.
+What Comparator checks, from the `leanprover/comparator` README (read 2026-10-07): every
+theorem in `theorem_names` "prove[s] the same statement as provided in `Challenge`" and uses
+"no more axioms than listed in `permitted_axioms`". It builds the challenge and the solution
+with `lake` inside a `landrun` sandbox, exports each `.olean` with `lean4export` in another
+sandbox, checks the declarations agree, and replays the solution into the Lean kernel.
+`enable_nanoda: true` adds a second, independent kernel (nanoda). Its stated trust base and
+limits: the challenge's transitive imports, the lakefile, landrun, the kernel and the OS are
+trusted; you must not have compiled the solution (or any adversarial file) beforehand
+outside the sandbox; and definition holes "must always be checked with an additional
+(potentially human) verifier". For this project that means: run it on a fresh checkout, and
+review the lakefile too, since upstream's lakefile runs `git` and applies patches at
+configuration time.
 
 Why this matters for AutoevolveAI: our gate (`anse/formal/lean_runner.py`, file mode)
 parses `#print axioms` text from the output of a file that also contains model-written
@@ -100,7 +112,7 @@ whether the challenge statement is faithful to the paper (LL.md §7). That revie
 
 | Can do now (T4 box, no new downloads) | Needs a user decision first |
 |---|---|
-| Index + audit the clone (`index_corpus.py`) | The clone itself (network git refused in-session) |
+| Index + audit the clone (`index_corpus.py`) | The clone itself (`git clone` refused in-session) |
 | Statement-faithfulness review of challenges vs abstracts | A separate Lake project for OAI: v4.34.1 toolchain, `lake exe cache get` (many GB), ~30 deps, mmap workaround |
 | PARI/GP + Sage numerical checks of quantitative number-theory claims | Installing `comparator`, `landrun`, `lean4export` |
 | Use scope notes as a source of well-posed target statements | Building any `OAI.*` module locally |
@@ -109,11 +121,28 @@ Hard rules carried in: never copy an `import Mathlib` challenge into `formal/` (
 build, LL.md §3); never compile in a worktree (no `formal/.lake`); every experiment gets a
 positive and a negative control; PARI/Sage, not hand arithmetic, is ground truth.
 
-Overlap with LeanMaster: LeanMaster is about lattices, T-duality, K3/Mukai lattices,
-moonshine (MCP `search_theorems`). The nearest upstream family is 032 (Hodge and
-Kuga–Satake for K3 surfaces), which is algebraic geometry far above LeanMaster's lattice
-arithmetic; treat the link as "shared objects", not shared theorems. Run
-`search_theorems` before stating anything K3-related.
+### Overlap with LeanMaster
+
+The LeanMaster MCP tools (`search_theorems`, `usage_guide`) were refused in this session, so
+this is read from LeanMaster's README, not from a theorem search. Re-run
+`search_theorems` before relying on any of it.
+
+- **Same toolchain gap.** LeanMaster is also on Lean v4.34.0-rc2, so no LeanMaster module
+  can be imported into the v4.34.1 `OAI` project as is, nor the reverse.
+- **Quadratic forms and class numbers.** LeanMaster Stream 5 (`DualScaleDyons`) counts
+  Hurwitz class numbers `H` independently and checks DMZ identities against them. Upstream
+  has `OAI/NumberTheory/QuadraticForms` (contents not yet read). This is the most concrete
+  shared object: a candidate for cross-checking numeric tables, not for sharing proofs.
+- **Finite-order integer matrices.** LeanMaster Stream 9 proves `crystallographic_restriction`
+  (ψ(n) ≤ d) and `no_order_fifteen_in_rank_five`. Check upstream's `GroupTheory` and
+  `LinearAlgebra` libraries for overlapping statements after the clone.
+- **K3.** Upstream family 032 (Hodge, Kuga–Satake for K3) is algebraic geometry far above
+  LeanMaster's K3/Mukai lattice arithmetic: shared objects, not shared theorems.
+
+**LeanMaster's gate tools are part of the pipeline.** `tools/statement_lock.py` and
+`tools/axiom_audit.py` honour `LEAN_PROJECT_ROOT`, so they can point at upstream's `lean/`:
+statement locks in D1, axiom audit as a second checker beside Comparator in D2. This is
+untested against a v4.34.1 project.
 
 ## 4. The sub-project: stages
 
@@ -128,9 +157,14 @@ discovery; it is the instrument check that has to come first (LL.md §1).
 - **D1 — statement faithfulness.** For the number-theory challenges first: compare each
   Lean statement with its scope note and paper abstract; flag vacuous or weakened
   statements. A model reviewer is recorded as a model, not a human audit (LL.md §12).
+  Every reviewed statement is frozen with LeanMaster's
+  `LEAN_PROJECT_ROOT=<clone>/lean python tools/statement_lock.py --update <files>`, so a later
+  upstream edit to a challenge shows up as a lock failure (`--check`).
 - **D2 — independent Comparator re-run** (producer ≠ verifier). After approval: separate
   Lake project on disk 2, start with one small challenge (Catalan), preregister the expected
   outcome, and include a negative control (a challenge with a perturbed statement must fail).
+  Run LeanMaster's `tools/axiom_audit.py` on the built solution as a second, independent
+  checker (it also rejects `Lean.ofReduceBool`), and `enable_nanoda` if nanoda installs.
 - **D3 — numerical cross-checks.** Preregistered PARI/Sage experiments on quantitative
   claims, e.g. family 012: the density of n with P⁺(n) < P⁺(n+1) is 1/2 (upstream scope note).
   Finite-N numerics can only be *consistent* with a limit, never confirm it; the

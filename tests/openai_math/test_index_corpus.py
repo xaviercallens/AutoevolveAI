@@ -115,6 +115,7 @@ def test_negative_control_undeclared_theorem_name_is_flagged(clone: Path) -> Non
     _write_challenge(clone, "Renamed", GOOD_LEAN, _config("Renamed", ["OAI.catalan_irrational"]))
     audit = {a.name: a for a in ic.audit_challenges(clone / "lean")}["Renamed"]
     assert audit.problems == ["theorem_names not declared in challenge file: ['OAI.catalan_irrational']"]
+    assert audit.declared_theorems == ["OAI.InternalCatalan.catalan_irrational"]
 
 
 def test_negative_control_proof_inside_challenge_and_axiom_are_flagged(clone: Path) -> None:
@@ -158,11 +159,21 @@ def test_build_index_recounts_from_disk(clone: Path) -> None:
     assert index["toolchain"]["upstream"] == "leanprover/lean4:v4.34.1"
 
 
-def test_toolchain_mismatch_is_reported(clone: Path) -> None:
-    index = ic.build_index(clone)
-    local = index["toolchain"]["local_formal"]
-    assert index["toolchain"]["compatible"] is (local == "leanprover/lean4:v4.34.1")
-    assert local is None or local.startswith("leanprover/lean4:")
+def test_toolchain_mismatch_is_reported(
+    clone: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    local = tmp_path / "lean-toolchain"
+    monkeypatch.setattr(ic, "LOCAL_TOOLCHAIN_FILE", local)
+    local.write_text("leanprover/lean4:v4.34.0-rc2\n")
+    mismatch = ic.build_index(clone)["toolchain"]
+    assert mismatch["local_formal"] == "leanprover/lean4:v4.34.0-rc2"
+    assert mismatch["compatible"] is False
+    local.write_text("leanprover/lean4:v4.34.1\n")
+    assert ic.build_index(clone)["toolchain"]["compatible"] is True
+    local.unlink()
+    absent = ic.build_index(clone)["toolchain"]
+    assert absent["local_formal"] is None
+    assert absent["compatible"] is False
 
 
 def test_missing_clone_is_blocked_and_writes_nothing(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -194,3 +205,18 @@ def test_packed_refs_head_resolution(tmp_path: Path) -> None:
 def test_root_prefixed_and_nested_namespaces() -> None:
     src = "namespace A.B\ntheorem t : True := trivial\nend A.B\ntheorem _root_.Z.u : True := trivial\n"
     assert ic.declared_theorem_names(src) == ["A.B.t", "Z.u"]
+    unclosed = "namespace A\ntheorem v : True := trivial\nend B\ntheorem w : True := trivial\n"
+    assert ic.declared_theorem_names(unclosed) == ["A.v", "A.w"]
+
+
+def test_attributes_and_modifiers_before_theorem_are_recognised() -> None:
+    src = (
+        "namespace N\n"
+        "@[simp] theorem a : True := trivial\n"
+        "@[simp, norm_cast]\nprotected theorem b : True := trivial\n"
+        "nonrec lemma c : True := trivial\n"
+        "private noncomputable theorem d : True := trivial\n"
+        "end N\n"
+    )
+    assert ic.declared_theorem_names(src) == ["N.a", "N.b", "N.c", "N.d"]
+    assert ic.declared_theorem_names("@[simp] def notATheorem : Nat := 0\n") == []

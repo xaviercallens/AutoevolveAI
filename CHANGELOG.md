@@ -10,8 +10,9 @@ All notable changes to AutoevolveAI / SuperGravity are documented here.
 - `scripts/openai_math/index_corpus.py`: recounts and audits a local clone (permitted
   axioms, declared theorem names, statement-only challenges, toolchain match). Fails closed:
   exits 2 with BLOCKED when the clone is absent. The clone itself is pending (TODO 25).
-- `tests/openai_math/`: 12 tests with positive and negative controls, plus Hypothesis
-  property tests (skipped when Hypothesis is not installed).
+- `tests/openai_math/`: 13 tests with positive and negative controls (pass under system
+  python3), plus Hypothesis property tests that have not run yet (Hypothesis is not
+  installed in any interpreter this session could use).
 - LL.md §16; TODO 25-27 (clone + index, independent Comparator re-run, merge the `#exit`
   forgery guard into main).
 

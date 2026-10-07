@@ -534,12 +534,13 @@ Study of github.com/openai/math for the `openai_math` discovery sub-project
 issues"; only its Comparator-checked Lean theorems are its verified tier, and those certify
 the Lean statement, not its fidelity to the paper.
 
-- **Summarised web reads are not counts.** The study was done through WebFetch (network
-  `git clone` was refused in-session). Its summariser reported "100 challenge files" while
+- **Summarised web reads are not counts.** The study was done through WebFetch (`git clone`
+  and `git ls-remote` were refused in-session; `git push` to origin worked). Its summariser reported "100 challenge files" while
   listing ~54 names, "150 docs" while listing ~138, and tagged a family "Lean" that has no
   scope note. Every count goes through `scripts/openai_math/index_corpus.py` on a real clone.
-- **Toolchains do not mix.** Upstream is Lean v4.34.1 + a pinned full Mathlib + ~30 patched
-  dependencies, with `import Mathlib` in every challenge. `formal/` is v4.34.0-rc2 with a
+- **Toolchains do not mix.** Upstream is Lean v4.34.1 + a pinned full Mathlib + 30 pinned
+  dependencies (23 patched for v4.34.1), and the challenge read (`Catalan.lean`) starts with
+  `import Mathlib`. `formal/` is v4.34.0-rc2 with a
   partial Mathlib. Never copy an upstream file into `formal/`; building `OAI` needs its own
   Lake project and a user decision on the downloads.
 - **Adopt the Comparator split.** Statement module (reviewed) + solution module (untrusted)

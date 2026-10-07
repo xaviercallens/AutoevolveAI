@@ -53,7 +53,12 @@ REQUIRED_CONFIG_KEYS: tuple[str, ...] = (
 )
 EXIT_BLOCKED = 2
 
-_DECL_RE = re.compile(r"^\s*(?:private\s+|protected\s+)?(?:theorem|lemma)\s+([^\s:({\[]+)", re.M)
+_DECL_RE = re.compile(
+    r"^\s*(?:@\[[^\]]*\]\s*)*"
+    r"(?:(?:private|protected|noncomputable|nonrec)\s+)*"
+    r"(?:theorem|lemma)\s+([^\s:({\[]+)",
+    re.M,
+)
 _NAMESPACE_RE = re.compile(r"^\s*(namespace|end)\s+([^\s]+)\s*$", re.M)
 _IMPORT_RE = re.compile(r"^\s*import\s+([^\s]+)", re.M)
 _AXIOM_RE = re.compile(r"^\s*axiom\s+", re.M)

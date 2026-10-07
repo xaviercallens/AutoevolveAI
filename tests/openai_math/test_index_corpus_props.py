@@ -43,7 +43,10 @@ def test_theorem_is_qualified_by_its_enclosing_namespaces(namespaces: list[str],
     opening = "".join(f"namespace {n}\n" for n in namespaces)
     closing = "".join(f"end {n}\n" for n in reversed(namespaces))
     src = f"{opening}theorem {thm} : True := trivial\n{closing}theorem after : True := trivial\n"
-    assert ic.declared_theorem_names(src) == [".".join([*namespaces, thm]), "after"]
+    names = ic.declared_theorem_names(src)
+    assert names[0] == ".".join([*namespaces, thm])
+    assert names[1] == "after"
+    assert len(names) == 2
 
 
 @given(IDENT)

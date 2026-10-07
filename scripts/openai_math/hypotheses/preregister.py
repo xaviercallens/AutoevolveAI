@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+"""Freeze the openai_math hypothesis lab BEFORE the real runs (LL.md: preregister, commit).
+
+Writes results/openai_math/hypotheses/preregistration.json with the five hypotheses, their
+type (a = corollary of an upstream theorem, b = conjecture beyond upstream), the test,
+decision rule, controls, and the sha256 of every runner. Smoke-test values already seen are
+disclosed rather than hidden.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parents[2]
+OUT = REPO / "results" / "openai_math" / "hypotheses" / "preregistration.json"
+RUNNERS = ["h2_class_numbers.py", "h4_lienard.py", "h5_dyadic.py"]
+
+HYPOTHESES: list[dict[str, object]] = [
+    {
+        "id": "H1",
+        "area": "Riemann",
+        "type": "a (corollary)",
+        "anchor": "family 003, QuasiRiemannHypothesis.lean (Lean statement faithful; source scan clean; NOT compiled here)",
+        "statement": "If zeta(s) != 0 for Re s > 7/8, then psi(x) = x + O(x^(7/8) log^2 x) and M(x) = O_eps(x^(7/8+eps)).",
+        "novelty": "classical implication (von Koch/Ingham for psi; Littlewood for M); new only in that family 003 would make it unconditional",
+        "test": "none numerical (cannot fail at computable x); deliverable is a Lean statement locked as a target",
+    },
+    {
+        "id": "H2",
+        "area": "Riemann",
+        "type": "a (order 1/loglog, corollary) + b (explicit constant)",
+        "anchor": "family 003, DirichletSevenEighths.lean (same status as H1)",
+        "statement": "For every fundamental D < -4: L(1, chi_D) * log log|D| >= c_train, c_train = min over 7 <= |D| <= 1e6.",
+        "test": "h2_class_numbers.py: PARI class numbers for all fundamental D, |D| <= 1e7",
+        "decision": "PASS if min over holdout 1e6 < |D| <= 1e7 is >= c_train; FAIL otherwise",
+        "controls": {
+            "positive": "9 Heegner discriminants with h = 1 in |D| <= 1e6; h(-23)=3, h(-47)=5, h(-71)=7",
+            "negative": "min L(1,chi_D) over [1e6.5, 1e7] < min over [1e5, 1e5.5] (wrong-order statistic must drift)",
+        },
+        "known_weakness": "c_train is likely set by small |D|, so the holdout test is weak; the dyadic-window minima are reported as the informative trend",
+    },
+    {
+        "id": "H3",
+        "area": "Riemann",
+        "type": "a (corollary)",
+        "anchor": "family 003, DirichletSevenEighths.lean",
+        "statement": "If every Dirichlet L-function is zero-free in Re s > 7/8, then psi(x; q, a) = x/phi(q) + O(x^(7/8) log^2 x) uniformly in q and (a, q) = 1 (non-trivial for q <= x^(1/8 - eps)).",
+        "novelty": "classical implication of a uniform zero-free half-plane; unconditional only via family 003; compare Siegel-Walfisz (q <= (log x)^A)",
+        "test": "none numerical; Lean target",
+    },
+    {
+        "id": "H4",
+        "area": "Hilbert 16th",
+        "type": "b (conjecture)",
+        "anchor": "family 143, QuinticLienard.lean (faithful; source scan clean; NOT compiled here)",
+        "statement": "Classical Lienard systems of degree 6 have at most 4 limit cycles (the De Maesschalck-Dumortier lower bound is sharp).",
+        "novelty": "unchecked: no upper bound for degree 6 was found in the 2026-10-07 search; sharpness not claimed in the sources read",
+        "test": "h4_lienard.py, 8 seeds x budget 1200 s",
+        "decision": "REFUTED if any confirmed count >= 5 at degree 6; a confirmed 3 at degree 5 contradicts upstream's formal theorem; otherwise 'not refuted (low power)'",
+        "controls": {
+            "positive": "van der Pol -> 1 cycle; averaging-built quintic -> 2 cycles",
+            "negative": "random degree 3/4 samples never report >= 2 (theorems)",
+        },
+        "known_weakness": "random search does not reach the canard regime where De Maesschalck-Dumortier's 4 cycles live; the instrument has not reproduced 4 at degree 6",
+        "smoke_test_seen": {"seed": 1, "budget_s": 30, "max_cycles": {"5": 2, "6": 2}},
+    },
+    {
+        "id": "H5",
+        "area": "Hilbert transform",
+        "type": "b (conjecture)",
+        "anchor": "'An L3 bound for the dyadic triangular Hilbert form' (2026-10-05), Theorem 1.1, constant 40; NOT Lean-formalized (family 082's Lean covers only the continuous maximal estimate)",
+        "statement": "The best constant C* in sum_k sum_{I in A_k} |L_I| <= C* prod ||F_v||_3 equals 2.",
+        "test": "h5_dyadic.py, N = 2..7, restarts 40 (N<=6) / 12 (N=7), Hoelder ascent",
+        "decision": "REFUTED if any ratio > 2 + 1e-9 at any N; a ratio > 40 contradicts upstream's Theorem 1.1; supported (not proved) if every run stays <= 2 + 1e-9 and an exact rational witness attains 2",
+        "controls": {
+            "positive": "F = 1 gives ratio 1 exactly; vectorised L_I equals a direct loop at N = 2 (<1e-12)",
+            "negative": "Haar-free form at F = 1 gives N + 1 (grows with scales): 4 at N = 3, 7 at N = 6",
+        },
+        "smoke_test_seen": {"N": [2, 3, 4], "restarts": 3, "best_ratio": 1.9999999999987477},
+    },
+]
+
+
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def main() -> int:
+    payload = {
+        "lab": "openai_math hypothesis lab (autoresearch-style, see program.md)",
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "stage": "preregistration: smoke tests only have been run; values seen are disclosed per hypothesis",
+        "runner_sha256": {r: sha256(HERE / r) for r in RUNNERS},
+        "program_sha256": sha256(HERE / "program.md"),
+        "hypotheses": HYPOTHESES,
+    }
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(json.dumps(payload, indent=2) + "\n")
+    print(f"wrote {OUT}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

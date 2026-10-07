@@ -265,3 +265,39 @@ this candidate (score).
   held-out split, and the fine-tuned checkpoint is versioned separately from the base
   download (never overwrite `checkpoints/laya/model.safetensors` from the upstream download
   in place) so a regression can be rolled back to the base checkpoint.
+
+### 25. openai_math D0: clone and index github.com/openai/math -- DONE 2026-10-07
+Plan and stages D0-D5: `docs/OPENAI_MATH_STUDY.md`. The user cloned it (HEAD adc7f124);
+`results/openai_math/corpus_index.json` has 722 preprints, 235 scope notes, 405 challenges,
+0 defects, 10 review notes, all triaged in the study's section 2b.
+
+### 28. openai_math D1: body-check the nine definition-hole challenges
+Comparator does not compare definition-hole bodies (study section 2b). For Brenier,
+DefocusingNLS, ElementaryPositivity, EuclideanFiveColor, KServer, Naimark,
+OccupiedOverlap, Rokhlin and SpinAngle, compare each hole's body in the challenge with the
+solution's definition (KServer `MainStatement` already matches by eye, up to bound-variable
+names).
+- **Accept when:** each hole has a recorded verdict (matches / differs / sorried in the
+  challenge), by elaborated-`Expr` comparison once D2 builds, or by eye before that and
+  labelled as such.
+
+### 26. openai_math D2: independent Comparator re-run (needs user approval)
+Separate Lake project on disk 2 (v4.34.1, `lake exe cache get`, mmap workaround), with
+`comparator`, `landrun`, `lean4export` installed. Start with `Catalan.json`.
+- **Accept when:** one challenge passes Comparator on this machine AND a perturbed copy of
+  the same challenge (negative control) fails it, both recorded under `results/openai_math/`.
+
+### 27. Merge the `#exit` forgery guard into main
+The guard written in master-math run two (`build_ladder.verdict`) is only on branch
+`worktree-master-math-regen2`. `anse/formal/lean_runner.py` file mode has no equivalent.
+- **Accept when:** a test feeds `lean_runner.verify_file` a proof with a forged
+  `#print "... depends on axioms: [propext]"` + `#exit` and it is rejected; or the gate moves
+  to a Comparator-style statement/solution split.
+
+### 29. openai_math hypothesis lab follow-ups (2026-10-07)
+- H5': an upper-bound proof of C* <= 5/2, or a multi-scale search that beats 5/2.
+- H4: a canard (slow-fast) search that first reproduces De Maesschalck-Dumortier's 4 cycles at
+  degree 6; fix the per-sample budget (stiff solver or in-loop deadline).
+- H2(b): extend past |D| = 1e7; certify h with an unconditional method.
+- H1-H3: formal derivations, only after TODO 26 Comparator-checks family 003.
+- **Accept when:** each item has a preregistered run with controls in `results.tsv`.

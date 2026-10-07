@@ -2,6 +2,17 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [Unreleased] — openai_math hypothesis lab: five Riemann/Hilbert hypotheses (2026-10-07)
+
+- `docs/OPENAI_MATH_HYPOTHESES.md`: H1-H3 (Riemann; corollaries of upstream family 003 plus an
+  explicit class-number constant), H4 (Lienard degree 6 <= 4 limit cycles), H5' (dyadic triangular
+  Hilbert constant = 5/2). Preregistered (commits 27d1d93, 542d6f5); H5 (C* = 2) refuted by its own
+  run; exact witness gives C* >= 5/2.
+- `scripts/openai_math/hypotheses/`: program.md (autoresearch-style), runners h2/h4/h5, h5_exact,
+  preregister, build_ledger (Elenchus gate: 6 claims, no findings); Lean targets for H1-H4
+  (elaborate in LeanMaster's environment; `sorry` targets).
+- `scripts/openai_math/scan_solution.py`: static scan of upstream proof import closures.
+
 ## [Unreleased] — openai_math discovery sub-project, stage D0 (2026-10-07)
 
 - `docs/OPENAI_MATH_STUDY.md`: study of github.com/openai/math (722 manuscripts / 372

@@ -563,3 +563,23 @@ the Lean statement, not its fidelity to the paper.
 **Apply:** before using any upstream theorem as a premise or target, (1) recount it from the
 clone, (2) review the challenge statement against the paper, (3) re-run Comparator ourselves
 (producer != verifier). Re-verifying is the instrument check, not discovery.
+
+## 17. Hypothesis lab on openai/math: preregistration caught our own first conjecture (2026-10-07)
+
+`docs/OPENAI_MATH_HYPOTHESES.md`, `scripts/openai_math/hypotheses/`. Five hypotheses (three
+Riemann corollaries/conjectures anchored on upstream family 003, Lienard degree 6, the dyadic
+triangular Hilbert constant), each preregistered and committed before its confirmatory run.
+
+- **The preregistered H5 (C* = 2) was refuted by its own run.** Smoke tests at N <= 4 with 3
+  restarts all said 2.0; the real run (40 restarts) found 5/2 at N = 4. Smoke-test numbers are
+  not evidence; disclosing them in the preregistration is what kept the record honest.
+- **Turn a float optimum into an exact certificate when you can.** The 2.5 optimum had +-1
+  entries, so the ratio is an exact dyadic rational: C* >= 5/2 is Tier B, not Tier X.
+- **Corollaries are not discoveries.** H1-H3 are classical implications of a zero-free
+  half-plane; they matter only because upstream 003 would make them unconditional. Label them.
+- **A wall-clock budget checked between samples is not a budget.** Two of eight Lienard seeds
+  ran >4x past their 1200 s budget inside single stiff samples (explicit DOP853 on relaxation
+  oscillations). Check the budget inside the sample loop or use a stiff solver.
+- **LeanBert does not exist here**; the named-but-absent tool was reported, not simulated.
+- **Pipes still hide exit codes.** A Lean compile piped to `head` showed exit 0 over two type
+  errors; the recorded run redirects to a file and appends Lean's own exit code.

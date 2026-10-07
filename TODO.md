@@ -293,3 +293,11 @@ The guard written in master-math run two (`build_ladder.verdict`) is only on bra
 - **Accept when:** a test feeds `lean_runner.verify_file` a proof with a forged
   `#print "... depends on axioms: [propext]"` + `#exit` and it is rejected; or the gate moves
   to a Comparator-style statement/solution split.
+
+### 29. openai_math hypothesis lab follow-ups (2026-10-07)
+- H5': an upper-bound proof of C* <= 5/2, or a multi-scale search that beats 5/2.
+- H4: a canard (slow-fast) search that first reproduces De Maesschalck-Dumortier's 4 cycles at
+  degree 6; fix the per-sample budget (stiff solver or in-loop deadline).
+- H2(b): extend past |D| = 1e7; certify h with an unconditional method.
+- H1-H3: formal derivations, only after TODO 26 Comparator-checks family 003.
+- **Accept when:** each item has a preregistered run with controls in `results.tsv`.

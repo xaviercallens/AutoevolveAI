@@ -2,7 +2,28 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
-## [Unreleased] — openai_math hypothesis lab: five Riemann/Hilbert hypotheses (2026-10-07)
+## [14.2.0] — openai_math sub-project: study, D0 index, Riemann/Hilbert hypothesis lab, night LTM cycle (2026-10-07)
+
+Summary: a new math-discovery sub-project built on github.com/openai/math (722 model-written
+manuscripts) with LeanMaster's Lean environment and the Elenchus claim ledger. Nothing here is a
+proof; upstream claims are claims by another model and were not compiled on this machine.
+
+### Gates (run on this branch, system python3)
+- `pytest tests/openai_math/test_index_corpus.py tests/openai_math/test_index_corpus_props.py
+  tests/openai_math/test_hypothesis_lab.py tests/test_night_ltm_ingest.py`: 27 passed, 1 skipped
+  (Hypothesis not installed).
+- `test_rigor_guard.py`: exit 1 on pre-existing files only (7 hollow K3 tests); none in new files.
+- `antigravity_guard.py`: exit 1. Pre-existing files fail on packages absent from system python;
+  the one new-file finding is the `hypothesis` import in `tests/openai_math/test_index_corpus_props.py`
+  (same cause as the existing `tests/conftest.py`).
+- Full `pytest tests/` was not run: it rewrites `data/chroma/chroma.sqlite3`.
+
+### Overnight LTM cycle
+- `scripts/night_ltm_ingest.py`: all AutoevolveAI Claude Code transcript folders -> Redis + Chroma,
+  repo documents and the openai/math corpus -> Chroma, under the T4 lease, deadline before the
+  05:05 retrain. First run launched 2026-10-07 21:35 UTC; results land in `results/ltm_ingest/`.
+
+### Hypothesis lab
 
 - `docs/OPENAI_MATH_HYPOTHESES.md`: H1-H3 (Riemann; corollaries of upstream family 003 plus an
   explicit class-number constant), H4 (Lienard degree 6 <= 4 limit cycles), H5' (dyadic triangular
@@ -13,14 +34,14 @@ All notable changes to AutoevolveAI / SuperGravity are documented here.
   (elaborate in LeanMaster's environment; `sorry` targets).
 - `scripts/openai_math/scan_solution.py`: static scan of upstream proof import closures.
 
-## [Unreleased] — openai_math discovery sub-project, stage D0 (2026-10-07)
+### Stage D0: study and corpus index
 
 - `docs/OPENAI_MATH_STUDY.md`: study of github.com/openai/math (722 manuscripts / 372
   families per its README), its Lean v4.34.1 library and Comparator verification, and a
   staged plan D0-D5 for math discovery with AutoevolveAI + LeanMaster.
 - `scripts/openai_math/index_corpus.py`: recounts and audits a local clone (permitted
   axioms, declared theorem names, statement-only challenges, toolchain match). Fails closed:
-  exits 2 with BLOCKED when the clone is absent. The clone itself is pending (TODO 25).
+  exits 2 with BLOCKED when the clone is absent. Run on the user's clone (HEAD adc7f124).
 - `tests/openai_math/`: 17 tests with positive and negative controls (pass under system
   python3), plus Hypothesis property tests that have not run yet (Hypothesis is not
   installed in any interpreter this session could use).

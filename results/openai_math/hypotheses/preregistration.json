@@ -1,6 +1,6 @@
 {
   "lab": "openai_math hypothesis lab (autoresearch-style, see program.md)",
-  "timestamp_utc": "2026-10-07T19:50:19.811950+00:00",
+  "timestamp_utc": "2026-10-07T20:59:00.624446+00:00",
   "stage": "preregistration: smoke tests only have been run; values seen are disclosed per hypothesis",
   "runner_sha256": {
     "h2_class_numbers.py": "ad7e627ccaf85100297375cf9cc34c60b2324bd191f34a8a4080fa7fdfe457cd",
@@ -84,7 +84,24 @@
         ],
         "restarts": 3,
         "best_ratio": 1.9999999999987477
-      }
+      },
+      "outcome": "REFUTED 2026-10-07 by the preregistered run: ratio 5/2 at N = 4 (exact rational witness, h5_exact.py verify)"
+    },
+    {
+      "id": "H5'",
+      "amends": "H5 (refuted); amendment written AFTER the H5 runs and the N=5 sign-flip exploration, BEFORE the confirmatory runs below",
+      "area": "Hilbert transform",
+      "type": "b (conjecture)",
+      "anchor": "same as H5 (unformalized upstream Theorem 1.1, constant 40)",
+      "statement": "The best constant C* in the dyadic triangular Hilbert estimate equals 5/2.",
+      "evidence_before_amendment": {
+        "hoelder_ascent": "N=4,5,6, 40 restarts each: best 2.5 (to 1e-10)",
+        "exact_witness": "N=4 +-1 inputs, exact ratio 5/2 = 1 + 1/2 + 1/2 + 1/4 (scales -3..0) + 1/4 (top term): rigorous C* >= 5/2",
+        "sign_flip_search": "N=5, 900 s: lifted witness stays 5/2; random start reaches 3041/2048"
+      },
+      "confirmatory_test": "h5_dyadic.py at N = 7 (restarts 12, seed0 7000) and N = 6 (restarts 40, seed0 6000); seeds never used before",
+      "decision": "REFUTED if any ratio > 5/2 + 1e-9; otherwise 'not refuted' (a numerical search cannot prove an upper bound)",
+      "controls": "as H5"
     }
   ]
 }

@@ -73,7 +73,7 @@ def main() -> None:
             rows.append(f"{r['z']:.3f} & ${q}$ & {r['measured']:.4f} & {r['sigma']:.4f} & [{r['pred_lo']:.4f}, {r['pred_hi']:.4f}] & [{r['pull_lo']:+.3f}, {r['pull_hi']:+.3f}] \\\\")
         else:
             rows.append(f"{r['z']:.3f} & ${q}$ & {r['measured']:.4f} & -- & not certified & -- \\\\")
-    (HERE / "table_desi.tex").write_text(wrap("@{}rlrrll@{}", "$z$ & quantity & DESI DR2 & $\\sigma$ & certified prediction & pull", rows))
+    (HERE / "table_desi.tex").write_text(wrap("@{}rlrrll@{}", "$z$ & quantity & DESI DR2 & $\\sigma$ & prediction from certified bounds & pull", rows))
 
     ax = res["lean"]["axioms"]
     m["NTheorems"] = str(len([k for k in ax if not k.startswith("ctl_")]))

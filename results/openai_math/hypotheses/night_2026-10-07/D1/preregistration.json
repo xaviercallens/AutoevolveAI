@@ -1,0 +1,95 @@
+{
+  "lane": "D1",
+  "date": "2026-10-07",
+  "todo": 28,
+  "hypothesis_id": "D1-definition-hole-bodies",
+  "statement": "For each definition hole listed in the nine upstream openai/math Comparator configs that declare definition_names (Brenier, DefocusingNLS, ElementaryPositivity, EuclideanFiveColor, KServer, Naimark, OccupiedOverlap, Rokhlin, SpinAngle; 45 hole names in total), the solution's declaration of that name either reproduces the challenge's declaration (so a Comparator pass would certify the challenge's intended meaning) or it does not / cannot be checked. Comparator's definitionHoleMatches compares name, universe levels, type and safety only, not the body (read from upstream Comparator source in an earlier session, 2026-10-07; Comparator/Compare.lean is not present in the local clone, so this lane does not re-verify that claim). This lane is a statement review, not a numeric test: it has no numeric threshold.",
+  "status_of_upstream": "Challenge and solution files are claims by another model (openai/math @ adc7f1241b42e322a6451854ab7e4b4c146bf78a). Nothing is compiled or elaborated in this lane.",
+  "inputs": {
+    "clone": "/mnt/disks/disk-socrateai-local-1/callensxavier_home_data/SocrateAI-Scientific-Agora-LeanMaster/lean4basesource/openai-math (read-only)",
+    "commit": "adc7f1241b42e322a6451854ab7e4b4c146bf78a",
+    "lean_root": "<clone>/lean",
+    "configs": "<lean_root>/ComparatorChallenges/{Brenier,DefocusingNLS,ElementaryPositivity,EuclideanFiveColor,KServer,Naimark,OccupiedOverlap,Rokhlin,SpinAngle}.json",
+    "challenge_files": "<lean_root>/ComparatorChallenges/<Name>.lean",
+    "solution_search_space": "the import closure of each config's solution_module, following only `import X` lines whose file <lean_root>/X.lean exists (Mathlib and other external imports are not searched). A declaration in an OAI file outside that closure does not count.",
+    "hole_counts_from_configs": {
+      "Brenier": 12,
+      "DefocusingNLS": 3,
+      "ElementaryPositivity": 1,
+      "EuclideanFiveColor": 1,
+      "KServer": 9,
+      "Naimark": 7,
+      "OccupiedOverlap": 5,
+      "Rokhlin": 4,
+      "SpinAngle": 3
+    }
+  },
+  "method": {
+    "extraction": "Comment-stripped (line comments, nested block comments, doc comments; string literals kept), column-0 declarations of kind def/abbrev/theorem/lemma/instance/structure/inductive/class/opaque/axiom/example/irreducible_def (with optional @[..] attributes and private/protected/noncomputable/partial/unsafe/nonrec modifiers). A declaration ends at the next column-0 command line. Fully qualified names from a namespace/section stack (namespace A.B pushes one scope per component; `end X.Y` pops as many scopes as X.Y has components, bare `end` pops one; dotted declaration names extend the prefix; _root_. resets it). Universe suffixes .{u} are stripped from the name. The active open/variable/universe/omit/include lines of each declaration's scope are recorded as context, not compared.",
+    "comparison": "Token streams after the declaration name (signature + body) are compared. Whitespace and comments are irrelevant by construction. Two streams are equal up to bound-variable renaming iff they have the same length, every non-identifier token is equal, and differing identifiers form a single consistent bijection in which both members are bound on their own side (binder positions: after fun/λ/∀/∃/∃!/∑/∏/⋃/⋂/∫/∮/Π/Σ/let/have up to a terminator; leading identifiers of a bracket group followed by ':' '//' or '|'; pattern variables of a match arm '|' ... '=>' where the '|' is at depth 0 or after with/fun at its depth). A dotted token x.f may match y.f when x->y is such a renaming. Dotted global names, keywords and free identifiers must match exactly. No other equivalences: fun vs λ, => vs ↦, Finset.univ vs univ under `open Finset`, notation vs its unfolding are all DIFFERS mechanically.",
+    "kind_rule": "A declaration-kind mismatch (e.g. abbrev vs def) is DIFFERS, because reducibility changes elaboration.",
+    "sorry_rule": "SORRIED_IN_CHALLENGE iff the comment-stripped challenge declaration contains a `sorry` or `admit` token. Recorded separately: challenge_sorry_only (everything after the signature is `sorry`, `by sorry` or `admit`) vs a body that merely contains a sorry (e.g. `decreasing_by sorry`), and whether the solution declaration contains sorry/admit. The challenge-side fields are recorded even when the solution side is NOT_FOUND.",
+    "shadowing": "For each hole found in the solution closure, shadow_candidates lists names prefix.ident, for every free (unbound, non-keyword) identifier ident of the solution declaration and every prefix of its own namespace or a namespace opened in its context, that are declared in the solution closure but not in the challenge file (other hole names excluded). context_differs flags any difference between the recorded open/variable/universe context lines of the two sides. Neither changes the mechanical verdict."
+  },
+  "verdict_categories": {
+    "NOT_FOUND": "no declaration of the hole's full name in the challenge file, or none in the solution import closure (file:line hints from a raw-text search are attached for the eye check)",
+    "AMBIGUOUS": "more than one declaration of the full name on one side; treated as a parser flag, never resolved by choosing one",
+    "SORRIED_IN_CHALLENGE": "the challenge's definition is sorry'd: a genuine hole; the theorem's meaning depends on the solution's definition and is flagged, not resolved",
+    "MATCHES": "same kind and token-identical up to whitespace, comments and a bound-variable bijection (the renaming map is recorded)",
+    "DIFFERS": "anything else; the first differing token, whether it lies in the signature or the body, and a +-10 token window from each side are quoted"
+  },
+  "decision_rule": [
+    "Mechanical verdicts are assigned in the fixed order NOT_FOUND, AMBIGUOUS, SORRIED_IN_CHALLENGE, kind check, MATCHES, DIFFERS by scripts/openai_math/d1_hole_bodies.py at the sha256 below; the code is not edited between preregistration and the run. If a defect forces an edit, the edit, the new sha256 and the reason are disclosed in the result, and controls and the full run are repeated.",
+    "Every MATCHES and DIFFERS verdict (and every renaming map) is then checked by eye against the source, with the recorded open/variable/universe context of both sides. The eye review is stored separately (eye_verdict, note, meaning_pinned) and never overwrites the mechanical verdict; every disagreement is listed in eye_disagreements.",
+    "A hole whose meaning cannot be pinned (SORRIED_IN_CHALLENGE, NOT_FOUND, AMBIGUOUS, a DIFFERS whose semantic effect cannot be settled by reading, or a MATCHES whose surrounding context differs in a way that could change elaboration) is reported with meaning_pinned=false, not resolved. This lane never upgrades DIFFERS to MATCHES; text comparison is not elaboration, and elaborated Expr comparison is deferred to D2.",
+    "A MATCHES with a non-empty shadow_candidates list or context_differs=true gets meaning_pinned=false unless the by-eye check reads every shadow candidate and context difference and records why it cannot change the elaborated meaning.",
+    "Results count only if every control in controls.json passes (all_pass=true). A failing control means the run is reported as a crash, not as verdicts."
+  ],
+  "controls": {
+    "positive": [
+      "self: each of the nine challenge files compared with itself: every hole MATCHES (or SORRIED_IN_CHALLENGE where the challenge declaration contains sorry)",
+      "layout: each challenge vs a copy with indentation changed, trailing line comments and a nested block comment added: same verdict as self",
+      "alpha_rename_bound: EuclideanFiveColor with bound variables point/otherPoint renamed to p/q: ProperColoring MATCHES"
+    ],
+    "negative": [
+      "neg_eq1_to_eq2: EuclideanFiveColor `‖ = 1` -> `‖ = 2`: ProperColoring DIFFERS",
+      "neg_body_true: KServer `def MainStatement : Prop := True` (the D2 attack Comparator would accept): DIFFERS",
+      "neg_global_swap_dist_edist: KServer serviceCost `dist` -> `edist` (undotted global): DIFFERS, not a renaming",
+      "neg_dotted_swap_log_exp: KServer `Real.log` -> `Real.exp`: MainStatement DIFFERS",
+      "neg_abbrev_to_def: KServer `abbrev Configuration` -> `def Configuration`: DIFFERS",
+      "neg_sorried_challenge: EuclideanFiveColor challenge with ProperColoring's body replaced by sorry: SORRIED_IN_CHALLENGE",
+      "neg_not_found: OAI.EuclideanFiveColor.NoSuchDefinition: NOT_FOUND"
+    ],
+    "where": "d1_hole_bodies.py controls --root <lean_root> --out <lane>; mutated copies are written to <lane>/controls/, results to <lane>/controls.json"
+  },
+  "outputs": {
+    "chunks": "<lane>/chunks/<Name>.json (one per challenge; reruns skip finished chunks)",
+    "eye_review": "<lane>/eye_review.json (written by hand during the by-eye check)",
+    "final_json": "results/openai_math/hypotheses/night_2026-10-07/D1/definition_holes.json",
+    "final_table": "results/openai_math/hypotheses/night_2026-10-07/D1/definition_holes.md"
+  },
+  "budget": {
+    "cpu": "1 core, reading and small scripts only (no Lean, no lake, no LLM)",
+    "time": "each Bash call < 2 min; whole lane (controls + 9 chunks + eye review) within one session",
+    "planned_commands": [
+      "/usr/bin/python3 scripts/openai_math/d1_hole_bodies.py controls --root <lean_root> --out <lane>",
+      "/usr/bin/python3 scripts/openai_math/d1_hole_bodies.py run --root <lean_root> --out <lane>",
+      "(by-eye review, writes <lane>/eye_review.json)",
+      "/usr/bin/python3 scripts/openai_math/d1_hole_bodies.py assemble --out <lane> --eye <lane>/eye_review.json"
+    ]
+  },
+  "code": {
+    "scripts/openai_math/d1_hole_bodies.py": "82b5147337fadabe61ce95380f9acf0651d0dc0ca45fbb7efdbf3f6211a38de1",
+    "tests/openai_math/test_d1_hole_bodies.py": "539d03bb94a16f4cabf7bc9bc4f5995c6a14840b7d8ae8b8ff93fc5b1e31d127",
+    "interpreter": "/usr/bin/python3 (Python 3.10.12), pytest 9.1.1; hypothesis is NOT installed for this interpreter, so the one Hypothesis property test is skipped"
+  },
+  "smoke_test_disclosure": {
+    "unit_tests": "/usr/bin/python3 -m pytest tests/openai_math/test_d1_hole_bodies.py -q -p no:cacheprovider -> 22 passed, 1 skipped (Hypothesis property test; hypothesis not installed). All on synthetic Lean snippets and a tmp-dir import tree. An earlier version of the code (before the namespace-stack, sorry-field, shadowing and irreducible_def changes suggested in review) gave 18 passed, 1 skipped.",
+    "real_files_touched_before_preregistration": [
+      "Read by eye during orientation: the nine config JSONs (hole names and solution modules), challenge files EuclideanFiveColor.lean, KServer.lean, Rokhlin.lean and the first 70 lines of ElementaryPositivity.lean (its single hole elementaryPositivityWitness is visibly `:= by sorry` in the challenge), and only the import/namespace/section/open/variable lines of the solution files OAI/Combinatorics/KServer/Main.lean and OAI/Dynamics/MultipleMixing/Main.lean (no solution definition bodies were read).",
+      "A substring-presence check confirmed that each control mutation applies to the real EuclideanFiveColor/KServer challenge files (all True). No comparison of any challenge against any solution was run.",
+      "Prior knowledge: docs/OPENAI_MATH_STUDY.md (earlier session) records a by-eye reading that KServer's MainStatement in OAI/Combinatorics/KServer/Main.lean:123 matches the challenge up to renamed bound variables. That is a prior expectation, not a result of this lane."
+    ],
+    "instrument_check_challenge_side": "extract_decls run on the nine challenge .lean files only (no solution file): of the 45 hole names, 45 found exactly once in their challenge file, 0 missing, 0 duplicated. No verdict was computed."
+  }
+}

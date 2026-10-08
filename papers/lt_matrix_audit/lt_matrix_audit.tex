@@ -1,0 +1,153 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[hidelinks]{hyperref}
+\input{gen_numbers.tex}
+\emergencystretch=3em
+
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\DeclareMathOperator{\tr}{tr}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Lone}{L_1}
+
+\title{A null result for the matrix-valued sharp one-dimensional Lieb--Thirring inequality,\\
+and a Comparator check of the scalar Lean formalisation}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-08}
+\hypersetup{pdftitle={A null result for the matrix-valued sharp one-dimensional Lieb-Thirring inequality, and a Comparator check of the scalar Lean formalisation}, pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We report two things, neither of which is a mathematical breakthrough. First, an adversarial numerical search for
+a violation of the matrix-valued sharp one-dimensional Lieb--Thirring inequality $\operatorname{Tr}(-\partial_x^2\otimes 1_m-W)_-^{\gamma}\le \Lone(\gamma)\int\operatorname{tr}W^{\gamma+1/2}\,dx$
+for $1/2<\gamma<3/2$, with $\Lone$ the one-bound-state constant. The instrument is one-sided by construction (every computed ratio is a rigorous
+lower bound of the true one up to quadrature error), and was validated by positive and negative controls before any result was read.
+Across $\MTwoCells$ cells at $m=2$ ($\MTwoRestarts$ restarts), $\MThreeCells$ cells at $m=3$, a second-variation test at the embedded scalar extremiser,
+and an independent search of the dual kinetic form, no violation was found: $\MTwoFlagged$ restarts exceeded $\Lone$ by the flag threshold, and the closest approach is
+$\MTwoClosest$ below $\Lone$, which is below the instrument's resolution of about $10^{-6}$. This does \emph{not} prove the matrix inequality.
+Second, using upstream's own pinned toolchain, we ran the \texttt{leanprover/comparator} on the scalar sharp Lieb--Thirring theorem published in the
+\texttt{openai/math} repository and it was accepted by the Lean kernel with only the three standard axioms. The Lean statement is scalar; the Comparator
+certifies that the solution proves the challenge statement, not that the statement is a faithful formalisation of the conjecture, which we did not audit.
+\end{abstract}
+
+\section{Claim, scope and what is \emph{not} claimed}
+For $m\ge1$, a matrix potential $W\ge0$ on $\R$ with values in $m\times m$ Hermitian matrices, and $\gamma\in(1/2,3/2)$ the inequality in question is
+\begin{equation}\label{eq:LT}
+ \operatorname{Tr}\bigl(-\partial_x^2\otimes 1_m-W\bigr)_-^{\gamma}\ \le\ \Lone(\gamma)\int_{\R}\tr W(x)^{\gamma+1/2}\,dx,\qquad
+ \Lone(\gamma)=\frac{2\bigl(\tfrac{\gamma-1/2}{\gamma+1/2}\bigr)^{\gamma-1/2}\Gamma(\gamma+1)}{2\sqrt\pi\,\Gamma(\gamma+\tfrac32)} .
+\end{equation}
+Here $\Lone$ is the constant for which equality holds at the one-bound-state potential $W=(r+1)\operatorname{sech}^2(rx)\,ee^{\dagger}$, $e$ a unit vector, with $r=1/(\gamma-\tfrac12)$
+(one bound state $\operatorname{sech}^{\gamma-1/2}(rx)\,e$ at energy $-1$). For $m=1$ this is the scalar sharp Lieb--Thirring inequality; for $\gamma\ge3/2$ the operator-valued case is
+a theorem of Laptev and Weidl~\cite{LW}, of which we use only $\gamma=3/2$ (where $\Lone=3/16$) as a control. The statement that~\eqref{eq:LT} holds for $m\ge2$ in the range $1/2<\gamma<3/2$, together with a classification of the equality cases,
+appears as a headline claim of one family in the public \texttt{openai/math} repository (accessed 2026-10-08), which presents it as the work of an AI model. We did not assess its literature status.
+The matrix claim is \emph{not} part of the Lean formalisation in that repository, which is scalar.
+
+\paragraph{What this paper does not claim.} It does not prove or refute~\eqref{eq:LT} for $m\ge2$; it does not show the Lean statement is an adequate formalisation of any conjecture;
+it contains no new theorem. A search that finds nothing is evidence of the instrument's reach, not of truth.
+
+\section{Instrument and preregistration}
+\paragraph{One-sided design.} The eigenvalues of $-\partial_x^2\otimes 1_m-W$ are computed on the Dirichlet box $[-L,L]$ ($L=24$) in a sine basis by Rayleigh--Ritz.
+Dirichlet restriction can only raise eigenvalues (domain monotonicity) and a finite basis raises them again (min--max), so every computed negative eigenvalue lies above the true one and the computed $\sum|E_j|^\gamma$ is a lower bound of
+the whole-line value, up to quadrature error (Gauss--Legendre, $Q=1200$ nodes). Potentials are $W=B^\dagger B$ with $B$ built from $\operatorname{sech}$ times Chebyshev polynomials in $\tanh$ with complex coefficients and shifts.
+Candidate violations were to be re-evaluated on a refined grid and by an independent finite-difference scheme with Richardson extrapolation (agreement about $10^{-6}$); a candidate counted as certified only if the refined-grid excess exceeded $10^{-5}$ and the finite-difference excess exceeded $5\times10^{-6}$.
+The verdict rule was interval-style and abstaining: VOID, VIOLATION\_CERTIFIED, UNDECIDED, NO\_VIOLATION\_FOUND.
+
+\paragraph{Preregistration.} Hypotheses H-LT1 (no violation at $m=2$, then $m=3$), H-LT2 (structure of near-maximisers), H-LT3 (second variation at the embedded scalar extremiser), H-LT4 (instrument validity)
+and H-LT5 (dual kinetic form) were registered with kill criteria and the sha256 of the frozen instrument and campaign code before any campaign result was seen.
+Seeds were ledger-enforced and never reused. Deviations are logged in each lane's \texttt{deviations.md}.
+
+\paragraph{Controls.} Table~\ref{tab:ctl} lists the controls, run before the campaigns. The two negative controls matter: at $\gamma=3$ the one-soliton constant is not optimal, and the same code must find a violation; it does.
+\begin{table}[h]\centering\small
+\input{table_controls.tex}
+\caption{Controls (from \texttt{results/openai\_math/hypotheses/lt\_matrix/controls.json}). Excess means computed ratio over $\Lone$ minus one.}\label{tab:ctl}
+\end{table}
+The exact extremiser itself is computed \emph{below} $\Lone$ by up to $6.5\times10^{-7}$ (C1). The instrument therefore cannot resolve differences below about $10^{-6}$.
+
+\section{Results}
+\subsection{$m=2$ (H-LT1)}
+$\MTwoCells$ cells over $\gamma\in\{0.75,1,1.25,1.4\}$ and the families random, embedded-scalar, rotated-pair and $x$-dependent twist, with $K\in\{2,3\}$ and $P\in\{8,10\}$,
+$\MTwoRestarts$ restarts in total. Table~\ref{tab:m2} gives, per cell, how far below $\Lone$ the best restart stays. No restart reached the flag threshold of $10^{-7}$ above $\Lone$.
+The closest approach, $\MTwoClosest$ below $\Lone$, is below the resolution of about $10^{-6}$ (at $\gamma=1$ the exact extremiser itself is computed $6.5\times10^{-7}$ below $\Lone$): the search found nothing better than the scalar soliton,
+and could not rule out a violation smaller than about $10^{-6}$. The least-converged cells stay as far as $\MTwoFarthestBest$ below $\Lone$.
+\begin{table}[h]\centering\small
+\input{table_m2.tex}
+\caption{All $m=2$ cells (from \texttt{LT\_A/result.json}). The ``twist'' cells were repeated in chunks until saturated.}\label{tab:m2}
+\end{table}
+
+\subsection{$m=3$ (H-LT1)}
+Table~\ref{tab:m3} lists the six cells and the $\gamma=3/2$ control, where the supremum is a proved theorem and must not be exceeded; it was not.
+\begin{table}[h]\centering\small
+\input{table_m3.tex}
+\caption{$m=3$ cells (from \texttt{LT\_B/result.json}).}\label{tab:m3}
+\end{table}
+
+\subsection{Second variation at the embedded scalar extremiser (H-LT3)}
+Perturbing $B^*=\operatorname{diag}(\sqrt{r+1}\operatorname{sech}(rx),0,\dots,0)$ in all directions except the exactly flat ones (translation, dilation), the restricted Hessian of $\log R$ has
+$\HessPositive$ positive eigenvalues beyond tolerance in all $\HessCells$ test cells (Table~\ref{tab:hess}). The same code on the $\gamma=3$ negative control returns confirmed positive directions (Table~\ref{tab:hessctl}; $\HessCtlPositive$ positive eigenvalues, all in the control).
+The correct wording is ``no positive direction found beyond tolerance'': most modes are flat to numerical precision (122 of 162 at $m=3$), so this is \emph{not} a proof that the embedded extremiser is a strict local maximum.
+\begin{table}[h]\centering\small
+\input{table_hessian.tex}
+\caption{Restricted Hessian spectrum summary at the embedded scalar extremiser (from \texttt{LT\_B/result.json}).}\label{tab:hess}
+\end{table}
+\begin{table}[h]\centering\small
+\input{table_hessian_ctl.tex}
+\caption{Negative control, $\gamma=3$: positive directions are found, as they must be.}\label{tab:hessctl}
+\end{table}
+
+\subsection{An independent search space: the dual kinetic form (H-LT5)}
+At $\gamma=1$, \eqref{eq:LT} implies for orthonormal families $\psi_1,\dots,\psi_N$ in $L^2(\R;\mathbb C^m)$, with $\rho=\sum_j\psi_j\psi_j^\dagger$, that
+$\sum_j\|\psi_j'\|^2\ge\frac{\pi^2}{4}\int\tr\rho^3\,dx$, because $4/(27\Lone(1)^2)=\pi^2/4$. The kinetic energy is exact in the sine basis and $\int\tr\rho^3$ is evaluated exactly on a periodic grid.
+Table~\ref{tab:dual} gives, for $m\in\{1,2,3\}$ and $N\in\{1,2,3,4\}$, the smallest relative excess of the quotient over $\pi^2/4$ found in 12 restarts per cell; the smallest value over all $\DualCells$ cells is $\DualMinExcess$ above, so nothing went below.
+In $\DualNeverClose$ cells (those with $(m,N)\in\{(1,3),(1,4),(2,4)\}$) no restart came within $10^{-5}$ of $\pi^2/4$ although the $m=1$ cases are theorems; the search resolution there is poor, and a violation smaller than about $10^{-4}$ would be invisible.
+\begin{table}[h]\centering\small
+\input{table_dual.tex}
+\caption{Dual kinetic form (from \texttt{LT\_C/result.json}).}\label{tab:dual}
+\end{table}
+
+\subsection{Structure of near-maximisers (H-LT2): the preregistered prediction was killed}
+The preregistered prediction was that near-maximisers are, up to a constant unitary, direct sums of scalar solitons: a commutator statistic $C<0.01$.
+On a snapshot of the data taken during the night, $\TwoRows$ near-maximiser rows existed, of which $\TwoAnalysed$ had stored parameters ($\TwoNotStored$ did not and were not analysed). Of these, $\TwoKilled$ met the kill rule
+($R\ge(1-10^{-4})\Lone$ with $C>0.05$), $\TwoKilledOutside$ of them outside the $\gamma=3/2$ control; $\TwoIntermediate$ were intermediate and $\TwoHolds$ held the prediction.
+An exploratory, not preregistered, follow-up suggests that kills from embedded or twisted starts are tail noise of a scalar soliton plus a zero channel, while kills from the random family are genuine multi-channel near-maximisers that are not a direct sum in one constant basis.
+We offer an untested explanation: spatially separated pieces with different eigenvector directions decouple asymptotically (so $R\approx\Lone$) without commuting across $x,y$, so the wording ``one constant unitary'' may be too strong.
+This concerns the form of an equality-case classification, not the inequality.
+
+\section{Comparator check of the scalar Lean formalisation}
+The repository \texttt{openai/math} contains a Lean 4 formalisation with a challenge file \path{ComparatorChallenges/LiebThirring.lean} (statement, ending in \texttt{sorry}) and a solution module \path{OAI.Analysis.LiebThirring.Main}.
+We installed upstream's own pinned stack on a separate disk: Lean 4.34.1, Mathlib at upstream's commit \texttt{d13f23b7}, and upstream's \texttt{lakefile} (\texttt{autoImplicit} off), with no edits.
+\begin{itemize}
+\item \texttt{lake build} of the Lieb--Thirring closure (38 files) succeeds, and \texttt{\#print axioms} for the four final theorems lists exactly \texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}.
+\item The \texttt{leanprover/comparator}, run with \texttt{landrun} (sandbox) and \texttt{lean4export} and the Lean default kernel, reports \emph{``\CmpOutput''} for \path{OAI.SharpLiebThirring.sharp_lieb_thirring}
+with permitted axioms \texttt{propext}, \texttt{Quot.sound}, \texttt{Classical.choice}.
+\item Controls for the Comparator, run on the same setup: a matching statement is accepted; a different statement is rejected (``theorem statement do not match''); a proof using an extra axiom is rejected (``Illegal axiom detected'').
+\item The triangular-lattice energy theorem of the same repository: Comparator verdict \CmpTriVerdict{} (see the repository for the record).
+\end{itemize}
+\paragraph{Process lessons.} Before the pinned stack was available, an adapted copy compiled on a different Lean/Mathlib version needed a declared one-line rename for the Lieb--Thirring closure (\texttt{Set.equivOfEq} to \texttt{Equiv.setCongr}),
+while the triangular closure failed on a tactic whose behaviour changed (\texttt{convert}/\texttt{simp} left an unreduced \texttt{if}); both compiled unmodified under the pin. The lesson is that version drift is easy to mistake for a proof defect.
+An independent verifier of the first pilot also found that we had compiled with \texttt{autoImplicit} on while upstream's lakefile turns it off; the final result above uses upstream's setting.
+
+\paragraph{What the Comparator does and does not certify.} It certifies that the solution proves a theorem whose statement equals the challenge statement and uses only permitted axioms. It does not certify that the statement formalises the Lieb--Thirring conjecture
+(domain of test functions, extended-real sums, definition of the negative moment), which requires a human audit that has not been done. It says nothing about the matrix-valued case.
+
+\section{Limitations}
+(i) The instrument resolves differences of about $10^{-6}$ only; a violation of relative size below that is invisible. (ii) The search is local and finite: $336$ restarts at $m=2$ cannot cover the space of potentials.
+(iii) The dual-form search did not converge in three cells. (iv) The near-maximiser analysis rests on a partial snapshot. (v) The Lean part is scalar. (vi) The statement audit is outstanding.
+
+\section*{Reproducibility and acknowledgements}
+All numbers and tables in this paper are generated from the committed result files by \texttt{papers/lt\_matrix\_audit/gen\_numbers.py}. Code, preregistrations, lane records with independent adversarial verification notes, and the Comparator logs are in
+the \texttt{AutoevolveAI} repository on branch \texttt{worktree-openai-math-discovery}. The experiments, code and the drafting of this paper were carried out with the assistance of the AI model Claude (Anthropic) under the author's direction;
+the author is responsible for the content.
+
+\begin{thebibliography}{9}
+\bibitem{LW} A.~Laptev and T.~Weidl, Sharp Lieb--Thirring inequalities in high dimensions, \emph{Acta Math.} \textbf{184} (2000), 87--111.
+\bibitem{LT} E.~H.~Lieb and W.~Thirring, Inequalities for the moments of the eigenvalues of the Schr\"odinger Hamiltonian and their relation to Sobolev inequalities, in \emph{Studies in Mathematical Physics}, Princeton Univ.\ Press, 1976, 269--303.
+\bibitem{cmp} \texttt{leanprover/comparator}, \url{https://github.com/leanprover/comparator}; \texttt{openai/math}, \url{https://github.com/openai/math} (both accessed 2026-10-08).
+\end{thebibliography}
+\end{document}

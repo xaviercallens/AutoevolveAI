@@ -3,26 +3,25 @@
   "verdict": "COMPARATOR_ACCEPTS",
   "authorised_by": "user: 'Yes and I autorize' and '! bash .../setup_comparator.sh' (2026-10-08)",
   "claim": "leanprover/comparator, with the Lean default kernel, accepts upstream's solution OAI.Analysis.LiebThirring.Main for the challenge ComparatorChallenges.LiebThirring: theorem OAI.SharpLiebThirring.sharp_lieb_thirring has the same statement in both and uses only propext, Quot.sound, Classical.choice.",
-  "output_tail": [
-    "real\t6m19.830s",
-    "user\t4m58.482s",
-    "sys\t0m24.179s",
-    "exit-of-pipeline: done"
-  ],
   "controls_run_after_the_main_run_on_the_same_setup": {
     "positive_CtlPos": {
       "expected": "accept",
       "got": [
-        "exit-of-pipeline: done"
+        "Lean default kernel accepts the solution",
+        "Your solution is okay!"
       ]
     },
     "negative_wrong_statement_CtlNegStmt": {
       "expected": "reject",
-      "got": "user\t0m6.457s"
+      "got": [
+        "uncaught exception: Challenge and solution theorem statement do not match: 'Ctl.t'"
+      ]
     },
     "negative_extra_axiom_CtlNegAxiom": {
       "expected": "reject",
-      "got": "user\t0m6.545s"
+      "got": [
+        "uncaught exception: Illegal axiom detected: 'Ctl.cheat'"
+      ]
     },
     "control_sources": "/mnt/disks/disk-socrateai-local-1/callensxavier_home_data/openai_math_pinned/lean/ComparatorChallenges/Ctl*.lean and Ctl*.json (in the disk-2 copy, not in upstream or this repo)"
   },
@@ -44,5 +43,12 @@
     "an external kernel check (nanoda not run)"
   ],
   "tier": "Tier A for the Lean statement OAI.SharpLiebThirring.sharp_lieb_thirring as written in the challenge file (kernel-checked; statement meaning unaudited). Not a claim about the literature.",
-  "timestamp_utc": "2026-10-08T16:04:19.555323+00:00"
+  "timestamp_utc": "2026-10-08T16:04:19.555323+00:00",
+  "output_evidence": [
+    "Build completed successfully (8924 jobs).",
+    "Build completed successfully (8961 jobs).",
+    "Lean default kernel accepts the solution",
+    "Your solution is okay!"
+  ],
+  "correction": "first commit b3cf558 stored the last log lines (timing), not the Comparator's own verdict lines; evidence lines replaced from the saved logs, no re-run"
 }

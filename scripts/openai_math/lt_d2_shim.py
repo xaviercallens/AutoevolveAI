@@ -34,6 +34,8 @@ ROOTS = [D.ROOT_MODULE]
 FINALS = [D.FINAL_THEOREM]
 CHALLENGE = D.UP / "ComparatorChallenges" / "LiebThirring.lean"
 CARRY_FROM: Path | None = None
+# upstream's lakefile sets `autoImplicit false` for every OAI library; plain `lean` defaults to true, which is more permissive
+LEAN_OPTS: list[str] = ["-DautoImplicit=false"]
 LANE_D = Path(__file__).resolve().parents[2] / "results" / "openai_math" / "hypotheses" / "night_2026-10-08" / "LT_D"
 
 
@@ -100,7 +102,7 @@ def cmd_closure(lane: Path, max_seconds: int) -> None:
             break
         out_o = scratch / (m.replace(".", "/") + ".olean")
         out_o.parent.mkdir(parents=True, exist_ok=True)
-        res = D.run_lean([f"--root={src}", "-o", str(out_o), "-i", str(out_o.with_suffix(".ilean")), str(path)], lp, 3000)
+        res = D.run_lean([*LEAN_OPTS, f"--root={src}", "-o", str(out_o), "-i", str(out_o.with_suffix(".ilean")), str(path)], lp, 3000)
         ok = (not res["has_error"]) and out_o.exists()
         rec[m] = {"status": "compiled" if ok else "failed", "seconds": res["seconds"],
                   "first_error": "" if ok else D.first_error(str(res["output"])), "timed_out": res["timed_out"]}
@@ -167,7 +169,13 @@ def main() -> int:
     ap.add_argument("--final", action="append", default=[], help="theorem(s) whose axioms are printed (default: Lieb-Thirring)")
     ap.add_argument("--challenge", default=None, help="challenge file name in ComparatorChallenges/ for the statement comparison")
     ap.add_argument("--carry-from", default=None, help="lane dir whose compiled oleans/records may be reused for unchanged files")
+    ap.add_argument("--lean-opt", action="append", default=None,
+                    help="lean option(s); default -DautoImplicit=false as in upstream's lakefile; an empty value --lean-opt= "
+                         "clears the list (plain lean, the earlier LT_D / LT_D2 runs)")
     args = ap.parse_args()
+    global LEAN_OPTS
+    if args.lean_opt is not None:
+        LEAN_OPTS = [o for o in args.lean_opt if o]
     global ROOTS, FINALS, CHALLENGE, CARRY_FROM
     ROOTS = args.root or ROOTS
     FINALS = args.final or FINALS

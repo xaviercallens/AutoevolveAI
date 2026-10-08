@@ -1,0 +1,23 @@
+{
+  "lane": "LT_D2b",
+  "stage": "preregistration: written before prepare/closure/axioms were run; smoke values seen: none",
+  "timestamp_utc": "2026-10-08T12:16:24.672441+00:00",
+  "motivation": "The adversarial verifier of LT_D2 noted that upstream's lakefile sets `autoImplicit false` for every OAI library, while LT_D / LT_D2 compiled with plain `lean` (autoImplicit true, a more permissive setting). The verifier recompiled Model, FiniteParity and Main with -DautoImplicit=false and all passed; the other 35 files were not rerun.",
+  "hypothesis": "H-D2b: with -DautoImplicit=false and the single declared rename (Set.equivOfEq -> Equiv.setCongr, same justification as LT_D2), all 38 files compile from scratch (no carried-over oleans) and the axiom list of OAI.SharpLiebThirring.sharp_lieb_thirring is within propext, Classical.choice, Quot.sound.",
+  "kill_criterion": "any file fails (a file that compiles only with autoImplicit true would mean an auto-bound identifier hides a different meaning); or a non-whitelisted axiom",
+  "rules": [
+    "fresh scratch directory, nothing carried over",
+    "only the declared rename; stop at the first failure",
+    "same toolchain as LT_D2 (Lean 4.34.0-rc2, LeanMaster's Mathlib rev 85e3a25e)"
+  ],
+  "still_not_established": [
+    "a Comparator run",
+    "compilation under upstream's own pinned toolchain (Lean 4.34.1, Mathlib d13f23b7)",
+    "statement adequacy (no human audit)",
+    "equality of the elaborated statement with the challenge's"
+  ],
+  "code_sha256": {
+    "scripts/openai_math/lt_d2_shim.py": "494edb1d23dffdf6d304fe65ecfa53bb5ba94fabba8fb44794289dbaa8ff80c9"
+  },
+  "budget": "1 core, about 15 minutes of compile"
+}

@@ -32,7 +32,16 @@
   "controls": "the compile runner and the axiom classifier were exercised by lanes LT_D and LT_D2 (14 + 24 successful compiles, one known failure reproduced, planted-axiom negative controls in the LT_D2 verification). No new control is added.",
   "code_sha256": {
     "scripts/openai_math/lt_d2_shim.py": "59d30813194482b1b764fd9c780f4a7dcbff26636daa0dfd122fccefee7a63f3",
-    "scripts/openai_math/lt_d_lean.py": "471b286dbef0f6794e515bdaf06102eb71fdef3fbcd8d0ecbf05bc3407fbcb38"
+    "scripts/openai_math/lt_d_lean.py": "471b286dbef0f6794e515bdaf06102eb71fdef3fbcd8d0ecbf05bc3407fbcb38",
+    "scripts/openai_math/lt_d2_shim.py (after amendment)": "494edb1d23dffdf6d304fe65ecfa53bb5ba94fabba8fb44794289dbaa8ff80c9"
   },
-  "budget": "1 core, about 3 hours, no GPU"
+  "budget": "1 core, about 3 hours, no GPU",
+  "amendments": [
+    {
+      "timestamp_utc": "2026-10-08T12:16:24.672441+00:00",
+      "change": "compile with -DautoImplicit=false (upstream's lakefile setting for all OAI libraries) instead of plain lean",
+      "reason": "found by the adversarial verifier of LT_D2; the TRI_D3 run had been started minutes earlier with plain lean, was stopped before any file was reported compiled, its partial scratch was deleted, and the run restarts from zero",
+      "made_before_the_rerun": true
+    }
+  ]
 }

@@ -16,7 +16,84 @@
     "H6": "A kernel-checked interval for chi2(0.29743, K_fit) with K_fit = 299792458/10154300 (h r_d = 101.543) contains the rusty-SUNDIALS value 10.2710; its width is reported (no threshold).",
     "H7": "Kernel-checked: for every real K, chi2(Om = 1, K) >= X_EdS with X_EdS >= 1000 (Einstein-de Sitter is excluded by DESI DR2 BAO alone at any h r_d).",
     "H8": "Kernel-checked slab bounds L_s with: for all Om in slab s and all real K, chi2(Om, K) >= L_s. A slab is EXCLUDED when L_s > U_fit + 25, U_fit the upper end of the H6 interval (Delta chi2 > 25 against a certified upper bound of the minimum). Prediction: the excluded slabs cover [0, 0.24] and [0.36, 1].",
-    "slabs": [[0, 0.05], [0.05, 0.10], [0.10, 0.15], [0.15, 0.20], [0.20, 0.22], [0.22, 0.24], [0.24, 0.25], [0.25, 0.26], [0.34, 0.35], [0.35, 0.36], [0.36, 0.38], [0.38, 0.40], [0.40, 0.45], [0.45, 0.50], [0.50, 0.60], [0.60, 0.70], [0.70, 0.80], [0.80, 0.90], [0.90, 1.00]]
+    "slabs": [
+      [
+        0,
+        0.05
+      ],
+      [
+        0.05,
+        0.1
+      ],
+      [
+        0.1,
+        0.15
+      ],
+      [
+        0.15,
+        0.2
+      ],
+      [
+        0.2,
+        0.22
+      ],
+      [
+        0.22,
+        0.24
+      ],
+      [
+        0.24,
+        0.25
+      ],
+      [
+        0.25,
+        0.26
+      ],
+      [
+        0.34,
+        0.35
+      ],
+      [
+        0.35,
+        0.36
+      ],
+      [
+        0.36,
+        0.38
+      ],
+      [
+        0.38,
+        0.4
+      ],
+      [
+        0.4,
+        0.45
+      ],
+      [
+        0.45,
+        0.5
+      ],
+      [
+        0.5,
+        0.6
+      ],
+      [
+        0.6,
+        0.7
+      ],
+      [
+        0.7,
+        0.8
+      ],
+      [
+        0.8,
+        0.9
+      ],
+      [
+        0.9,
+        1.0
+      ]
+    ]
   },
   "controls": {
     "C4 (positive)": "the rusty-SUNDIALS chi2 at the fit point (from its MCP server or crate) lies inside the H6 interval; the MCP profile chi2_min(Om) on a fine Om grid is >= L_s inside every slab s",
@@ -24,6 +101,27 @@
     "C6 (negative)": "a copy with one DESI value shifted by +10 sigma must give an H6 interval that excludes 10.2710 (the certificate is sensitive to the data)",
     "C7 (negative)": "a deliberately false stated bound is rejected; planted sorry/axiom flagged by the axiom audit"
   },
-  "kill_and_void": ["any control failing voids P2", "no slab bound or interval is edited by hand; failures are reported"],
-  "not_claimed": ["no claim about radiation, neutrinos, curvature or dark-energy models other than flat LCDM", "the Gaussian likelihood and the DESI data vector are inputs, not theorems", "Delta chi2 thresholds are conventions"]
+  "kill_and_void": [
+    "any control failing voids P2",
+    "no slab bound or interval is edited by hand; failures are reported"
+  ],
+  "not_claimed": [
+    "no claim about radiation, neutrinos, curvature or dark-energy models other than flat LCDM",
+    "the Gaussian likelihood and the DESI data vector are inputs, not theorems",
+    "Delta chi2 thresholds are conventions"
+  ],
+  "amendments": [
+    {
+      "id": "A1",
+      "timestamp_utc": "2026-10-08T20:22:38.598801+00:00",
+      "made_before_any_P2_number_was_computed": true,
+      "change": "the profile over K is centred: for each case pick an untrusted K0 > 0 (from a floating-point fit) and write K = K0 + t; with r0_j = d_j - K0 x_j, chi2 = c' - t B' + t^2 A where c' = sum P r0 r0, B' = sum P_jk (r0_j x_k + x_j r0_k), A = sum P x x, so A > 0 gives chi2 >= c' - B'^2/(4A) for every real t, i.e. every real K. The claim (all K) is unchanged.",
+      "reason": "conditioning: uncentred, c = d P d and B^2/(4A) are both ~1e5 and their difference is the quantity of interest, so separate interval bounds on A and B lose ~4 eps c ~ 1e2 or more at relative width eps = 3e-4 (thousands inside a slab), which would make H7/H8 vacuous for reasons of method. Centred, c' and B' are small. Argument only; no trial computation was run.",
+      "also": [
+        "smoke tests before scaling: (i) decide +kernel on the rational interval evaluator for a 2-variable expression; (ii) the S = 20000 table check alone, timed; chunks joined in two levels",
+        "the real-valued chi2 is defined as a sum over the 25 non-zero entries of the block-diagonal P, with the zero off-block structure stated in the data definition",
+        "order: H6 and H7 first, then slabs; no slab added or split without a further dated amendment"
+      ]
+    }
+  ]
 }

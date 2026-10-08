@@ -301,3 +301,12 @@ The guard written in master-math run two (`build_ladder.verdict`) is only on bra
 - H2(b): extend past |D| = 1e7; certify h with an unconditional method.
 - H1-H3: formal derivations, only after TODO 26 Comparator-checks family 003.
 - **Accept when:** each item has a preregistered run with controls in `results.tsv`.
+
+### 30. Nightly dream phase has no JEPA checkpoint to load (found 2026-10-08)
+`scripts/nightly_dream_phase.py` calls `FastJEPALatentPredictor.load_checkpoint(checkpoints/latent_dreamer_jepa.pt)`
+unconditionally, and no script in the repo writes that file (absent in the main checkout and both
+worktrees). The step fails loudly every night, and the Kev gate then rejects the run.
+- Do: decide what the predictor is trained on, add the script that trains and saves it, and make
+  the dream phase report BLOCKED (not crash) when the checkpoint is absent.
+- **Accept when:** a nightly run either trains the checkpoint and the dream step passes, or reports
+  BLOCKED with the missing-checkpoint reason and the other steps still run.

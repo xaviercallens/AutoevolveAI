@@ -1,0 +1,59 @@
+{
+  "lane": "LT_A",
+  "date": "2026-10-08",
+  "stage": "preregistration written BEFORE any lane result; no lane control run and no campaign cell has been executed in this lane",
+  "hypothesis": {
+    "id": "H-LT1 (m = 2 part)",
+    "statement": "For gamma in {0.75, 1.0, 1.25, 1.4} and every 2x2 Hermitian W(x) >= 0, R[W] = Tr(-d^2/dx^2 - W)_-^gamma / int tr W^(gamma+1/2) <= L1(gamma) (Lean sharpConstant). Upstream claim (another model, 2026-10-05, not in Lean), tested adversarially, not proved.",
+    "prediction": "NO_VIOLATION_FOUND in every cell",
+    "kill_criterion": "VIOLATION_CERTIFIED in any cell with this lane's controls passing (reported as a Tier X candidate, not a discovery, no extrapolation)"
+  },
+  "verdict_categories_per_cell": ["VOID", "VIOLATION_CERTIFIED", "UNDECIDED", "NO_VIOLATION_FOUND"],
+  "decision_rule": {
+    "VOID": "any control in the lane's own controls.json fails (all_pass != true): lane stops, no cell number counts. lt_a_driver.py refuses to start chunks without all_pass.",
+    "excess": "excess = R_lower_bound / L1 - 1 (R from the frozen instrument; Dirichlet box + Rayleigh-Ritz make it a lower bound up to quadrature)",
+    "flag": "a restart is flagged if excess > 1e-7; campaign.py then refines it (doubled grid; finite-difference Richardson)",
+    "VIOLATION_CERTIFIED": "some flagged restart has refined-grid excess > 1e-5 AND finite-difference excess > 5e-6. Additionally the stored .pt parameters are re-evaluated on a third independent grid (L = 32, M = 256, Q = 3200) by lt_a_driver.py recheck, and all three numbers are reported; the third grid is reported but the frozen rule is not altered.",
+    "UNDECIDED": "a restart flagged and no restart satisfies the CERTIFIED condition (1e-7 < refined excess <= 1e-5, or the two solvers disagree)",
+    "NO_VIOLATION_FOUND": "every restart in the cell has excess <= 1e-7 (not a proof; finite search power, reported as best excess = distance below L1, number of restarts, budget)",
+    "per_cell_reported": ["best excess", "number of restarts", "number flagged", "verdict", "closeness to L1 from below"],
+    "cell_stop": "a cell with VIOLATION_CERTIFIED is not extended"
+  },
+  "controls": {
+    "positive_and_negative": "scripts/openai_math/lt_matrix/controls.py rerun once at lane start, written to LT_A/controls.json (C1 exact equality potential reproduces L1; C2/C3 unitary invariance and additivity; C4 scalar search reaches L1 and not above; C6 gamma=3/2 not exceeded; NEGATIVE C5, C7: at gamma=3 the search must exceed the one-state constant for m=1 and m=2). Expected from the earlier pass (results/openai_math/hypotheses/lt_matrix/controls.json): all pass. If any fails: lane VOID.",
+    "pre_reg_note": "controls are rerun in this lane so its cells are tied to its own control pass; the earlier pass is not substituted"
+  },
+  "campaign_design": {
+    "base_cells": "gamma in {0.75, 1.0, 1.25, 1.4} x family in {random, embed, rotpair, twist}; m = 2, K = 2, P = 8; >= 12 restarts per cell",
+    "extra_cells": "family random with K = 3, P = 10 at each of the four gammas; >= 12 restarts per cell",
+    "grid": "M = 320 for gamma = 0.75, M = 160 otherwise; L = 24; Q = 1200 (M <= 200) or 2400 (frozen campaign.py rule)",
+    "seeds": "from 1000 upward, allocated by append-only seed_ledger.json in blocks of 40 per chunk (name recorded); never reused",
+    "chunks": "one driver call = at most 2 concurrent campaign.py processes, --threads 2 each (4 cores), --budget-s 420 (360 for gamma 0.75, whose M=320 restarts are slower); a restart in flight when the budget expires finishes, hard subprocess timeout about 520 s total per call. Restarts counts are what the cell JSON records; chunks of the same cell are summed",
+    "autoresearch_loop": "after each round, aggregate; choose the non-saturated cell with highest best excess (closest to 0 from below); change EXACTLY ONE factor (family, or K/P pair, or seed block, or gamma); keep the change if the best excess of the new cell exceeds the parent's best excess; log every row (kept or discarded) to lane_results.tsv with the columns of results/openai_math/hypotheses/results.tsv. A cell is saturated when two consecutive extra chunks raised its best R by < 1e-8. The metric and verdict rule are frozen. Seed-block changes are fresh blocks from the ledger, never a repeat.",
+    "statistics_disclosure": "restart count per cell is not equal after the loop; reported per cell. Cherry-picking is limited because every chunk's rows are kept and all cells are listed."
+  },
+  "budget": {
+    "cpu": "2 concurrent processes x 2 threads = 4 of 8 cores; no GPU use (T4 reserved for LTM ingest and 05:05 retrain)",
+    "time": "controls about 6 min; base cells 16 x >= 12 restarts plus 4 K=3 cells at about 15-90 s per restart, run until the 06:30 UTC lane deadline passed by the workflow; stop earlier on VOID",
+    "this_stage_cap_minutes": 60
+  },
+  "code_paths_sha256": {
+    "scripts/openai_math/lt_matrix/instrument.py": "effb5de7e215e7d1b713d6c9f1a8fe09f4b6fa0c088aafd3b3e1c5076aaf9fac",
+    "scripts/openai_math/lt_matrix/controls.py": "061a5d17fd242d3a974399bdfc9ffacb4f2bc6f08f91ff22967b0c1fb1d603cc",
+    "scripts/openai_math/lt_matrix/campaign.py": "00fd51fd7ecafa4cf89ae43ca9699418b0969fdd88fd51a632c00fd1e1872c5b",
+    "scripts/openai_math/lt_matrix/lt_a_driver.py": "416a7da91c587eef509982eaadd9a73a6ef396739918a57477a4681eac5530fa (new, lane-owned: chunk / aggregate / recheck)"
+  },
+  "frozen_references": {
+    "docs/OPENAI_MATH_LT_MATRIX.md": "ca6d6c24294f9d48df44dc64845ed9a404690f0d1418315246bcd7a6eb9e6be9",
+    "results/openai_math/hypotheses/lt_matrix/preregistration.json": "read; instrument hashes match the three files above"
+  },
+  "deviations_from_frozen_instruments": "none. The frozen files are used unmodified. Third-grid recheck (L=32, M=256, Q=3200) is a new additional reporting check in lt_a_driver.py, not a change to the verdict rule.",
+  "smoke_tests_disclosed": {
+    "lt_a_driver.py": "run with no lane controls.json: chunk refused with the VOID message (rc 3); aggregate and recheck on an empty cells directory printed an empty list. No campaign number, no excess value and no R value was produced or seen. The recheck path with real .pt files is untested until the first flagged restart; if it errors it is fixed in the open and the fix recorded in deviations.md."
+  },
+  "open_design_questions": [
+    "alpha-level of search power: nothing known about how many restarts reach within 1e-6 of L1 for rotpair/twist in m = 2; it is measured, not assumed",
+    "campaign.py stores .pt only for best-so-far restarts; a flagged non-best restart has no stored parameters and is reported NO_STORED_PARAMS in the recheck (in practice a flagged restart that exceeds the previous best is stored)",
+    "gamma = 0.75 with M = 320 may exceed 90 s per restart; the realized restarts count may be less than 12 per chunk and is then extended in further chunks"
+  ]
+}

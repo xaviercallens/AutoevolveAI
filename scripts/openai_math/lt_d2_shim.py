@@ -30,6 +30,10 @@ sys.path.insert(0, str(HERE))
 import lt_d_lean as D  # noqa: E402
 import d1_hole_bodies as B  # noqa: E402
 
+ROOTS = [D.ROOT_MODULE]
+FINALS = [D.FINAL_THEOREM]
+CHALLENGE = D.UP / "ComparatorChallenges" / "LiebThirring.lean"
+CARRY_FROM: Path | None = None
 LANE_D = Path(__file__).resolve().parents[2] / "results" / "openai_math" / "hypotheses" / "night_2026-10-08" / "LT_D"
 
 
@@ -38,7 +42,9 @@ def sha(text: str) -> str:
 
 
 def cmd_prepare(lane: Path, renames: list[tuple[str, str]]) -> None:
-    order = D.closure_order(D.ROOT_MODULE)
+    order: list[str] = []
+    for r in ROOTS:  # each closure lists dependencies first, so appending unseen items keeps dependency order
+        order += [m for m in D.closure_order(r) if m not in order]
     src = lane / "src"
     patches: dict[str, dict[str, object]] = {}
     for m in order:
@@ -57,14 +63,17 @@ def cmd_prepare(lane: Path, renames: list[tuple[str, str]]) -> None:
             patches[m] = {"replacements": counts, "sha256_original": sha(text), "sha256_modified": sha(new)}
     D.save(lane, "patches.json", {"renames": renames, "patched_files": patches})
     # carry over the oleans of lane LT_D for files whose source is unchanged
-    prior = json.loads((LANE_D / "part1b_closure.json").read_text())
     scratch = lane / "scratch_olean"
-    if not scratch.exists():
-        shutil.copytree(LANE_D / "scratch_olean", scratch)
-    rec = {m: {"status": "compiled", "seconds": v["seconds"], "carried_from": "LT_D", "first_error": ""}
-           for m, v in prior.items() if v["status"] == "compiled" and m not in patches}
+    rec: dict[str, dict[str, object]] = {}
+    if CARRY_FROM is not None:
+        prior = json.loads((CARRY_FROM / "part1b_closure.json").read_text())
+        if not scratch.exists():
+            shutil.copytree(CARRY_FROM / "scratch_olean", scratch)
+        rec = {m: {"status": "compiled", "seconds": v["seconds"], "carried_from": "LT_D", "first_error": ""}
+               for m, v in prior.items() if v["status"] == "compiled" and m not in patches}
+    scratch.mkdir(exist_ok=True)
     D.save(lane, "part1b_closure.json", rec)
-    D.save(lane, "closure.json", {"root": D.ROOT_MODULE, "n_files": len(order), "order": order})
+    D.save(lane, "closure.json", {"roots": ROOTS, "n_files": len(order), "order": order})
     print(f"prepared {len(order)} files, {len(patches)} patched, {len(rec)} carried over")
 
 
@@ -105,18 +114,21 @@ def cmd_closure(lane: Path, max_seconds: int) -> None:
 def cmd_axioms(lane: Path) -> None:
     scratch = lane / "scratch_olean"
     f = lane / "scratch_axioms.lean"
-    f.write_text(f"import {D.ROOT_MODULE}\n#print axioms {D.FINAL_THEOREM}\n#check @{D.FINAL_THEOREM}\n", encoding="utf-8")
+    body = "".join(f"#print axioms {n}\n#check @{n}\n" for n in FINALS)
+    f.write_text("".join(f"import {r}\n" for r in ROOTS) + body, encoding="utf-8")
     res = D.run_lean([str(f)], D.lean_path() + ":" + str(scratch), 3000)
-    res["verdict"] = D.axiom_verdict(str(res["output"]), D.FINAL_THEOREM)
-    res["axioms"] = D.parse_axioms(str(res["output"])).get(D.FINAL_THEOREM)
+    res["verdicts"] = {n: D.axiom_verdict(str(res["output"]), n) for n in FINALS}
+    res["axioms_by_theorem"] = {n: D.parse_axioms(str(res["output"])).get(n) for n in FINALS}
+    res["verdict"] = D.axiom_verdict(str(res["output"]), FINALS[0])
+    res["axioms"] = D.parse_axioms(str(res["output"])).get(FINALS[0])
     D.save(lane, "part_axioms.json", res)
-    print(res["verdict"], res["axioms"])
+    print(res["verdicts"], res["axioms_by_theorem"])
 
 
 def cmd_statements(lane: Path) -> None:
     """Text-level comparison (comments stripped, alpha-renaming allowed) of every declaration in the challenge file against
     the declaration of the same name in the solution closure. Not elaboration; a reading aid, labelled as such."""
-    chal = B.extract_decls((D.UP / "ComparatorChallenges" / "LiebThirring.lean").read_text(), "LiebThirring.lean")
+    chal = B.extract_decls(CHALLENGE.read_text(), CHALLENGE.name)
     order = json.loads((lane / "closure.json").read_text())["order"]
     sol: dict[str, list[B.Decl]] = {}
     for m in order:
@@ -130,7 +142,11 @@ def cmd_statements(lane: Path) -> None:
             continue
         results = []
         for c in cands:
-            same, nsub, _ = B.alpha_compare(d.tokens_after_name, c.tokens_after_name)
+            a_tok, b_tok = d.tokens_after_name, c.tokens_after_name
+            if d.kind in ("theorem", "lemma"):  # compare the statement only: a proof body may legitimately differ from `sorry`
+                a_tok = a_tok[: a_tok.index(":=")] if ":=" in a_tok else a_tok
+                b_tok = b_tok[: b_tok.index(":=")] if ":=" in b_tok else b_tok
+            same, nsub, _ = B.alpha_compare(a_tok, b_tok)
             results.append({"module": c.file, "line": c.line, "identical_up_to_binder_renaming": same, "substitutions": nsub})
         rows.append({"name": d.full_name, "kind": d.kind, "challenge_has_sorry": B.has_sorry(d), "solution_matches": results,
                      "verdict": "MATCH" if any(r["identical_up_to_binder_renaming"] for r in results) else "DIFFERS"})
@@ -147,8 +163,18 @@ def main() -> int:
     ap.add_argument("--lane", required=True)
     ap.add_argument("--rename", action="append", default=[], help="OLD=NEW (recorded in patches.json)")
     ap.add_argument("--max-seconds", type=int, default=3000)
+    ap.add_argument("--root", action="append", default=[], help="root module(s) of the closure (default: Lieb-Thirring Main)")
+    ap.add_argument("--final", action="append", default=[], help="theorem(s) whose axioms are printed (default: Lieb-Thirring)")
+    ap.add_argument("--challenge", default=None, help="challenge file name in ComparatorChallenges/ for the statement comparison")
+    ap.add_argument("--carry-from", default=None, help="lane dir whose compiled oleans/records may be reused for unchanged files")
     args = ap.parse_args()
-    lane = Path(args.lane)
+    global ROOTS, FINALS, CHALLENGE, CARRY_FROM
+    ROOTS = args.root or ROOTS
+    FINALS = args.final or FINALS
+    if args.challenge:
+        CHALLENGE = D.UP / "ComparatorChallenges" / args.challenge
+    CARRY_FROM = Path(args.carry_from).resolve() if args.carry_from else None
+    lane = Path(args.lane).resolve()  # Lean runs with cwd = LeanMaster, so every path it receives must be absolute
     lane.mkdir(parents=True, exist_ok=True)
     if args.cmd == "prepare":
         cmd_prepare(lane, [tuple(r.split("=", 1)) for r in args.rename])

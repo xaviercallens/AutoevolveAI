@@ -1,0 +1,57 @@
+{
+  "lane": "LT_D2",
+  "verdict": "KERNEL_PILOT_OK",
+  "meaning": "On a scratch copy of upstream's Lieb-Thirring closure that differs from upstream only by the declared rename Set.equivOfEq -> Equiv.setCongr (one replacement in FiniteParity.lean), all 38 files compile under Lean v4.34.0-rc2 with LeanMaster's Mathlib (rev 85e3a25e), and `#print axioms OAI.SharpLiebThirring.sharp_lieb_thirring` lists exactly propext, Classical.choice, Quot.sound.",
+  "does_not_establish": [
+    "a Comparator run (no exported-environment comparison, no sandbox)",
+    "that the ORIGINAL upstream files compile under upstream's pinned toolchain (v4.34.1) and Mathlib",
+    "that the formalised statement is an adequate formalisation of the Lieb-Thirring conjecture (no human statement audit)",
+    "anything about the matrix-valued claim or the equality-case classification (not formalised upstream)"
+  ],
+  "files": {
+    "total": 38,
+    "compiled": 38,
+    "carried_over_from_LT_D": 14,
+    "compiled_in_this_lane": 24
+  },
+  "patches": {
+    "patched_files": {
+      "OAI.Analysis.LiebThirring.FiniteParity": {
+        "replacements": {
+          "Set.equivOfEq": 1
+        },
+        "sha256_modified": "5eb0658476bbe7e215cd179a4b2ae34098eadebb1046de506e0f367ba6648b88",
+        "sha256_original": "91d5e071ac80d099c38091f9de63641df7a0830dcb82c7eb6ea2fca6d3774682"
+      }
+    },
+    "renames": [
+      [
+        "Set.equivOfEq",
+        "Equiv.setCongr"
+      ]
+    ]
+  },
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "axiom_verdict": "OK",
+  "statement_comparison_text_level": {
+    "declarations": 16,
+    "match": 16,
+    "note": "text-level, comments stripped; not elaboration"
+  },
+  "toolchain": {
+    "lean": "4.34.0-rc2 (commit 6a10ac8c)",
+    "mathlib_rev": "85e3a25e006c35636f0e53b0e9296caca2685bc0",
+    "upstream_toolchain": "leanprover/lean4:v4.34.1"
+  },
+  "code_sha256_at_result": {
+    "lt_d2_shim.py": "78dcd3d236ec4168ba721bfd2bd041859eeaefb60815aadd9fecd24cb6476730",
+    "lt_d_lean.py": "471b286dbef0f6794e515bdaf06102eb71fdef3fbcd8d0ecbf05bc3407fbcb38",
+    "d1_hole_bodies.py": "82b5147337fadabe61ce95380f9acf0651d0dc0ca45fbb7efdbf3f6211a38de1"
+  },
+  "deviations": "deviations.md D1: a relative-path harness bug produced a bogus 'failed' record before any Lean verdict; fixed and rerun. The code hash in preregistration.json is therefore stale; the hash above is the one that produced this result.",
+  "tier": "Tier A is NOT claimed for the original files. For the adapted copy under this toolchain the kernel footprint is clean; statement adequacy is unaudited (Elenchus would flag LEDGER_UNAUDITED_TIER_A)."
+}

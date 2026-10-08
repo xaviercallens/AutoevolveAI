@@ -1,0 +1,38 @@
+{
+  "lane": "TRI_D3",
+  "stage": "preregistration: written before prepare/closure/axioms/statements were run; smoke values seen: none",
+  "timestamp_utc": "2026-10-08T12:09:17.104931+00:00",
+  "motivation": "Family 090 of openai/math claims that the density-one triangular lattice minimises the lower energy per particle among ALL locally finite planar configurations of centred density one, for every smooth completely monotone function of squared distance (Cohn-Kumar universal optimality of A2, open as of the literature this project holds), plus sharp Gaussian Fourier minorants. LT_D2 showed that a disclosed one-rename adaptation of the Lieb-Thirring closure passes a kernel check under LeanMaster's toolchain; the same method is applied to the triangular-lattice proofs, whose three solution closures share 229 local files, 66k lines, Mathlib-only (lead scan: solution_scan_lt_triangular_packing.json, no sorry/admit/axiom).",
+  "roots": [
+    "OAI.Analysis.Triangular.Energy.Universal",
+    "OAI.Analysis.Triangular.GaussianMinorants",
+    "OAI.Analysis.Triangular.Main"
+  ],
+  "finals": [
+    "OAI.AtomicTriangular.universal_energy_minimum",
+    "OAI.AtomicTriangular.sharp_gaussian_minorants_with_construction",
+    "OAI.AtomicTriangular.sharp_gaussian_minorants_atomic"
+  ],
+  "challenge_for_statement_comparison": "ComparatorChallenges/TriangularEnergy.lean (the AtomicGaussian challenge shares its namespaces and is compared too if time allows)",
+  "hypothesis": "H-D3: the union closure compiles completely on a scratch copy that differs from upstream only by declared renames of drifted identifiers (at most 5 renames), and #print axioms of each of the three final theorems lists only propext, Classical.choice, Quot.sound.",
+  "kill_criterion": "an error that is not an unknown identifier fixed by a declared same-meaning rename; more than 5 renames; a timeout of a single file beyond 3000 s; or sorryAx / any other axiom in a final theorem's footprint",
+  "rules": [
+    "only declared renames are applied, to a scratch copy; upstream files and LeanMaster's build are never modified",
+    "no rename is declared in advance: each is added as a dated amendment (with the `#check` of its replacement in LeanMaster's Mathlib and the use-site type argument) BEFORE the run that needs it, and committed",
+    "statements, definitions and theorem names are never changed",
+    "the run stops at the first failure not covered by a declared rename; it is reported, not patched around",
+    "resumable: finished files are never recompiled; wall-clock budget about 3 hours, one Lean process at a time"
+  ],
+  "outcomes": {
+    "KERNEL_PILOT_OK": "all files compile and all three footprints are within the whitelist: the kernel of THIS toolchain accepts an adapted copy of upstream's proofs of the sharp Gaussian minorants and of the universal energy minimality. NOT a Comparator run; NOT Tier A for the original files; statement adequacy unaudited",
+    "KERNEL_PILOT_PARTIAL": "stopped at a non-rename error or at the rename cap: report how far it got and the first blocking error",
+    "KERNEL_PILOT_BAD_AXIOMS": "compiled but sorryAx or a non-whitelisted axiom appears: a finding about the upstream proof"
+  },
+  "statement_comparison": "text-level only (comments stripped, binder renaming allowed): every declaration of TriangularEnergy.lean against the same-named declaration in the closure; a reading aid, not elaboration",
+  "controls": "the compile runner and the axiom classifier were exercised by lanes LT_D and LT_D2 (14 + 24 successful compiles, one known failure reproduced, planted-axiom negative controls in the LT_D2 verification). No new control is added.",
+  "code_sha256": {
+    "scripts/openai_math/lt_d2_shim.py": "59d30813194482b1b764fd9c780f4a7dcbff26636daa0dfd122fccefee7a63f3",
+    "scripts/openai_math/lt_d_lean.py": "471b286dbef0f6794e515bdaf06102eb71fdef3fbcd8d0ecbf05bc3407fbcb38"
+  },
+  "budget": "1 core, about 3 hours, no GPU"
+}

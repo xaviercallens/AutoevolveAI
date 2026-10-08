@@ -1,0 +1,34 @@
+{
+  "lane": "LT_D2",
+  "stage": "preregistration: written before prepare/closure/axioms/statements were run; smoke values seen: none",
+  "timestamp_utc": "2026-10-08T11:56:06.100087+00:00",
+  "motivation": "Lane LT_D compiled 14 of 38 closure files of upstream's Lieb-Thirring proof under LeanMaster's toolchain (Lean v4.34.0-rc2) and stopped at FiniteParity.lean:505 on the unknown constant Set.equivOfEq; 23 files are blocked behind it (an independent verifier confirmed: blocked iff transitively importing FiniteParity).",
+  "hypothesis": "H-D2: the closure compiles completely on a scratch copy that differs only by declared renames of drifted identifiers, and #print axioms OAI.SharpLiebThirring.sharp_lieb_thirring lists only propext, Classical.choice, Quot.sound.",
+  "kill_criterion": "any file fails with an error that is not an unknown identifier fixed by a declared same-meaning rename; or the final axiom list contains sorryAx or any other axiom",
+  "allowed_renames": [
+    {
+      "old": "Set.equivOfEq",
+      "new": "Equiv.setCongr",
+      "justification": "single use at OAI/Analysis/LiebThirring/FiniteParity.lean:505 in `Nat.card_congr (Set.equivOfEq hsingle)` with hsingle : fixedPoints (orbitMap f hf) = {q}. LeanMaster's Mathlib defines `Equiv.setCongr {s t : Set a} (h : s = t) : s \u2243 t` (Mathlib/Logic/Equiv/Set.lean:159): same type at the use site. That Set.equivOfEq existed in upstream's pinned Mathlib is NOT verified here; the drift explanation is only 'consistent with'."
+    }
+  ],
+  "rules": [
+    "only the declared renames are applied, to a scratch copy; upstream files and LeanMaster's build are never modified",
+    "statements, definitions and theorem names are never changed",
+    "the run stops at the first failure not covered by a declared rename; it is reported, not patched around",
+    "each additional rename needs its own justification recorded as a dated amendment before the run that needs it"
+  ],
+  "outcomes": {
+    "KERNEL_PILOT_OK": "all 38 files compile and the axiom list is a subset of the whitelist: the kernel of this toolchain accepts an adapted copy of upstream's proof. NOT a Comparator run; NOT proof that the challenge statement equals the solution's statement; NOT Tier A for the original files",
+    "KERNEL_PILOT_PARTIAL": "stopped at a non-rename error: report how far it got",
+    "KERNEL_PILOT_BAD_AXIOMS": "compiled but sorryAx or a non-whitelisted axiom appears: a finding about the upstream proof"
+  },
+  "statement_comparison": "text-level only (comments stripped, binder renaming allowed): each declaration of ComparatorChallenges/LiebThirring.lean against the same-named declaration in the closure; MATCH / DIFFERS / NOT_FOUND; a reading aid, not elaboration",
+  "controls": "the driver's classifiers were controlled by lane LT_D (controls.json) and are reused unchanged. No new compile-failure control exists; the 14 carried-over compiles and the one known failure are the evidence that the runner separates pass from fail. LT_D's verifier noted that only an after-run of those controls is evidenced",
+  "code_sha256": {
+    "scripts/openai_math/lt_d2_shim.py": "40123ffa9a569ee8957211754c2c36aeb350a2d9f6e24db6e51c5275b97d35a4",
+    "scripts/openai_math/lt_d_lean.py": "471b286dbef0f6794e515bdaf06102eb71fdef3fbcd8d0ecbf05bc3407fbcb38",
+    "scripts/openai_math/d1_hole_bodies.py": "82b5147337fadabe61ce95380f9acf0651d0dc0ca45fbb7efdbf3f6211a38de1"
+  },
+  "budget": "1 core, one Lean process at a time, wall clock about 1 hour"
+}

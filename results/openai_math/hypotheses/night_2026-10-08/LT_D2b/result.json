@@ -1,0 +1,51 @@
+{
+  "lane": "LT_D2b",
+  "verdict": "KERNEL_PILOT_OK",
+  "meaning": "With upstream's own option -DautoImplicit=false, from a fresh scratch directory (nothing carried over), all 38 files of the Lieb-Thirring closure compile under Lean v4.34.0-rc2 with LeanMaster's Mathlib (rev 85e3a25e) after the single declared rename Set.equivOfEq -> Equiv.setCongr, and #print axioms OAI.SharpLiebThirring.sharp_lieb_thirring lists exactly propext, Classical.choice, Quot.sound. This closes the autoImplicit gap the verifier of LT_D2 found.",
+  "files": {
+    "total": 38,
+    "compiled": 38,
+    "carried_over": 0,
+    "compile_seconds_total": 855
+  },
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "axiom_verdict": "OK",
+  "statement_comparison_text_level": {
+    "declarations": 16,
+    "match": 16,
+    "note": "text-level, comments stripped; not elaboration"
+  },
+  "patches": {
+    "patched_files": {
+      "OAI.Analysis.LiebThirring.FiniteParity": {
+        "replacements": {
+          "Set.equivOfEq": 1
+        },
+        "sha256_modified": "5eb0658476bbe7e215cd179a4b2ae34098eadebb1046de506e0f367ba6648b88",
+        "sha256_original": "91d5e071ac80d099c38091f9de63641df7a0830dcb82c7eb6ea2fca6d3774682"
+      }
+    },
+    "renames": [
+      [
+        "Set.equivOfEq",
+        "Equiv.setCongr"
+      ]
+    ]
+  },
+  "does_not_establish": [
+    "a Comparator run",
+    "compilation under upstream's pinned toolchain (Lean 4.34.1, Mathlib d13f23b7): this toolchain differs (Lean 4.34.0-rc2, Mathlib 85e3a25e)",
+    "that the formalised statement adequately formalises the Lieb-Thirring conjecture (no human statement audit; an adversarial model reading found no vacuity)",
+    "anything about the matrix-valued claim or the equality-case classification (not formalised upstream)"
+  ],
+  "code_sha256_at_result": {
+    "lt_d2_shim.py": "cb1f7a96a9daf754d8702bfea720d866b3c0402ea04993d5ccb7324d0cace671",
+    "lt_d_lean.py": "471b286dbef0f6794e515bdaf06102eb71fdef3fbcd8d0ecbf05bc3407fbcb38",
+    "d1_hole_bodies.py": "82b5147337fadabe61ce95380f9acf0651d0dc0ca45fbb7efdbf3f6211a38de1"
+  },
+  "tier": "Tier A is not claimed for upstream's original files. For the renamed copy under this toolchain, with autoImplicit false, the kernel footprint is clean; statement adequacy is unaudited."
+}

@@ -1,7 +1,7 @@
 export const meta = {
   name: 'openai-math-night-lab-v2',
   description: 'Overnight openai_math lab, per-lane pipeline: preregister -> commit own prereg -> run -> adversarial verify; then synthesize and commit',
-  whenToUse: 'Nightly openai_math hypothesis lab. args = {date: "YYYY-MM-DD", lanes: [{key, cpu, task}]}',
+  whenToUse: 'Nightly openai_math hypothesis lab. args = {date: "YYYY-MM-DD", deadline: "HH:MM UTC" (optional), lanes: [{key, cpu, task}]}',
   phases: [
     { title: 'Preregister', detail: 'each lane designs its run and writes a preregistration (cap 60 min)' },
     { title: 'Commit prereg', detail: 'each lane commits its own preregistration before running' },
@@ -81,7 +81,7 @@ and git push (if the push is rejected because the remote moved, git pull --rebas
 LANE ${l.key}. CPU allotment: ${l.cpu}. Lane directory: ${l.dir}.
 ${l.task}
 
-Your preregistration is committed (${c.sha}) at ${l.dir}/preregistration.json: follow it exactly. Write any deviation into ${l.dir}/deviations.md BEFORE the affected run. Controls first, then the preregistered run, in resumable chunks, until done or about 06:30 UTC. Write ${l.dir}/result.json and ${l.dir}/lane_results.tsv (columns of ${WT}/results/openai_math/hypotheses/results.tsv). Return the lane report.`, { label: `run:${l.key}`, phase: 'Run', schema: REPORT }),
+Your preregistration is committed (${c.sha}) at ${l.dir}/preregistration.json: follow it exactly. Write any deviation into ${l.dir}/deviations.md BEFORE the affected run. Controls first, then the preregistered run, in resumable chunks, until done or about ${args.deadline || '06:30 UTC'}. Write ${l.dir}/result.json and ${l.dir}/lane_results.tsv (columns of ${WT}/results/openai_math/hypotheses/results.tsv). Return the lane report.`, { label: `run:${l.key}`, phase: 'Run', schema: REPORT }),
   (rep, l) => rep && agent(`Adversarial verifier: default to finding problems. Lane ${l.key} of the overnight math workflow in ${WT} claims the report below. Check against the files: (1) ${l.dir}/preregistration.json was committed before the results (git log -- that path vs result mtimes); (2) every number in the report appears in a result file produced by the preregistered code (spot-recompute one with a python3 run under 5 minutes); (3) both controls ran and passed; (4) no overstatement (numeric search proves no upper bound; corollaries are not discoveries; upstream claims are not results). Write only ${l.dir}/verification.md.
 REPORT: ${JSON.stringify(rep)}`, { label: `verify:${l.key}`, phase: 'Verify', schema: VERDICT }).then(v => ({ lane: l.key, report: rep, verification: v })),
 )

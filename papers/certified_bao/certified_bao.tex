@@ -1,0 +1,153 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[hidelinks]{hyperref}
+\input{gen_numbers.tex}
+\emergencystretch=3em
+
+\newtheorem{theorem}{Theorem}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+
+\title{Kernel-checked enclosures of DESI DR2 BAO distances in Lean 4:\\
+certifying solver output with integer certificates}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-08}
+\hypersetup{pdftitle={Kernel-checked enclosures of DESI DR2 BAO distances in Lean 4}, pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We report a small, end-to-end example of certified numerics for cosmology. For the flat $\Lambda$CDM best fit to the
+DESI DR2 baryon-acoustic-oscillation data ($\Omega_m=0.29743$, radiation off), Lean 4 theorems, checked by the kernel with
+only the axioms \texttt{propext}, \texttt{Classical.choice} and \texttt{Quot.sound} and without \texttt{native\_decide},
+enclose the dimensionless comoving distance $\chi(z)=\int_0^z dz'/E(z')$ at all seven DESI DR2 effective redshifts with
+relative width between $\MinWidth$ and $\MaxWidth$ (the Einstein--de Sitter control, a different model, has widths up to $6.6\times10^{-4}$). The method is elementary: $1/E$ is decreasing, so Riemann sums on a grid
+bound the integral, and an untrusted program supplies integer bounds of $1/E$ at $\NNodes$ grid nodes which the kernel
+re-checks by exact integer arithmetic. The certified enclosures were then used as a reference to audit a Rust CVODE
+reimplementation (rusty-SUNDIALS) and astropy: their values lie inside; a deliberately loose CVODE run falls outside at
+$\LooseOut$ of $\NZ$ redshifts; and the enclosures for $\Omega_m\times1.01$ are disjoint from those of the fit.
+All hypotheses and controls were preregistered. The paper also records, as research directions, how a survey of the
+\texttt{openai/math} Lean library bears on this programme: it contributes certificate methodology, not results on the
+underlying physics. Nothing here is a new physical result; the contribution is a verified reference computation and a
+reusable pipeline.
+\end{abstract}
+
+\section{Motivation and scope}
+Floating-point solvers fail silently. In the same research programme we found that a Rust CVODE reimplementation had an
+Adams method stuck at order one and a Nordsieck-array shift bug at tight tolerances, both of which had been ``certified''
+by unproved axioms in that project's own Lean files. A kernel-checked enclosure of a quantity is immune to such bugs: if the
+theorem compiles, the number is where the theorem says it is, whatever the solver did.
+
+\paragraph{What is claimed.} For $E(\Omega_m,z)=\sqrt{\Omega_m(1+z)^3+1-\Omega_m}$ with $\Omega_m=29743/100000$ and
+$z\in\{0.295, 0.510, 0.706, 0.934, 1.321, 1.484, 2.330\}$, the Lean theorems state rational lower and upper bounds for
+$\chi(z)$ and for $1/E(z)$ (Table~\ref{tab:enc}). \paragraph{What is not claimed.} The fit point is a rounded value of a
+floating-point minimisation and is not certified as the $\chi^2$ minimum; $D_V/r_d$, the conversion to $D_M/r_d$,
+$D_H/r_d$ and the comparison with DESI are computed outside Lean from the certified bounds (the pulls in floating point, with diagonal errors only); the model (flat $\Lambda$CDM,
+no radiation) is a modelling choice, not a theorem; no statement about dark energy is made.
+
+\section{Method}
+\paragraph{Model.} $\chi(z)=\int_0^z 1/E(\Omega_m,x)\,dx$ in units of $c/H_0$; $D_M/r_d=\frac{c}{100\,h r_d}\chi(z)$ and
+$D_H/r_d=\frac{c}{100\,hr_d}\frac{1}{E(z)}$ with $c=299792.458$\,km/s and $h r_d=101.543$\,Mpc.
+
+\paragraph{Riemann bounds.} For $0\le\Omega_m\le1$, $1/E$ is antitone on $[0,\infty)$ (Lean: \texttt{invE\_antitoneOn}). On the grid
+$x_i=i/S$ ($S=2000$), every cell satisfies $f(x_{i+1})/S\le\int_{x_i}^{x_{i+1}}f\le f(x_i)/S$ (\texttt{cell\_bounds}). Every DESI DR2
+redshift is a multiple of $1/2000$, so no endpoint is rounded.
+
+\paragraph{Integer certificate.} With $\Omega_m=p/q$, $A(x_i)=\Omega_m(1+x_i)^3+1-\Omega_m=a_i/b$ exactly, with
+$a_i=p(S+i)^3+(q-p)S^3$ and $b=qS^3$. For integers $\ell_i,h_i$ and $D=10^{12}$, the conditions
+\[ \ell_i^2\,a_i\ \le\ D^2 b\ \le\ h_i^2\,a_i \]
+imply $\ell_i/D\le 1/E(x_i)\le h_i/D$ (\texttt{node\_bounds}). An untrusted Python program computes $\ell_i=\lfloor D/\sqrt{A(x_i)}\rfloor$
+by integer square roots and $h_i=\ell_i+1$. A Boolean function \texttt{checkFrom} tests all $\NNodes$ conditions and is evaluated
+by the kernel (\texttt{decide +kernel}); the kernel's arbitrary-precision natural-number arithmetic makes this exact.
+
+\begin{theorem}[\texttt{BAOCert.seg\_bounds}]
+Let $p\le q$, $q,S,D>0$, and let $L=((\ell_0,h_0),\dots,(\ell_k,h_k))$ satisfy \texttt{checkFrom}$\,p\,q\,S\,D\,i_0\,L$. Then
+\[ \frac{1}{DS}\sum_{j=1}^{k}\ell_j\ \le\ \int_{i_0/S}^{(i_0+k)/S}\frac{dx}{E(p/q,x)}\ \le\ \frac{1}{DS}\sum_{j=0}^{k-1}h_j .\]
+\end{theorem}
+The proof is by induction over the table, using the cell bounds and additivity of the interval integral (Mathlib). For each
+DESI redshift $n/S$ a generated theorem (e.g.\ \texttt{BAOCert.Fit.chi\_z0934}) instantiates it with the prefix of length $n+1$ and
+the two sums evaluated by the kernel.
+
+\paragraph{Toolchain.} Lean 4.34.1 with Mathlib at commit \texttt{d13f23b7}, pinned Mathlib imports, \texttt{autoImplicit} off.
+The core compiles in $\CoreSeconds$\,s and the fit-point certificate (table plus seven theorems) in $\FitSeconds$\,s on one core.
+
+\section{Preregistration and controls}
+Before any table was generated, we committed five hypotheses: H1 (enclosures with relative width $\le5\times10^{-4}$, standard axioms
+only), H2 (rusty-SUNDIALS and astropy values inside), H3 (enclosures at $\Omega_m\times1.01$ disjoint from the fit's for $z\ge0.5$),
+H4 (a loose CVODE run, $r_{\rm tol}=10^{-2}$, outside at least once) and H5 (a certified $\chi^2$ interval, secondary). Controls: C1, the Einstein--de Sitter
+closed form $\chi=2(1-(1+z)^{-1/2})$ lies inside the $\Omega_m=1$ enclosures (checked exactly by squaring); C2, a table with one upper
+bound lowered by $10^6$ units is rejected by the kernel; C3, a \texttt{sorry} proof and a proof from a declared axiom are flagged by the
+axiom audit. All three controls passed. H1--H4 passed; H5 was not attempted. One deviation: the loose run of H4 also set
+$a_{\rm tol}=10^{-2}$, which the preregistration did not name. An independent verifier recompiled all files, re-ran the axiom
+audit, planted its own negative controls (a lowered upper bound is rejected by the kernel; a false stated bound fails to elaborate)
+and recomputed every enclosure check with 50-digit arithmetic; it confirmed the results with the scope corrections made here.
+
+\section{Results}
+\begin{table}[h]\centering\small
+\input{table_enclosures.tex}
+\caption{Kernel-checked enclosures of $\chi(z)$ and of $1/E(z)$ at the fit point (\texttt{formal\_cert/BAOCert/Fit.lean}); $D_M/r_d$ and
+$D_H/r_d$ are these bounds times the exact rational $c/(100\,hr_d)$, computed outside Lean.}\label{tab:enc}
+\end{table}
+
+All $\NTheorems$ certified statements audited depend only on \texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}
+(the table check alone uses only \texttt{propext}); the sources contain no \texttt{sorry} and no \texttt{native\_decide}.
+
+\begin{table}[h]\centering\small
+\input{table_audit.tex}
+\caption{Solver audit against the enclosures (``in'': inside; ``out'': outside by the given absolute amount in $\chi$). Columns:
+rusty-SUNDIALS CVODE at $r_{\rm tol}=10^{-7}$ (its default), $10^{-3}$ and $10^{-2}$; its adaptive Gauss--Kronrod quadrature (default);
+astropy 6.1.7 \texttt{FlatLambdaCDM(H0=70, Om0=0.29743, Tcmb0=0)}. The rusty-SUNDIALS code is the \texttt{qf-bao-distances} crate on the
+branch of its PR \#63.}\label{tab:audit}
+\end{table}
+
+Table~\ref{tab:audit} shows the intended use: the certificate grades a solver, and it catches the loose run. Its resolution is the
+enclosure width: the run at $r_{\rm tol}=10^{-3}$ stays inside, so at this width the certificate cannot tell it from the default runs
+(whose errors the crate's own tests put at or below about $10^{-6}$). H2 is therefore a test at the $10^{-4}$ level only, and only
+of $\chi$: the solvers' $1/E$ values were not compared; second-order bounds (Section~\ref{sec:dir}) would close that gap.
+The enclosures at $\Omega_m\times1.01$ are disjoint from the fit's at every redshift, so the certificate resolves a 1\% change in $\Omega_m$.
+
+\begin{table}[h]\centering\small
+\input{table_desi.tex}
+\caption{DESI DR2 BAO measurements against the certified predictions at the fit point; pulls use the diagonal errors only and are
+computed outside Lean. The $D_V/r_d$ bin is not certified (it needs a cube-root enclosure).}\label{tab:desi}
+\end{table}
+
+\section{Research directions}\label{sec:dir}
+A read-only survey of all Lean 4 work on this server against the \texttt{openai/math} library found no overlap with the K3, moonshine
+and T-duality core of the programme; the overlap is certificate infrastructure (rational ball arithmetic with a soundness theorem,
+verified matrix inverses from residuals, and the discipline of integer tables closed by \texttt{decide +kernel}, used over a million
+times there and never with \texttt{native\_decide}). The present pilot uses that discipline, not that code. The ranked directions are:
+(R1) a certified DESI DR2 $\chi^2$ interval and a certified exclusion of Einstein--de Sitter, then second-order enclosures (width
+$\sim10^{-8}$) and evolving dark energy; (R2) verified integrator theory for rusty-SUNDIALS (BDF order conditions and zero-stability,
+Nordsieck rescaling), replacing vacuous axioms in that project; (R3) validated Taylor enclosures for a nonlinear ODE with an exact
+invariant (a 0-D tokamak current quench); (R4) sanity theorems supporting a human audit of Comparator-accepted Lean statements;
+(R5) removing inconsistent axioms from the existing corpus; (R6) a certified follow-up of a published null result on the matrix
+Lieb--Thirring inequality. Details are in \texttt{docs/RESEARCH\_DIRECTIONS\_2026-10-08.md}.
+
+\section{Limitations}
+The enclosures are first order, width about $2.8\times10^{-4}$. Only $\Lambda$CDM without radiation is covered, at one parameter point.
+The trusted base is Lean's kernel and Mathlib; the emitter, the solver runs and the DESI comparison are not trusted and need not be.
+The rusty-SUNDIALS checkout was a pull-request branch, not its main branch.
+
+\section*{Reproducibility and acknowledgements}
+Lean sources: \path{formal_cert/BAOCert/}; emitter, evaluation and Rust audit: \path{scripts/certified_numerics/}; preregistration,
+compile logs, axiom lists and results: \path{results/certified_numerics/P1_bao/}, in the \texttt{AutoevolveAI} repository and in the
+accompanying bundle. Tables in this paper are generated from those files by \texttt{papers/certified\_bao/gen\_numbers.py}. The work,
+code and drafting were carried out with the assistance of the AI model Claude (Anthropic) under the author's direction; the author is
+responsible for the content.
+
+\begin{thebibliography}{9}
+\bibitem{desi} DESI Collaboration, DESI DR2 Results II: Measurements of Baryon Acoustic Oscillations and Cosmological Constraints,
+arXiv:2503.14738 (2025).
+\bibitem{lean} L.~de Moura and S.~Ullrich, The Lean 4 theorem prover and programming language, CADE-28 (2021).
+\bibitem{mathlib} The mathlib Community, The Lean mathematical library, CPP 2020.
+\end{thebibliography}
+\end{document}

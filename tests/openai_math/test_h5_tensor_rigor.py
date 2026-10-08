@@ -102,3 +102,52 @@ def test_exhaustive_N1_maxima() -> None:
     out = rig.exhaustive_N1()
     assert out["count"] == 4096
     assert out["max_R"] == "1" and out["max_phi"] == "1"
+
+
+def _recursion(h: Fraction, t: Fraction, steps: int) -> list[Fraction]:
+    r = [h + t]
+    for _ in range(steps - 1):
+        r.append(h + t * r[-1])
+    return r
+
+
+def test_lemma_limit_monotonicity_condition_over_a_grid() -> None:
+    """R_1 <= Phi iff T == 0 or R_1 >= 1; the sequence is monotone with constant sign of R_r - Phi."""
+    seen_decreasing = False
+    for hn in range(0, 9):
+        for tn in range(0, 8):
+            h, t = Fraction(hn, 4), Fraction(tn, 8)
+            if t >= 1:
+                continue
+            phi = h / (1 - t)
+            seq = _recursion(h, t, 6)
+            r1 = seq[0]
+            assert (r1 <= phi) == (t == 0 or r1 >= 1)
+            diffs = [x - phi for x in seq]
+            assert all((d >= 0) == (diffs[0] >= 0) for d in diffs)
+            if r1 > phi:
+                seen_decreasing = True
+                assert all(a >= b for a, b in zip(seq, seq[1:]))
+    assert seen_decreasing  # the counterexample class from the review (e.g. H = 0, |T| = 1/4) is in the grid
+
+
+def test_lemma_counterexample_h0_t_quarter_decreases() -> None:
+    seq = _recursion(Fraction(0), Fraction(1, 4), 5)
+    assert seq[0] == Fraction(1, 4) and seq[1] == Fraction(1, 16)
+    assert all(a > b for a, b in zip(seq, seq[1:]))
+    assert Fraction(0) / (1 - Fraction(1, 4)) == 0  # Phi = 0, below R_1: not "monotone from below"
+
+
+def test_signed_sup_is_dominated_by_absolute_sum_and_small_on_tensor_powers() -> None:
+    sig = _load("signed_form_t", TENSOR / "signed_form.py")
+    g = rig.seed_from_lane()
+    if g is None:
+        pytest.skip("seed witness not present")
+    cur = g
+    expected = [Fraction(1), Fraction(1, 2), Fraction(1, 4)]
+    for r, want in enumerate(expected, start=1):
+        if r > 1:
+            cur = rig.kron(cur, g)
+        got = sig.signed_sup(cur)
+        assert got == want
+        assert got <= rig.R_pm1(cur)

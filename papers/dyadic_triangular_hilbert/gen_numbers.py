@@ -75,6 +75,9 @@ def main() -> int:
         best_f = float(Fraction(s["best"]))
         srows.append(f"{obj} & {s['n_res']} & {s['restarts_done']} & {origin} & ${frac_tex(s['best'])}$ & {best_f:.4f} \\\\")
     lines.append(r"\newcommand{\searchTableRows}{" + " ".join(srows) + "}")
+    signed = json.loads((TENSOR / "signed_form.json").read_text())["rows"]
+    signed_text = ", ".join(f"${frac_tex(r['signed_sup'])}$ at $N={r['N']}$" for r in signed)
+    lines.append(rf"\newcommand{{\signedRowsText}}{{{signed_text}}}")
     best_phi = max((Fraction(s["best"]) for s in searches.values() if s["mode"] == "phi"), default=Fraction(0))
     best_R = max((Fraction(s["best"]) for s in searches.values() if s["mode"] == "R"), default=Fraction(0))
     lines.append(rf"\newcommand{{\searchBestPhi}}{{{frac_tex(str(best_phi))}}}")

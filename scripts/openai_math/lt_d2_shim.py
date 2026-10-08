@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import sys
 import time
@@ -43,12 +44,19 @@ def sha(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 
 
-def cmd_prepare(lane: Path, renames: list[tuple[str, str]]) -> None:
+def cmd_prepare(lane: Path, renames: list[tuple[str, str]], regex_renames: list[tuple[str, str]], resume: bool) -> None:
     order: list[str] = []
     for r in ROOTS:  # each closure lists dependencies first, so appending unseen items keeps dependency order
         order += [m for m in D.closure_order(r) if m not in order]
     src = lane / "src"
     patches: dict[str, dict[str, object]] = {}
+    old_hash: dict[str, str] = {}
+    if resume and src.exists():  # hashes of the sources the existing records were compiled from
+        for m in order:
+            q = src / (m.replace(".", "/") + ".lean")
+            if q.exists():
+                old_hash[m] = sha(q.read_text(encoding="utf-8"))
+    new_hash: dict[str, str] = {}
     for m in order:
         text = D.mod_path(m).read_text(encoding="utf-8")
         new = text
@@ -58,12 +66,17 @@ def cmd_prepare(lane: Path, renames: list[tuple[str, str]]) -> None:
             if n:
                 counts[old] = n
                 new = new.replace(old, rep)
+        for pat, rep in regex_renames:
+            new, n = re.subn(pat, rep, new)
+            if n:
+                counts["regex:" + pat] = n
         dst = src / (m.replace(".", "/") + ".lean")
         dst.parent.mkdir(parents=True, exist_ok=True)
         dst.write_text(new, encoding="utf-8")
+        new_hash[m] = sha(new)
         if counts:
             patches[m] = {"replacements": counts, "sha256_original": sha(text), "sha256_modified": sha(new)}
-    D.save(lane, "patches.json", {"renames": renames, "patched_files": patches})
+    D.save(lane, "patches.json", {"renames": renames, "regex_renames": regex_renames, "patched_files": patches})
     # carry over the oleans of lane LT_D for files whose source is unchanged
     scratch = lane / "scratch_olean"
     rec: dict[str, dict[str, object]] = {}
@@ -74,6 +87,12 @@ def cmd_prepare(lane: Path, renames: list[tuple[str, str]]) -> None:
         rec = {m: {"status": "compiled", "seconds": v["seconds"], "carried_from": "LT_D", "first_error": ""}
                for m, v in prior.items() if v["status"] == "compiled" and m not in patches}
     scratch.mkdir(exist_ok=True)
+    if resume and (lane / "part1b_closure.json").exists():
+        old = json.loads((lane / "part1b_closure.json").read_text())
+        for m, v in old.items():
+            if v.get("status") == "compiled" and old_hash.get(m) == new_hash.get(m) and (scratch / (m.replace(".", "/") + ".olean")).exists():
+                rec[m] = v
+
     D.save(lane, "part1b_closure.json", rec)
     D.save(lane, "closure.json", {"roots": ROOTS, "n_files": len(order), "order": order})
     print(f"prepared {len(order)} files, {len(patches)} patched, {len(rec)} carried over")
@@ -163,7 +182,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=["prepare", "closure", "axioms", "statements"])
     ap.add_argument("--lane", required=True)
-    ap.add_argument("--rename", action="append", default=[], help="OLD=NEW (recorded in patches.json)")
+    ap.add_argument("--rename", action="append", default=[], help="OLD=NEW plain-text rename (recorded in patches.json)")
+    ap.add_argument("--rename-re", action="append", default=[], help="PATTERN=>REPL regex rename (recorded in patches.json)")
+    ap.add_argument("--resume", action="store_true", help="keep records/oleans of previously compiled files whose patched source is unchanged")
     ap.add_argument("--max-seconds", type=int, default=3000)
     ap.add_argument("--root", action="append", default=[], help="root module(s) of the closure (default: Lieb-Thirring Main)")
     ap.add_argument("--final", action="append", default=[], help="theorem(s) whose axioms are printed (default: Lieb-Thirring)")
@@ -185,7 +206,7 @@ def main() -> int:
     lane = Path(args.lane).resolve()  # Lean runs with cwd = LeanMaster, so every path it receives must be absolute
     lane.mkdir(parents=True, exist_ok=True)
     if args.cmd == "prepare":
-        cmd_prepare(lane, [tuple(r.split("=", 1)) for r in args.rename])
+        cmd_prepare(lane, [tuple(r.split("=", 1)) for r in args.rename], [tuple(r.split("=>", 1)) for r in args.rename_re], args.resume)
     elif args.cmd == "closure":
         cmd_closure(lane, args.max_seconds)
     elif args.cmd == "axioms":

@@ -33,7 +33,8 @@
   "code_sha256": {
     "scripts/openai_math/lt_d2_shim.py": "59d30813194482b1b764fd9c780f4a7dcbff26636daa0dfd122fccefee7a63f3",
     "scripts/openai_math/lt_d_lean.py": "471b286dbef0f6794e515bdaf06102eb71fdef3fbcd8d0ecbf05bc3407fbcb38",
-    "scripts/openai_math/lt_d2_shim.py (after amendment)": "494edb1d23dffdf6d304fe65ecfa53bb5ba94fabba8fb44794289dbaa8ff80c9"
+    "scripts/openai_math/lt_d2_shim.py (after amendment)": "494edb1d23dffdf6d304fe65ecfa53bb5ba94fabba8fb44794289dbaa8ff80c9",
+    "scripts/openai_math/lt_d2_shim.py (after A2: regex renames, --resume)": "cb1f7a96a9daf754d8702bfea720d866b3c0402ea04993d5ccb7324d0cace671"
   },
   "budget": "1 core, about 3 hours, no GPU",
   "amendments": [
@@ -41,6 +42,18 @@
       "timestamp_utc": "2026-10-08T12:16:24.672441+00:00",
       "change": "compile with -DautoImplicit=false (upstream's lakefile setting for all OAI libraries) instead of plain lean",
       "reason": "found by the adversarial verifier of LT_D2; the TRI_D3 run had been started minutes earlier with plain lean, was stopped before any file was reported compiled, its partial scratch was deleted, and the run restarts from zero",
+      "made_before_the_rerun": true
+    },
+    {
+      "id": "A2",
+      "timestamp_utc": "2026-10-08T12:25:02.548822+00:00",
+      "evidence": "first run with -DautoImplicit=false compiled 8 of 229 files (including the 3988-line interval-arithmetic file Certificate.WaveIntervals in 213 s), then failed at Schwartz/Regularity.lean:30:12: Unknown constant `Finset.prod_le_prod\u2080` (the second error, 31:12 'No goals', is a cascade of the first; checked by listing all errors of the file).",
+      "rename_regex": {
+        "pattern": "(?<![\\w'])((?:Finset\\.)?)prod_le_prod\u2080(?![\\w'])",
+        "replacement": "\\1prod_le_prod"
+      },
+      "justification": "LeanMaster's Mathlib (rev 85e3a25e) has `Finset.prod_le_prod (h0 : \u2200 i \u2208 s, 0 \u2264 f i) (h1 : \u2200 i \u2208 s, f i \u2264 g i) : \u220f i \u2208 s, f i \u2264 \u220f i \u2208 s, g i` (Mathlib/Algebra/Order/BigOperators/GroupWithZero/Finset.lean:39). The use site passes a nonnegativity proof and leaves the pointwise bound as the next goal, which is this shape. That upstream's `\u2080` lemma has the same hypotheses is NOT verified here (their Mathlib is not available); the name drift is 'consistent with' a rename in newer Mathlib. The regex has identifier boundaries so it cannot touch longer names; the lemma is used in 1164 files of the whole upstream library, so the rename is expected to appear many times in the closure (counted in patches.json).",
+      "renames_used_so_far": "1 of at most 5 (regex counts as one rename)",
       "made_before_the_rerun": true
     }
   ]

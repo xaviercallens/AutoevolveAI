@@ -137,6 +137,13 @@ def main() -> int:
     ap.add_argument("--publish-id", type=int, help="publish an existing draft (mints the DOI; irreversible)")
     args = ap.parse_args()
     meta = json.loads(args.meta.read_text())
+    if args.publish_id:
+        # Publishing must not rebuild the local archive: the record holds the files uploaded earlier,
+        # and a rebuild (tar/gzip are not byte-reproducible) would leave the local copy different.
+        token = load_tokens(args.token_file)["ZENODO_TOKEN"]
+        dep = zenodo_request("POST", f"{ZENODO}/deposit/depositions/{args.publish_id}/actions/publish", token)
+        print(json.dumps({"zenodo": summary(dep)}, indent=2))
+        return 0
     tar_path, manifest = build_bundle()
     report: dict[str, Any] = {"bundle": str(tar_path), "bundle_sha256": sha256(tar_path), "bundle_bytes": tar_path.stat().st_size,
                               "files_in_manifest": len(json.loads(manifest.read_text())), "paper_pdf_sha256": sha256(PAPER_PDF)}

@@ -2,6 +2,15 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [Unreleased] — dyadic triangular Hilbert preprint (2026-10-08)
+
+- Preprint and Zenodo record doi:10.5281/zenodo.23232389: C* >= 3 for the absolute dyadic triangular Hilbert
+  sum via an exact product rule for tensor products; conjecture C* = 3. `papers/dyadic_triangular_hilbert/`,
+  `scripts/openai_math/hypotheses/tensor/`, `scripts/publish_dyadic_hilbert.py`.
+- Review-driven corrections before publication (Lemma 3.2, absolute-sum scope, signed-form check, citations).
+- `--publish-id` no longer rebuilds the local archive.
+- Nightly retrain: steps inherit the launching interpreter; retrain reports from the 2026-10-08 test runs.
+
 ## [14.2.0] — openai_math sub-project: study, D0 index, Riemann/Hilbert hypothesis lab, night LTM cycle (2026-10-07)
 
 Summary: a new math-discovery sub-project built on github.com/openai/math (722 model-written

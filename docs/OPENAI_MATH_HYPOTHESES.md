@@ -115,7 +115,7 @@ evidence blobs verified: 15 claims (6 from 2026-10-07, 9 from the night run), no
 | H1/H3 follow from a zero-free half-plane (classical) | L | citation |
 | H2(b) holds for all fundamental \|D\| ≤ 10⁷ | X | numeric |
 | **C* ≥ 5/2 (exact witness)** | **B** | exact_harness |
-| No ratio above 5/2 found, N ≤ 7 | X | numeric |
+| Hoelder ascent found no ratio above 5/2, N ≤ 7 (a search limit: the night's tensor input gives 11/4 at N = 6) | X | numeric |
 | H4: at most 2 cycles found at degrees 5 and 6 | X | numeric |
 | Night: kron(w4, w4) at N = 8 has ratio exactly 23/8; H5′ refuted | **B** | exact_harness |
 | Night: ±1 maximum is 1 at N = 1 and 2 at N = 2 (exhaustive) | B | exact_harness |
@@ -146,7 +146,7 @@ Runs on 2026-10-08 between 04:29 and 05:43 UTC, after the lane preregistrations 
 `c1d7cd5` (04:28:43 UTC). Each lane was checked by a separate adversarial verifier
 (`verification.md` in each lane directory); the wording below includes their corrections. Results:
 `results/openai_math/hypotheses/night_2026-10-07/`, rows 8–20 of `results.tsv`. Lane `result.json`
-files are runner output and were not edited, so a few figures there are less precise than here.
+files were left as the lanes wrote them, so a few figures there are less precise than here.
 Where a lane says its deviations were written before the affected run, the file times cannot
 confirm it (each `deviations.md` has a single modification time).
 
@@ -227,7 +227,7 @@ confirm it (each `deviations.md` has a single modification time).
     recomputed independently. C_3 ≤ 5/2 rests on `holder_bound.py` alone.
 - **Shows:** the conjectured sharp constant 5/2 is false. Upstream's constant 40 is not contradicted.
 - **Does not show:** any upper bound beyond N = 3. **H5″ (C* = 3)** is a conjecture on weak
-  evidence. A ±1 g with H(g)/(1 − |T(g)|) > 3 would refute it.
+  evidence, novelty unchecked. A ±1 g with H(g)/(1 − |T(g)|) > 3 would refute it.
 
 ### D1: definition-hole bodies (Comparator anchors) — 43 of 45 reproduce the challenge, unelaborated
 

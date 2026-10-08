@@ -583,3 +583,27 @@ triangular Hilbert constant), each preregistered and committed before its confir
 - **LeanBert does not exist here**; the named-but-absent tool was reported, not simulated.
 - **Pipes still hide exit codes.** A Lean compile piped to `head` showed exit 0 over two type
   errors; the recorded run redirects to a file and appends Lean's own exit code.
+
+## 18. Choosing what to test in an AI-written library: aim at the gap, not at the headline (2026-10-08)
+
+Screening upstream openai/math for physics-relevant claims (`docs/OPENAI_MATH_SELECTION_2026-10-08.md`):
+372 families, 235 with a Lean scope note, 91 physics-keyword hits, 63 of them with Lean.
+
+- **A claim already in Lean is decided by a Comparator run, not by a numerical search.** A search against a
+  formalised statement replicates formal work and, if the proof compiles, cannot succeed. Point the search at the GAP:
+  family 262's Lean is scalar, but two further manuscripts claim the matrix-valued case and an equality-case
+  classification. Compare the family headline, the manuscripts in it, and the Lean statement; they need not agree.
+- **Design the instrument so that its error is one-sided.** Dirichlet box + Rayleigh-Ritz in a sine basis makes every
+  computed negative eigenvalue magnitude a lower bound, so a discretisation cannot manufacture a violation of an upper
+  bound. Calibrate the remaining (quadrature) error against an independent solver and set the certification threshold
+  from the measured agreement (about 1e-6 here), not from hope.
+- **Run both polarities of control before the first candidate**: the exact extremiser reproduces the constant; a proved
+  endpoint (gamma = 3/2) is reached and not exceeded; and where the claim is known to fail (gamma = 3) the search must
+  beat it. A search that cannot find a known violation has no power to report "none found".
+- **Fork after torch is a deadlock.** A `ProcessPoolExecutor` created with the default fork context after the parent
+  used torch hung forever (futex wait, zero CPU). Use `multiprocessing.get_context("spawn")`.
+- **`pkill -f <pattern>` can kill its own shell** when the pattern appears in the command line (exit 144).
+- **Check the einsum, not just the maths.** `einsum("q,qj,qk,qab->jakb")` materialised a Q x M x M intermediate and made
+  a restart take 200 s; one matmul per (a, b) block gave a 10x speed-up with identical values.
+- An independent review before building paid off: it redirected the work from numerical hunts against formalised
+  statements to the unformalised matrix claim.

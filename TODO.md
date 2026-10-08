@@ -328,3 +328,15 @@ via the product rule; conjecture H + 3|T| <= 3 prod ||F||_3 (would give C* = 3).
 - Attack the conjecture: the coupling between even and odd coarse triples is the obstacle (paper, Sec. 6).
 - Exhaustive +-1 maximum of Psi = H + 3|T| at N = 2 by the lane's reduction (currently only R was exhausted).
 - **Accept when:** a Lean-checked product rule, or a proof/refutation of the conjecture at N = 2 over real inputs.
+
+### 32. Matrix-valued sharp 1D Lieb-Thirring lab: follow-ups (2026-10-08)
+Docs: `docs/OPENAI_MATH_LT_MATRIX.md`, `docs/OPENAI_MATH_SELECTION_2026-10-08.md`; instruments
+`scripts/openai_math/lt_matrix/` (frozen, preregistered e15b810); lane results under
+`results/openai_math/hypotheses/night_2026-10-08/LT_{A,B,C,D}/`.
+- Read the four lane reports and verifications before claiming anything (all Tier X).
+- If NO_VIOLATION_FOUND everywhere: write the numerical evidence up honestly as corroboration, with the search power
+  (how close each cell came to L1) and the gaps (m <= 3, gamma grid, basis K <= 3).
+- If a candidate is VIOLATION_CERTIFIED: re-evaluate the explicit potential in exact/interval arithmetic, then preregister
+  a confirmatory run with new seeds before any public statement.
+- Comparator request (docs/OPENAI_MATH_D2_REQUEST.md, written by lane D): narrow run on `LiebThirring.json` first.
+- **Accept when:** each hypothesis H-LT1..5 has a recorded verdict in the ledger with its controls.

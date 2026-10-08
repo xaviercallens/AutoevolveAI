@@ -319,3 +319,12 @@ worktrees). The step fails loudly every night, and the Kev gate then rejects the
   the dream phase report BLOCKED (not crash) when the checkpoint is absent.
 - **Accept when:** a nightly run either trains the checkpoint and the dream step passes, or reports
   BLOCKED with the missing-checkpoint reason and the other steps still run.
+
+### 31. Dyadic triangular Hilbert constant: next steps after the preprint (2026-10-08)
+Preprint: papers/dyadic_triangular_hilbert (Zenodo DOI 10.5281/zenodo.23232389). Proved C* >= 3
+via the product rule; conjecture H + 3|T| <= 3 prod ||F||_3 (would give C* = 3).
+- Formalise the product rule and the per-level bound in Lean (finite statements over Fin (2^N));
+  only then can any claim here reach Tier A.
+- Attack the conjecture: the coupling between even and odd coarse triples is the obstacle (paper, Sec. 6).
+- Exhaustive +-1 maximum of Psi = H + 3|T| at N = 2 by the lane's reduction (currently only R was exhausted).
+- **Accept when:** a Lean-checked product rule, or a proof/refutation of the conjecture at N = 2 over real inputs.

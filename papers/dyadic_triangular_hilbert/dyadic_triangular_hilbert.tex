@@ -1,0 +1,325 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[hidelinks]{hyperref}
+\input{gen_numbers.tex}
+\emergencystretch=3em
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Lam}{\Lambda}
+\DeclareMathOperator{\tr}{tr}
+
+\title{The sharp constant of the dyadic triangular Hilbert form is at least~3}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-08}
+\hypersetup{pdftitle={The sharp constant of the dyadic triangular Hilbert form is at least 3}, pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Let $\Lam(F_0,F_1,F_2)=\sum_{k\in\Z}\sum_{I\in A_k}|L_I(F_0,F_1,F_2)|$ be the dyadic triangular Hilbert form with
+absolute local contributions, in the normalisation of the recent preprint \emph{An $L^3$ bound for the dyadic triangular
+Hilbert form} (OpenAI, 2026), which proves $\Lam\le 40\prod_v\|F_v\|_{L^3(\R_+^2)}$ for real inputs. Let $C^\ast$ be the
+best constant. We prove $C^\ast\ge 3$. The proof is elementary: for inputs constant on dyadic squares, $\Lam$ is a finite
+sum of integer-valued traces, and an exact \emph{product rule} describes how it transforms under Kronecker (tensor)
+products of inputs. Tensor powers of one explicit $4\times4$ sign pattern $g$ with $(H,T)=(\seedH,\seedT)$ then have ratio
+exactly $3-2^{1-r}$, so the supremum is at least~3. All values are exact rationals, computed by two independent
+implementations and, for the first instance beyond $5/2$, by a third. We also prove that the sharp constant at
+resolution~1 is exactly~1 and that each dyadic level contributes at most $\prod_v\|F_v\|_3$. We conjecture $C^\ast=3$,
+and state the conjecture in a sharper, tensor-closed form, $H(F)+3|T(F)|\le3\prod_v\|F_v\|_3$, which is saturated on the
+whole tensor family. Exhaustive search at resolution~1 and exact hill-climbs at resolutions 2--4 found no violation.
+The gap $3\le C^\ast\le 40$ remains. Nothing here is machine-checked in a proof assistant.
+\end{abstract}
+
+\section{Introduction}
+
+The triangular Hilbert transform couples three functions of two variables, each pair sharing one variable, and its
+$L^3\times L^3\times L^3$ estimate is a well-known open problem of multilinear harmonic analysis
+\cite{thieleproblems,ktzk2015}. A dyadic model, in which the intervals are constrained by binary addition without
+carries, was formulated alongside it. The preprint \cite{oai2026dyadic} (one of the manuscripts released in the
+\texttt{openai/math} repository, produced by an internal OpenAI model) proves the uniform estimate for this dyadic
+model with unrestricted real inputs and the explicit constant~40. That manuscript is not formalised in Lean and we have
+not verified its proof; we use only its \emph{definition} of the form, which we restate in full.
+
+The question we address is the size of the best constant. Our contribution is a lower bound.
+
+\begin{theorem}\label{thm:main}
+Let $C^\ast$ be the best constant in $\Lam(F_0,F_1,F_2)\le C^\ast\prod_{v}\|F_v\|_{L^3(\R_+^2)}$ over real, bounded,
+compactly supported $F_v$. Then $C^\ast\ge3$.
+\end{theorem}
+
+The mechanism is a product rule (Theorem~\ref{thm:product}): on inputs constant on dyadic squares, the form of a
+Kronecker product $f\otimes g$ is an affine function of the form of $f$ with slope $|T(g)|$, the top term of~$g$. A seed
+with $H(g)/(1-|T(g)|)=3$ therefore generates a sequence with ratios $3-2^{1-r}$. The value $5/2$ found earlier by
+numerical ascent (Section~\ref{sec:history}) is the second member of that sequence.
+
+\section{Definitions and the finite reduction}
+
+We write $\R_+=[0,\infty)$. For $k\in\Z$ let $D_k=\{[2^k n,2^k(n+1)):n\in\Z_{\ge0}\}$, and for $I\in D_k$ with index
+$n_I$ let $h_I=\mathbf 1_{I_{\mathrm{left}}}-\mathbf 1_{I_{\mathrm{right}}}$. Let $\oplus$ be bitwise XOR and
+\[
+A_k=\{(I_0,I_1,I_2)\in D_k^3:\ n_{I_0}\oplus n_{I_1}\oplus n_{I_2}=0\}.
+\]
+For real measurable $F_0,F_1,F_2$ on $\R_+^2$ and $I\in A_k$,
+\begin{equation}\label{eq:LI}
+L_I(F_0,F_1,F_2)=2^{-k}\int_{I_0\times I_1\times I_2}F_0(x_0,x_1)F_1(x_1,x_2)F_2(x_2,x_0)\,h_{I_0}(x_0)h_{I_1}(x_1)h_{I_2}(x_2)\,dx_0\,dx_1\,dx_2,
+\end{equation}
+and $\Lam(F)=\sum_{k\in\Z}\sum_{I\in A_k}|L_I(F)|$. Theorem~1.1 of \cite{oai2026dyadic} states
+$\Lam(F)\le40\prod_v\|F_v\|_3$ for real bounded compactly supported inputs, and extends to $L^3$ by density. We write
+$R(F)=\Lam(F)/\prod_v\|F_v\|_3$ and $C^\ast=\sup R$.
+
+\paragraph{Step inputs.}
+Fix $N\ge1$, $n=2^N$, and let each $F_v$ be constant on the squares of side $2^{-N}$ inside $[0,1)^2$ and zero
+elsewhere; identify $F_v$ with the $n\times n$ matrix $F_v[i,j]$ of its values. Write $T(F)=\int F_0F_1F_2$ over the unit
+cube, so that $T=n^{-3}\sum_{i,j,k}F_0[i,j]F_1[j,k]F_2[k,i]=n^{-3}\tr(F_0F_1F_2)$.
+
+\begin{proposition}[finite reduction]\label{prop:finite}
+For step inputs at resolution $N$,
+\[
+\Lam(F)=|T(F)|+H(F),\qquad H(F)=\sum_{l=0}^{N-1}\sum_{I\in A_{-l}}|L_I(F)|,
+\]
+and every $L_I$ is $2^{l}n^{-3}$ times an integer combination of products of entries. Dyadic dilations leave $R$
+unchanged, so restricting the support to $[0,1)^2$ loses nothing.
+\end{proposition}
+
+\begin{proof}
+At scale $2^k\ge2$ only the triple of intervals containing $[0,1)$ meets the support, all three Haar functions equal $+1$
+there, and $L=2^{-k}T$; these scales sum to $|T|\sum_{k\ge1}2^{-k}=|T|$. At scale $2^k\le2^{-N}$ each $h_I$ integrates to
+zero on every cell, so $L_I=0$. At level $l$, i.e.\ $k=-l$ with $0\le l\le N-1$, there are $m=2^l$ intervals of $b=n/m$
+cells each; writing $s\in\{\pm1\}^b$ for the Haar signs and $F_v^{pq}$ for the $b\times b$ block of $F_v$ on the
+interval pair $(p,q)$, the triple $(p,q,p\oplus q)$ contributes
+\begin{equation}\label{eq:trace}
+L_I=2^{l}n^{-3}\tr\big(SF_0^{pq}SF_1^{q,p\oplus q}SF_2^{p\oplus q,p}\big),\qquad S=\operatorname{diag}(s).
+\end{equation}
+Dilation invariance follows from the scaling of \eqref{eq:LI}.
+\end{proof}
+
+For sign inputs ($F_v[i,j]\in\{\pm1\}$) every $\|F_v\|_3=1$, so $R=|T|+H$ is an exact rational. All computations below
+use integer arithmetic on \eqref{eq:trace}; nothing is floating point.
+
+\section{The product rule}
+
+For $f=(f_0,f_1,f_2)$ at resolution $N_1$ and $g$ at resolution $N_2$, let $f\otimes g$ be the input at resolution
+$N_1+N_2$ with $(f_v\otimes g_v)[i,j]=f_v[\lfloor i/2^{N_2}\rfloor,\lfloor j/2^{N_2}\rfloor]\,g_v[i\bmod 2^{N_2},j\bmod 2^{N_2}]$
+(the Kronecker product: $f$ on the coarse cells, a copy of $g$ inside each). Put
+\[
+A'(f)=2^{-2N_1}\sum_{p\oplus q\oplus r=0}|f_0[p,q]\,f_1[q,r]\,f_2[r,p]|,
+\]
+the triangular form of $|f|$ over the admissible coarse triples; $A'(f)=1$ for sign inputs.
+
+\begin{theorem}[product rule]\label{thm:product}
+For real step inputs $f,g$,
+\[
+\Lam(f\otimes g)=|T(f)|\,|T(g)|+|T(g)|\,H(f)+A'(f)\,H(g),\qquad
+\|f_v\otimes g_v\|_3=\|f_v\|_3\|g_v\|_3,\qquad T(f\otimes g)=T(f)T(g).
+\]
+In particular, for sign inputs,
+\begin{equation}\label{eq:rule}
+R(f\otimes g)=H(g)+|T(g)|\,R(f).
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Let $F=f\otimes g$, $n_1=2^{N_1}$, $n_2=2^{N_2}$.
+
+\emph{Coarse levels $l<N_1$.} Each Haar function is constant on every coarse cell of side $2^{-N_1}$, so the integral
+in \eqref{eq:LI} splits into a sum over coarse cell triples $(a_0,a_1,a_2)$ of
+$\pm f_0[a_0,a_1]f_1[a_1,a_2]f_2[a_2,a_0]$ times the integral of $g_0g_1g_2$ over the cell cube, which is
+$n_1^{-3}T(g)$ after rescaling the cell to the unit cube. Hence $L_I(F)=T(g)\,L_I(f)$ for every coarse triple, and the
+same computation with all signs $+1$ gives $T(F)=T(f)T(g)$.
+
+\emph{Fine levels $l\ge N_1$.} Write $I_v=2^{-N_1}(a_v+J_v)$ with $J_v$ dyadic of level $l-N_1$. The index of $I_v$ is
+$a_v2^{l-N_1}+j_v$, so the XOR condition holds iff $a_0\oplus a_1\oplus a_2=0$ and $j_0\oplus j_1\oplus j_2=0$. On the
+cube of $I$ the inputs equal $f_0[a_0,a_1]f_1[a_1,a_2]f_2[a_2,a_0]$ times the fine copy of $g$, the prefactor splits as
+$2^{l}=2^{N_1}2^{\,l-N_1}$ and the measure contributes $n_1^{-3}$, so
+$L_I(F)=f_0[a_0,a_1]f_1[a_1,a_2]f_2[a_2,a_0]\cdot n_1^{-2}\,L_J(g)$. Summing $|L_I(F)|$ over the admissible $(a_0,a_1)$
+and over $J$ gives $A'(f)\sum_J|L_J(g)|$ at level $l-N_1$; over all fine levels this is $A'(f)H(g)$.
+
+The norm identity is $\|f_v\otimes g_v\|_3^3=n_1^{-2}n_2^{-2}\sum|f_v|^3\sum|g_v|^3$. Adding the two groups of levels
+to $|T(F)|$ gives the formula; for sign inputs all norms and $A'(f)$ equal~1.
+\end{proof}
+
+\begin{lemma}[closure]\label{lem:closure}
+For sign inputs with $|T|<1$ put $\Phi(g)=H(g)/(1-|T(g)|)$. If $\Phi(f)\le M$ and $\Phi(g)\le M$ then
+$\Phi(f\otimes g)\le M$; and $R(g^{\otimes r})\to\Phi(g)$ monotonically from below as $r\to\infty$.
+\end{lemma}
+
+\begin{proof}
+By \eqref{eq:rule} applied twice, $H(f\otimes g)=H(g)+|T(g)|H(f)$ and $|T(f\otimes g)|=|T(f)||T(g)|$. Then
+$H(f\otimes g)\le M(1-|T(g)|)+|T(g)|M(1-|T(f)|)=M(1-|T(f)||T(g)|)$. For the second claim, $R_r=H+|T|R_{r-1}$ with
+$R_1=H+|T|$ is an affine contraction with fixed point $\Phi$, and $R_1\le\Phi$ iff $H+|T|\le H/(1-|T|)$, which holds.
+\end{proof}
+
+Thus the tensor construction can never exceed the best $\Phi$ of a ``prime'' seed, and the lower bound it yields is
+exactly $\sup_g\Phi(g)$.
+
+\section{The lower bound}
+
+\begin{theorem}\label{thm:three}
+Let $g=(g_0,g_1,g_2)$ be the sign input at resolution~2
+\[
+g_0=\seedMatA,\quad g_1=\seedMatB,\quad g_2=\seedMatC.
+\]
+Then $H(g)=\seedH$, $T(g)=\seedT$, $R(g)=\seedR$, and $R(g^{\otimes r})=3-2^{1-r}$ for every $r\ge1$. Hence $C^\ast\ge3$.
+\end{theorem}
+
+\begin{proof}
+The values of $H$ and $T$ are finite integer computations from \eqref{eq:trace} (Section~\ref{sec:comp}). By
+\eqref{eq:rule}, $R_r=\tfrac32+\tfrac12R_{r-1}$ with $R_1=2$, whose solution is $3-2^{1-r}$. Each $g^{\otimes r}$ is a
+bounded compactly supported sign input, so $C^\ast\ge\sup_rR(g^{\otimes r})=3$.
+\end{proof}
+
+Table~\ref{tab:powers} lists the exact values up to $r=\rMaxPowers$ (resolution $N=\nMaxPowers$), each computed directly
+from \eqref{eq:trace} rather than from the recursion, together with the closed form.
+
+\begin{table}[h]\centering
+\begin{tabular}{rrllllc}\toprule
+$r$ & $N$ & $R(g^{\otimes r})$ & $H$ & $T$ & $3-2^{1-r}$ & match \\\midrule
+\powersTableRows
+\bottomrule\end{tabular}
+\caption{Exact ratios of the tensor powers of the seed $g$ (direct evaluation, integer arithmetic).}\label{tab:powers}
+\end{table}
+
+\begin{remark}
+The seed $g$ is the sign pattern of the resolution-2 witness found by numerical ascent (Section~\ref{sec:history});
+it attains the exhaustive resolution-2 maximum $R=2$ among sign inputs (Section~\ref{sec:comp}). Its tensor square $g\otimes g$ has ratio $5/2$ and explains the value
+first reached by floating-point ascent at resolution~4.
+\end{remark}
+
+\section{Upper bounds}\label{sec:upper}
+
+Write $C_N$ for the best constant over step inputs at resolution $N$ (real entries). Clearly $C_1\le C_2\le\dots$ and
+$C^\ast=\sup_NC_N$ by density.
+
+\begin{proposition}\label{prop:level}
+For real step inputs, $|T(F)|+\sum_{I\in A_0}|L_I(F)|\le\prod_v\|F_v\|_3$ and, for each level $l$,
+$\sum_{I\in A_{-l}}|L_I(F)|\le\prod_v\|F_v\|_3$. Consequently $C_N\le N+1$, and $C_1=1$.
+\end{proposition}
+
+\begin{proof}
+We use the triangular H\"older inequality: for any abelian group $G$ and functions $u_v$ on $G^2$,
+$\sum_{x\oplus y\oplus z=0}|u_0(x,y)u_1(y,z)u_2(z,x)|\le\prod_v\|u_v\|_{\ell^3(G^2)}$, because the three maps
+$(x,y)\mapsto(x,y),(y,z),(z,x)$ from the admissible set to $G^2$ are bijections, so the generalised H\"older inequality
+with exponents $(3,3,3)$ applies and each factor is the full $\ell^3$ norm. (The same holds for the odd class
+$x\oplus y\oplus z=1$ and, with Lebesgue measure, for integrals over half-cubes.)
+
+\emph{Level $l$.} Each $|L_I|\le2^{l}\int_{I_0\times I_1\times I_2}|F_0F_1F_2|$. On that cube H\"older with exponents
+$(3,3,3)$ gives $\int|F_0F_1F_2|\le\prod_v(2^{-l}\int_{Q_v}|F_v|^3)^{1/3}=2^{-l}\prod_v\|F_v\mathbf 1_{Q_v}\|_3$,
+where $Q_0=I_0\times I_1$, $Q_1=I_1\times I_2$, $Q_2=I_2\times I_0$ (the third variable ranges over an interval of
+length $2^{-l}$). Summing over $I\in A_{-l}$ and applying the triangular H\"older inequality on the group
+$(\Z/2)^l$ of interval indices under XOR, with $u_v(p,q)=\|F_v\mathbf 1_{I_p\times I_q}\|_3$, gives
+$\sum_I|L_I|\le\prod_v(\sum_{p,q}\|F_v\mathbf 1_{I_p\times I_q}\|_3^3)^{1/3}=\prod_v\|F_v\|_3$.
+
+\emph{Top terms.} $T\pm L_{(0,0,0)}=\int F_0F_1F_2(1\pm h(x_0)h(x_1)h(x_2))$, and $1+hhh$ equals $2$ on the four
+half-cubes of even parity and $0$ otherwise (and $1-hhh$ the reverse). So
+$|T|+|L_{(0,0,0)}|=\max(|T+L|,|T-L|)\le2\max_{\text{parity}}\int_{\text{class}}|F_0F_1F_2|$, and on each half-cube
+H\"older gives a factor $\tfrac12\prod_v\|F_v\mathbf 1_{Q_v}\|_3$; the four half-cubes of one parity class map
+bijectively onto the four quarter-squares of each $F_v$, so the triangular H\"older inequality on $\Z/2$ bounds the sum
+by $\tfrac12\prod_v\|F_v\|_3$. Hence $|T|+|L_{(0,0,0)}|\le\prod_v\|F_v\|_3$.
+
+Adding the level bounds gives $C_N\le N+1$; at $N=1$ the only level is $l=0$, so $C_1\le1$, and $F\equiv1$ attains~1.
+\end{proof}
+
+The bound $C_N\le N+1$ is attained when all Haar signs are replaced by $+1$ (the Haar-free form), which is how the
+numerical instruments are checked for power. The uniform bound $40$ of \cite{oai2026dyadic} exploits cancellation across
+levels through a matrix energy $\tr((R^\ast R)^{3/2})$; we have not improved it.
+
+\section{A sharp conjecture}
+
+\begin{conjecture}\label{conj:psi}
+For all real step inputs (equivalently all real inputs), $H(F)+3|T(F)|\le3\prod_v\|F_v\|_3$.
+\end{conjecture}
+
+Since $R=|T|+H\le H+3|T|$, Conjecture~\ref{conj:psi} implies $C^\ast\le3$, hence $C^\ast=3$ by
+Theorem~\ref{thm:three}. The functional $\Psi(F)=H(F)+3|T(F)|$ is the natural object for three reasons. First, for sign
+inputs $\Psi\le3$ is equivalent to $\Phi\le3$, so it is exactly the statement that no seed beats the one found. Second,
+equality propagates through tensor products: if $\Psi(f)=\Psi(g)=3$ then, by Theorem~\ref{thm:product},
+$\Psi(f\otimes g)=H(g)+|T(g)|(H(f)+3|T(f)|)=H(g)+3|T(g)|=3$. The constant input ($H=0,T=1$) and the seed $g$
+($H=\tfrac32,T=\tfrac12$) both satisfy $\Psi=3$, so the entire family $g^{\otimes r}$, and every tensor product of
+copies of $g$ and $\mathbf 1$, lies on the equality set. Third, at resolution~1 it is a theorem:
+$\Psi\le|L|+3|T|\le1+2|T|\le3$ by Proposition~\ref{prop:level}. A proof for general $N$ cannot proceed cell by cell,
+because the fine levels only see the admissible (even) coarse triples while $T$ sees all eight, and each square of
+$F_v$ is shared by one even and one odd triple; this coupling is where the content of the conjecture lies.
+
+\section{Computations}\label{sec:comp}
+
+All results are in the repository \texttt{xaviercallens/AutoevolveAI} at commit \texttt{\gitcommit}, directory
+\texttt{results/openai\_math/hypotheses/tensor/}, produced by \texttt{scripts/openai\_math/hypotheses/tensor/}
+(\texttt{h5\_tensor\_rigor.py}, sha256 prefix \texttt{\rigorSha}; \texttt{phi\_search.py}, \texttt{\searchSha}), and
+archived at Zenodo (DOI \zenodoDOI).
+
+\paragraph{Independent implementations.} The evaluator in \texttt{h5\_tensor\_rigor.py} was written from
+\eqref{eq:LI}--\eqref{eq:trace} and agrees with the earlier evaluator \texttt{h5\_exact.py} on random sign inputs at
+resolutions 1--4 (test suite). The value $\nightRatioNeight$ of $w_4\otimes w_4$ (Section~\ref{sec:history}) was obtained
+by both, and by a third implementation written by an adversarial verifier agent from the definition, with a different
+contraction order ($\nightIndependent$). Controls: the constant input gives exactly~1; the Haar-free form gives exactly
+$N+1$; the product rule was checked exactly on \prodRulePairs{} random sign pairs and, in its general form with $A'(f)$,
+on \prodRuleGeneralPairs{} random rational pairs (all pass: \prodRuleAllPass).
+
+\paragraph{Exhaustive resolution~1.} Over all $\nOneCount$ sign inputs, $\max R=\nOneMaxR$ and $\max\Phi=\nOneMaxPhi$.
+
+\paragraph{Resolution~2.} The exhaustive maximum of $R$ over the $2^{48}$ sign inputs is $2$. The computation (night lane
+of 2026-10-07) fixes $(F_0,F_1)$, reduces by the symmetries $F_v\to-F_v$, and uses that for fixed coefficient vectors
+$c_t$ of the six terms, $\max_{F_2\in\{\pm1\}^{16}}\sum_t|\langle c_t,F_2\rangle|=\max_{s\in\{\pm1\}^6}\|\sum_ts_tc_t\|_1$;
+each chunk's argmax was rechecked by the exact evaluator. The seed $g$ attains this maximum.
+
+\paragraph{Searches for a seed beating 3.} Exact hill-climbs on $\Phi$ (single and pair sign flips, random and perturbed
+tensor starts) and on $R$ found no value of $\Phi$ above 3 (best $\Phi$: $\searchBestPhi$; best $R$: $\searchBestR$;
+any above 3: \searchAnyAboveThree). Table~\ref{tab:search} lists the runs. A hill-climb proves nothing; it is reported
+as the evidence it is.
+
+\begin{table}[h]\centering
+\begin{tabular}{llrlll}\toprule
+objective & $N$ & restarts & starts & best (exact) & best \\\midrule
+\searchTableRows
+\bottomrule\end{tabular}
+\caption{Exact sign-flip hill-climbs (\texttt{phi\_search.py}). None exceeds 3.}\label{tab:search}
+\end{table}
+
+\section{How the bound was found}\label{sec:history}
+
+The constant was first studied by preregistered numerical experiments in a research pipeline run by language-model
+agents. A H\"older-ascent search at resolutions 2--7 reached exactly $2$ at $N\le3$ and $5/2$ at $N\ge4$. The
+hypothesis $C^\ast=2$ was preregistered and refuted by its own run; the amended hypothesis $C^\ast=5/2$ survived
+fresh-seed runs at $N=6,7$ and was then refuted at $N=8$ by the tensor square of the $N=4$ witness $w_4$, with exact
+ratio $\nightRatioNeight$. The product rule was found while explaining that number. Local ascent never found the tensor
+extremisers on its own: every ascent run at resolutions 4--8 converged to $5/2$ to within $10^{-10}$ and never left it,
+which is consistent with $5/2$ being a local maximum of $R$ among the inputs reachable by small moves.
+
+\section{Limitations and AI use}
+
+The proofs are short. Theorem~\ref{thm:product} was read and its identity re-derived numerically by an independent
+model verifier; Proposition~\ref{prop:finite}, Lemma~\ref{lem:closure} and Proposition~\ref{prop:level} were written
+for this manuscript and have been checked only by the agent that wrote them. None is machine-checked in a proof
+assistant. The exhaustive resolution-2 maximum is a computer-assisted claim from a preregistered run; the
+resolution-1 maximum was recomputed here. The upper bound $40$ is taken from \cite{oai2026dyadic} and is not verified
+here; Theorem~\ref{thm:main} does not depend on it. Whether the true constant is~3 is open.
+
+The computations, the search for the seed, the product rule and this manuscript were produced by Claude agents (Anthropic)
+running in Claude Code under a workflow that the author designed and launched: preregistration committed before each
+confirmatory run, positive and negative controls, exact arithmetic, and an adversarial model verifier for every lane.
+The author chose the problem and the rules. No person has independently refereed this manuscript before this preprint.
+
+\begin{thebibliography}{9}
+\bibitem{oai2026dyadic} OpenAI, \emph{An $L^3$ bound for the dyadic triangular Hilbert form}, preprint, 5 October 2026,
+in \texttt{github.com/openai/math} (commit \texttt{adc7f124}), \texttt{preprints/An-L3-bound-for-the-dyadic-triangular-Hilbert-form-October-5-2026/}.
+\bibitem{ktzk2015} V.~Kova\v{c}, C.~Thiele, P.~Zorin-Kranich, \emph{Dyadic triangular Hilbert transform of two general
+functions and one not too general function}, Forum Math.\ Sigma 3 (2015), e25; arXiv:1506.00861.
+\bibitem{thieleproblems} C.~Thiele (ed.), \emph{Some problems in harmonic analysis}, arXiv:1701.06637 (Section~9, Problem~13).
+\end{thebibliography}
+
+\end{document}

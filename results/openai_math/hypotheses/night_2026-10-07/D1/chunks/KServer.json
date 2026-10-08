@@ -1,0 +1,454 @@
+{
+  "challenge": "KServer",
+  "config": "ComparatorChallenges/KServer.json",
+  "solution_module": "OAI.Combinatorics.KServer.Main",
+  "solution_closure_files": 37,
+  "theorem_names": [
+    "OAI.KServer.main_theorem"
+  ],
+  "holes": [
+    {
+      "hole": "OAI.KServer.Configuration",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/KServer.lean",
+          "line": 13,
+          "end_line": 13,
+          "kind": "abbrev",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Combinatorics/KServer/Basic.lean",
+          "line": 13,
+          "end_line": 13,
+          "kind": "abbrev",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "abbrev Configuration (k : ℕ) (X : Type u) := Fin k → X",
+      "challenge_context": [
+        "open scoped BigOperators",
+        "universe u"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "abbrev Configuration (k : ℕ) (X : Type u) := Fin k → X",
+      "solution_context": [
+        "open scoped BigOperators",
+        "universe u"
+      ],
+      "context_differs": false,
+      "renaming": {},
+      "textually_identical": true,
+      "kind": {
+        "challenge": "abbrev",
+        "solution": "abbrev"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.KServer.LabelDistribution",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/KServer.lean",
+          "line": 15,
+          "end_line": 17,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Combinatorics/KServer/Basic.lean",
+          "line": 16,
+          "end_line": 17,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def LabelDistribution (k : ℕ) := {probability : Fin k → ℝ // (∀ label, 0 ≤ probability label) ∧ ∑ label, probability label = 1}",
+      "challenge_context": [
+        "open scoped BigOperators",
+        "universe u"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def LabelDistribution (k : ℕ) := {p : Fin k → ℝ // (∀ i, 0 ≤ p i) ∧ ∑ i, p i = 1}",
+      "solution_context": [
+        "open scoped BigOperators",
+        "universe u"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "probability": "p",
+        "label": "i"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical up to bound-variable renaming",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.KServer.Policy",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/KServer.lean",
+          "line": 19,
+          "end_line": 20,
+          "kind": "abbrev",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Combinatorics/KServer/Basic.lean",
+          "line": 22,
+          "end_line": 23,
+          "kind": "abbrev",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "abbrev Policy (k : ℕ) (X : Type u) := List (X × Fin k) → X → LabelDistribution k",
+      "challenge_context": [
+        "open scoped BigOperators",
+        "universe u"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "abbrev Policy (k : ℕ) (X : Type u) := List (X × Fin k) → X → LabelDistribution k",
+      "solution_context": [
+        "open scoped BigOperators",
+        "universe u"
+      ],
+      "context_differs": false,
+      "renaming": {},
+      "textually_identical": true,
+      "kind": {
+        "challenge": "abbrev",
+        "solution": "abbrev"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.KServer.serve",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/KServer.lean",
+          "line": 22,
+          "end_line": 24,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Combinatorics/KServer/Basic.lean",
+          "line": 26,
+          "end_line": 27,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def serve {k : ℕ} {X : Type u} (s : Configuration k X) (label : Fin k) (request : X) : Configuration k X := Function.update s label request",
+      "challenge_context": [
+        "open scoped BigOperators",
+        "universe u"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def serve {k : ℕ} {X : Type u} (s : Configuration k X) (i : Fin k) (r : X) : Configuration k X := Function.update s i r",
+      "solution_context": [
+        "open scoped BigOperators",
+        "universe u"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "label": "i",
+        "request": "r"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical up to bound-variable renaming",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.KServer.serviceCost",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/KServer.lean",
+          "line": 26,
+          "end_line": 31,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Combinatorics/KServer/Basic.lean",
+          "line": 30,
+          "end_line": 34,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def serviceCost {k : ℕ} {X : Type u} [MetricSpace X] (s : Configuration k X) : (requests : List X) → (Fin requests.length → Fin k) → ℝ | [], _ => 0 | request :: requests, labels => dist (s (labels 0)) request + serviceCost (serve s (labels 0) request) requests (fun index => labels index.succ)",
+      "challenge_context": [
+        "open scoped BigOperators",
+        "universe u"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def serviceCost {k : ℕ} {X : Type u} [MetricSpace X] (s : Configuration k X) : (σ : List X) → (Fin σ.length → Fin k) → ℝ | [], _ => 0 | r :: rs, j => dist (s (j 0)) r + serviceCost (serve s (j 0) r) rs (fun i => j i.succ)",
+      "solution_context": [
+        "open scoped BigOperators",
+        "universe u"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "requests": "σ",
+        "request": "r"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "DIFFERS",
+      "difference_in": "body",
+      "reason": "first differing token #49 (body)",
+      "challenge_window": "| [ ] , _ => 0 | request :: requests , labels => dist ( s ( labels 0",
+      "solution_window": "| [ ] , _ => 0 | r :: rs , j => dist ( s ( j 0",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.KServer.pathProbability",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/KServer.lean",
+          "line": 33,
+          "end_line": 40,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Combinatorics/KServer/Basic.lean",
+          "line": 37,
+          "end_line": 41,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def pathProbability {k : ℕ} {X : Type u} (A : Policy k X) (history : List (X × Fin k)) : (requests : List X) → (Fin requests.length → Fin k) → ℝ | [], _ => 1 | request :: requests, labels => (A history request).val (labels 0) * pathProbability A (history ++ [(request, labels 0)]) requests (fun index => labels index.succ)",
+      "challenge_context": [
+        "open scoped BigOperators",
+        "universe u"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def pathProbability {k : ℕ} {X : Type u} (A : Policy k X) (h : List (X × Fin k)) : (σ : List X) → (Fin σ.length → Fin k) → ℝ | [], _ => 1 | r :: rs, j => (A h r).val (j 0) * pathProbability A (h ++ [(r, j 0)]) rs (fun i => j i.succ)",
+      "solution_context": [
+        "open scoped BigOperators",
+        "universe u"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "history": "h",
+        "requests": "σ",
+        "request": "r"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "DIFFERS",
+      "difference_in": "body",
+      "reason": "first differing token #56 (body)",
+      "challenge_window": "| [ ] , _ => 1 | request :: requests , labels => ( A history request ) .",
+      "solution_window": "| [ ] , _ => 1 | r :: rs , j => ( A h r ) .",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.KServer.expectedCost",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/KServer.lean",
+          "line": 42,
+          "end_line": 45,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Combinatorics/KServer/Basic.lean",
+          "line": 44,
+          "end_line": 46,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def expectedCost {k : ℕ} {X : Type u} [MetricSpace X] (A : Policy k X) (s : Configuration k X) (requests : List X) : ℝ := ∑ labels : Fin requests.length → Fin k, pathProbability A [] requests labels * serviceCost s requests labels",
+      "challenge_context": [
+        "open scoped BigOperators",
+        "universe u"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def expectedCost {k : ℕ} {X : Type u} [MetricSpace X] (A : Policy k X) (s : Configuration k X) (σ : List X) : ℝ := ∑ j : Fin σ.length → Fin k, pathProbability A [] σ j * serviceCost s σ j",
+      "solution_context": [
+        "open scoped BigOperators",
+        "universe u"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "requests": "σ",
+        "labels": "j"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical up to bound-variable renaming",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.KServer.optimalCost",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/KServer.lean",
+          "line": 47,
+          "end_line": 49,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Combinatorics/KServer/Basic.lean",
+          "line": 51,
+          "end_line": 53,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def optimalCost {k : ℕ} {X : Type u} [MetricSpace X] (s : Configuration k X) (requests : List X) : ℝ := sInf (Set.range (serviceCost s requests))",
+      "challenge_context": [
+        "open scoped BigOperators",
+        "universe u"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def optimalCost {k : ℕ} {X : Type u} [MetricSpace X] (s : Configuration k X) (σ : List X) : ℝ := sInf (Set.range (serviceCost s σ))",
+      "solution_context": [
+        "open scoped BigOperators",
+        "universe u"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "requests": "σ"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical up to bound-variable renaming",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.KServer.MainStatement",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/KServer.lean",
+          "line": 51,
+          "end_line": 60,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Combinatorics/KServer/Main.lean",
+          "line": 123,
+          "end_line": 131,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def MainStatement : Prop := ∃ C : ℝ, 0 < C ∧ ∀ (k : ℕ), 2 ≤ k → ∀ (X : Type u) (_ : MetricSpace X), (∃ embedding : Fin (k + 1) → X, Function.Injective embedding) → ∀ s : Configuration k X, ∃ A : Policy k X, ∃ B : ℝ, 0 ≤ B ∧ (Function.Injective s → B = 0) ∧ ∀ requests : List X, expectedCost A s requests ≤ C * (Real.log (k + 1)) ^ 2 * optimalCost s requests + B",
+      "challenge_context": [
+        "open scoped BigOperators",
+        "universe u"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def MainStatement : Prop := ∃ C : ℝ, 0 < C ∧ ∀ (k : ℕ), 2 ≤ k → ∀ (X : Type u) (_ : MetricSpace X), (∃ e : Fin (k + 1) → X, Function.Injective e) → ∀ s : Configuration k X, ∃ A : Policy k X, ∃ B : ℝ, 0 ≤ B ∧ (Function.Injective s → B = 0) ∧ ∀ σ : List X, expectedCost A s σ ≤ C * (Real.log (k + 1)) ^ 2 * optimalCost s σ + B",
+      "solution_context": [
+        "open scoped BigOperators",
+        "open Finset",
+        "open GlobalEndpoint FiniteMetricTransport",
+        "universe u"
+      ],
+      "context_differs": true,
+      "renaming": {
+        "embedding": "e",
+        "requests": "σ"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical up to bound-variable renaming",
+      "shadow_candidates": []
+    }
+  ]
+}

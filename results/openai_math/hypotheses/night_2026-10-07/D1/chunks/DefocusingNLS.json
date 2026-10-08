@@ -1,0 +1,172 @@
+{
+  "challenge": "DefocusingNLS",
+  "config": "ComparatorChallenges/DefocusingNLS.json",
+  "solution_module": "OAI.MathematicalPhysics.DefocusingNLS.MainTheorems",
+  "solution_closure_files": 2415,
+  "theorem_names": [
+    "OAI.DefocusingNLS.stable_blowup",
+    "OAI.DefocusingNLS.gaussian_blowup",
+    "OAI.DefocusingNLS.gaussian_not_almost_sure_global"
+  ],
+  "holes": [
+    {
+      "hole": "OAI.DefocusingNLS.sobolevProduct",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/DefocusingNLS.lean",
+          "line": 105,
+          "end_line": 109,
+          "kind": "def",
+          "modifiers": [
+            "noncomputable"
+          ],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/MathematicalPhysics/DefocusingNLS/Linear/SobolevConvolution.lean",
+          "line": 148,
+          "end_line": 151,
+          "kind": "def",
+          "modifiers": [
+            "noncomputable"
+          ],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": true,
+      "challenge_sorry_only": false,
+      "challenge_text": "def sobolevProduct (k : ℝ) (_hk : 6 < k) (f g : FourierL2) : FourierL2 := ⟨fun n => (sobolevProductWeight k n : ℂ) * sobolevProductCoefficient k f g n, by sorry⟩ run_cmd Lean.modifyEnv fun env => Lean.Meta.auxLemmasExt.setState env {}",
+      "challenge_context": [
+        "open Set Filter Topology MeasureTheory ProbabilityTheory",
+        "open scoped ENNReal NNReal ComplexConjugate ContDiff"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def sobolevProduct (k : ℝ) (hk : 6 < k) (f g : FourierL2) : FourierL2 := ⟨fun n => (sobolevProductWeight k n : ℂ) * sobolevProductCoefficient k f g n, (lp.memℓp (sobolevProductMajorant k f g)).mono' (weighted_sobolevProduct_le_majorant k hk f g)⟩",
+      "solution_context": [
+        "open scoped ENNReal"
+      ],
+      "context_differs": true,
+      "renaming": {
+        "_hk": "hk"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "SORRIED_IN_CHALLENGE",
+      "reason": "challenge declaration contains sorry/admit: genuine hole, meaning set by the solution",
+      "shadow_candidates": [
+        "OAI.DefocusingNLS.sobolevProductMajorant",
+        "OAI.DefocusingNLS.weighted_sobolevProduct_le_majorant"
+      ]
+    },
+    {
+      "hole": "OAI.DefocusingNLS.schrodingerFlow",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/DefocusingNLS.lean",
+          "line": 130,
+          "end_line": 161,
+          "kind": "def",
+          "modifiers": [
+            "noncomputable"
+          ],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/MathematicalPhysics/DefocusingNLS/Linear/SchrodingerFlow.lean",
+          "line": 48,
+          "end_line": 64,
+          "kind": "def",
+          "modifiers": [
+            "noncomputable"
+          ],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def schrodingerFlow (t : ℝ) : FourierL2 →ₗᵢ[ℂ] FourierL2 where toFun f := ⟨fun n => schrodingerMultiplier t n * f n, by apply (lp.memℓp f).mono' intro n simp only [norm_mul, schrodingerMultiplier, Complex.norm_exp, Complex.mul_re, Complex.neg_re, Complex.neg_im, Complex.I_re, Complex.I_im, Complex.ofReal_re, Complex.ofReal_im, neg_zero, zero_mul, mul_zero, sub_zero, Real.exp_zero, one_mul] exact le_rfl⟩ map_add' f g := by ext n change schrodingerMultiplier t n * (f n + g n) = schrodingerMultiplier t n * f n + schrodingerMultiplier t n * g n exact mul_add _ _ _ map_smul' c f := by ext n; simp [mul_left_comm] norm_map' f := by have hm (n : frequencyLattice) : ‖schrodingerMultiplier t n‖ = 1 := by simp only [schrodingerMultiplier, Complex.norm_exp, Complex.mul_re, Complex.neg_re, Complex.neg_im, Complex.I_re, Complex.I_im, Complex.ofReal_re, Complex.ofReal_im, neg_zero, zero_mul, mul_zero, sub_zero, Real.exp_zero] apply le_antisymm · apply lp.norm_mono (by norm_num : (2 : ℝ≥0∞) ≠ 0) intro n change ‖schrodingerMultiplier t n * f n‖ ≤ ‖f n‖ rw [norm_mul, hm, one_mul] · apply lp.norm_mono (by norm_num : (2 : ℝ≥0∞) ≠ 0) intro n change ‖f n‖ ≤ ‖schrodingerMultiplier t n * f n‖ rw [norm_mul, hm, one_mul] run_cmd Lean.modifyEnv fun env => Lean.Meta.auxLemmasExt.setState env {}",
+      "challenge_context": [
+        "open Set Filter Topology MeasureTheory ProbabilityTheory",
+        "open scoped ENNReal NNReal ComplexConjugate ContDiff"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def schrodingerFlow (t : ℝ) : FourierL2 →ₗᵢ[ℂ] FourierL2 where toFun f := ⟨fun n => schrodingerMultiplier t n * f n, (lp.memℓp f).mono' (by intro n; simp)⟩ map_add' f g := by ext n change schrodingerMultiplier t n * (f n + g n) = schrodingerMultiplier t n * f n + schrodingerMultiplier t n * g n exact mul_add _ _ _ map_smul' c f := by ext n; simp [mul_left_comm] norm_map' f := by apply le_antisymm · apply lp.norm_mono (by norm_num : (2 : ℝ≥0∞) ≠ 0) intro n simp · apply lp.norm_mono (by norm_num : (2 : ℝ≥0∞) ≠ 0) intro n simp",
+      "solution_context": [
+        "open Filter Topology",
+        "open scoped ENNReal"
+      ],
+      "context_differs": true,
+      "renaming": {},
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "DIFFERS",
+      "difference_in": "body",
+      "reason": "first differing token #28 (body)",
+      "challenge_window": "fun n => schrodingerMultiplier t n * f n , by apply ( lp.memℓp f ) . mono' intro n",
+      "solution_window": "fun n => schrodingerMultiplier t n * f n , ( lp.memℓp f ) . mono' ( by intro n",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.DefocusingNLS.sobolevOddPower",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/DefocusingNLS.lean",
+          "line": 120,
+          "end_line": 125,
+          "kind": "def",
+          "modifiers": [
+            "noncomputable"
+          ],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/MathematicalPhysics/DefocusingNLS/Linear/SobolevNonlinearity.lean",
+          "line": 29,
+          "end_line": 32,
+          "kind": "def",
+          "modifiers": [
+            "noncomputable"
+          ],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def sobolevOddPower (k : ℝ) (hk : 6 < k) : ℕ → FourierL2 → FourierL2 | 0, f => f | m + 1, f => sobolevProduct k hk (sobolevProduct k hk (sobolevOddPower k hk m f) (fourierConjugate f)) f run_cmd Lean.modifyEnv fun env => Lean.Meta.auxLemmasExt.setState env {}",
+      "challenge_context": [
+        "open Set Filter Topology MeasureTheory ProbabilityTheory",
+        "open scoped ENNReal NNReal ComplexConjugate ContDiff"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def sobolevOddPower (k : ℝ) (hk : 6 < k) : ℕ → FourierL2 → FourierL2 | 0, f => f | m + 1, f => sobolevProduct k hk (sobolevProduct k hk (sobolevOddPower k hk m f) (fourierConjugate f)) f",
+      "solution_context": [
+        "open scoped ComplexConjugate"
+      ],
+      "context_differs": true,
+      "renaming": {},
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "DIFFERS",
+      "difference_in": "body",
+      "reason": "first differing token #51 (body)",
+      "challenge_window": "hk m f ) ( fourierConjugate f ) ) f run_cmd Lean.modifyEnv fun env => Lean.Meta.auxLemmasExt.setState env { }",
+      "solution_window": "hk m f ) ( fourierConjugate f ) ) f",
+      "shadow_candidates": []
+    }
+  ]
+}

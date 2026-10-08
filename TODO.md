@@ -300,6 +300,15 @@ The guard written in master-math run two (`build_ladder.verdict`) is only on bra
   degree 6; fix the per-sample budget (stiff solver or in-loop deadline).
 - H2(b): extend past |D| = 1e7; certify h with an unconditional method.
 - H1-H3: formal derivations, only after TODO 26 Comparator-checks family 003.
+- Night 2026-10-07 follow-ups (`docs/OPENAI_MATH_HYPOTHESES.md`, section "Night run 2026-10-07"):
+  - H5': refuted (23/8). Preregister H5'' (C* = 3); have someone other than the lane review the
+    NOTE.md product-rule proof (or Lean-check it); check its novelty; recompute B_3 = 5/2 independently.
+  - H5: fix the walsh_top `_init` KeyError (`json['top']` vs `result.top`) in a new, re-hashed runner
+    under a new preregistration.
+  - H4: P4 not reproduced at eps 0.003. Higher-precision integration (mpmath/arb) near the A(Y)
+    plateau, or eps 0.006-0.01 with a matched N2. Add a local resolution check and exclude levels
+    in the jitter band.
+  - D1: Expr-level comparison of the 45 holes once D2 builds; scan the challenge-only opens.
 - **Accept when:** each item has a preregistered run with controls in `results.tsv`.
 
 ### 30. Nightly dream phase has no JEPA checkpoint to load (found 2026-10-08)

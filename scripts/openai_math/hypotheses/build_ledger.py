@@ -57,6 +57,18 @@ def night_2026_10_07(n: Path) -> list[dict[str, object]]:
     ]
 
 
+def night_2026_10_08(n: Path) -> list[dict[str, object]]:
+    """Claims from the night run 2026-10-08 (Lieb-Thirring matrix lab), worded with the verifiers' corrections."""
+    return [
+        claim("OMHL-X-1", "H-LT1 (m=2): in 22 cells (gamma 0.75/1.0/1.25/1.4; random/embed/rotpair/twist; K=2 and K=3), 336 restarts, none exceeded L1(gamma) by the 1e-7 flag (best excess about -2.8e-7 to -2.2e-5 below L1); lane controls passed. Finite-power numerical evidence, not a proof; violations below about 1e-6 are not detectable (a third-grid recheck of the best restart shifts its excess by about 1e-7).", "X", "numeric", n / "LT_A" / "result.json"),
+        claim("OMHL-X-2", "H-LT1 (m=3): 8 restarts in each of 6 cells (gamma 1.0 and 1.25; random/embed/twist) found no R above L1(gamma) (all excess below 0, best -8.2e-7 at gamma 1.0 twist); the gamma=3/2 non-exceedance control (sup 3/16) was not exceeded (max excess -2.0e-7). Search cannot see violations below about 1e-6.", "X", "numeric", n / "LT_B" / "result.json"),
+        claim("OMHL-X-3", "H-LT3: at the embedded scalar one-soliton for gamma in {0.75, 1.0, 1.25, 1.4} and m = 1, 2, 3 (P=8), the Hessian of log R restricted to the complement of translation and dilation has no eigenvalue above the relative threshold (6.8e-7 to 2.7e-6). Most matrix directions are second-order flat zero modes (122 of 162 at m=3), so local maximality along them is undecided; the gamma=3 control is a weak detection check (theta0 is not critical there).", "X", "numeric", n / "LT_B" / "result.json", ["OMHL-X-2"]),
+        claim("OMHL-X-4", "H-LT5: the dual kinetic bound J = sum ||psi_j'||^2 / int tr(rho^3) >= pi^2/4 (gamma=1) was not violated in 12 cells (m=1..3, N=1..4; 144 restarts); smallest excess +1.49e-8 (m=1, N=1). Cells (1,3), (1,4), (2,4) never came within 1e-5 of pi^2/4, so resolution there is about 1e-4. Finite search, not a proof.", "X", "numeric", n / "LT_C" / "result.json"),
+        claim("OMHL-X-5", "H-LT2 (exploratory kill): on a partial snapshot (125 of 345 near-maximisers had stored parameters), the preregistered commutator prediction is refuted: near-maximisers with R >= (1-1e-4) L1 and commutator statistic C > 0.05 exist (C up to 0.4955). Kinds of kill are mixed (tail noise, multi-channel random-family, and at least one single-channel non-commuting rotpair gamma=1.4 row). Whether one constant unitary suffices is an untested hypothesis; snapshot selection bias is possible.", "X", "numeric", n / "LT_C" / "h_lt2.json"),
+        claim("OMHL-X-6", "LT_D: of the 38-file import closure of OAI.Analysis.LiebThirring.Main, 14 compiled under LeanMaster's Lean v4.34.0-rc2 toolchain in this lane, FiniteParity.lean:505 failed with unknown constant Set.equivOfEq, and 23 files were blocked; consistent with version drift (not checked against upstream's Mathlib pin in this lane). The challenge statement elaborated; Elenchus gave NO_FOOTPRINT on the sorry-ended challenge files by design. Not Tier A. Superseded by later commits LT_D2b and LT_D3.", "X", "numeric", n / "LT_D" / "part1b_closure.json"),
+    ]
+
+
 def main() -> int:
     h = RES / "hypotheses"
     claims = [
@@ -70,6 +82,7 @@ def main() -> int:
     if h4_files:
         claims.append(claim("OMH-X-6", f"H4: {len(h4_files)} seeds of random and averaging-structured classical Lienard search found at most 2 confirmed limit cycles at degree 5 and at degree 6. Low power; does not reach the canard regime.", "X", "numeric", h4_files[0]))
     claims.extend(night_2026_10_07(h / "night_2026-10-07"))
+    claims.extend(night_2026_10_08(h / "night_2026-10-08"))
     LEDGER_DIR.mkdir(parents=True, exist_ok=True)
     evidence_dir = LEDGER_DIR / "evidence"
     evidence_dir.mkdir(exist_ok=True)

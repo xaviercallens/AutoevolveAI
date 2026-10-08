@@ -275,3 +275,106 @@ sha256-manifested bundle of code, exact results and witnesses. Source: `papers/d
   below, false unless T = 0 or R >= 1 (now stated exactly, with a test for the counterexample class); the title
   and abstract were scoped to the absolute sum; a citation was fixed against upstream's reference list.
 - Next steps: TODO 31 (formalise the product rule in Lean, attack the conjecture, exhaustive Psi at N = 2).
+
+
+## Night run 2026-10-08
+
+Matrix-valued Lieb–Thirring lab (the sharp 1D constant claim, family 262, not in Lean upstream; hypotheses H-LT1 to H-LT5
+as defined in each lane's `preregistration.json` and `docs/OPENAI_MATH_LT_MATRIX.md`). Four lanes ran; each was checked
+by an adversarial verifier (`verification.md` per lane), and the wording below applies every correction. Results:
+`results/openai_math/hypotheses/night_2026-10-08/`, rows 21–75 of `results.tsv` (renumbered from the lane files).
+All lanes reported DONE with controls passing; no lane was rejected. Nothing here proves or refutes the matrix
+Lieb–Thirring claim. All lane files were uncommitted when written, so preregistration ordering rests on local
+commit clocks. The H1–H5 verdicts above are unchanged by this night.
+
+### LT_A, H-LT1 at m = 2: NO_VIOLATION_FOUND in all 22 cells
+- **What ran:** gamma 0.75, 1.0, 1.25, 1.4 with four starting families (random, embed, rotpair, twist), K = 2, P = 8
+  (16 cells), plus 4 random K = 3, P = 10 cells and 2 twist K = 3, P = 10 cells. 336 restarts, 0 flagged above 1e-7,
+  so no refinement was needed. Restart counts per cell are unequal (12 to 36).
+- **Controls:** C1 to C7 re-run in the lane before any cell counted; all pass (negative controls at gamma = 3 exceed
+  L1 by +15.9%; the gamma = 1.5 control stays within 2.6e-7).
+- **Best excess R/L1 − 1 (always below zero):** −2.84e-7 (gamma 1.25 twist) and −3.41e-7 (gamma 1.4 twist) are the
+  closest to L1; the other cells sit at −6e-7 down to −2.2e-5.
+- **Autoresearch:** extra seed blocks on the K = 2 twist cells at gamma 1.25 and 1.4 (two each) and one each at
+  gamma 1.0 and 0.75 raised no best. The twist K = 3, P = 10 rows were new-cell baselines and are worse than their
+  K = 2 parents; they were labelled `keep` in the lane file and are `discard` in `results.tsv`. Saturation is
+  established only for gamma 1.25 and 1.4 twist (two consecutive extra chunks); for gamma 1.0 and 0.75 only one ran.
+- **Deviations:** a first g0.75 chunk was killed by the driver's 520 s timeout (no JSON; seeds 1040–1079 burned and
+  excluded); the rest ran from a lane-owned background queue `scripts/openai_math/lt_matrix/lt_a_bg.py` that runs
+  the same frozen commands. That script is untracked at preregistration time and not hash-pinned.
+- **Shows:** no violation of the matrix bound at m = 2 over this finite search.
+- **Does not show:** a proof. The search cannot see violations below about 1e-6: the best cells stop 2.8e-7 to 1e-6
+  below L1, scalar controls stop 2e-6 to 4e-5 below it, and a third-grid recheck of the best restart moves its excess
+  from −2.84e-7 to −1.97e-7 (a shift of about 1e-7, comparable to the flag).
+
+### LT_B, H-LT1 at m = 3 and H-LT3 (second variation): no positive Hessian direction beyond tolerance
+- **What ran:** Part 1: m = 3, K = 2, P = 8, 8 restarts in each of 6 cells (gamma 1.0 and 1.25; random, embed,
+  twist) plus the gamma = 1.5 control. Part 2: the Hessian of log R at the embedded scalar one-soliton for gamma 0.75,
+  1.0, 1.25, 1.4 and m = 1, 2, 3 (12 cells), plus gamma = 3 negative controls at m = 1, 2.
+- **Part 1 outcome:** NO_VIOLATION_FOUND in all 6 cells, 0 flagged. Control max excess −2.0e-7 (not exceeded).
+  Best per cell: random −1.38e-5 and −9.3e-6, embed −2.75e-6 and −1.1e-6, twist −8.2e-7 and −9.0e-7 (gamma 1.0 and
+  1.25). The detection-side `controls.json` was reused, not re-run, and Part 1 has a non-exceedance control only.
+- **Part 2 outcome:** NONPOSITIVE_SECOND_VARIATION in all 12 cells. Restricted lambda_max 2.9e-9, 3.5e-9, 3.1e-10,
+  1.8e-10 at gamma 0.75, 1.0, 1.25, 1.4, identical for m = 1, 2, 3. Thresholds are relative (1e-6 times the spectral
+  norm; 6.8e-7 to 2.7e-6), so curvature below them is declared noise by that rule. At m = 3: 122 zero modes, 40
+  negative modes of 162.
+- **Shows:** H-LT3 is not killed: the scalar soliton embedding has no positive Hessian direction beyond tolerance
+  in the complement of translation and dilation.
+- **Does not show:** that the embedding is a saddle or a local maximum. Most matrix directions are second-order flat,
+  so the Hessian cannot decide local maximality there. The identical lambda_max across m is a structural property of
+  the row-0 block, not independent confirmation at m = 2, 3. The gamma = 3 negative control is a weak detection check:
+  theta0 is not critical there (gradient 0.43) and the control flag bypasses the VOID path. The search cannot see
+  violations below about 1e-6 (the control sits 2e-7 below the sharp value).
+- **Provenance:** `driver.py` and `aggregate.py` in the lane directory are unfrozen and were run uncommitted; the
+  `deviations.md` note "written ~11:40" disagrees with its file time (11:33).
+
+### LT_C, H-LT5 (dual kinetic bound) and H-LT2 (commutator structure)
+- **H-LT5 ran:** an independent sine-basis search of J = Σ‖ψ_j'‖² / ∫tr ρ³ against π²/4 at gamma = 1, m = 1..3,
+  N = 1..4, 12 restarts per cell (144). Controls C1, C2, C4, C5, C6 passed (C2 under an over-strict rule that was
+  amended and disclosed; 10 unit tests pass).
+- **H-LT5 outcome:** NO_VIOLATION_FOUND. Nothing fell below π²/4; the smallest excess is +1.49e-8 (m = 1, N = 1).
+  Cells (1,3), (1,4) and (2,4) never came within 1e-5 of π²/4, so resolution there is about 1e-4. Re-evaluations on a
+  2^24 grid, a doubled basis and Gauss–Legendre agree.
+- **H-LT2 ran:** commutator statistic C on stored near-maximisers (snapshot at 15:00 UTC, not re-run): 345 rows, 125
+  analysed (220 had no stored parameters), 59 KILLED (52 outside the gamma = 1.5 control), 47 INTERMEDIATE, 19
+  PREDICTION_HOLDS; C from 0.0012 to 0.4955.
+- **H-LT2 outcome:** the preregistered prediction (near-maximisers share one constant unitary) is KILLED under its
+  rule: strong near-maximisers (R ≥ (1−1e-4) L1) with C > 0.05 exist.
+- **Exploratory, not preregistered:** the kills are of mixed type. Most embed, twist and rotpair kills look like tail
+  noise (C about 1e-3 on the core region), but one rotpair gamma = 1.4 row is a non-commuting single-channel case
+  (C 0.13 to 0.17 with second-channel weight at most 0.012). Random-family kills are multi-channel (second-channel
+  weight 0.027 to 0.426), but at tr W > 0.5 C is below 0.05 in 10 of 23 non-control random kills. "One constant
+  unitary is too strong" and the explanation by spatially separated pieces remain hypotheses; the 220 rows without
+  parameters make selection bias possible.
+- **Does not show:** a counterexample to the Lieb–Thirring claim; no Tier X candidate counterexample was found.
+
+### LT_D, Lean closure of the upstream Lieb–Thirring solution: PARTIAL at the time, since superseded
+- **What ran:** the 38-file import closure of `OAI.Analysis.LiebThirring.Main` under LeanMaster's Lean v4.34.0-rc2
+  toolchain; the challenge statement elaboration; Elenchus and a statement lock on the four challenge files; and the
+  request document `docs/OPENAI_MATH_D2_REQUEST.md`.
+- **Outcome:** 14 files compiled, 1 failed (`FiniteParity.lean:505`, unknown constant `Set.equivOfEq`), 23 blocked
+  (exactly the transitive importers of the failure). The failure is consistent with version drift; the lane did not
+  check upstream's Mathlib pin for that constant. The challenge file elaborates (a parse check only; it ends in
+  `sorry` by design). Elenchus returned NO_FOOTPRINT on all four sorry-ended challenge files, which is expected since
+  they carry no `#print axioms`. Statement lock: 101 declarations in 4 files, `--check` OK. The axiom check (part 1c)
+  was not run. No Tier A claim.
+- **Lane-record gaps:** only one `controls.json` exists, written after the closure, so the preregistered
+  before-closure control run is not evidenced; no Elenchus control pair was run; `deviations.md` is missing (the
+  closure ran as one background process, not resumable slices, and a shell variable was used); the preregistration
+  was committed under the LT_A message `bdd0dcb`.
+- **Later commits (after this lane, recorded for context; they are not covered by the lane verifier):** `076e04d`
+  (LT_D2b) compiled 38 of 38 files under LeanMaster's toolchain after one declared rename; `a02a5f4` (LT_D3) built the
+  closure under upstream's pinned Lean 4.34.1 and Mathlib `d13f23b7` with zero edits and clean axioms; `6e47561`
+  (TRI_D4) did the same for the triangular closure. Per those commit messages, no Comparator run has been done yet.
+- **Next:** run Comparator on the Lieb–Thirring challenge (D2 request above).
+
+### Lanes that produced nothing
+None. LT_A's first g0.75 chunk produced no result (timeout, excluded and disclosed above).
+
+### What to do next
+1. Run Comparator on the Lieb–Thirring and triangular closures (the only route to a Tier A statement).
+2. For H-LT1, attack the resolution limit: nothing below about 1e-6 is visible, so a sharper instrument is needed
+   before any more restarts are worth their cost.
+3. For H-LT2, re-run the commutator statistic on all 345 near-maximisers with parameters stored, then test the
+   spatially-separated explanation.
+4. For H-LT5, raise the budget for cells (1,3), (1,4) and (2,4), which never converged to π²/4.

@@ -2,6 +2,39 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [14.3.0] — Cloud TPU support as a detected environment (2026-10-09)
+
+Summary: AutoevolveAI now detects a Cloud TPU as part of its capability profile and ships a JAX
+port of the DESI DR2 BAO grid-posterior kernel that runs on it. Validated on `gwenlaya-tpu-1`
+(us-west4-a, v5litepod-1, JAX 0.6.2) from a Linux 7.0.0-1013-gcp host.
+
+### Added
+- `anse/infrastructure/agent_environment.py`: `detect_tpu()` / `TPUInfo`. Local TPU VM = `/dev/accel*`
+  or `/dev/vfio/<n>` plus GCE `accelerator-type` metadata (vfio alone is never accepted: GPU
+  passthrough uses it too). Remote TPU = `AUTOEVOLVE_TPU_NAME` + `AUTOEVOLVE_TPU_ZONE`, verified live
+  with `gcloud ... tpu-vm describe` and required to be READY. No JAX import during detection.
+  `CapabilityProfile` gains `tpu`, `jax_platform` and `ANSE_JAX_PLATFORM`; `device` stays
+  `cuda`/`cpu` so existing `model.to(profile.device)` callers are unaffected.
+- `scripts/desi_dr2_bao/grid_posterior_jax.py`: `export` (local, numpy reference + Fisher-centred grids)
+  and `run` (jax only, float64 or `f32`). Positive control (JAX == numpy) and negative control
+  (shifted parameter changes the likelihood) must pass before any grid number is reported.
+- `pyproject.toml`: `jax` optional extra.
+
+### Measured (TPU v5e, 4 DESI grids vs `results/desi_dr2_bao/grid_summary.json`)
+- float64: moments agree to <= 4e-13 relative; DR2 LCDM 361,201 pts 7.3 s, wCDM 2,803,221 pts 12.5 s
+  (numpy CPU on the same host: DR2 LCDM 8.2 s, so no speedup; v5e emulates f64).
+- float32 + `jax_default_matmul_precision=highest`: moments agree to <= 5e-6 relative (max mean shift
+  2.2e-5 sigma); 0.75 s / 1.7 s. Default-precision float32 FAILS the control (3e-3 relative error).
+- Detection on the TPU VM itself: local, v5litepod-1. From the dev host with the env vars set: remote, READY.
+
+### Gates
+- `pytest tests/infrastructure`: 30 passed. `ruff` clean on every changed file.
+- `tests/test_kev_decision_engine.py::test_kev_decision_gate_cli` fails identically with and without
+  this change (live nightly-training state); `tests/test_local_32gb_cpu_antigravity_validation.py`
+  hangs on a clean HEAD checkout too. Neither was caused by or fixed here.
+- `antigravity_guard.py` / `test_rigor_guard.py`: exit 1 on pre-existing files (ruff backlog, hollow K3
+  tests); no finding in new files.
+
 ## [14.2.0] — openai_math sub-project: study, D0 index, Riemann/Hilbert hypothesis lab, night LTM cycle (2026-10-07)
 
 Summary: a new math-discovery sub-project built on github.com/openai/math (722 model-written

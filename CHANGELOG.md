@@ -19,6 +19,11 @@ port of the DESI DR2 BAO grid-posterior kernel that runs on it. Validated on `gw
   and `run` (jax only, float64 or `f32`). Positive control (JAX == numpy) and negative control
   (shifted parameter changes the likelihood) must pass before any grid number is reported.
 - `pyproject.toml`: `jax` optional extra.
+- `anse/infrastructure/tpu_runner.py` + `scripts/tpu/run_on_tpu.py`: upload files, run a command inside
+  `~/venv-tpu`, fetch results, via `gcloud ... tpu-vm scp/ssh --internal-ip`; failures raise with the
+  real stderr and the CLI exits non-zero. `scripts/tpu/setup_tpu_env.sh`: idempotent venv creation +
+  auto-activation, exits non-zero unless JAX reports the `tpu` backend. Live-tested: the f32 DESI job
+  reproduced through the runner; a remote `sys.exit(7)` surfaces as CLI exit 1.
 
 ### Measured (TPU v5e, 4 DESI grids vs `results/desi_dr2_bao/grid_summary.json`)
 - float64: moments agree to <= 4e-13 relative; DR2 LCDM 361,201 pts 7.3 s, wCDM 2,803,221 pts 12.5 s

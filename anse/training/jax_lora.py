@@ -18,7 +18,8 @@ from typing import Any
 import jax
 import jax.numpy as jnp
 import numpy as np
-from safetensors.flax import load_file, save_file
+from safetensors.flax import load_file
+from safetensors.numpy import save_file
 
 Params = dict[str, Any]
 TARGETS = ("q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj")
@@ -155,7 +156,10 @@ def save_peft_adapter(lora: Params, cfg: Mapping[str, Any], out: Path, r: int, a
     for key, val in lora.items():
         layer, name, ab = key.split(".")
         block = "mlp" if name in ("gate_proj", "up_proj", "down_proj") else "self_attn"
-        tensors[f"base_model.model.model.layers.{layer}.{block}.{name}.lora_{ab}.weight"] = val.astype(jnp.float32)
+        # np.asarray of a TPU array shaped (d, 16) comes back NON C-contiguous (values right, strides
+        # transposed); safetensors serialises the raw buffer, which scrambled every lora_B. Force C order.
+        host = np.ascontiguousarray(np.asarray(val, dtype=np.float32))
+        tensors[f"base_model.model.model.layers.{layer}.{block}.{name}.lora_{ab}.weight"] = host
     save_file(tensors, str(out / "adapter_model.safetensors"), metadata={"format": "pt"})
     (out / "adapter_config.json").write_text(json.dumps({
         "peft_type": "LORA", "task_type": "CAUSAL_LM", "base_model_name_or_path": base_model,

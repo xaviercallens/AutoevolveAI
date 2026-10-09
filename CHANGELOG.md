@@ -39,6 +39,17 @@ port of the DESI DR2 BAO grid-posterior kernel that runs on it. Validated on `gw
   LoRA. Validated vs Hugging Face (max logit err 5.4e-5, argmax 100%) and vs PEFT with a random adapter (1.2e-4);
   wrong-rope negative control errs by 10.8.
 
+### LoRA retraining on TPU (Qwen2.5-Coder-1.5B, 9 train / 3 held-out sandbox-verified episodes, r=16 alpha=32)
+- BUG FOUND AND FIXED: `np.asarray` of a TPU array shaped `(d, 16)` is not C-contiguous; safetensors serialised the raw
+  buffer and scrambled every `lora_B`. In-process training numbers were right, saved adapters were not (reload on CPU
+  and on the TPU showed ~zero effect). `save_peft_adapter` now forces C order; regression test in
+  `tests/training/test_jax_lora_save.py`, negative control confirmed (F-ordered array without the fix is scrambled).
+- Result after the fix, adapter reloaded and scored independently with PEFT + torch on CPU (bf16), held-out NLL:
+  base 0.1937 -> real pairs lr 1e-5 x 20 steps 0.1372 (train 0.1347 -> 0.0440); shuffled-label negative control 0.1808.
+  lr 2e-4 x 40 steps memorises (train NLL ~1e-6) and held-out NLL gets WORSE (0.19 -> 0.55 in-process).
+- Caveats: n=3 held-out tasks; lr/steps were chosen after looking at that same held-out set, so the gain is optimistic;
+  NLL is not pass@1 -- no functional evaluation was run. NOT promoted; adapters are not committed.
+
 ### Vector DB / LTM measurements (TPU v5e, real Chroma collections, k=10)
 - mathlib4_premises 1881x384: exact == float64 brute force (recall 0.9945, max |sim err| 2.4e-7; the
   gap is near-tie swaps), Chroma/HNSW recall vs exact 0.9925, 200 queries in 1.2 ms (TPU) vs 5.2 ms

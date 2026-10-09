@@ -25,6 +25,21 @@ port of the DESI DR2 BAO grid-posterior kernel that runs on it. Validated on `gw
   auto-activation, exits non-zero unless JAX reports the `tpu` backend. Live-tested: the f32 DESI job
   reproduced through the runner; a remote `sys.exit(7)` surfaces as CLI exit 1.
 
+- `anse/memory/tpu_index.py` (`ExactIndex`): exact cosine kNN over LTM embeddings in JAX, always at
+  `highest` matmul precision. `scripts/tpu/export_vectordb.py` + `scripts/tpu/vector_search_jax.py`:
+  validate it against float64 brute force (positive) and mismatched queries (negative), and score
+  Chroma/HNSW against the exact ground truth. `scripts/ltm_consistency_audit.py`: read-only
+  Redis-vs-Chroma transcript audit.
+
+### Vector DB / LTM measurements (TPU v5e, real Chroma collections, k=10)
+- mathlib4_premises 1881x384: exact == float64 brute force (recall 0.9945, max |sim err| 2.4e-7; the
+  gap is near-tie swaps), Chroma/HNSW recall vs exact 0.9925, 200 queries in 1.2 ms (TPU) vs 5.2 ms
+  (CPU, same host). ltm_code_solutions 481x384: HNSW recall 0.996. claude_code_sessions 153x1024: 1.000.
+  Negative control (mismatched queries) recall <= 0.10 in all three.
+- Redis LTM vs Chroma transcripts: 129 turns each, 0 orphans, 0 trainable/retrieval_only flag leaks.
+- Retraining on TPU was NOT done: `ltm_code_solutions` has 391/481 rows at two energy values
+  (9.4/9.1) and `phase1_traces` has 21 rows -- no honest training signal. Reported BLOCKED, not faked.
+
 ### Measured (TPU v5e, 4 DESI grids vs `results/desi_dr2_bao/grid_summary.json`)
 - float64: moments agree to <= 4e-13 relative; DR2 LCDM 361,201 pts 7.3 s, wCDM 2,803,221 pts 12.5 s
   (numpy CPU on the same host: DR2 LCDM 8.2 s, so no speedup; v5e emulates f64).

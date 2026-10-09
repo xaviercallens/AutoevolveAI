@@ -31,6 +31,14 @@ port of the DESI DR2 BAO grid-posterior kernel that runs on it. Validated on `gw
   Chroma/HNSW against the exact ground truth. `scripts/ltm_consistency_audit.py`: read-only
   Redis-vs-Chroma transcript audit.
 
+- `anse/verification/gwaya_gate.py` + `gwaya` extra (pinned `v3.7.1`, commit 5278db2): ACCEPT only if the AST zero-stub
+  audit is clean AND the candidate+tests exit 0 inside GWAYA's bubblewrap sandbox; otherwise REJECT, or BLOCKED when
+  isolation/toolchain/time is missing. 6 tests (sandbox stubbed). Measured on this host: stubs REJECT, executable
+  candidates BLOCKED (AppArmor blocks unprivileged userns; `GWAYA_ALLOW_UNISOLATED` deliberately not used).
+- `anse/training/jax_lora.py` + `scripts/tpu/{validate_jax_qwen,prepare_lora_data,lora_train_jax}.py`: pure-JAX Qwen2
+  LoRA. Validated vs Hugging Face (max logit err 5.4e-5, argmax 100%) and vs PEFT with a random adapter (1.2e-4);
+  wrong-rope negative control errs by 10.8.
+
 ### Vector DB / LTM measurements (TPU v5e, real Chroma collections, k=10)
 - mathlib4_premises 1881x384: exact == float64 brute force (recall 0.9945, max |sim err| 2.4e-7; the
   gap is near-tie swaps), Chroma/HNSW recall vs exact 0.9925, 200 queries in 1.2 ms (TPU) vs 5.2 ms

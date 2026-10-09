@@ -39,6 +39,14 @@ port of the DESI DR2 BAO grid-posterior kernel that runs on it. Validated on `gw
   LoRA. Validated vs Hugging Face (max logit err 5.4e-5, argmax 100%) and vs PEFT with a random adapter (1.2e-4);
   wrong-rope negative control errs by 10.8.
 
+### GWAYA gate wired into the episode harvest
+- `anse/verification/episode_gate.py` + `scripts/harvest_episodes.py`: every harvested episode now carries
+  `metadata.gwaya` = {status, reasons, confirmed}. REJECT demotes a "converged" episode (converged=False,
+  energy >= 100); BLOCKED/UNAVAILABLE never upgrade or demote. `scripts/ltm_learning_mix.py --require-gate` keeps only
+  gate-ACCEPTed rows. Legacy episodes have no gate record, so strict mode currently exits BLOCKED (0 of 12 confirmed).
+- Measured on this host: harvest `--dry-run` controls pass (stub-that-passes-its-test is demoted; real solution kept);
+  real-solution gate status is BLOCKED until the host's bubblewrap sandbox works. 26 tests pass.
+
 ### LoRA retraining on TPU (Qwen2.5-Coder-1.5B, 9 train / 3 held-out sandbox-verified episodes, r=16 alpha=32)
 - BUG FOUND AND FIXED: `np.asarray` of a TPU array shaped `(d, 16)` is not C-contiguous; safetensors serialised the raw
   buffer and scrambled every `lora_B`. In-process training numbers were right, saved adapters were not (reload on CPU

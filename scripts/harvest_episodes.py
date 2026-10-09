@@ -53,6 +53,9 @@ sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
 
 from gpu_lease import gpu_lease  # noqa: E402
 
+sys.path.insert(0, str(REPO))
+from anse.verification.episode_gate import apply_gate  # noqa: E402
+
 OLLAMA = "http://localhost:11434"
 LEASE_HOLDER = "autoevolve-harvest-episodes"
 CODER_MODEL = "qwen2.5-coder:7b-instruct"
@@ -220,10 +223,19 @@ def main(argv: list[str] | None = None) -> int:
         good_ok = ok["tests_passed"] == ok["tests_total"]
         bad_ok = bad["tests_passed"] < bad["tests_total"]
         print(f"verifier is discriminating: {good_ok and bad_ok}")
-        return 0 if (good_ok and bad_ok) else 1
+        # GWAYA gate controls: a stub that PASSES the hidden test must be demoted; a real solution must not be.
+        stub = "def sum_even(xs):\n    pass\n"
+        g_stub = apply_gate(stub, t.hidden_test, True, 0.0)
+        g_good = apply_gate(good, t.hidden_test, True, 0.0)
+        print(f"gate negative control (stub claimed converged): demoted={g_stub.meta.get('demoted', False)} "
+              f"status={g_stub.meta['status']}")
+        print(f"gate positive control (real solution): status={g_good.meta['status']} converged={g_good.converged}")
+        gate_ok = bool(g_stub.meta.get("demoted")) and g_good.converged
+        return 0 if (good_ok and bad_ok and gate_ok) else 1
 
     episodes: list[dict[str, Any]] = []
     stats = {"attempted": 0, "fully_passed": 0, "partial": 0, "failed": 0}
+    gate_counts: dict[str, int] = {}
 
     with gpu_lease(LEASE_HOLDER, "harvest episodes: coder samples + embeddings", ttl_s=3600, timeout_s=3600):
         for task in selected:
@@ -239,8 +251,11 @@ def main(argv: list[str] | None = None) -> int:
                 code = extract_code(raw)
                 v = verify(code, task)
                 energy = energy_of(v)
+                gated = apply_gate(code, task.hidden_test, v["tests_passed"] == v["tests_total"], energy)
+                energy = gated.energy
+                gate_counts[gated.meta["status"]] = gate_counts.get(gated.meta["status"], 0) + 1
 
-                if v["tests_passed"] == v["tests_total"]:
+                if gated.converged:
                     stats["fully_passed"] += 1
                 elif v["tests_passed"] > 0:
                     stats["partial"] += 1
@@ -256,7 +271,7 @@ def main(argv: list[str] | None = None) -> int:
                         "raw_response": raw[:4000],
                         "energy": energy,
                         "energy_category": "low" if energy < 1.0 else "high",
-                        "converged": v["tests_passed"] == v["tests_total"],
+                        "converged": gated.converged,
                         "iteration": sample,
                         "duration_ms": (time.time() - t0) * 1000.0,
                         "returncode": v["returncode"],
@@ -273,6 +288,7 @@ def main(argv: list[str] | None = None) -> int:
                             "verifier": "sandbox+hidden_assertions",
                             "temperature": temperature,
                             "peak_ram_mb": v["peak_ram_mb"],
+                            "gwaya": gated.meta,
                         },
                     }
                 )
@@ -292,6 +308,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  hidden_state dims  : {dims}  (must be a single value)")
     print(f"  rows with verdict  : {verified}/{len(episodes)}")
     print(f"  outcomes           : {json.dumps(stats)}")
+    print(f"  GWAYA gate         : {json.dumps(gate_counts)}  (BLOCKED = no bwrap isolation on this host)")
 
     contract_ok = len(tasks_seen) >= 2 and len(dims) == 1 and verified == len(episodes)
     print(f"  JEPA contract met  : {contract_ok}")

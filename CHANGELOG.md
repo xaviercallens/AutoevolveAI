@@ -2,6 +2,19 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [Unreleased] — JAX ensemble MCMC for the DESI DR2 BAO fit
+
+- `scripts/desi_dr2_bao/mcmc_jax.py`: 2048-walker affine-invariant stretch-move sampler under `lax.scan`, same likelihood
+  and flat priors as `mcmc_fit.py`, started from the same initial ball (no knowledge of the grid answer).
+- Measured on TPU v5e (float32 + `highest` matmul precision, 2048 walkers x 3000 steps, 600 burn-in), 4 runs
+  (DR1/DR2 x LCDM/wCDM): posterior means within 0.009 sigma of the exact grid (`grid_summary.json`) and within 0.013 sigma
+  of the stored emcee results for all 10 parameters; std ratio vs grid 0.999-1.002; first-half/second-half mean drift
+  <= 0.015 sigma; acceptance 0.64-0.72. Negative control (data vector x1.05) moves DR2 LCDM `h_rd` by -6.6 sigma.
+- Kernel throughput 3.3e7-4.8e7 likelihood evaluations/s on the TPU vs 4.4e4/s for the numpy path measured earlier on this
+  host (~1000x per evaluation). This is NOT an end-to-end speedup claim: emcee and this sampler need different
+  evaluation counts for the same effective sample size, and ESS/tau were not computed for the JAX chains.
+- `tests/test_mcmc_jax_sampler.py` (known 2-D Gaussian recovered; wrong-width/wrong-mean expectations rejected; seed reproducible).
+
 ## [14.3.0] — Cloud TPU support as a detected environment (2026-10-09)
 
 Summary: AutoevolveAI now detects a Cloud TPU as part of its capability profile and ships a JAX

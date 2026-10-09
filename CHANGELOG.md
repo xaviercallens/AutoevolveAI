@@ -2,6 +2,86 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [14.3.0] — Cloud TPU support as a detected environment (2026-10-09)
+
+Summary: AutoevolveAI now detects a Cloud TPU as part of its capability profile and ships a JAX
+port of the DESI DR2 BAO grid-posterior kernel that runs on it. Validated on `gwenlaya-tpu-1`
+(us-west4-a, v5litepod-1, JAX 0.6.2) from a Linux 7.0.0-1013-gcp host.
+
+### Added
+- `anse/infrastructure/agent_environment.py`: `detect_tpu()` / `TPUInfo`. Local TPU VM = `/dev/accel*`
+  or `/dev/vfio/<n>` plus GCE `accelerator-type` metadata (vfio alone is never accepted: GPU
+  passthrough uses it too). Remote TPU = `AUTOEVOLVE_TPU_NAME` + `AUTOEVOLVE_TPU_ZONE`, verified live
+  with `gcloud ... tpu-vm describe` and required to be READY. No JAX import during detection.
+  `CapabilityProfile` gains `tpu`, `jax_platform` and `ANSE_JAX_PLATFORM`; `device` stays
+  `cuda`/`cpu` so existing `model.to(profile.device)` callers are unaffected.
+- `scripts/desi_dr2_bao/grid_posterior_jax.py`: `export` (local, numpy reference + Fisher-centred grids)
+  and `run` (jax only, float64 or `f32`). Positive control (JAX == numpy) and negative control
+  (shifted parameter changes the likelihood) must pass before any grid number is reported.
+- `pyproject.toml`: `jax` optional extra.
+- `anse/infrastructure/tpu_runner.py` + `scripts/tpu/run_on_tpu.py`: upload files, run a command inside
+  `~/venv-tpu`, fetch results, via `gcloud ... tpu-vm scp/ssh --internal-ip`; failures raise with the
+  real stderr and the CLI exits non-zero. `scripts/tpu/setup_tpu_env.sh`: idempotent venv creation +
+  auto-activation, exits non-zero unless JAX reports the `tpu` backend. Live-tested: the f32 DESI job
+  reproduced through the runner; a remote `sys.exit(7)` surfaces as CLI exit 1.
+
+- `anse/memory/tpu_index.py` (`ExactIndex`): exact cosine kNN over LTM embeddings in JAX, always at
+  `highest` matmul precision. `scripts/tpu/export_vectordb.py` + `scripts/tpu/vector_search_jax.py`:
+  validate it against float64 brute force (positive) and mismatched queries (negative), and score
+  Chroma/HNSW against the exact ground truth. `scripts/ltm_consistency_audit.py`: read-only
+  Redis-vs-Chroma transcript audit.
+
+- `anse/verification/gwaya_gate.py` + `gwaya` extra (pinned `v3.7.1`, commit 5278db2): ACCEPT only if the AST zero-stub
+  audit is clean AND the candidate+tests exit 0 inside GWAYA's bubblewrap sandbox; otherwise REJECT, or BLOCKED when
+  isolation/toolchain/time is missing. 6 tests (sandbox stubbed). Measured on this host: stubs REJECT, executable
+  candidates BLOCKED (AppArmor blocks unprivileged userns; `GWAYA_ALLOW_UNISOLATED` deliberately not used).
+- `anse/training/jax_lora.py` + `scripts/tpu/{validate_jax_qwen,prepare_lora_data,lora_train_jax}.py`: pure-JAX Qwen2
+  LoRA. Validated vs Hugging Face (max logit err 5.4e-5, argmax 100%) and vs PEFT with a random adapter (1.2e-4);
+  wrong-rope negative control errs by 10.8.
+
+### GWAYA gate wired into the episode harvest
+- `anse/verification/episode_gate.py` + `scripts/harvest_episodes.py`: every harvested episode now carries
+  `metadata.gwaya` = {status, reasons, confirmed}. REJECT demotes a "converged" episode (converged=False,
+  energy >= 100); BLOCKED/UNAVAILABLE never upgrade or demote. `scripts/ltm_learning_mix.py --require-gate` keeps only
+  gate-ACCEPTed rows. Legacy episodes have no gate record, so strict mode currently exits BLOCKED (0 of 12 confirmed).
+- Measured on this host: harvest `--dry-run` controls pass (stub-that-passes-its-test is demoted; real solution kept);
+  real-solution gate status is BLOCKED until the host's bubblewrap sandbox works. 26 tests pass.
+
+### LoRA retraining on TPU (Qwen2.5-Coder-1.5B, 9 train / 3 held-out sandbox-verified episodes, r=16 alpha=32)
+- BUG FOUND AND FIXED: `np.asarray` of a TPU array shaped `(d, 16)` is not C-contiguous; safetensors serialised the raw
+  buffer and scrambled every `lora_B`. In-process training numbers were right, saved adapters were not (reload on CPU
+  and on the TPU showed ~zero effect). `save_peft_adapter` now forces C order; regression test in
+  `tests/training/test_jax_lora_save.py`, negative control confirmed (F-ordered array without the fix is scrambled).
+- Result after the fix, adapter reloaded and scored independently with PEFT + torch on CPU (bf16), held-out NLL:
+  base 0.1937 -> real pairs lr 1e-5 x 20 steps 0.1372 (train 0.1347 -> 0.0440); shuffled-label negative control 0.1808.
+  lr 2e-4 x 40 steps memorises (train NLL ~1e-6) and held-out NLL gets WORSE (0.19 -> 0.55 in-process).
+- Caveats: n=3 held-out tasks; lr/steps were chosen after looking at that same held-out set, so the gain is optimistic;
+  NLL is not pass@1 -- no functional evaluation was run. NOT promoted; adapters are not committed.
+
+### Vector DB / LTM measurements (TPU v5e, real Chroma collections, k=10)
+- mathlib4_premises 1881x384: exact == float64 brute force (recall 0.9945, max |sim err| 2.4e-7; the
+  gap is near-tie swaps), Chroma/HNSW recall vs exact 0.9925, 200 queries in 1.2 ms (TPU) vs 5.2 ms
+  (CPU, same host). ltm_code_solutions 481x384: HNSW recall 0.996. claude_code_sessions 153x1024: 1.000.
+  Negative control (mismatched queries) recall <= 0.10 in all three.
+- Redis LTM vs Chroma transcripts: 129 turns each, 0 orphans, 0 trainable/retrieval_only flag leaks.
+- Retraining on TPU was NOT done: `ltm_code_solutions` has 391/481 rows at two energy values
+  (9.4/9.1) and `phase1_traces` has 21 rows -- no honest training signal. Reported BLOCKED, not faked.
+
+### Measured (TPU v5e, 4 DESI grids vs `results/desi_dr2_bao/grid_summary.json`)
+- float64: moments agree to <= 4e-13 relative; DR2 LCDM 361,201 pts 7.3 s, wCDM 2,803,221 pts 12.5 s
+  (numpy CPU on the same host: DR2 LCDM 8.2 s, so no speedup; v5e emulates f64).
+- float32 + `jax_default_matmul_precision=highest`: moments agree to <= 5e-6 relative (max mean shift
+  2.2e-5 sigma); 0.75 s / 1.7 s. Default-precision float32 FAILS the control (3e-3 relative error).
+- Detection on the TPU VM itself: local, v5litepod-1. From the dev host with the env vars set: remote, READY.
+
+### Gates
+- `pytest tests/infrastructure`: 30 passed. `ruff` clean on every changed file.
+- `tests/test_kev_decision_engine.py::test_kev_decision_gate_cli` fails identically with and without
+  this change (live nightly-training state); `tests/test_local_32gb_cpu_antigravity_validation.py`
+  hangs on a clean HEAD checkout too. Neither was caused by or fixed here.
+- `antigravity_guard.py` / `test_rigor_guard.py`: exit 1 on pre-existing files (ruff backlog, hollow K3
+  tests); no finding in new files.
+
 ## [14.2.0] — openai_math sub-project: study, D0 index, Riemann/Hilbert hypothesis lab, night LTM cycle (2026-10-07)
 
 Summary: a new math-discovery sub-project built on github.com/openai/math (722 model-written

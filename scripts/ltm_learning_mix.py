@@ -56,7 +56,7 @@ def _label(path: Path) -> str:
         return str(path)
 
 
-def load_verified(path: Path = EPISODES) -> list[dict]:
+def load_verified(path: Path = EPISODES, require_gate: bool = False) -> list[dict]:
     """Sandbox-verified episodes. A row may carry its own origin; the harvest file's rows
     come from harvest_episodes.py's sandbox verifier, so that is the default."""
     rows = []
@@ -65,7 +65,11 @@ def load_verified(path: Path = EPISODES) -> list[dict]:
             if not line.strip():
                 continue
             ep = json.loads(line)
+            gate = (ep.get("metadata") or {}).get("gwaya") or {}
+            if require_gate and not gate.get("confirmed"):
+                continue  # legacy rows (no gate record) and BLOCKED/UNAVAILABLE rows are not confirmed
             rows.append({
+                "gate": gate.get("status"),
                 "source": _label(path),
                 "origin": ep.get("origin") or "sandbox",
                 "verified": True,
@@ -138,6 +142,8 @@ def main() -> int:
     ap.add_argument("--transcript", type=Path, default=TRANSCRIPT_ROWS)
     ap.add_argument("--gate-file", type=Path, default=GATE_FILE,
                     help="the human-written N-8 gate; transcript rows are refused until it exists")
+    ap.add_argument("--require-gate", action="store_true",
+                    help="keep only verified episodes the GWAYA gate ACCEPTed (metadata.gwaya.confirmed)")
     ap.add_argument("--dry-run", action="store_true", help="report only; write nothing")
     args = ap.parse_args()
 
@@ -145,7 +151,7 @@ def main() -> int:
         print(f"BLOCKED: dilution {args.dilution} outside [0, 0.5]; the verified pool must dominate")
         return 1
 
-    verified, refused_verified = partition(load_verified(args.episodes), args.gate_file)
+    verified, refused_verified = partition(load_verified(args.episodes, args.require_gate), args.gate_file)
     new_pool = load_new(args.call_logs) + load_transcript(args.transcript)
     new, refused_new = partition(new_pool, args.gate_file)
     by_reason: dict[str, int] = {}

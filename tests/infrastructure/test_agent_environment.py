@@ -21,10 +21,12 @@ from anse.infrastructure.agent_environment import (
     CapabilityProfile,
     GPUInfo,
     LLMBackend,
+    TPUInfo,
     _parse_nvidia_smi_csv,
     _select_llm_backend,
     detect_coding_agent,
     detect_gpu,
+    detect_tpu,
     resolve_capability_profile,
 )
 
@@ -235,3 +237,88 @@ def test_capability_profile_is_frozen(tmp_path: Path) -> None:
     )
     with pytest.raises(AttributeError):
         profile.coding_agent = ANTIGRAVITY  # type: ignore[misc]
+
+
+class TestDetectTpu:
+    def test_local_tpu_via_accel_nodes(self) -> None:
+        with (
+            patch.dict("os.environ", {"TPU_ACCELERATOR_TYPE": "v4-8"}, clear=True),
+            patch("anse.infrastructure.agent_environment.glob.glob", return_value=["/dev/accel0"]),
+        ):
+            info = detect_tpu()
+        assert info.available and info.kind == "local"
+        assert info.accelerator_type == "v4-8"
+
+    def test_vfio_without_metadata_is_not_a_tpu(self) -> None:
+        with (
+            patch.dict("os.environ", {}, clear=True),
+            patch("anse.infrastructure.agent_environment._tpu_metadata_accelerator", return_value=None),
+            patch("anse.infrastructure.agent_environment.glob.glob",
+                  side_effect=lambda pat: ["/dev/vfio/0"] if "vfio" in pat else []),
+        ):
+            info = detect_tpu()
+        assert not info.available
+        assert info.kind is None
+
+    def test_vfio_with_metadata_is_local_v5e(self) -> None:
+        with (
+            patch.dict("os.environ", {}, clear=True),
+            patch("anse.infrastructure.agent_environment._tpu_metadata_accelerator",
+                  return_value="v5litepod-1"),
+            patch("anse.infrastructure.agent_environment.glob.glob",
+                  side_effect=lambda pat: ["/dev/vfio/0"] if "vfio" in pat else []),
+        ):
+            info = detect_tpu()
+        assert info.available and info.kind == "local"
+        assert info.accelerator_type == "v5litepod-1"
+
+    def test_remote_tpu_ready(self) -> None:
+        done = subprocess.CompletedProcess([], 0, stdout="READY\tv5litepod-1\n", stderr="")
+        env = {"AUTOEVOLVE_TPU_NAME": "gwenlaya-tpu-1", "AUTOEVOLVE_TPU_ZONE": "us-west4-a"}
+        with (
+            patch.dict("os.environ", env, clear=True),
+            patch("anse.infrastructure.agent_environment.glob.glob", return_value=[]),
+            patch("anse.infrastructure.agent_environment._tpu_metadata_accelerator", return_value=None),
+            patch("anse.infrastructure.agent_environment.shutil.which", return_value="/usr/bin/gcloud"),
+            patch("anse.infrastructure.agent_environment.subprocess.run", return_value=done),
+        ):
+            info = detect_tpu()
+        assert info.available and info.kind == "remote"
+        assert info.name == "gwenlaya-tpu-1" and info.accelerator_type == "v5litepod-1"
+
+    def test_remote_tpu_not_ready_reports_error(self) -> None:
+        done = subprocess.CompletedProcess([], 0, stdout="CREATING\tv5litepod-1\n", stderr="")
+        env = {"AUTOEVOLVE_TPU_NAME": "t", "AUTOEVOLVE_TPU_ZONE": "z"}
+        with (
+            patch.dict("os.environ", env, clear=True),
+            patch("anse.infrastructure.agent_environment.glob.glob", return_value=[]),
+            patch("anse.infrastructure.agent_environment._tpu_metadata_accelerator", return_value=None),
+            patch("anse.infrastructure.agent_environment.shutil.which", return_value="/usr/bin/gcloud"),
+            patch("anse.infrastructure.agent_environment.subprocess.run", return_value=done),
+        ):
+            info = detect_tpu()
+        assert not info.available
+        assert info.probe_error is not None and "CREATING" in info.probe_error
+
+    def test_no_signal_means_no_tpu(self) -> None:
+        with (
+            patch.dict("os.environ", {}, clear=True),
+            patch("anse.infrastructure.agent_environment.glob.glob", return_value=[]),
+            patch("anse.infrastructure.agent_environment._tpu_metadata_accelerator", return_value=None),
+        ):
+            info = detect_tpu()
+        assert not info.available
+        assert info.kind is None
+
+    def test_profile_exposes_jax_platform_and_keeps_torch_device_safe(self) -> None:
+        tpu = TPUInfo(True, "local", "v5litepod-1", None, None)
+        with (
+            patch("anse.infrastructure.agent_environment.detect_tpu", return_value=tpu),
+            patch("anse.infrastructure.agent_environment.detect_gpu",
+                  return_value=GPUInfo(False, None, None, "nvidia-smi not on PATH")),
+        ):
+            profile = resolve_capability_profile()
+        assert profile.jax_platform == "tpu"
+        assert profile.device == "cpu"
+        assert profile.env_overrides()["ANSE_JAX_PLATFORM"] == "tpu"
+        assert profile.profile_id.endswith("_tpu_v5litepod-1")

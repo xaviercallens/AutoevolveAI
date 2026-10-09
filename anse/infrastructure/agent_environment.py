@@ -8,8 +8,10 @@ Two independent axes decide which config/backend a session should use:
    support matrix; each ships its own guard hooks and MCP config file
    (`.claude/` + `.mcp.json` vs `.antigravity/`).
 2. Compute environment -- what hardware is actually reachable right now:
-   an NVIDIA GPU, queried live via `nvidia-smi`, never assumed from a prior
-   session, a memory note, or project docs.
+   an NVIDIA GPU, queried live via `nvidia-smi`, or a Cloud TPU (local TPU VM
+   device nodes + GCE metadata, or a remote TPU named by `AUTOEVOLVE_TPU_NAME`
+   and verified live with `gcloud`); never assumed from a prior session, a
+   memory note, or project docs.
 
 Detection is evidence-only. Claude Code is identified from process-env
 signals this process can actually observe (`CLAUDECODE=1`, set by the CLI
@@ -30,11 +32,14 @@ the live probe for backend selection when the probe itself can't see it.
 
 from __future__ import annotations
 
+import glob
 import json
 import os
 import shutil
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -172,6 +177,90 @@ def detect_gpu(timeout_s: float = 5.0) -> GPUInfo:
     return _parse_nvidia_smi_csv(result.stdout)
 
 
+TPU_LOCAL = "local"
+TPU_REMOTE = "remote"
+_TPU_METADATA_URL = (
+    "http://metadata.google.internal/computeMetadata/v1/instance/attributes/accelerator-type"
+)
+
+
+@dataclass(frozen=True)
+class TPUInfo:
+    """Result of a live Cloud TPU probe.
+
+    `kind` is "local" when this process runs on the TPU VM itself (JAX can use
+    it directly) and "remote" when a named TPU was verified reachable via
+    `gcloud` from another host. `available=False` carries `probe_error`.
+    """
+
+    available: bool
+    kind: str | None
+    accelerator_type: str | None
+    name: str | None
+    probe_error: str | None
+
+
+_NO_TPU = TPUInfo(False, None, None, None, "no TPU signal")
+
+
+def _tpu_metadata_accelerator(timeout_s: float) -> str | None:
+    request = urllib.request.Request(_TPU_METADATA_URL, headers={"Metadata-Flavor": "Google"})
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_s) as response:  # noqa: S310 - fixed GCE URL
+            return response.read().decode().strip() or None
+    except (urllib.error.URLError, OSError, ValueError):
+        return None
+
+
+def _detect_local_tpu(timeout_s: float) -> TPUInfo | None:
+    """Local TPU VM: `/dev/accel*` (v2-v4, v5p) or `/dev/vfio/<n>` (v5e, v6e) plus,
+    for vfio only, GCE `accelerator-type` metadata -- vfio alone also appears for
+    GPU passthrough, so it is never accepted without the metadata."""
+    accel_type = os.environ.get("TPU_ACCELERATOR_TYPE", "").strip() or _tpu_metadata_accelerator(timeout_s)
+    if glob.glob("/dev/accel*"):
+        return TPUInfo(True, TPU_LOCAL, accel_type, os.environ.get("TPU_NAME") or None, None)
+    if accel_type and any(Path(p).name.isdigit() for p in glob.glob("/dev/vfio/*")):
+        return TPUInfo(True, TPU_LOCAL, accel_type, os.environ.get("TPU_NAME") or None, None)
+    return None
+
+
+def _detect_remote_tpu(timeout_s: float) -> TPUInfo:
+    name = os.environ.get("AUTOEVOLVE_TPU_NAME", "").strip()
+    zone = os.environ.get("AUTOEVOLVE_TPU_ZONE", "").strip()
+    if not name or not zone:
+        return _NO_TPU
+    exe = shutil.which("gcloud")
+    if exe is None:
+        return TPUInfo(False, None, None, name, "gcloud not on PATH")
+    try:
+        result = subprocess.run(
+            [exe, "compute", "tpus", "tpu-vm", "describe", name, f"--zone={zone}",
+             "--format=value(state,acceleratorType)"],
+            capture_output=True,
+            text=True,
+            timeout=timeout_s,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return TPUInfo(False, None, None, name, f"gcloud timed out after {timeout_s}s")
+    except OSError as exc:
+        return TPUInfo(False, None, None, name, f"gcloud failed to launch: {exc}")
+    if result.returncode != 0:
+        message = (result.stderr or result.stdout).strip() or f"exit {result.returncode}"
+        return TPUInfo(False, None, None, name, message)
+    fields = result.stdout.split()
+    if len(fields) < 2 or fields[0] != "READY":
+        return TPUInfo(False, None, None, name, f"TPU not READY: {result.stdout.strip() or 'no output'}")
+    return TPUInfo(True, TPU_REMOTE, fields[1], name, None)
+
+
+def detect_tpu(timeout_s: float = 5.0) -> TPUInfo:
+    """Probe for a Cloud TPU. Live, never cached; imports no JAX (a bad XLA
+    environment can crash `import jax`, and detection must survive that)."""
+    local = _detect_local_tpu(min(timeout_s, 1.0))
+    return local if local is not None else _detect_remote_tpu(max(timeout_s, 30.0))  # gcloud cold start is slow
+
+
 def _gpu_hint() -> str | None:
     value = os.environ.get("AUTOEVOLVE_GPU_HINT", "").strip().lower()
     return value or None
@@ -287,9 +376,18 @@ class CapabilityProfile:
     supports_local_lora: bool = True
     supports_local_rl: bool = True
     supports_local_jepa: bool = True
+    tpu: TPUInfo = _NO_TPU
+
+    @property
+    def jax_platform(self) -> str:
+        """JAX platform this process can use directly: "tpu" only on a local TPU VM.
+        `device` deliberately stays "cuda"/"cpu" because existing torch callers do
+        `.to(profile.device)`; a remote TPU is reached by running a job on it."""
+        return "tpu" if self.tpu.available and self.tpu.kind == TPU_LOCAL else "cpu"
 
     def as_dict(self) -> dict[str, object]:
         payload = asdict(self)
+        payload["jax_platform"] = self.jax_platform
         payload["config_dir"] = str(self.config_dir)
         payload["mcp_config_path"] = str(self.mcp_config_path)
         return payload
@@ -302,6 +400,7 @@ class CapabilityProfile:
             "ANSE_EMBEDDING_MODEL": self.llm.embedding_model,
             "ANSE_DEVICE": self.device,
             "ANSE_PROFILE_ID": self.profile_id,
+            "ANSE_JAX_PLATFORM": self.jax_platform,
         }
 
 
@@ -329,10 +428,13 @@ def resolve_capability_profile(project_root: Path | None = None) -> CapabilityPr
     agent = detect_coding_agent()
     gpu = detect_gpu()
     memory = detect_system_memory()
+    tpu = detect_tpu()
     llm = _select_llm_backend(gpu)
     device = "cuda" if (gpu.available or _gpu_hint()) else "cpu"
 
-    if gpu.available or _gpu_hint():
+    if tpu.available and device == "cpu":
+        profile_id = f"{agent}_tpu_{tpu.accelerator_type or 'unknown'}"
+    elif gpu.available or _gpu_hint():
         gpu_label = _gpu_hint() or (gpu.name.lower().replace(" ", "_") if gpu.name else "gpu")
         profile_id = f"{agent}_{gpu_label}"
     else:
@@ -347,6 +449,7 @@ def resolve_capability_profile(project_root: Path | None = None) -> CapabilityPr
         mcp_config_path=_mcp_config_path_for(agent, root),
         device=device,
         profile_id=profile_id,
+        tpu=tpu,
         supports_local_lora=True,
         supports_local_rl=True,
         supports_local_jepa=True,

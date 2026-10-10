@@ -2,6 +2,7 @@ import Triangular.Riesz
 import Triangular.RieszFinite
 import Triangular.AnyDensity
 import Triangular.Controls
+import Triangular.UniversalOptimality
 
 /-! Axiom audit of the D1 corollary, with planted controls. -/
 
@@ -22,6 +23,11 @@ import Triangular.Controls
 #print axioms TriangularControls.rho_one
 #print axioms TriangularControls.riesz_lattice_homogeneous
 #print axioms TriangularControls.riesz_any_density_homogeneous
+#print axioms TriangularUniversalOptimality.triangular_universally_optimal
+#print axioms TriangularUniversalOptimality.vacancy_energy
+#print axioms TriangularUniversalOptimality.vacancy_not_isometric_image
+#print axioms TriangularUniversalOptimality.vacancy_universally_optimal
+#print axioms TriangularUniversalOptimality.universal_optimum_not_unique
 
 theorem ctl_sorry : TriangularRiesz.riesz 1 1 = 0 := by sorry
 axiom ctl_cheat : False

@@ -40,7 +40,12 @@ theorem triangular_universally_optimal {ρ : ℝ} (hρ : 0 < ρ) :
 /-- The triangular lattice with the point at the origin removed. -/
 def vacancy : Set Plane := A \ {0}
 
-lemma zero_mem_A : (0 : Plane) ∈ A := ⟨(0, 0), by simp [triangularPoint]⟩
+lemma triangularPoint_zero : triangularPoint (0, 0) = 0 := by
+  unfold triangularPoint
+  ext i
+  fin_cases i <;> simp [EuclideanSpace.single_apply]
+
+lemma zero_mem_A : (0 : Plane) ∈ A := ⟨(0, 0), triangularPoint_zero⟩
 
 lemma vacancy_lf : LocallyFinite vacancy := by
   intro R
@@ -64,7 +69,6 @@ lemma diskCount_vacancy {R : ℝ} (hR : 0 ≤ R) : diskCount vacancy R = diskCou
   unfold diskCount OAI.TriangularUniversal.diskCount
   rw [show OAI.TriangularUniversal.diskPoints vacancy R = diskPoints vacancy R from rfl, diskPoints_vacancy,
     Finset.card_erase_of_mem (zero_mem_diskPoints hR)]
-  rfl
 
 lemma one_le_diskCount {R : ℝ} (hR : 0 ≤ R) : 1 ≤ diskCount A R :=
   Finset.card_pos.2 ⟨0, zero_mem_diskPoints hR⟩
@@ -72,7 +76,7 @@ lemma one_le_diskCount {R : ℝ} (hR : 0 ≤ R) : 1 ≤ diskCount A R :=
 lemma tendsto_inv_area : Tendsto (fun R : ℝ => 1 / (Real.pi * R ^ 2)) atTop (𝓝 0) := by
   have h : Tendsto (fun R : ℝ => Real.pi * R ^ 2) atTop atTop :=
     (tendsto_pow_atTop two_ne_zero).const_mul_atTop Real.pi_pos
-  simpa [one_div] using h.inv_tendsto_atTop
+  exact h.inv_tendsto_atTop.congr fun R => by simp only [Pi.inv_apply, one_div]
 
 lemma vacancy_density : DensityOne vacancy := by
   have h := A_d1.sub tendsto_inv_area
@@ -150,7 +154,8 @@ lemma diskEnergy_vacancy_le (g : ℝ → ℝ) :
     show OAI.TriangularUniversal.diskPoints A R = diskPoints A R from rfl,
     show OAI.TriangularUniversal.diskCount A R = diskCount A R from rfl, coeff_eq hN', mul_assoc]
   unfold corr
-  exact mul_le_mul_left' (mul_le_mul_left' (pair_sum_le g R) _) _
+  have hs := pair_sum_le g R
+  gcongr
 
 /-- **The vacancy configuration is also a minimiser**, for every admissible `g`. -/
 theorem vacancy_energy (g : ℝ → ℝ) (hg : AdmissiblePotential g) : energy g vacancy = latticeEnergy g := by
@@ -213,7 +218,7 @@ theorem vacancy_not_isometric_image : ¬ ∃ f : Plane → Plane, Isometry f ∧
   obtain ⟨b, hb, hfb⟩ := hq
   have h0 : f ((2 : ℝ) • a - b) = 0 := by
     rw [key, hfa, hfb, ← triangularPoint_comb]
-    simp [triangularPoint]
+    convert triangularPoint_zero using 2 <;> norm_num
   have hmem : (0 : Plane) ∈ f '' A := ⟨_, A_comb ha hb, h0⟩
   rw [hfA] at hmem
   exact hmem.2 rfl

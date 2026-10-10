@@ -5,16 +5,20 @@ import Triangular.AnyDensity
 
 `UniversallyOptimal ρ C` transcribes Definition 1.3 of CKMRV (Ann. Math. 196, 2022) in upstream's notions of
 density and lower energy: `C` has density `ρ` and minimises the `g`-energy among all locally finite density-`ρ`
-configurations, for every admissible (smooth, completely monotone) `g` of squared distance.
+configurations, for every admissible (smooth, completely monotone) `g` of squared distance. One gap: CKMRV
+(Defs 1.2–1.3) also require the energy of `C` itself to exist as a limit; here only the lower energy (`liminf`) is
+used, so `UniversallyOptimal` is strictly weaker than CKMRV's notion.
 
-* `triangular_universally_optimal`: `ρ^{-1/2} A` is universally optimal for every `ρ > 0`
-  (conditional on upstream's `universal_energy_minimum`).
-* `vacancy_energy`: the lattice with one point removed, `A \ {0}`, has the same energy for every admissible `g`.
-* `vacancy_not_isometric_image`: `A \ {0}` is not an isometric image of `A`.
-* `universal_optimum_not_unique`: so universal optima are not unique up to isometry among all configurations. This is
-  the remark after CKMRV Theorem 1.4 ("removing a single particle changes neither the density nor the energy"), and it
-  shows that "the minimiser is the triangular lattice" is false in this formulation; only the minimum *value* is
-  determined.
+* `triangular_universally_optimal`: `ρ^{-1/2} A` is universally optimal for every `ρ > 0`. It rests on upstream's
+  `universal_energy_minimum`, whose proof is kernel-checked and axiom-clean; what remains conditional is that upstream's
+  definitions faithfully express the intended mathematics.
+* `vacancy_energy`: the lattice with one point removed, `A \ {0}`, has the same lower energy for every admissible `g`.
+* `vacancy_not_isometric_image`: `A \ {0}` is not an isometric image of `A` (isometries of the plane are affine).
+* `universal_optimum_not_unique`: so universal optima, in this lower-energy notion, are not unique up to isometry among
+  all configurations. This is the remark after CKMRV Theorem 1.4 ("removing a single particle changes neither the
+  density nor the energy"); it shows that "the minimiser is the triangular lattice" is false among *all*
+  configurations. Uniqueness among *periodic* configurations (the form CKMRV prove in dimensions 8 and 24) is open in
+  dimension 2 and is not addressed here.
 -/
 
 namespace TriangularUniversalOptimality

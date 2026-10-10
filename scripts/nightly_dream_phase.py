@@ -61,34 +61,9 @@ def run_dream_phase() -> dict[str, Any]:
 
         hippocampus = HippocampalReplayEngine(predictor=predictor)
 
-        # Seed wake episodes if memory has fewer than 15 traces
-        existing_trace_count = 0
-        if hippocampus.memory_file.exists():
-            with open(hippocampus.memory_file, encoding="utf-8") as f:
-                existing_trace_count = sum(1 for line in f if line.strip())
-
-        if existing_trace_count < 15:
-            logger.info(f"🌱 Seeding episodic wake traces (existing: {existing_trace_count}) for dream consolidation...")
-            seed_episodes = [
-                ("math", "Hodge star duality theorem", "discrete exterior calculus 2-form", 0.042, True),
-                ("physics", "Hamiltonian energy conservation", "symplectic Runge-Kutta integrator", -0.85, True),
-                ("ml", "LoRA rank dimension mismatch", "linear layer projection dimension", 1_000_000.0, False),
-                ("symbolic", "Banach fixed-point theorem", "contraction mapping constant L < 1", 0.12, True),
-                ("physics", "SU(3) lattice gauge Wilson loop", "gauge invariance phase trace", 0.005, False),
-                ("rl", "strictly proper scoring rule", "log reward honest calibration", -1.2, False),
-                ("math", "Lie algebra Killing form", "semi-simple Cartan subalgebra", 0.08, False),
-                ("physics", "Klein-Gordon relativistic field", "canonical momentum commutation", 0.15, False),
-                ("symbolic", "homotopy type theory path equivalence", "univalence axiom identity", 0.03, False),
-                ("ml", "AdamW weight decay decoupled", "gradient step variance", 0.22, False),
-                ("physics", "topological Chern number", "Berry phase curvature integral", -0.4, False),
-                ("math", "spectral graph Laplacian eigenvalues", "Dirichlet energy bound", 0.06, False),
-                ("rl", "GRPO group advantage standardization", "relative trajectory preference", -0.9, False),
-                ("symbolic", "soundness verification in Lean 4", "lake build zero axiomatization", 0.01, False),
-                ("ml", "flash attention tiling block size", "SRAM bandwidth efficiency", 0.18, False),
-            ]
-            for domain, prompt, thought, energy, anchor in seed_episodes:
-                hippocampus.log_wake_episode(domain, prompt, thought, energy, is_anchor=anchor)
-
+        # Replay only real wake traces. The hand-written seed episodes that used to be logged
+        # here carried invented energies (one was 1_000_000.0) and were removed: they made the
+        # retention figure measure a fiction. With no real traces the sleep cycle reports NO_TRACES.
         # Replay batch size should leave ample held-out traces to measure retention
         with open(hippocampus.memory_file, encoding="utf-8") as f:
             total_traces = sum(1 for line in f if line.strip())

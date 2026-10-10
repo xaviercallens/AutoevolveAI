@@ -102,15 +102,44 @@ class GateResult:
     status: str
     reasons: list[str] = field(default_factory=list)
     positives: int = 0
-    real_folds: dict[int, list[float]] = field(default_factory=dict)
-    control_folds: dict[int, list[float]] = field(default_factory=dict)
+    real_folds: dict[Any, Any] = field(default_factory=dict)
+    control_folds: dict[Any, Any] = field(default_factory=dict)
     worst_real: float = float("nan")
     control_best: float = float("nan")
     control_spread: float = float("nan")
 
 
 def evaluate_gate(rows: list[dict[str, Any]], seeds: tuple[int, ...] = DEFAULT_SEEDS) -> GateResult:
-    """Run real and shuffled-label probes over every seed and decide PASS or BLOCKED."""
+    """Evaluate each source separately and PASS only if every source passes.
+
+    A probe over rows from several sources can separate them by their text style, which often
+    correlates with the label (one source mostly fails, another mostly passes). That scores well
+    without learning anything about correctness. So each ``metadata.source`` is gated on its own.
+    """
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        source = str(row.get("metadata", {}).get("source", "unknown"))
+        groups.setdefault(source, []).append(row)
+
+    if not groups:
+        return GateResult(status="BLOCKED", reasons=["no rows in the verified pool"])
+    per_source = {source: _evaluate_single_source(sub, seeds) for source, sub in sorted(groups.items())}
+    failing = [s for s, g in per_source.items() if g.status != "PASS"]
+    combined = GateResult(status="PASS" if not failing else "BLOCKED", positives=sum(int(r["energy"]) for r in rows))
+    combined.real_folds = {source: gate.real_folds for source, gate in per_source.items()}
+    combined.control_folds = {source: gate.control_folds for source, gate in per_source.items()}
+    for source, gate in per_source.items():
+        combined.reasons.extend(f"[{source}] {reason}" for reason in gate.reasons)
+    measured = [g for g in per_source.values() if not math.isnan(g.worst_real)]
+    if measured:
+        combined.worst_real = min(g.worst_real for g in measured)
+        combined.control_best = max(g.control_best for g in measured)
+        combined.control_spread = max(g.control_spread for g in measured)
+    return combined
+
+
+def _evaluate_single_source(rows: list[dict[str, Any]], seeds: tuple[int, ...]) -> GateResult:
+    """Run real and shuffled-label probes over every seed for one source and decide PASS or BLOCKED."""
     labels = [int(r["energy"]) for r in rows]
     positives = sum(labels)
     result = GateResult(status="BLOCKED", positives=positives)

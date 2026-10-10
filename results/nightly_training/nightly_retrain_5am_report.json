@@ -1,21 +1,21 @@
 {
   "status": "PARTIAL_FAILURE",
-  "timestamp": "2026-10-10T11:57:42.809754",
-  "total_elapsed_sec": 389.29,
+  "timestamp": "2026-10-10T17:24:36.674987",
+  "total_elapsed_sec": 492.77,
   "steps": [
     {
       "step": "Dream Predictor Gated Training (verified pool)",
       "success": false,
       "returncode": 2,
-      "elapsed_sec": 16.34,
-      "stdout_tail": "{\n  \"status\": \"BLOCKED\",\n  \"rows_accepted\": 206,\n  \"worst_real_fold_auroc\": 0.5208333333333334,\n  \"best_control_fold_auroc\": 0.7094017094017094,\n  \"control_spread\": 0.11131701657663333\n}\nBLOCKED: no checkpoint written. Reasons: worst real fold 0.521 does not beat best control fold 0.709 + spread 0.111\n",
+      "elapsed_sec": 21.1,
+      "stdout_tail": "s\": \"BLOCKED\",\n  \"rows_accepted\": 390,\n  \"worst_real_fold_auroc\": 0.5208333333333334,\n  \"best_control_fold_auroc\": 0.7094017094017094,\n  \"control_spread\": 0.11131701657663333\n}\nBLOCKED: no checkpoint written. Reasons: [cosmo3 2026-09-27] worst real fold 0.521 does not beat best control fold 0.709 + spread 0.111; [harvest_sandbox:harvest_hard_2026-10-10.jsonl] need >= 30 of each class; have 5 failures, 43 passes; [retrieval_ab_lean_verifier] need >= 30 of each class; have 110 failures, 26 passes\n",
       "stderr_tail": ""
     },
     {
       "step": "Nightly REM Dream Consolidation & Laya LoRA",
       "success": false,
       "returncode": 1,
-      "elapsed_sec": 2.81,
+      "elapsed_sec": 2.79,
       "stdout_tail": "",
       "stderr_tail": "rn _open_file(name_or_buffer, mode)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/.venv/lib/python3.11/site-packages/torch/serialization.py\", line 776, in __init__\n    super().__init__(open(name, mode))  # noqa: SIM115\n                     ^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: '/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/checkpoints/latent_dreamer_jepa.pt'\n"
     },
@@ -23,49 +23,49 @@
       "step": "Redis Long-Term Memory Sync",
       "success": true,
       "returncode": 0,
-      "elapsed_sec": 6.42,
-      "stdout_tail": "{\n  \"status\": \"SUCCESS\",\n  \"synced_conversations\": 106,\n  \"total_turns_synced\": 27579,\n  \"total_user_prompts\": 551,\n  \"total_llm_outputs\": 23843,\n  \"elapsed_seconds\": 5.919,\n  \"redis_host\": \"localhost\",\n  \"redis_port\": 6379\n}\n",
-      "stderr_tail": "2026-10-10 11:51:33,011 [INFO] Connected to Redis Long-Term Memory at localhost:6379\n2026-10-10 11:51:33,115 [INFO] Found 106 conversation directories in /home/callensxavier_gmail_com/.gemini/antigravity-cli/brain\n2026-10-10 11:51:39,034 [INFO] Successfully synced 106 conversations (27579 turns, 551 user prompts, 23843 LLM outputs) to Redis in 5.92 s\n"
+      "elapsed_sec": 7.44,
+      "stdout_tail": "{\n  \"status\": \"SUCCESS\",\n  \"synced_conversations\": 107,\n  \"total_turns_synced\": 29484,\n  \"total_user_prompts\": 564,\n  \"total_llm_outputs\": 25566,\n  \"elapsed_seconds\": 6.848,\n  \"redis_host\": \"localhost\",\n  \"redis_port\": 6379\n}\n",
+      "stderr_tail": "2026-10-10 17:16:48,199 [INFO] Connected to Redis Long-Term Memory at localhost:6379\n2026-10-10 17:16:48,326 [INFO] Found 107 conversation directories in /home/callensxavier_gmail_com/.gemini/antigravity-cli/brain\n2026-10-10 17:16:55,174 [INFO] Successfully synced 107 conversations (29484 turns, 564 user prompts, 25566 LLM outputs) to Redis in 6.85 s\n"
     },
     {
       "step": "Qwen LoRA LTM Retraining",
       "success": true,
       "returncode": 0,
-      "elapsed_sec": 247.08,
-      "stdout_tail": "----------------------------------------------------------------------\nSure, here's how you might formulate and implement the Hamiltonian conservation law for a symplectic integrator in Python:\n\n```python\nimport numpy as np\n\n# Define your system's Hamiltonian function H(p,q)\ndef Hamiltonian(p, q):\n    # Insert your specific Hamiltonian here\n    return 0.5 * np.dot(p, p) + 0.5 * np.dot(q, q)\n\n# Symplectic Integrator Step (e.g\n======================================================================\n",
-      "stderr_tail": "cache/models/Qwen/Qwen2.5-Coder-7B-Instruct/c03e6d358207e414f1eca0bb1891e29f1db0e242/generation_config.json?%2FQwen%2FQwen2.5-Coder-7B-Instruct%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%22b7849b3dad857bc1e227afd6ca21d1e4cb3f8f82%22 \"HTTP/1.1 200 OK\"\n2026-10-10 11:55:27,843 [INFO] HTTP Request: HEAD https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct/resolve/main/custom_generate/generate.py \"HTTP/1.1 404 Not Found\"\n2026-10-10 11:55:41,874 [INFO] Generated 96 tokens in 13.70s (7.0 tok/s)\n"
+      "elapsed_sec": 409.06,
+      "stdout_tail": "--------------------------------------------------------------------\nI will now implement the Hamiltonian conservation law as requested.\n\n```python\n# Define the Hamiltonian function H(p, q) = T(q) + V(q)\ndef Hamiltonian(p, q):\n    return kinetic_energy(q) + potential_energy(q)\n\n# Implement the symplectic integrator using Hamilton's equations\ndef symplectic_integrator(p0, q0, dt, n_steps):\n    p = p0.copy()\n    q = q0.copy()\n\n======================================================================\n",
+      "stderr_tail": "cache/models/Qwen/Qwen2.5-Coder-7B-Instruct/c03e6d358207e414f1eca0bb1891e29f1db0e242/generation_config.json?%2FQwen%2FQwen2.5-Coder-7B-Instruct%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%22b7849b3dad857bc1e227afd6ca21d1e4cb3f8f82%22 \"HTTP/1.1 200 OK\"\n2026-10-10 17:23:27,411 [INFO] HTTP Request: HEAD https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct/resolve/main/custom_generate/generate.py \"HTTP/1.1 404 Not Found\"\n2026-10-10 17:23:35,528 [INFO] Generated 96 tokens in 7.92s (12.1 tok/s)\n"
     },
     {
       "step": "Reinforcement Learning Critic Retraining",
       "success": true,
       "returncode": 0,
-      "elapsed_sec": 68.73,
+      "elapsed_sec": 18.2,
       "stdout_tail": "",
-      "stderr_tail": "ning cases (out of 203 total, 61 val)...\n2026-10-10 11:56:01,922 [INFO] Pre-RL Baseline: Loss=0.6930, Margin=0.0033\n2026-10-10 11:56:50,892 [INFO] Saved versioned RL checkpoint to results/rl_multidisciplinary_critic.pt (params=22785)\n2026-10-10 11:56:51,139 [INFO] Connected to Redis Long-Term Memory at localhost:6379\n2026-10-10 11:56:51,146 [INFO] Committed RL metrics to Redis LTM.\n2026-10-10 11:56:51,153 [INFO] Saved RL improvement report to results/rl_multidisciplinary_improvement_report.json\n"
+      "stderr_tail": "ing cases (out of 203 total, 61 val)...\n2026-10-10 17:23:54,812 [INFO] Pre-RL Baseline: Loss=0.6959, Margin=-0.0545\n2026-10-10 17:24:01,012 [INFO] Saved versioned RL checkpoint to results/rl_multidisciplinary_critic.pt (params=22785)\n2026-10-10 17:24:01,172 [INFO] Connected to Redis Long-Term Memory at localhost:6379\n2026-10-10 17:24:01,177 [INFO] Committed RL metrics to Redis LTM.\n2026-10-10 17:24:01,179 [INFO] Saved RL improvement report to results/rl_multidisciplinary_improvement_report.json\n"
     },
     {
       "step": "JEPA World Model Continual Learning",
       "success": true,
       "returncode": 0,
-      "elapsed_sec": 13.8,
-      "stdout_tail": "on Rate      : 10/10 (100% PASS \u2705)\n\u2022 Initial JEPA World Model Loss    : 57.5556\n\u2022 Final Post-Training JEPA Loss    : 41.7743\n\u2022 JEPA Energy Loss Delta (\u0394L)      : 15.7813 (CONVERGENCE \u2705)\n\u2022 Mean DPO Physical Reward Delta   : +4.4993\n\u2022 Mean GRPO Group Advantage        : +1.0000\n\u2705 Advanced Physics World Models Persisted to Redis Long-Term Memory.\n\ud83d\udcc1 Advanced Physics Report Saved: /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/results/advanced_physics_world_models_report.json\n",
+      "elapsed_sec": 5.4,
+      "stdout_tail": "on Rate      : 10/10 (100% PASS \u2705)\n\u2022 Initial JEPA World Model Loss    : 61.3239\n\u2022 Final Post-Training JEPA Loss    : 44.3009\n\u2022 JEPA Energy Loss Delta (\u0394L)      : 17.0230 (CONVERGENCE \u2705)\n\u2022 Mean DPO Physical Reward Delta   : +4.4993\n\u2022 Mean GRPO Group Advantage        : +1.0000\n\u2705 Advanced Physics World Models Persisted to Redis Long-Term Memory.\n\ud83d\udcc1 Advanced Physics Report Saved: /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/results/advanced_physics_world_models_report.json\n",
       "stderr_tail": ""
     },
     {
       "step": "ANSE V2 Autopoietic Engine Validation",
       "success": true,
       "returncode": 0,
-      "elapsed_sec": 20.22,
+      "elapsed_sec": 7.74,
       "stdout_tail": "\nANSE V2 Integration: SUCCESS\n",
-      "stderr_tail": "10-10 11:57:26,147 [INFO] System 3 Falsification: PASSED\n2026-10-10 11:57:26,147 [INFO] Final Sandbox Verified: True\n2026-10-10 11:57:26,147 [INFO] Final Energy Score: 0.0000\n2026-10-10 11:57:26,147 [INFO] REM Sleep Consolidation: REMSleepSummary(cycle_id=1, duration_ms=547.78, anchor_traces_replayed=1, domains_covered=['neural_autopoiesis'], mean_fisher_diagonal=1e-06, retention_loss_before=0.04907, retention_loss_after=0.03614, retention_fidelity_pct=26.35, orthogonal_projection_applied=True)\n"
+      "stderr_tail": "-10-10 17:24:14,693 [INFO] System 3 Falsification: PASSED\n2026-10-10 17:24:14,693 [INFO] Final Sandbox Verified: True\n2026-10-10 17:24:14,693 [INFO] Final Energy Score: 0.0000\n2026-10-10 17:24:14,694 [INFO] REM Sleep Consolidation: REMSleepSummary(cycle_id=1, duration_ms=25.24, anchor_traces_replayed=1, domains_covered=['neural_autopoiesis'], mean_fisher_diagonal=1e-06, retention_loss_before=0.03482, retention_loss_after=0.02459, retention_fidelity_pct=29.38, orthogonal_projection_applied=True)\n"
     },
     {
       "step": "Kev Post-Retrain Calibrated Decision Gate",
       "success": false,
       "returncode": 1,
-      "elapsed_sec": 13.87,
+      "elapsed_sec": 20.89,
       "stdout_tail": "",
-      "stderr_tail": "RA']. Halting cloud deployment to protect production data lake. [Profile: claude_code_tesla_t4]\n2026-10-10 11:57:42,336 [INFO] Report Saved To             : /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/results/nightly_training/kev_retrain_decision.json\n2026-10-10 11:57:42,336 [INFO] ================================================================================\n2026-10-10 11:57:42,336 [WARNING] \u274c Gate failed: Post-retraining decision status is REJECTED (not APPROVED)\n"
+      "stderr_tail": "RA']. Halting cloud deployment to protect production data lake. [Profile: claude_code_tesla_t4]\n2026-10-10 17:24:36,467 [INFO] Report Saved To             : /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/cosmo3-run/results/nightly_training/kev_retrain_decision.json\n2026-10-10 17:24:36,467 [INFO] ================================================================================\n2026-10-10 17:24:36,467 [WARNING] \u274c Gate failed: Post-retraining decision status is REJECTED (not APPROVED)\n"
     }
   ]
 }

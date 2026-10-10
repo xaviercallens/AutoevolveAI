@@ -66,6 +66,9 @@ class Task:
     statement: str
     entry_point: str
     hidden_test: str
+    # Known-correct solution. Dry-run must score it full marks, which proves the hidden test is
+    # satisfiable and not a wrong test that the model is then blamed for failing.
+    reference: str = ""
 
 
 # Deliberately small and unambiguous: the point is to exercise the data contract
@@ -108,6 +111,61 @@ TASKS: tuple[Task, ...] = (
     Task("py-digit-sum", "Write `def digit_sum(n: int) -> int` summing the decimal digits of abs(n).",
          "digit_sum",
          "assert digit_sum(123)==6\nassert digit_sum(-45)==9\nassert digit_sum(0)==0"),
+)
+
+
+# Harder bank. Each statement is precise about the edge case a small coder model tends to miss
+# (truncation direction, touching intervals, strictness, tie-breaking, cycles). Every hidden
+# test is checked against its reference solution in --dry-run before any model is called.
+HARD_TASKS: tuple[Task, ...] = (
+    Task("hard-rpn-trunc", "Write `def eval_rpn(tokens: list[str]) -> int` evaluating Reverse Polish notation with + - * /. Integer division truncates toward zero.",
+         "eval_rpn",
+         "assert eval_rpn(['2','1','+','3','*'])==9\nassert eval_rpn(['4','13','5','/','+'])==6\nassert eval_rpn(['-7','2','/'])==-3\nassert eval_rpn(['-7'])==-7",
+         "def eval_rpn(tokens):\n    st = []\n    for t in tokens:\n        if len(t) == 1 and t in '+-*/':\n            b = st.pop(); a = st.pop()\n            if t == '+': st.append(a + b)\n            elif t == '-': st.append(a - b)\n            elif t == '*': st.append(a * b)\n            else: st.append(int(a / b))\n        else:\n            st.append(int(t))\n    return st[-1]\n"),
+    Task("hard-merge-touching", "Write `def merge(intervals: list[list[int]]) -> list[list[int]]` merging overlapping AND touching closed intervals, returning them sorted. Input may be unsorted; empty input gives [].",
+         "merge",
+         "assert merge([[1,4],[4,5]])==[[1,5]]\nassert merge([[1,3],[2,6],[8,10],[15,18]])==[[1,6],[8,10],[15,18]]\nassert merge([])==[]\nassert merge([[5,6],[1,2]])==[[1,2],[5,6]]",
+         "def merge(intervals):\n    out = []\n    for s, e in sorted(intervals):\n        if out and s <= out[-1][1]:\n            out[-1][1] = max(out[-1][1], e)\n        else:\n            out.append([s, e])\n    return out\n"),
+    Task("hard-lis-strict", "Write `def lis_length(xs: list[int]) -> int` returning the length of the longest STRICTLY increasing subsequence; 0 for empty input.",
+         "lis_length",
+         "assert lis_length([10,9,2,5,3,7,101,18])==4\nassert lis_length([2,2,2])==1\nassert lis_length([])==0\nassert lis_length([1,3,2,4])==3",
+         "def lis_length(xs):\n    best = [1] * len(xs)\n    for i in range(len(xs)):\n        for j in range(i):\n            if xs[j] < xs[i]:\n                best[i] = max(best[i], best[j] + 1)\n    return max(best, default=0)\n"),
+    Task("hard-min-window", "Write `def min_window(s: str, t: str) -> str` returning the shortest substring of s containing every character of t with multiplicity; return '' if none. On ties return the leftmost.",
+         "min_window",
+         "assert min_window('ADOBECODEBANC','ABC')=='BANC'\nassert min_window('a','aa')==''\nassert min_window('aa','aa')=='aa'\nassert min_window('ab','b')=='b'",
+         "def min_window(s, t):\n    from collections import Counter\n    need = Counter(t); missing = len(t)\n    best = (0, 0); lo = 0\n    best_len = float('inf')\n    for hi, ch in enumerate(s, 1):\n        if need[ch] > 0: missing -= 1\n        need[ch] -= 1\n        while missing == 0:\n            if hi - lo < best_len:\n                best_len = hi - lo; best = (lo, hi)\n            need[s[lo]] += 1\n            if need[s[lo]] > 0: missing += 1\n            lo += 1\n    return s[best[0]:best[1]] if best_len != float('inf') else ''\n"),
+    Task("hard-topo-lex", "Write `def topo_order(n: int, edges: list[tuple[int,int]]) -> list[int] | None` returning the lexicographically smallest topological order of nodes 0..n-1 for directed edges (a,b meaning a before b), or None if there is a cycle.",
+         "topo_order",
+         "assert topo_order(3,[(0,1),(1,2)])==[0,1,2]\nassert topo_order(2,[(0,1),(1,0)]) is None\nassert topo_order(3,[(2,0),(1,0)])==[1,2,0]\nassert topo_order(0,[])==[]",
+         "def topo_order(n, edges):\n    import heapq\n    indeg = [0] * n; adj = [[] for _ in range(n)]\n    for a, b in edges:\n        adj[a].append(b); indeg[b] += 1\n    heap = [i for i in range(n) if indeg[i] == 0]\n    heapq.heapify(heap); out = []\n    while heap:\n        u = heapq.heappop(heap); out.append(u)\n        for v in adj[u]:\n            indeg[v] -= 1\n            if indeg[v] == 0: heapq.heappush(heap, v)\n    return out if len(out) == n else None\n"),
+    Task("hard-caesar-any-shift", "Write `def caesar(s: str, k: int) -> str` shifting ASCII letters by k (any integer, including negative and k > 26), preserving case; leave all other characters unchanged.",
+         "caesar",
+         "assert caesar('Hello, World!',3)=='Khoor, Zruog!'\nassert caesar('abc',-1)=='zab'\nassert caesar('xyz',29)=='abc'\nassert caesar('A1 b',0)=='A1 b'",
+         "def caesar(s, k):\n    out = []\n    for ch in s:\n        if 'a' <= ch <= 'z':\n            out.append(chr((ord(ch) - 97 + k) % 26 + 97))\n        elif 'A' <= ch <= 'Z':\n            out.append(chr((ord(ch) - 65 + k) % 26 + 65))\n        else:\n            out.append(ch)\n    return ''.join(out)\n"),
+    Task("hard-balanced-brackets", "Write `def balanced(s: str) -> bool` returning True iff every ()[]{} bracket pair is properly nested; all other characters are ignored.",
+         "balanced",
+         "assert balanced('a(b[c]{d})e')\nassert not balanced('(]')\nassert balanced('')\nassert not balanced('(a')\nassert not balanced(')(')",
+         "def balanced(s):\n    pairs = {')': '(', ']': '[', '}': '{'}\n    st = []\n    for ch in s:\n        if ch in '([{': st.append(ch)\n        elif ch in pairs:\n            if not st or st.pop() != pairs[ch]: return False\n    return not st\n"),
+    Task("hard-kth-duplicates", "Write `def kth_largest(xs: list[int], k: int) -> int` returning the k-th largest element counting duplicates (k=1 is the maximum). Raise ValueError if k is outside 1..len(xs).",
+         "kth_largest",
+         "assert kth_largest([3,2,3,1,2,4,5,5,6],4)==4\nassert kth_largest([5,5],2)==5\nassert exec(\"try:\\n    kth_largest([1],2)\\nexcept ValueError:\\n    pass\\nelse:\\n    raise AssertionError\") is None",
+         "def kth_largest(xs, k):\n    if k < 1 or k > len(xs):\n        raise ValueError('k out of range')\n    return sorted(xs, reverse=True)[k - 1]\n"),
+    Task("hard-dijkstra-directed", "Write `def shortest(n: int, edges: list[tuple[int,int,int]], src: int, dst: int) -> int` returning the minimum total weight of a directed path from src to dst (edges (u,v,w), w >= 0), or -1 if unreachable. Return 0 when src == dst.",
+         "shortest",
+         "assert shortest(4,[(0,1,1),(1,3,2),(0,2,5),(2,3,1)],0,3)==3\nassert shortest(3,[(0,1,1)],0,2)==-1\nassert shortest(2,[],1,1)==0\nassert shortest(2,[(1,0,4)],0,1)==-1",
+         "def shortest(n, edges, src, dst):\n    import heapq\n    adj = [[] for _ in range(n)]\n    for u, v, w in edges: adj[u].append((v, w))\n    dist = [None] * n; dist[src] = 0; pq = [(0, src)]\n    while pq:\n        d, u = heapq.heappop(pq)\n        if d != dist[u]: continue\n        for v, w in adj[u]:\n            nd = d + w\n            if dist[v] is None or nd < dist[v]:\n                dist[v] = nd; heapq.heappush(pq, (nd, v))\n    return -1 if dist[dst] is None else dist[dst]\n"),
+    Task("hard-deep-merge", "Write `def deep_merge(a: dict, b: dict) -> dict` returning a new dict where nested dicts merge recursively, values from b override a for non-dict values, and neither input is mutated.",
+         "deep_merge",
+         "assert deep_merge({'x':{'y':1}},{'x':{'z':3}})=={'x':{'y':1,'z':3}}\nassert deep_merge({'a':1},{'a':{'b':2}})=={'a':{'b':2}}\nassert (lambda a,b: (lambda r: r=={'x':{'y':1,'z':3}} and a=={'x':{'y':1}} and b=={'x':{'z':3}} and r is not a)(deep_merge(a,b)))({'x':{'y':1}},{'x':{'z':3}})",
+         "def deep_merge(a, b):\n    import copy\n    out = copy.deepcopy(a)\n    for k, v in b.items():\n        if isinstance(v, dict) and isinstance(out.get(k), dict):\n            out[k] = deep_merge(out[k], v)\n        else:\n            out[k] = copy.deepcopy(v)\n    return out\n"),
+    Task("hard-window-max", "Write `def window_max(xs: list[int], k: int) -> list[int]` returning the maximum of each window of length k, in order; return [] when k < 1 or k > len(xs).",
+         "window_max",
+         "assert window_max([1,3,-1,-3,5,3,6,7],3)==[3,3,5,5,6,7]\nassert window_max([1],2)==[]\nassert window_max([4,2],0)==[]\nassert window_max([2,2],2)==[2]",
+         "def window_max(xs, k):\n    if k < 1 or k > len(xs): return []\n    return [max(xs[i:i + k]) for i in range(len(xs) - k + 1)]\n"),
+    Task("hard-islands-4conn", "Write `def count_islands(grid: list[str]) -> int` counting 4-connected components of '1' cells in a grid of '0'/'1' strings; diagonal neighbours do NOT connect; an empty grid gives 0.",
+         "count_islands",
+         "assert count_islands(['11000','11000','00100','00011'])==3\nassert count_islands(['10','01'])==2\nassert count_islands([])==0\nassert count_islands(['1'])==1",
+         "def count_islands(grid):\n    from collections import deque\n    seen = set(); count = 0\n    for r in range(len(grid)):\n        for c in range(len(grid[r])):\n            if grid[r][c] == '1' and (r, c) not in seen:\n                count += 1; q = deque([(r, c)]); seen.add((r, c))\n                while q:\n                    y, x = q.popleft()\n                    for dy, dx in ((1,0),(-1,0),(0,1),(0,-1)):\n                        ny, nx = y + dy, x + dx\n                        if 0 <= ny < len(grid) and 0 <= nx < len(grid[ny]) and grid[ny][nx] == '1' and (ny, nx) not in seen:\n                            seen.add((ny, nx)); q.append((ny, nx))\n    return count\n"),
 )
 
 
@@ -198,15 +256,29 @@ def embed(text: str) -> list[float]:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--tasks", type=int, default=len(TASKS))
+    ap.add_argument("--task-set", choices=("easy", "hard"), default="easy",
+                    help="easy: the original 12 tasks (the model passes all of them); hard: edge-case bank")
+    ap.add_argument("--tasks", type=int, default=None)
     ap.add_argument("--samples", type=int, default=2, help="attempts per task")
     ap.add_argument("--dry-run", action="store_true",
                     help="verify the bank against reference solutions; no model calls")
     ap.add_argument("--out", type=Path, default=OUT / "harvest.jsonl")
     args = ap.parse_args(argv)
 
-    selected = TASKS[: args.tasks]
+    bank = HARD_TASKS if args.task_set == "hard" else TASKS
+    selected = bank[: args.tasks] if args.tasks is not None else bank
     args.out.parent.mkdir(parents=True, exist_ok=True)
+
+    if args.dry_run and args.task_set == "hard":
+        # Every hard task's reference must pass its hidden test; a failing reference means the
+        # test itself is wrong, and such a task must not be used to score the model.
+        failures = []
+        for task in HARD_TASKS:
+            result = verify(task.reference, task)
+            if result["tests_passed"] != result["tests_total"]:
+                failures.append(f"{task.task_id}: {result['tests_passed']}/{result['tests_total']}")
+        print(f"hard bank: {len(HARD_TASKS)} tasks, reference failures: {failures or 'none'}")
+        return 0 if not failures else 1
 
     if args.dry_run:
         # Sanity: a KNOWN-GOOD solution must score full marks, and an empty one
@@ -287,7 +359,7 @@ def main(argv: list[str] | None = None) -> int:
     tasks_seen = {e["task"] for e in episodes}
     verified = sum(1 for e in episodes if e["metadata"]["tests_total"] > 0)
 
-    print(f"\nwrote {len(episodes)} episodes -> {args.out.relative_to(REPO)}")
+    print(f"\nwrote {len(episodes)} episodes -> {args.out.resolve()}")
     print(f"  distinct tasks     : {len(tasks_seen)}  (>=2 required for a task-level split)")
     print(f"  hidden_state dims  : {dims}  (must be a single value)")
     print(f"  rows with verdict  : {verified}/{len(episodes)}")

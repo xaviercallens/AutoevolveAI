@@ -34,6 +34,10 @@ def main() -> int:
     plan = RES / "refine_plan.json"
     if plan.exists():
         names += json.loads(plan.read_text())["new_edges"]
+    p3 = REPO / "results" / "certified_numerics" / "P3_h0" / "plan.json"
+    if p3.exists():
+        names += json.loads(p3.read_text())["new_tables"]
+    names = list(dict.fromkeys(names))
     with ThreadPoolExecutor(max_workers=workers) as ex:
         for name, rc in ex.map(job, names):
             print(name, "rc", rc, flush=True)

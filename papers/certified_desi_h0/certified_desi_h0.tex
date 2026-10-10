@@ -28,7 +28,7 @@ $h r_d$, and is at most $\FitHi$ at a specific point, so these bands are exclude
 Einstein--de Sitter has $\chi^2\ge\EdSBound$ at every $h r_d$.
 (ii) With the BBN prior $\omega_b=0.02218\pm0.00055$ and the Aubourg et al.\ fitting formula for the sound horizon, the combined $\chi^2$
 exceeds $\UTot+25$ for every $\Omega_m\in[0,1]$, every $\omega_b$ and every $h\ge0.73$, while it is at most $\UTot$ at $h=\HStar$:
-a certified form of the known tension between BAO+BBN and $H_0\approx73$. The proofs combine a rational interval evaluator with a soundness
+a certified form of the known tension between BAO+BBN and $H_0\approx73$ (the certified statement is conservative: an independent floating computation puts the $\Delta\chi^2=25$ crossing at $H_0\approx71.6$ and $\Delta\chi^2\approx54.6$ at $H_0=73$). The proofs combine a rational interval evaluator with a soundness
 theorem, monotonicity in the parameters, certified bounds of $\log$, $\exp$ and real powers from Mathlib's series estimates, and
 integer certificates closed by \texttt{decide +kernel}; only the axioms \texttt{propext}, \texttt{Classical.choice} and \texttt{Quot.sound} are used.
 The preregistered slab layout of (i) failed, and a disclosed post-hoc refinement was needed. These are certified versions of
@@ -70,7 +70,7 @@ expansion loses $\sim10^2$ to cancellation and makes the bounds vacuous).
 $\Omega_m\in[a,b]$, $\omega_b\in[c,d]$ every admissible $K$ satisfies $K\le K_0:=c/(100\cdot0.73\,r_d(\omega_{cb}(0.73,b),d))$. Centring at $K_0$, if $B'\ge0$
 on the box then $\chi^2(K)\ge c'$ for all $K\le K_0$. The value $r_d$ at the box corner is enclosed by $\exp(c_0-a\log\omega_{cb}-b\log\omega_b)$ with $\log$ bounded by
 Mathlib's series for $\log(1-u)$ after scaling by $2^k$, $\log2$ by Mathlib's $10^{-10}$ bracket, and $\exp$ by Mathlib's Taylor bound; the certified bracket at one
-point is $[\RdLo,\RdHi]$ and contains the Python value $\RdPy$. Outside $\omega_b\in\mu\pm7\sigma$ the prior term alone exceeds $49$, using a kernel-checked proof that the
+point is $[\RdLo,\RdHi]$ (relative width $2.3\times10^{-10}$) and contains the Python value $\RdPy$, about $1.1\times10^{-10}$ (relative) from each end. Outside $\omega_b\in\mu\pm7\sigma$ (including $\omega_b\le0$, where $r_d$ is not physical) the prior term alone exceeds $49$, using a kernel-checked proof that the
 BAO $\chi^2$ is non-negative (block positive semidefiniteness of $P$). Outside $\Omega_m\in[0.255,0.35]$ the all-$K$ slab theorems of (i) apply.
 The final theorem is assembled by nested case splits that replay the bisection of the $(\Omega_m,\omega_b)$ band into $\NBoxes$ boxes.
 
@@ -83,12 +83,15 @@ Controls: a copy of the data with one value shifted by $10\sigma$ moves the cert
 false bounds fail to compile; planted \texttt{sorry} and axioms are flagged ($\NAudP2$ theorems audited).
 
 \paragraph{(ii) Hubble constant.} $\chi^2_{\rm tot}\le\UTot$ at $(\Omega_m,h,\omega_b)=(0.29743,\HStar,0.02218)$ and $\chi^2_{\rm tot}>\UTot+25$ for all $h\ge0.73$; the weakest box clears the threshold at $\BoxMin$.
-With one parameter of interest, $\Delta\chi^2=25$ corresponds to $5\sigma$. Negative controls at the level of the untrusted planner: the same pipeline produces no certificate for $h\ge0.686$ (inside the allowed
-region) nor for $h\ge0.73$ with the BBN mean shifted to $0.0282$, a value that makes $h=0.73$ acceptable. The lower side ($h\le0.64$) was preregistered as secondary and not attempted.
+With one parameter of interest, $\Delta\chi^2=25$ corresponds to $5\sigma$. Negative controls at the level of the untrusted planner (Python mirror, not Lean): the same pipeline produces no certificate for $h\ge0.686$ (inside the allowed
+region) nor for $h\ge0.73$ with the BBN mean shifted to $0.0282$, a value that makes $h=0.73$ acceptable; independent numerics confirm that both target statements are false.
+An independent verifier rebuilt all 173 modules of the final theorem's import closure from source and found, among others, that a false threshold of 65 is rejected by the kernel
+(a point with $\chi^2_{\rm tot}=64.91$ exists at $h=0.73$), as is a box with its bound raised or its $K_0$ lowered. The lower side ($h\le0.64$) was preregistered as secondary and not attempted.
 
 \section{Limitations and scope}
-Radiation is neglected (it changes $E(2.33)$ by a few $\times10^{-4}$); the sound horizon is a fitting formula, not a Boltzmann code; neutrino density is fixed; the likelihoods are Gaussian and the data
-are taken as published; $\Delta\chi^2$ thresholds are conventions. The certified regions are conservative and depend on the box layout. Nothing here bears on the origin of the tension.
+Radiation is neglected in $E(z)$ (it changes $E(2.33)$ by a few $\times10^{-4}$), while the Aubourg fitting formula was calibrated on Boltzmann-code results that include radiation;
+the sound horizon is a fitting formula, not a Boltzmann code; $\Omega_m$ is restricted to $[0,1]$; neutrino density is fixed; the likelihoods are Gaussian and the data
+are taken as published; $\Delta\chi^2$ thresholds are conventions. The certified regions are conservative and depend on the box layout; $H_0=73$ is a reference value, not the edge of the excluded region. Nothing here bears on the origin of the tension.
 
 \section*{Reproducibility and acknowledgements}
 Lean: \path{formal_cert/BAOCert/} (\path{Likelihood.lean}, \path{P2/}, \path{H0/}, \path{P3/}); emitters, planners, evaluation and the MCP client: \path{scripts/certified_numerics/};

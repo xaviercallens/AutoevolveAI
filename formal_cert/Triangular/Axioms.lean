@@ -1,6 +1,7 @@
 import Triangular.Riesz
 import Triangular.RieszFinite
 import Triangular.AnyDensity
+import Triangular.Controls
 
 /-! Axiom audit of the D1 corollary, with planted controls. -/
 
@@ -16,6 +17,11 @@ import Triangular.AnyDensity
 #print axioms TriangularDensity.attained
 #print axioms TriangularDensity.triangular_optimal_any_density
 #print axioms TriangularDensity.unscaled_false
+#print axioms TriangularControls.riesz_sq
+#print axioms TriangularControls.riesz_neg_two_not_admissible
+#print axioms TriangularControls.rho_one
+#print axioms TriangularControls.riesz_lattice_homogeneous
+#print axioms TriangularControls.riesz_any_density_homogeneous
 
 theorem ctl_sorry : TriangularRiesz.riesz 1 1 = 0 := by sorry
 axiom ctl_cheat : False

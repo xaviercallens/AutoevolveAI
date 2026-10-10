@@ -258,6 +258,13 @@ def mean_heldout_loss(model: Any, texts: list[str], tokenizer: Any, device: Any,
     return sum(losses) / len(losses)
 
 
+EVIDENCE_LABEL = {
+    "tier": "EXPLORATORY_UNVERIFIED",
+    "training_rows": "raw Redis LTM conversation pairs; no verifier verdict attached",
+    "policy": "CLAUDE.md caps unverified rows at 30% of a training mix; this adapter is exploratory and must not be treated as verified training or deployed as one",
+}
+
+
 def execute_local_lora_training(
     dataset: list[dict[str, str]],
     model_id: str = "Qwen/Qwen2.5-Coder-7B-Instruct",
@@ -414,6 +421,7 @@ def execute_local_lora_training(
         "adapter_path": str(out_path),
         "quantization": "nf4-4bit" if quant_config is not None else str(dtype),
         "ollama_evicted": evicted,
+        **EVIDENCE_LABEL,
         "train_examples": len(formatted_texts),
         "heldout_examples": n_heldout,
         "heldout_loss_baseline": baseline_heldout_loss,
@@ -531,6 +539,7 @@ def main() -> int:
 
     # 5. Output Final Report
     report = {
+        "evidence": EVIDENCE_LABEL,
         "sync_stats": sync_stats,
         "dataset_size": len(dataset),
         "train_report": train_report,

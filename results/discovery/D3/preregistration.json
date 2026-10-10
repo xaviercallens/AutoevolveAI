@@ -1,0 +1,18 @@
+{
+  "id": "D3",
+  "stage": "preregistration, committed before formal_cert/Triangular/UniversalOptimality.lean is written",
+  "request": "User asked to prove: (1) the theorem solves the planar Cohn-Kumar universal-optimality question, i.e. particles always arrange into a triangular lattice for every completely monotone repulsion; (2) the historical claim that this was previously solved only in dimensions 8 and 24.",
+  "assessment_before_work": {
+    "1a_energy": "Provable (conditional on upstream universal_energy_minimum): CKMRV 2022 Definition 1.3 (universally optimal = minimises p-energy among configurations of the same density, for every completely monotonic function of squared distance) holds for rho^{-1/2} A at every rho > 0.",
+    "1b_arrangement": "False as stated in this (lower-energy, all-configurations) formulation. CKMRV 2022 after Thm 1.4: 'the uniqueness assertion cannot hold among all configurations, because removing a single particle changes neither the density nor the energy.' The meaningful uniqueness statement (among periodic configurations, as CKMRV prove for E8/Leech) is not claimed by upstream for d = 2 and is not attempted here.",
+    "2_history": "Not a mathematical statement; checked against CKMRV's own text. Correction expected: dimension 1 was solved earlier (Ventevogel-Nijboer; Cohn-Kumar gave another proof); CKMRV: 'no examples of universal optima in R^d with d > 1 had been rigorously proved'."
+  },
+  "hypotheses": {
+    "H1": "triangular_universally_optimal: for every rho > 0, UniversallyOptimal rho (rho^{-1/2} A), with UniversallyOptimal transcribing CKMRV Def 1.3 in upstream's energy/density notions.",
+    "H2": "vacancy_energy: for every admissible g, energy g (A \\ {0}) = latticeEnergy g (A with one vacancy is also a minimiser).",
+    "H3": "vacancy_not_isometric_image: there is no isometry f of the plane with f '' A = A \\ {0}; hence the set of universal optima is not a single isometry class (universal_optimum_not_unique)."
+  },
+  "kill_criteria": "H2 fails if the liminf comparison cannot be closed (needs N_R -> infinity and a factor N/(N-1) -> 1 inside an ENNReal liminf); H3 fails if Mazur-Ulam affinity of isometries cannot be used in Mathlib's form.",
+  "probability_estimate": "H1 ~95%, H2 ~75%, H3 ~80%",
+  "evidence_kind": "Lean kernel, axiom whitelist; planted controls in Axioms.lean"
+}

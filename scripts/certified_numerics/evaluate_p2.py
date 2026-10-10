@@ -113,6 +113,9 @@ def main() -> int:
                              "sorry_flagged": "sorryAx" in ctl.get("ctl_sorry", []), "axiom_flagged": "ctl_cheat" in ctl.get("ctl_axiom", [])}
     out["C7_axiom_audit"]["pass"] = all(out["C7_axiom_audit"][k] for k in ("all_whitelisted", "sorry_flagged", "axiom_flagged"))
     controls_ok = all(out[k]["pass"] for k in ("C4_mcp_profile_consistent", "C5_control_slab_not_excluded", "C6_tampered_data", "C7_axiom_audit"))
+    out["scope"] = ["flat LCDM, radiation off, Om in [0, 1]", "DESI DR2 BAO ALL_GCcomb Gaussian likelihood (data vector and covariance as inputs)",
+                    "profiled over every real K = c/(100 h r_d), i.e. every h r_d", "Delta chi2 = 25 with 2 free parameters is about 4.6 sigma (not 5 sigma)",
+                    "the preregistered slab layout (H8) failed 8/19; the A2 refinement is post hoc (disclosed in the preregistration amendments)"]
     out["verdict"] = "VOID" if not controls_ok else ("P2_OK" if all(out[k]["pass"] for k in ("H6", "H7", "H8_preregistered_layout")) else "P2_PARTIAL")
     (RES / "result.json").write_text(json.dumps(out, indent=1) + "\n")
     print(json.dumps({k: (v["pass"] if isinstance(v, dict) and "pass" in v else v) for k, v in out.items() if k != "A2_refined"}, indent=1))

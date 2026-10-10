@@ -11,13 +11,15 @@
 \newtheorem{corollary}[theorem]{Corollary}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\Z}{\mathbb{Z}}
-\newcommand{\lean}[1]{\texttt{\detokenize{#1}}}
+\usepackage{url}\usepackage{microtype}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.}\makeatother
+\DeclareUrlCommand\lean{\urlstyle{tt}}
 
 \title{Riesz-energy, finiteness and every-density corollaries of\\
-planar universal optimality, kernel-checked in Lean 4}
+the openai/math planar universal-optimality theorem, kernel-checked in Lean 4}
 \author{Xavier Callens (SocrateAI Lab)}
 \date{Preprint v1, 2026-10-10}
-\hypersetup{pdftitle={Riesz-energy, finiteness and every-density corollaries of planar universal optimality, kernel-checked in Lean 4}, pdfauthor={Xavier Callens}}
+\hypersetup{pdftitle={Riesz-energy, finiteness and every-density corollaries of the openai/math planar universal-optimality theorem, kernel-checked in Lean 4}, pdfauthor={Xavier Callens}}
 
 \begin{document}
 \maketitle
@@ -28,16 +30,16 @@ $g$-energy among all locally finite planar configurations of density one, for ev
 (theorem \lean{universal_energy_minimum}, Comparator-accepted by us under the pinned toolchain)~\cite{oai,oaicert}. We derive three named
 consequences inside that pinned environment and check them with the Lean kernel, using only the axioms
 \lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}:
-(D1) for every $s>0$ the Riesz potential $|x-y|^{-s}$ is admissible, so the triangular lattice minimises the Riesz $s$-energy among
+(D1) for every $s>0$ the Riesz potential $t\mapsto t^{-s/2}$ (in $t=|x-y|^2$, i.e.\ $|x-y|^{-s}$) is admissible, so the triangular lattice minimises the Riesz $s$-energy among
 all locally finite density-one configurations;
-(D1b) for $s>2$ the triangular lattice's Riesz $s$-energy (an Epstein zeta value) is finite, so D1 is not the empty statement
-$\infty\le\infty$ (for $0<s\le2$ it is);
+(D1b) for $s>2$ the triangular lattice's Riesz $s$-energy (an Epstein zeta value) is finite, so D1 is a comparison with a finite, attained minimum
+(for $0<s\le2$ the lattice side is $\infty$ and D1 only says $E(C)=\infty$);
 (D2) for every density $\rho>0$ and every admissible $g$, the rescaled lattice $\rho^{-1/2}A$ has density $\rho$ and minimises the
-$g$-energy among all locally finite density-$\rho$ configurations; without the rescaling the statement is false, which we also prove.
+$g$-energy among all locally finite density-$\rho$ configurations; without the rescaling the statement is false (proved in Lean at $\rho=1/4$, $s=4$).
 Mathematically each step is short: complete monotonicity of $t^{-s/2}$ and a scaling argument. The upstream manuscript already states
 informally that its theorem covers inverse powers. What is new is the kernel-checked form of these statements, with a statement-fidelity
-audit, planted negative controls and independent re-verification. Everything is conditional on the upstream theorem, which has not been
-peer reviewed and which, by its authors' own account, does not establish the stronger per-potential form of the Cohn--Kumar
+audit, planted negative controls and re-verification by separate instances of the same AI model (producer $\neq$ verifier). Everything is conditional on the upstream theorem, which has not been
+peer reviewed and which, by its authors' own account, does not claim the stronger per-potential form of the Cohn--Kumar
 conjecture.
 \end{abstract}
 
@@ -50,8 +52,9 @@ Cohn and Kumar~\cite[Conj.~9.4]{ck}, proved in dimensions 8 and 24 by Cohn, Kuma
 planar results concern restricted competitor classes~\cite{hardin} and small perturbations~\cite{leble}.
 
 On 2026-09-23 the openai/math release posted a manuscript~\cite{oai} claiming the energy-comparison conclusion in the plane, together with a
-Lean proof of it. By its own account that manuscript does not construct a sharp auxiliary function for each potential, which is the stronger
-per-potential form of the Cohn--Kumar conjecture. The release of 2026-10-07 withdrew three unrelated manuscripts (Hodge/K3). It did not touch
+Lean proof of it. By its own account that manuscript constructs sharp auxiliary functions for every Gaussian but not for each mixed completely monotone
+potential, and it does not claim that stronger per-potential form of the Cohn--Kumar conjecture. The release of 2026-10-07 withdrew three unrelated manuscripts (on Weil classes of abelian eightfolds, Kuga--Satake for K3, and the Hodge conjecture for
+products of K3 surfaces). It did not touch
 the triangular manuscripts, and the Lean files we use are byte-identical at its commit (Section~\ref{sec:fidelity}).
 
 \paragraph{What this note is and is not.} It is a kernel-checked derivation, inside upstream's pinned environment, of three statements
@@ -72,7 +75,10 @@ with values in $[0,\infty]$;
 \item $A=\{b^{-1/2}(j+k/2,\,kb): j,k\in\Z\}$, $b=\sqrt3/2$ (covolume one), and $E_g^{\rm lat}=\sum_{a\in A\setminus0}g(|a|^2)\in[0,\infty]$.
 \end{itemize}
 The theorem is: for admissible $g$ and locally finite $C$ of density one,
-$E_g^{\rm lat}\le E_g(C)$ and $E_g^{\rm lat}=E_g(A)$.
+$E_g^{\rm lat}\le E_g(C)$ and $E_g^{\rm lat}=E_g(A)$. The challenge file states it with \texttt{sorry} by design; the proof is in
+\texttt{OAI/Analysis/Triangular/Energy/Universal.lean}, and Comparator certifies that the two statements agree. The file has the same sha256
+at upstream commits \texttt{adc7f124} and \texttt{fd4aeeb2}, and \texttt{git diff} between them touches no file under
+\texttt{lean/OAI/Analysis/Triangular/}, \texttt{LatticeSummability.lean}, the toolchain or the lake manifest.
 
 We compared each item with the lower-energy and centred-density formulation of~\cite[Defs.~1.1--1.3]{ckmrv} that the manuscript cites
 (\texttt{results/discovery/statement\_fidelity.md}). They match, including the ordered-pair normalisation by $N_R$ and the convention that
@@ -83,7 +89,7 @@ can differ. Second, the audit was done by the producing agent; the independent v
 
 All statements below are Lean theorems in the AutoevolveAI repository (\texttt{formal\_cert/Triangular/}), compiled against upstream's
 pinned Lean~4.34.1 / Mathlib \texttt{d13f23b7} / openai/math build. Here $\mathrm{riesz}_s(t)=t^{-s/2}$, so
-$\mathrm{riesz}_s(|x-y|^2)=|x-y|^{-s}$; the verifier kernel-checked this identity for $r>0$.
+$\mathrm{riesz}_s(|x-y|^2)=|x-y|^{-s}$; this identity is kernel-checked for $|x-y|>0$ (\lean{TriangularControls.riesz_sq}).
 
 \begin{theorem}[D1, \lean{TriangularRiesz.riesz_admissible}, \lean{triangular_riesz_optimal}]
 For every $s>0$, $\mathrm{riesz}_s$ is admissible. Hence for every locally finite $C$ of density one,
@@ -98,13 +104,13 @@ For every $s>2$, $\sum_{a\in A\setminus0}|a|^{-s}<\infty$.
 \end{theorem}
 \noindent\emph{Proof idea.} \lean{norm_sq_triangularPoint}: $|p(j,k)|^2=\tfrac{2}{\sqrt3}(j^2+jk+k^2)$. Reindex the sum over $A\setminus0$ by the
 injective parametrisation, map $k\mapsto-k$ to match the form $j^2-jk+k^2$, and apply the openai/math lemma
-\lean{LatticeSummability.summable_normForm_neg_rpow} with $\sigma=s/2>1$. For $0<s\le2$ the sum diverges (partial sums grow like $2\pi\log R$
-at $s=2$; the verifier checked this numerically), so D1 is informative exactly for $s>2$.
+\lean{LatticeSummability.summable_normForm_neg_rpow} with $\sigma=s/2>1$. For $0<s\le2$ the sum diverges (standard; not kernel-checked; the verifier confirmed
+$2\pi\log R$ growth numerically at $s=2$), so D1 compares with a finite minimum exactly for $s>2$.
 
 For $\rho>0$ say that $C$ has \emph{density} $\rho$ if $N_R(C)/(\pi R^2)\to\rho$. At $\rho=1$ this is upstream's definition by
 \lean{Iff.rfl}.
 
-\begin{theorem}[D2, \lean{TriangularDensity.universal_any_density}, \lean{triangular_optimal_any_density}]
+\begin{theorem}[D2; \lean{universal_any_density}, \lean{triangular_optimal_any_density}, \lean{attained}]
 Let $g$ be admissible and $\rho>0$. Then $\rho^{-1/2}A$ is locally finite and has density $\rho$, and for every locally finite $C$ of
 density $\rho$,
 \[ E_g(\rho^{-1/2}A)=\sum_{a\in A\setminus0} g(|a|^2/\rho)\le E_g(C). \]
@@ -116,31 +122,38 @@ because this order isomorphism maps \lean{atTop} to itself. Applying upstream's 
 inequality, and its attainment conjunct gives the equality. The density and attainment lemmas (\lean{scaled_density}, \lean{attained}) were
 written by the independent D2 verifier and merged with attribution.
 
-\begin{corollary}[\lean{riesz_any_density}]
+\begin{corollary}[\lean{riesz_any_density_homogeneous}]
 For $s>0$, $\rho>0$ and locally finite $C$ of density $\rho$: $\rho^{s/2}\sum_{a\in A\setminus0}|a|^{-s}\le E_{\mathrm{riesz}_s}(C)$
-(stated in Lean as $\sum g(\rho^{-1}|a|^2)$; informative for $s>2$).
+in $[0,\infty]$. The homogeneity step $\sum_a \mathrm{riesz}_s(\rho^{-1}|a|^2)=\rho^{s/2}\sum_a|a|^{-s}$ is kernel-checked
+(\lean{riesz_lattice_homogeneous}). Informative for $s>2$.
 \end{corollary}
 
-\paragraph{Negative control (\lean{TriangularDensity.unscaled_false}).} The unrescaled claim
-``$E^{\rm lat}_g\le E_g(C)$ for every locally finite $C$ of density $\rho$'' is false at $\rho=1/4$, $s=4$, and this is proved in Lean. The witness
-$C=2A$ has energy $\sum(4|a|^2)^{-2}$, which is strictly smaller, and finite by D1b. So the $\rho^{-1}$ in D2 cannot be dropped. At $\rho>1$ the
-unrescaled claim is true but weaker, because admissible $g$ are non-increasing.
+\paragraph{Negative control.} The unrescaled claim
+``$E^{\rm lat}_g\le E_g(C)$ for every locally finite $C$ of density $\rho$'' is false at $\rho=1/4$, $s=4$, and this is proved in Lean (\lean{TriangularDensity.unscaled_false}). The witness
+$C=2A$ has energy $\sum(4|a|^2)^{-2}$, which is strictly smaller, and finite by D1b. So the $\rho^{-1}$ in D2 cannot be dropped. For $\rho\ge1$ the
+unrescaled claim is true but weaker (it follows from D2 because admissible $g$ are non-increasing; not kernel-checked).
+A further control: $t\mapsto t$ ($s=-2$) is \emph{not} admissible (\lean{riesz_neg_two_not_admissible}).
 
 \section{Verification}
 
 \begin{itemize}
-\item \textbf{Kernel and axioms.} \lean{Riesz.lean}, \lean{RieszFinite.lean} and \lean{AnyDensity.lean} compile with exit code 0 (each about
-14--20\,s once upstream's oleans are cached). \texttt{\#print axioms} reports $\{$\lean{propext}, \lean{Classical.choice},
+\item \textbf{Kernel and axioms.} \lean{Riesz.lean}, \lean{RieszFinite.lean}, \lean{AnyDensity.lean} and \lean{Controls.lean} compile with
+exit code 0 (each about 13--20\,s once upstream's oleans are cached; two harmless deprecation warnings). \texttt{\#print axioms} reports $\{$\lean{propext}, \lean{Classical.choice},
 \lean{Quot.sound}$\}$ for every theorem above and for upstream's \lean{universal_energy_minimum}. A planted \lean{sorry} and a planted axiom
-in the same audit file are both flagged (\lean{sorryAx}, \lean{ctl_cheat}). There is no \lean{sorry} or \lean{native_decide} in the shipped files.
-\item \textbf{Preregistration.} D1b and D2 were preregistered with kill criteria before their Lean files were written
-(\texttt{results/discovery/D1b,D2/preregistration.json}). D1 was preregistered only through the proposal document
-(\texttt{docs/DISCOVERY\_PROPOSAL\_2026-10-10.md}), which assigned it prior probability about 85\%.
-\item \textbf{Independent verification.} D1/D1b and D2 were each re-verified by a separate AI-agent instance that recompiled the files and
-wrote its own axiom audit, controls and numerics. Both verdicts were CONFIRMED\_WITH\_CORRECTIONS, and all corrections were wording or scope,
-now applied. The verifiers' extra controls included a kernel proof that $\mathrm{riesz}_{-2}$ ($t\mapsto t$) is \emph{not} admissible, and
-a check that the D1b proof cannot pass its only $s$-dependent step at $s=2$.
-\item \textbf{Numerics} (verifier code, mpmath; closed forms agree with direct sums to about $10^{-7}$). Table~\ref{tab:num}: the triangular
+in the same audit file are both flagged (\lean{sorryAx}, \lean{ctl_cheat}). There is no \lean{sorry}, \lean{axiom} or \lean{native_decide} in the four proof files; \lean{Axioms.lean} contains only the two planted
+controls.
+\item \textbf{Preregistration.} D1b and D2 had preregistrations with kill criteria committed before their Lean files (3--4 minutes earlier,
+per git log; commit order is the only evidence of timing; \texttt{results/discovery/D1b,D2/preregistration.json}). D1 was not preregistered:
+the proposal document (\texttt{docs/DISCOVERY\_PROPOSAL\_2026-10-10.md}), which assigned it a prior of about 85\%, was committed together
+with its Lean file.
+\item \textbf{Re-verification.} D1/D1b and D2 were each re-verified by a separate instance of the same AI model (producer $\neq$ verifier),
+which recompiled the files and wrote its own axiom audit, controls and numerics. Both verdicts were CONFIRMED\_WITH\_CORRECTIONS. The
+corrections were wording and scope, plus (D2) adding the verifier's lemmas \lean{scaled_density}, \lean{attained} and \lean{unscaled_false},
+which no second party wrote or reviewed line by line. The final \lean{AnyDensity.lean} and \lean{Controls.lean} were recompiled with clean
+axioms by the producer and by a pre-publication referee (another separate instance), but not re-examined by the D2 verifier. The verifiers' controls also included a check that the D1b proof cannot pass its only $s$-dependent step at $s=2$
+(scratch file, not shipped).
+\item \textbf{Numerics} (verifier code, mpmath; for the Riesz rows, closed forms agree with direct sums to about $10^{-7}$; the referee
+reproduced every row independently). Table~\ref{tab:num}: the triangular
 lattice beats the square lattice at equal density in every case, and for Riesz $s=4$ the ratio $0.959605$ does not depend on $\rho$, as
 homogeneity predicts.
 \end{itemize}
@@ -157,9 +170,13 @@ $t^{-3}$ ($s=6$) & 1 & 4.1412565472 & 4.6589136156 & 0.5177\\
 $e^{-t}$ & 0.5 & 0.60238788592 & 0.61630926604 & $1.39\times10^{-2}$\\
 $e^{-t}$ & 2 & 5.2831853119385 & 5.2831853744169 & $6.25\times10^{-8}$\\
 $e^{-t}$ & 4 & 11.566370614359172955 & 11.566370614359173314 & $3.59\times10^{-16}$\\
+$t^{-2}$ ($s=4$) & 0.5 & 1.445835 & 1.506699 & ratio 0.959605\\
+$t^{-2}$ ($s=4$) & 2 & 23.13337 & 24.10718 & ratio 0.959605\\
+$t^{-2}$ ($s=4$) & 4 & 92.53347 & 96.42874 & ratio 0.959605\\
 \bottomrule
 \end{tabular}
-\caption{Per-point lattice energies $\sum_{y\in L\setminus0}g(|y|^2)$ at density $\rho$ (independent verifier numerics). At $\rho=4$ the
+\caption{Per-point lattice energies $\sum_{y\in L\setminus0}g(|y|^2)$ at density $\rho$, with $L=\rho^{-1/2}L_1$ and $L_1$ the covolume-one
+triangular or square lattice (verifier numerics, reproduced by the referee). At $\rho=4$ the
 Gaussian gap is below double precision, and a float64 run misreports the order; the 60-digit run resolves it.}\label{tab:num}
 \end{table}
 
@@ -169,16 +186,18 @@ Gaussian gap is below double precision, and a float64 run misreports the order; 
 checked that it is accepted by Comparator, with clean axioms, under the pinned toolchain. Its statement has been audited by AI agents, not by a
 human expert.
 \item The Cohn--Kumar conjecture in its per-potential form (a sharp auxiliary function for each potential) is not established, upstream or here.
-\item For $0<s\le2$, D1 only says $E(C)=\infty$; renormalised Riesz and Coulomb energies are treated in the upstream manuscript, not here.
+\item For $0<s\le2$, D1 only says $E(C)=\infty$; renormalised logarithmic ($s=0$) and Riesz ($0<s<2$) energies are treated in the upstream manuscript, not here;
+neither treats $s=2$.
 \item Closed versus open disks in the energy definition was not analysed.
 \item Other admissible families (Yukawa, $e^{-\kappa\sqrt t}/\sqrt t$) were not attempted. They need complete monotonicity of compositions,
 which current Mathlib does not offer in usable form.
 \end{enumerate}
 
-\paragraph{Reproducibility.} Lean sources: \texttt{Riesz.lean}, \texttt{RieszFinite.lean}, \texttt{AnyDensity.lean} and \texttt{Axioms.lean} in
-\texttt{formal\_cert/Triangular/} (sha256 in the bundle manifest). Upstream: openai/math commit \texttt{adc7f124}, unchanged at \texttt{fd4aeeb2} for the files used. Toolchain: Lean 4.34.1, Mathlib
-\texttt{d13f23b7}. Compiler driver: \texttt{scripts/certified\_numerics/lean\_pinned.py}. Verification reports and numerics scripts:
-\texttt{results/discovery/}. Repository: \url{https://github.com/xaviercallens/AutoevolveAI}, branch \texttt{worktree-openai-math-discovery}.
+\paragraph{Reproducibility.} Lean sources: \lean{Riesz.lean}, \lean{RieszFinite.lean}, \lean{AnyDensity.lean}, \lean{Controls.lean} and \lean{Axioms.lean} in
+\lean{formal_cert/Triangular/} (sha256 in the bundle's \texttt{MANIFEST.json}). Upstream: \mbox{openai/math} commit \texttt{adc7f124}, unchanged at \texttt{fd4aeeb2} for the files used. Toolchain: Lean 4.34.1, Mathlib
+\texttt{d13f23b7}. Compiler driver: \lean{scripts/certified_numerics/lean_pinned.py}. Verification reports and numerics scripts:
+\lean{results/discovery/}. Repository: \url{https://github.com/xaviercallens/AutoevolveAI}, Lean sources at commit
+\texttt{9eb1773f0e7b2bc3\allowbreak 94d4b685df29cf1f\allowbreak 88327f49}.
 Method: SocrateAI-Scientific-Elenchus (tiered hypotheses with predictions and kill criteria)~\cite{elenchus}.
 
 \paragraph{AI use.} The Lean proofs, audit and text were produced by AI agents (Claude) under the author's direction; the verification runs
@@ -187,16 +206,16 @@ were separate agent instances. The author takes responsibility for the claims as
 \begin{thebibliography}{99}
 \bibitem{oai} OpenAI, Universal optimality of the triangular lattice, OpenAI Math Release preprint, September 23, 2026,
 \url{https://github.com/openai/math}.
-\bibitem{oaicert} OpenAI, An atomic certificate for triangular-lattice universal optimality, OpenAI Math Release preprint, September 26, 2026.
+\bibitem{oaicert} OpenAI, An atomic certificate for triangular-lattice universal optimality, OpenAI Math Release preprint, September 26, 2026, \url{https://github.com/openai/math}.
 \bibitem{ck} H.~Cohn, A.~Kumar, Universally optimal distribution of points on spheres, J.\ Amer.\ Math.\ Soc.\ 20 (2007) 99--148,
 doi:10.1090/S0894-0347-06-00546-7.
 \bibitem{ckmrv} H.~Cohn, A.~Kumar, S.~D.~Miller, D.~Radchenko, M.~Viazovska, Universal optimality of the $E_8$ and Leech lattices and
 interpolation formulas, Ann.\ of Math.\ 196 (2022) 983--1082, doi:10.4007/annals.2022.196.3.3.
-\bibitem{rankin} R.~A.~Rankin, A minimum problem for the Epstein zeta-function, Proc.\ Glasgow Math.\ Assoc.\ 1 (1953) 149--158.
-\bibitem{cassels} J.~W.~S.~Cassels, On a problem of Rankin about the Epstein zeta-function, Proc.\ Glasgow Math.\ Assoc.\ 4 (1959) 73--80.
-\bibitem{casselsc} J.~W.~S.~Cassels, Corrigendum, Proc.\ Glasgow Math.\ Assoc.\ 6 (1963) 116.
-\bibitem{ennola} V.~Ennola, A lemma about the Epstein zeta-function, Proc.\ Glasgow Math.\ Assoc.\ 6 (1964) 198--201.
-\bibitem{diananda} P.~H.~Diananda, Notes on two lemmas concerning the Epstein zeta-function, Proc.\ Glasgow Math.\ Assoc.\ 6 (1964) 202--204.
+\bibitem{rankin} R.~A.~Rankin, A minimum problem for the Epstein zeta-function, Proc.\ Glasgow Math.\ Assoc.\ 1 (1953) 149--158, doi:10.1017/S2040618500035668.
+\bibitem{cassels} J.~W.~S.~Cassels, On a problem of Rankin about the Epstein zeta-function, Proc.\ Glasgow Math.\ Assoc.\ 4 (1959) 73--80, doi:10.1017/S2040618500033906.
+\bibitem{casselsc} J.~W.~S.~Cassels, Corrigendum, Proc.\ Glasgow Math.\ Assoc.\ 6 (1963) 116, doi:10.1017/S2040618500034833.
+\bibitem{ennola} V.~Ennola, A lemma about the Epstein zeta-function, Proc.\ Glasgow Math.\ Assoc.\ 6 (1964) 198--201, doi:10.1017/S2040618500035024.
+\bibitem{diananda} P.~H.~Diananda, Notes on two lemmas concerning the Epstein zeta-function, Proc.\ Glasgow Math.\ Assoc.\ 6 (1964) 202--204, doi:10.1017/S2040618500035036.
 \bibitem{montgomery} H.~L.~Montgomery, Minimal theta functions, Glasgow Math.\ J.\ 30 (1988) 75--85, doi:10.1017/S0017089500007047.
 \bibitem{hardin} D.~P.~Hardin, N.~J.~Tenpas, Universally optimal periodic configurations in the plane, Discrete Analysis (2025), Paper No.~26,
 doi:10.19086/da.144978.

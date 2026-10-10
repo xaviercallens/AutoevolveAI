@@ -1,6 +1,6 @@
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.Real.Basic
-import Mathlib.Logic.Basic
+import Mathlib.Basic.Logic.Basic
 
 namespace ANSE.StrongGravity
 

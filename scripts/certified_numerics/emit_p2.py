@@ -77,6 +77,7 @@ def lean_table(name: str, p: int, q: int, S: int, only_check: bool) -> dict[str,
             zs = f"((({n} : ℕ) : ℝ) / (({S} : ℕ) : ℝ))"
             rw = [] if f == 1 else [f"  have hz : {zs} = {zc} := by norm_num", "  rw [hz] at h"]
             out += [
+                *(["-- resource limit only (no effect on soundness): the fine table's prefixes are large", "set_option maxHeartbeats 8000000 in"] if f != 1 else []),
                 f"theorem chi_{lab} : (⟨({L} : ℚ) / ({DS} : ℚ), ({U} : ℚ) / ({DS} : ℚ)⟩ : Iv).mem (chi {Om} {zc}) := by",
                 f"  have h := chi_bounds (p := {p}) (q := {q}) (S := {S}) (D := {D}) (n := {n}) (by norm_num) (by norm_num) (by norm_num) (by norm_num)",
                 f"    (tbl.take {n + 1}) (by decide +kernel) (checkFrom_take {p} {q} {S} {D} tbl 0 {n + 1} tbl_check)",
@@ -125,7 +126,7 @@ def lean_table(name: str, p: int, q: int, S: int, only_check: bool) -> dict[str,
             f"    have hz : ((((({Z2000[0]} : ℚ) / 2000) : ℚ)) : ℝ) = {zc} := by norm_num",
             "    rw [hz] at h2",
             "    exact h2",
-            "  exact wV_bounds (by positivity) (by rw [div_le_one (by positivity)]; norm_num) (by positivity) (by positivity) (by positivity)",
+            "  exact wV_bounds (by positivity) " + ("(by norm_num)" if p == q else "(by rw [div_le_one (by positivity)]; norm_num)") + " (by positivity) (by positivity) (by positivity)",
             "    (by positivity) (by positivity) hc hi hlo hhi", ""]
         rep["wV"] = [f"{wl}/{WD}", f"{wh}/{WD}"]
     out.append(f"end BAOCert.P2.T_{name}")

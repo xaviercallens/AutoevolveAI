@@ -31,6 +31,9 @@ def job(name: str) -> tuple[str, int]:
 def main() -> int:
     workers = int(sys.argv[1]) if len(sys.argv) > 1 else 4
     names = [e[0] for e in json.loads((REPO / "scripts/certified_numerics/p2_edges.json").read_text())["edges"]] + ["FitFine"]
+    plan = RES / "refine_plan.json"
+    if plan.exists():
+        names += json.loads(plan.read_text())["new_edges"]
     with ThreadPoolExecutor(max_workers=workers) as ex:
         for name, rc in ex.map(job, names):
             print(name, "rc", rc, flush=True)

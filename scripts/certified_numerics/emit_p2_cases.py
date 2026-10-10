@@ -132,16 +132,38 @@ def tables() -> dict[str, dict]:
     return out
 
 
-def iv_from(t: dict, kind: str, n: int) -> tuple[Fraction, Fraction]:
+class RF(Fraction):
+    """A Fraction that remembers the unreduced 'num/den' text it was read from, so that the Lean literal written into
+    a case file is syntactically the one stated by the table theorem (reduced and unreduced literals are equal
+    rationals but do not unify syntactically)."""
+
+    raw: str
+
+    def __new__(cls, s: str) -> "RF":
+        n, d = s.split("/")
+        obj = super().__new__(cls, int(n), int(d))
+        obj.raw = s
+        return obj
+
+
+def iv_from(t: dict, kind: str, n: int) -> tuple[RF, RF]:
     if kind == "w":
         a, b = t["wV"]
     else:
         a, b = t["z"][ZLAB[n]][kind]
-    return Fraction(*map(int, a.split("/"))), Fraction(*map(int, b.split("/")))
+    return RF(a), RF(b)
+
+
+def lit(x: Fraction) -> str:
+    raw = getattr(x, "raw", None)
+    if raw is not None:
+        n, d = raw.split("/")
+        return f"({n} : ℚ) / ({d} : ℚ)"
+    return q(x)
 
 
 def iv_lean(I) -> str:
-    return f"⟨{q(I[0])}, {q(I[1])}⟩"
+    return f"⟨{lit(I[0])}, {lit(I[1])}⟩"
 
 
 def round_down(x: Fraction, digits: int = 4) -> Fraction:
@@ -241,7 +263,7 @@ def write_fit(data_name: str | None) -> None:
              f"  have hhi : ((cEx {mod}.Pent {mod}.dR (299792458 / 10154300)).ieval (envOf envs)).hi ≤ {q(hi)} := by decide +kernel",
              "  have hlo' := (Rat.cast_le (K := ℝ)).2 hlo",
              "  have hhi' := (Rat.cast_le (K := ℝ)).2 hhi",
-             f"  exact ⟨by push_cast at hlo' ⊢; exact hlo'.trans hm.1, by push_cast at hhi' ⊢; exact hm.2.trans hhi'⟩", "",
+             "  exact ⟨hlo'.trans hm.1, hm.2.trans hhi'⟩", "",
              f"end BAOCert.P2.{name}"]
     (LEAN_DIR / f"{name}.lean").write_text("\n".join(lines) + "\n", encoding="utf-8")
     rep = {"case": name, "interval_exact": [str(I[0]), str(I[1])], "stated": [str(lo), str(hi)], "stated_float": [float(lo), float(hi)]}
@@ -295,6 +317,58 @@ def write_slab_file(rep: dict, ta: str, tb: str, a: tuple[int, int], b: tuple[in
     return name
 
 
+def refine() -> int:
+    """Amendment A2: recursive bisection of the non-excluded preregistered slabs (min width 1/400)."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from emit_p2 import lean_table  # noqa: E402
+
+    prereg = json.loads((RES / "preregistration.json").read_text())
+    U_fit = Fraction(json.loads((RES / "case_Fit.json").read_text())["stated"][1])
+    T = U_fit + 25
+    elist = json.loads((REPO / "scripts/certified_numerics/p2_edges.json").read_text())["edges"]
+    edges = {Fraction(p, q_): n for n, p, q_ in elist}
+    raw = {n: (p, q_) for n, p, q_ in elist}
+    d, P = load_PD("Data")
+
+    def edge(x: Fraction) -> str:
+        if x not in edges:
+            name = f"R{x.numerator}_{x.denominator}"
+            if not (LEAN_DIR / f"T_{name}.lean").exists():
+                lean_table(name, x.numerator, x.denominator, 2000, False)
+            edges[x] = name
+            raw[name] = (x.numerator, x.denominator)
+        return edges[x]
+
+    leaves, new_edges = [], set()
+    stack = [(Fraction(str(a)), Fraction(str(b))) for a, b in prereg["hypotheses"]["slabs"]]
+    while stack:
+        a, b = stack.pop()
+        known = a in edges and b in edges
+        ta, tb = edge(a), edge(b)
+        if not known:
+            new_edges.update({ta, tb} - {n for n, _, _ in json.loads((REPO / "scripts/certified_numerics/p2_edges.json").read_text())["edges"]})
+        name = f"Ref_{ta}_{tb}"
+        rep = slab_case(name, ta, tb, raw[ta], raw[tb], d, P)
+        excluded = rep["A_lo_positive"] and Fraction(rep["L"]) > T
+        if excluded or b - a <= Fraction(1, 400):
+            if excluded:
+                write_slab_file(rep, ta, tb, raw[ta], raw[tb])
+            rep.pop("env")
+            rep["excluded"] = bool(excluded)
+            leaves.append(rep)
+        else:
+            m = (a + b) / 2
+            stack += [(a, m), (m, b)]
+    leaves.sort(key=lambda r: Fraction(r["a"]))
+    (RES / "refine_plan.json").write_text(json.dumps({"threshold": str(T), "U_fit": str(U_fit), "leaves": leaves,
+                                                      "new_edges": sorted(new_edges)}, indent=1) + "\n")
+    exc = [r for r in leaves if r["excluded"]]
+    print(json.dumps({"threshold": float(T), "leaves": len(leaves), "excluded": len(exc), "new_edges": len(new_edges),
+                      "not_excluded": [[r["a"], r["b"], r["L_float"]] for r in leaves if not r["excluded"]]}, indent=1))
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -305,23 +379,28 @@ def main() -> int:
     ff = sub.add_parser("fit")
     ff.add_argument("--data")
     sub.add_parser("slabs")
+    sub.add_parser("refine")
     args = ap.parse_args()
+    if args.cmd == "refine":
+        return refine()
     if args.cmd == "data":
         write_data(args.name, args.tamper_row, args.tamper_sigma)
     elif args.cmd == "fit":
         write_fit(args.data)
     elif args.cmd == "slabs":
         prereg = json.loads((RES / "preregistration.json").read_text())
-        edges = {Fraction(p, q_): n for n, p, q_ in json.loads((REPO / "scripts/certified_numerics/p2_edges.json").read_text())["edges"]}
+        elist = json.loads((REPO / "scripts/certified_numerics/p2_edges.json").read_text())["edges"]
+        edges = {Fraction(p, q_): n for n, p, q_ in elist}
+        raw = {n: (p, q_) for n, p, q_ in elist}
         d, P = load_PD("Data")
         slabs = [[Fraction(str(a)), Fraction(str(b))] for a, b in prereg["hypotheses"]["slabs"]] + [[Fraction(29, 100), Fraction(30, 100)], [Fraction(1), Fraction(1)]]
         out = []
         for a, b in slabs:
             ta, tb = edges[a], edges[b]
             name = "EdS" if a == b == 1 else f"Slab_{ta}_{tb}"
-            rep = slab_case(name, ta, tb, (a.numerator, a.denominator), (b.numerator, b.denominator), d, P)
+            rep = slab_case(name, ta, tb, raw[ta], raw[tb], d, P)
             if rep["A_lo_positive"]:
-                write_slab_file(rep, ta, tb, (a.numerator, a.denominator), (b.numerator, b.denominator))
+                write_slab_file(rep, ta, tb, raw[ta], raw[tb])
             rep.pop("env")
             out.append(rep)
             print(name, rep["L_float"])

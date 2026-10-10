@@ -179,7 +179,7 @@ theorem wV_z0295 : (⟨(227432269060185 : ℚ) / (1000000000000000 : ℚ), (2275
     have hz : (((((590 : ℚ) / 2000) : ℚ)) : ℝ) = (((590 : ℕ) : ℝ) / ((2000 : ℕ) : ℝ)) := by norm_num
     rw [hz] at h2
     exact h2
-  exact wV_bounds (by positivity) (by rw [div_le_one (by positivity)]; norm_num) (by positivity) (by positivity) (by positivity)
+  exact wV_bounds (by positivity) (by norm_num) (by positivity) (by positivity) (by positivity)
     (by positivity) (by positivity) hc hi hlo hhi
 
 end BAOCert.P2.T_O100

@@ -387,6 +387,8 @@ def tbl : List (ℕ × ℕ) := g0 ++ g1 ++ g2 ++ g3 ++ g4 ++ g5 ++ g6 ++ g7 ++ g
 
 theorem tbl_check : checkFrom 29743 100000 20000 1000000000000 0 tbl = true := by decide +kernel
 
+-- resource limit only (no effect on soundness): the fine table's prefixes are large
+set_option maxHeartbeats 8000000 in
 theorem chi_z0295 : (⟨(5494773466858866 : ℚ) / (20000000000000000 : ℚ), (5494912329447930 : ℚ) / (20000000000000000 : ℚ)⟩ : Iv).mem (chi (((29743 : ℕ) : ℝ) / ((100000 : ℕ) : ℝ)) (((590 : ℕ) : ℝ) / ((2000 : ℕ) : ℝ))) := by
   have h := chi_bounds (p := 29743) (q := 100000) (S := 20000) (D := 1000000000000) (n := 5900) (by norm_num) (by norm_num) (by norm_num) (by norm_num)
     (tbl.take 5901) (by decide +kernel) (checkFrom_take 29743 100000 20000 1000000000000 tbl 0 5901 tbl_check)
@@ -407,6 +409,8 @@ theorem invE_z0295 : (⟨(861137416836 : ℚ) / (1000000000000 : ℚ), (86113741
   have e2 : (((861137416837 : ℚ) / (1000000000000 : ℚ) : ℚ) : ℝ) = (((861137416837 : ℕ) : ℝ) / ((1000000000000 : ℕ) : ℝ)) := by norm_num
   exact ⟨by rw [e1]; exact h.1, by rw [e2]; exact h.2⟩
 
+-- resource limit only (no effect on soundness): the fine table's prefixes are large
+set_option maxHeartbeats 8000000 in
 theorem chi_z0510 : (⟨(8980093744124392 : ℚ) / (20000000000000000 : ℚ), (8980332711532688 : ℚ) / (20000000000000000 : ℚ)⟩ : Iv).mem (chi (((29743 : ℕ) : ℝ) / ((100000 : ℕ) : ℝ)) (((1020 : ℕ) : ℝ) / ((2000 : ℕ) : ℝ))) := by
   have h := chi_bounds (p := 29743) (q := 100000) (S := 20000) (D := 1000000000000) (n := 10200) (by norm_num) (by norm_num) (by norm_num) (by norm_num)
     (tbl.take 10201) (by decide +kernel) (checkFrom_take 29743 100000 20000 1000000000000 tbl 0 10201 tbl_check)
@@ -427,6 +431,8 @@ theorem invE_z0510 : (⟨(761032601904 : ℚ) / (1000000000000 : ℚ), (76103260
   have e2 : (((761032601905 : ℚ) / (1000000000000 : ℚ) : ℚ) : ℝ) = (((761032601905 : ℕ) : ℝ) / ((1000000000000 : ℕ) : ℝ)) := by norm_num
   exact ⟨by rw [e1]; exact h.1, by rw [e2]; exact h.2⟩
 
+-- resource limit only (no effect on soundness): the fine table's prefixes are large
+set_option maxHeartbeats 8000000 in
 theorem chi_z0706 : (⟨(11796466787192679 : ℚ) / (20000000000000000 : ℚ), (11796789403948199 : ℚ) / (20000000000000000 : ℚ)⟩ : Iv).mem (chi (((29743 : ℕ) : ℝ) / ((100000 : ℕ) : ℝ)) (((1412 : ℕ) : ℝ) / ((2000 : ℕ) : ℝ))) := by
   have h := chi_bounds (p := 29743) (q := 100000) (S := 20000) (D := 1000000000000) (n := 14120) (by norm_num) (by norm_num) (by norm_num) (by norm_num)
     (tbl.take 14121) (by decide +kernel) (checkFrom_take 29743 100000 20000 1000000000000 tbl 0 14121 tbl_check)
@@ -447,6 +453,8 @@ theorem invE_z0706 : (⟨(677383258600 : ℚ) / (1000000000000 : ℚ), (67738325
   have e2 : (((677383258601 : ℚ) / (1000000000000 : ℚ) : ℚ) : ℝ) = (((677383258601 : ℕ) : ℝ) / ((1000000000000 : ℕ) : ℝ)) := by norm_num
   exact ⟨by rw [e1]; exact h.1, by rw [e2]; exact h.2⟩
 
+-- resource limit only (no effect on soundness): the fine table's prefixes are large
+set_option maxHeartbeats 8000000 in
 theorem chi_z0934 : (⟨(14685438720179756 : ℚ) / (20000000000000000 : ℚ), (14685846800417121 : ℚ) / (20000000000000000 : ℚ)⟩ : Iv).mem (chi (((29743 : ℕ) : ℝ) / ((100000 : ℕ) : ℝ)) (((1868 : ℕ) : ℝ) / ((2000 : ℕ) : ℝ))) := by
   have h := chi_bounds (p := 29743) (q := 100000) (S := 20000) (D := 1000000000000) (n := 18680) (by norm_num) (by norm_num) (by norm_num) (by norm_num)
     (tbl.take 18681) (by decide +kernel) (checkFrom_take 29743 100000 20000 1000000000000 tbl 0 18681 tbl_check)
@@ -467,6 +475,8 @@ theorem invE_z0934 : (⟨(591919781315 : ℚ) / (1000000000000 : ℚ), (59191978
   have e2 : (((591919781316 : ℚ) / (1000000000000 : ℚ) : ℚ) : ℝ) = (((591919781316 : ℕ) : ℝ) / ((1000000000000 : ℕ) : ℝ)) := by norm_num
   exact ⟨by rw [e1]; exact h.1, by rw [e2]; exact h.2⟩
 
+-- resource limit only (no effect on soundness): the fine table's prefixes are large
+set_option maxHeartbeats 8000000 in
 theorem chi_z1321 : (⟨(18794681414802300 : ℚ) / (20000000000000000 : ℚ), (18795205840426801 : ℚ) / (20000000000000000 : ℚ)⟩ : Iv).mem (chi (((29743 : ℕ) : ℝ) / ((100000 : ℕ) : ℝ)) (((2642 : ℕ) : ℝ) / ((2000 : ℕ) : ℝ))) := by
   have h := chi_bounds (p := 29743) (q := 100000) (S := 20000) (D := 1000000000000) (n := 26420) (by norm_num) (by norm_num) (by norm_num) (by norm_num)
     (tbl.take 26421) (by decide +kernel) (checkFrom_take 29743 100000 20000 1000000000000 tbl 0 26421 tbl_check)
@@ -487,6 +497,8 @@ theorem invE_z1321 : (⟨(475574401919 : ℚ) / (1000000000000 : ℚ), (47557440
   have e2 : (((475574401920 : ℚ) / (1000000000000 : ℚ) : ℚ) : ℝ) = (((475574401920 : ℕ) : ℝ) / ((1000000000000 : ℕ) : ℝ)) := by norm_num
   exact ⟨by rw [e1]; exact h.1, by rw [e2]; exact h.2⟩
 
+-- resource limit only (no effect on soundness): the fine table's prefixes are large
+set_option maxHeartbeats 8000000 in
 theorem chi_z1484 : (⟨(20279130785876203 : ℚ) / (20000000000000000 : ℚ), (20279694817175477 : ℚ) / (20000000000000000 : ℚ)⟩ : Iv).mem (chi (((29743 : ℕ) : ℝ) / ((100000 : ℕ) : ℝ)) (((2968 : ℕ) : ℝ) / ((2000 : ℕ) : ℝ))) := by
   have h := chi_bounds (p := 29743) (q := 100000) (S := 20000) (D := 1000000000000) (n := 29680) (by norm_num) (by norm_num) (by norm_num) (by norm_num)
     (tbl.take 29681) (by decide +kernel) (checkFrom_take 29743 100000 20000 1000000000000 tbl 0 29681 tbl_check)
@@ -507,6 +519,8 @@ theorem invE_z1484 : (⟨(435968730406 : ℚ) / (1000000000000 : ℚ), (43596873
   have e2 : (((435968730407 : ℚ) / (1000000000000 : ℚ) : ℚ) : ℝ) = (((435968730407 : ℕ) : ℝ) / ((1000000000000 : ℕ) : ℝ)) := by norm_num
   exact ⟨by rw [e1]; exact h.1, by rw [e2]; exact h.2⟩
 
+-- resource limit only (no effect on soundness): the fine table's prefixes are large
+set_option maxHeartbeats 8000000 in
 theorem chi_z2330 : (⟨(26318935983824944 : ℚ) / (20000000000000000 : ℚ), (26319643449635668 : ℚ) / (20000000000000000 : ℚ)⟩ : Iv).mem (chi (((29743 : ℕ) : ℝ) / ((100000 : ℕ) : ℝ)) (((4660 : ℕ) : ℝ) / ((2000 : ℕ) : ℝ))) := by
   have h := chi_bounds (p := 29743) (q := 100000) (S := 20000) (D := 1000000000000) (n := 46600) (by norm_num) (by norm_num) (by norm_num) (by norm_num)
     (tbl.take 46601) (by decide +kernel) (checkFrom_take 29743 100000 20000 1000000000000 tbl 0 46601 tbl_check)

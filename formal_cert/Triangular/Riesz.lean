@@ -45,7 +45,9 @@ theorem riesz_admissible {s : ℝ} (hs : 0 < s) : AdmissiblePotential (riesz s) 
         rw [← mul_assoc, ← mul_assoc, h1, one_mul]
 
 /-- **Riesz optimality.** For every `s > 0` the triangular lattice minimises the Riesz `s`-energy among all locally
-finite planar configurations of density one (energies in `[0, ∞]`; for `s ≤ 2` both sides are typically `∞`). -/
+finite planar configurations of density one (energies in `[0, ∞]`). For `s ≤ 2` the lattice energy is `∞`, so the
+statement then only says `energy C = ∞`; it is informative for `s > 2`, where the lattice energy is finite
+(`latticeEnergy_riesz_lt_top`). -/
 theorem triangular_riesz_optimal {s : ℝ} (hs : 0 < s) (C : Set Plane) (hC : LocallyFinite C) (hd : DensityOne C) :
     latticeEnergy (riesz s) ≤ energy (riesz s) C :=
   (universal_energy_minimum (riesz s) C (riesz_admissible hs) hC hd).1

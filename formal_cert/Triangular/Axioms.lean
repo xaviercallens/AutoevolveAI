@@ -12,6 +12,10 @@ import Triangular.AnyDensity
 #print axioms OAI.SevenEighths.LatticeSummability.summable_normForm_neg_rpow
 #print axioms TriangularDensity.universal_any_density
 #print axioms TriangularDensity.riesz_any_density
+#print axioms TriangularDensity.scaled_density
+#print axioms TriangularDensity.attained
+#print axioms TriangularDensity.triangular_optimal_any_density
+#print axioms TriangularDensity.unscaled_false
 
 theorem ctl_sorry : TriangularRiesz.riesz 1 1 = 0 := by sorry
 axiom ctl_cheat : False

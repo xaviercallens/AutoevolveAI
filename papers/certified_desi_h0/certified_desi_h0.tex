@@ -9,8 +9,6 @@
 \input{gen_numbers.tex}
 \emergencystretch=3em
 
-\newtheorem{theorem}{Theorem}
-
 \title{Kernel-checked constraints from DESI DR2 BAO in Lean 4:\\
 certified exclusions of $\Omega_m$ bands and of $H_0\ge 73$\,km\,s$^{-1}$\,Mpc$^{-1}$ with a BBN prior}
 \author{Xavier Callens (SocrateAI Lab)}
@@ -21,34 +19,36 @@ certified exclusions of $\Omega_m$ bands and of $H_0\ge 73$\,km\,s$^{-1}$\,Mpc$^
 \maketitle
 
 \begin{abstract}
-We turn two standard cosmological statements into theorems checked by the Lean 4 kernel, with the solvers kept outside the
+We turn two standard cosmological statements into theorems checked by the Lean 4 kernel, with solvers and minimisers kept outside the
 trusted base. For flat $\Lambda$CDM with radiation neglected and the Gaussian DESI DR2 BAO likelihood~\cite{desi}:
-(i) the BAO $\chi^2$ exceeds $\Thr$ for every $\Omega_m\in[0,0.255]\cup[0.35,1]$ and every value of the BAO scale
-$h r_d$, and is at most $\FitHi$ at a specific point, so these bands are excluded at $\Delta\chi^2>25$ (about $4.6\sigma$ for two parameters);
-Einstein--de Sitter has $\chi^2\ge\EdSBound$ at every $h r_d$.
-(ii) With the BBN prior $\omega_b=0.02218\pm0.00055$ and the Aubourg et al.\ fitting formula for the sound horizon, the combined $\chi^2$
-exceeds $\UTot+25$ for every $\Omega_m\in[0,1]$, every $\omega_b$ and every $h\ge0.73$, while it is at most $\UTot$ at $h=\HStar$:
-a certified form of the known tension between BAO+BBN and $H_0\approx73$ (the certified statement is conservative: an independent floating computation puts the $\Delta\chi^2=25$ crossing at $H_0\approx71.6$ and $\Delta\chi^2\approx54.6$ at $H_0=73$). The proofs combine a rational interval evaluator with a soundness
-theorem, monotonicity in the parameters, certified bounds of $\log$, $\exp$ and real powers from Mathlib's series estimates, and
-integer certificates closed by \texttt{decide +kernel}; only the axioms \texttt{propext}, \texttt{Classical.choice} and \texttt{Quot.sound} are used.
-The preregistered slab layout of (i) failed, and a disclosed post-hoc refinement was needed. These are certified versions of
-results that are already known numerically; there is no new physics here.
+(i) the BAO $\chi^2$ exceeds $\Thr$ for every $\Omega_m\in[0,0.255]\cup[0.35,1]$ and every value of the BAO scale $h r_d$, while it is at most $\FitHi$ at a
+specific point, so these bands are excluded at $\Delta\chi^2>25$ with $h r_d$ profiled ($5\sigma$ for one parameter of interest under Wilks' theorem; about $4.6\sigma$
+if read as a joint two-parameter region); Einstein--de Sitter has $\chi^2\ge\EdSBound$ at every $h r_d$.
+(ii) With the BBN prior $\omega_b=0.02218\pm0.00055$ (DESI DR2 eq.~14~\cite{desi,bbn}) and the Aubourg et al.\ fitting formula for the sound horizon~\cite{aubourg},
+the combined $\chi^2$ exceeds $\UTot+25$ for every $\Omega_m\in[0,1]$, every real $\omega_b$ and every $h\ge0.73$, while it is at most $\UTot$ at $h\approx\HStar$:
+a certified, conservative form of the known tension between BAO+BBN and the distance-ladder value $H_0\approx73$~\cite{shoes}.
+The proofs use a rational interval evaluator with a soundness theorem, monotonicity in the parameters, bounds of $\log$, $\exp$ and real powers
+derived from Mathlib's series estimates, and integer certificates closed by \texttt{decide +kernel}; only the axioms \texttt{propext},
+\texttt{Classical.choice} and \texttt{Quot.sound} are used. The preregistered slab layout of (i) failed and a disclosed post-hoc refinement was needed.
+These are certified versions of results already known numerically; there is no new physics here.
 \end{abstract}
 
 \section{Why certify a likelihood statement}
-Statements such as ``$\Omega_m>0.35$ is excluded'' or ``BAO+BBN disfavour $H_0=73$'' are normally established by floating-point
-minimisation over nuisance parameters. A kernel-checked version removes the integrator, the minimiser and the floating-point arithmetic from
-the trusted base: if the theorem compiles, it holds for the stated model and data, for \emph{every} value of the profiled parameters, not only
-those the minimiser visited. This continues a pilot~\cite{p1} that certified BAO distances only. The model and the likelihood remain modelling inputs
-that a reader must accept or not; the theorems certify the computation, not the cosmology.
+Statements such as ``$\Omega_m>0.35$ is excluded'' or ``BAO+BBN disfavour $H_0=73$'' are normally established by floating-point minimisation over
+nuisance parameters. A kernel-checked version removes the integrator, the minimiser and the floating-point arithmetic from the trusted base: if the
+theorem compiles, it holds for the stated model and data for \emph{every} value of the profiled parameters, not only those a minimiser visited. This
+continues a pilot that certified BAO distances only~\cite{p1}. The model and the likelihood remain inputs that a reader must accept or not; the theorems
+certify the computation, not the cosmology.
 
 \section{Model, data and statements}
 $E(z)=\sqrt{\Omega_m(1+z)^3+1-\Omega_m}$ (flat $\Lambda$CDM, radiation off), $\chi(z)=\int_0^z dz'/E$. The DESI DR2 BAO data vector
-(13 points at $z=0.295,\dots,2.33$) and its block-diagonal covariance $C$ are read as exact rationals; $P=C^{-1}$ is computed exactly and the identity
-$PC=I$ over the full $13\times13$ matrices is checked by the kernel. Predictions are $K\chi$, $K/E$ and $K(z\chi^2/E)^{1/3}$ for $D_M/r_d$, $D_H/r_d$, $D_V/r_d$,
-with $K=c/(100\,h r_d)$. For (ii), $r_d=55.154\,e^{-72.3(\omega_\nu+0.0006)^2}/(\omega_{cb}^{0.25351}\omega_b^{0.12807})$\,Mpc~\cite{aubourg}, $\omega_\nu=0.0107\times0.06$,
-$\omega_{cb}=\Omega_m h^2-\omega_\nu$, exactly as in an earlier floating-point analysis whose Lean skeleton of these definitions (monotonicity of $r_d$ and of $h r_d$)
-we import unchanged. Table~\ref{tab:res} lists every preregistered statement and its verdict.
+(13 measurements at 7 effective redshifts, $z=0.295,\dots,2.33$) and its block-diagonal covariance $C$ are read as exact rationals; $P=C^{-1}$ is computed exactly and the
+identity $PC=I$ over the full $13\times13$ matrices is checked by the kernel. Predictions are $K\chi$, $K/E$ and $K(z\chi^2/E)^{1/3}$ for $D_M/r_d$, $D_H/r_d$, $D_V/r_d$,
+with $K=c/(100\,h r_d)$. For (ii), $r_d=55.154\,e^{-72.3(\omega_\nu+0.0006)^2}/(\omega_{cb}^{\alpha}\omega_b^{\beta})$\,Mpc with $\alpha=0.25351$, $\beta=0.12807$~\cite{aubourg},
+$\omega_\nu=0.0107\times0.06$ and $\omega_{cb}=\Omega_m h^2-\omega_\nu$, exactly as in an earlier floating-point analysis by the author (repository \texttt{AutoevolveAI},
+\path{results/bao_bbn_h0}, with radiation included, which found $H_0=68.57\pm0.60$); we import its Lean skeleton (\path{formal/ANSE/BAO_BBN_H0.lean},
+monotonicity of $r_d$ and of $h r_d$) byte for byte. For comparison, DESI's own BAO+BBN analysis gives $H_0=68.51\pm0.58$~\cite{desi}. Table~\ref{tab:res} lists every
+preregistered statement and its verdict.
 
 \begin{table}[h]\centering\small
 \input{table_results.tex}
@@ -59,49 +59,62 @@ we import unchanged. Table~\ref{tab:res} lists every preregistered statement and
 \paragraph{Distances.} As in~\cite{p1}: $1/E$ is decreasing, so Riemann sums on a grid bound $\chi$; an untrusted program supplies integer bounds of $1/E$ at the grid
 nodes, which the kernel re-checks exactly ($4661$ nodes per parameter value, $46\,601$ for the fit point).
 
-\paragraph{Likelihood.} $\chi^2$ is a quadratic form in the predictions. Writing $K=K_0+t$ for an untrusted centre $K_0$,
-$\chi^2=c'-tB'+t^2A$ with $c'$, $B'$, $A$ polynomials in the base quantities; a rational interval evaluator, proved sound once, bounds them over a box.
-Then $A>0$ gives $\chi^2\ge c'-B'^2/(4A)$ for \emph{every} real $K$, which profiles over $h r_d$ exactly. Centring keeps $c'$ and $B'$ small (an uncentred
-expansion loses $\sim10^2$ to cancellation and makes the bounds vacuous).
+\paragraph{Likelihood.} $\chi^2$ is a quadratic form in the predictions. Writing $K=K_0+t$ for an untrusted centre $K_0$, $\chi^2=c'-tB'+t^2A$ with $c'$, $B'$, $A$ polynomials in
+the base quantities; a rational interval evaluator, proved sound once, bounds them over a box. Then $A>0$ gives $\chi^2\ge c'-B'^2/(4A)$ for \emph{every} real $K$, which
+profiles over $h r_d$ exactly. Centring (preregistration amendment A1, made before any number of this part was computed) keeps $c'$ and $B'$ small; without it, cancellation
+between two terms of size $\sim10^5$ would, by an a priori estimate, cost $\sim10^2$ and make the bounds vacuous.
 
 \paragraph{Parameter slabs.} $\chi$, $1/E$ and $(z\chi^2/E)^{1/3}$ decrease in $\Omega_m$, so tables at the two edges of a slab bound every prediction inside it.
 
-\paragraph{The $H_0$ statement.} For $h\ge0.73$, $h r_d$ increases with $h$ (imported theorem), and $r_d$ decreases with $\omega_{cb}$ and $\omega_b$; hence over a box
-$\Omega_m\in[a,b]$, $\omega_b\in[c,d]$ every admissible $K$ satisfies $K\le K_0:=c/(100\cdot0.73\,r_d(\omega_{cb}(0.73,b),d))$. Centring at $K_0$, if $B'\ge0$
-on the box then $\chi^2(K)\ge c'$ for all $K\le K_0$. The value $r_d$ at the box corner is enclosed by $\exp(c_0-a\log\omega_{cb}-b\log\omega_b)$ with $\log$ bounded by
-Mathlib's series for $\log(1-u)$ after scaling by $2^k$, $\log2$ by Mathlib's $10^{-10}$ bracket, and $\exp$ by Mathlib's Taylor bound; the certified bracket at one
-point is $[\RdLo,\RdHi]$ (relative width $2.3\times10^{-10}$) and contains the Python value $\RdPy$, about $1.1\times10^{-10}$ (relative) from each end. Outside $\omega_b\in\mu\pm7\sigma$ (including $\omega_b\le0$, where $r_d$ is not physical) the prior term alone exceeds $49$, using a kernel-checked proof that the
-BAO $\chi^2$ is non-negative (block positive semidefiniteness of $P$). Outside $\Omega_m\in[0.255,0.35]$ the all-$K$ slab theorems of (i) apply.
-The final theorem is assembled by nested case splits that replay the bisection of the $(\Omega_m,\omega_b)$ band into $\NBoxes$ boxes.
+\paragraph{The $H_0$ statement.} On $\{h:\omega_\nu\le(1-2\alpha)\Omega_m h^2\}$, which contains every box below at $h\ge0.73$, $h r_d$ increases with $h$ (imported theorem), and
+$r_d$ decreases with $\omega_{cb}$ and $\omega_b$. Hence over a box $\Omega_m\in[\Omega_-,\Omega_+]$, $\omega_b\in[\omega_-,\omega_+]$ every admissible $K$ satisfies
+$K\le K_0:=c/(100\cdot0.73\,r_d(\omega_{cb}(0.73,\Omega_+),\omega_+))$. Centring at $K_0$, if $B'\ge0$ on the box then $\chi^2(K)\ge c'$ for all $K\le K_0$. The value of $r_d$ at the
+box corner is enclosed through $\exp(c_0-\alpha\log\omega_{cb}-\beta\log\omega_b)$, with $\log$ bounded by Mathlib's series for $\log(1-u)$ after scaling by $2^k$, $\log2$ by
+Mathlib's $10^{-10}$ bracket, and $\exp$ by Mathlib's Taylor bound. At $(\omega_{cb},\omega_b)=(0.159228,0.02218)$ the certified bracket is $[\RdLo,\RdHi]$ (relative width
+$2.3\times10^{-10}$) and contains the Python value $\RdPy$, within $2.5\times10^{-12}$ of its midpoint. Outside $\omega_b\in\mu\pm7\sigma$ (including $\omega_b\le0$, where $r_d$ is not
+physical) the prior term alone exceeds $49$, using a kernel-checked proof that the BAO $\chi^2$ is non-negative (block positive semidefiniteness of $P$). Outside
+$\Omega_m\in[0.255,0.35]$ the all-$K$ slab theorems of (i) apply. The final theorem is assembled by nested case splits that replay the bisection of the
+$(\Omega_m,\omega_b)$ band into $\NBoxes$ boxes.
 
 \section{Results}
-\paragraph{(i) Matter density.} The interval $[\FitLo,\FitHi]$ for $\chi^2$ at the fit point contains the floating values from the rusty-SUNDIALS BAO crate (through its MCP
-server, $\MCPFit$) and an independent 40-digit computation. Einstein--de Sitter is excluded at every $h r_d$. The preregistered slab layout excluded only $\PreExcl$ of $\PreN$ slabs: inside a wide slab the
-predictions vary so much that the box bound is slack. A refinement by bisection, written after an untrusted preview and disclosed, gives $\RefN$ slab theorems with bounds $\ge\RefMin$,
-covering $[0,0.255]\cup[0.35,1]$; the floating $\Delta\chi^2=25$ edges are $0.2577$ and $0.3443$, so the certified band is conservative.
-Controls: a copy of the data with one value shifted by $10\sigma$ moves the certified interval to $[\TamperLo,\TamperHi]$; a slab containing the fit point is not excluded;
-false bounds fail to compile; planted \texttt{sorry} and axioms are flagged ($\NAudP2$ theorems audited).
+\paragraph{(i) Matter density.} The interval $[\FitLo,\FitHi]$ for $\chi^2$ at the fit point contains the value $\MCPFit$ from the author's own Rust BAO code
+(rusty-SUNDIALS, an unmerged branch; not independent of this work's data handling) and a 40-digit value computed in an independent verification run.
+Einstein--de Sitter is excluded at every $h r_d$. The preregistered slab layout excluded only $\PreExcl$ of $\PreN$ slabs, so the preregistered prediction
+($[0,0.24]\cup[0.36,1]$ excluded) was not met: nine of the eleven failures are slack of the box bound in wide slabs, and the slabs $[0.25,0.26]$ and $[0.34,0.35]$ reach into the
+allowed region and cannot be excluded at all. A refinement by bisection, written after an untrusted preview and disclosed as amendment A2 (as the preregistration required for any
+change of layout), gives $\RefN$ slab theorems with bounds $\ge\RefMin$ covering $[0,0.255]\cup[0.35,1]$; floating $\Delta\chi^2=25$ edges are $0.2577$ and $0.3443$, so the certified
+bands are conservative. Controls: a copy of the data with one value shifted by $10\sigma$ moves the certified interval to $[\TamperLo,\TamperHi]$; a slab containing the fit point is not
+excluded; false bounds fail to compile; planted \texttt{sorry} and axioms are flagged (the producer's audit covered $\NAudP2$ theorems; the verification run re-audited a subset).
 
-\paragraph{(ii) Hubble constant.} $\chi^2_{\rm tot}\le\UTot$ at $(\Omega_m,h,\omega_b)=(0.29743,\HStar,0.02218)$ and $\chi^2_{\rm tot}>\UTot+25$ for all $h\ge0.73$; the weakest box clears the threshold at $\BoxMin$.
-With one parameter of interest, $\Delta\chi^2=25$ corresponds to $5\sigma$. Negative controls at the level of the untrusted planner (Python mirror, not Lean): the same pipeline produces no certificate for $h\ge0.686$ (inside the allowed
-region) nor for $h\ge0.73$ with the BBN mean shifted to $0.0282$, a value that makes $h=0.73$ acceptable; independent numerics confirm that both target statements are false.
-An independent verifier rebuilt all 173 modules of the final theorem's import closure from source and found, among others, that a false threshold of 65 is rejected by the kernel
-(a point with $\chi^2_{\rm tot}=64.91$ exists at $h=0.73$), as is a box with its bound raised or its $K_0$ lowered. The lower side ($h\le0.64$) was preregistered as secondary and not attempted.
+\paragraph{(ii) Hubble constant.} $\chi^2_{\rm tot}\le\UTot$ at $(\Omega_m,h,\omega_b)=(0.29743,\,h_\star,\,0.02218)$, $h_\star=\HStarExact$; only this upper end was certified, which is all
+the exclusion needs (H9 met in that one-sided form). For all $h\ge0.73$, $\chi^2_{\rm tot}>\UTot+25$; the weakest element of the proof is the $\Omega_m$ slab $[0.2525,0.255]$ at $\RefMin$,
+the weakest $H_0$ box clears at $\BoxMin$. With one parameter of interest and the others profiled, $\Delta\chi^2=25$ corresponds to $5\sigma$ (about $4.3\sigma$ if read jointly in
+$(\Omega_m,h,\omega_b)$). An independent verification run puts the floating $\Delta\chi^2=25$ crossing at $H_0\approx71.6$ and $\Delta\chi^2\approx54.6$ at $H_0=73$; $H_0=73$ is a
+reference value, not the edge of the excluded region. That run also rebuilt all 173 modules of the final theorem's import closure from source and found that the proof breaks when the
+threshold is raised to 65 (a false statement: $\chi^2_{\rm tot}=64.91$ at $h=0.73$), or when one box's bound is raised or its $K_0$ lowered beyond what its certificate supports (tightness
+checks; such a raised bound may itself be true). Planner-level checks (Python mirror, not Lean): for $h\ge0.686$, and for $h\ge0.73$ with the BBN mean moved to $0.0282$, the planner certified
+none of its 291 boxes; every failure was the vertex condition $B'\ge0$, at boxes whose $\chi^2$ lower bound was far above threshold, so these runs show that the method does not certify there,
+not that it detects a low $\chi^2$; independent numerics show both statements are false. The lower side ($h\le0.64$) was preregistered as secondary and not attempted.
 
 \section{Limitations and scope}
-Radiation is neglected in $E(z)$ (it changes $E(2.33)$ by a few $\times10^{-4}$), while the Aubourg fitting formula was calibrated on Boltzmann-code results that include radiation;
-the sound horizon is a fitting formula, not a Boltzmann code; $\Omega_m$ is restricted to $[0,1]$; neutrino density is fixed; the likelihoods are Gaussian and the data
-are taken as published; $\Delta\chi^2$ thresholds are conventions. The certified regions are conservative and depend on the box layout; $H_0=73$ is a reference value, not the edge of the excluded region. Nothing here bears on the origin of the tension.
+Radiation is neglected in $E(z)$ (it changes $E(2.33)$ by about $5\times10^{-4}$), the massive neutrino is treated as matter at all $z$, while the Aubourg fitting formula was calibrated on
+Boltzmann-code results that include radiation (with $N_{\rm eff}=3.046$; DESI uses $3.044$); the sound horizon is a fitting formula; $\Omega_m$ is restricted to $[0,1]$; the likelihoods are
+Gaussian and the data are taken as published; $\Delta\chi^2$ thresholds are conventions. The certified regions are conservative and depend on the box layout. Nothing here bears on the origin
+of the tension.
 
 \section*{Reproducibility and acknowledgements}
-Lean: \path{formal_cert/BAOCert/} (\path{Likelihood.lean}, \path{P2/}, \path{H0/}, \path{P3/}); emitters, planners, evaluation and the MCP client: \path{scripts/certified_numerics/};
-preregistrations, amendments, compile logs, axiom audits, independent verification notes and results: \path{results/certified_numerics/P2_likelihood/} and \path{P3_h0/}, in the
-\texttt{AutoevolveAI} repository and the accompanying bundle. Toolchain: Lean 4.34.1, Mathlib \texttt{d13f23b7}~\cite{lean,mathlib}. Numbers in this paper are generated from the result files by
-\path{papers/certified_desi_h0/gen_numbers.py}. The work, code and drafting were carried out with the assistance of the AI model Claude (Anthropic) under the author's direction; the author is responsible for the content.
+Lean: \path{formal_cert/BAOCert/} (\path{Likelihood.lean}, \path{P2/}, \path{H0/}, \path{P3/}); emitters, planners, evaluation and the client used to query the Rust code: \path{scripts/certified_numerics/};
+preregistrations, amendments, compile logs, axiom audits, verification notes and results: \path{results/certified_numerics/P2_likelihood/} and \path{P3_h0/}. All are in the accompanying
+Zenodo bundle (with a manifest of sha256 sums) and in the \texttt{AutoevolveAI} repository, branch \texttt{worktree-openai-math-discovery}. Toolchain: Lean 4.34.1, Mathlib \texttt{d13f23b7}~\cite{lean,mathlib}.
+Numbers in this paper are generated from the result files by \path{papers/certified_desi_h0/gen_numbers.py}.
+Preregistration, Lean and Python code, numerics, the independent verification runs (separate instances of the same AI model, without access to the producer's build outputs) and
+drafting were performed by the AI model Claude (Anthropic) under the author's high-level direction; no human has independently re-derived the results; the author is responsible for the content.
 
 \begin{thebibliography}{9}
 \bibitem{desi} DESI Collaboration, DESI DR2 Results II: Measurements of Baryon Acoustic Oscillations and Cosmological Constraints, arXiv:2503.14738 (2025).
+\bibitem{bbn} N.~Sch\"oneberg, The 2024 BBN baryon abundance update, arXiv:2401.15054 (2024); A.-K.~Burns, T.~M.~P.~Tait and M.~Valli, PRyMordial, Eur.\ Phys.\ J.\ C 84, 86 (2024).
 \bibitem{aubourg} \'E.~Aubourg et al., Cosmological implications of baryon acoustic oscillation measurements, Phys.\ Rev.\ D 92, 123516 (2015), arXiv:1411.1074, eq.~16.
+\bibitem{shoes} A.~G.~Riess et al., A comprehensive measurement of the local value of the Hubble constant, Astrophys.\ J.\ Lett.\ 934, L7 (2022), arXiv:2112.04510.
 \bibitem{p1} X.~Callens, Kernel-checked enclosures of DESI DR2 BAO distances in Lean 4, Zenodo, doi:10.5281/zenodo.23247730 (2026).
 \bibitem{lean} L.~de Moura and S.~Ullrich, The Lean 4 theorem prover and programming language, CADE-28 (2021).
 \bibitem{mathlib} The mathlib Community, The Lean mathematical library, CPP 2020.

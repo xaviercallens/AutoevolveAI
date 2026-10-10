@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import math
 from fractions import Fraction
 from pathlib import Path
 
@@ -11,6 +12,16 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
 R2 = REPO / "results" / "certified_numerics" / "P2_likelihood"
 R3 = REPO / "results" / "certified_numerics" / "P3_h0"
+
+
+def dn(x: float, k: int) -> str:
+    """round down to k decimals (lower ends of enclosures)."""
+    return f"{math.floor(x * 10**k) / 10**k:.{k}f}"
+
+
+def up(x: float, k: int) -> str:
+    """round up to k decimals (upper ends of enclosures)."""
+    return f"{math.ceil(x * 10**k) / 10**k:.{k}f}"
 
 
 def wrap(spec: str, header: str, rows: list[str]) -> str:
@@ -35,20 +46,21 @@ def main() -> None:
     m["RefN"] = str(len(exc))
     m["RefMin"] = f"{min(l['L_float'] for l in exc):.2f}"
     m["NAudP2"] = str(p2["C7_axiom_audit"]["n_audited"])
-    m["TamperLo"], m["TamperHi"] = (f"{x:.2f}" for x in p2["C6_tampered_data"]["interval"])
+    m["TamperLo"], m["TamperHi"] = dn(p2["C6_tampered_data"]["interval"][0], 2), up(p2["C6_tampered_data"]["interval"][1], 2)
     m["UTot"] = f"{point['U_tot_float']:.4f}"
     m["HStar"] = f"{point['h_float']:.6f}"
+    m["HStarExact"] = point["h"]
     m["NBoxes"] = str(len(boxes))
     m["BoxMin"] = f"{min(float(Fraction(b['L'])) + b['prior_min'] for b in boxes):.2f}"
     c8 = p3["C8_rd_vs_python"]
-    m["RdLo"], m["RdHi"], m["RdPy"] = f"{c8['certified_lo']:.8f}", f"{c8['certified_hi']:.8f}", f"{c8['common_rd_aubourg16']:.10f}"
+    m["RdLo"], m["RdHi"], m["RdPy"] = dn(c8["certified_lo"], 8), up(c8["certified_hi"], 8), f"{c8['common_rd_aubourg16']:.10f}"
     m["NAudP3"] = str(p3["C11_axiom_audit"]["n"])
     rows = [
         f"P2 / H6 & $\\chi^2_{{\\rm BAO}}(0.29743,\\,K_{{\\rm fit}})\\in[{m['FitLo']},\\,{m['FitHi']}]$ & \\texttt{{P2.Fit.chi2\\_fit}} & yes \\\\",
         f"P2 / H7 & $\\forall K:\\ \\chi^2_{{\\rm BAO}}(\\Omega_m{{=}}1,K)\\ge {m['EdSBound']}$ & \\texttt{{P2.EdS.chi2\\_slab}} & yes \\\\",
         f"P2 / H8 & preregistered slabs excluded at $\\Delta\\chi^2>25$ & 19 slab files & \\textbf{{failed}} ({m['PreExcl']}/{m['PreN']}) \\\\",
         f"P2 / A2 & $\\forall\\Omega_m\\in[0,0.255]\\cup[0.35,1],\\forall K:\\ \\chi^2_{{\\rm BAO}}>{m['Thr']}$ & {m['RefN']} slab theorems & yes (post hoc) \\\\",
-        f"P3 / H9 & $\\chi^2_{{\\rm tot}}(0.29743,{m['HStar']},0.02218)\\le {m['UTot']}$ & \\texttt{{P3.Point.chi2tot\\_point}} & yes \\\\",
+        f"P3 / H9 & $\\chi^2_{{\\rm tot}}(0.29743,\\,h_\\star,\\,0.02218)\\le {m['UTot']}$, $h_\\star\\approx{m['HStar']}$ (one-sided) & \\texttt{{P3.Point.chi2tot\\_point}} & yes \\\\",
         f"P3 / H10 & $\\forall\\Omega_m\\in[0,1],\\forall\\omega_b,\\forall h\\ge0.73:\\ \\chi^2_{{\\rm tot}}>{m['UTot']}+25$ & \\texttt{{P3.H0\\_ge\\_73\\_excluded}} & yes \\\\",
         "P3 / H11 & the same for $h\\le0.64$ & -- & not attempted \\\\",
     ]

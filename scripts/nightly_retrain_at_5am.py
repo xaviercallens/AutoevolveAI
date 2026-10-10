@@ -122,7 +122,15 @@ def execute_nightly_retraining(lora_steps: int = 150, skip_deploy: bool = False)
     results: list[dict[str, Any]] = []
 
     with gpu_lease(LEASE_HOLDER, "nightly retrain: dream + LTM LoRA + RL + JEPA + v2 validation", ttl_s=6 * 3600, timeout_s=3600):
-        # 0. Dream predictor from the verified pool. Exits 2 (BLOCKED) when the gate does not pass,
+        # 0a. Pull every pending verifier verdict file into the verified pool (idempotent).
+        results.append(
+            run_pipeline_step(
+                "Verified Pool Import (Lean + hard harvest verdicts)",
+                [*STEP_PYTHON, "scripts/import_pending_verdicts.py"],
+            )
+        )
+
+        # 0b. Dream predictor from the verified pool. Exits 2 (BLOCKED) when the gate does not pass,
         # and writes no checkpoint in that case, so the dream step below fails closed.
         results.append(
             run_pipeline_step(

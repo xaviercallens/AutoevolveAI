@@ -103,7 +103,7 @@ def zenodo_metadata(meta: dict[str, Any]) -> dict[str, Any]:
         "related_identifiers": [
             {"identifier": "https://github.com/xaviercallens/AutoevolveAI", "relation": "isSupplementTo", "scheme": "url"},
             {"identifier": "https://github.com/openai/math", "relation": "references", "scheme": "url"},
-            {"identifier": "10.5281/zenodo.23247730", "relation": "isContinuationOf", "scheme": "doi"},
+            {"identifier": "10.5281/zenodo.23247730", "relation": "continues", "scheme": "doi"},
         ],
         "notes": meta.get("notes", ""),
     }}

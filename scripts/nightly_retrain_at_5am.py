@@ -112,7 +112,7 @@ def wait_until_target_time(target_hour: int = 5, target_minute: int = 5) -> None
     log_both("⏰ Target time reached! Commencing Nightly Model Retraining Pipeline...")
 
 
-def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) -> dict[str, Any]:
+def execute_nightly_retraining(lora_steps: int = 150, skip_deploy: bool = False) -> dict[str, Any]:
     """Execute all phases of model retraining, database snapshotting, and cloud deployment."""
     pipeline_start = time.time()
     log_both("=" * 80)
@@ -265,7 +265,7 @@ def main() -> int:
     parser.add_argument("--now", action="store_true", help="Run immediately without waiting")
     parser.add_argument("--hour", type=int, default=5, help="Target hour (default 5)")
     parser.add_argument("--minute", type=int, default=5, help="Target minute (default 5)")
-    parser.add_argument("--lora-steps", type=int, default=10, help="Number of LoRA steps for Qwen LTM on CPU (default 10)")
+    parser.add_argument("--lora-steps", type=int, default=150, help="QLoRA steps for the 7B base on the T4 (default 150)")
     parser.add_argument("--skip-deploy", action="store_true", help="Skip deployment to GCP Data Lake")
     args = parser.parse_args()
 

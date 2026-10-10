@@ -14,11 +14,18 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import subprocess
 import sys
 import time
 from pathlib import Path
 from typing import Any
+
+# The 7B base is ~15 GB of safetensors. The root disk has ~27 GB free, so keep the Hugging Face
+# cache on the data disk unless the caller already chose a location.
+DATA_DISK_HF_CACHE = Path("/mnt/disks/disk-socrateai-local-1/hf_cache")
+if "HF_HUB_CACHE" not in os.environ and DATA_DISK_HF_CACHE.is_dir():
+    os.environ["HF_HUB_CACHE"] = str(DATA_DISK_HF_CACHE)
 
 # Ensure unbuffered logs
 sys.stdout.reconfigure(line_buffering=True)
@@ -211,37 +218,104 @@ def extract_lora_dataset_from_redis(redis_client: Any, max_samples: int = 100) -
     return dataset
 
 
+OLLAMA_URL = "http://localhost:11434"
+
+
+def unload_ollama_models() -> list[str]:
+    """Ask Ollama to evict every resident model so the T4 is free for training.
+
+    Ollama keeps models resident for minutes after use, and a training step that starts right
+    after another job released the lease can run out of VRAM. Eviction is a keep_alive=0 request
+    per model. Returns the names evicted; an unreachable Ollama evicts nothing and is not an error.
+    """
+    import urllib.request
+
+    try:
+        with urllib.request.urlopen(f"{OLLAMA_URL}/api/ps", timeout=10) as resp:
+            resident = [m["name"] for m in json.load(resp).get("models", [])]
+    except OSError:
+        return []
+    for name in resident:
+        body = json.dumps({"model": name, "keep_alive": 0}).encode("utf-8")
+        req = urllib.request.Request(
+            f"{OLLAMA_URL}/api/generate", data=body, headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=60):
+            pass
+    return resident
+
+
+def mean_heldout_loss(model: Any, texts: list[str], tokenizer: Any, device: Any, max_length: int) -> float:
+    """Mean per-batch causal-LM loss on held-out texts. Lower is better; no training happens here."""
+    model.eval()
+    losses: list[float] = []
+    with torch.no_grad():
+        for text in texts:
+            inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=max_length).to(device)
+            out = model(input_ids=inputs["input_ids"], attention_mask=inputs["attention_mask"], labels=inputs["input_ids"])
+            losses.append(float(out.loss.item()))
+    model.train()
+    return sum(losses) / len(losses)
+
+
 def execute_local_lora_training(
     dataset: list[dict[str, str]],
-    model_id: str = "Qwen/Qwen2.5-0.5B-Instruct",
+    model_id: str = "Qwen/Qwen2.5-Coder-7B-Instruct",
     output_dir: str = "results/qwen_lora_ltm_local",
-    max_steps: int = 10,
+    max_steps: int = 150,
     batch_size: int = 2,
     max_length: int = 160,
-    lr: float = 3e-4,
+    lr: float = 2e-4,
+    heldout_fraction: float = 0.1,
+    load_4bit: bool = True,
 ) -> dict[str, Any]:
-    """Execute PyTorch PEFT LoRA fine-tuning directly on local multi-threaded CPU."""
+    """QLoRA fine-tune on the local GPU, with a held-out before/after loss.
+
+    A 7B base is loaded in 4-bit NF4 (about 5 GB) so it fits the 15 GB T4 with room for
+    activations. Compute runs in fp16, because sm_75 has no bf16 tensor cores. The last
+    ``heldout_fraction`` of the dataset is never trained on; its loss with the adapter disabled
+    is the baseline, and the report records whether the adapter lowered it.
+    """
     from peft import LoraConfig, TaskType, get_peft_model
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     out_path = Path(output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
 
+    evicted = unload_ollama_models() if torch.cuda.is_available() else []
+    if evicted:
+        logger.info("Evicted resident Ollama models before training: %s", evicted)
+
     logger.info("Loading tokenizer & base model: %s", model_id)
     tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+    dtype = torch.float16 if use_cuda else torch.float32
 
-    logger.info("Loading model weights on %s (dtype: %s, threads: %d)...", device, dtype, torch.get_num_threads())
+    quant_config = None
+    if use_cuda and load_4bit:
+        from transformers import BitsAndBytesConfig
+
+        quant_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_use_double_quant=True,
+        )
+
+    logger.info("Loading base weights on %s (dtype: %s, 4-bit: %s)...", device, dtype, quant_config is not None)
     base_model = AutoModelForCausalLM.from_pretrained(
         model_id,
         torch_dtype=dtype,
         trust_remote_code=True,
+        quantization_config=quant_config,
+        device_map={"": 0} if quant_config is not None else None,
     )
-    base_model.to(device)
+    if quant_config is None:
+        base_model.to(device)
 
     # Configure PEFT LoRA
     logger.info("Injecting LoRA adapters (rank=8, alpha=16, targets=q_proj, v_proj)...")
@@ -267,10 +341,20 @@ def execute_local_lora_training(
         text = tokenizer.apply_chat_template(chat, tokenize=False)
         formatted_texts.append(text)
 
-    # Optimizer
-    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
+    # Held-out tail: never trained on. Its loss with the adapter disabled is the baseline.
+    n_heldout = max(1, int(len(formatted_texts) * heldout_fraction))
+    heldout_texts = formatted_texts[-n_heldout:]
+    formatted_texts = formatted_texts[:-n_heldout]
+    with model.disable_adapter():
+        baseline_heldout_loss = mean_heldout_loss(model, heldout_texts, tokenizer, device, max_length)
+    logger.info("Held-out loss before training (adapter disabled, n=%d): %.4f", n_heldout, baseline_heldout_loss)
 
-    logger.info("Starting accelerated multi-core LoRA loop (%d steps, batch_size=%d, max_len=%d)...", max_steps, batch_size, max_length)
+    # Optimizer
+    optimizer = torch.optim.AdamW(
+        [p for p in model.parameters() if p.requires_grad], lr=lr, weight_decay=0.01
+    )
+
+    logger.info("Starting QLoRA loop (%d steps, batch_size=%d, max_len=%d)...", max_steps, batch_size, max_length)
     model.train()
 
     t0 = time.perf_counter()
@@ -312,6 +396,13 @@ def execute_local_lora_training(
     elapsed = time.perf_counter() - t0
     logger.info("LoRA Training Complete in %.2fs! Initial Loss: %.4f -> Final Loss: %.4f", elapsed, loss_history[0], loss_history[-1])
 
+    trained_heldout_loss = mean_heldout_loss(model, heldout_texts, tokenizer, device, max_length)
+    heldout_improved = trained_heldout_loss < baseline_heldout_loss
+    logger.info(
+        "Held-out loss after training: %.4f (baseline %.4f) -> %s",
+        trained_heldout_loss, baseline_heldout_loss, "IMPROVED" if heldout_improved else "NO IMPROVEMENT",
+    )
+
     # Save adapter
     logger.info("Saving trained LoRA adapter to %s", out_path)
     model.save_pretrained(str(out_path))
@@ -321,6 +412,13 @@ def execute_local_lora_training(
         "status": "SUCCESS",
         "model_id": model_id,
         "adapter_path": str(out_path),
+        "quantization": "nf4-4bit" if quant_config is not None else str(dtype),
+        "ollama_evicted": evicted,
+        "train_examples": len(formatted_texts),
+        "heldout_examples": n_heldout,
+        "heldout_loss_baseline": baseline_heldout_loss,
+        "heldout_loss_trained": trained_heldout_loss,
+        "heldout_improved": heldout_improved,
         "steps_trained": max_steps,
         "initial_loss": loss_history[0],
         "final_loss": loss_history[-1],
@@ -342,10 +440,23 @@ def verify_lora_inference(
 
     logger.info("Verifying local inference using trained LoRA adapter...")
     tokenizer = AutoTokenizer.from_pretrained(adapter_path, trust_remote_code=True)
+    use_cuda = torch.cuda.is_available()
+    quant_config = None
+    if use_cuda:
+        from transformers import BitsAndBytesConfig
+
+        quant_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_use_double_quant=True,
+        )
     base = AutoModelForCausalLM.from_pretrained(
         base_model_id,
-        torch_dtype=torch.float32,
+        torch_dtype=torch.float16 if use_cuda else torch.float32,
         trust_remote_code=True,
+        quantization_config=quant_config,
+        device_map={"": 0} if use_cuda else None,
     )
     model = PeftModel.from_pretrained(base, adapter_path)
     model.eval()
@@ -355,7 +466,7 @@ def verify_lora_inference(
         {"role": "user", "content": test_prompt},
     ]
     prompt_str = tokenizer.apply_chat_template(chat, tokenize=False, add_generation_prompt=True)
-    inputs = tokenizer(prompt_str, return_tensors="pt")
+    inputs = tokenizer(prompt_str, return_tensors="pt").to(model.device)
 
     t0 = time.perf_counter()
     with torch.no_grad():
@@ -375,8 +486,8 @@ def verify_lora_inference(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Deploy and execute LoRA on Redis LTM")
-    parser.add_argument("--model-id", default="Qwen/Qwen2.5-0.5B-Instruct")
-    parser.add_argument("--steps", type=int, default=10)
+    parser.add_argument("--model-id", default="Qwen/Qwen2.5-Coder-7B-Instruct")
+    parser.add_argument("--steps", type=int, default=150)
     parser.add_argument("--max-len", type=int, default=160)
     parser.add_argument("--port", type=int, default=6379)
     parser.add_argument("--output-dir", default="results/qwen_lora_ltm_local")

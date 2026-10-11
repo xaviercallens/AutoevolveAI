@@ -48,7 +48,7 @@ so by the method's own publish gate the ledger does not yet pass.
 Table~\ref{tab:ledger} lists every claim made below, with its tier and its ledger identifier.
 
 \begin{table}[!ht]\centering\small
-\begin{tabular}{>{\raggedright\arraybackslash}p{2.1cm}p{0.6cm}p{11.8cm}}
+\begin{tabular}{>{\raggedright\arraybackslash}p{2.1cm}p{0.7cm}p{11.7cm}}
 \toprule
 Ledger id & Tier & Claim (abbreviated; full statements in \texttt{ledger.json}) \\
 \midrule
@@ -56,7 +56,7 @@ UO-A-0001 & A & upstream \lean{universal_energy_minimum} (our compile and footpr
 UO-A-0002--4 & A & Riesz admissibility and optimality; finiteness for $s>2$; every density with attainment~\cite{d12}\\
 UO-A-0005 & A & \lean{triangular_universally_optimal}: $\rho^{-1/2}A$ is \lean{UniversallyOptimal} for every $\rho>0$\\
 UO-A-0006 & A & \lean{universal_optimum_not_unique}: $A\setminus\{0\}$ is universally optimal and not an isometric image of $A$\\
-UO-L-0001--4 & L & CKMRV Definition~1.3; uniqueness remark after Theorem~1.4; history; composition footnote~\cite{ckmrv}\\
+UO-L-0001--6 & L & CKMRV Definition~1.3, uniqueness remark, history, composition footnote, lattice energy~\cite{ckmrv}; upstream scope remark~\cite{oai}\\
 UO-C-0001 & C & the 2D Yukawa interaction is completely monotone in $r^2$\\
 UO-C-0002 & C & the interpretation of UO-A-0006 (what it does and does not refute)\\
 UO-X-000$n$ & X & CVODE $N$-body study, controls, disk study (\texttt{claim\_licence: false})\\
@@ -89,8 +89,9 @@ and optimality of $\rho^{-1/2}A$ at every density with attainment are in~\cite{d
 \end{align*}
 This transcribes~\cite[Def.~1.3]{ckmrv} with one difference: CKMRV also require the energy of $C$ to exist as a limit,
 and $\mathrm{UO}$ uses only the $\liminf$, so it is weaker (we do not claim it is strictly weaker; no witness is
-filed). For a lattice the limit exists classically~\cite{ckmrv}, so Theorem~1 gives CKMRV's own notion for
-$\rho^{-1/2}A$ once that unformalised fact is supplied.
+filed). For a lattice whose sum $\sum_{x\ne0}g(|x|^2)$ converges absolutely, CKMRV take the energy to be that sum
+(UO-L-0005). Given the unformalised fact that the disk averages then converge to it, Theorem~1 yields CKMRV's notion
+for $\rho^{-1/2}A$. That step is Tier~C and is not claimed here.
 \begin{theorem}[\lean{triangular_universally_optimal}]
 For every $\rho>0$, $\mathrm{UO}(\rho,\rho^{-1/2}A)$.
 \end{theorem}
@@ -108,7 +109,7 @@ and pick $a,b\in A$ with $f(a)=p(1,0)$ and $f(b)=p(2,0)$. Then $2a-b\in A$ and $
 contradicting $0\notin A\setminus\{0\}$.
 
 This is the remark after~\cite[Thm.~1.4]{ckmrv} (UO-L-0002), also noted by upstream (``it identifies the minimum
-value, not all minimizers''~\cite[\S1]{oai}), now as a theorem in this setting. Its interpretation (UO-C-0002) is
+value, not all minimizers''~\cite[\S1]{oai}, UO-L-0006), now as a theorem in this setting. Its interpretation (UO-C-0002) is
 Tier~C: in the lower-energy formulation over \emph{all} locally finite configurations, ``the minimiser is the
 triangular lattice'' is false, and only the minimum value is pinned down. Uniqueness among \emph{periodic}
 configurations, which CKMRV prove in dimensions 8 and 24, is not claimed by upstream for dimension~2 and is not
@@ -124,8 +125,8 @@ producer$\ne$verifier, not human review.
 Per CKMRV's own text (UO-L-0003): Ventevogel and Nijboer proved universal optimality of $\mathbb Z$ in dimension~1
 (Cohn and Kumar gave another proof); before CKMRV no universal optimum was proved in any dimension $>1$; CKMRV proved
 it for $E_8$ and the Leech lattice; and universal optimality of the hexagonal lattice ``in full generality is an
-important open problem''. So dimension~1 was settled before dimensions 8 and 24, and dimension~2 is the first open
-case.
+important open problem''. So, per CKMRV, dimension~1 was settled before dimensions 8 and 24, and dimension~2 was
+then the lowest open case.
 
 \section{Tier C: why the Yukawa interaction is in the class}
 $V(r)=e^{-\kappa r}/r$ is $g(t)=e^{-\kappa\sqrt t}/\sqrt t$ with $t=r^2$. Here $t^{-1/2}$ is completely monotone;
@@ -154,14 +155,15 @@ family. We do not claim that either is more realistic; the dataset supplies diso
 interatomic potentials were deliberately not used: they model atomic chemistry, not a completely monotone pair
 potential, and cannot test this theorem.
 
-\paragraph{Preregistration.} The predictions and controls were committed (\texttt{636c514}) before any result was
-produced and before the solver code was committed (\texttt{968b0f2}); results are in commit \texttt{1f46e70}. P1: no
+\paragraph{Preregistration.} The predictions and controls were committed (\texttt{636c514}) before the solver code
+(\texttt{968b0f2}) and before the results (\texttt{1f46e70}) were committed. Git cannot show that no local run
+preceded the preregistration commit. P1: no
 relaxed configuration has energy per particle below $e_{\rm tri}$ by more than $10^{-9}$ relative. P2: at least one
 annealed run per family reaches the perfect lattice. P3: $T=0$ quenches mostly end in defected local minima, which is
 a property of gradient flow and not evidence against the theorem. \emph{Deviations from the preregistration.} (a) The
 coordination cutoff is $1.35\,d_0$, with $d_0$ the median nearest-neighbour distance of the configuration, not the
 registered $1.4a$. (b) At $\kappa=1$ ten initial conditions per family were run, and five incommensurate controls,
-instead of twenty, twenty and ten. (c) The incommensurate control's automatic pass test checks only that every state
+instead of the registered twenty per family; the number of incommensurate runs was not registered. (c) The incommensurate control's automatic pass test checks only that every state
 is above $e_{\rm tri}$; that the states are defected, also registered, is read from the table (all are).
 
 \paragraph{Controls.} References: $e_{\rm tri}=\ETriTwo$ and $e_{\rm sq}=\ESqTwo$ at $\kappa=2$
@@ -183,7 +185,8 @@ instrument, and this failure says nothing about the theorem in either direction.
 of \RunsTwoHF{} and \QDefTwoUni{} of \RunsTwoUni{} $T=0$ quenches at $\kappa=2$ keep defects. The remainder are
 defect-free but above $e_{\rm tri}$; their structure was not analysed. Every run converged to $\max|F|<10^{-9}$. The
 final Hessian was computed for the \HessCheckedTwo{} ($\kappa=2$) and \HessCheckedOne{} ($\kappa=1$) non-control runs.
-\HessNegTwo{} and \HessNegOne{} of them have a negative eigenvalue; all have exactly two translation modes, and every
+\HessNegTwo{} and \HessNegOne{} of them have an eigenvalue below $-10^{-9}\lambda_{\max}$. All have exactly two
+translation modes ($|\lambda|\le\HessTransTwo$ at $\kappa=2$, $\le\HessTransOne$ at $\kappa=1$), and every
 other eigenvalue is at least $\HessThirdTwo$ ($\kappa=2$) and $\HessThirdOne$ ($\kappa=1$). These end states are
 therefore strict local minima modulo translation. The incommensurate-box and disk runs were not Hessian-checked. The
 negative control behaves as it must: in the incommensurate box every relaxed state is defected and at least
@@ -199,7 +202,8 @@ supplied disorder only.
 \input{table_numerics.tex}
 \end{tabular}
 \caption{CVODE relaxations. ``perfect'': zero defects and $|e-e_{\rm tri}|<10^{-8}|e_{\rm tri}|$. Relative gap
-$(e-e_{\rm tri})/e_{\rm tri}$. ``Hess.$<0$'': runs whose final Hessian has a negative eigenvalue, over runs whose Hessian was computed (n/a: not
+$(e-e_{\rm tri})/e_{\rm tri}$. ``Hess.$<0$'': runs whose final Hessian has an eigenvalue below $-10^{-9}\lambda_{\max}$, over runs whose Hessian
+was computed (n/a: not
 computed). The incommensurate
 family uses a square box and is a negative control. Tier~X throughout.}\label{tab:num}
 \end{table}
@@ -224,7 +228,8 @@ theorem.
 \end{enumerate}
 
 \paragraph{Reproducibility.} Lean: AutoevolveAI \texttt{formal\_cert/Triangular/}; LeanMaster release
-\texttt{v3.48.1}. Numerics: rusty-SUNDIALS results commit \texttt{1f46e70}. Ledger and evidence:
+\texttt{v3.48.1}. Numerics: rusty-SUNDIALS results commit \texttt{1f46e70}; summary regenerated by \texttt{scripts/summarize.py} at
+\texttt{e1a6083}. Ledger and evidence:
 \texttt{results/discovery/ledger/} (gate: \texttt{tools/ledger.py} of~\cite{elenchus}, exit \LedgerExit{}:
 \LedgerClaims{} claims, \LedgerBlocks{} blocks, \LedgerFlags{} flags).
 

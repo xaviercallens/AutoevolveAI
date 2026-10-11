@@ -67,6 +67,10 @@ def main() -> None:
         m[f"HessNeg{tag}"] = str(sum(v["hess_negative_runs"] for v in fam.values()))
         thirds = [v["hess_third_min"] for v in fam.values() if v["hess_third_min"] is not None]
         m[f"HessThird{tag}"] = sci(min(thirds), 1)
+        kv = 2 if tag == "Two" else 1
+        trans = [abs(v) for r in jl(YUK / f"main_kappa{kv}.jsonl") for st in ("quench", "anneal_quench")
+                 for v in r.get(st, {}).get("hess_lowest", [])[:2]]
+        m[f"HessTrans{tag}"] = sci(max(trans), 1)
         for f, ftag in (("hf_oc20", "HF"), ("uniform", "Uni")):
             a = fam[f"{f}/anneal_quench"]
             q = fam[f"{f}/quench"]

@@ -51,6 +51,16 @@ def excerpt(lines: tuple[int, int]) -> dict:
             "extraction_sha256": sha(CKMRV.read_bytes()), "lines": list(lines), "text": "\n".join(t[lines[0] - 1:lines[1]])}
 
 
+UPAPER = Path("/home/callensxavier_gmail_com/.claude/jobs/6ecda88c/tmp/upaper/preprints/Universal-optimality-of-the-triangular-lattice-September-23-2026/build/sections/01-uniform-gaussian-theorem.tex")
+
+
+def upstream_excerpt(lines: tuple[int, int]) -> dict:
+    t = UPAPER.read_text().splitlines()
+    return {"source": "OpenAI, Universal optimality of the triangular lattice, OpenAI Math Release preprint, 2026-09-23",
+            "durable_reference": "github.com/openai/math commit fd4aeeb2ee4fc729c18d98444fed42fd0529eeeb, preprints/Universal-optimality-of-the-triangular-lattice-September-23-2026/build/sections/01-uniform-gaussian-theorem.tex",
+            "file_sha256": sha(UPAPER.read_bytes()), "lines": list(lines), "text": "\n".join(t[lines[0] - 1:lines[1]])}
+
+
 def rec(cid: str, tier: str, kind: str, statement: str, depends: list[str], ev: dict) -> dict:
     return {"schema_version": 1, "id": cid, "statement": statement, "tier": tier, "kind": kind,
             "depends_on": depends, "evidence": blob(ev), "audit": None}
@@ -98,12 +108,18 @@ def main() -> None:
         rec("UO-L-0004", "L", "citation",
             "CKMRV footnote 2: if p and q' are completely monotonic then p o q is completely monotonic (Faa di Bruno sign argument).",
             [], excerpt((506, 521))),
+        rec("UO-L-0005", "L", "citation",
+            "CKMRV Section 1: a lattice has density 1/vol(R^d/Lambda) and p-energy sum_{x in Lambda minus 0} p(|x|), assuming this sum is absolutely convergent.",
+            [], excerpt((150, 177))),
+        rec("UO-L-0006", "L", "citation",
+            "Upstream manuscript (OpenAI, Universal optimality of the triangular lattice, 2026-09-23), Section 1 after Theorem 1.1: the theorem identifies the minimum value, not all minimizers.",
+            [], upstream_excerpt((42, 47))),
         rec("UO-C-0001", "C", "argument",
             "Yukawa V(r) = exp(-kappa r)/r, as g(t) = exp(-kappa sqrt t)/sqrt t, is completely monotone in t: t^(-1/2) is completely monotone; exp(-kappa sqrt t) is p o q with p(u) = exp(-kappa u) completely monotone and q = sqrt with q' = t^(-1/2)/2 completely monotone (UO-L-0004); products of completely monotone functions are completely monotone (Leibniz rule). Not kernel-checked.",
             ["UO-L-0004"], {"kind": "argument", "text": "See statement; the product step uses (fg)^(n) = sum binom(n,k) f^(k) g^(n-k), every term of sign (-1)^n."}),
         rec("UO-C-0002", "C", "argument",
             "Interpretation of UO-A-0006: in the lower-energy formulation over all locally finite configurations, 'mutually repelling particles always arrange into a triangular lattice' is false as a uniqueness statement; only the minimum value is pinned down there. Uniqueness among periodic configurations (CKMRV's form) is not claimed by upstream for dimension 2 and not addressed. UniversallyOptimal is weaker than CKMRV Def 1.3 (no requirement that the energy exist as a limit); strictness is not claimed.",
-            ["UO-A-0006", "UO-L-0001", "UO-L-0002"], {"kind": "argument", "text": "Gloss of a Tier A statement; Tier A attaches to the formal statement, never to its gloss."}),
+            ["UO-A-0006", "UO-L-0001", "UO-L-0002", "UO-L-0005", "UO-L-0006"], {"kind": "argument", "text": "Gloss of a Tier A statement; Tier A attaches to the formal statement, never to its gloss."}),
     ]
     summary = YUK / "results/summary.json"
     if summary.exists():

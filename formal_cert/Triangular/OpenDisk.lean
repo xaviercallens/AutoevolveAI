@@ -10,6 +10,11 @@ OPEN disks `ball 0 R`, and for every locally finite configuration they coincide:
 * `energy_eq_openEnergy`: `energy g C = openEnergy g C` for every `g`;
 * `universal_energy_minimum_open`: upstream's theorem holds verbatim with open disks.
 
+Scope: this settles the open/closed question for upstream's observables only (centred disks, `N/(πR²)` density,
+`liminf` energy in `[0, ∞]`); it says nothing about other window shapes, `limsup` energies or physical boundary
+conditions. The identity is not definitional (pointwise counts differ at boundary radii), and it needs no
+local-finiteness hypothesis at all: see `OpenDiskAny.lean` (from the independent verification run).
+
 Human proof: local finiteness makes `C ∩ closedBall 0 R` finite, so the open-disk point set at radius `R` is the
 closed-disk set at a slightly smaller radius, and the closed-disk set at `R` is the open-disk set at a slightly larger
 radius. The disk-energy functions therefore take each other's values at radii within distance one, and their lower

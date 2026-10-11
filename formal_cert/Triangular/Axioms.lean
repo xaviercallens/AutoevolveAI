@@ -4,6 +4,7 @@ import Triangular.AnyDensity
 import Triangular.Controls
 import Triangular.UniversalOptimality
 import Triangular.OpenDisk
+import Triangular.OpenDiskAny
 
 /-! Axiom audit of the D1 corollary, with planted controls. -/
 
@@ -33,6 +34,10 @@ import Triangular.OpenDisk
 #print axioms TriangularOpenDisk.densityOne_iff_open
 #print axioms TriangularOpenDisk.universal_energy_minimum_open
 #print axioms TriangularOpenDisk.A_densityOneOpen
+#print axioms TriangularOpenDiskAny.energy_eq_openEnergy_any
+#print axioms TriangularOpenDiskAny.densityOne_iff_open_any
+#print axioms TriangularOpenDiskAny.ctl_open
+#print axioms TriangularOpenDiskAny.ctl_closed
 
 theorem ctl_sorry : TriangularRiesz.riesz 1 1 = 0 := by sorry
 axiom ctl_cheat : False

@@ -1,0 +1,227 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.}\makeatother
+\DeclareUrlCommand\lean{\urlstyle{tt}}
+\emergencystretch=3em
+\input{gen_numbers.tex}
+\newtheorem{theorem}{Theorem}
+\newcommand{\R}{\mathbb{R}}
+
+\title{Planar universal optimality, tiered:\\ kernel-checked consequences, a non-uniqueness theorem,\\ and a CVODE $N$-body consistency check for the Yukawa interaction}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-11}
+\hypersetup{pdftitle={Planar universal optimality, tiered}, pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The openai/math release contains a Lean~4 proof that the triangular lattice minimises the lower $g$-energy among all
+locally finite planar configurations of density one, for every smooth completely monotone $g$~\cite{oai}. We file every
+claim we make about it in a claim ledger with the tiers of the SocrateAI-Scientific-Elenchus method~\cite{elenchus}:
+\textbf{A} kernel-checked, \textbf{L} cited literature, \textbf{C} argument, \textbf{X} floating-point
+exploration, which may steer but may never support a claim. At Tier~A, conditional only on the fidelity of upstream's
+definitions, we prove in Lean that the rescaled triangular lattice is universally optimal at every density in the sense
+of Cohn--Kumar--Miller--Radchenko--Viazovska's Definition~1.3, with upstream's lower energy, which is strictly weaker
+than theirs. We also prove that universal optima are \emph{not} unique among all configurations: the lattice with one
+vacancy is another, and it is not an isometric image of the lattice. So the popular gloss ``repelling particles always
+arrange into a triangular lattice'' is false in this formulation. At Tier~X we run an overdamped $N$-body relaxation
+for the 2D Yukawa interaction, which is in the theorem's class (Tier~C), with the CVODE solver of rusty-SUNDIALS, from
+initial conditions derived from the Hugging Face OC20 dataset. The preregistered falsifiable prediction, that no
+relaxed periodic configuration falls below the triangular-lattice energy, is reported with its controls. It is
+consistency evidence, not proof. The ledger passes the Elenchus gate with \LedgerBlocks{} blocking findings and
+\LedgerFlags{} flags, each flag marking a Tier~A row whose statement adequacy no human has audited.
+\end{abstract}
+
+\section{Claims and tiers}
+
+\begin{table}[h]\centering\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{2.1cm}p{0.6cm}p{12.4cm}}
+\toprule
+Ledger id & Tier & Claim (abbreviated; full statements in \texttt{ledger.json}) \\
+\midrule
+UO-A-0001 & A & upstream \lean{universal_energy_minimum} (our compile and footprint; definitions AI-audited only)\\
+UO-A-0002--4 & A & Riesz admissibility and optimality; finiteness for $s>2$; every density with attainment~\cite{d12}\\
+UO-A-0005 & A & \lean{triangular_universally_optimal}: $\rho^{-1/2}A$ is \lean{UniversallyOptimal} for every $\rho>0$\\
+UO-A-0006 & A & \lean{universal_optimum_not_unique}: $A\setminus\{0\}$ is universally optimal and not an isometric image of $A$\\
+UO-L-0001--4 & L & CKMRV Definition~1.3; uniqueness remark after Theorem~1.4; history; composition footnote~\cite{ckmrv}\\
+UO-C-0001 & C & the 2D Yukawa interaction is completely monotone in $r^2$\\
+UO-C-0002 & C & the interpretation of UO-A-0006 (what it does and does not refute)\\
+UO-X-000$n$ & X & CVODE $N$-body study, controls, disk study (\texttt{claim\_licence: false})\\
+\bottomrule
+\end{tabular}
+\caption{The claim ledger. A row may not be cited above its tier, and no row is filed above anything it rests on;
+both are checked mechanically, transitively, by the Elenchus gate. Every row points to a content-addressed evidence
+blob (compiled axiom output with source hashes, primary-source excerpts with line numbers, argument text, or result
+files).}
+\end{table}
+
+\section{Tier A: what the kernel checked}
+
+\paragraph{Upstream (UO-A-0001).} With $A$ the triangular lattice of covolume one, $N_R(C)$ the number of points of $C$
+in the closed disk of radius $R$, density $\lim N_R/(\pi R^2)$, and lower energy
+$E_g(C)=\liminf_R N_R^{-1}\sum_{x\ne y}g(|x-y|^2)$ in $[0,\infty]$, upstream proves
+$\sum_{a\in A\setminus0}g(|a|^2)\le E_g(C)$, with equality for $C=A$, for every smooth completely monotone $g$. We
+recompiled it with the pinned toolchain (Lean~4.34.1, Mathlib \texttt{d13f23b7}, openai/math \texttt{adc7f124},
+unchanged at \texttt{fd4aeeb2}); its footprint is $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$. The
+proof is checked. What is not established by any gate is that these definitions are the intended ones; our item-by-item
+comparison with~\cite[Defs.~1.1--1.3]{ckmrv} was done by AI agents and is filed as such.
+
+\paragraph{Earlier corollaries (UO-A-0002--4).} Riesz admissibility, finiteness of the lattice Riesz energy for $s>2$,
+and optimality of $\rho^{-1/2}A$ at every density with attainment are in~\cite{d12}.
+
+\paragraph{Universal optimality in the sense of CKMRV (UO-A-0005).} Define, in upstream's notions,
+\begin{align*}
+\mathrm{UO}(\rho,C)\;:\iff\;& C \text{ locally finite},\quad \mathrm{dens}(C)=\rho,\quad\text{and}\\
+& \forall g \text{ admissible},\ \forall C' \text{ locally finite of density } \rho:\ E_g(C)\le E_g(C').
+\end{align*}
+This transcribes~\cite[Def.~1.3]{ckmrv} with one difference: CKMRV also require the energy of $C$ to exist as a limit,
+and $\mathrm{UO}$ uses only the $\liminf$, so it is strictly weaker.
+\begin{theorem}[\lean{triangular_universally_optimal}]
+For every $\rho>0$, $\mathrm{UO}(\rho,\rho^{-1/2}A)$.
+\end{theorem}
+
+\paragraph{Non-uniqueness (UO-A-0006).}
+\begin{theorem}[\lean{vacancy_energy}, \lean{vacancy_not_isometric_image}, \lean{universal_optimum_not_unique}]
+For every admissible $g$, $E_g(A\setminus\{0\})=\sum_{a\in A\setminus0}g(|a|^2)$. Hence $\mathrm{UO}(1,A\setminus\{0\})$, and
+there is no isometry $f$ of the plane with $f(A)=A\setminus\{0\}$.
+\end{theorem}
+\noindent\emph{Proof idea.} Removing one point removes a sub-sum from each disk energy, and the normalisation changes
+by $N_R/(N_R-1)\to1$; the $\liminf$ comparison closes with \lean{ENNReal.liminf_mul_le}, and upstream's theorem gives
+the reverse inequality. For the isometry statement, isometries of the plane are affine (Mathlib's
+\lean{Isometry.affineIsometryOfStrictConvexSpace}), so $f(2a-b)=2f(a)-f(b)$; taking preimages of
+$p(1,0)$ and $p(2,0)$ produces $0\in f(A)$, contradicting $0\notin A\setminus\{0\}$.
+
+This is the remark after~\cite[Thm.~1.4]{ckmrv} (UO-L-0002), now as a theorem in this setting. Its interpretation
+(UO-C-0002) is Tier~C: in the lower-energy formulation over \emph{all} locally finite configurations, ``the minimiser is
+the triangular lattice'' is false, and only the minimum value is pinned down. Uniqueness among \emph{periodic}
+configurations, which CKMRV prove in dimensions 8 and 24, is open in dimension~2 and is not addressed here.
+
+\paragraph{Gates.} A clean sequential rebuild of the whole chain exits~0. All 22 audited declarations have footprints
+within the allowlist, and two planted controls (\lean{sorry}, a custom axiom) are flagged by the same audit. Each layer
+was re-verified by a separate instance of the same AI model that recompiled it and wrote its own controls. That is
+producer$\ne$verifier, not human review.
+
+\section{Tier L: what is known}
+Per CKMRV's own text (UO-L-0003): Ventevogel and Nijboer proved universal optimality of $\mathbb Z$ in dimension~1
+(Cohn and Kumar gave another proof); before CKMRV no universal optimum was proved in any dimension $>1$; CKMRV proved
+it for $E_8$ and the Leech lattice; and universal optimality of the hexagonal lattice ``in full generality is an
+important open problem''. Statements that the problem was previously solved only in dimensions 8 and 24 omit
+dimension~1.
+
+\section{Tier C: why the Yukawa interaction is in the class}
+$V(r)=e^{-\kappa r}/r$ is $g(t)=e^{-\kappa\sqrt t}/\sqrt t$ with $t=r^2$. Here $t^{-1/2}$ is completely monotone;
+$e^{-\kappa\sqrt t}=p\circ q$ with $p(u)=e^{-\kappa u}$ completely monotone and $q'(t)=\tfrac12t^{-1/2}$ completely
+monotone, hence completely monotone by~\cite[footnote~2]{ckmrv} (UO-L-0004); and products of completely monotone
+functions are completely monotone (Leibniz). So upstream's theorem, if its definitions are faithful, predicts that no
+density-one configuration has Yukawa energy below the triangular lattice's. This argument is not kernel-checked
+(UO-C-0001), and so the numerics below rest on Tier~C, not on Tier~A.
+
+\section{Tier X: a CVODE $N$-body consistency check}
+
+\paragraph{Instrument.} rusty-SUNDIALS~\cite{rusty}, crate \texttt{qf-yukawa-crystal}. $N=288$ particles in a periodic
+rectangle that holds the triangular lattice $16\times18$ exactly at density~1; shifted-force Yukawa with cutoff
+$r_c=8$ (minimum image), $\kappa=2$ (truncation size $\TruncTwo$) and $\kappa=1$ ($\TruncOne$). The truncated
+potential is not exactly completely monotone beyond $r_c$; that is a disclosed approximation. Overdamped relaxation
+$\dot x=-\nabla E$ is integrated by CVODE (BDF) with the analytic Jacobian $-\nabla^2E$ until $\max|F|<10^{-9}$, and
+minima are checked by the Hessian spectrum (cyclic Jacobi). Two packages named in common descriptions of this pipeline
+were not used: rusty-SUNDIALS has no KINSOL port, and its IDA crate documents itself as a fixed-step prototype.
+Annealing is overdamped Langevin (Euler--Maruyama) outside SUNDIALS, because a stochastic equation is not an ODE,
+followed by a CVODE quench.
+
+\paragraph{Initial conditions.} Twenty disordered configurations derived from the Hugging Face dataset
+\texttt{colabfit/OC20\_IS2RES\_val\_id}~\cite{oc20} (CC-BY-4.0): random OC20 structures, rotated uniformly in 3D,
+projected, rescaled and accepted with a minimum separation. Twenty uniform random configurations serve as a second
+family. We do not claim that either is more realistic; the dataset supplies disorder, not physics. Machine-learned
+interatomic potentials were deliberately not used: they model atomic chemistry, not a completely monotone pair
+potential, and cannot test this theorem.
+
+\paragraph{Preregistration.} The predictions and controls were committed (\texttt{636c514}) before the solver code
+(\texttt{968b0f2}). P1: no relaxed configuration has energy per particle below $e_{\rm tri}$ by more than $10^{-9}$
+relative. P2: at least one annealed run per family reaches the perfect lattice. P3: $T=0$ quenches mostly end in
+defected local minima, which is a property of gradient flow and not evidence against the theorem.
+
+\paragraph{Controls.} References: $e_{\rm tri}=\ETriTwo$ and $e_{\rm sq}=\ESqTwo$ at $\kappa=2$
+($e_{\rm sq}-e_{\rm tri}=\DSqTwo$); the periodic box reproduces the direct lattice sum to $\BoxVsSumTwo$. A perfect
+lattice stays put (relative gap $\PosGap$); a lattice with $0.1a$ noise relaxes back (gap $\NoisyGap$); the Hessian at
+the lattice has exactly two zero translation modes and smallest other eigenvalue $\HessMin$. Negative controls: the
+square lattice is a stationary point with $\SqNeg$ negative Hessian eigenvalues (a saddle) and relaxes below its energy;
+in a box that cannot hold the triangular lattice the relaxed states keep defects and stay above $e_{\rm tri}$
+(\IncommTwo).
+
+\paragraph{Results.} Table~\ref{tab:num}. \textbf{P1} (the falsifiable prediction): \POneTwo{} at $\kappa=2$, with
+\UndercutsTwo{} undercuts in \RelaxTwo{} relaxations, and \POneOne{} at $\kappa=1$, with \UndercutsOne{} undercuts in
+\RelaxOne. The lowest annealed gaps, $\MinGapTwoHF$ (OC20-derived) and $\MinGapTwoUni$ (uniform) at $\kappa=2$, are the
+lattice itself to round-off. \textbf{P2}: \PTwoTwo{} at $\kappa=2$, but narrowly: \PerfTwoHF{} of \RunsTwoHF{}
+(OC20-derived) and \PerfTwoUni{} of \RunsTwoUni{} (uniform) annealed runs reached the perfect lattice. At $\kappa=1$
+P2 \emph{fails as preregistered}: \PerfOneHF{} of \RunsOneHF{} and \PerfOneUni{} of \RunsOneUni{}. The other annealed
+runs end in defected or strained local minima above $e_{\rm tri}$. The annealing schedule is a weak instrument, and
+this failure says nothing about the theorem in either direction. \textbf{P3}, as expected: \QDefTwoHF{} of
+\RunsTwoHF{} and \QDefTwoUni{} of \RunsTwoUni{} $T=0$ quenches at $\kappa=2$ keep defects. The remainder are defect-free
+but above $e_{\rm tri}$; their structure was not analysed. Every run converged to $\max|F|<10^{-9}$, and no final
+Hessian has a negative eigenvalue, so every end state is a local minimum. The negative control behaves as it must: in
+the incommensurate box every relaxed state is defected and at least $\IncommMinTwo$ above $e_{\rm tri}$. The two
+initial-condition families behave alike. The dataset supplied disorder, and nothing in these runs depends on its
+chemistry.
+
+\begin{table}[h]\centering\scriptsize\setlength{\tabcolsep}{3pt}
+\begin{tabular}{llrrrrrrr}
+\toprule
+& family / stage & runs & perfect & defected & min rel.\ gap & max rel.\ gap & not conv. & Hess.$<0$\\
+\midrule
+\input{table_numerics.tex}
+\end{tabular}
+\caption{CVODE relaxations. ``perfect'': zero defects and $|e-e_{\rm tri}|<10^{-8}|e_{\rm tri}|$. Relative gap
+$(e-e_{\rm tri})/e_{\rm tri}$. ``Hess.$<0$'': runs whose final Hessian has a negative eigenvalue. The incommensurate
+family uses a square box and is a negative control. Tier~X throughout.}\label{tab:num}
+\end{table}
+
+\paragraph{Open versus closed disk.} $N=300$, $\kappa=2$, annealed and quenched: harmonic bowl (open) versus soft
+wall (closed). Interior defect fraction \DiskOpenInt{} (open) versus \DiskClosedInt{} (closed); edge \DiskOpenEdge{}
+versus \DiskClosedEdge; interior mean $|\psi_6|$ \DiskOpenPsi{} versus \DiskClosedPsi. The comparison is confounded:
+the bowl produces a non-uniform density, the closed disk compresses particles against the wall, and the two ``edge''
+layers (within two spacings of the outermost particle) contain different numbers of particles. It describes
+finite-size edge effects in these two set-ups and is not a controlled measurement of either. It is not a test of whether upstream's closed-disk counting differs from an open-disk one, which is a question
+about measure-zero boundary terms in a limit.
+
+\section{Limitations}
+\begin{enumerate}
+\item No human has audited whether upstream's definitions, or ours, express the intended mathematics; the ledger flags
+every Tier~A row for this.
+\item $\mathrm{UO}$ is strictly weaker than CKMRV's universal optimality (no existence of the energy limit).
+\item Uniqueness among periodic configurations in dimension~2 is open and not attempted.
+\item The Yukawa step is Tier~C; the numerics are Tier~X and support no claim.
+\item Finite $N$, truncated potential, heuristic annealing: P2 can fail for reasons that have nothing to do with the
+theorem.
+\end{enumerate}
+
+\paragraph{Reproducibility.} Lean: AutoevolveAI \texttt{formal\_cert/Triangular/}; LeanMaster release
+\texttt{v3.48.1}. Numerics: rusty-SUNDIALS branch \texttt{physics/yukawa-triangular-2026-10-10}. Ledger and evidence:
+\texttt{results/discovery/ledger/} (gate: \texttt{tools/ledger.py} of~\cite{elenchus}, exit \LedgerExit{}:
+\LedgerClaims{} claims, \LedgerBlocks{} blocks, \LedgerFlags{} flags).
+
+\paragraph{AI use.} The proofs, numerics, ledger and text were produced by AI agents (Claude) under the author's
+direction; verification runs were separate instances of the same model. The author is responsible for the content.
+
+\begin{thebibliography}{9}
+\bibitem{oai} OpenAI, Universal optimality of the triangular lattice, OpenAI Math Release preprint, 2026-09-23,
+\url{https://github.com/openai/math}.
+\bibitem{ckmrv} H.~Cohn, A.~Kumar, S.~D.~Miller, D.~Radchenko, M.~Viazovska, Universal optimality of the $E_8$ and
+Leech lattices and interpolation formulas, Ann.\ of Math.\ 196 (2022) 983--1082, doi:10.4007/annals.2022.196.3.3.
+\bibitem{d12} X.~Callens, Riesz-energy, finiteness and every-density corollaries of the openai/math planar
+universal-optimality theorem, kernel-checked in Lean 4, Zenodo (2026), doi:10.5281/zenodo.23285631.
+\bibitem{elenchus} X.~Callens, SocrateAI-Scientific-Elenchus,
+\url{https://github.com/xaviercallens/SocrateAI-Scientific-Elenchus} (commit \texttt{c9ae8cd}).
+\bibitem{rusty} X.~Callens, rusty-SUNDIALS, \url{https://github.com/xaviercallens/rusty-SUNDIALS}.
+\bibitem{oc20} L.~Chanussot et al., OC20 IS2RES val id, ColabFit (2024), doi:10.60732/b4005525; Open Catalyst 2020,
+ACS Catal.\ 11 (2021) 6059, doi:10.1021/acscatal.0c04525.
+\end{thebibliography}
+\end{document}

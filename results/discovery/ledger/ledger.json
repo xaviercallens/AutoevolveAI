@@ -1,0 +1,184 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "UO-A-0001",
+   "statement": "OAI.AtomicTriangular.universal_energy_minimum (openai/math): for every g with AdmissiblePotential g and every C with LocallyFinite C and DensityOne C, latticeEnergy g <= energy g C and latticeEnergy g = energy g A. Kernel footprint within the allowlist. Certifies the statement about THOSE upstream definitions; that they express the Cohn-Kumar universal-optimality question is a statement-adequacy matter (AI-audited only).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:f760da93b3f8764e16692037c198bc795b688ba6c7893d3650b587b91488a2e8",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-A-0002",
+   "statement": "TriangularRiesz.riesz_admissible and triangular_riesz_optimal: for s > 0, AdmissiblePotential (fun t => t^(-(s/2))), hence latticeEnergy (riesz s) <= energy (riesz s) C for every locally finite density-one C.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "UO-A-0001"
+   ],
+   "evidence": "sha256:9918f1d011d0303687d41358dffc4c915bff95c886c27f80f87459c6f8969245",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-A-0003",
+   "statement": "TriangularRiesz.latticeEnergy_riesz_lt_top: for s > 2, latticeEnergy (riesz s) < top.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:19a4c78f11831a5c2008eda76e538d70653828ec48541af04b2e9fbb308c845e",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-A-0004",
+   "statement": "TriangularDensity.triangular_optimal_any_density (with scaled_density, attained) and unscaled_false: for rho > 0 and admissible h, (sqrt rho)^-1 A is locally finite with DensityRho rho and its energy is <= that of every locally finite DensityRho-rho configuration; the unrescaled claim is false at rho = 1/4 for riesz 4.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "UO-A-0001",
+    "UO-A-0003"
+   ],
+   "evidence": "sha256:7c308f8542635fb926ab7ab80dcced7d36f7a572445f7c0b259c10947dbebf99",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-A-0005",
+   "statement": "TriangularUniversalOptimality.triangular_universally_optimal: for rho > 0, UniversallyOptimal rho ((sqrt rho)^-1 A), where UniversallyOptimal is defined in UniversalOptimality.lean with upstream's lower (liminf) energy.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "UO-A-0004"
+   ],
+   "evidence": "sha256:5bb1ea3f6b4e7113731109883fbaf7715d83b77cd35a695f7b56eff60cd89d9a",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-A-0006",
+   "statement": "TriangularUniversalOptimality.universal_optimum_not_unique: there is C with UniversallyOptimal 1 C and no isometry f of the plane with f '' A = C (witness A minus the origin; vacancy_energy: its energy equals latticeEnergy g for every admissible g).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "UO-A-0001"
+   ],
+   "evidence": "sha256:6bfa801c34804fbda2749348bda8b4d0f3a67ac88bec500a8fc5465343dc6191",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-L-0001",
+   "statement": "CKMRV Definition 1.3: a configuration of density rho is universally optimal if it minimises p-energy for every completely monotonic function of squared distance; density is bookkeeping (rescaling).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:c2a32e4d23879c4c7b7651a48a3db1f1259c1704d01402aaa634d96541595bbe",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-L-0002",
+   "statement": "CKMRV Theorem 1.4 and the remark after it: E8 and Leech are universally optimal and unique among periodic configurations; uniqueness cannot hold among all configurations because removing a single particle changes neither density nor energy.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:c33de49826c7b978cef08aaecaebc9a06865398303546579b2ffa830cd5f1119",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-L-0003",
+   "statement": "History per CKMRV: Ventevogel-Nijboer proved universal optimality of Z in dimension 1 (Cohn-Kumar gave another proof); before CKMRV no universal optimum in dimension > 1 was proved; universal optimality of A2 in full generality is called an important open problem.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:95fe5b1aedb461ff19158d529b402a0d214941298501fbd929b5ae56a0e7a35d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-L-0004",
+   "statement": "CKMRV footnote 2: if p and q' are completely monotonic then p o q is completely monotonic (Faa di Bruno sign argument).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:ae74c0a917b615f4ea96e8994db191f29376cebb892fb1bf8f4d6fb640de776d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-C-0001",
+   "statement": "Yukawa V(r) = exp(-kappa r)/r, as g(t) = exp(-kappa sqrt t)/sqrt t, is completely monotone in t: t^(-1/2) is completely monotone; exp(-kappa sqrt t) is p o q with p(u) = exp(-kappa u) completely monotone and q = sqrt with q' = t^(-1/2)/2 completely monotone (UO-L-0004); products of completely monotone functions are completely monotone (Leibniz rule). Not kernel-checked.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "UO-L-0004"
+   ],
+   "evidence": "sha256:7d30d382ba303891aa5e57bead4838161bd3331a6c8e8de27d481376bab844b2",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-C-0002",
+   "statement": "Interpretation of UO-A-0006: in the lower-energy formulation over all locally finite configurations, 'mutually repelling particles always arrange into a triangular lattice' is false as a uniqueness statement; only the minimum value is pinned down there. Uniqueness among periodic configurations (CKMRV's form) is open in dimension 2 and not addressed. UniversallyOptimal is strictly weaker than CKMRV Def 1.3 (no requirement that the energy exist as a limit).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "UO-A-0006",
+    "UO-L-0001",
+    "UO-L-0002"
+   ],
+   "evidence": "sha256:fafc5baff2fbbd9a8fad9909715d193ae9afda37fe6e360a969c732f533d8782",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-X-0001",
+   "statement": "CVODE N-body study, Yukawa kappa = 2, N = 288 periodic: P1 (no relaxed configuration below e_tri by more than 1e-9 relative) pass = True; P2 per-family perfect-lattice counts after annealing = {'hf_oc20': 1, 'uniform': 1}; P3 defected T=0 quenches = {'hf_oc20': '15/20', 'uniform': '14/20'}. Consistency evidence only; claim_licence false.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "UO-C-0001"
+   ],
+   "evidence": "sha256:8ad7daea2964ccb228bc2a9409690db26cb540e5a3b1479d2b144348328ec3fb",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-X-0002",
+   "statement": "Truncation cross-check kappa = 1 (truncation ~4e-5): P1 pass = True; P2 = {'hf_oc20': 0, 'uniform': 2}. Consistency evidence only.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "UO-C-0001"
+   ],
+   "evidence": "sha256:de2057e022900a0ac469dc7ffe2b73514284faaf61aa8a5d7ddd58c2c0d1aee9",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-X-0003",
+   "statement": "Controls: perfect and noisy triangular lattices return to the lattice (gap ~1e-14, Hessian two zero modes, smallest other eigenvalue ~0.024); square lattice is a saddle (negative Hessian eigenvalues) and relaxes below its energy; references e_square > e_tri.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:a00495494b62946edbd3d2bfb86bab19f8895c511ea4cbfb5c979aab642b3456",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-X-0004",
+   "statement": "Open (harmonic bowl) vs closed (soft wall) disk, N = 300, kappa = 2: {'open_bowl': {'runs': 10, 'interior_defect_fraction_mean': 0.08554350530612945, 'edge_defect_fraction_mean': 0.9652501289202309, 'interior_psi6_local_mean': 0.9128549999999999, 'cluster_radius_mean': 10.805509999999998}, 'closed_wall': {'runs': 10, 'interior_defect_fraction_mean': 0.03256901047225612, 'edge_defect_fraction_mean': 0.602250023463206, 'interior_psi6_local_mean': 0.9305160000000001, 'cluster_radius_mean': 9.88722}}. Finite-size edge-effect description; not a test of the Lean open/closed-disk counting convention.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:f90e7179a32e8647c6cfc65dac03b1c5bb9deb9d008cdfa316a993b6df878166",
+   "audit": null
+  }
+ ]
+}

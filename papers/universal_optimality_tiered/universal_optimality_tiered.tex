@@ -29,22 +29,26 @@ locally finite planar configurations of density one, for every smooth completely
 claim we make about it in a claim ledger with the tiers of the SocrateAI-Scientific-Elenchus method~\cite{elenchus}:
 \textbf{A} kernel-checked, \textbf{L} cited literature, \textbf{C} argument, \textbf{X} floating-point
 exploration, which may steer but may never support a claim. At Tier~A, conditional only on the fidelity of upstream's
-definitions, we prove in Lean that the rescaled triangular lattice is universally optimal at every density in the sense
-of Cohn--Kumar--Miller--Radchenko--Viazovska's Definition~1.3, with upstream's lower energy, which is strictly weaker
-than theirs. We also prove that universal optima are \emph{not} unique among all configurations: the lattice with one
-vacancy is another, and it is not an isometric image of the lattice. So the popular gloss ``repelling particles always
-arrange into a triangular lattice'' is false in this formulation. At Tier~X we run an overdamped $N$-body relaxation
+definitions and of our transcription, we prove in Lean that the rescaled triangular lattice is universally optimal at
+every density in the sense of Cohn--Kumar--Miller--Radchenko--Viazovska's (CKMRV) Definition~1.3, stated with
+upstream's lower energy. That is weaker than their notion, which also requires the energy to exist as a limit. We also
+formalise the remark that follows CKMRV's Theorem~1.4, which upstream also notes: universal optima are not unique among
+all configurations, because the lattice with one vacancy is another and is not an isometric image of the lattice. In
+this formulation only the minimum value is determined, not the minimiser. At Tier~X we run an overdamped $N$-body relaxation
 for the 2D Yukawa interaction, which is in the theorem's class (Tier~C), with the CVODE solver of rusty-SUNDIALS, from
 initial conditions derived from the Hugging Face OC20 dataset. The preregistered falsifiable prediction, that no
 relaxed periodic configuration falls below the triangular-lattice energy, is reported with its controls. It is
-consistency evidence, not proof. The ledger passes the Elenchus gate with \LedgerBlocks{} blocking findings and
-\LedgerFlags{} flags, each flag marking a Tier~A row whose statement adequacy no human has audited.
+consistency evidence, not proof. The Elenchus ledger gate reports \LedgerBlocks{} blocking findings and
+\LedgerFlags{} flags (exit \LedgerExit). Each flag marks a Tier~A row whose statement adequacy no human has audited,
+so by the method's own publish gate the ledger does not yet pass.
 \end{abstract}
 
 \section{Claims and tiers}
 
-\begin{table}[h]\centering\small
-\begin{tabular}{>{\raggedright\arraybackslash}p{2.1cm}p{0.6cm}p{12.4cm}}
+Table~\ref{tab:ledger} lists every claim made below, with its tier and its ledger identifier.
+
+\begin{table}[!ht]\centering\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{2.1cm}p{0.6cm}p{11.8cm}}
 \toprule
 Ledger id & Tier & Claim (abbreviated; full statements in \texttt{ledger.json}) \\
 \midrule
@@ -61,7 +65,7 @@ UO-X-000$n$ & X & CVODE $N$-body study, controls, disk study (\texttt{claim\_lic
 \caption{The claim ledger. A row may not be cited above its tier, and no row is filed above anything it rests on;
 both are checked mechanically, transitively, by the Elenchus gate. Every row points to a content-addressed evidence
 blob (compiled axiom output with source hashes, primary-source excerpts with line numbers, argument text, or result
-files).}
+files).}\label{tab:ledger}
 \end{table}
 
 \section{Tier A: what the kernel checked}
@@ -84,29 +88,35 @@ and optimality of $\rho^{-1/2}A$ at every density with attainment are in~\cite{d
 & \forall g \text{ admissible},\ \forall C' \text{ locally finite of density } \rho:\ E_g(C)\le E_g(C').
 \end{align*}
 This transcribes~\cite[Def.~1.3]{ckmrv} with one difference: CKMRV also require the energy of $C$ to exist as a limit,
-and $\mathrm{UO}$ uses only the $\liminf$, so it is strictly weaker.
+and $\mathrm{UO}$ uses only the $\liminf$, so it is weaker (we do not claim it is strictly weaker; no witness is
+filed). For a lattice the limit exists classically~\cite{ckmrv}, so Theorem~1 gives CKMRV's own notion for
+$\rho^{-1/2}A$ once that unformalised fact is supplied.
 \begin{theorem}[\lean{triangular_universally_optimal}]
 For every $\rho>0$, $\mathrm{UO}(\rho,\rho^{-1/2}A)$.
 \end{theorem}
 
 \paragraph{Non-uniqueness (UO-A-0006).}
-\begin{theorem}[\lean{vacancy_energy}, \lean{vacancy_not_isometric_image}, \lean{universal_optimum_not_unique}]
+\begin{theorem}[\lean{vacancy_energy}; \lean{vacancy_not_isometric_image};\\ \lean{universal_optimum_not_unique}]
 For every admissible $g$, $E_g(A\setminus\{0\})=\sum_{a\in A\setminus0}g(|a|^2)$. Hence $\mathrm{UO}(1,A\setminus\{0\})$, and
 there is no isometry $f$ of the plane with $f(A)=A\setminus\{0\}$.
 \end{theorem}
 \noindent\emph{Proof idea.} Removing one point removes a sub-sum from each disk energy, and the normalisation changes
 by $N_R/(N_R-1)\to1$; the $\liminf$ comparison closes with \lean{ENNReal.liminf_mul_le}, and upstream's theorem gives
 the reverse inequality. For the isometry statement, isometries of the plane are affine (Mathlib's
-\lean{Isometry.affineIsometryOfStrictConvexSpace}), so $f(2a-b)=2f(a)-f(b)$; taking preimages of
-$p(1,0)$ and $p(2,0)$ produces $0\in f(A)$, contradicting $0\notin A\setminus\{0\}$.
+\lean{Isometry.affineIsometryOfStrictConvexSpace}), so $f(2a-b)=2f(a)-f(b)$. Write $p$ for \lean{triangularPoint}
+and pick $a,b\in A$ with $f(a)=p(1,0)$ and $f(b)=p(2,0)$. Then $2a-b\in A$ and $f(2a-b)=2p(1,0)-p(2,0)=p(0,0)=0$,
+contradicting $0\notin A\setminus\{0\}$.
 
-This is the remark after~\cite[Thm.~1.4]{ckmrv} (UO-L-0002), now as a theorem in this setting. Its interpretation
-(UO-C-0002) is Tier~C: in the lower-energy formulation over \emph{all} locally finite configurations, ``the minimiser is
-the triangular lattice'' is false, and only the minimum value is pinned down. Uniqueness among \emph{periodic}
-configurations, which CKMRV prove in dimensions 8 and 24, is open in dimension~2 and is not addressed here.
+This is the remark after~\cite[Thm.~1.4]{ckmrv} (UO-L-0002), also noted by upstream (``it identifies the minimum
+value, not all minimizers''~\cite[\S1]{oai}), now as a theorem in this setting. Its interpretation (UO-C-0002) is
+Tier~C: in the lower-energy formulation over \emph{all} locally finite configurations, ``the minimiser is the
+triangular lattice'' is false, and only the minimum value is pinned down. Uniqueness among \emph{periodic}
+configurations, which CKMRV prove in dimensions 8 and 24, is not claimed by upstream for dimension~2 and is not
+addressed here.
 
-\paragraph{Gates.} A clean sequential rebuild of the whole chain exits~0. All 22 audited declarations have footprints
-within the allowlist, and two planted controls (\lean{sorry}, a custom axiom) are flagged by the same audit. Each layer
+\paragraph{Gates.} A clean sequential rebuild of the whole chain exits~0 (recorded in the AutoevolveAI commit message
+\texttt{d50dfc4}; no build log is committed). The audit file prints 24 footprints: the 22 audited declarations are
+within the allowlist, and the 2 planted controls (\lean{sorry}, a custom axiom) are flagged by the same audit. Each layer
 was re-verified by a separate instance of the same AI model that recompiled it and wrote its own controls. That is
 producer$\ne$verifier, not human review.
 
@@ -114,8 +124,8 @@ producer$\ne$verifier, not human review.
 Per CKMRV's own text (UO-L-0003): Ventevogel and Nijboer proved universal optimality of $\mathbb Z$ in dimension~1
 (Cohn and Kumar gave another proof); before CKMRV no universal optimum was proved in any dimension $>1$; CKMRV proved
 it for $E_8$ and the Leech lattice; and universal optimality of the hexagonal lattice ``in full generality is an
-important open problem''. Statements that the problem was previously solved only in dimensions 8 and 24 omit
-dimension~1.
+important open problem''. So dimension~1 was settled before dimensions 8 and 24, and dimension~2 is the first open
+case.
 
 \section{Tier C: why the Yukawa interaction is in the class}
 $V(r)=e^{-\kappa r}/r$ is $g(t)=e^{-\kappa\sqrt t}/\sqrt t$ with $t=r^2$. Here $t^{-1/2}$ is completely monotone;
@@ -129,7 +139,7 @@ density-one configuration has Yukawa energy below the triangular lattice's. This
 
 \paragraph{Instrument.} rusty-SUNDIALS~\cite{rusty}, crate \texttt{qf-yukawa-crystal}. $N=288$ particles in a periodic
 rectangle that holds the triangular lattice $16\times18$ exactly at density~1; shifted-force Yukawa with cutoff
-$r_c=8$ (minimum image), $\kappa=2$ (truncation size $\TruncTwo$) and $\kappa=1$ ($\TruncOne$). The truncated
+$r_c=8$ (minimum image), $\kappa=2$ ($V(r_c)=\TruncTwo$) and $\kappa=1$ ($V(r_c)=\TruncOne$). The truncated
 potential is not exactly completely monotone beyond $r_c$; that is a disclosed approximation. Overdamped relaxation
 $\dot x=-\nabla E$ is integrated by CVODE (BDF) with the analytic Jacobian $-\nabla^2E$ until $\max|F|<10^{-9}$, and
 minima are checked by the Hessian spectrum (cyclic Jacobi). Two packages named in common descriptions of this pipeline
@@ -144,10 +154,15 @@ family. We do not claim that either is more realistic; the dataset supplies diso
 interatomic potentials were deliberately not used: they model atomic chemistry, not a completely monotone pair
 potential, and cannot test this theorem.
 
-\paragraph{Preregistration.} The predictions and controls were committed (\texttt{636c514}) before the solver code
-(\texttt{968b0f2}). P1: no relaxed configuration has energy per particle below $e_{\rm tri}$ by more than $10^{-9}$
-relative. P2: at least one annealed run per family reaches the perfect lattice. P3: $T=0$ quenches mostly end in
-defected local minima, which is a property of gradient flow and not evidence against the theorem.
+\paragraph{Preregistration.} The predictions and controls were committed (\texttt{636c514}) before any result was
+produced and before the solver code was committed (\texttt{968b0f2}); results are in commit \texttt{1f46e70}. P1: no
+relaxed configuration has energy per particle below $e_{\rm tri}$ by more than $10^{-9}$ relative. P2: at least one
+annealed run per family reaches the perfect lattice. P3: $T=0$ quenches mostly end in defected local minima, which is
+a property of gradient flow and not evidence against the theorem. \emph{Deviations from the preregistration.} (a) The
+coordination cutoff is $1.35\,d_0$, with $d_0$ the median nearest-neighbour distance of the configuration, not the
+registered $1.4a$. (b) At $\kappa=1$ ten initial conditions per family were run, and five incommensurate controls,
+instead of twenty, twenty and ten. (c) The incommensurate control's automatic pass test checks only that every state
+is above $e_{\rm tri}$; that the states are defected, also registered, is read from the table (all are).
 
 \paragraph{Controls.} References: $e_{\rm tri}=\ETriTwo$ and $e_{\rm sq}=\ESqTwo$ at $\kappa=2$
 ($e_{\rm sq}-e_{\rm tri}=\DSqTwo$); the periodic box reproduces the direct lattice sum to $\BoxVsSumTwo$. A perfect
@@ -158,19 +173,23 @@ in a box that cannot hold the triangular lattice the relaxed states keep defects
 (\IncommTwo).
 
 \paragraph{Results.} Table~\ref{tab:num}. \textbf{P1} (the falsifiable prediction): \POneTwo{} at $\kappa=2$, with
-\UndercutsTwo{} undercuts in \RelaxTwo{} relaxations, and \POneOne{} at $\kappa=1$, with \UndercutsOne{} undercuts in
-\RelaxOne. The lowest annealed gaps, $\MinGapTwoHF$ (OC20-derived) and $\MinGapTwoUni$ (uniform) at $\kappa=2$, are the
+\UndercutsTwo{} undercuts in \RelaxTwo{} relaxations (\RelaxCtlTwo{} of them in the incommensurate control box), and
+\POneOne{} at $\kappa=1$, with \UndercutsOne{} undercuts in \RelaxOne{} (\RelaxCtlOne{} control). The lowest annealed gaps, $\MinGapTwoHF$ (OC20-derived) and $\MinGapTwoUni$ (uniform) at $\kappa=2$, are the
 lattice itself to round-off. \textbf{P2}: \PTwoTwo{} at $\kappa=2$, but narrowly: \PerfTwoHF{} of \RunsTwoHF{}
 (OC20-derived) and \PerfTwoUni{} of \RunsTwoUni{} (uniform) annealed runs reached the perfect lattice. At $\kappa=1$
 P2 \emph{fails as preregistered}: \PerfOneHF{} of \RunsOneHF{} and \PerfOneUni{} of \RunsOneUni{}. The other annealed
-runs end in defected or strained local minima above $e_{\rm tri}$. The annealing schedule is a weak instrument, and
-this failure says nothing about the theorem in either direction. \textbf{P3}, as expected: \QDefTwoHF{} of
-\RunsTwoHF{} and \QDefTwoUni{} of \RunsTwoUni{} $T=0$ quenches at $\kappa=2$ keep defects. The remainder are defect-free
-but above $e_{\rm tri}$; their structure was not analysed. Every run converged to $\max|F|<10^{-9}$, and no final
-Hessian has a negative eigenvalue, so every end state is a local minimum. The negative control behaves as it must: in
-the incommensurate box every relaxed state is defected and at least $\IncommMinTwo$ above $e_{\rm tri}$. The two
-initial-condition families behave alike. The dataset supplied disorder, and nothing in these runs depends on its
-chemistry.
+runs end in defected local minima or in defect-free states above $e_{\rm tri}$. The annealing schedule is a weak
+instrument, and this failure says nothing about the theorem in either direction. \textbf{P3}, as expected: \QDefTwoHF{}
+of \RunsTwoHF{} and \QDefTwoUni{} of \RunsTwoUni{} $T=0$ quenches at $\kappa=2$ keep defects. The remainder are
+defect-free but above $e_{\rm tri}$; their structure was not analysed. Every run converged to $\max|F|<10^{-9}$. The
+final Hessian was computed for the \HessCheckedTwo{} ($\kappa=2$) and \HessCheckedOne{} ($\kappa=1$) non-control runs.
+\HessNegTwo{} and \HessNegOne{} of them have a negative eigenvalue; all have exactly two translation modes, and every
+other eigenvalue is at least $\HessThirdTwo$ ($\kappa=2$) and $\HessThirdOne$ ($\kappa=1$). These end states are
+therefore strict local minima modulo translation. The incommensurate-box and disk runs were not Hessian-checked. The
+negative control behaves as it must: in the incommensurate box every relaxed state is defected and at least
+$\IncommMinTwo$ above $e_{\rm tri}$. At $\kappa=2$ the two initial-condition families behave alike. At $\kappa=1$
+they differ (Table~\ref{tab:num}), with small counts. Nothing in these runs depends on the dataset's chemistry: it
+supplied disorder only.
 
 \begin{table}[h]\centering\scriptsize\setlength{\tabcolsep}{3pt}
 \begin{tabular}{llrrrrrrr}
@@ -180,7 +199,8 @@ chemistry.
 \input{table_numerics.tex}
 \end{tabular}
 \caption{CVODE relaxations. ``perfect'': zero defects and $|e-e_{\rm tri}|<10^{-8}|e_{\rm tri}|$. Relative gap
-$(e-e_{\rm tri})/e_{\rm tri}$. ``Hess.$<0$'': runs whose final Hessian has a negative eigenvalue. The incommensurate
+$(e-e_{\rm tri})/e_{\rm tri}$. ``Hess.$<0$'': runs whose final Hessian has a negative eigenvalue, over runs whose Hessian was computed (n/a: not
+computed). The incommensurate
 family uses a square box and is a negative control. Tier~X throughout.}\label{tab:num}
 \end{table}
 
@@ -196,20 +216,22 @@ about measure-zero boundary terms in a limit.
 \begin{enumerate}
 \item No human has audited whether upstream's definitions, or ours, express the intended mathematics; the ledger flags
 every Tier~A row for this.
-\item $\mathrm{UO}$ is strictly weaker than CKMRV's universal optimality (no existence of the energy limit).
-\item Uniqueness among periodic configurations in dimension~2 is open and not attempted.
+\item $\mathrm{UO}$ is weaker than CKMRV's universal optimality (it does not require the energy limit to exist).
+\item Uniqueness among periodic configurations in dimension~2 is not claimed by upstream and was not attempted.
 \item The Yukawa step is Tier~C; the numerics are Tier~X and support no claim.
 \item Finite $N$, truncated potential, heuristic annealing: P2 can fail for reasons that have nothing to do with the
 theorem.
 \end{enumerate}
 
 \paragraph{Reproducibility.} Lean: AutoevolveAI \texttt{formal\_cert/Triangular/}; LeanMaster release
-\texttt{v3.48.1}. Numerics: rusty-SUNDIALS branch \texttt{physics/yukawa-triangular-2026-10-10}. Ledger and evidence:
+\texttt{v3.48.1}. Numerics: rusty-SUNDIALS results commit \texttt{1f46e70}. Ledger and evidence:
 \texttt{results/discovery/ledger/} (gate: \texttt{tools/ledger.py} of~\cite{elenchus}, exit \LedgerExit{}:
 \LedgerClaims{} claims, \LedgerBlocks{} blocks, \LedgerFlags{} flags).
 
 \paragraph{AI use.} The proofs, numerics, ledger and text were produced by AI agents (Claude) under the author's
-direction; verification runs were separate instances of the same model. The author is responsible for the content.
+direction; verification runs and the manuscript audit were separate instances of the same model. A DeepSeek-Prover-V2
+model (on Cloud Run) was also queried during the Lean work; none of its output was used. The author is responsible
+for the content.
 
 \begin{thebibliography}{9}
 \bibitem{oai} OpenAI, Universal optimality of the triangular lattice, OpenAI Math Release preprint, 2026-09-23,

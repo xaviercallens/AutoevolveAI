@@ -56,11 +56,17 @@ def main() -> None:
             fname, stage = fam.split("/")
             short = {"hf_oc20": "OC20-derived", "uniform": "uniform", "ctl_neg_incommensurate_box": "incomm.\\ box (ctl)"}[fname]
             label = f"{short}, {'anneal + quench' if stage == 'anneal_quench' else '$T=0$ quench'}"
+            hess = f"{v['hess_negative_runs']}/{v['hess_checked']}" if v["hess_checked"] else "n/a"
             rows.append(f"$\\kappa={2 if tag == 'Two' else 1}$ & {label} & {v['runs']} & {v['perfect_lattice']} & {v['defected']} & "
-                        f"${sci(v['min_rel_gap'])}$ & ${sci(v['max_rel_gap'])}$ & {v['not_converged']} & {v['hess_negative_runs']} \\\\")
+                        f"${sci(v['min_rel_gap'])}$ & ${sci(v['max_rel_gap'])}$ & {v['not_converged']} & {hess} \\\\")
         m[f"Undercuts{tag}"] = str(len(k["P1_no_undercut"]["undercuts"]))
         fam = k["families"]
         m[f"Relax{tag}"] = str(sum(v["runs"] for v in fam.values()))
+        m[f"RelaxCtl{tag}"] = str(sum(v["runs"] for f, v in fam.items() if f.startswith("ctl_")))
+        m[f"HessChecked{tag}"] = str(sum(v["hess_checked"] for v in fam.values()))
+        m[f"HessNeg{tag}"] = str(sum(v["hess_negative_runs"] for v in fam.values()))
+        thirds = [v["hess_third_min"] for v in fam.values() if v["hess_third_min"] is not None]
+        m[f"HessThird{tag}"] = sci(min(thirds), 1)
         for f, ftag in (("hf_oc20", "HF"), ("uniform", "Uni")):
             a = fam[f"{f}/anneal_quench"]
             q = fam[f"{f}/quench"]

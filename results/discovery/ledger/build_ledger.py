@@ -47,7 +47,8 @@ def axioms_lines(names: list[str]) -> list[str]:
 def excerpt(lines: tuple[int, int]) -> dict:
     t = CKMRV.read_text().splitlines()
     return {"source": "Cohn, Kumar, Miller, Radchenko, Viazovska, Universal optimality of the E8 and Leech lattices and interpolation formulas, Ann. Math. 196 (2022) 983-1082, arXiv:1902.05438 (alphaXiv full text)",
-            "file": file_ref(CKMRV), "lines": list(lines), "text": "\n".join(t[lines[0] - 1:lines[1]])}
+            "durable_reference": "arXiv:1902.05438 (doi:10.4007/annals.2022.196.3.3); line numbers refer to the alphaXiv full-text extraction whose sha256 is given; the excerpt is reproduced verbatim below",
+            "extraction_sha256": sha(CKMRV.read_bytes()), "lines": list(lines), "text": "\n".join(t[lines[0] - 1:lines[1]])}
 
 
 def rec(cid: str, tier: str, kind: str, statement: str, depends: list[str], ev: dict) -> dict:
@@ -67,7 +68,9 @@ def main() -> None:
     claims = [
         rec("UO-A-0001", "A", "lean_axioms",
             "OAI.AtomicTriangular.universal_energy_minimum (openai/math): for every g with AdmissiblePotential g and every C with LocallyFinite C and DensityOne C, latticeEnergy g <= energy g C and latticeEnergy g = energy g A. Kernel footprint within the allowlist. Certifies the statement about THOSE upstream definitions; that they express the Cohn-Kumar universal-optimality question is a statement-adequacy matter (AI-audited only).",
-            [], lean_ev(["OAI.AtomicTriangular.universal_energy_minimum"], [])),
+            [], dict(lean_ev(["OAI.AtomicTriangular.universal_energy_minimum"], []),
+                     sources=[file_ref(UPSTREAM.parents[1] / "OAI/Analysis/Triangular/Energy/Universal.lean"),
+                              file_ref(UPSTREAM.parents[1] / "OAI/Analysis/Triangular/Energy/Basic.lean")])),
         rec("UO-A-0002", "A", "lean_axioms",
             "TriangularRiesz.riesz_admissible and triangular_riesz_optimal: for s > 0, AdmissiblePotential (fun t => t^(-(s/2))), hence latticeEnergy (riesz s) <= energy (riesz s) C for every locally finite density-one C.",
             ["UO-A-0001"], lean_ev(["TriangularRiesz.riesz_admissible", "TriangularRiesz.triangular_riesz_optimal"], [T + "Riesz.lean"])),
@@ -99,7 +102,7 @@ def main() -> None:
             "Yukawa V(r) = exp(-kappa r)/r, as g(t) = exp(-kappa sqrt t)/sqrt t, is completely monotone in t: t^(-1/2) is completely monotone; exp(-kappa sqrt t) is p o q with p(u) = exp(-kappa u) completely monotone and q = sqrt with q' = t^(-1/2)/2 completely monotone (UO-L-0004); products of completely monotone functions are completely monotone (Leibniz rule). Not kernel-checked.",
             ["UO-L-0004"], {"kind": "argument", "text": "See statement; the product step uses (fg)^(n) = sum binom(n,k) f^(k) g^(n-k), every term of sign (-1)^n."}),
         rec("UO-C-0002", "C", "argument",
-            "Interpretation of UO-A-0006: in the lower-energy formulation over all locally finite configurations, 'mutually repelling particles always arrange into a triangular lattice' is false as a uniqueness statement; only the minimum value is pinned down there. Uniqueness among periodic configurations (CKMRV's form) is open in dimension 2 and not addressed. UniversallyOptimal is strictly weaker than CKMRV Def 1.3 (no requirement that the energy exist as a limit).",
+            "Interpretation of UO-A-0006: in the lower-energy formulation over all locally finite configurations, 'mutually repelling particles always arrange into a triangular lattice' is false as a uniqueness statement; only the minimum value is pinned down there. Uniqueness among periodic configurations (CKMRV's form) is not claimed by upstream for dimension 2 and not addressed. UniversallyOptimal is weaker than CKMRV Def 1.3 (no requirement that the energy exist as a limit); strictness is not claimed.",
             ["UO-A-0006", "UO-L-0001", "UO-L-0002"], {"kind": "argument", "text": "Gloss of a Tier A statement; Tier A attaches to the formal statement, never to its gloss."}),
     ]
     summary = YUK / "results/summary.json"

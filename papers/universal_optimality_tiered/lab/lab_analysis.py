@@ -41,22 +41,42 @@ def interior_mask(x: np.ndarray, margin: float) -> np.ndarray:
     return np.all((x >= lo) & (x <= hi), axis=1)
 
 
-def to_density_one(x: np.ndarray) -> tuple[np.ndarray, float]:
-    """Rescale so that the interior density is 1. Density = 1 / mean Voronoi cell area of interior particles
-    (exact for a lattice; a bounding-box estimate is biased by the edge half-cell, which the self-test caught)."""
+def voronoi_density(x: np.ndarray, mask: np.ndarray) -> float:
+    """Density = 1 / mean Voronoi cell area of the masked particles (exact for a lattice; a bounding-box estimate is
+    biased by the edge half-cell, which the self-test caught)."""
     from scipy.spatial import ConvexHull, Voronoi
 
-    c = x.mean(axis=0)
-    span = x.max(axis=0) - x.min(axis=0)
-    inner = np.all(np.abs(x - c) <= span / 4, axis=1)
     vor = Voronoi(x)
     areas = []
-    for i in np.flatnonzero(inner):
+    for i in np.flatnonzero(mask):
         reg = vor.regions[vor.point_region[i]]
         if reg and -1 not in reg:
             areas.append(ConvexHull(vor.vertices[reg]).volume)
-    rho = 1.0 / float(np.mean(areas))
-    return (x - c) * math.sqrt(rho), rho
+    return 1.0 / float(np.mean(areas))
+
+
+def to_density_one(x: np.ndarray, rcut: float) -> tuple[np.ndarray, float, np.ndarray]:
+    """Rescale so that the density of the ENERGY-MASK particles (those at least rcut from the field-of-view edge,
+    in density-1 units) is 1. Two passes: a central-region estimate fixes the units, then the density is
+    re-estimated on the energy mask itself, so density and energy refer to the same particles."""
+    c = x.mean(axis=0)
+    span = x.max(axis=0) - x.min(axis=0)
+    central = np.all(np.abs(x - c) <= span / 4, axis=1)
+    rho = voronoi_density(x, central)
+    for _ in range(2):
+        x1 = (x - c) * math.sqrt(rho)
+        mask = interior_mask(x1, rcut)
+        rho = rho * voronoi_density(x1, mask)  # density of the masked particles, in input units
+    x1 = (x - c) * math.sqrt(rho)
+    return x1, rho, interior_mask(x1, rcut)
+
+
+def tail(law: str, rcut: float) -> float:
+    """Uniform-density tail of the per-particle energy beyond rcut at density 1: (1/2) int_rcut^inf 2 pi r v(r) dr."""
+    if law == "dipolar":
+        return math.pi / rcut
+    k = float(law.split(":")[1])
+    return math.pi * math.exp(-k * rcut) / k
 
 
 def order(x: np.ndarray, mask: np.ndarray) -> dict:
@@ -103,14 +123,22 @@ def square_patch(n: int) -> np.ndarray:
 
 
 def analyse(x: np.ndarray, law: str, rcut: float) -> dict:
-    x1, rho = to_density_one(x)
-    mask = interior_mask(x1, rcut)
+    """`law` is 'dipolar' or 'yukawa:<kappa>' with kappa in the INPUT length units; it is converted to density-1
+    units internally (kappa_1 = kappa_input / sqrt(rho)). Energies are truncated at rcut (density-1 units) with a
+    uniform tail correction; measured and reference are truncated identically. The truncated potential is not exactly
+    completely monotone, so the comparison is between equally truncated energies (see the paper's kill criteria)."""
+    x1, rho, mask = to_density_one(x, rcut)
+    law1 = law
+    if law.startswith("yukawa:"):
+        law1 = f"yukawa:{float(law.split(':')[1]) / math.sqrt(rho)}"
     ref = triangular_patch(int(2 * math.sqrt(len(x1))) + 2 * int(rcut) + 6)
     ref = ref - ref.mean(axis=0)
-    e_tri = energy_per_particle(ref, interior_mask(ref, rcut), law, rcut)
-    e = energy_per_particle(x1, mask, law, rcut)
-    out = {"n": int(len(x)), "measured_density_input_units": rho, "law": law, "rcut": rcut, **order(x1, mask),
-           "e_per_particle": e, "e_tri_same_density": e_tri, "rel_gap": (e - e_tri) / abs(e_tri),
+    e_tri = energy_per_particle(ref, interior_mask(ref, rcut), law1, rcut)
+    e = energy_per_particle(x1, mask, law1, rcut)
+    tc = tail(law1, rcut)
+    out = {"n": int(len(x)), "measured_density_input_units": rho, "law": law, "law_density1": law1, "rcut": rcut,
+           **order(x1, mask), "e_per_particle_truncated": e, "e_tri_truncated": e_tri, "tail_correction": tc,
+           "e_per_particle": e + tc, "e_tri_same_density": e_tri + tc, "rel_gap": (e - e_tri) / abs(e_tri + tc),
            "prediction_e_ge_e_tri": bool(e >= e_tri * (1 - 1e-9))}
     return out
 
@@ -127,7 +155,10 @@ def selftest() -> int:
     sq = square_patch(40)
     r_sq = analyse(sq, "dipolar", 6.0)
     ok &= r_sq["defect_fraction"] == 1.0 and r_sq["rel_gap"] > 0  # negative control: square is detected and costs more
-    print(json.dumps({"triangular": r_tri, "noisy_triangular": r_noisy, "square": r_sq}, indent=1))
+    # Yukawa kappa supplied in input units: a lattice scaled by 3.7 with kappa_input = 2/3.7 must give kappa_1 = 2.
+    r_yuk = analyse(tri * 3.7, f"yukawa:{2 / 3.7}", 6.0)
+    ok &= abs(float(r_yuk["law_density1"].split(":")[1]) - 2.0) < 1e-9 and abs(r_yuk["rel_gap"]) < 1e-6
+    print(json.dumps({"triangular": r_tri, "noisy_triangular": r_noisy, "square": r_sq, "yukawa_units": r_yuk}, indent=1))
     print("SELFTEST", "PASS" if ok else "FAIL")
     return 0 if ok else 1
 

@@ -61,6 +61,16 @@ def upstream_excerpt(lines: tuple[int, int]) -> dict:
             "file_sha256": sha(UPAPER.read_bytes()), "lines": list(lines), "text": "\n".join(t[lines[0] - 1:lines[1]])}
 
 
+UPAPER8 = UPAPER.parent / "08-renormalized-jellium.tex"
+
+
+def upstream_section8_excerpt(lines: tuple[int, int]) -> dict:
+    t = UPAPER8.read_text().splitlines()
+    return {"source": "OpenAI, Universal optimality of the triangular lattice, 2026-09-23, Section 8",
+            "durable_reference": "github.com/openai/math commit fd4aeeb2ee4fc729c18d98444fed42fd0529eeeb, preprints/Universal-optimality-of-the-triangular-lattice-September-23-2026/build/sections/08-renormalized-jellium.tex",
+            "file_sha256": sha(UPAPER8.read_bytes()), "lines": list(lines), "text": "\n".join(t[lines[0] - 1:lines[1]])}
+
+
 def rec(cid: str, tier: str, kind: str, statement: str, depends: list[str], ev: dict) -> dict:
     return {"schema_version": 1, "id": cid, "statement": statement, "tier": tier, "kind": kind,
             "depends_on": depends, "evidence": blob(ev), "audit": None}
@@ -114,6 +124,14 @@ def main() -> None:
         rec("UO-L-0006", "L", "citation",
             "Upstream manuscript (OpenAI, Universal optimality of the triangular lattice, 2026-09-23), Section 1 after Theorem 1.1: the theorem identifies the minimum value, not all minimizers.",
             [], upstream_excerpt((42, 47))),
+        rec("UO-L-0007", "L", "citation",
+            "Upstream manuscript Section 8, Corollary 'Planar renormalized and jellium energies': for 0 <= s < 2 the triangular lattice minimizes the renormalized energy W_s among density-one configurations and e_Jel = kappa_s^{-1} W_s(A). Literature Madelung energies of the 2D Wigner crystal (Hartree x r_s per electron): triangular -1.106102587, square -1.100244420 (Alves et al., PRB 103, 245125 (2021), agreeing with Bonsall & Maradudin, PRB 15, 1959 (1977)).",
+            [], dict(upstream_section8_excerpt((133, 145)),
+                     madelung={"triangular": -1.106102587, "square": -1.100244420,
+                               "source": "doi:10.1103/PhysRevB.103.245125 (agreeing with doi:10.1103/PhysRevB.15.1959)"})),
+        rec("UO-C-0003", "C", "argument",
+            "(i) The upstream renormalized/jellium corollary is not formalised in upstream's Lean (grep for jellium/renormal under the pinned OAI/Analysis/Triangular tree finds nothing; absence by search, not proof). (ii) Laboratory protocols L1-L4 (superparamagnetic colloids, dusty plasma, colloids in cavities, electrons on helium) are proposals; none has been run.",
+            ["UO-L-0007"], {"kind": "argument", "text": "Search-based absence and experimental proposals; see paper Sections 6-7."}),
         rec("UO-C-0001", "C", "argument",
             "Yukawa V(r) = exp(-kappa r)/r, as g(t) = exp(-kappa sqrt t)/sqrt t, is completely monotone in t: t^(-1/2) is completely monotone; exp(-kappa sqrt t) is p o q with p(u) = exp(-kappa u) completely monotone and q = sqrt with q' = t^(-1/2)/2 completely monotone (UO-L-0004); products of completely monotone functions are completely monotone (Leibniz rule). Not kernel-checked.",
             ["UO-L-0004"], {"kind": "argument", "text": "See statement; the product step uses (fg)^(n) = sum binom(n,k) f^(k) g^(n-k), every term of sign (-1)^n."}),
@@ -142,6 +160,17 @@ def main() -> None:
             claims.append(rec("UO-X-0004", "X", "numeric",
                               f"Open (harmonic bowl) vs closed (soft wall) disk, N = 300, kappa = 2: {s['disk']}. Finite-size edge-effect description; not a test of the Lean open/closed-disk counting convention.",
                               [], dict(base, disk=s["disk"])))
+        jc = YUK / "results/jellium/controls.jsonl"
+        if jc.exists():
+            rows = [json.loads(l) for l in jc.read_text().splitlines() if l.strip()]
+            claims.append(rec("UO-X-0005", "X", "numeric",
+                              "Jellium (s = 1, 2D Wigner crystal) Ewald controls: triangular and square Madelung energies agree with the UO-L-0007 values to the rounding level of the published digits (< 1e-8 preregistered); energy invariant to < 1e-10 over a 4x range of the Ewald parameter (unit test); the square lattice is a saddle point (negative Hessian eigenvalues). Consistency evidence only.",
+                              ["UO-L-0007"], dict(base, files=[file_ref(jc), file_ref(YUK / "results/jellium/preregistration.json"), file_ref(YUK / "src/jellium.rs")], controls=rows)))
+        lab = W / "papers/universal_optimality_tiered/lab/lab_analysis.py"
+        claims.append(rec("UO-X-0006", "X", "numeric",
+                          "lab/lab_analysis.py self-test: a perfect triangular lattice gives relative gap ~6e-14 at an arbitrary length scale; thermal noise raises the energy above the lattice; a square lattice is detected (all sites non-6-fold) and placed above it; a Yukawa kappa given in input units is converted to density-1 units correctly.",
+                          [], {"kind": "numeric", "tier": "X", "claim_licence": False, "ran": True, "files": [file_ref(lab)],
+                               "command": "python -I lab_analysis.py --selftest", "result": "SELFTEST PASS"}))
     ledger = {"schema_version": 1, "claims": claims}
     (HERE / "ledger.json").write_text(json.dumps(ledger, indent=1, ensure_ascii=False))
     print(f"claims {len(claims)}; evidence blobs {len(list(EV.glob('*.json')))}")

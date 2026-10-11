@@ -95,9 +95,26 @@ def voronoi_cells(x: np.ndarray, box: tuple[float, float] | None, clip_r: float 
 
 def draw_psi(ax, x, box, title=None, clip_r=None):
     coord, psi, _ = periodic_neighbours(x, box)
-    polys, _ = voronoi_cells(x, box, clip_r)
-    keep = [i for i, p in enumerate(polys) if p is not None]
-    pc = PolyCollection([polys[i] for i in keep], array=psi[keep], cmap=PSI, edgecolors=INK, linewidths=0.35)
+    if box is not None:
+        # Draw the cells of all nine periodic copies so cells crossing the box edge are complete (no cropped gaps);
+        # each copy carries the order parameter of its base particle, and the axes clip to the box.
+        lx, ly = box
+        base = np.mod(x, box)
+        tiles = np.vstack([base + [i * lx, j * ly] for i in (-1, 0, 1) for j in (-1, 0, 1)])
+        vor = Voronoi(tiles)
+        polys, vals = [], []
+        for t in range(len(tiles)):
+            reg = vor.regions[vor.point_region[t]]
+            if reg and -1 not in reg:
+                poly = vor.vertices[reg]
+                if poly[:, 0].max() > -1 and poly[:, 0].min() < lx + 1 and poly[:, 1].max() > -1 and poly[:, 1].min() < ly + 1:
+                    polys.append(poly)
+                    vals.append(psi[t % len(x)])
+        pc = PolyCollection(polys, array=np.asarray(vals), cmap=PSI, edgecolors=INK, linewidths=0.35)
+    else:
+        polys, _ = voronoi_cells(x, box, clip_r)
+        keep = [i for i, p in enumerate(polys) if p is not None]
+        pc = PolyCollection([polys[i] for i in keep], array=psi[keep], cmap=PSI, edgecolors=INK, linewidths=0.35)
     pc.set_clim(0, 1)
     ax.add_collection(pc)
     defect = coord != 6
@@ -227,26 +244,31 @@ def lattices() -> None:
     for ax, kv in zip(axes[:2], (2, 1)):
         r = refs[kv]
         vals = [r["e_tri_sum"], r["e_square_sum"]]
-        ax.bar(["triangular", "square"], vals, color=["#c0398b", "#2f6db3"])
-        ax.set_ylim(min(vals) * 0.995, max(vals) * 1.003)
+        ax.scatter([0, 1], vals, color=["#c0398b", "#2f6db3"], s=160, zorder=2)
+        for xx, v in zip((0, 1), vals):
+            ax.text(xx + 0.12, v, f"{v:.6f}", fontsize=7.5, va="center")
+        ax.set_xticks([0, 1], ["triangular", "square"])
+        ax.set_xlim(-0.4, 1.6)
+        pad = 0.25 * (vals[1] - vals[0])
+        ax.set_ylim(vals[0] - pad, vals[1] + pad)
         ax.set_title(f"Yukawa $\\kappa={kv}$: $e_{{\\rm sq}}-e_{{\\rm tri}}$ = {r['square_minus_tri']:.2e}", fontsize=9.5)
-        ax.set_ylabel("energy per particle")
+        ax.set_ylabel("energy per particle (axis not from 0)")
     ax = axes[2]
     tri = jel["ctl_pos_perfect"]["quench"]["e"]
     sq = jel["ctl_neg_square_saddle"]["e_square_box"]
     lit_t = jel["ctl_pos_perfect"]["e_ref_literature"]
     lit_s = jel["ctl_neg_square_saddle"]["e_square_literature"]
     ax.scatter([0, 1], [tri, sq], color=["#c0398b", "#2f6db3"], s=160, zorder=2, label="this code (Ewald)")
-    ax.scatter([0, 1], [lit_t, lit_s], color="black", marker="_", s=900, zorder=3, label="Bonsall-Maradudin (1977)")
+    ax.scatter([0, 1], [lit_t, lit_s], color="black", marker="_", s=900, zorder=3, label="Alves et al. (2021), = Bonsall-Maradudin")
     for xx, v, lv in ((0, tri, lit_t), (1, sq, lit_s)):
-        ax.text(xx + 0.12, v, f"{v:.9f}\n(rel. diff {abs(v - lv) / abs(lv):.0e})", fontsize=7, va="center")
+        ax.text(xx + 0.12, v, f"{v:.9f}\n(rel. diff {abs(v - lv) / abs(lv):.1e})", fontsize=7, va="center")
     ax.set_xticks([0, 1], ["triangular", "square"])
     ax.set_xlim(-0.4, 1.8)
     ax.set_ylim(min(tri, sq) - 0.004, max(tri, sq) + 0.004)
     ax.set_ylabel("energy per particle")
     ax.set_title(f"2D Wigner jellium ($1/r$): square is a saddle\n({jel['ctl_neg_square_saddle']['hess_negative']} unstable modes)",
                  fontsize=9.5)
-    ax.legend(fontsize=7, frameon=False, loc="upper left")
+    ax.legend(fontsize=7, frameon=False, loc="lower right")
     fig.tight_layout()
     save(fig, "lattices", dark=False)
 

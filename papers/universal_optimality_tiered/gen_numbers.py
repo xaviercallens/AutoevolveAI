@@ -44,6 +44,14 @@ def main() -> None:
     m["HessMin"] = f"{pos['hess_lowest'][2]:.4f}"
     m["SqNeg"] = str(sq["hess_negative"])
     m["SqAfterGap"] = sci(sq["e_after_minus_e_tri"])
+    jel = {r["label"]: r for r in jl(YUK / "jellium/controls.jsonl")}
+    jt = jel["ctl_pos_perfect"]["quench"]["e"]
+    jlt = jel["ctl_pos_perfect"]["e_ref_literature"]
+    js = jel["ctl_neg_square_saddle"]["e_square_box"]
+    jls = jel["ctl_neg_square_saddle"]["e_square_literature"]
+    m["JelTriRel"] = sci(abs(jt - jlt) / abs(jlt), 1)
+    m["JelSqRel"] = sci(abs(js - jls) / abs(jls), 1)
+    m["JelSqNeg"] = str(jel["ctl_neg_square_saddle"]["hess_negative"])
     rows = []
     for key, tag in (("main_kappa2", "Two"), ("main_kappa1", "One")):
         if key not in s:

@@ -132,6 +132,28 @@
   },
   {
    "schema_version": 1,
+   "id": "UO-L-0007",
+   "statement": "Upstream manuscript Section 8, Corollary 'Planar renormalized and jellium energies': for 0 <= s < 2 the triangular lattice minimizes the renormalized energy W_s among density-one configurations and e_Jel = kappa_s^{-1} W_s(A). Literature Madelung energies of the 2D Wigner crystal (Hartree x r_s per electron): triangular -1.106102587, square -1.100244420 (Alves et al., PRB 103, 245125 (2021), agreeing with Bonsall & Maradudin, PRB 15, 1959 (1977)).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:8c2ee951e92666e5e64b33a7720c0393c90e6d3cd3e555036040b48b6378b235",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-C-0003",
+   "statement": "(i) The upstream renormalized/jellium corollary is not formalised in upstream's Lean (grep for jellium/renormal under the pinned OAI/Analysis/Triangular tree finds nothing; absence by search, not proof). (ii) Laboratory protocols L1-L4 (superparamagnetic colloids, dusty plasma, colloids in cavities, electrons on helium) are proposals; none has been run.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "UO-L-0007"
+   ],
+   "evidence": "sha256:5be7ca836148685bb9afb19264dfcd27f0da56781594013aeb84fd02b32839d4",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
    "id": "UO-C-0001",
    "statement": "Yukawa V(r) = exp(-kappa r)/r, as g(t) = exp(-kappa sqrt t)/sqrt t, is completely monotone in t: t^(-1/2) is completely monotone; exp(-kappa sqrt t) is p o q with p(u) = exp(-kappa u) completely monotone and q = sqrt with q' = t^(-1/2)/2 completely monotone (UO-L-0004); products of completely monotone functions are completely monotone (Leibniz rule). Not kernel-checked.",
    "tier": "C",
@@ -200,6 +222,28 @@
    "kind": "numeric",
    "depends_on": [],
    "evidence": "sha256:42d5bc642bc6f93a77b18c6a98913f2a9d23fecc1c76efff2c671dd93b4bc835",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-X-0005",
+   "statement": "Jellium (s = 1, 2D Wigner crystal) Ewald controls: triangular and square Madelung energies agree with the UO-L-0007 values to the rounding level of the published digits (< 1e-8 preregistered); energy invariant to < 1e-10 over a 4x range of the Ewald parameter (unit test); the square lattice is a saddle point (negative Hessian eigenvalues). Consistency evidence only.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "UO-L-0007"
+   ],
+   "evidence": "sha256:a2d706dc95d5ebdf1fdb0e0ad6584ed1749d20b07671dac589b3b7d5202f8b70",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "UO-X-0006",
+   "statement": "lab/lab_analysis.py self-test: a perfect triangular lattice gives relative gap ~6e-14 at an arbitrary length scale; thermal noise raises the energy above the lattice; a square lattice is detected (all sites non-6-fold) and placed above it; a Yukawa kappa given in input units is converted to density-1 units correctly.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:cefbd6d96a8103590e09b832b6d04d62e411bf59047b84f0034fa964b2079daf",
    "audit": null
   }
  ]

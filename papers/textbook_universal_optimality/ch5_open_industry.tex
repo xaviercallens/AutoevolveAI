@@ -22,7 +22,7 @@ toolchain of Chapter~2, with axiom footprint inside $\{\texttt{propext},\texttt{
 \toprule
 Question & Mathematical status & Lean status\\
 \midrule
-Riesz $s>2$, Gaussians, every completely monotone $g$ & proved upstream \cite{oai} & kernel-checked (upstream + our D1, D1b, D2)\\
+Riesz $s>2$, Gaussians, every completely monotone $g$ & proved upstream \cite{oai} (AI-generated, not peer reviewed) & kernel-checked (upstream + our D1, D1b, D2)\\
 Raw energies for $0<s\le2$ & infinite for every competitor (\S\ref{ch5:sec:div}) & divergence of the lattice sum not formalised\\
 Renormalised / jellium, $0\le s<2$ & proved in upstream's manuscript, \S8 \cite{oai}; implication from Petrache--Serfaty \cite{ps} & not formalised anywhere\\
 Endpoint $s=2$ & open; outside upstream's statement & ---\\
@@ -288,10 +288,10 @@ $2.6\times10^{-10}$). The square lattice gives $e_{\mathrm{sq}}=-1.950132460$, w
 the square lattice to relative $4.3\times10^{-10}$, so $e_{\mathrm{tri}}<e_{\mathrm{sq}}$, in agreement with the classical lattice comparison of
 Bonsall and Maradudin \cite{bm}. The square lattice is a saddle (64 unstable modes in the tested cell), and the
 result is invariant under the Ewald splitting parameter to better than $10^{-10}$ over a factor-$4$ range. The
-crate's energy convention (pairs counted once or twice, as in~\eqref{ch5:eq:jellium}) has not been matched to upstream's
-here; the \emph{ordering} triangular below square does not depend on it.
+crate counts each pair once (Chapter~3), so its energies per particle are one half of those in the ordered-pair
+convention of~\eqref{ch5:eq:jellium}; the \emph{ordering} triangular below square does not depend on the factor.
 
-Status of the main relaxation study (no relaxed periodic configuration below $e_{\mathrm{tri}}$, hypothesis E1):
+Status of the main relaxation study, the study E1 (prediction J1: no relaxed periodic configuration below $e_{\mathrm{tri}}$):
 \JelliumMainStatus.
 
 Even a perfect outcome is Tier X: it would be a consistency check of Corollary~\ref{ch5:cor:jellium} in one case, not
@@ -391,7 +391,8 @@ $f(a)=\int G_\alpha(a)\,\mathrm{d}\mu=g(|a|^2)$; at $w\in\Lat^*\setminus\{0\}$, 
 mixing destroys the contact conditions or the signs. It does not.
 
 What upstream actually integrates is different. It integrates the \emph{scalar} inequalities
-$E_{G_\alpha}(C)\ge\theta_\Lat(\alpha):=\sum_{a\ne0}e^{-\pi\alpha|a|^2}$, which are explicit and measurable in
+$E_{G_\alpha}(C)\ge\vartheta_\Lat(\alpha):=\theta_\Lat(\alpha)-1=\sum_{a\ne0}e^{-\pi\alpha|a|^2}$ (here
+$\theta_\Lat$ is the full theta function of Chapter~1, which includes $a=0$, and $\vartheta_\Lat$ omits it), which are explicit and measurable in
 $\alpha$ on both sides; Tonelli and the lower-limit argument of upstream's \S5 then give the energy inequality for $g$.
 No function is ever mixed. To turn the formal computation~\eqref{ch5:eq:mixture} into a proof, one would need at least
 the following \tierC{}:
@@ -413,12 +414,12 @@ Upstream gives none of these estimates, and neither does this book.
 \tierC{} For $g(t)=t^{-s/2}$, the Gamma integral gives $t^{-s/2}=\frac{\pi^{s/2}}{\Gamma(s/2)}\int_0^\infty
 \alpha^{s/2-1}e^{-\pi\alpha t}\,\mathrm{d}\alpha$, so $\mathrm{d}\mu\propto\alpha^{s/2-1}\,\mathrm{d}\alpha$.
 \begin{itemize}[leftmargin=*]
-\item As $\alpha\to0$: Poisson summation gives $\theta_\Lat(\alpha)=\alpha^{-1}\sum_{w\in\Lat^*}e^{-\pi|w|^2/\alpha}-1
-  \sim\alpha^{-1}$, so $\int_0\theta_\Lat\,\mathrm{d}\mu<\infty$ iff $s>2$. This is the finiteness of the lattice
-  energy (D1b), and it is the same at the level of functions, since $\hat f_\alpha(0)-f_\alpha(0)=\theta_\Lat(\alpha)$.
+\item As $\alpha\to0$: Poisson summation gives $\vartheta_\Lat(\alpha)=\alpha^{-1}\sum_{w\in\Lat^*}e^{-\pi|w|^2/\alpha}-1
+  \sim\alpha^{-1}$, so $\int_0\vartheta_\Lat\,\mathrm{d}\mu<\infty$ iff $s>2$. This is the finiteness of the lattice
+  energy (D1b), and it is the same at the level of functions, since $\hat f_\alpha(0)-f_\alpha(0)=\vartheta_\Lat(\alpha)$.
 \item As $\alpha\to\infty$: $\mu$ has infinite mass ($\int^\infty\alpha^{s/2-1}\mathrm{d}\alpha=\infty$ for $s>0$). The
-  constraints give only $-\theta_\Lat(\alpha)\le f_\alpha(0)\le1$: the upper bound from $f_\alpha\le G_\alpha$, the lower
-  from $\hat f_\alpha(0)=f_\alpha(0)+\theta_\Lat(\alpha)\ge0$. So $f(0)$ is finite only if $f_\alpha(0)$ decays fast
+  constraints give only $-\vartheta_\Lat(\alpha)\le f_\alpha(0)\le1$: the upper bound from $f_\alpha\le G_\alpha$, the lower
+  from $\hat f_\alpha(0)=f_\alpha(0)+\vartheta_\Lat(\alpha)\ge0$. So $f(0)$ is finite only if $f_\alpha(0)$ decays fast
   enough as $\alpha\to\infty$. Upstream gives no such estimate. Note also that $g(|x|^2)\to\infty$ at $x=0$, so
   $f\le g$ does not bound $f(0)$.
 \end{itemize}
@@ -561,7 +562,8 @@ error, as the duality predicts. The crossing is a floating-point observation and
 student can make it rigorous with interval arithmetic (Project U2).
 \end{numbox}
 
-This shows only that neither fcc nor bcc is universally optimal. It does not show that no configuration in
+If the Tier X inequality at $\alpha=2$ is certified (Project U2), then neither fcc nor bcc is universally optimal;
+that is all it would show. It does not show that no configuration in
 $\R^3$ is universally optimal; that stronger statement remains conjectural, and in this book it is \tierC{}.
 
 %=====================================================================
@@ -593,7 +595,9 @@ families matter.
   and products of completely monotone functions are completely monotone. So Yukawa is covered directly. This is the
   model of Chapter~3 (shifted-force cutoffs in the simulations are a modelling choice and are not covered).
 \item \textbf{Inverse powers} $r^{-s}$ with $s>2$: covered (our D1, D1b). Dipolar repulsion $r^{-3}$ is the case $s=3$.
-\item \textbf{Unscreened Coulomb} $r^{-1}$ ($s=1$) and the logarithm ($s=0$): \emph{not} covered by the main theorem;
+\item \textbf{Unscreened Coulomb} $r^{-1}$ ($s=1$) and the logarithm ($s=0$). Here `Coulomb' means the
+  three-dimensional $1/r$ law restricted to the plane (Riesz $s=1$); the planar Coulomb (logarithmic, $s=0$)
+  interaction is distinguished where it matters. Both are \emph{not} covered by the main theorem;
   only by the renormalised Corollary~\ref{ch5:cor:jellium} (\tierL{}, not formalised), which assumes a neutralising
   uniform background.
 \end{itemize}
@@ -727,7 +731,7 @@ before reporting a number, and never cite a Lean name you have not checked exist
   times Laguerre polynomials (whose Fourier transforms are explicit), and set up a linear program: impose
   $f\le g$ and $\hat f\ge0$ on fine radial grids, impose the contact conditions on the first shells of $\Lat$ and
   $\Lat^*$, and maximise $\hat f(0)-f(0)$. Positive control: run it for a Gaussian, where the optimum must reach
-  $\theta_\Lat(\alpha)$. \emph{Deliverable:} the gap between the LP optimum and $\sum_{a\ne0}g(|a|^2)$ as the basis
+  $\vartheta_\Lat(\alpha)$. \emph{Deliverable:} the gap between the LP optimum and $\sum_{a\ne0}g(|a|^2)$ as the basis
   grows, and a report of where it fails: which constraint is active off the grid, and which shell's contact
   condition cannot be met. This is evidence, not proof (Tier X), unless the final function is certified with ball
   arithmetic.

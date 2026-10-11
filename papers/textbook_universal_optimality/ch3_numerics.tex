@@ -1,6 +1,7 @@
 \chapter{Numerical validation in Python and Rust (Tier X)}\label{ch:numerics}
 
-Chapters~1 and~2 proved, and checked in Lean, that the triangular lattice $\Lat$ has the least lower energy among all
+Chapters~1 and~2 stated upstream's theorem (AI-generated, not peer reviewed; kernel-checked in Lean, conditional on
+the fidelity of the definitions) that the triangular lattice $\Lat$ has the least lower energy among all
 locally finite configurations of density one, for every admissible potential $g$. This chapter does something much
 weaker, and the weakness is the subject of its first section. We put a few hundred particles in a periodic box, let
 them interact through a screened Coulomb (Yukawa) law, let the energy run downhill, and look at where it ends. The
@@ -9,7 +10,9 @@ companion written for this book. Every number in the chapter is \tierX{} unless 
 
 All Rust code below is quoted verbatim from the files
 \texttt{crates/\allowbreak qf-yukawa-crystal/\allowbreak src/\allowbreak \{lib.rs,\allowbreak jellium.rs,\allowbreak main.rs\}} on the branch
-\texttt{physics/\allowbreak jellium-\allowbreak wigner-\allowbreak 2026-10-11} of rusty-SUNDIALS, with the line numbers given in each listing title.
+\texttt{physics/\allowbreak jellium-\allowbreak wigner-\allowbreak 2026-10-11} of rusty-SUNDIALS, pinned to commit
+\texttt{b7e4380} of that branch, with the line numbers given in each listing title. Every listing and every line
+number in this chapter was re-checked against \texttt{git show b7e4380:<path>}.
 Lines left out are marked \texttt{// [...]} (an insertion of ours, not part of the file).
 
 \section{What numerics can and cannot do}\label{sec:num-can}
@@ -29,8 +32,9 @@ operation and sums of tens of thousands of terms.
 \end{itemize}
 A periodic box is itself a competitor of a special kind. A configuration with $N$ particles in a periodic rectangle
 of area $N$ is, after periodic extension, a locally finite configuration of density one in the plane. Its energy per
-particle in the box (with the minimum-image rule and $r_c$ less than half the box) equals the lower energy of the
-periodic extension for the truncated potential. So the box computes honest energies of honest competitors, but only of
+particle in the box (with the minimum-image rule and $r_c$ less than half the box) equals one half of the lower energy
+$E_g$ of Chapter~1 for the periodic extension (Chapter~1 counts ordered pairs; this chapter, like the physics
+literature, counts each pair once), for the truncated potential. So the box computes honest energies of honest competitors, but only of
 \emph{periodic} ones, with one fixed period cell, and only for the truncated potential.
 
 \begin{warnbox}[: Tier X never supports a claim]
@@ -637,7 +641,8 @@ $|\psi_6(i)|=1$; for the square lattice $\psi_6(i)=0$, since $\sum_{m=0}^3e^{6\m
 \section{The jellium extension: $s=1$ with Ewald summation}\label{sec:num-jellium}
 
 \subsection{Why a background}
-For the Coulomb potential $1/r$ (Riesz $s=1$ in the plane) the lattice sum $\sum_{v\ne0}|v|^{-1}$ diverges: there are
+Here `Coulomb' means the three-dimensional $1/r$ law restricted to the plane (Riesz $s=1$); the planar Coulomb
+(logarithmic, $s=0$) interaction is distinguished where it matters. For the Coulomb potential $1/r$ (Riesz $s=1$ in the plane) the lattice sum $\sum_{v\ne0}|v|^{-1}$ diverges: there are
 about $2\pi r\,dr$ points at distance $r$, and $\int^\infty2\pi r\cdot r^{-1}\,dr=\infty$. Every competitor of
 density one has infinite energy, and the theorem says nothing (\lean{latticeEnergy_riesz_lt_top} needs $s>2$, and
 the inequality $\infty\le\infty$ is empty). Physics removes the divergence with a uniform neutralising background of

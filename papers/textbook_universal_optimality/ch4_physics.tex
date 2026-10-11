@@ -32,7 +32,9 @@ An ideal (inviscid), incompressible fluid in the plane has velocity $u=(u_1,u_2)
 \begin{equation}\label{eq:ch4-euler}
 \partial_t u + (u\cdot\nabla)u = -\nabla p,\qquad \nabla\cdot u = 0 ,
 \end{equation}
-with the density set to one. Incompressibility lets us write $u$ through a \emph{stream function} $\psi$,
+with the density set to one. Incompressibility lets us write $u$ through a \emph{stream function}
+$\psi$\footnote{The stream function $\psi$ of this section is unrelated to the bond-orientational order parameter
+$\psi_6$ used later in this chapter and in Chapter~3.},
 \begin{equation}\label{eq:ch4-stream}
 u = \nabla^{\perp}\psi := (\partial_y\psi,\,-\partial_x\psi),
 \end{equation}
@@ -132,9 +134,11 @@ family $r^{-s}$, the logarithm is the $s\to 0$ limit after subtracting a constan
 \frac{r^{-s}-1}{s}\;\longrightarrow\;-\log r\qquad (s\to0^+).
 \]
 In the language of Chapter~1, with $t=r^2$, the logarithmic potential is $g(t)=-\tfrac12\log t$. It fails
-\lean{AdmissiblePotential} for two reasons \tierC{} (an elementary check, Exercise~\ref{ex:ch4-log}):
-it is negative for $t>1$, and in any case its lattice sum diverges, so the comparison ``$E(C)\ge E(\Lat)$'' would
-read $\infty\ge\infty$. The theorem of Chapter~2 says nothing about it.
+\lean{AdmissiblePotential} \tierC{} (an elementary check, Exercise~\ref{ex:ch4-log}): it is negative for $t>1$.
+Moreover, every nonzero lattice point has $|a|^2\ge2/\sqrt3>1$, so the real lattice sum
+$\sum_{a\ne0}-\tfrac12\log|a|^2$ diverges to $-\infty$. (In Lean, \lean{ENNReal.ofReal} truncates each negative term to
+$0$, so \lean{latticeEnergy} of this $g$ is $0$.) Either way, the theorem does not apply (the logarithm is not a
+nonnegative completely monotone function). The theorem of Chapter~2 says nothing about it.
 
 What replaces it is a \emph{renormalised} energy, in which the infinite interaction with distant particles is
 cancelled by a neutralising background. Upstream's manuscript states, in its Section~8 and after Petrache and
@@ -403,8 +407,9 @@ you estimate it yourself). On time scales $\gg\tau_m$ the inertial term is negli
 \gamma\,\dot x_i = -\nabla_{x_i}E + \xi_i ,\qquad D=\frac{k_BT}{\gamma}\ \ \text{(Einstein relation).}
 \end{equation}
 At $T=0$ it is the gradient flow $\dot x = -\gamma^{-1}\nabla E$. Rescaling time by $\gamma$ gives exactly the
-equation $\dot x = -\nabla E$ that rusty-SUNDIALS integrates with CVODE in Chapter~3, and the Euler--Maruyama
-annealing of Chapter~3 is the time discretisation of \eqref{eq:ch4-overdamped} at slowly decreasing $T$ \tierC.
+equation $\dot x = -\nabla E$ that rusty-SUNDIALS integrates with CVODE in Chapter~3. The annealing of Chapter~3 is
+modelled on \eqref{eq:ch4-overdamped} at slowly decreasing $T$, but the code uses a capped Euler--Maruyama scheme
+(heuristic annealing, see Chapter~3), which is not a consistent discretisation of it \tierC.
 
 \paragraph{Hydrodynamic interactions.} The model above treats each particle as feeling only its own drag.
 In reality, a moving colloid sets the liquid around it in motion, and that flow drags its neighbours. To leading
@@ -437,23 +442,25 @@ completely monotone. So $g$ satisfies the hypotheses of the upstream theorem \ti
 This step is \emph{not} in our Lean files, which is why every statement about Yukawa crystals in this book is
 Tier~C at best. The numerical study of Chapter~3 is for exactly this potential (with a shifted-force cutoff at
 $r_c=8$): at $\kappa=2$, with $N=288$ in a periodic box at density one, the reference energies per particle are
-$e_{\rm tri}=0.3935333668$ and $e_{\rm sq}=0.4009647699$, and none of 100 relaxations (20 of them
+$e_{\rm tri}=0.3935333668$ and $e_{\rm sq}=0.4009647699$ (each pair counted once, as in Chapter~3: one half of
+Chapter~1's $E_g$), and none of 100 relaxations (20 of them
 incommensurate-box controls) fell below $e_{\rm tri}$ \tierX.
 
-Real dusty plasmas leave the theorem's class in several ways. The ion flow past a grain builds a wake that attracts
-other grains, chiefly those below it; the wake force is non-reciprocal, so there is no pair energy at all.
-Grains move out of the plane; and far from a grain, the potential is not Yukawa. These confounds are listed again in
+Real dusty plasmas leave the theorem's class in several ways \tierC{} (general knowledge, not cited here). The ion
+flow past a grain builds a wake that attracts other grains, chiefly those below it; the wake force is non-reciprocal,
+so there is no pair energy at all. Grains move out of the plane; and far from a grain, the potential is not Yukawa. These confounds are listed again in
 protocol L2 below.
 
 \subsection{Electrons on liquid helium}
 Grimes and Adams observed a liquid-to-crystal phase transition of a classical two-dimensional sheet of electrons held
 above the surface of liquid helium~\cite{grimes} \tierL. The pair interaction is Coulomb,
-$e^2/(4\pi\varepsilon_0 r)$: Riesz with $s=1$, so the infinite lattice sum diverges and the system is neutralised
+$e^2/(4\pi\varepsilon_0 r)$. Here `Coulomb' means the three-dimensional $1/r$ law restricted to the plane (Riesz
+$s=1$); the planar Coulomb (logarithmic, $s=0$) interaction is distinguished where it matters. It is Riesz with $s=1$, so the infinite lattice sum diverges and the system is neutralised
 by positive charge on electrodes \emph{below} the sheet. This is jellium in the sense of Chapter~5---but with a
 caveat that the clean mathematical jellium does not have.
 
 \paragraph{Image charges change the exponent.} Model the electrode as a grounded conducting plane a distance $d$ below
-the sheet. Each electron then has an image of charge $-e$ at distance $2d$ from it, vertically below. Two electrons
+the sheet. Each electron then has an image of opposite charge ($+e$ for an electron) at distance $2d$ from it, vertically below. Two electrons
 at in-plane distance $r$ interact directly and through each other's images:
 \[
 U(r) = \frac{e^2}{4\pi\varepsilon_0}\Bigl(\frac1r - \frac{1}{\sqrt{r^2+4d^2}}\Bigr)
@@ -523,7 +530,7 @@ triangular value beyond the measurement error, with the law's prefactor independ
 parabolic, the analogue of the ``open bowl'' of Chapter~3. \emph{Procedure:} measure $\kappa$ and the coupling from
 the phonon spectrum or the pair correlation; image the monolayer; run the shared script; simulate the bowl model at
 the measured $\kappa$ and $N$. \emph{Prediction:} a near-triangular interior with defects concentrated at the rim;
-the interior defect fraction is compared with simulation at matched $\kappa$ and $N$. \emph{Confounds:} ion-wake
+the interior defect fraction is compared with simulation at matched $\kappa$ and $N$. \emph{Confounds} \tierC{} (general knowledge, not cited here): ion-wake
 attraction (non-reciprocal, chiefly between vertically adjacent grains, able to drive a mode-coupling instability
 in a monolayer), out-of-plane motion, and departures from a pure Yukawa law at large distance all move the system
 outside the theorem's class. Neutral-gas drag damps the dynamics but does not change the interaction law.
@@ -538,7 +545,7 @@ experimental open-versus-closed comparison---with the confounds that the simulat
 \paragraph{L4. Electrons on liquid helium (jellium, $s=1$).} Following~\cite{grimes}. The neutralising charge sits
 on electrodes a distance $d$ below the sheet, so this is the jellium case only when $d$ is much larger than the
 spacing; otherwise, as computed above, image charges make the interaction dipolar at distances $\gg d$.
-\emph{Prediction:} the crystal is triangular. The evidence in~\cite{grimes} is spectroscopic, not a direct image, so
+\emph{Prediction:} the crystal is triangular. The evidence in~\cite{grimes} is spectroscopic, not a direct image \tierC{} (our reading of~\cite{grimes}), so
 a test compares spectroscopic signatures with the triangular Madelung and phonon structure~\cite{bm}. Direct
 imaging would need a detection method that the protocol does not specify.
 
@@ -702,10 +709,10 @@ conventions, with the ring as the known-answer check.
 \section{Other domains, briefly}\label{sec:ch4-other}
 
 \paragraph{Ion crystals.} Ions held in Penning traps can form single-plane crystals. The ions interact by the
-three-dimensional Coulomb law ($s=1$ in the plane), and the trap together with the plasma's rotation provides a
+three-dimensional Coulomb law (Riesz $s=1$ in the plane), and the trap together with the plasma's rotation provides a
 harmonic radial confinement, which, as in \eqref{eq:ch4-rotframe}, plays the role of a neutralising background.
-These planar ion crystals are the $s=1$ analogue of the rotating vortex lattice; triangular order is reported for
-them in the literature \tierC{} (we cite no source here).
+These planar ion crystals are the $s=1$ analogue of the rotating vortex lattice; triangular order is expected for
+them \tierC{} (general knowledge; we cite no source here).
 
 \paragraph{Abrikosov lattices in type-II superconductors.} In a type-II superconductor in a magnetic field between
 the two critical fields, flux enters as quantised vortices, which arrange themselves in a lattice. Near the upper
@@ -723,7 +730,7 @@ parameter, and how the result relates to Montgomery's theorem, we leave to the l
 cells, and it is tempting to file them with the triangular lattice, whose Voronoi cells are regular hexagons. But the
 underlying optimisation is different: one minimises the total \emph{perimeter} of a partition of the plane into
 cells of equal area. There are no point particles and no pair potential. The ``honeycomb conjecture'' that the
-regular hexagonal partition is optimal was proved by Hales (see the literature) \tierC. Neither that theorem nor the
+regular hexagonal partition is optimal was proved by Hales \tierC{} (general knowledge; no citation here). Neither that theorem nor the
 universal optimality theorem implies the other; they share an answer, not a problem.
 
 %=====================================================================
@@ -748,8 +755,9 @@ prototype, it has no KINSOL, and its MCP server has no particle tools. Each gap 
 \begin{exercise}\label{ex:ch4-green}
 Repeat the proof of Proposition~\ref{prop:ch4-green} in $\R^3$ and show that $G(x)=1/(4\pi|x|)$. In $\R^d$,
 $d\ge3$, show that $G(x)=c_d|x|^{2-d}$, and find $c_d$ in terms of the surface area of the unit sphere. Which Riesz
-exponent $s$ is ``Coulomb'' in dimension $d$? Conclude that in the plane the Coulomb case is $s=0$ (logarithm), not
-$s=1$.
+exponent $s$ is the Green-function (``Coulomb'') exponent in dimension $d$? Conclude that the \emph{planar} Coulomb
+interaction, the Green function of the plane, is the case $s=0$ (logarithm), whereas the $1/r$ law that this book
+calls `Coulomb' (the three-dimensional law restricted to the plane) is Riesz $s=1$.
 \end{exercise}
 
 \begin{exercise}\label{ex:ch4-ring}
@@ -768,7 +776,7 @@ shows a drift of $H$ but not of $P$, $Q$, $I$. What would a negative control wit
 \begin{exercise}\label{ex:ch4-log}
 Let $g(t)=-\frac12\log t$. Show that $(-1)^r g^{(r)}(t)\ge0$ for all $r\ge1$ and $t>0$, but that $g(t)<0$ for
 $t>1$. Which clause of \lean{AdmissiblePotential} fails? Show that adding a constant cannot repair it. Show also
-that $\sum_{a\in\Lat\setminus0}g(|a|^2)$ diverges.
+that $\sum_{a\in\Lat\setminus0}g(|a|^2)$ diverges to $-\infty$ (all $|a|^2>1$), and that the Lean \lean{latticeEnergy}, which applies \lean{ENNReal.ofReal} termwise, is $0$.
 \end{exercise}
 
 \begin{exercise}\label{ex:ch4-rot}

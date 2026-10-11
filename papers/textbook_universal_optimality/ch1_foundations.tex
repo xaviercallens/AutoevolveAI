@@ -630,7 +630,7 @@ the audited theorem, whose axiom footprint is the allowlist (\S\ref{sec:lean}). 
 separately.
 \begin{itemize}
 \item \emph{Shift.} For $\varepsilon>0$ the shifted function $g(\varepsilon+t)$ is a mixture
-$\int_{[0,1]}v^t\,d\rho(v)$ of \emph{power potentials} $v^t$. Here $\rho$ is a finite measure on $[0,1]$ of mass
+$\int_{[0,1]}v^t\,d\nu(v)$ of \emph{power potentials} $v^t$. Here $\nu$ is a finite measure on $[0,1]$ of mass
 $g(\varepsilon)$, obtained by upstream's own finite-difference argument (Lean: \lean{CM.shifted_mixture}). With
 $v=e^{-\pi\alpha}$ one has $v^t=e^{-\pi\alpha t}$: $v\in(0,1)$ are Gaussians, $v=1$ is the constant, and $v=0$ is the
 zero potential.
@@ -748,7 +748,7 @@ This book accepts exactly the allowlist
 \]
 the standard axioms of Lean's classical mathematics. Anything else, in particular \lean{sorryAx}, rejects the result.
 
-Our audit file \lean{formal_cert/Triangular/Axioms.lean} prints the axioms of 22 declarations and of two planted
+Our audit file \lean{formal_cert/Triangular/Axioms.lean} prints the axioms of 30 declarations (22 for D1--D3, 8 for D4) and of two planted
 controls. The controls, quoted verbatim, are:
 \begin{lstlisting}[language=Lean]
 theorem ctl_sorry : TriangularRiesz.riesz 1 1 = 0 := by sorry
@@ -762,7 +762,7 @@ Both controls ``prove'' the false statement $1^{-1/2}=0$. The recorded compile o
 \begin{lstlisting}
 'TriangularRiesz.triangular_riesz_optimal' depends on axioms: [propext, Classical.choice, Quot.sound]
 'OAI.AtomicTriangular.universal_energy_minimum' depends on axioms: [propext, Classical.choice, Quot.sound]
-.../formal_cert/Triangular/Axioms.lean:32:8: warning: declaration uses `sorry`
+.../formal_cert/Triangular/Axioms.lean:42:8: warning: declaration uses `sorry`
 'ctl_sorry' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
 'ctl_axiom' depends on axioms: [ctl_cheat, propext, Classical.choice, Quot.sound]
 \end{lstlisting}

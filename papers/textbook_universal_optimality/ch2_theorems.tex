@@ -24,7 +24,7 @@ changed.
 
 \begin{table}[ht]
 \centering\footnotesize
-\begin{tabular}{@{}l l p{4.3cm}@{}}
+\begin{tabular}{@{}l p{9.4cm} p{3.6cm}@{}}
 \toprule
 Result & Main Lean name (file) & Tier \\
 \midrule
@@ -34,7 +34,7 @@ D1b & \lean{latticeEnergy_riesz_lt_top} (\lean{RieszFinite.lean}) & A \\
 D2 & \lean{triangular_optimal_any_density} (\lean{AnyDensity.lean}) & A \\
 Controls & \lean{riesz_neg_two_not_admissible}, \dots{} (\lean{Controls.lean}) & A \\
 D3 & \lean{universal_optimum_not_unique} (\lean{UniversalOptimality.lean}) & A \\
-D4 & open versus closed disks (\lean{OpenDisk.lean}) & human proof C; Lean: \S\ref{ch2:sec:d4} \\
+D4 & \lean{energy_eq_openEnergy}, \lean{densityOne_iff_open} (\lean{OpenDisk.lean}, \lean{OpenDiskAny.lean}) & A \\
 \bottomrule
 \end{tabular}
 \caption{The results of this chapter. ``A'' always means: kernel-checked, conditional on the fidelity of the
@@ -197,7 +197,8 @@ arithmetic). The construction does \emph{not} use modular forms; modular forms a
 dimensions $8$ and $24$.
 
 \paragraph{Step 5: from Gaussians to all admissible $g$.} An admissible $g$ is a positive mixture of Gaussians in
-$t=\|x\|^2$: $g(t)=\int_{[0,\infty)}e^{-\alpha t}\,d\mu(\alpha)$ (Bernstein--Hausdorff--Widder; upstream gives its own
+$t=\|x\|^2$: $g(t)=\int_{[0,\infty)}e^{-\pi\alpha t}\,d\mu(\alpha)$, i.e.\ $g(\|x\|^2)=\int G_\alpha(x)\,d\mu(\alpha)$
+in the normalisation of Step~1 (Bernstein--Hausdorff--Widder, after rescaling $\alpha$ by $\pi$; upstream gives its own
 finite-difference proof). The measure may charge $\alpha=0$, i.e.\ contain a constant, whose energy is infinite at
 density one (upstream lemma \lean{energy_one}). Integrating the Gaussian bounds needs monotone convergence and Tonelli,
 and, because $\liminf$ is not linear, a separate lower-limit argument; the endpoint and infinite-energy cases are treated
@@ -243,7 +244,7 @@ to every admissible $g$ and also yields attainment. The rewrites \lean{latticeEn
 translate between the challenge file's description of the lattice and the one used inside the library. Notice that the
 hypothesis \lean{_hC : LocallyFinite C} is unused in the proof (the leading underscore says so): local finiteness is
 part of the \emph{statement} that Comparator checks, and it matters for the meaning of \lean{diskPoints}, but the bound
-itself does not need it \tierA.
+itself does not need it \tierC{} (the hypothesis is unused in upstream's proof term; no theorem without it is stated).
 
 % =====================================================================================================
 \section{Result D1: Riesz potentials}\label{ch2:sec:d1}
@@ -865,6 +866,11 @@ Let $C$ be locally finite, $g:\R\to\R$ any function and $\rho\in\R$. Then
 \end{enumerate}
 \end{theorem}
 
+Lean covers (i) for $\rho=1$ only (\lean{densityOne_iff_open}) and (ii) (\lean{energy_eq_openEnergy});
+\lean{OpenDiskAny.lean} proves both without the local-finiteness hypothesis, and \lean{ctl_open} and \lean{ctl_closed} show
+the identity is not definitional (a point on the unit circle). Case $\rho\ne1$: \tierC{} (the same argument applies,
+not formalised).
+
 Status: \tierC{} for the human proof below. Lean status of D4: \DFourStatus.
 
 The disk energy at radius $R$ depends on $R$ only through the finite set $C\cap B_R$ (respectively $C\cap B^\circ_R$):
@@ -948,9 +954,42 @@ Status: \tierC{} for the corollary and its proof. Lean status of D4: \DFourStatu
 The preregistration of D4 (\lean{results/discovery/D4/preregistration.json}) was committed before the Lean file was
 written. It names the hypothesis, the kill criterion (``the liminf comparison for ENNReal-valued step functions on atTop
 (real index) cannot be closed in-session''), the controls (axiom audit with planted \lean{sorry}/axiom; non-vacuity at
-$C=A$) and a prior probability of about $65\%$ that the Lean proof would go through. We quote no Lean code for D4 in
-this chapter.
+$C=A$) and a prior probability of about $65\%$ that the Lean proof would go through. The proof went through: the
+statements below were kernel-checked, with the footprints recorded in \S\ref{ch2:sec:audit}.
 \end{remark}
+
+\begin{leanbox}[(\lean{formal_cert/Triangular/OpenDisk.lean}, verbatim, proofs elided)]
+\begin{lstlisting}[language=Lean]
+/-- **D4, energy.** The lower energy is the same with open and with closed disks. -/
+theorem energy_eq_openEnergy (g : ℝ → ℝ) {C : Set Plane} (hC : LocallyFinite C) :
+    energy g C = openEnergy g C := by
+  -- ...
+/-- **D4, density.** Centred density one is the same with open and with closed disks. -/
+theorem densityOne_iff_open {C : Set Plane} (hC : LocallyFinite C) : DensityOne C ↔ DensityOneOpen C := by
+  -- ...
+/-- **D4.** Upstream's universal optimality theorem, verbatim with open disks. -/
+theorem universal_energy_minimum_open (g : ℝ → ℝ) (C : Set Plane) (hg : AdmissiblePotential g)
+    (hC : LocallyFinite C) (hd : DensityOneOpen C) :
+    latticeEnergy g ≤ openEnergy g C ∧ latticeEnergy g = openEnergy g A := by
+  -- ...
+theorem A_densityOneOpen : DensityOneOpen A :=
+  -- ...
+\end{lstlisting}
+\end{leanbox}
+
+\begin{leanbox}[(\lean{formal_cert/Triangular/OpenDiskAny.lean}, verbatim, proofs elided)]
+\begin{lstlisting}[language=Lean]
+theorem energy_eq_openEnergy_any (g : ℝ → ℝ) (C : Set Plane) : energy g C = openEnergy g C := by
+  -- ...
+theorem densityOne_iff_open_any (C : Set Plane) : DensityOne C ↔ DensityOneOpen C := by
+  -- ...
+lemma ctl_open : openDiskCount {e} 1 = 0 := by
+  -- ...
+lemma ctl_closed : diskCount {e} 1 = 1 := by
+  -- ...
+\end{lstlisting}
+\end{leanbox}
+Here \lean{e} is \lean{EuclideanSpace.single 0 1}, a point of norm one.
 
 % =====================================================================================================
 \section{The axiom audit and the controls}\label{ch2:sec:audit}
@@ -972,14 +1011,24 @@ import Triangular.RieszFinite
 import Triangular.AnyDensity
 import Triangular.Controls
 import Triangular.UniversalOptimality
+import Triangular.OpenDisk
+import Triangular.OpenDiskAny
 
 /-! Axiom audit of the D1 corollary, with planted controls. -/
 
 #print axioms TriangularRiesz.riesz_admissible
 #print axioms TriangularRiesz.triangular_riesz_optimal
 #print axioms OAI.AtomicTriangular.universal_energy_minimum
--- ... (22 audited declarations in total)
+-- ... (22 audited declarations for D1-D3; 30 in total)
 #print axioms TriangularUniversalOptimality.universal_optimum_not_unique
+#print axioms TriangularOpenDisk.energy_eq_openEnergy
+#print axioms TriangularOpenDisk.densityOne_iff_open
+#print axioms TriangularOpenDisk.universal_energy_minimum_open
+#print axioms TriangularOpenDisk.A_densityOneOpen
+#print axioms TriangularOpenDiskAny.energy_eq_openEnergy_any
+#print axioms TriangularOpenDiskAny.densityOne_iff_open_any
+#print axioms TriangularOpenDiskAny.ctl_open
+#print axioms TriangularOpenDiskAny.ctl_closed
 
 theorem ctl_sorry : TriangularRiesz.riesz 1 1 = 0 := by sorry
 axiom ctl_cheat : False
@@ -994,7 +1043,7 @@ This is the point of the controls.
 
 \begin{numbox}[(recorded compiler output, not a number but a log)]
 The following is the output stored in \lean{results/discovery/D1/compile_Axioms.json} (fields \lean{rc}~$=0$,
-\lean{seconds}~$=11.7$) from compiling \lean{Axioms.lean} with the pinned toolchain. We did not rerun the compile for
+\lean{seconds}~$=15.4$) from compiling \lean{Axioms.lean} with the pinned toolchain. We did not rerun the compile for
 this book (the machine is shared); the log is quoted, shortened, verbatim.
 \begin{lstlisting}
 'TriangularRiesz.riesz_admissible' depends on axioms: [propext, Classical.choice, Quot.sound]
@@ -1010,7 +1059,15 @@ this book (the machine is shared); the log is quoted, shortened, verbatim.
 'TriangularUniversalOptimality.vacancy_not_isometric_image' depends on axioms: [propext, Classical.choice, Quot.sound]
 'TriangularUniversalOptimality.vacancy_universally_optimal' depends on axioms: [propext, Classical.choice, Quot.sound]
 'TriangularUniversalOptimality.universal_optimum_not_unique' depends on axioms: [propext, Classical.choice, Quot.sound]
-.../formal_cert/Triangular/Axioms.lean:32:8: warning: declaration uses `sorry`
+'TriangularOpenDisk.energy_eq_openEnergy' depends on axioms: [propext, Classical.choice, Quot.sound]
+'TriangularOpenDisk.densityOne_iff_open' depends on axioms: [propext, Classical.choice, Quot.sound]
+'TriangularOpenDisk.universal_energy_minimum_open' depends on axioms: [propext, Classical.choice, Quot.sound]
+'TriangularOpenDisk.A_densityOneOpen' depends on axioms: [propext, Classical.choice, Quot.sound]
+'TriangularOpenDiskAny.energy_eq_openEnergy_any' depends on axioms: [propext, Classical.choice, Quot.sound]
+'TriangularOpenDiskAny.densityOne_iff_open_any' depends on axioms: [propext, Classical.choice, Quot.sound]
+'TriangularOpenDiskAny.ctl_open' depends on axioms: [propext, Classical.choice, Quot.sound]
+'TriangularOpenDiskAny.ctl_closed' depends on axioms: [propext, Classical.choice, Quot.sound]
+.../formal_cert/Triangular/Axioms.lean:42:8: warning: declaration uses `sorry`
 'ctl_sorry' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
 'ctl_axiom' depends on axioms: [ctl_cheat, propext, Classical.choice, Quot.sound]
 \end{lstlisting}
@@ -1020,10 +1077,10 @@ this book (the machine is shared); the log is quoted, shortened, verbatim.
 \begin{itemize}
 \item The return code is $0$ although the file contains a \lean{sorry} and a false axiom. An exit code is not a proof
   gate.
-\item All 22 audited declarations, including upstream's \lean{universal_energy_minimum}, report the footprint
+\item All 30 audited declarations (22 for D1--D3, 8 for D4), including upstream's \lean{universal_energy_minimum}, report the footprint
   [\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}]: the three standard axioms of Lean's classical
   mathematics, which Mathlib uses everywhere. This is \emph{not} ``zero axioms''. \tierA
-\item \lean{ctl_sorry} reports \lean{sorryAx} (and the compiler warns, at line~32), so the gate rejects it.
+\item \lean{ctl_sorry} reports \lean{sorryAx} (and the compiler warns, at line~42), so the gate rejects it.
   \lean{ctl_axiom} reports \lean{ctl_cheat}, outside the whitelist, so the gate rejects it. Both controls are flagged,
   which shows that the gate is able to fail.
 \item A clean footprint certifies that the proofs are complete relative to the definitions. It does not certify that
@@ -1105,7 +1162,8 @@ $F\neq\emptyset$?
 \begin{exercise}[Pen and paper]\label{ch2:ex:add}
 Let $s>2$ and $x\notin A$. Show that $A\cup\{x\}$ has density one and that $E_{g_s}(A\cup\{x\})=\mathcal{E}_{g_s}(A)$.
 \emph{Hint:} the extra pairs contribute $2\sum_{a\in A\cap B_R}\|x-a\|^{-s}$, which stays bounded as $R\to\infty$; compare
-with D1b. Which step fails for $s\le2$?
+with D1b. For $s\le2$ the conclusion still holds, trivially: both sides are $\infty$. Which step of the finiteness
+argument above fails there?
 \end{exercise}
 
 \begin{exercise}[Pen and paper]\label{ch2:ex:lf}
@@ -1121,7 +1179,8 @@ theorem diskCount_mono {C : Set Plane} (hC : LocallyFinite C) {R R' : ℝ} (h : 
     diskCount C R ≤ diskCount C R' := by
   sorry
 \end{lstlisting}
-Then show by an example that the hypothesis \lean{hC} cannot be removed.
+Then show by an example that the hypothesis \lean{hC} cannot be removed. (Proved in \lean{OpenDisk.lean} as
+\lean{diskCount_mono}; use it as the solution key.)
 \end{exercise}
 
 \begin{exercise}[Lean]\label{ch2:ex:repar}
@@ -1133,7 +1192,8 @@ theorem liminf_le_liminf_of_tendsto (u : ℝ → ENNReal) (φ : ℝ → ℝ)
   sorry
 \end{lstlisting}
 \emph{Hint:} $\liminf$ along $\lean{atTop}$ of $u\circ\varphi$ is $\liminf u$ along the filter \lean{map φ atTop}, and
-\lean{map φ atTop ≤ atTop}.
+\lean{map φ atTop ≤ atTop}. (Proved in \lean{OpenDisk.lean} as \lean{liminf_le_liminf_comp}; use it as the solution
+key.)
 \end{exercise}
 
 \begin{exercise}[Lean]\label{ch2:ex:vacrho}

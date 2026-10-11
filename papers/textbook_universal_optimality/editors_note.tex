@@ -1,0 +1,35 @@
+\chapter*{Editor's note: status at assembly}
+\addcontentsline{toc}{chapter}{Editor's note: status at assembly}
+The five chapters were written independently, each from the same fact sheet (\texttt{FACTS.md}), and combined
+afterwards. This note records what changed while they were being written.
+
+\paragraph{D4: open versus closed disks \tierA.} The theorem of Section~2.5 (open-disk density and lower energy
+coincide with the closed-disk ones) is kernel-checked in \texttt{formal\_cert/Triangular/OpenDisk.lean}:
+\begin{itemize}
+\item \lean{energy_eq_openEnergy}, \lean{densityOne_iff_open} and \lean{universal_energy_minimum_open}, which is
+upstream's theorem verbatim with open disks;
+\item \lean{A_densityOneOpen}, the non-vacuity check.
+\end{itemize}
+It was preregistered before the proof was written. An independent verification run accepted it with corrections. That
+run found that the two identities need no local-finiteness hypothesis at all, and kernel-checked this in
+\texttt{OpenDiskAny.lean}. It also added a control showing that the identity is not definitional: for a single point on
+the unit circle, the open and closed counts differ at $R=1$. Every footprint is within \{propext, Classical.choice,
+Quot.sound\}.
+
+\emph{Scope:} this settles the open/closed question for upstream's observables only (centred disks, $N/(\pi R^2)$
+density, $\liminf$ energy in $[0,\infty]$). It says nothing about other window shapes, $\limsup$ energies or physical
+boundary conditions.
+
+\paragraph{Jellium (\tierX).} \JelliumMainStatus.
+
+\paragraph{Erratum carried from the published paper (found while writing Chapter~3).} The numerical study uses a
+shifted-force truncation of the Yukawa potential at $r_c=8$. The quantity reported in the paper as the truncation size
+is $V(r_c)$, which is \emph{not} the change in the energy per particle. Summing the unshifted potential out to $r=60$
+changes the absolute energies by about $9.5\times10^{-6}$ at $\kappa=2$ and $1.8\times10^{-2}$ at $\kappa=1$; at
+$\kappa=1$ that exceeds $e_{\rm sq}-e_{\rm tri}$. The square--triangular gap itself is almost unchanged, and every
+comparison in the study uses the same truncated potential, so the P1 observation stands for that potential. But the
+truncated potential is not completely monotone, so P1 concerns an approximation of the Yukawa interaction, not the
+interaction the theorem covers. The next version of the paper will state this.
+
+\paragraph{Scripts.} The Python scripts quoted in Chapters~3--5 are in \texttt{code/}. Chapter~1 prints its short
+checks inline. The scratch checks quoted in Chapter~3's footnotes are not shipped.

@@ -1,0 +1,839 @@
+\chapter{Physics: from fluid dynamics to plasmas, and what rusty-SUNDIALS brings}\label{ch:physics}
+\chaptermark{Physics: fluids, plasmas, rusty-SUNDIALS}
+
+The theorem of the previous chapters is a statement about exact potentials and infinite point configurations.
+Physics never offers either. It offers finite systems at finite temperature, with interaction laws that are only
+approximately of the ideal form, confined by walls, bowls or electrodes, and evolving by a dynamics that may or
+may not seek the minimum of anything. This chapter asks where, in real systems, the triangular lattice appears,
+which of those systems are actually inside the class of the theorem, and which only resemble it.
+
+The primary domain is \emph{fluid dynamics}: two-dimensional incompressible flow and its point vortices
+(Section~\ref{sec:ch4-vortices}), and colloidal monolayers at fluid interfaces, whose overdamped motion through a
+viscous liquid is exactly the gradient-flow model used in Chapter~3 (Section~\ref{sec:ch4-colloids}). We then visit
+plasmas (Section~\ref{sec:ch4-plasmas}), summarise four laboratory protocols (Section~\ref{sec:ch4-lab}), and ask
+what the solver library rusty-SUNDIALS~\cite{rusty} does well, does badly, and does not yet do for this physics
+(Section~\ref{sec:ch4-rusty}). A short survey of other domains (Section~\ref{sec:ch4-other}) and exercises close the
+chapter.
+
+\begin{warnbox}[: how to read the tiers in this chapter]
+Almost nothing in this chapter is Tier~A. The kernel-checked statements of Chapter~2 are about the functions
+$g(t)=t^{-s/2}$ (Riesz, $s>0$) and about \emph{admissible} potentials in general. Whether a given laboratory system
+\emph{is} described by such a potential is a modelling statement: Tier~C when we argue it, Tier~L when a cited paper
+reports it. An observation in a cited experiment is Tier~L; an analogy between two systems is Tier~C; a number we
+computed in floating point is Tier~X. A physical system that ``looks triangular'' is never evidence for the
+theorem, and a physical system that does not is never evidence against it.
+\end{warnbox}
+
+%=====================================================================
+\section{Two-dimensional Euler flow and point vortices}\label{sec:ch4-vortices}
+
+\subsection{The vorticity equation}
+An ideal (inviscid), incompressible fluid in the plane has velocity $u=(u_1,u_2)$ obeying the Euler equations
+\begin{equation}\label{eq:ch4-euler}
+\partial_t u + (u\cdot\nabla)u = -\nabla p,\qquad \nabla\cdot u = 0 ,
+\end{equation}
+with the density set to one. Incompressibility lets us write $u$ through a \emph{stream function} $\psi$,
+\begin{equation}\label{eq:ch4-stream}
+u = \nabla^{\perp}\psi := (\partial_y\psi,\,-\partial_x\psi),
+\end{equation}
+and the scalar \emph{vorticity} $\omega = \partial_x u_2 - \partial_y u_1$ then satisfies
+\begin{equation}\label{eq:ch4-poisson}
+-\Delta\psi = \omega .
+\end{equation}
+Taking the curl of \eqref{eq:ch4-euler} eliminates the pressure. In two dimensions the vortex-stretching term
+vanishes and one is left with pure transport,
+\begin{equation}\label{eq:ch4-vorticity}
+\partial_t\omega + u\cdot\nabla\omega = 0 .
+\end{equation}
+Vorticity is carried by the flow; it is neither created nor destroyed. The whole dynamics is: given $\omega$,
+solve the Poisson equation \eqref{eq:ch4-poisson} for $\psi$, form $u$ by \eqref{eq:ch4-stream}, and move
+$\omega$ along $u$. This is textbook fluid mechanics \tierC{} (we state it without a citation; any fluid
+dynamics text derives it).
+
+\subsection{The Green's function of \texorpdfstring{$-\Delta$}{-Laplacian} in the plane}
+To solve \eqref{eq:ch4-poisson} on the whole plane we need a function $G$ with $-\Delta G = \delta_0$.
+
+\begin{proposition}\label{prop:ch4-green}
+The function $G(x) = -\frac{1}{2\pi}\log|x|$ satisfies $-\Delta G = \delta_0$ in the sense of distributions on
+$\R^2$.
+\end{proposition}
+\begin{humanproof}
+For $x\neq0$ write $r=|x|$. A radial function $f(r)$ has $\Delta f = f'' + f'/r = r^{-1}(r f')'$. With
+$f=\log r$, $rf'=1$, so $\Delta \log r = 0$ away from the origin. It remains to find the weight of the delta. Let
+$\varphi$ be a smooth test function with compact support. By Green's second identity on the annulus
+$\epsilon<|x|<R$ (with $R$ beyond the support of $\varphi$),
+\[
+\int_{|x|>\epsilon} G\,\Delta\varphi\,dx
+= \oint_{|x|=\epsilon}\bigl(G\,\partial_n\varphi - \varphi\,\partial_n G\bigr)\,d\ell ,
+\]
+where $n$ is the normal pointing \emph{into} the small disk, i.e.\ $\partial_n = -\partial_r$. Now
+$\partial_r G = -1/(2\pi r)$, so $-\varphi\,\partial_n G = \varphi\,\partial_r G = -\varphi/(2\pi\epsilon)$ on the
+circle, whose length is $2\pi\epsilon$; this term tends to $-\varphi(0)$. The first term is bounded by
+$\frac{1}{2\pi}|\log\epsilon|\cdot\|\nabla\varphi\|_\infty\cdot 2\pi\epsilon\to 0$. Hence
+$\int G\,\Delta\varphi = -\varphi(0)$, which is $\langle -\Delta G,\varphi\rangle = \varphi(0)$.
+\end{humanproof}
+
+The physical reading is Gauss's law: the flux of $-\nabla G$ through any circle around the origin is
+$2\pi r\cdot \frac{1}{2\pi r}=1$, independent of $r$. In three dimensions the same computation gives
+$1/(4\pi|x|)$; in two it gives a \emph{logarithm}. This single fact is why the planar point-vortex system is the
+logarithmic case of our energy problem.
+
+\subsection{Kirchhoff's point vortices}
+Concentrate the vorticity at $N$ points: $\omega = \sum_{j=1}^N \Gamma_j\,\delta_{x_j}$, where $\Gamma_j$ is the
+\emph{circulation} of vortex $j$ (positive for counter-clockwise rotation). By Proposition~\ref{prop:ch4-green},
+\[
+\psi(x) = -\frac{1}{2\pi}\sum_{j}\Gamma_j\log|x-x_j| .
+\]
+Each vortex is moved by the velocity due to all the \emph{others}; its own field is circular around it and does not
+move it (this is the standard regularisation, Tier~C). Writing $x_i=(x_i,y_i)$ and
+$r_{ij}=|x_i-x_j|$, \eqref{eq:ch4-stream} gives the Kirchhoff--Helmholtz equations
+\begin{equation}\label{eq:ch4-kirchhoff}
+\dot x_i = -\frac{1}{2\pi}\sum_{j\neq i}\Gamma_j\,\frac{y_i-y_j}{r_{ij}^2},\qquad
+\dot y_i = \frac{1}{2\pi}\sum_{j\neq i}\Gamma_j\,\frac{x_i-x_j}{r_{ij}^2}.
+\end{equation}
+
+\begin{proposition}[Hamiltonian structure]\label{prop:ch4-ham}
+Let
+\begin{equation}\label{eq:ch4-H}
+H = -\frac{1}{2\pi}\sum_{i<j}\Gamma_i\Gamma_j\log r_{ij}
+  = \frac12\sum_{i\neq j}\Gamma_i\Gamma_j\,G(x_i-x_j).
+\end{equation}
+Then \eqref{eq:ch4-kirchhoff} is equivalent to
+$\Gamma_i\dot x_i = \partial H/\partial y_i$ and $\Gamma_i\dot y_i = -\partial H/\partial x_i$ (for $\Gamma_i\ne0$).
+\end{proposition}
+\begin{humanproof}
+$\partial_{y_i}\log r_{ij} = (y_i-y_j)/r_{ij}^2$, and $y_i$ appears in the terms with pair $\{i,j\}$ for every
+$j\neq i$. So $\partial H/\partial y_i = -\frac{1}{2\pi}\sum_{j\ne i}\Gamma_i\Gamma_j(y_i-y_j)/r_{ij}^2$; divide by
+$\Gamma_i$ and compare with \eqref{eq:ch4-kirchhoff}. The $x$-equation is the same computation with a sign.
+\end{humanproof}
+
+So $(x_i,\Gamma_i y_i)$ are canonical coordinates: the plane of each vortex is its own phase space. The
+Hamiltonian is conserved. So are the \emph{linear impulse} $P=\sum_i\Gamma_i x_i$, $Q=\sum_i\Gamma_i y_i$, and
+the \emph{angular impulse} $I=\sum_i\Gamma_i|x_i|^2$. These three come from translation and rotation invariance;
+in fact they are conserved for \emph{any} velocity law of the form
+$\dot x_i = \sum_{j\neq i}\Gamma_j\,(x_i-x_j)^{\perp} f(r_{ij})$, a fact the code below uses as a negative control
+(Exercise~\ref{ex:ch4-impulse}).
+
+\begin{remark}[Two different divergences]\label{rem:ch4-divergences}
+The kinetic energy of the flow is $\frac12\int|u|^2 = \frac12\int\omega\psi$ (integrate by parts). For point
+vortices this is
+$\frac12\sum_{i,j}\Gamma_i\Gamma_jG(x_i-x_j)$, \emph{including} $i=j$, where $G(0)=+\infty$. Dropping the
+diagonal (the \emph{self-energy} of each vortex) gives \eqref{eq:ch4-H}; it is a renormalisation by an infinite
+constant that does not depend on positions. A second, independent divergence appears for infinitely many vortices
+of one sign at positive density: the pair sum $\sum_{j}\log r_{ij}$ diverges at large distances. The first
+divergence is local and harmless for dynamics; the second is the one that puts the problem outside the theorem.
+\end{remark}
+
+\subsection{Why this is the case \texorpdfstring{$s=0$}{s = 0}, and why it is outside the theorem}
+For like-signed vortices, $\Gamma_i\Gamma_j>0$, the pair energy $-\frac{\Gamma_i\Gamma_j}{2\pi}\log r$
+\emph{decreases} with distance: like vortices repel in the energy sense, exactly as like charges do. In the Riesz
+family $r^{-s}$, the logarithm is the $s\to 0$ limit after subtracting a constant:
+\[
+\frac{r^{-s}-1}{s}\;\longrightarrow\;-\log r\qquad (s\to0^+).
+\]
+In the language of Chapter~1, with $t=r^2$, the logarithmic potential is $g(t)=-\tfrac12\log t$. It fails
+\lean{AdmissiblePotential} for two reasons \tierC{} (an elementary check, Exercise~\ref{ex:ch4-log}):
+it is negative for $t>1$, and in any case its lattice sum diverges, so the comparison ``$E(C)\ge E(\Lat)$'' would
+read $\infty\ge\infty$. The theorem of Chapter~2 says nothing about it.
+
+What replaces it is a \emph{renormalised} energy, in which the infinite interaction with distant particles is
+cancelled by a neutralising background. Upstream's manuscript states, in its Section~8 and after Petrache and
+Serfaty~\cite{ps}, that for $0\le s<2$ (the logarithm included) the triangular lattice minimises the renormalised
+energy~\cite{oai} \tierL. That argument is in the AI-generated, not peer-reviewed manuscript only; it is \emph{not}
+in Lean anywhere. Chapter~5 explains the construction and the open endpoint $s=2$.
+
+\subsection{Rotating frames: the vortex lattice as a logarithmic jellium}
+A family of $N$ vortices that rotates rigidly at angular velocity $\Omega$ about the origin satisfies
+$\dot x_i = -\Omega y_i$, $\dot y_i=\Omega x_i$. Insert this into Proposition~\ref{prop:ch4-ham}:
+$\Gamma_i(-\Omega y_i) = \partial H/\partial y_i$ and $\Gamma_i\Omega x_i = -\partial H/\partial x_i$, that is,
+\begin{equation}\label{eq:ch4-rotframe}
+\nabla_{x_i}\Bigl(H + \frac{\Omega}{2}\,I\Bigr) = 0\quad\text{for all } i,\qquad
+I=\sum_i\Gamma_i|x_i|^2 .
+\end{equation}
+\emph{Rigidly rotating vortex configurations are exactly the critical points of $H_\Omega=H+\frac{\Omega}{2}I$.}
+For $N$ equal vortices $\Gamma>0$ and $\Omega>0$,
+\[
+H_\Omega = -\frac{\Gamma^2}{2\pi}\sum_{i<j}\log r_{ij} + \frac{\Omega\Gamma}{2}\sum_i|x_i|^2,
+\]
+a logarithmic repulsion in a harmonic bowl. The bowl is precisely the potential of a uniform neutralising
+background. Indeed, let a uniform disk $D$ carry vorticity density $-\Gamma n_b$. A vortex $\Gamma$ at $x\in D$
+has interaction energy $V(x) = -\Gamma^2 n_b\int_D G(x-y)\,dy$ with it, and by Proposition~\ref{prop:ch4-green},
+$-\Delta_x\int_D G(x-y)\,dy = 1$ inside $D$, so $\Delta V = \Gamma^2 n_b$. On the other hand
+$\Delta\bigl(\frac{\Omega\Gamma}{2}|x|^2\bigr) = 2\Omega\Gamma$. Both are radial, so they agree up to a constant
+exactly when
+\begin{equation}\label{eq:ch4-feynman}
+n_b = \frac{2\Omega}{\Gamma}.
+\end{equation}
+The rotating frame therefore turns the like-sign vortex gas into a \emph{two-dimensional one-component plasma}: a
+logarithmic jellium with background density $2\Omega/\Gamma$ \tierC. If the vortex density equals the background
+density, the system is neutral on average, and the large-scale divergence of Remark~\ref{rem:ch4-divergences}
+cancels. In a quantum superfluid, every vortex carries the same quantised circulation $\Gamma=h/m$, and
+\eqref{eq:ch4-feynman} becomes the familiar statement that a rotating superfluid mimics solid-body rotation with a
+vortex density $2\Omega m/h$ (this is often called Feynman's rule; we give no citation for it here) \tierC.
+
+\begin{warnbox}[: what the analogy does and does not say]
+The identification ``rotating vortices $=$ log-jellium'' is an exact rewriting for \emph{point} vortices in an
+\emph{unbounded} ideal fluid. Real vortices have cores, real containers have walls (which add image vortices), and
+real superfluids are described by a Gross--Pitaevskii or similar field theory, not by point particles. Moreover,
+the renormalised-energy statement for the logarithm is Tier~L through~\cite{oai} only. So ``the triangular vortex
+lattice of a rotating superfluid is explained by universal optimality'' is \emph{not} a claim of this book. The
+claim is weaker: the energy that a rotating vortex array makes stationary is, after an exact rewriting, the
+$s=0$ jellium energy that Chapter~5 discusses \tierC.
+\end{warnbox}
+
+\subsection{Experiments: vortex crystals and vortex lattices}
+
+\begin{physbox}[: vortex crystals in a magnetised electron column]
+Fine, Cass, Flynn and Driscoll observed the relaxation of two-dimensional turbulence to \emph{vortex crystals}
+in a magnetised pure-electron column~\cite{fine} \tierL. Why is an electron column a two-dimensional fluid? In a
+strong axial field $B\hat z$, the electrons' guiding centres drift with $v = E\times B/B^2$. With $E=-\nabla\phi$
+and $B=B\hat z$, $v = \bigl(-\partial_y\phi,\ \partial_x\phi\bigr)/B$. Compare \eqref{eq:ch4-stream}:
+$\psi = -\phi/B$. Poisson's law for the electron density $n$, $\Delta\phi = en/\varepsilon_0$, then gives
+$\omega = -\Delta\psi = en/(\varepsilon_0B)$: \emph{the electron density is the vorticity} \tierC{} (the standard
+guiding-centre drift argument, not taken from~\cite{fine}). The drift dynamics is the 2D Euler equation
+\eqref{eq:ch4-vorticity}, with the conducting wall of the trap fixing the boundary condition on $\phi$.
+
+What~\cite{fine} reports is stated in its title: two-dimensional turbulence relaxes to ``vortex crystals''. We
+quote nothing more from that paper here: no number of vortices, no arrangement, no lifetime. The physics we add is
+our own reasoning \tierC. Ideal drift dynamics is \emph{conservative}: $H$ is not minimised by dissipation. An
+ordered vortex pattern that persists in such a flow is naturally read as a rigidly rotating state, i.e.\ a
+critical point of $H_\Omega$ in \eqref{eq:ch4-rotframe}, here in a bounded domain with a wall. The connection
+with jellium-type energy minimisation is an analogy \tierC.
+\end{physbox}
+
+\begin{physbox}[: vortex lattices in a rotating Bose--Einstein condensate]
+Abo-Shaeer, Raman, Vogels and Ketterle observed vortex lattices in rotating Bose--Einstein condensates, the vortices
+arranging themselves in a triangular (Abrikosov) pattern~\cite{aboshaeer} \tierL. Unlike the ideal point-vortex
+flow, a real condensate has dissipation, so its vortex array can settle into a state of low energy in the rotating
+frame \tierC{} (our gloss, not a statement taken from~\cite{aboshaeer}). In the rotating frame, the energy that the
+lattice minimises contains the term $-\Omega L_z$, whose effect on the vortices is the harmonic, neutralising bowl
+of \eqref{eq:ch4-rotframe}. The resulting ``logarithmic jellium'' picture is an analogy, with all the caveats of the
+box above \tierC: cores, the finite and inhomogeneous condensate, and the edge.
+\end{physbox}
+
+\subsection{A computational check: conservation in a point-vortex code}\label{sec:ch4-pvcode}
+Before any physics is extracted from a simulation, one should check that it conserves what the equations
+conserve, and that the check \emph{can fail}. The script below (57 lines,
+\texttt{code/ch4\_point\_vortices.py} in the book directory) integrates \eqref{eq:ch4-kirchhoff} with
+\texttt{scipy.integrate.solve\_ivp}. It runs three experiments.
+\begin{enumerate}
+\item \emph{Known answer (positive control).} A regular ring of $n$ equal vortices ($\Gamma=1$) of radius $R$
+rotates rigidly at $\Omega = (n-1)\Gamma/(4\pi R^2)$ (Exercise~\ref{ex:ch4-ring}). For $n=5$, $R=1$:
+$\Omega = 1/\pi$.
+\item \emph{Conservation.} Eight vortices of random signs and strengths, integrated to $t=10$ with an explicit
+Runge--Kutta method (DOP853) and with an implicit BDF method; the drifts of $H$, $P$, $Q$, $I$ over 201 output times
+are printed.
+\item \emph{Negative control.} The same system with the kernel $1/r$ in place of $1/r^2$ in
+\eqref{eq:ch4-kirchhoff} (\texttt{power=1}). This is no longer the flow generated by the logarithmic $H$, so $H$
+must drift, while $P$, $Q$, $I$ should still be conserved by symmetry.
+\end{enumerate}
+
+\begin{lstlisting}[language=Python,caption={\texttt{code/ch4\_point\_vortices.py} (verbatim).}]
+"""N point vortices in the plane (Kirchhoff): conservation checks with a known answer and a negative control."""
+import numpy as np
+from scipy.integrate import solve_ivp
+from scipy.optimize import OptimizeResult as OdeResult
+
+
+def rhs(t: float, z: np.ndarray, gam: np.ndarray, power: int = 2) -> np.ndarray:
+    """Velocity of each vortex: u_i = -(1/2pi) sum_j G_j (y_i-y_j)/r^p, v_i = (1/2pi) sum_j G_j (x_i-x_j)/r^p."""
+    x, y = z[0::2], z[1::2]
+    dx, dy = x[:, None] - x[None, :], y[:, None] - y[None, :]
+    r2 = dx**2 + dy**2
+    np.fill_diagonal(r2, 1.0)
+    k = gam[None, :] / (2 * np.pi * r2 ** (power / 2))
+    np.fill_diagonal(k, 0.0)
+    out = np.empty_like(z)
+    out[0::2], out[1::2] = -(k * dy).sum(1), (k * dx).sum(1)
+    return out
+
+
+def invariants(z: np.ndarray, gam: np.ndarray) -> tuple[float, float, float, float]:
+    """Hamiltonian H = -(1/2pi) sum_{i<j} G_i G_j log r_ij, impulses P, Q and angular impulse I."""
+    x, y = z[0::2], z[1::2]
+    r = np.hypot(x[:, None] - x[None, :], y[:, None] - y[None, :])
+    iu = np.triu_indices(len(gam), 1)
+    h = -np.sum(np.outer(gam, gam)[iu] * np.log(r[iu])) / (2 * np.pi)
+    return h, float(gam @ x), float(gam @ y), float(gam @ (x**2 + y**2))
+
+
+def drift(sol: OdeResult, gam: np.ndarray) -> list[float]:
+    """Max over output times of |invariant(t) - invariant(0)| (relative for H and I)."""
+    inv = np.array([invariants(sol.y[:, k], gam) for k in range(sol.y.shape[1])])
+    d = np.abs(inv - inv[0]).max(0)
+    return [d[0] / abs(inv[0, 0]), d[1], d[2], d[3] / abs(inv[0, 3])]
+
+
+# Known answer: a ring of n equal vortices (G = 1, radius R) rotates rigidly at omega = (n-1)/(4 pi R^2).
+n, R, T = 5, 1.0, 20.0
+th = 2 * np.pi * np.arange(n) / n
+z0 = np.column_stack([R * np.cos(th), R * np.sin(th)]).ravel()
+ring = solve_ivp(rhs, (0, T), z0, args=(np.ones(n),), method="DOP853", rtol=1e-12, atol=1e-12)
+angle = np.unwrap(np.arctan2(ring.y[1], ring.y[0]))[-1]
+print(f"ring n=5: omega numeric {angle / T:.12f}  exact {(n - 1) / (4 * np.pi * R**2):.12f}")
+
+# Random mixed-sign system, two integrators.
+rng = np.random.default_rng(2026)
+N = 8
+gam = rng.choice([-1.0, 1.0], N) * rng.uniform(0.5, 1.5, N)
+z0 = rng.uniform(-1, 1, 2 * N)
+t_eval = np.linspace(0, 10, 201)
+for method in ("DOP853", "BDF"):
+    sol = solve_ivp(rhs, (0, 10), z0, args=(gam,), method=method, rtol=1e-10, atol=1e-12, t_eval=t_eval)
+    dH, dP, dQ, dI = drift(sol, gam)
+    print(f"{method:6s} nfev={sol.nfev:6d}  rel dH={dH:.2e}  dP={dP:.2e}  dQ={dQ:.2e}  rel dI={dI:.2e}")
+
+# Negative control: a 1/r kernel instead of 1/r^2 is not the gradient of the log Hamiltonian.
+bad = solve_ivp(rhs, (0, 10), z0, args=(gam, 1), method="DOP853", rtol=1e-10, atol=1e-12, t_eval=t_eval)
+print("control (1/r kernel): rel dH={:.2e}  dP={:.2e}  dQ={:.2e}  rel dI={:.2e}".format(*drift(bad, gam)))
+\end{lstlisting}
+
+\begin{numbox}[: output of the point-vortex script (Tier X)]
+Command, exactly as run (two cores):
+\begin{lstlisting}
+taskset -c 2,3 /home/callensxavier_gmail_com/AutoevolveAI/.venv/bin/python -I /home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/openai-math-discovery/papers/textbook_universal_optimality/code/ch4_point_vortices.py
+\end{lstlisting}
+Output, verbatim:
+\begin{lstlisting}
+ring n=5: omega numeric 0.318309886184  exact 0.318309886184
+DOP853 nfev= 57329  rel dH=1.92e-08  dP=7.55e-15  dQ=4.44e-15  rel dI=9.68e-11
+BDF    nfev=166250  rel dH=5.78e-07  dP=2.60e-14  dQ=2.02e-14  rel dI=4.05e-09
+control (1/r kernel): rel dH=3.61e-02  dP=2.11e-15  dQ=8.88e-16  rel dI=8.21e-11
+\end{lstlisting}
+\end{numbox}
+
+How to read it \tierX:
+\begin{itemize}
+\item The ring's rotation rate agrees with $1/\pi$ to the twelve printed digits. The code's velocity law and its
+normalisation $1/2\pi$ are therefore right.
+\item With DOP853 the linear impulses are conserved to round-off ($\sim10^{-14}$), the angular impulse to about
+$10^{-10}$ relative and the Hamiltonian to about $2\times10^{-8}$ relative. $H$ is the most sensitive
+invariant here because it contains $\log r_{ij}$, which is large when two vortices of opposite sign come close.
+\item BDF conserves everything less well (about $30\times$ worse for $H$) and uses about three times as many
+right-hand-side evaluations. This is \emph{not} a verdict on BDF in general. Without a supplied Jacobian, SciPy's BDF
+builds one by finite differences, and those evaluations are counted in \texttt{nfev}. More importantly, the
+point-vortex flow is Hamiltonian, not dissipative: the eigenvalues of its Jacobian lie on or near the imaginary
+axis, the problem is not stiff, and an implicit method built for stiff decay brings cost without benefit. The
+gradient flows of Chapter~3 are the opposite case (Section~\ref{sec:ch4-rusty}).
+\item The negative control does what it should: with the wrong kernel, $H$ drifts by $3.6\times10^{-2}$, more than
+six orders of magnitude above the correct run, while $P$, $Q$ and $I$ remain conserved. A conservation test that
+checked only $P$, $Q$, $I$ would have passed the wrong code. Only $H$ tests that the kernel is the gradient of the
+logarithm.
+\end{itemize}
+
+%=====================================================================
+\section{Colloids at fluid interfaces}\label{sec:ch4-colloids}
+
+Colloids are particles of roughly micrometre size suspended in a liquid. Confined to a plane---by gravity onto a
+flat glass surface, or by surface tension at a liquid--air interface---and made to repel each other, they form
+two-dimensional crystals that can be filmed particle by particle. They are the cleanest laboratory realisation of
+the theorem's setting that we know of, for two reasons. The interaction law can be tuned and is close to a pure
+power law in one important case; and the dynamics is overdamped motion in a viscous fluid, which is the gradient
+flow that our numerics integrate.
+
+\subsection{Superparamagnetic colloids: a Riesz \texorpdfstring{$s=3$}{s = 3} system}
+Zahn, Wille, Maret, Sengupta and Nielaba studied superparamagnetic colloids at a flat air--water interface and
+measured the elastic properties of the resulting two-dimensional crystals by video
+microscopy~\cite{zahn} \tierL. A magnetic field $B$ perpendicular to the interface induces in each particle a
+magnetic moment $m\propto\chi B$, where $\chi$ is the particle's susceptibility. All moments are parallel and
+perpendicular to the plane, so for two particles at in-plane distance $r$ the dipole--dipole energy is
+\begin{equation}\label{eq:ch4-dipole}
+U(r) = \frac{\mu_0}{4\pi}\,\frac{m^2}{r^3}
+\end{equation}
+(the angular factor $1-3\cos^2\theta$ of the dipole law equals one because the moments are perpendicular to their
+separation) \tierC. This is a Riesz potential with $s=3$. In the language of Chapter~1,
+$g(t) = t^{-3/2}$ up to a positive constant. The Lean results of Chapter~2 are stated for $t^{-s/2}$ itself;
+multiplying by a positive constant multiplies every energy by that constant and changes no inequality (our step,
+\tierC, and trivial). For $t^{-3/2}$ they say \tierA{} (kernel-checked, conditional on the fidelity of the
+definitions):
+\begin{itemize}
+\item $g$ is admissible (\lean{riesz_admissible}, which needs $s>0$), so the triangular lattice minimises the lower
+energy among all locally finite configurations of density one (\lean{triangular_riesz_optimal}, D1);
+\item its lattice energy is finite (\lean{latticeEnergy_riesz_lt_top}, which needs $s>2$; D1b);
+\item the same holds at any density $\rho$, with the energy scaled accordingly (D2, theorem
+\lean{triangular_optimal_any_density}). For $s=3$ the lattice energy at density $\rho$ is $\rho^{3/2}$ times its value at density one
+(\lean{riesz_lattice_homogeneous}), and that scaled value is a lower bound for every competitor of density $\rho$
+(\lean{riesz_any_density_homogeneous}).
+\end{itemize}
+The Tier~A content is the statement about $t^{-3/2}$. That the colloids interact by \eqref{eq:ch4-dipole} is a
+modelling assumption \tierC, with known corrections: particles have finite size, their moments induce each other
+(mutual induction), and the interface may not be perfectly flat.
+
+It is useful to have a single dimensionless number for such a system. At area density $n$ the typical spacing is
+$\propto n^{-1/2}$, so the typical dipolar energy is $\propto \mu_0 m^2 n^{3/2}$, and the ratio to the thermal
+energy is a coupling of the form
+\[
+\Gamma_{\rm mag}\;\propto\;\frac{\mu_0\,(\chi B)^2\, n^{3/2}}{k_BT}.
+\]
+Raising $B$ at fixed $n$ cools the system in the only sense that matters: it increases the coupling. A slow
+ramp of $B$ is the laboratory analogue of the simulated annealing of Chapter~3 \tierC.
+
+\subsection{Charged colloids in cavities}
+Bubeck, Neser, Bechinger and Leiderer studied small two-dimensional colloidal crystals confined in circular,
+hexagonal and square cavities~\cite{bubeck} \tierL. The tiered paper~\cite{tiered}, summarising the publisher's
+abstract (its full text was read neither there nor here), reports that these clusters contained about 10 to 100
+particles and that their structure was dominated by the shape of the confining region. For us, such cavities are the experimental counterpart of the ``closed disk'' of
+Chapter~3, in which a soft wall holds the particles. Edge effects are not a nuisance here; they are the phenomenon.
+A cavity of $N$ particles has a boundary layer whose share of particles decreases only like $N^{-1/2}$.
+
+\subsection{Hydrodynamics: from Stokes drag to the gradient flow}\label{sec:ch4-stokes}
+Why does a colloidal monolayer relax by the gradient flow $\dot x = -\nabla E$ used in Chapter~3? Because it moves
+through a viscous liquid at very small Reynolds number.
+
+\paragraph{Stokes drag.} A sphere of radius $a$ moving at velocity $v$ through an unbounded liquid of viscosity
+$\eta$, slowly enough that inertia of the liquid is negligible, feels the drag $F_{\rm drag}=-\gamma v$ with
+$\gamma = 6\pi\eta a$ (Stokes' law, textbook result, no-slip boundary condition) \tierC. A particle sitting
+\emph{at} an air--water interface is only partly immersed, and its drag coefficient differs from the bulk value;
+we leave $\gamma$ symbolic and quote no number.
+
+\paragraph{The Langevin equation.} Newton's law for particle $i$, of mass $m$, at temperature $T$ reads
+\begin{equation}\label{eq:ch4-langevin}
+m\,\ddot x_i = -\gamma\,\dot x_i - \nabla_{x_i}E(x_1,\dots,x_N) + \xi_i(t),\qquad
+\langle\xi_i(t)\otimes\xi_j(t')\rangle = 2\gamma k_BT\,\delta_{ij}\,\mathrm{Id}\;\delta(t-t'),
+\end{equation}
+where $\xi$ is the random force of the solvent molecules. Its strength is fixed by the fluctuation--dissipation
+theorem: with this choice, the stationary distribution is the Boltzmann distribution $\propto e^{-E/k_BT}$ \tierC.
+
+\paragraph{The overdamped limit.} Without the forces $-\nabla E$ and $\xi$, the velocity decays as
+$e^{-t/\tau_m}$ with $\tau_m = m/\gamma$. For a micrometre colloid in water, $\tau_m$ is many orders of magnitude
+shorter than the time the particle needs to move by a fraction of its spacing (Exercise~\ref{ex:ch4-taum}, where
+you estimate it yourself). On time scales $\gg\tau_m$ the inertial term is negligible, and
+\eqref{eq:ch4-langevin} becomes the \emph{overdamped Langevin equation}
+\begin{equation}\label{eq:ch4-overdamped}
+\gamma\,\dot x_i = -\nabla_{x_i}E + \xi_i ,\qquad D=\frac{k_BT}{\gamma}\ \ \text{(Einstein relation).}
+\end{equation}
+At $T=0$ it is the gradient flow $\dot x = -\gamma^{-1}\nabla E$. Rescaling time by $\gamma$ gives exactly the
+equation $\dot x = -\nabla E$ that rusty-SUNDIALS integrates with CVODE in Chapter~3, and the Euler--Maruyama
+annealing of Chapter~3 is the time discretisation of \eqref{eq:ch4-overdamped} at slowly decreasing $T$ \tierC.
+
+\paragraph{Hydrodynamic interactions.} The model above treats each particle as feeling only its own drag.
+In reality, a moving colloid sets the liquid around it in motion, and that flow drags its neighbours. To leading
+order this is described by a \emph{mobility tensor} $M_{ij}$ (Oseen or Rotne--Prager forms; see the literature),
+and the zero-temperature dynamics becomes $\dot x_i = -\sum_j M_{ij}\nabla_{x_j}E$. Two facts survive \tierC:
+\begin{enumerate}
+\item If $M$ is symmetric positive definite, $\frac{d}{dt}E = -\sum_{ij}\nabla_iE\cdot M_{ij}\nabla_jE\le0$: the
+energy still decreases.
+\item The stationary points ($\nabla E = 0$) and their stability (the Hessian) do not depend on $M$.
+\end{enumerate}
+Hydrodynamics therefore changes the \emph{paths} to the minimum and the efficiency of annealing, not the
+minimum. This is why the question ``what is the ground state?''\ belongs to the energy alone. It is also why the
+theorem, which is about the energy alone, is relevant to colloids at all.
+
+%=====================================================================
+\section{Plasmas}\label{sec:ch4-plasmas}
+
+\subsection{Dusty-plasma crystals: the Yukawa potential}
+Thomas, Morfill, Demmel, Goree, Feuerbacher and M\"ohlmann observed Coulomb crystallisation of charged
+microparticles levitated in a plasma~\cite{thomas} \tierL. The grains acquire a large negative charge from the
+plasma, and the surrounding ions and electrons screen it. In the simplest (Debye--H\"uckel) model the screened pair
+potential is of Yukawa form,
+\[
+V(r) = \frac{e^{-\kappa r}}{r}\quad\text{(up to a positive constant; $\kappa$ the inverse screening length)}
+\]
+\tierC. As a function of $t=r^2$, $g(t) = e^{-\kappa\sqrt t}/\sqrt t$. Is it admissible? The function $1/\sqrt t$
+is completely monotone; $e^{-\kappa\sqrt t}$ is completely monotone because $e^{-\kappa u}$ is completely monotone
+in $u$ and $\sqrt t$ has a completely monotone derivative; products of completely monotone functions are
+completely monotone. So $g$ satisfies the hypotheses of the upstream theorem \tierC{} (Exercise~\ref{ex:ch4-yukawa}).
+This step is \emph{not} in our Lean files, which is why every statement about Yukawa crystals in this book is
+Tier~C at best. The numerical study of Chapter~3 is for exactly this potential (with a shifted-force cutoff at
+$r_c=8$): at $\kappa=2$, with $N=288$ in a periodic box at density one, the reference energies per particle are
+$e_{\rm tri}=0.3935333668$ and $e_{\rm sq}=0.4009647699$, and none of 100 relaxations (20 of them
+incommensurate-box controls) fell below $e_{\rm tri}$ \tierX.
+
+Real dusty plasmas leave the theorem's class in several ways. The ion flow past a grain builds a wake that attracts
+other grains, chiefly those below it; the wake force is non-reciprocal, so there is no pair energy at all.
+Grains move out of the plane; and far from a grain, the potential is not Yukawa. These confounds are listed again in
+protocol L2 below.
+
+\subsection{Electrons on liquid helium}
+Grimes and Adams observed a liquid-to-crystal phase transition of a classical two-dimensional sheet of electrons held
+above the surface of liquid helium~\cite{grimes} \tierL. The pair interaction is Coulomb,
+$e^2/(4\pi\varepsilon_0 r)$: Riesz with $s=1$, so the infinite lattice sum diverges and the system is neutralised
+by positive charge on electrodes \emph{below} the sheet. This is jellium in the sense of Chapter~5---but with a
+caveat that the clean mathematical jellium does not have.
+
+\paragraph{Image charges change the exponent.} Model the electrode as a grounded conducting plane a distance $d$ below
+the sheet. Each electron then has an image of charge $-e$ at distance $2d$ from it, vertically below. Two electrons
+at in-plane distance $r$ interact directly and through each other's images:
+\[
+U(r) = \frac{e^2}{4\pi\varepsilon_0}\Bigl(\frac1r - \frac{1}{\sqrt{r^2+4d^2}}\Bigr)
+\;\approx\;\frac{e^2}{4\pi\varepsilon_0}\,\frac{2d^2}{r^3}\qquad (r\gg d)
+\]
+\tierC{} (Exercise~\ref{ex:ch4-image}). At distances large compared with $d$, the interaction becomes
+\emph{dipolar}, $s=3$, and the system leaves the jellium regime and enters the finite-energy class of the theorem.
+Electrons on helium are therefore jellium only when $d$ is much larger than the interparticle spacing.
+
+\subsection{Wigner crystal energetics}
+For the clean 2D Wigner crystal (point charges with $1/r$ interaction in a plane, uniform neutralising background
+in the same plane) the energies of the triangular and square lattices were computed by Bonsall and
+Maradudin~\cite{bm}, who found the triangular lattice lower and the square lattice dynamically unstable (an
+imaginary phonon branch) \tierL. Alves, Bendazzoli, Evangelisti and Berger gave ten-digit Madelung energies by a
+real-space method~\cite{alves} \tierL.
+
+\begin{numbox}[: jellium controls from Chapter~3 (Tier X)]
+Our Ewald implementation (rusty-SUNDIALS branch \lean{physics/jellium-wigner-2026-10-11}) reproduces the published
+values: triangular energy per particle $-1.960515789320$ against the literature value $-1.960515789825$ (relative
+difference $2.6\times10^{-10}$); square $-1.950132460$, relative difference $4.3\times10^{-10}$ from the
+literature; the energy is invariant to better than $10^{-10}$ over a $4\times$ range of the Ewald splitting
+parameter; and the square lattice is a saddle point with 64 unstable modes, consistent with~\cite{bm}. The main
+relaxation study: \JelliumMainStatus.
+\end{numbox}
+
+These are controls, not results: they show that the code computes the energy that the literature computes. They
+say nothing about whether some non-lattice configuration could do better; that is the question the theorem
+answers (for $s>0$ in the finite-energy class) and that Chapter~5 discusses for $s=1$.
+
+%=====================================================================
+\section{Laboratory protocols L1--L4}\label{sec:ch4-lab}
+
+The tiered paper~\cite{tiered} proposes four experiments. We summarise them here with their caveats. They are
+\emph{proposals} \tierC; none has been run. An experiment cannot test the Lean statement, which is about exact
+potentials and infinite configurations. What it can test is whether real two-dimensional repulsive systems behave as
+the theorem and the numerics suggest.
+
+All four share one analysis script, \texttt{lab/lab\_analysis.py} (in the tiered paper's directory), which takes
+tracked particle coordinates and computes the same observables as the simulations:
+\begin{itemize}
+\item the \emph{density}, from the mean Voronoi cell area of the same interior particles over which the energy is
+averaged;
+\item the \emph{coordination}, by the $1.35\,d_0$ neighbour rule, and the local and global bond-orientational order
+$|\psi_6|$;
+\item the \emph{energy} per interior particle for a stated interaction law, truncated at $r_c$ with a uniform tail
+correction, compared with a triangular lattice at the same density and the same truncation.
+\end{itemize}
+The script's self-test passes: a perfect lattice gives a gap at round-off level, thermal noise raises the energy
+above the lattice, and a square lattice is detected and placed above it. Two caveats bear on every kill criterion.
+The truncated potential is not exactly completely monotone, so the comparison is between equally truncated
+energies. And because at $s=3$ the energy scales like $\rho^{3/2}$, a relative density error $\delta\rho/\rho$
+becomes a relative energy error of about $1.5\,\delta\rho/\rho$ (Exercise~\ref{ex:ch4-density}), which must enter
+the error bar. Each protocol should be preregistered with the script, a predicted bracket and its kill criterion.
+
+\paragraph{L1. Superparamagnetic colloids at a flat air--water interface (Riesz $s=3$).} Following~\cite{zahn}.
+\emph{Procedure:} ramp $B$ slowly from the fluid to the crystal at fixed area fraction; track positions by video
+microscopy; record $\chi$ and $B$ so that the prefactor of \eqref{eq:ch4-dipole} is known. \emph{Predictions:}
+(a) at large coupling, $|\psi_6|\to1$ and the interior defect fraction $\to0$; (b) the measured dipolar energy per
+interior particle exceeds the triangular value at the measured density, by an amount that shrinks as $B$ grows
+(the thermal excess); (c) a particle removed with optical tweezers leaves a vacancy that relaxes locally, without
+global restructuring; (d) a square arrangement imposed with holographic tweezers and released relaxes away from
+square---the analogue of the square-saddle control computed for Yukawa and jellium (the $s=3$ square lattice itself
+was not computed). \emph{Kill criterion:} a slowly ramped, defect-free interior whose dipolar energy lies below the
+triangular value beyond the measurement error, with the law's prefactor independently confirmed.
+
+\paragraph{L2. Dusty-plasma monolayer (Yukawa).} Following~\cite{thomas}. The radial confinement is close to
+parabolic, the analogue of the ``open bowl'' of Chapter~3. \emph{Procedure:} measure $\kappa$ and the coupling from
+the phonon spectrum or the pair correlation; image the monolayer; run the shared script; simulate the bowl model at
+the measured $\kappa$ and $N$. \emph{Prediction:} a near-triangular interior with defects concentrated at the rim;
+the interior defect fraction is compared with simulation at matched $\kappa$ and $N$. \emph{Confounds:} ion-wake
+attraction (non-reciprocal, chiefly between vertically adjacent grains, able to drive a mode-coupling instability
+in a monolayer), out-of-plane motion, and departures from a pure Yukawa law at large distance all move the system
+outside the theorem's class. Neutral-gas drag damps the dynamics but does not change the interaction law.
+
+\paragraph{L3. Charged colloids in circular, hexagonal and square cavities (closed disk).} Following~\cite{bubeck}.
+\emph{Procedure:} repeat the circular-cavity case at $N\approx300$, image the interior, compare with closed-wall
+simulations at matched $N$ and wall stiffness. \emph{Prediction:} the edge defect fraction exceeds the interior one,
+as in the closed-disk simulations of Chapter~3. Compared with L2 at matched $N$ and density, this is the
+experimental open-versus-closed comparison---with the confounds that the simulated comparison already has
+(non-uniform density in the bowl, compression against the wall, different edge-layer sizes).
+
+\paragraph{L4. Electrons on liquid helium (jellium, $s=1$).} Following~\cite{grimes}. The neutralising charge sits
+on electrodes a distance $d$ below the sheet, so this is the jellium case only when $d$ is much larger than the
+spacing; otherwise, as computed above, image charges make the interaction dipolar at distances $\gg d$.
+\emph{Prediction:} the crystal is triangular. The evidence in~\cite{grimes} is spectroscopic, not a direct image, so
+a test compares spectroscopic signatures with the triangular Madelung and phonon structure~\cite{bm}. Direct
+imaging would need a detection method that the protocol does not specify.
+
+\begin{warnbox}[: what a positive outcome would mean]
+Suppose L1 is carried out and every prediction holds. That would show that a real dipolar monolayer behaves as the
+ideal model predicts. It would \emph{not} confirm the theorem (which needs no confirmation of that kind and admits
+none), and it would \emph{not} confirm the model (a defect-free triangular interior is also what many non-ideal
+interactions produce). The kill criterion is asymmetric on purpose: only an undercut of the triangular energy,
+with the law independently confirmed, would be informative, and it would point at the model, not at the proof.
+\end{warnbox}
+
+%=====================================================================
+\section{rusty-SUNDIALS: implications and opportunities}\label{sec:ch4-rusty}
+
+rusty-SUNDIALS~\cite{rusty} is a Rust re-implementation of parts of the SUNDIALS suite. The numerical study of
+Chapter~3 (crate \texttt{qf-yukawa-crystal}) uses its CVODE. This section asks what the physics of this chapter
+demands from such a library, and what the library currently provides. Every statement about the code below was
+checked against the files named; the proposals are \tierC.
+
+\subsection{Stiffness of particle relaxation}
+Linearise the gradient flow $\dot x = F(x) = -\nabla E(x)$ around a minimum $x^\ast$:
+$\dot{\delta x} = -\mathcal H\,\delta x$, with $\mathcal H$ the Hessian. If $\lambda_1\le\dots\le\lambda_{2N}$ are
+its eigenvalues, the Jacobian of the ODE has eigenvalues $-\lambda_k$. In a crystal:
+\begin{itemize}
+\item the two translation modes have $\lambda=0$ (in our runs, $|\lambda|\le1.5\times10^{-15}$ at $\kappa=2$)
+\tierX;
+\item the long-wavelength phonons have small $\lambda$; for a crystal their smallest value decreases as the box
+grows, because the softest wavenumber scales like $1/L$ \tierC. At the single size studied ($N=288$), the perfect
+lattice's smallest non-zero eigenvalue was $0.0236$ \tierX. Separately, over the 80 non-control relaxed runs at
+$\kappa=2$, most of them defected, every non-translation eigenvalue was at least $5.4\times10^{-5}$ \tierX; such a
+low floor reflects soft modes of defected configurations, not a size effect;
+\item the short-wavelength, nearest-neighbour modes have the largest eigenvalue $\lambda_{\max}$.
+\end{itemize}
+An explicit method is stable only for step sizes $h\lesssim 2/\lambda_{\max}$, while relaxation along the softest
+mode needs a time $\sim 1/\lambda_{\min}$. The number of explicit steps therefore grows like the
+\emph{stiffness ratio} $\lambda_{\max}/\lambda_{\min}$, which in a crystal grows with the system size (the softest
+phonon wavenumber scales like $1/L$) \tierC. We give no numerical value for the ratio because $\lambda_{\max}$ is not
+among the recorded results. BDF methods, whose stability regions contain most or all of the left half-plane, take
+steps limited by accuracy instead of stability, and this is why CVODE's BDF is the right tool for the quench.
+
+Contrast the point vortices of Section~\ref{sec:ch4-pvcode}: there the dynamics is Hamiltonian, the eigenvalues
+are near the imaginary axis, and explicit (or, better, symplectic) integrators are the right tool. The same library
+must serve both regimes.
+
+\subsection{BDF versus Adams in rusty-SUNDIALS}
+CVODE offers two families: BDF for stiff problems, Adams--Moulton for non-stiff ones. In rusty-SUNDIALS the
+Adams path does not work as an Adams method. The crate description of \texttt{qf-bao-distances} records it in one
+sentence:
+\begin{lstlisting}
+... integrated with this repository's own CVODE (BDF; its Adams path was measured to be stuck at order 1) ...
+\end{lstlisting}
+(\texttt{crates/qf-bao-distances/Cargo.toml}). The README of \texttt{crates/sundials-mcp} gives the measured detail:
+\texttt{Method::Adams} never leaves order 1 because a coefficient routine (\texttt{compute\_l}) is a placeholder,
+and its error on a smooth quadrature problem scales like $\sqrt{\mathrm{rtol}}$ (it reports $2.1\times10^{-4}$
+relative at $\mathrm{rtol}=10^{-7}$). The same README records that many output times from one BDF run degrade
+accuracy compared with a fresh solve per output ($4\times10^{-6}$ against $6\times10^{-7}$). These are that
+README's measurements, not ours \tierX.
+
+\emph{Implications.} The relaxations of Chapter~3 are stiff and use BDF, so they are not affected by the Adams
+defect. A point-vortex or any other Hamiltonian problem would want Adams (or a dedicated symplectic method), and
+today it would silently get a first-order method if it asked for Adams. \emph{Opportunity:} implement the
+variable-order Adams coefficients and test them against a problem with a known high-order convergence rate
+(Project~P2 below).
+
+\subsection{Analytic versus finite-difference Jacobians}
+A BDF step solves a nonlinear system by Newton's method and needs the Jacobian $\partial F/\partial x$. For the
+gradient flow this is $-\mathcal H$. The two crates of Chapter~3 make different choices, as their source says:
+\begin{lstlisting}
+crates/qf-yukawa-crystal/src/lib.rs:
+/// Overdamped relaxation `dx/dt = F(x)` with CVODE (BDF, analytic Jacobian) until `max |F| < ftol` or `t > tmax`.
+crates/qf-yukawa-crystal/src/jellium.rs:
+    /// Overdamped relaxation with CVODE (BDF, finite-difference Jacobian) until `max |F| < ftol` or `t > tmax`.
+\end{lstlisting}
+For the short-range Yukawa potential with a cutoff, the Hessian is a sparse sum of $2\times2$ blocks and is cheap to
+write down; the Yukawa relaxation passes it to CVODE (\texttt{.jacobian(jac)} with entries $-\mathcal H$). For
+jellium, the Ewald sum makes an analytic Hessian laborious, and CVODE forms the Jacobian by finite differences of
+the force: the difference-quotient loop in \texttt{crates/cvode/src/solver.rs} makes one extra right-hand-side
+call per column, $J_{:,j}=(f(y+\varepsilon e_j)-f(y))/\varepsilon$, i.e.\ $2N$ Ewald force evaluations per
+Jacobian for $N$ particles. The Hessian used for
+the stability analysis of jellium is likewise ``central finite differences of the analytic force (symmetrised)''
+(source comment in \texttt{jellium.rs}).
+
+\emph{Opportunities} \tierC: an analytic Ewald Hessian (the real-space and reciprocal-space parts can both be
+differentiated twice in closed form); automatic differentiation; or a Jacobian-free Newton--Krylov solver in which
+only Hessian--vector products are needed, which a single extra force evaluation approximates.
+
+\subsection{Constraints and DAEs: what IDA would add}
+Several physical set-ups of this chapter are \emph{constrained}: particles confined by a hard wall (rather than the
+soft wall $\varepsilon(r-R)^4$ of Chapter~3), particles on a curved interface, vortices in a bounded domain with
+explicit boundary conditions, or relaxation at a fixed density or fixed angular impulse. The natural formulation is
+a differential-algebraic system $F(t,y,\dot y)=0$, which is what SUNDIALS' IDA solves. In rusty-SUNDIALS,
+\texttt{crates/ida} is not that solver yet; its own header says so:
+\begin{lstlisting}
+/// A fixed-step Backward Euler prototype for DAE residuals, NOT a general IDA solver.
+///
+/// It does one fixed-point iteration per step (no Newton-Krylov, no Nordsieck array, no variable
+/// order/step size, no error control beyond the fixed-point residual). It approximates `dF/dy ~ 1`
+/// (see the fixed-point loop in `solve`), which is only valid for mildly stiff residuals. Treat it
+/// as a placeholder for a real IDA port, not as a replacement for it; `CvodeSolver` in the `cvode`
+/// crate is the tested, variable-order solver in this repository.
+\end{lstlisting}
+(\texttt{crates/ida/src/solver.rs}, lines 3--9). It was not used in Chapter~3. \emph{Opportunity:} a real IDA port
+(variable order and step, Newton iteration with the residual Jacobian, error control), validated on index-1
+problems with closed-form solutions before any physics is run on it.
+
+\subsection{KINSOL: solving \texorpdfstring{$F(x)=0$}{F(x) = 0} directly}
+The gradient flow finds \emph{minima}: almost every initial condition flows away from saddle points. But some of
+the most informative configurations are saddles. The square lattice is one (Chapter~3 found it a saddle with 72
+negative Hessian eigenvalues at $\kappa=2$ and 64 at $\kappa=1$) \tierX; transition states between defect
+configurations are others; and rigidly rotating vortex configurations, the critical points of $H_\Omega$ in
+\eqref{eq:ch4-rotframe}, are generally saddles too. All of these are zeros of a force, $F(x)=0$. SUNDIALS solves
+such systems with KINSOL (Newton and Newton--Krylov with globalisation). rusty-SUNDIALS has no KINSOL: no crate of
+that name exists, and a search of the crates' sources and manifests for ``kinsol'' finds nothing. \emph{Opportunity}
+\tierC: a KINSOL port, tested on the square-lattice saddle (whose existence and index Chapter~3 already measured)
+and on the regular vortex ring of Section~\ref{sec:ch4-pvcode} in its rotating frame.
+
+\subsection{The sundials-mcp server: solvers for AI agents}
+\texttt{crates/sundials-mcp} is a Model Context Protocol server (JSON-RPC over standard input and output) through
+which AI agents can run rusty-SUNDIALS solvers. Its README lists the tools \texttt{about},
+\texttt{list\_problems}, \texttt{solve} (named CVODE problems: \texttt{exponential}, \texttt{robertson},
+\texttt{vanderpol}, \texttt{lorenz}, \texttt{domain\_exit}), \texttt{pgpe\_run}, \texttt{cmb\_bound} and
+\texttt{bao\_distances}. Two of its design rules are worth copying in any scientific tool that an agent will call:
+\begin{itemize}
+\item every result carries a field \texttt{ran}, and \texttt{ran: false} means that nothing was computed---never a
+pass;
+\item a solver failure is reported as a tool error with the solver's own message and \emph{no} partial trajectory;
+each known-answer check names an external reference.
+\end{itemize}
+The server also runs every solve in a worker subprocess, because the CVODE code prints diagnostics to standard
+output on some failure paths, which would corrupt the protocol stream. \texttt{pgpe\_run} runs a projected
+Gross--Pitaevskii field model, in which quantised vortices can occur, but no tool simulates point particles or
+point vortices, and we did not check whether either GPE crate (\texttt{qf-pgpe}, \texttt{qf-gpe2d}) supports a
+rotating frame. \emph{Opportunity} \tierC: a \texttt{relax\_crystal} tool (Yukawa or jellium relaxation with the
+Chapter~3 controls built in) and a \texttt{point\_vortices} tool (with the ring known-answer test and the
+conservation report of Section~\ref{sec:ch4-pvcode}), each returning its controls alongside its result.
+
+\subsection{Student projects}
+\begin{enumerate}[label=\textbf{P\arabic*.}]
+\item \textbf{Point vortices with CVODE.} Port \texttt{rhs} of Section~\ref{sec:ch4-pvcode} to Rust and integrate it
+with rusty-SUNDIALS' CVODE (BDF, the only reliable method today). Reproduce the ring rotation rate and the
+conservation table. Compare with the SciPy output above; explain any difference in the drift of $H$. Add the
+$1/r$-kernel control. (No CVODE run of this problem exists yet; this is a proposal.)
+\item \textbf{Fix Adams.} Implement the variable-order Adams--Moulton coefficients in the CVODE crate and show
+order $>1$ on a smooth problem (e.g.\ $y'=-y$), by plotting error against tolerance. Then rerun P1 with Adams.
+\item \textbf{Vortex crystals in a rotating frame.} Minimise $H_\Omega$ of \eqref{eq:ch4-rotframe} for $N$ equal
+vortices by gradient flow with CVODE (this is a stiff relaxation, like Chapter~3), measure $|\psi_6|$ in the
+interior, and check that the interior density approaches $2\Omega/\Gamma$ of \eqref{eq:ch4-feynman}.
+\item \textbf{A Newton solver for saddles.} Write a small Newton iteration (a ``KINSOL-lite'') for $F(x)=0$ and
+converge onto the square-lattice saddle of the Yukawa crystal from a slightly perturbed square start; count the
+negative Hessian eigenvalues and compare with Chapter~3.
+\item \textbf{An analytic Ewald Hessian.} Derive and code it, test it against the existing finite-difference
+Hessian, and compare the CVODE cost of the jellium relaxation with both Jacobians.
+\item \textbf{Hydrodynamic interactions.} Add a Rotne--Prager mobility (see the literature for its form) to the
+Yukawa gradient flow and verify numerically that the relaxed configurations and their energies do not change while
+the relaxation paths do.
+\item \textbf{An MCP tool.} Add a \texttt{point\_vortices} tool to \texttt{sundials-mcp} that follows its honesty
+conventions, with the ring as the known-answer check.
+\end{enumerate}
+
+%=====================================================================
+\section{Other domains, briefly}\label{sec:ch4-other}
+
+\paragraph{Ion crystals.} Ions held in Penning traps can form single-plane crystals. The ions interact by the
+three-dimensional Coulomb law ($s=1$ in the plane), and the trap together with the plasma's rotation provides a
+harmonic radial confinement, which, as in \eqref{eq:ch4-rotframe}, plays the role of a neutralising background.
+These planar ion crystals are the $s=1$ analogue of the rotating vortex lattice; triangular order is reported for
+them in the literature \tierC{} (we cite no source here).
+
+\paragraph{Abrikosov lattices in type-II superconductors.} In a type-II superconductor in a magnetic field between
+the two critical fields, flux enters as quantised vortices, which arrange themselves in a lattice. Near the upper
+critical field, Ginzburg--Landau theory reduces the choice of lattice to minimising a single number (the Abrikosov
+parameter), and the triangular lattice is the minimiser; the square lattice that was first proposed is higher
+\tierC{} (standard physics, no citation here). The mathematics behind such statements is close to this book's:
+Gaussian lattice sums. Montgomery proved that among lattices of fixed covolume the triangular lattice minimises the
+theta function $\sum_{a}e^{-\pi\alpha|a|^2}$ for every $\alpha>0$~\cite{montgomery} \tierL, and Rankin and Cassels
+studied the analogous problem for the Epstein zeta function~\cite{rankin,cassels} \tierL. These are \emph{lattice}
+results: they compare lattices with lattices. The theorem of Chapter~2 compares the triangular lattice with
+\emph{every} configuration of density one, periodic or not. Which lattice sum, exactly, expresses the Abrikosov
+parameter, and how the result relates to Montgomery's theorem, we leave to the literature \tierC.
+
+\paragraph{Foams and honeycombs are a different problem.} Soap froths in a plane and bees' honeycombs show hexagonal
+cells, and it is tempting to file them with the triangular lattice, whose Voronoi cells are regular hexagons. But the
+underlying optimisation is different: one minimises the total \emph{perimeter} of a partition of the plane into
+cells of equal area. There are no point particles and no pair potential. The ``honeycomb conjecture'' that the
+regular hexagonal partition is optimal was proved by Hales (see the literature) \tierC. Neither that theorem nor the
+universal optimality theorem implies the other; they share an answer, not a problem.
+
+%=====================================================================
+\section*{Summary}
+\begin{itemize}
+\item Planar point vortices interact through the 2D Green's function, i.e.\ logarithmically: the case $s=0$, which
+lies outside the finite-energy class and needs renormalisation (Chapter~5). In a rotating frame the vortex energy
+becomes a logarithmic jellium with background density $2\Omega/\Gamma$ \tierC.
+\item Vortex crystals in electron columns~\cite{fine} and vortex lattices in rotating condensates~\cite{aboshaeer}
+are observations \tierL; their connection with energy minimisation is an analogy \tierC.
+\item Superparamagnetic colloids~\cite{zahn} realise a Riesz $s=3$ law, inside the theorem's class \tierA{} for
+the potential, \tierC{} for the modelling. Their overdamped motion is the gradient flow of Chapter~3.
+\item Dusty plasmas~\cite{thomas} are Yukawa (Tier~C admissibility); electrons on helium~\cite{grimes} are jellium
+only when the electrodes are far, and dipolar otherwise.
+\item rusty-SUNDIALS handles stiff relaxation with BDF well; its Adams path is stuck at order~1, its IDA is a
+prototype, it has no KINSOL, and its MCP server has no particle tools. Each gap is a student project.
+\end{itemize}
+
+%=====================================================================
+\section*{Exercises}
+
+\begin{exercise}\label{ex:ch4-green}
+Repeat the proof of Proposition~\ref{prop:ch4-green} in $\R^3$ and show that $G(x)=1/(4\pi|x|)$. In $\R^d$,
+$d\ge3$, show that $G(x)=c_d|x|^{2-d}$, and find $c_d$ in terms of the surface area of the unit sphere. Which Riesz
+exponent $s$ is ``Coulomb'' in dimension $d$? Conclude that in the plane the Coulomb case is $s=0$ (logarithm), not
+$s=1$.
+\end{exercise}
+
+\begin{exercise}\label{ex:ch4-ring}
+Show that $n$ equal vortices of circulation $\Gamma$ at the vertices of a regular $n$-gon of radius $R$ rotate
+rigidly at $\Omega=(n-1)\Gamma/(4\pi R^2)$. (Hint: by symmetry compute the velocity of one vortex; use
+$\sum_{k=1}^{n-1}\frac{1}{1-e^{2\pi i k/n}}=\frac{n-1}{2}$.) Check the case $n=2$ directly.
+\end{exercise}
+
+\begin{exercise}\label{ex:ch4-impulse}
+Let $\dot x_i = \sum_{j\neq i}\Gamma_j\,(x_i-x_j)^{\perp}f(r_{ij})$ with $(a,b)^\perp=(-b,a)$ and any function $f$.
+Prove that $P$, $Q$ and $I$ are conserved. Show that for $N=2$ the distance $r_{12}$, hence the logarithmic $H$,
+is conserved for \emph{every} $f$. Then explain why, for $N=8$, the negative-control line of the point-vortex output
+shows a drift of $H$ but not of $P$, $Q$, $I$. What would a negative control with $N=2$ have shown?
+\end{exercise}
+
+\begin{exercise}\label{ex:ch4-log}
+Let $g(t)=-\frac12\log t$. Show that $(-1)^r g^{(r)}(t)\ge0$ for all $r\ge1$ and $t>0$, but that $g(t)<0$ for
+$t>1$. Which clause of \lean{AdmissiblePotential} fails? Show that adding a constant cannot repair it. Show also
+that $\sum_{a\in\Lat\setminus0}g(|a|^2)$ diverges.
+\end{exercise}
+
+\begin{exercise}\label{ex:ch4-rot}
+Derive \eqref{eq:ch4-rotframe}. Then show that for equal vortices the confining term $\frac{\Omega\Gamma}{2}|x|^2$
+equals, up to a constant, the interaction energy of a vortex with a uniform disk of vorticity $-\Gamma n_b$
+(containing it), with $n_b=2\Omega/\Gamma$. Use Proposition~\ref{prop:ch4-green} and the radial form of the
+Laplacian.
+\end{exercise}
+
+\begin{exercise}\label{ex:ch4-drift}
+Show that the $E\times B$ drift velocity in a uniform field $B\hat z$ is divergence-free when $\phi$ is smooth, and
+that the electron density is advected by it. Write the analogue of \eqref{eq:ch4-vorticity} for the density.
+Which boundary condition does a grounded cylindrical wall impose, and what does it do to a single off-centre
+vortex (method of images)?
+\end{exercise}
+
+\begin{exercise}\label{ex:ch4-taum}
+Using $\gamma=6\pi\eta a$, estimate the momentum relaxation time $\tau_m=m/\gamma$ of a silica sphere of radius
+$1\,\mu$m in water, and the time it takes to diffuse a distance equal to its own radius ($a^2/D$, $D=k_BT/\gamma$)
+at room temperature. Look up the material constants yourself and state your sources. Justify the overdamped limit.
+\end{exercise}
+
+\begin{exercise}\label{ex:ch4-lyap}
+Show that along $\dot x = -M\nabla E$, with $M$ symmetric positive definite, $E$ is non-increasing, and that
+the linear stability of a critical point (its number of unstable directions) is the number of negative
+eigenvalues of the Hessian, independently of $M$. (Hint: $M^{1/2}\mathcal H M^{1/2}$ and $\mathcal H$ have the same
+inertia.)
+\end{exercise}
+
+\begin{exercise}\label{ex:ch4-yukawa}
+Prove that $g(t)=e^{-\kappa\sqrt t}/\sqrt t$ is completely monotone on $(0,\infty)$ for $\kappa\ge0$. Use: (i) if
+$\varphi$ is completely monotone and $h$ is positive with a completely monotone derivative, then
+$\varphi\circ h$ is completely monotone; (ii) products of completely monotone functions are completely monotone.
+Prove (ii) by Leibniz's rule. Why is this not enough to put Yukawa crystals at Tier~A in this book?
+\end{exercise}
+
+\begin{exercise}\label{ex:ch4-image}
+Derive the image-charge interaction for two electrons at height $d$ above a grounded plane, and its expansion
+$\frac{2d^2}{r^3}$ (in units of $e^2/4\pi\varepsilon_0$) for $r\gg d$. Compute the next term. Which Riesz exponent
+governs the large-distance behaviour, and is it in the finite-energy class?
+\end{exercise}
+
+\begin{exercise}\label{ex:ch4-density}
+For the Riesz energy per particle $e_s(\rho)=c_s\rho^{s/2}$, show that a relative density error $\delta\rho/\rho$
+gives a relative energy error $\frac{s}{2}\frac{\delta\rho}{\rho}$ to first order. Evaluate it for $s=3$ and
+explain why this matters for the L1 kill criterion.
+\end{exercise}
+
+\begin{exercise}\label{ex:ch4-stiff}
+For the gradient flow $\dot x=-\mathcal H x$ with $\mathcal H$ symmetric positive semidefinite, show that forward
+Euler is stable iff $h<2/\lambda_{\max}$, and that backward Euler is stable for all $h>0$. Estimate the number of
+forward-Euler steps needed to reduce the softest non-zero mode by a factor $e$. Why do the zero (translation) modes
+not matter?
+\end{exercise}
+
+\begin{exercise}\label{ex:ch4-code}
+Modify the point-vortex script: (a) replace DOP853 by RK45 and tighten or loosen \texttt{rtol}; plot the relative
+drift of $H$ against \texttt{rtol}. (b) Give SciPy's BDF the analytic Jacobian of \eqref{eq:ch4-kirchhoff} and
+compare \texttt{nfev}. (c) Change the seed until two opposite vortices come very close, and explain the effect on
+the drift of $H$. Report your actual output.
+\end{exercise}
+
+\begin{exercise}\label{ex:ch4-riesz3}
+Compute, to six digits, the lattice sums $\sum_{a\in\Lat\setminus0}|a|^{-3}$ for the triangular lattice and
+$\sum_{a\in\Z^2\setminus0}|a|^{-3}$ for the square lattice, both of covolume one. (Sum over a large disk and correct
+the tail by an integral; test your tail correction by doubling the radius.) Which is smaller, and what does the
+theorem predict? Use \lean{norm_sq_triangularPoint} for the triangular norms.
+\end{exercise}

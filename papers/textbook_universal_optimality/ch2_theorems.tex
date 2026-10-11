@@ -1,0 +1,1168 @@
+\chapter{The theorems, side by side: human proof and Lean~4}\label{ch2:chapter}
+
+This chapter states every result of the book twice. First comes the mathematics: an informal statement, a precise
+statement and a human proof that you can check with pen and paper. Then comes the Lean~4 text, quoted verbatim from the
+files in \lean{formal_cert/Triangular/}, together with a short paragraph explaining how the formal proof follows the
+human one. Where a listing is shortened, the omission is marked by a comment \lean{-- ...}; nothing else in a listing is
+changed.
+
+\paragraph{How the tiers are used in this chapter.}
+\begin{itemize}
+\item A Lean theorem that compiled under the pinned toolchain (Lean~4.34.1, Mathlib \lean{d13f23b7}, openai/math
+  \lean{adc7f124}), with an axiom footprint inside \{\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}\}, is
+  \tierA. Tier~A attaches to the \emph{formal statement}. It means ``kernel-checked, conditional on the fidelity of the
+  definitions''. It does not mean ``true of the physical world'', and it does not mean that the Lean definitions say what
+  the English says: no human has audited the adequacy of the statements, and the claims ledger carries six open
+  adequacy flags.
+\item Every result below except the upstream theorem is a corollary of the upstream theorem
+  \lean{OAI.AtomicTriangular.universal_energy_minimum}~\cite{oai}. That theorem is AI-generated (OpenAI release). We
+  kernel-checked it and Comparator accepted it under the pinned toolchain. It has not been peer reviewed.
+\item A human proof written out in this book is an argument, \tierC, until it is matched by a kernel-checked Lean
+  proof. When it is matched, the \emph{Lean statement} is Tier~A; the human proof stays an explanation of it.
+\item Statements taken from the upstream manuscript or the published literature are \tierL.
+\end{itemize}
+
+\begin{table}[ht]
+\centering\footnotesize
+\begin{tabular}{@{}l l p{4.3cm}@{}}
+\toprule
+Result & Main Lean name (file) & Tier \\
+\midrule
+Upstream & \lean{universal_energy_minimum} (upstream) & A (AI-generated, not peer reviewed) \\
+D1 & \lean{triangular_riesz_optimal} (\lean{Riesz.lean}) & A \\
+D1b & \lean{latticeEnergy_riesz_lt_top} (\lean{RieszFinite.lean}) & A \\
+D2 & \lean{triangular_optimal_any_density} (\lean{AnyDensity.lean}) & A \\
+Controls & \lean{riesz_neg_two_not_admissible}, \dots{} (\lean{Controls.lean}) & A \\
+D3 & \lean{universal_optimum_not_unique} (\lean{UniversalOptimality.lean}) & A \\
+D4 & open versus closed disks (\lean{OpenDisk.lean}) & human proof C; Lean: \S\ref{ch2:sec:d4} \\
+\bottomrule
+\end{tabular}
+\caption{The results of this chapter. ``A'' always means: kernel-checked, conditional on the fidelity of the
+definitions.}\label{ch2:tab:results}
+\end{table}
+
+% =====================================================================================================
+\section{The objects, as upstream defines them}\label{ch2:sec:defs}
+
+We write $\mathbb{P}=\R^2$ with the Euclidean norm, and $B_R=\{x:\|x\|\le R\}$ for the \emph{closed} disk of radius
+$R$ centred at the origin. All definitions in this section are upstream's~\cite{oai}. They are taken from the challenge
+file \lean{lean/ComparatorChallenges/TriangularEnergy.lean} (openai/math \lean{adc7f124}, sha256 \lean{af51979c...0616};
+we checked the full hash, \lean{af51979c7baecd3e9852637bbba29eff}\allowbreak\lean{96cbb09cec84e15eff7d686f1a770616}, with
+\lean{sha256sum} on our pinned copy).
+
+\begin{definition}[Configurations, counts, density]\label{ch2:def:basic}
+A \emph{configuration} is a set $C\subseteq\mathbb{P}$ (no multiplicities). It is \emph{locally finite} if
+$C\cap B_R$ is finite for every $R$. Its \emph{disk count} is $N_R(C)=\#(C\cap B_R)$; by convention the count is $0$
+if $C\cap B_R$ is infinite. $C$ has \emph{density one} if $N_R(C)/(\pi R^2)\to 1$ as $R\to\infty$, and density $\rho$
+if the limit is $\rho$.
+\end{definition}
+
+\begin{definition}[Admissible potentials]\label{ch2:def:adm}
+$g:\R\to\R$ is \emph{admissible} if $g$ is $C^\infty$ on $(0,\infty)$, $g(t)\ge 0$ for $t>0$, and
+$(-1)^r g^{(r)}(t)\ge 0$ for every $r\in\N$ and every $t>0$. The inequalities are \emph{weak}, and the smoothness is
+$C^\infty$, not analyticity. The variable $t$ is the \emph{squared} distance: a pair at distance $r$ interacts through
+$g(r^2)$.
+\end{definition}
+
+\begin{definition}[Disk energy, lower energy, lattice energy]\label{ch2:def:energy}
+With values in $[0,\infty]$,
+\[
+E_g(C;R)=\frac{1}{N_R(C)}\sum_{x\in C\cap B_R}\ \sum_{\substack{y\in C\cap B_R\\ y\neq x}} g\bigl(\|x-y\|^2\bigr),
+\qquad
+E_g(C)=\liminf_{R\to\infty}E_g(C;R).
+\]
+(Each term is truncated at $0$ by \lean{ENNReal.ofReal}, and $0^{-1}=\infty$, $\infty\cdot 0=0$ in $[0,\infty]$, so an
+empty disk has energy $0$.) $E_g(C)$ is the \emph{lower} energy: it is a $\liminf$, and nothing requires the limit to
+exist. Let $b=\sqrt3/2$ and
+\[
+p(j,k)=b^{-1/2}\Bigl(j+\tfrac k2,\ kb\Bigr),\qquad A=\{p(j,k):(j,k)\in\Z^2\}.
+\]
+$A$ is the triangular lattice of covolume one. Its \emph{lattice energy} is $\mathcal{E}_g(A)=\sum_{a\in A\setminus\{0\}}
+g(\|a\|^2)\in[0,\infty]$; the sum may be $\infty$.
+\end{definition}
+
+\begin{leanbox}[(upstream challenge file, verbatim)]
+\begin{lstlisting}[language=Lean,escapeinside={(*}{*)}]
+-- lean/ComparatorChallenges/TriangularEnergy.lean, lines 11-36 (namespace OAI.TriangularUniversal)
+abbrev Plane := EuclideanSpace ℝ (Fin 2)
+
+def LocallyFinite (C : Set Plane) : Prop :=
+  ∀ R : ℝ, (C ∩ Metric.closedBall (0 : Plane) R).Finite
+
+def diskPoints (C : Set Plane) (R : ℝ) : Finset Plane :=
+  if h : (C ∩ Metric.closedBall (0 : Plane) R).Finite then h.toFinset else (*$\emptyset$*)
+
+def diskCount (C : Set Plane) (R : ℝ) : ℕ := (diskPoints C R).card
+
+def DensityOne (C : Set Plane) : Prop :=
+  Tendsto (fun R : ℝ => (diskCount C R : ℝ) / (Real.pi * R ^ 2))
+    atTop (𝓝 1)
+
+def AdmissiblePotential (g : ℝ → ℝ) : Prop :=
+  ContDiffOn ℝ (⊤ : ℕ∞) g (Set.Ioi 0) ∧
+  (∀ t : ℝ, 0 < t → 0 ≤ g t) ∧
+  ∀ (r : ℕ) (t : ℝ), 0 < t → 0 ≤ (-1 : ℝ) ^ r * iteratedDeriv r g t
+
+def diskEnergy (g : ℝ → ℝ) (C : Set Plane) (R : ℝ) : ℝ≥0∞ :=
+  (diskCount C R : ℝ≥0∞)⁻¹ *
+    ∑ x ∈ diskPoints C R, ∑ y ∈ (diskPoints C R).erase x,
+      ENNReal.ofReal (g (‖x - y‖ ^ 2))
+
+def energy (g : ℝ → ℝ) (C : Set Plane) : ℝ≥0∞ :=
+  Filter.liminf (diskEnergy g C) atTop
+-- ... lines 40-63 (namespace OAI.AtomicTriangular)
+def b : ℝ := Real.sqrt 3 / 2
+
+def triangularPoint (jk : ℤ × ℤ) : Plane :=
+  (Real.sqrt b)⁻¹ •
+    (EuclideanSpace.single 0 ((jk.1 : ℝ) + (jk.2 : ℝ) / 2) +
+      EuclideanSpace.single 1 ((jk.2 : ℝ) * b))
+
+def A : Set Plane := Set.range triangularPoint
+-- ...
+def latticeEnergy (g : ℝ → ℝ) : ℝ≥0∞ :=
+  ∑' a : {x : Plane // x ∈ A ∧ x ≠ 0}, ENNReal.ofReal (g (‖a.val‖ ^ 2))
+\end{lstlisting}
+\end{leanbox}
+
+Two details of the formal definitions are worth noticing before any proof. First, \lean{diskPoints} returns the empty
+set when $C\cap B_R$ is infinite, so every useful statement carries the hypothesis \lean{LocallyFinite C}. Second,
+\lean{iteratedDeriv} is the iterated \emph{global} derivative of $g:\R\to\R$; at a point $t>0$ it agrees with the
+classical derivative because $g$ is smooth on the open set $(0,\infty)$ around $t$ (this is item ``Potential class'' of
+the statement-fidelity audit, \lean{results/discovery/statement_fidelity.md}) \tierC.
+
+% =====================================================================================================
+\section{Result 0: the upstream theorem}\label{ch2:sec:upstream}
+
+\paragraph{Informal statement.} Among all locally finite planar configurations of density one, the triangular lattice
+has the least lower energy, simultaneously for every admissible potential.
+
+\begin{theorem}[Universal energy minimum~\cite{oai}]\label{ch2:thm:upstream}
+Let $g$ be admissible and $C$ locally finite of density one. Then
+\[
+\mathcal{E}_g(A)\le E_g(C)\qquad\text{and}\qquad \mathcal{E}_g(A)=E_g(A).
+\]
+\end{theorem}
+Status: \tierA{} for the Lean statement below (AI-generated proof, kernel-checked and Comparator-accepted by us under
+the pinned toolchain, footprint \{\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}\}; not peer reviewed);
+\tierL{} for the manuscript's proof.
+
+\paragraph{What is claimed, and what is not.}
+\begin{itemize}
+\item The theorem is an \emph{energy comparison}: it identifies the minimum \emph{value} $\mathcal{E}_g(A)$ of the lower
+  energy. In upstream's words, ``It identifies the minimum value, not all minimizers.'' \tierL{} Section~\ref{ch2:sec:d3}
+  shows, in Lean, that the minimizer is indeed not unique.
+\item Upstream does \emph{not} claim the per-potential form of the Cohn--Kumar conjecture, in which each potential has a
+  sharp auxiliary function of its own. That strong form is \textbf{open}. \tierL
+\item The competitor $C$ need not be periodic; it only has to be locally finite with density one.
+\item Energies are lower energies over \emph{closed} disks centred at $0$. Section~\ref{ch2:sec:d4} shows that open disks
+  give the same density and the same lower energy.
+\item The Riesz endpoint $s=2$ and renormalized (Coulomb-type) energies are not covered. Renormalized energies are
+  treated only in the upstream manuscript (its Section~8), and not in Lean anywhere. \tierL
+\end{itemize}
+
+\subsection{Proof architecture (Tier L)}
+We give only the architecture of upstream's proof (upstream manuscript, Section~1), not its details. Everything in this
+subsection is \tierL.
+
+\paragraph{Step 1: Gaussians.} Use the normalisation $\hat f(\xi)=\int f(x)e^{-2\pi i x\cdot\xi}\,dx$, the Gaussian
+$G_\alpha(x)=e^{-\pi\alpha\|x\|^2}$ ($\alpha>0$) and the dual lattice $A^*$. For every $\alpha>0$ upstream constructs a
+radial Schwartz function $f_\alpha$ with
+\[
+f_\alpha\le G_\alpha,\qquad \hat f_\alpha\ge 0,\qquad f_\alpha(a)=G_\alpha(a)\ (a\in A\setminus\{0\}),\qquad
+\hat f_\alpha(w)=0\ (w\in A^*\setminus\{0\}).
+\]
+So $f_\alpha$ is a \emph{minorant} of the potential (not a majorant), with nonnegative Fourier transform.
+
+\paragraph{Step 2: the linear-programming bound.} For every competitor $C$ of centred density one,
+\[
+E_{G_\alpha}(C)\ \ge\ \hat f_\alpha(0)-f_\alpha(0).
+\]
+This is a Cohn--Elkies-type bound~\cite{ck,ckmrv}. The competitor does not need to be periodic; upstream compares the
+disk sums with the area of the disk and controls the error uniformly.
+
+\paragraph{Step 3: equality on the lattice.} Poisson summation on $A$ (covolume one) reads
+$\sum_{a\in A}f_\alpha(a)=\sum_{w\in A^*}\hat f_\alpha(w)$. The interpolation conditions turn it into
+$f_\alpha(0)+\sum_{a\neq0}G_\alpha(a)=\hat f_\alpha(0)$. Hence
+\[
+\hat f_\alpha(0)-f_\alpha(0)=\sum_{a\in A\setminus\{0\}}e^{-\pi\alpha\|a\|^2}=\mathcal{E}_{G_\alpha}(A),
+\]
+and the bound of Step~2 is attained by $A$.
+
+\paragraph{Step 4: the construction of $f_\alpha$.} A sine product with double zeros encodes the periodic contact set.
+Multiplying it by double-pole and simple-pole terms gives entire functions with prescribed values and slopes.
+Compactly supported spectral measures and Gaussian damping follow. Finite reference lists are handled by positive
+quadrature, with certified matrix and polynomial inequalities (the verification scripts use \lean{python-flint} ball
+arithmetic). The construction does \emph{not} use modular forms; modular forms are the method of~\cite{ckmrv} in
+dimensions $8$ and $24$.
+
+\paragraph{Step 5: from Gaussians to all admissible $g$.} An admissible $g$ is a positive mixture of Gaussians in
+$t=\|x\|^2$: $g(t)=\int_{[0,\infty)}e^{-\alpha t}\,d\mu(\alpha)$ (Bernstein--Hausdorff--Widder; upstream gives its own
+finite-difference proof). The measure may charge $\alpha=0$, i.e.\ contain a constant, whose energy is infinite at
+density one (upstream lemma \lean{energy_one}). Integrating the Gaussian bounds needs monotone convergence and Tonelli,
+and, because $\liminf$ is not linear, a separate lower-limit argument; the endpoint and infinite-energy cases are treated
+in upstream's Section~5.
+
+\begin{leanbox}[(upstream proof, top level, verbatim)]
+The challenge file states the theorem with \lean{sorry} by design; the proof lives in
+\lean{OAI/Analysis/Triangular/Energy/Universal.lean}, and Comparator certifies that the two statements agree. We quote
+the 26-line proof file from our copy of the upstream release \lean{fd4aeeb2} (the triangular files are unchanged
+from \lean{adc7f124}).
+\begin{lstlisting}[language=Lean,escapeinside={(*}{*)}]
+-- ComparatorChallenges/TriangularEnergy.lean, lines 65-69
+/-- Universal energy minimality for smooth completely monotone potentials, with attainment. -/
+theorem universal_energy_minimum (g : ℝ → ℝ) (C : Set Plane)
+    (hg : AdmissiblePotential g) (hC : LocallyFinite C) (hd : DensityOne C) :
+    latticeEnergy g ≤ energy g C ∧ latticeEnergy g = energy g A := by
+  sorry
+
+-- OAI/Analysis/Triangular/Energy/Universal.lean, lines 7-22
+namespace AtomicTriangular
+/-- The triangular lattice minimizes every nonnegative completely monotone energy. -/
+theorem universal_energy_minimum (g : ℝ → ℝ) (C : Set Plane)
+    (hg : AdmissiblePotential g) (_hC : LocallyFinite C) (hd : DensityOne C) :
+    latticeEnergy g ≤ energy g C ∧ latticeEnergy g = energy g A := by
+  have hb (α : ℝ) (hα : 0<α) :
+      TriangularUniversal.latticeEnergy (TriangularUniversal.gaussPot α)≤
+        TriangularUniversal.energy (TriangularUniversal.gaussPot α) C := by
+    rw [(*$\leftarrow$*)latticeEnergy_eq_support]
+    exact gaussian_energy_bound hd α hα
+  have hu := TriangularUniversal.universal_from_gaussian_bounds hd hb hg
+  constructor
+  · rw [latticeEnergy_eq_support]
+    exact hu.1
+  · rw [latticeEnergy_eq_support,A_eq_support]
+    exact hu.2
+\end{lstlisting}
+\end{leanbox}
+
+\paragraph{How the Lean proof mirrors the architecture.} The top-level proof has exactly two moves. The local fact
+\lean{hb} is Steps~1--4: a lower bound for every Gaussian potential \lean{gaussPot α}, obtained from
+\lean{gaussian_energy_bound}. The call \lean{universal_from_gaussian_bounds} is Step~5: it passes from Gaussian bounds
+to every admissible $g$ and also yields attainment. The rewrites \lean{latticeEnergy_eq_support} and \lean{A_eq_support}
+translate between the challenge file's description of the lattice and the one used inside the library. Notice that the
+hypothesis \lean{_hC : LocallyFinite C} is unused in the proof (the leading underscore says so): local finiteness is
+part of the \emph{statement} that Comparator checks, and it matters for the meaning of \lean{diskPoints}, but the bound
+itself does not need it \tierA.
+
+% =====================================================================================================
+\section{Result D1: Riesz potentials}\label{ch2:sec:d1}
+
+\paragraph{Informal statement.} For every $s>0$ the triangular lattice minimizes the Riesz energy
+$\sum|x-y|^{-s}$ among locally finite configurations of density one. The statement has content only for $s>2$.
+
+The Riesz kernel at distance $r$ is $r^{-s}$, so in the variable $t=r^2$ the potential is
+\[
+g_s(t)=t^{-s/2}.
+\]
+In Lean this is \lean{TriangularRiesz.riesz s := fun t => t ^ (-(s / 2))}, and the control \lean{riesz_sq} checks
+$g_s(r^2)=r^{-s}$ for $r>0$ \tierA.
+
+\begin{lemma}[Admissibility]\label{ch2:lem:rieszadm}
+For every $s>0$, $g_s$ is admissible.
+\end{lemma}
+
+\begin{humanproof}
+Write $\sigma=s/2>0$. We check the three conditions of Definition~\ref{ch2:def:adm}.
+
+\emph{Smoothness.} On $(0,\infty)$, $t\mapsto t^{-\sigma}=e^{-\sigma\log t}$ is a composition of smooth functions.
+
+\emph{Positivity.} For $t>0$, $t^{-\sigma}>0$.
+
+\emph{Complete monotonicity.} Differentiating $r$ times,
+\[
+g_s^{(r)}(t)=(-\sigma)(-\sigma-1)\cdots(-\sigma-r+1)\,t^{-\sigma-r}.
+\]
+The coefficient is the \emph{descending} Pochhammer symbol $(x)_r^{\downarrow}=x(x-1)\cdots(x-r+1)$ at $x=-\sigma$.
+Pulling a factor $-1$ out of each of the $r$ factors gives
+\[
+(-\sigma)_r^{\downarrow}=(-1)^r\,\sigma(\sigma+1)\cdots(\sigma+r-1)=(-1)^r(\sigma)_r^{\uparrow},
+\]
+with the \emph{ascending} Pochhammer symbol $(\sigma)_r^{\uparrow}$. Therefore
+\[
+(-1)^r g_s^{(r)}(t)=(-1)^r(-1)^r(\sigma)_r^{\uparrow}\,t^{-\sigma-r}=(\sigma)_r^{\uparrow}\,t^{-\sigma-r}.
+\]
+Each factor $\sigma+i$ ($0\le i<r$) is positive because $\sigma>0$, so $(\sigma)_r^{\uparrow}>0$, and $t^{-\sigma-r}>0$.
+The product is positive, in particular $\ge0$.
+\end{humanproof}
+
+\begin{theorem}[D1, Riesz optimality]\label{ch2:thm:d1}
+For every $s>0$ and every locally finite $C$ of density one, $\sum_{a\in A\setminus\{0\}}\|a\|^{-s}\le E_{g_s}(C)$ in
+$[0,\infty]$.
+\end{theorem}
+
+\begin{humanproof}
+Apply Theorem~\ref{ch2:thm:upstream} with $g=g_s$, which is admissible by Lemma~\ref{ch2:lem:rieszadm}, and keep the first
+conjunct.
+\end{humanproof}
+
+Status: \tierA{} for the Lean statement (conditional on upstream and on the fidelity of the definitions). The upstream
+manuscript already says informally that the theorem ``includes every inverse power $g(t)=t^{-p}$ with $p>0$''; D1 is
+therefore the kernel-checked form of a stated special case, not a new mathematical claim.
+
+\begin{warnbox}[(informative only for $s>2$)]
+For $0<s\le2$ the left-hand side is $\infty$, so Theorem~\ref{ch2:thm:d1} only says $E_{g_s}(C)=\infty$.
+The reason is a counting argument \tierC: the lattice has about $2\pi k$ points with $k\le\|a\|<k+1$, each contributing
+about $k^{-s}$, and $\sum_k k^{1-s}=\infty$ for $s\le2$ (Exercise~\ref{ch2:ex:diverge}). We have \emph{not} proved this
+divergence in Lean. For $s>2$ the left-hand side is finite (D1b, \S\ref{ch2:sec:d1b}), so the theorem is not the
+trivial $\infty\le\infty$. The endpoint $s=2$ is open.
+\end{warnbox}
+
+\begin{leanbox}[(\lean{formal_cert/Triangular/Riesz.lean}, verbatim)]
+\begin{lstlisting}[language=Lean,escapeinside={(*}{*)}]
+/-- Riesz potential in the variable `t = r²`. -/
+noncomputable def riesz (s : ℝ) : ℝ → ℝ := fun t => t ^ (-(s / 2))
+
+theorem riesz_admissible {s : ℝ} (hs : 0 < s) : AdmissiblePotential (riesz s) := by
+  refine ⟨?_, ?_, ?_⟩
+  · intro x hx
+    exact (Real.contDiffAt_rpow_const_of_ne (ne_of_gt hx)).contDiffWithinAt
+  · intro t ht
+    exact (Real.rpow_pos_of_pos ht _).le
+  · intro r t ht
+    have ha : 0 < s / 2 := by positivity
+    rw [iteratedDeriv_eq_iterate]
+    unfold riesz
+    rw [Real.iter_deriv_rpow_const]
+    have hasc := ascPochhammer_eval_neg_eq_descPochhammer (R := ℝ) (-(s / 2)) r
+    rw [neg_neg] at hasc
+    have hdesc : (descPochhammer ℝ r).eval (-(s / 2)) = (-1) ^ r * (ascPochhammer ℝ r).eval (s / 2) := by
+      have h1 : ((-1 : ℝ) ^ r) * ((-1) ^ r) = 1 := by rw [(*$\leftarrow$*) mul_pow]; norm_num
+      calc (descPochhammer ℝ r).eval (-(s / 2))
+          = ((-1) ^ r * (-1) ^ r) * (descPochhammer ℝ r).eval (-(s / 2)) := by rw [h1, one_mul]
+        _ = (-1) ^ r * (ascPochhammer ℝ r).eval (s / 2) := by rw [hasc]; ring
+    rw [hdesc]
+    have hpos := ascPochhammer_pos r (s / 2) ha
+    have hpow := Real.rpow_pos_of_pos ht (-(s / 2) - r)
+    have h1 : ((-1 : ℝ) ^ r) * ((-1) ^ r) = 1 := by rw [(*$\leftarrow$*) mul_pow]; norm_num
+    calc (0 : ℝ) ≤ (ascPochhammer ℝ r).eval (s / 2) * t ^ (-(s / 2) - r) := by positivity
+      _ = (-1) ^ r * ((-1) ^ r * (ascPochhammer ℝ r).eval (s / 2) * t ^ (-(s / 2) - r)) := by
+        rw [(*$\leftarrow$*) mul_assoc, (*$\leftarrow$*) mul_assoc, h1, one_mul]
+
+theorem triangular_riesz_optimal {s : ℝ} (hs : 0 < s) (C : Set Plane) (hC : LocallyFinite C) (hd : DensityOne C) :
+    latticeEnergy (riesz s) ≤ energy (riesz s) C :=
+  (universal_energy_minimum (riesz s) C (riesz_admissible hs) hC hd).1
+\end{lstlisting}
+\end{leanbox}
+
+\paragraph{How the Lean proof mirrors the human proof.} The anonymous constructor \lean{⟨?_, ?_, ?_⟩} opens the three
+conditions in the order of the human proof. Smoothness is the Mathlib fact that $x\mapsto x^p$ is smooth away from
+$0$ (\lean{Real.contDiffAt_rpow_const_of_ne}); positivity is \lean{Real.rpow_pos_of_pos}. For complete monotonicity,
+\lean{iteratedDeriv_eq_iterate} turns the $r$-th derivative into the $r$-fold iterate of \lean{deriv}, and
+\lean{Real.iter_deriv_rpow_const} is the displayed formula with the descending Pochhammer polynomial evaluated at
+$-\sigma$. The identity $(-\sigma)^{\downarrow}_r=(-1)^r(\sigma)^{\uparrow}_r$ is \lean{ascPochhammer_eval_neg_eq_descPochhammer}
+read backwards; it is packaged as \lean{hdesc}, using $(-1)^r(-1)^r=1$ (\lean{h1}). Positivity of the ascending symbol
+at $\sigma>0$ is \lean{ascPochhammer_pos}, and the final \lean{calc} cancels the two signs, exactly as in the last
+display of the human proof. The optimality theorem is one line: the first projection \lean{.1} of the upstream theorem.
+
+\begin{leanbox}[(negative control, \lean{Controls.lean}, verbatim)]
+\begin{lstlisting}[language=Lean]
+theorem riesz_neg_two_not_admissible : ¬ AdmissiblePotential (TriangularRiesz.riesz (-2)) := by
+  intro h
+  have h3 := h.2.2 1 1 one_pos
+  have hfun : TriangularRiesz.riesz (-2) = fun t => t := by
+    funext t
+    unfold TriangularRiesz.riesz
+    norm_num
+  rw [hfun] at h3
+  simp at h3 <;> linarith
+\end{lstlisting}
+\end{leanbox}
+The hypothesis $s>0$ cannot be dropped: for $s=-2$ the ``potential'' is $g(t)=t$, whose first derivative is $+1$, so
+the condition $(-1)^1g'(1)\ge0$ fails. The control picks exactly that instance (\lean{h.2.2 1 1}: $r=1$, $t=1$). It
+shows that \lean{AdmissiblePotential} is not vacuous \tierA.
+
+% =====================================================================================================
+\section{Result D1b: the Riesz lattice energy is finite for $s>2$}\label{ch2:sec:d1b}
+
+\paragraph{Informal statement.} For $s>2$ the Epstein-type sum $\sum_{a\in A\setminus\{0\}}\|a\|^{-s}$ converges.
+
+\begin{lemma}[Norm identity]\label{ch2:lem:norm}
+$\|p(j,k)\|^2=\dfrac1b\,(j^2+jk+k^2)$ for all $(j,k)\in\Z^2$.
+\end{lemma}
+
+\begin{humanproof}
+$\|p(j,k)\|^2=b^{-1}\bigl((j+k/2)^2+k^2b^2\bigr)=b^{-1}\bigl(j^2+jk+\tfrac14k^2+\tfrac34k^2\bigr)=b^{-1}(j^2+jk+k^2)$,
+using $b^2=3/4$.
+\end{humanproof}
+
+\begin{theorem}[D1b]\label{ch2:thm:d1b}
+For every $s>2$, $\mathcal{E}_{g_s}(A)=\sum_{a\in A\setminus\{0\}}\|a\|^{-s}<\infty$.
+\end{theorem}
+
+\begin{humanproof}
+Let $\sigma=s/2>1$ and $Q(j,k)=j^2+jk+k^2$.
+
+\emph{Step 1 (summability over $\Z^2$).} Since $jk\ge-\tfrac12(j^2+k^2)$, we have $Q(j,k)\ge\tfrac12(j^2+k^2)$, so $Q$
+vanishes only at $(0,0)$ and $Q^{-\sigma}\le2^\sigma(j^2+k^2)^{-\sigma}$ elsewhere. The $8n$ integer points with
+$\max(|j|,|k|)=n\ge1$ satisfy $j^2+k^2\ge n^2$, so
+\[
+\sum_{(j,k)\neq(0,0)}Q(j,k)^{-\sigma}\le2^\sigma\sum_{n\ge1}8n\cdot n^{-2\sigma}<\infty\qquad(2\sigma-1>1).
+\]
+
+\emph{Step 2 (scaling).} By Lemma~\ref{ch2:lem:norm}, $\|p(j,k)\|^{-s}=(Q/b)^{-\sigma}=b^{\sigma}Q^{-\sigma}$, a constant
+multiple of a summable family.
+
+\emph{Step 3 (reindexing).} Each $a\in A\setminus\{0\}$ is $p(j,k)$ for some index; choose one, $\iota(a)$. Then
+$p(\iota(a))=a$, so $\iota$ is injective (if $\iota(a)=\iota(a')$ then $a=p(\iota(a))=p(\iota(a'))=a'$). A nonnegative
+summable family stays summable when restricted along an injective map, so $\sum_{a}\|a\|^{-s}=\sum_a
+b^\sigma Q(\iota(a))^{-\sigma}<\infty$.
+\end{humanproof}
+
+\begin{leanbox}[(\lean{formal_cert/Triangular/RieszFinite.lean}, verbatim, shortened)]
+\begin{lstlisting}[language=Lean,escapeinside={(*}{*)}]
+lemma norm_sq_triangularPoint (j k : ℤ) :
+    ‖triangularPoint (j, k)‖ ^ 2 = (1 / b) * ((j : ℝ) ^ 2 + (j : ℝ) * k + (k : ℝ) ^ 2) := by
+  rw [EuclideanSpace.real_norm_sq_eq]
+  -- ...
+  field_simp
+  rw [hsb, hb2]
+  ring
+
+/-- A chosen index of a lattice point. -/
+noncomputable def toIdx (a : {x : Plane // x ∈ A ∧ x ≠ 0}) : ℤ × ℤ := Classical.choose a.2.1
+
+lemma toIdx_spec (a : {x : Plane // x ∈ A ∧ x ≠ 0}) : triangularPoint (toIdx a) = a.val :=
+  Classical.choose_spec a.2.1
+
+lemma toIdx_injective : Function.Injective toIdx := by
+  intro a a' h
+  apply Subtype.ext
+  rw [(*$\leftarrow$*) toIdx_spec a, (*$\leftarrow$*) toIdx_spec a', h]
+
+/-- **D1b.** For every `s > 2` the Riesz `s`-energy of the density-one triangular lattice is finite. -/
+theorem latticeEnergy_riesz_lt_top {s : ℝ} (hs : 2 < s) : latticeEnergy (riesz s) < ⊤ := by
+  have hσ : 1 < s / 2 := by linarith
+  set Q : ℤ × ℤ → ℝ := fun jk => (jk.1 : ℝ) ^ 2 + (jk.1 : ℝ) * jk.2 + (jk.2 : ℝ) ^ 2 with hQ
+  -- ...
+  -- (*$\Sigma$*) Q^(-σ) over ℤ² from openai/math, via (j,k) (*$\mapsto$*) (j,-k)
+  have hQsum : Summable (fun jk : ℤ × ℤ => Q jk ^ (-(s / 2))) := by
+    have hn := LatticeSummability.summable_normForm_neg_rpow hσ
+    -- ...
+  have hh : Summable (fun jk : ℤ × ℤ => ((1 / b) * Q jk) ^ (-(s / 2))) := by
+    -- ...
+    exact hQsum.mul_left _
+  -- ...
+  have hfsum : Summable f := by
+    have := hh.comp_injective toIdx_injective
+    -- ...
+  rw [(*$\leftarrow$*) ENNReal.ofReal_tsum_of_nonneg hf0 hfsum]
+  exact ENNReal.ofReal_lt_top
+\end{lstlisting}
+\end{leanbox}
+(The elided lines include an equivalence of $\Z\times\Z$ written with a Unicode arrow that this book's listing style
+cannot typeset; read the file for the full text.)
+
+\paragraph{How the Lean proof mirrors the human proof.} The three steps appear in the same order. Step~1 is not reproved.
+The openai/math library already contains the lemma
+\begin{center}\lean{LatticeSummability.summable_normForm_neg_rpow},\end{center}
+\noindent summability of
+$(x^2-xy+y^2)^{-\sigma}$ for $\sigma>1$, and the file transports it to $Q$ by the substitution $(j,k)\mapsto(j,-k)$,
+which turns $j^2-jk+k^2$ into $j^2+jk+k^2$. (In Lean's real powers $0^{-\sigma}=0$, so the term at $(0,0)$ does no harm
+and the sum may run over all of $\Z^2$.) Step~2 is \lean{hh}, a constant multiple via \lean{Real.mul_rpow}. Step~3 is
+\lean{toIdx}: an index chosen with \lean{Classical.choose}, whose injectivity is proved exactly as in the human proof,
+from $p\circ\iota=\mathrm{id}$, without ever proving that $p$ itself is injective. \lean{Summable.comp_injective}
+restricts the summable family, and \lean{ENNReal.ofReal_tsum_of_nonneg} moves the real sum into $[0,\infty]$, where a
+real number is $<\infty$.
+
+% =====================================================================================================
+\section{Result D2: every density}\label{ch2:sec:d2}
+
+\paragraph{Informal statement.} At every density $\rho>0$ the triangular lattice rescaled to density $\rho$,
+$\rho^{-1/2}A$, is optimal for every admissible potential, and it attains the bound.
+
+\begin{theorem}[D2]\label{ch2:thm:d2}
+Let $\rho>0$, $h$ admissible and $C$ locally finite of density $\rho$. Then
+\[
+\sum_{a\in A\setminus\{0\}}h\Bigl(\frac{\|a\|^2}{\rho}\Bigr)\le E_h(C),
+\qquad\text{and}\qquad E_h(\rho^{-1/2}A)=\sum_{a\in A\setminus\{0\}}h\Bigl(\frac{\|a\|^2}{\rho}\Bigr).
+\]
+Consequently $\rho^{-1/2}A$ is locally finite, has density $\rho$, and $E_h(\rho^{-1/2}A)\le E_h(C)$.
+\end{theorem}
+
+The proof consists of four scaling lemmas. Throughout, $c>0$ and $cC=\{cx:x\in C\}$.
+
+\begin{lemma}[Scaling counts]\label{ch2:lem:count}
+If $C$ is locally finite, so is $cC$, and $N_R(cC)=N_{R/c}(C)$.
+\end{lemma}
+\begin{humanproof}
+$cx\in B_R\iff\|x\|\le R/c$, so $cC\cap B_R=c\,(C\cap B_{R/c})$, the image of a finite set under the injective map
+$x\mapsto cx$. It is finite and has the same number of elements.
+\end{humanproof}
+
+\begin{lemma}[Scaling density]\label{ch2:lem:dens}
+If $C$ is locally finite with density $\rho$, then $\sqrt\rho\,C$ has density one.
+\end{lemma}
+\begin{humanproof}
+With $c=\sqrt\rho$ and Lemma~\ref{ch2:lem:count}, for $R>0$
+\[
+\frac{N_R(cC)}{\pi R^2}=\frac{N_{R/c}(C)}{\pi R^2}=\frac1\rho\cdot\frac{N_{R/c}(C)}{\pi(R/c)^2}
+\xrightarrow[R\to\infty]{}\frac1\rho\cdot\rho=1,
+\]
+because $R/c\to\infty$ when $R\to\infty$.
+\end{humanproof}
+
+\begin{lemma}[Scaling energies]\label{ch2:lem:en}
+If $C$ is locally finite, $E_g(cC;R)=E_{g(c^2\,\cdot)}(C;R/c)$ for every $R$, and $E_g(cC)=E_{g(c^2\,\cdot)}(C)$.
+\end{lemma}
+\begin{humanproof}
+The disk sets correspond under $x\mapsto cx$ (Lemma~\ref{ch2:lem:count}), the counts agree, and
+$g(\|cx-cy\|^2)=g(c^2\|x-y\|^2)$, which proves the first identity term by term. For the second, put
+$F(R)=E_{g(c^2\cdot)}(C;R)$. The map $R\mapsto R/c$ is an increasing bijection of $\R$, so it maps the filter of
+neighbourhoods of $+\infty$ onto itself, and $\liminf_{R\to\infty}F(R/c)=\liminf_{R\to\infty}F(R)$.
+\end{humanproof}
+
+\begin{lemma}[Rescaled potentials]\label{ch2:lem:adm}
+If $g$ is admissible and $c>0$, then $t\mapsto g(ct)$ is admissible.
+\end{lemma}
+\begin{humanproof}
+Smoothness and positivity are preserved because $t>0\Rightarrow ct>0$. By the chain rule and induction on $r$,
+$\frac{d^r}{dt^r}g(ct)=c^r g^{(r)}(ct)$, so $(-1)^r\frac{d^r}{dt^r}g(ct)=c^r\cdot(-1)^rg^{(r)}(ct)\ge0$.
+\end{humanproof}
+
+\begin{humanproof}[Human proof of Theorem~\ref{ch2:thm:d2}]
+\emph{Bound.} Let $c=\sqrt\rho$ and $h_\rho(t)=h(t/\rho)$, admissible by Lemma~\ref{ch2:lem:adm}. The configuration
+$cC$ is locally finite with density one (Lemmas~\ref{ch2:lem:count} and~\ref{ch2:lem:dens}). Theorem~\ref{ch2:thm:upstream}
+gives $\mathcal{E}_{h_\rho}(A)\le E_{h_\rho}(cC)$. By Lemma~\ref{ch2:lem:en},
+$E_{h_\rho}(cC)=E_{h_\rho(c^2\,\cdot)}(C)$, and $h_\rho(c^2t)=h(\rho t/\rho)=h(t)$. So $\mathcal{E}_{h_\rho}(A)\le E_h(C)$,
+which is the bound.
+
+\emph{Attainment.} By Lemma~\ref{ch2:lem:en} with $c=\rho^{-1/2}$, $E_h(\rho^{-1/2}A)=E_{h(\rho^{-1}\cdot)}(A)=E_{h_\rho}(A)$,
+and the second conjunct of Theorem~\ref{ch2:thm:upstream} for $h_\rho$ gives $E_{h_\rho}(A)=\mathcal{E}_{h_\rho}(A)$.
+
+\emph{Density of $\rho^{-1/2}A$.} With $c=\rho^{-1/2}$, $N_R(cA)/(\pi R^2)=\rho\cdot N_{R\sqrt\rho}(A)/(\pi(R\sqrt\rho)^2)\to\rho$.
+\end{humanproof}
+
+\begin{leanbox}[(\lean{formal_cert/Triangular/AnyDensity.lean}, verbatim, shortened)]
+\begin{lstlisting}[language=Lean,escapeinside={(*}{*)}]
+/-- `C` has density `ρ`. -/
+def DensityRho (ρ : ℝ) (C : Set Plane) : Prop :=
+  Tendsto (fun R : ℝ => (diskCount C R : ℝ) / (Real.pi * R ^ 2)) atTop (𝓝 ρ)
+
+lemma admissible_comp_mul {g : ℝ → ℝ} (hg : AdmissiblePotential g) {c : ℝ} (hc : 0 < c) :
+    AdmissiblePotential (fun t => g (c * t)) := by
+  -- ...
+lemma diskCount_smul {c : ℝ} (hc : 0 < c) {C : Set Plane} (hC : LocallyFinite C) (R : ℝ) :
+    diskCount (c • C) R = diskCount C (R / c) := by
+  -- ...
+lemma density_smul {ρ : ℝ} (hρ : 0 < ρ) {C : Set Plane} (hC : LocallyFinite C) (hd : DensityRho ρ C) :
+    DensityOne (Real.sqrt ρ • C) := by
+  -- ...
+lemma diskEnergy_smul {c : ℝ} (hc : 0 < c) (g : ℝ → ℝ) {C : Set Plane} (hC : LocallyFinite C) (R : ℝ) :
+    diskEnergy g (c • C) R = diskEnergy (fun t => g (c ^ 2 * t)) C (R / c) := by
+  -- ... (liminf_comp_div is quoted in full below)
+lemma energy_smul {c : ℝ} (hc : 0 < c) (g : ℝ → ℝ) {C : Set Plane} (hC : LocallyFinite C) :
+    energy g (c • C) = energy (fun t => g (c ^ 2 * t)) C := by
+  -- ...
+
+/-- **D2.** Universal optimality at every density `ρ > 0`. -/
+theorem universal_any_density (h : ℝ → ℝ) (hh : AdmissiblePotential h) {ρ : ℝ} (hρ : 0 < ρ) (C : Set Plane)
+    (hC : LocallyFinite C) (hd : DensityRho ρ C) :
+    latticeEnergy (fun t => h (ρ⁻¹ * t)) ≤ energy h C := by
+  have hs : 0 < Real.sqrt ρ := Real.sqrt_pos.2 hρ
+  have hg := admissible_comp_mul hh (inv_pos.2 hρ)
+  have key := (universal_energy_minimum (fun t => h (ρ⁻¹ * t)) (Real.sqrt ρ • C) hg (locallyFinite_smul hs hC)
+    (density_smul hρ hC hd)).1
+  rw [energy_smul hs _ hC] at key
+  have e : (fun t => (fun t => h (ρ⁻¹ * t)) (Real.sqrt ρ ^ 2 * t)) = h := by
+    funext t
+    simp only
+    rw [Real.sq_sqrt hρ.le, (*$\leftarrow$*) mul_assoc, inv_mul_cancel₀ hρ.ne', one_mul]
+  rw [e] at key
+  exact key
+
+theorem attained (h : ℝ → ℝ) (hh : AdmissiblePotential h) {ρ : ℝ} (hρ : 0 < ρ) :
+    energy h ((Real.sqrt ρ)⁻¹ • A) = latticeEnergy (fun t => h (ρ⁻¹ * t)) := by
+  have hs : 0 < Real.sqrt ρ := Real.sqrt_pos.2 hρ
+  rw [energy_smul (inv_pos.2 hs) h A_lf, inv_pow, Real.sq_sqrt hρ.le]
+  exact ((universal_energy_minimum _ A (admissible_comp_mul hh (inv_pos.2 hρ)) A_lf A_d1).2).symm
+
+/-- **D2, optimality form.** At every density `ρ > 0` the rescaled lattice `ρ^{-1/2} A` has density `ρ`, and its energy is
+`≤` that of every locally finite density-`ρ` configuration. -/
+theorem triangular_optimal_any_density (h : ℝ → ℝ) (hh : AdmissiblePotential h) {ρ : ℝ} (hρ : 0 < ρ) :
+    LocallyFinite ((Real.sqrt ρ)⁻¹ • A) ∧ DensityRho ρ ((Real.sqrt ρ)⁻¹ • A) ∧
+      ∀ C : Set Plane, LocallyFinite C → DensityRho ρ C → energy h ((Real.sqrt ρ)⁻¹ • A) ≤ energy h C :=
+  ⟨locallyFinite_smul (inv_pos.2 (Real.sqrt_pos.2 hρ)) A_lf, scaled_density hρ, fun C hC hd => by
+    rw [attained h hh hρ]; exact universal_any_density h hh hρ C hC hd⟩
+\end{lstlisting}
+The reparametrisation of the $\liminf$ (Lemma~\ref{ch2:lem:en}, second part) is the following, verbatim:
+\begin{lstlisting}[language=Lean,escapeinside={(*}{*)}]
+lemma liminf_comp_div {c : ℝ} (hc : 0 < c) (F : ℝ → ENNReal) :
+    liminf (fun R => F (R / c)) atTop = liminf F atTop := by
+  have hmap : map (fun R : ℝ => R / c) atTop = atTop := by
+    have h1 := (OrderIso.mulLeft₀ c⁻¹ (inv_pos.2 hc)).map_atTop
+    have h2 : ((OrderIso.mulLeft₀ c⁻¹ (inv_pos.2 hc)) : ℝ → ℝ) = fun R => R / c := by
+      funext R
+      exact (div_eq_inv_mul R c).symm
+    rw [(*$\leftarrow$*) h2]
+    exact h1
+  rw [show (fun R => F (R / c)) = F ∘ (fun R : ℝ => R / c) from rfl]
+  unfold Filter.liminf
+  rw [(*$\leftarrow$*) Filter.map_map, hmap]
+\end{lstlisting}
+\end{leanbox}
+
+\paragraph{How the Lean proof mirrors the human proof.} The four lemmas appear under their own names:
+\lean{diskCount_smul} (counts), \lean{density_smul} (density), \lean{diskEnergy_smul} together with
+\lean{liminf_comp_div} and \lean{energy_smul} (energies), and \lean{admissible_comp_mul} (potentials; its proof is the
+induction $\frac{d^r}{dt^r}g(ct)=c^rg^{(r)}(ct)$, stated as \lean{iterate_deriv_comp_mul}). The main proof is the
+human ``Bound'' paragraph line by line: \lean{key} is the upstream bound for $h_\rho$ and $\sqrt\rho\,C$;
+\lean{energy_smul} rewrites the energy of $\sqrt\rho\,C$; \lean{e} is the computation $h_\rho(c^2t)=h(t)$. The
+$\liminf$ lemma shows a typical formalisation move: ``an increasing bijection maps $+\infty$ to $+\infty$'' becomes
+\lean{OrderIso.map_atTop}, and the $\liminf$ of a composition becomes the $\liminf$ along the image filter
+(\lean{Filter.map_map}).
+
+\subsection{Why the factor $\rho^{-1}$ is needed: a negative control}
+
+It is tempting to state D2 as ``the density-one lattice energy $\mathcal{E}_h(A)$ is a lower bound at every density''.
+That is false. At density $\rho<1$ the points are farther apart, so repulsive energies are smaller.
+
+\begin{proposition}[\lean{unscaled_false}]\label{ch2:prop:unscaled}
+It is not true that $\mathcal{E}_{g_4}(A)\le E_{g_4}(C)$ for every locally finite $C$ of density $1/4$.
+\end{proposition}
+\begin{humanproof}
+Take $C=2A=(1/4)^{-1/2}A$, which has density $1/4$ by Theorem~\ref{ch2:thm:d2}. By attainment,
+$E_{g_4}(2A)=\sum_{a\neq0}(4\|a\|^2)^{-2}=\tfrac1{16}\sum_{a\ne0}\|a\|^{-4}$. The sum is finite (D1b with $s=4$) and
+positive, so $E_{g_4}(2A)<\mathcal{E}_{g_4}(A)$.
+\end{humanproof}
+
+In Lean the strict inequality is proved termwise rather than by the factor $1/16$: every term
+$((1/4)^{-1}\|a\|^2)^{-2}$ is $\le$, and the term at $p(1,0)$ is $<$, the corresponding term $(\|a\|^2)^{-2}$; since the
+right-hand sum is finite (\lean{latticeEnergy_riesz_lt_top}), \lean{ENNReal.tsum_lt_tsum} gives a strict inequality of
+the sums.
+\begin{leanbox}[(\lean{AnyDensity.lean}, verbatim, shortened)]
+\begin{lstlisting}[language=Lean,escapeinside={(*}{*)}]
+theorem unscaled_false :
+    ¬ (∀ C : Set Plane, LocallyFinite C → DensityRho (1 / 4) C →
+        latticeEnergy (TriangularRiesz.riesz 4) ≤ energy (TriangularRiesz.riesz 4) C) := by
+  intro H
+  have hρ : (0 : ℝ) < 1 / 4 := by norm_num
+  have key := H _ (locallyFinite_smul (inv_pos.2 (Real.sqrt_pos.2 hρ)) A_lf) (scaled_density hρ)
+  rw [attained _ (TriangularRiesz.riesz_admissible (by norm_num)) hρ] at key
+  -- key : (*$\Sigma$*) ofReal(t^{-2}) ≤ (*$\Sigma$*) ofReal((4t)^{-2}); but (4t)^{-2} < t^{-2} termwise and the sum is finite
+  have hfin := TriangularRiesz.latticeEnergy_riesz_lt_top (s := 4) (by norm_num)
+  -- ...
+  have strict := ENNReal.tsum_lt_tsum hfin2 hle (hlt ⟨_, hpt⟩)
+  exact absurd key (not_le.2 strict)
+\end{lstlisting}
+\end{leanbox}
+
+For the Riesz family the correct bound has a closed form. Since $g_s(t/\rho)=\rho^{s/2}g_s(t)$,
+\[
+\mathcal{E}_{g_s(\rho^{-1}\cdot)}(A)=\rho^{s/2}\,\mathcal{E}_{g_s}(A),
+\qquad\text{so}\qquad \rho^{s/2}\sum_{a\in A\setminus\{0\}}\|a\|^{-s}\le E_{g_s}(C)
+\]
+for every locally finite $C$ of density $\rho$ \tierA. In Lean these are \lean{riesz_lattice_homogeneous} and
+\lean{riesz_any_density_homogeneous} in \lean{Controls.lean}. At $\rho=1/4$, $s=4$ the factor is $1/16$, as in the proof above. The control
+\lean{rho_one} checks that at $\rho=1$ D2 gives back the density-one statement, and \lean{densityRho_one_iff} that
+\lean{DensityRho 1} \emph{is} \lean{DensityOne} (by \lean{Iff.rfl}) \tierA.
+
+% =====================================================================================================
+\section{Result D3: universal optimality, and a second minimizer}\label{ch2:sec:d3}
+
+\subsection{The definition}
+\begin{definition}[Universally optimal, lower-energy form]\label{ch2:def:uo}
+A configuration $C$ is \emph{universally optimal at density $\rho$} if $C$ is locally finite, has density $\rho$, and
+$E_g(C)\le E_g(C')$ for every admissible $g$ and every locally finite $C'$ of density $\rho$.
+\end{definition}
+
+This transcribes Definition~1.3 of~\cite{ckmrv} into upstream's notions of density and lower energy. It is
+\emph{weaker} than CKMRV's notion: CKMRV also require the energy of $C$ itself to exist as a limit, while here only the
+$\liminf$ enters \tierC. A Lean theorem about \lean{UniversallyOptimal} therefore says nothing about whether the limit
+exists.
+
+\begin{theorem}[\lean{triangular_universally_optimal}]\label{ch2:thm:uo}
+For every $\rho>0$, $\rho^{-1/2}A$ is universally optimal at density $\rho$.
+\end{theorem}
+\begin{humanproof}
+This is the last sentence of Theorem~\ref{ch2:thm:d2}, read against Definition~\ref{ch2:def:uo}.
+\end{humanproof}
+
+\begin{leanbox}[(\lean{formal_cert/Triangular/UniversalOptimality.lean}, verbatim)]
+\begin{lstlisting}[language=Lean]
+/-- CKMRV Definition 1.3, in upstream's density and lower-energy notions. -/
+def UniversallyOptimal (ρ : ℝ) (C : Set Plane) : Prop :=
+  LocallyFinite C ∧ DensityRho ρ C ∧
+    ∀ g : ℝ → ℝ, AdmissiblePotential g → ∀ C' : Set Plane, LocallyFinite C' → DensityRho ρ C' →
+      energy g C ≤ energy g C'
+
+/-- **Universal optimality of the triangular lattice at every density** (conditional on upstream). -/
+theorem triangular_universally_optimal {ρ : ℝ} (hρ : 0 < ρ) :
+    UniversallyOptimal ρ ((Real.sqrt ρ)⁻¹ • A) := by
+  refine ⟨locallyFinite_smul (inv_pos.2 (Real.sqrt_pos.2 hρ)) A_lf, scaled_density hρ, ?_⟩
+  intro g hg C' hC' hd
+  exact (triangular_optimal_any_density g hg hρ).2.2 C' hC' hd
+\end{lstlisting}
+\end{leanbox}
+
+\subsection{The vacancy theorem}
+Let $V=A\setminus\{0\}$, the lattice with one point removed (a \emph{vacancy}).
+
+\begin{theorem}[Vacancy]\label{ch2:thm:vac}
+\begin{enumerate}[label=(\roman*)]
+\item $V$ is locally finite and has density one.
+\item $E_g(V)=\mathcal{E}_g(A)$ for every admissible $g$.
+\item There is no isometry $f$ of the plane with $f(A)=V$.
+\end{enumerate}
+Hence $V$ is universally optimal at density one but is not an isometric copy of $A$: universal optima, in the
+lower-energy sense, are not unique up to isometry among all locally finite configurations.
+\end{theorem}
+
+\begin{humanproof}
+Write $N=N_R(A)$, and assume $R\ge0$, so that $0\in A\cap B_R$ and $N\ge1$.
+
+\emph{(i) Counts and density.} $V\subseteq A$, so $V$ is locally finite, and $V\cap B_R=(A\cap B_R)\setminus\{0\}$ has
+$N-1$ elements. Hence
+\[
+\frac{N_R(V)}{\pi R^2}=\frac{N_R(A)}{\pi R^2}-\frac1{\pi R^2}\longrightarrow1-0=1.
+\]
+
+\emph{(ii), upper bound.} Denote by $S_V(R)$ and $S_A(R)$ the two double sums in the disk energies. Every ordered pair
+$(x,y)$ of distinct points of $V\cap B_R$ is also a pair of $A\cap B_R$, and all terms are $\ge0$, so $S_V(R)\le
+S_A(R)$. Since $N\to\infty$ (density one forces $N\sim\pi R^2$), for large $R$ we have $N\ge2$ and
+\[
+E_g(V;R)=\frac{S_V(R)}{N-1}\le\frac{N}{N-1}\cdot\frac{S_A(R)}{N}=\kappa(R)\,E_g(A;R),\qquad
+\kappa(R)=\frac{N}{N-1}\longrightarrow1.
+\]
+Now we take lower limits. If $L=\liminf_R E_g(A;R)=\infty$ there is nothing to prove. Otherwise choose $R_n\to\infty$
+with $E_g(A;R_n)\to L$. Then $\kappa(R_n)E_g(A;R_n)\to1\cdot L$, so
+\[
+E_g(V)=\liminf_RE_g(V;R)\le\liminf_n\kappa(R_n)E_g(A;R_n)=L=E_g(A)=\mathcal{E}_g(A),
+\]
+the last equality by the second conjunct of Theorem~\ref{ch2:thm:upstream}.
+
+\emph{(ii), lower bound.} By (i), $V$ is an admissible competitor: locally finite of density one. The first conjunct of
+Theorem~\ref{ch2:thm:upstream} gives $\mathcal{E}_g(A)\le E_g(V)$. (Notice that this direction uses the universal
+theorem itself; we do not compute $E_g(V)$ from below by hand.)
+
+\emph{(iii) No isometry.} Suppose $f$ is an isometry of $\R^2$ with $f(A)=V$. An isometry of a strictly convex real
+normed space, in particular of the Euclidean plane, is affine, so
+\[
+f(2a-b)=2f(a)-f(b)\qquad\text{for all }a,b.
+\]
+The points $p(1,0)$ and $p(2,0)$ are nonzero (their squared norms are $1/b$ and $4/b$ by Lemma~\ref{ch2:lem:norm}), so
+they lie in $V=f(A)$: $p(1,0)=f(a)$ and $p(2,0)=f(b)$ with $a,b\in A$. The lattice is closed under integer combinations,
+so $2a-b\in A$, and
+\[
+f(2a-b)=2p(1,0)-p(2,0)=p(0,0)=0.
+\]
+So $0\in f(A)=V$, which contradicts $0\notin V$. In words: $p(1,0)$ is the midpoint of $0$ and $p(2,0)$; an affine
+bijection preserves midpoints and the lattice is closed under ``reflect $b$ through $a$'', so the image of $A$ must
+contain the point that the vacancy has removed.
+
+\emph{Conclusion.} By (i) and (ii), for every admissible $g$ and every competitor $C'$,
+$E_g(V)=\mathcal{E}_g(A)\le E_g(C')$; so $V$ is universally optimal at density one. With (iii) this is the
+non-uniqueness statement.
+\end{humanproof}
+
+\begin{leanbox}[(\lean{UniversalOptimality.lean}, verbatim, shortened)]
+\begin{lstlisting}[language=Lean,escapeinside={(*}{*)}]
+def vacancy : Set Plane := A \ {0}
+
+lemma diskCount_vacancy {R : ℝ} (hR : 0 ≤ R) : diskCount vacancy R = diskCount A R - 1 := by
+  -- ...
+/-- The correction factor `N / (N - 1)`. -/
+noncomputable def corr (R : ℝ) : ENNReal :=
+  ENNReal.ofReal ((diskCount A R : ℝ) / ((diskCount A R : ℝ) - 1))
+
+lemma corr_tendsto : Tendsto corr atTop (𝓝 1) := by
+  -- ...
+lemma diskEnergy_vacancy_le (g : ℝ → ℝ) :
+    (*$\forall^{\mathsf f}$*) R in atTop, diskEnergy g vacancy R ≤ corr R * diskEnergy g A R := by
+  -- ...
+
+/-- **The vacancy configuration is also a minimiser**, for every admissible `g`. -/
+theorem vacancy_energy (g : ℝ → ℝ) (hg : AdmissiblePotential g) : energy g vacancy = latticeEnergy g := by
+  apply le_antisymm
+  · have hA := (universal_energy_minimum g A hg A_lf A_d1).2
+    have hc := corr_tendsto
+    calc energy g vacancy = liminf (diskEnergy g vacancy) atTop := rfl
+      _ ≤ liminf (corr * diskEnergy g A) atTop := liminf_le_liminf (diskEnergy_vacancy_le g)
+      _ ≤ limsup corr atTop * liminf (diskEnergy g A) atTop := by
+          apply ENNReal.liminf_mul_le <;> left <;> rw [hc.limsup_eq] <;> simp
+      _ = latticeEnergy g := by
+          rw [hc.limsup_eq, one_mul, hA]
+          rfl
+  · exact (universal_energy_minimum g vacancy hg vacancy_lf vacancy_density).1
+
+theorem vacancy_not_isometric_image : ¬ ∃ f : Plane → Plane, Isometry f ∧ f '' A = vacancy := by
+  rintro ⟨f, hf, hfA⟩
+  set φ := hf.affineIsometryOfStrictConvexSpace
+  have hφ : ∀ p, φ p = f p := fun p => rfl
+  have key : ∀ a b : Plane, f ((2 : ℝ) • a - b) = (2 : ℝ) • f a - f b := by
+    -- ...
+  have hp : triangularPoint (1, 0) ∈ vacancy := by
+    -- ...
+  have hq : triangularPoint (2, 0) ∈ vacancy := by
+    -- ...
+  rw [(*$\leftarrow$*) hfA] at hp hq
+  obtain ⟨a, ha, hfa⟩ := hp
+  obtain ⟨b, hb, hfb⟩ := hq
+  have h0 : f ((2 : ℝ) • a - b) = 0 := by
+    rw [key, hfa, hfb, (*$\leftarrow$*) triangularPoint_comb]
+    convert triangularPoint_zero using 2 <;> norm_num
+  have hmem : (0 : Plane) ∈ f '' A := ⟨_, A_comb ha hb, h0⟩
+  rw [hfA] at hmem
+  exact hmem.2 rfl
+
+/-- **Non-uniqueness.** There is a universal optimum at density one that is not an isometric copy of the triangular
+lattice: the minimiser is not determined, only the minimum value. -/
+theorem universal_optimum_not_unique :
+    ∃ C : Set Plane, UniversallyOptimal 1 C ∧ ¬ ∃ f : Plane → Plane, Isometry f ∧ f '' A = C :=
+  ⟨vacancy, vacancy_universally_optimal, vacancy_not_isometric_image⟩
+\end{lstlisting}
+(Typographical note: in the file, the quantifier of \lean{diskEnergy_vacancy_le} is Lean's ``eventually'' binder, written
+with a superscript letter f after $\forall$; the listing shows it as $\forall^{\mathsf f}$.)
+\end{leanbox}
+
+\paragraph{How the Lean proof mirrors the human proof.} \lean{diskCount_vacancy} is the count $N-1$;
+\lean{vacancy_density} is the limit $1-0$. The factor $\kappa$ is \lean{corr}, and \lean{corr_tendsto} is
+$\kappa\to1$. \lean{diskEnergy_vacancy_le} is the inequality $E_g(V;R)\le\kappa(R)E_g(A;R)$ for all large $R$, built
+from \lean{pair_sum_le} ($S_V\le S_A$, by dropping terms) and \lean{coeff_eq} ($\frac1{N-1}=\frac N{N-1}\cdot\frac1N$ in
+$[0,\infty]$). The upper bound in \lean{vacancy_energy} is a three-step \lean{calc}. The human proof's subsequence
+argument is replaced by the library inequality \lean{ENNReal.liminf_mul_le},
+$\liminf(uv)\le\limsup u\cdot\liminf v$ in $[0,\infty]$, whose side conditions ($\limsup u\neq0$ or $\liminf v\neq\infty$,
+and the symmetric one) are discharged because $\limsup\kappa=1$. The lower bound is literally ``apply the upstream
+theorem to $V$''. In \lean{vacancy_not_isometric_image}, \lean{Isometry.affineIsometryOfStrictConvexSpace} is the
+statement ``isometries are affine'', \lean{key} is $f(2a-b)=2f(a)-f(b)$, \lean{triangularPoint_comb} and \lean{A_comb}
+say that the lattice is closed under $(a,b)\mapsto2a-b$, and the last three lines derive $0\in V$ and the contradiction.
+
+\subsection{Interpretation and what remains open}
+\begin{itemize}
+\item \tierC{} The lower energy cannot see a single missing point, and the same argument applies to any finite set of
+  missing points (Exercise~\ref{ch2:ex:finite}). So any statement of the form ``the minimizer is the triangular
+  lattice'' is \emph{false} among all locally finite configurations. This is the remark after CKMRV Theorem~1.4
+  (``removing a single particle changes neither the density nor the energy'')~\cite{ckmrv} \tierL, here in Lean
+  \tierA{} (for the lower-energy notion).
+\item \tierC{} The vacancy is not periodic. The meaningful uniqueness question is therefore uniqueness among
+  \emph{periodic} configurations, the form CKMRV prove in dimensions $8$ and $24$. In dimension~$2$ it is \textbf{open},
+  and nothing in this book addresses it.
+\item \tierC{} For physics (Chapter~4), the theorem says that the triangular lattice has the least energy per particle
+  in the bulk; it does not say that a physical system will be found in that state, or that defects cost energy per
+  particle. A single vacancy changes the total pair energy of a large disk by an amount that stays bounded (for
+  $s>2$ Riesz potentials, by the argument of Exercise~\ref{ch2:ex:add}), and the energy per particle does not see it.
+\end{itemize}
+
+% =====================================================================================================
+\section{Result D4: open versus closed disks}\label{ch2:sec:d4}
+
+Upstream measures densities and energies on \emph{closed} disks $B_R$. A reader might worry that open disks
+$B_R^\circ=\{x:\|x\|<R\}$ give a different theory: on the boundary circle a lattice can carry many points. We now prove
+that, for locally finite configurations, nothing changes.
+
+\paragraph{Notation.} For locally finite $C$ write $N^\circ_R(C)=\#(C\cap B^\circ_R)$ and define $E^\circ_g(C;R)$ and
+$E^\circ_g(C)=\liminf_RE^\circ_g(C;R)$ exactly as in Definition~\ref{ch2:def:energy}, with $B^\circ_R$ in place of $B_R$.
+$C$ has \emph{open density} $\rho$ if $N^\circ_R(C)/(\pi R^2)\to\rho$.
+
+\paragraph{Informal statement.} For a locally finite configuration, open and closed disks give the same density and the
+same lower energy. Hence upstream's theorem holds verbatim with open disks.
+
+\begin{theorem}[D4]\label{ch2:thm:d4}
+Let $C$ be locally finite, $g:\R\to\R$ any function and $\rho\in\R$. Then
+\begin{enumerate}[label=(\roman*)]
+\item $C$ has density $\rho$ if and only if it has open density $\rho$;
+\item $E^\circ_g(C)=E_g(C)$.
+\end{enumerate}
+\end{theorem}
+
+Status: \tierC{} for the human proof below. Lean status of D4: \DFourStatus.
+
+The disk energy at radius $R$ depends on $R$ only through the finite set $C\cap B_R$ (respectively $C\cap B^\circ_R$):
+the count is its cardinality and the double sum runs over it. The whole proof rests on comparing these sets.
+
+\begin{lemma}[Comparing point sets]\label{ch2:lem:sets}
+Let $C$ be locally finite and $R\in\R$. There are radii $\varphi(R)\in[R-1,R]$ and $\psi(R)\in[R,R+1]$ with
+\[
+C\cap B^\circ_R=C\cap B_{\varphi(R)}\qquad\text{and}\qquad C\cap B_R=C\cap B^\circ_{\psi(R)}.
+\]
+\end{lemma}
+
+\begin{humanproof}
+\emph{First identity.} The set $F=C\cap B^\circ_R$ is finite, since it lies in $C\cap B_R$. Let $m=\max\{\|x\|:x\in F\}$
+if $F\neq\emptyset$, and $m=-\infty$ otherwise. Every $x\in F$ has $\|x\|<R$, so $m<R$. Put
+$\varphi(R)=\max(m,R-\tfrac12)$, so $R-1\le\varphi(R)<R$. If $x\in C$ and $\|x\|\le\varphi(R)$, then $\|x\|<R$ and
+$x\in F$. Conversely, if $x\in F$ then $\|x\|\le m\le\varphi(R)$. So $F=C\cap B_{\varphi(R)}$.
+
+\emph{Second identity.} The set $G=\{x\in C:R<\|x\|\le R+1\}$ is finite, since it lies in $C\cap B_{R+1}$. Let
+$m'=\min\{\|x\|:x\in G\}$ if $G\neq\emptyset$, and $m'=+\infty$ otherwise; then $m'>R$. Put
+$\psi(R)=\min(m',R+\tfrac12)$, so $R<\psi(R)\le R+1$. If $\|x\|\le R$ then $\|x\|<\psi(R)$. Conversely, let $x\in C$ with
+$\|x\|<\psi(R)\le R+\frac12$. If we had $\|x\|>R$, then $x\in G$ and $\|x\|\ge m'\ge\psi(R)$, a contradiction; so
+$\|x\|\le R$. Hence $C\cap B_R=C\cap B^\circ_{\psi(R)}$.
+\end{humanproof}
+
+Finiteness is used twice, to make the maximum and the minimum exist. Without it the lemma fails
+(Exercise~\ref{ch2:ex:lf}).
+
+\begin{lemma}[Lower limits under reparametrisation]\label{ch2:lem:repar}
+Let $u:\R\to[0,\infty]$ and $\varphi:\R\to\R$ with $\varphi(R)\to\infty$ as $R\to\infty$. Then
+$\liminf_{R\to\infty}u(\varphi(R))\ge\liminf_{R\to\infty}u(R)$.
+\end{lemma}
+
+\begin{humanproof}
+Recall $\liminf_Ru(R)=\sup_X\inf_{x\ge X}u(x)$. Fix $X$ and put $m_X=\inf_{x\ge X}u(x)$. Since $\varphi(R)\to\infty$ there
+is $Y$ with $\varphi(R)\ge X$ for all $R\ge Y$, hence $u(\varphi(R))\ge m_X$ for all $R\ge Y$. Therefore
+$\inf_{R\ge Y}u(\varphi(R))\ge m_X$, and so $\liminf_Ru(\varphi(R))\ge m_X$. Taking the supremum over $X$ gives the claim.
+\end{humanproof}
+
+\begin{humanproof}[Human proof of Theorem~\ref{ch2:thm:d4}]
+\emph{(ii) Energies.} Put $u(R)=E_g(C;R)$ and $u^\circ(R)=E^\circ_g(C;R)$. Because the disk energy depends only on the
+point set, Lemma~\ref{ch2:lem:sets} gives
+\[
+u^\circ(R)=u(\varphi(R)),\qquad u(R)=u^\circ(\psi(R))\qquad\text{for every }R.
+\]
+Since $\varphi(R)\ge R-1$ and $\psi(R)\ge R$, both reparametrisations tend to $\infty$. Lemma~\ref{ch2:lem:repar} applied
+twice gives
+\begin{gather*}
+E^\circ_g(C)=\liminf_{R\to\infty}u(\varphi(R))\ \ge\ \liminf_{R\to\infty}u(R)=E_g(C),\\
+E_g(C)=\liminf_{R\to\infty}u^\circ(\psi(R))\ \ge\ \liminf_{R\to\infty}u^\circ(R)=E^\circ_g(C).
+\end{gather*}
+Hence $E^\circ_g(C)=E_g(C)$.
+
+\emph{(i) Densities.} Since $B_{R-1}\subseteq B^\circ_R\subseteq B_R\subseteq B^\circ_{R+1}$,
+\[
+N_{R-1}(C)\le N^\circ_R(C)\le N_R(C)\le N^\circ_{R+1}(C)\qquad(R\ge1).
+\]
+Suppose $C$ has density $\rho$. For $R>1$,
+\[
+\frac{N_{R-1}(C)}{\pi R^2}=\frac{N_{R-1}(C)}{\pi(R-1)^2}\cdot\frac{(R-1)^2}{R^2}\longrightarrow\rho\cdot1=\rho,
+\]
+and $N_R(C)/(\pi R^2)\to\rho$. The middle term $N^\circ_R(C)/(\pi R^2)$ is squeezed between them, so $C$ has open density
+$\rho$. Conversely, suppose $C$ has open density $\rho$. Then $N^\circ_R(C)\le N_R(C)\le N^\circ_{R+1}(C)$ and
+$N^\circ_{R+1}(C)/(\pi R^2)=\frac{N^\circ_{R+1}(C)}{\pi(R+1)^2}\cdot\frac{(R+1)^2}{R^2}\to\rho$; the same squeeze gives
+density $\rho$.
+\end{humanproof}
+
+\begin{corollary}[Upstream with open disks]\label{ch2:cor:open}
+Let $g$ be admissible and $C$ locally finite with open density one. Then $\mathcal{E}_g(A)\le E^\circ_g(C)$ and
+$\mathcal{E}_g(A)=E^\circ_g(A)$.
+\end{corollary}
+\begin{humanproof}
+By Theorem~\ref{ch2:thm:d4}(i), $C$ has density one, so Theorem~\ref{ch2:thm:upstream} gives
+$\mathcal{E}_g(A)\le E_g(C)=E^\circ_g(C)$, the equality by Theorem~\ref{ch2:thm:d4}(ii). The lattice $A$ is locally finite,
+so $\mathcal{E}_g(A)=E_g(A)=E^\circ_g(A)$.
+\end{humanproof}
+
+Status: \tierC{} for the corollary and its proof. Lean status of D4: \DFourStatus.
+
+\begin{remark}
+The preregistration of D4 (\lean{results/discovery/D4/preregistration.json}) was committed before the Lean file was
+written. It names the hypothesis, the kill criterion (``the liminf comparison for ENNReal-valued step functions on atTop
+(real index) cannot be closed in-session''), the controls (axiom audit with planted \lean{sorry}/axiom; non-vacuity at
+$C=A$) and a prior probability of about $65\%$ that the Lean proof would go through. We quote no Lean code for D4 in
+this chapter.
+\end{remark}
+
+% =====================================================================================================
+\section{The axiom audit and the controls}\label{ch2:sec:audit}
+
+A Lean file that ``compiles'' has not thereby been proved. Two failure modes exit with code~$0$:
+\begin{itemize}
+\item a proof containing \lean{sorry} compiles with a \emph{warning}, not an error;
+\item a declared \lean{axiom} can prove anything, including \lean{False}, and compiles silently.
+\end{itemize}
+Our gate therefore reads the axiom footprint of every theorem with \lean{#print axioms} and accepts a declaration only if
+its footprint is contained in the whitelist \{\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}\}; the
+presence of \lean{sorryAx} is a rejection. To show that the gate can fail, the audit file plants one \lean{sorry} and
+one false axiom, and the gate must flag both.
+
+\begin{leanbox}[(\lean{formal_cert/Triangular/Axioms.lean}, verbatim, shortened)]
+\begin{lstlisting}[language=Lean]
+import Triangular.Riesz
+import Triangular.RieszFinite
+import Triangular.AnyDensity
+import Triangular.Controls
+import Triangular.UniversalOptimality
+
+/-! Axiom audit of the D1 corollary, with planted controls. -/
+
+#print axioms TriangularRiesz.riesz_admissible
+#print axioms TriangularRiesz.triangular_riesz_optimal
+#print axioms OAI.AtomicTriangular.universal_energy_minimum
+-- ... (22 audited declarations in total)
+#print axioms TriangularUniversalOptimality.universal_optimum_not_unique
+
+theorem ctl_sorry : TriangularRiesz.riesz 1 1 = 0 := by sorry
+axiom ctl_cheat : False
+theorem ctl_axiom : TriangularRiesz.riesz 1 1 = 0 := ctl_cheat.elim
+#print axioms ctl_sorry
+#print axioms ctl_axiom
+\end{lstlisting}
+\end{leanbox}
+
+Note that the two control theorems state something \emph{false}: $g_1(1)=1^{-1/2}=1\neq0$. Both nevertheless compile.
+This is the point of the controls.
+
+\begin{numbox}[(recorded compiler output, not a number but a log)]
+The following is the output stored in \lean{results/discovery/D1/compile_Axioms.json} (fields \lean{rc}~$=0$,
+\lean{seconds}~$=11.7$) from compiling \lean{Axioms.lean} with the pinned toolchain. We did not rerun the compile for
+this book (the machine is shared); the log is quoted, shortened, verbatim.
+\begin{lstlisting}
+'TriangularRiesz.riesz_admissible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'TriangularRiesz.triangular_riesz_optimal' depends on axioms: [propext, Classical.choice, Quot.sound]
+'OAI.AtomicTriangular.universal_energy_minimum' depends on axioms: [propext, Classical.choice, Quot.sound]
+'TriangularRiesz.norm_sq_triangularPoint' depends on axioms: [propext, Classical.choice, Quot.sound]
+'TriangularRiesz.latticeEnergy_riesz_lt_top' depends on axioms: [propext, Classical.choice, Quot.sound]
+'OAI.SevenEighths.LatticeSummability.summable_normForm_neg_rpow' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'TriangularDensity.universal_any_density' depends on axioms: [propext, Classical.choice, Quot.sound]
+...
+'TriangularUniversalOptimality.vacancy_not_isometric_image' depends on axioms: [propext, Classical.choice, Quot.sound]
+'TriangularUniversalOptimality.vacancy_universally_optimal' depends on axioms: [propext, Classical.choice, Quot.sound]
+'TriangularUniversalOptimality.universal_optimum_not_unique' depends on axioms: [propext, Classical.choice, Quot.sound]
+.../formal_cert/Triangular/Axioms.lean:32:8: warning: declaration uses `sorry`
+'ctl_sorry' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
+'ctl_axiom' depends on axioms: [ctl_cheat, propext, Classical.choice, Quot.sound]
+\end{lstlisting}
+\end{numbox}
+
+\paragraph{How to read the log.}
+\begin{itemize}
+\item The return code is $0$ although the file contains a \lean{sorry} and a false axiom. An exit code is not a proof
+  gate.
+\item All 22 audited declarations, including upstream's \lean{universal_energy_minimum}, report the footprint
+  [\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}]: the three standard axioms of Lean's classical
+  mathematics, which Mathlib uses everywhere. This is \emph{not} ``zero axioms''. \tierA
+\item \lean{ctl_sorry} reports \lean{sorryAx} (and the compiler warns, at line~32), so the gate rejects it.
+  \lean{ctl_axiom} reports \lean{ctl_cheat}, outside the whitelist, so the gate rejects it. Both controls are flagged,
+  which shows that the gate is able to fail.
+\item A clean footprint certifies that the proofs are complete relative to the definitions. It does not certify that
+  the definitions mean what the English says (statement adequacy), which is a separate human audit and has not been
+  done.
+\end{itemize}
+
+\paragraph{The other controls, collected.} Every positive result in this chapter is accompanied by a control showing that
+its hypotheses or conclusions are not vacuous \tierA:
+\begin{itemize}
+\item \lean{riesz_neg_two_not_admissible}: the admissibility hypothesis can fail (\S\ref{ch2:sec:d1});
+\item \lean{riesz_sq}: the Lean potential is the Riesz kernel in the distance;
+\item \lean{smoothness_order_is_infty}: upstream's smoothness order is $C^\infty$, not analytic;
+\item \lean{scaled_density}, \lean{attained}: the hypothesis \lean{DensityRho ρ} is satisfiable, and the bound of D2 is
+  attained, so D2 is an optimality statement, not just an inequality (\S\ref{ch2:sec:d2});
+\item \lean{unscaled_false}: the naive unscaled statement is false (\S\ref{ch2:sec:d2});
+\item \lean{latticeEnergy_riesz_lt_top}: D1 is not $\infty\le\infty$ for $s>2$ (\S\ref{ch2:sec:d1b});
+\item \lean{rho_one}, \lean{densityRho_one_iff}: D2 specialises correctly to $\rho=1$;
+\item \lean{vacancy_not_isometric_image}: the second minimizer is genuinely different (\S\ref{ch2:sec:d3}).
+\end{itemize}
+
+% =====================================================================================================
+\section{Exercises}\label{ch2:sec:ex}
+
+Exercises marked \textbf{(Lean)} give a Lean statement with a \lean{sorry} placeholder for you to replace by a proof.
+These statements were written for this book and have \emph{not} been compiled by us; part of the exercise is to make
+them typecheck (they assume \lean{open OAI.AtomicTriangular Filter Topology} and the namespaces of the files above). A
+solution counts only if it passes the axiom gate of \S\ref{ch2:sec:audit}: compile, then \lean{#print axioms}, with
+footprint inside the whitelist and no \lean{sorryAx}.
+
+\begin{exercise}[Pen and paper]\label{ch2:ex:neigh}
+Using Lemma~\ref{ch2:lem:norm}, find the smallest nonzero value of $\|a\|^2$ for $a\in A$ and all lattice points that
+attain it. Show that there are exactly six, and that the minimal distance is $(2/\sqrt3)^{1/2}$.
+\end{exercise}
+
+\begin{exercise}[Pen and paper]\label{ch2:ex:diverge}
+Show that $\sum_{a\in A\setminus\{0\}}\|a\|^{-s}=\infty$ for $0<s\le2$. \emph{Hint:} bound the number of lattice points
+in the annulus $k\le\|a\|<k+1$ from below by a constant times $k$, for large $k$, using the density of $A$.
+\end{exercise}
+
+\begin{exercise}[Pen and paper]\label{ch2:ex:poch}
+Prove $(-x)^{\downarrow}_r=(-1)^r(x)^{\uparrow}_r$ by induction on $r$, and deduce that $(-1)^r\frac{d^r}{dt^r}t^{-\sigma}>0$
+for $\sigma>0$, $t>0$. What goes wrong for $\sigma<0$? Compare with \lean{riesz_neg_two_not_admissible}.
+\end{exercise}
+
+\begin{exercise}[Lean]\label{ch2:ex:exp}
+Prove that $t\mapsto e^{-t}$ is admissible.
+\begin{lstlisting}[language=Lean]
+theorem exp_neg_admissible : AdmissiblePotential (fun t => Real.exp (-t)) := by
+  sorry
+\end{lstlisting}
+\emph{Hint:} the $r$-th derivative is $(-1)^re^{-t}$; Mathlib's \lean{iteratedDeriv} lemmas for compositions with
+$t\mapsto -t$ may help, or prove $\lean{deriv}^{[r]}$ by induction as in \lean{iterate_deriv_comp_mul}.
+\end{exercise}
+
+\begin{exercise}[Pen and paper, then Lean]\label{ch2:ex:const}
+Show that the constant $g\equiv1$ is admissible and that $\mathcal{E}_1(A)=\infty$. Then show directly from the
+definition that $E_1(C)=\infty$ for every locally finite $C$ of density one ($E_1(C;R)=N_R(C)-1$). Explain why this is
+consistent with Theorem~\ref{ch2:thm:upstream}, and why the measure in the Gaussian-mixture representation may charge
+$\alpha=0$.
+\begin{lstlisting}[language=Lean]
+theorem const_admissible : AdmissiblePotential (fun _ => (1 : ℝ)) := by
+  sorry
+\end{lstlisting}
+\end{exercise}
+
+\begin{exercise}[Pen and paper]\label{ch2:ex:homog}
+Prove the homogeneity identity $\mathcal{E}_{g_s(\rho^{-1}\cdot)}(A)=\rho^{s/2}\mathcal{E}_{g_s}(A)$ and deduce, for
+$s>2$, that the minimal Riesz energy at density $\rho$ is a strictly increasing function of $\rho$. Why does
+Proposition~\ref{ch2:prop:unscaled} follow?
+\end{exercise}
+
+\begin{exercise}[Pen and paper]\label{ch2:ex:finite}
+Let $F\subseteq A$ be finite. Adapt the proof of Theorem~\ref{ch2:thm:vac} to show that $A\setminus F$ has density one and
+$E_g(A\setminus F)=\mathcal{E}_g(A)$ for every admissible $g$. Is $A\setminus F$ ever an isometric image of $A$ when
+$F\neq\emptyset$?
+\end{exercise}
+
+\begin{exercise}[Pen and paper]\label{ch2:ex:add}
+Let $s>2$ and $x\notin A$. Show that $A\cup\{x\}$ has density one and that $E_{g_s}(A\cup\{x\})=\mathcal{E}_{g_s}(A)$.
+\emph{Hint:} the extra pairs contribute $2\sum_{a\in A\cap B_R}\|x-a\|^{-s}$, which stays bounded as $R\to\infty$; compare
+with D1b. Which step fails for $s\le2$?
+\end{exercise}
+
+\begin{exercise}[Pen and paper]\label{ch2:ex:lf}
+Let $C=\{(1-\tfrac1n,0):n\ge1\}\cup\{(2,0)\}$. Show that $C$ is not locally finite, and that there is no $r<1$ with
+$C\cap B^\circ_1=C\cap B_r$. Which line of the proof of Lemma~\ref{ch2:lem:sets} fails? What does the Lean convention
+``\lean{diskPoints} is empty when the set is infinite'' give for $N_R(C)$, $R\ge1$?
+\end{exercise}
+
+\begin{exercise}[Lean]\label{ch2:ex:mono}
+Prove that disk counts are monotone in the radius for locally finite configurations.
+\begin{lstlisting}[language=Lean]
+theorem diskCount_mono {C : Set Plane} (hC : LocallyFinite C) {R R' : ℝ} (h : R ≤ R') :
+    diskCount C R ≤ diskCount C R' := by
+  sorry
+\end{lstlisting}
+Then show by an example that the hypothesis \lean{hC} cannot be removed.
+\end{exercise}
+
+\begin{exercise}[Lean]\label{ch2:ex:repar}
+Formalise Lemma~\ref{ch2:lem:repar}.
+\begin{lstlisting}[language=Lean]
+theorem liminf_le_liminf_of_tendsto (u : ℝ → ENNReal) (φ : ℝ → ℝ)
+    (hφ : Tendsto φ atTop atTop) :
+    liminf u atTop ≤ liminf (u ∘ φ) atTop := by
+  sorry
+\end{lstlisting}
+\emph{Hint:} $\liminf$ along $\lean{atTop}$ of $u\circ\varphi$ is $\liminf u$ along the filter \lean{map φ atTop}, and
+\lean{map φ atTop ≤ atTop}.
+\end{exercise}
+
+\begin{exercise}[Lean]\label{ch2:ex:vacrho}
+Generalise the vacancy theorem to every density: show that $(\rho^{-1/2}A)\setminus\{0\}$ is universally optimal at
+density $\rho$.
+\begin{lstlisting}[language=Lean]
+theorem vacancy_rho_universally_optimal {ρ : ℝ} (hρ : 0 < ρ) :
+    TriangularUniversalOptimality.UniversallyOptimal ρ (((Real.sqrt ρ)⁻¹ • A) \ {0}) := by
+  sorry
+\end{lstlisting}
+\emph{Hint:} either redo the proof of \lean{vacancy_energy} at density $\rho$, or show
+$((\rho^{-1/2})A)\setminus\{0\}=\rho^{-1/2}(A\setminus\{0\})$ and use the scaling lemmas of \lean{AnyDensity.lean}.
+\end{exercise}
+
+\begin{exercise}[Pen and paper]\label{ch2:ex:liminfmul}
+Let $u,v:\R\to[0,\infty]$ with $u(R)\to1$. Prove $\liminf uv=\liminf v$ (both inequalities), handling the case
+$\liminf v=\infty$. Where does the proof of Theorem~\ref{ch2:thm:vac} need only one of the two inequalities?
+\end{exercise}
+
+\begin{exercise}[Discussion]\label{ch2:ex:lim}
+Definition~\ref{ch2:def:uo} uses the lower energy. Write down the stronger CKMRV-style definition in which the limit
+$\lim_RE_g(C;R)$ must exist. Does the vacancy configuration satisfy it? (You may use, without proof, that
+$\lim_RE_g(A;R)$ exists for the potentials in question; state clearly that this is an assumption.) Which of the Lean
+theorems of this chapter would need new proofs under the stronger definition?
+\end{exercise}
+
+\begin{exercise}[Pen and paper]\label{ch2:ex:d4count}
+Show that for the triangular lattice the sequence $N_R(A)-N^\circ_R(A)$ is unbounded as $R\to\infty$ (the boundary
+circle can carry many lattice points), and nevertheless both $N_R(A)/(\pi R^2)$ and $N^\circ_R(A)/(\pi R^2)$ tend to $1$.
+Why does this not contradict Theorem~\ref{ch2:thm:d4}? \emph{Hint:} the number of representations of an integer by
+$j^2+jk+k^2$ is unbounded.
+\end{exercise}

@@ -1,0 +1,93 @@
+\documentclass[11pt,a4paper,openany]{book}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=2.6cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\usepackage{caption}
+\graphicspath{{/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/openai-math-discovery/papers/universal_optimality_tiered/figures/}}
+\emergencystretch=3em
+
+% ---------- shared macros (chapter writers: use only these) ----------
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Lat}{A}                   % the triangular lattice of covolume one
+\newcommand{\lean}[1]{\texttt{\detokenize{#1}}}
+\definecolor{tierA}{HTML}{1b7837}\definecolor{tierL}{HTML}{2166ac}\definecolor{tierC}{HTML}{b35806}\definecolor{tierX}{HTML}{762a83}
+\newcommand{\tierA}{\textcolor{tierA}{\textbf{[Tier A]}}}
+\newcommand{\tierL}{\textcolor{tierL}{\textbf{[Tier L]}}}
+\newcommand{\tierC}{\textcolor{tierC}{\textbf{[Tier C]}}}
+\newcommand{\tierX}{\textcolor{tierX}{\textbf{[Tier X]}}}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{exercise}{Exercise}[chapter]
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% Human proof, Lean box, numerics box, physics box, warning box
+\newenvironment{humanproof}{\begin{proof}[Human proof]}{\end{proof}}
+\newtcolorbox{leanbox}[1][]{colback=green!3,colframe=tierA!70,title={Lean 4 #1},fonttitle=\bfseries\small,breakable}
+\newtcolorbox{numbox}[1][]{colback=violet!3,colframe=tierX!70,title={Numerics #1},fonttitle=\bfseries\small,breakable}
+\newtcolorbox{physbox}[1][]{colback=blue!3,colframe=tierL!70,title={Physics #1},fonttitle=\bfseries\small,breakable}
+\newtcolorbox{warnbox}[1][]{colback=orange!5,colframe=tierC!80,title={Caution #1},fonttitle=\bfseries\small,breakable}
+
+\lstdefinelanguage{Lean}{morekeywords={theorem,lemma,def,noncomputable,abbrev,structure,instance,where,by,fun,have,show,
+  calc,exact,refine,intro,rintro,obtain,rw,simp,simp_all,simpa,norm_num,linarith,nlinarith,positivity,ring,field_simp,
+  unfold,namespace,end,open,import,variable,match,with,if,then,else,let,in,Type,Prop,sorry,omega,gcongr,apply,congr,ext},
+  sensitive=true,morecomment=[l]{--},morecomment=[s]{/-}{-/},morestring=[b]"}
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,frame=single,
+  framerule=0.3pt,rulecolor=\color{gray!50},keywordstyle=\color{tierL}\bfseries,commentstyle=\color{gray}\itshape,
+  stringstyle=\color{tierC},showstringspaces=false,
+  literate={ℝ}{{$\mathbb{R}$}}1 {ℤ}{{$\mathbb{Z}$}}1 {ℕ}{{$\mathbb{N}$}}1 {≤}{{$\le$}}1 {≥}{{$\ge$}}1 {≠}{{$\ne$}}1
+  {→}{{$\to$}}1 {↔}{{$\leftrightarrow$}}1 {∀}{{$\forall$}}1 {∃}{{$\exists$}}1 {∧}{{$\wedge$}}1 {∨}{{$\vee$}}1
+  {¬}{{$\neg$}}1 {⊤}{{$\top$}}1 {∈}{{$\in$}}1 {∉}{{$\notin$}}1 {∩}{{$\cap$}}1 {⁻¹}{{$^{-1}$}}1 {√}{{$\surd$}}1
+  {π}{{$\pi$}}1 {ρ}{{$\rho$}}1 {κ}{{$\kappa$}}1 {α}{{$\alpha$}}1 {δ}{{$\delta$}}1 {ε}{{$\varepsilon$}}1 {σ}{{$\sigma$}}1
+  {•}{{$\bullet$}}1 {∑}{{$\sum$}}1 {²}{{$^2$}}1 {₀}{{$_0$}}1 {₁}{{$_1$}}1 {₂}{{$_2$}}1 {‖}{{$\|$}}1 {⟨}{{$\langle$}}1 {⟩}{{$\rangle$}}1
+  {𝓝}{{$\mathcal{N}$}}1 {∞}{{$\infty$}}1 {≥}{{$\ge$}}1 {×}{{$\times$}}1 {·}{{$\cdot$}}1 {∘}{{$\circ$}}1 {∖}{{$\setminus$}}1
+  {ψ}{{$\psi$}}1 {φ}{{$\varphi$}}1 {λ}{{$\lambda$}}1 {μ}{{$\mu$}}1 {θ}{{$\theta$}}1 {Λ}{{$\Lambda$}}1 {∂}{{$\partial$}}1
+  {—}{{---}}1 {–}{{--}}1 {é}{{\'e}}1 {ö}{{\"o}}1 {’}{{'}}1}
+
+% Filled by the editor at assembly time:
+\providecommand{\DFourStatus}{(status pending)}
+\providecommand{\JelliumMainStatus}{(the main jellium relaxation study was still running at the time of writing)}
+\input{status.tex}
+
+\title{\textbf{The Triangular Lattice and Universal Optimality}\\[0.5em]
+\large Human proofs, Lean~4 verification, numerical validation in Python and Rust,\\ and physics from fluids to plasmas\\[0.5em]
+\normalsize A textbook for students}
+\author{Xavier Callens (SocrateAI Lab)\\[0.3em]\small written with AI agents (Claude) under the author's direction}
+\date{Draft, 2026-10-11}
+
+\begin{document}
+\frontmatter
+\maketitle
+\begin{center}
+\includegraphics[width=\textwidth]{cover.pdf}
+\end{center}
+\input{preface.tex}
+\tableofcontents
+\mainmatter
+\input{ch1_foundations.tex}
+\input{ch2_theorems.tex}
+\input{ch3_numerics.tex}
+\input{ch4_physics.tex}
+\input{ch5_open_industry.tex}
+\backmatter
+\input{editors_note.tex}
+\input{references.tex}
+\end{document}

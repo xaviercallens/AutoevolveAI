@@ -1,0 +1,797 @@
+\chapter{Open problems, research directions and industry}
+\label{ch5:ch:open}
+
+The first four chapters followed one theorem: for every completely monotone $g$, the triangular lattice $\Lat$ of
+covolume one has the least lower energy among locally finite planar configurations of density one
+\cite{oai}. This chapter is about the edges of that theorem. Some are places where the theorem is silent and
+something else must be said: divergent interactions, the strong Cohn--Kumar conjecture, the endpoint $s=2$. One is a
+detail of the definitions that has now been settled (open versus closed disks). The rest are questions the theorem
+does not ask: uniqueness, temperature, other dimensions, engineering.
+
+Recall the status of the main theorem itself: it is AI-generated (an OpenAI release), kernel-checked in Lean and
+accepted by Comparator in this project, and not peer reviewed \cite{oai}. Every statement below carries a tier. Most of this chapter is \tierC{} (argument, conjecture, proposal) or
+\tierL{} (cited literature). That is the honest state of an open-problems chapter, and it should not be read as a
+weakness. Table~\ref{ch5:tab:open-status} summarises where things stand.
+
+\begin{table}[ht]
+\centering\small
+\caption{Status of the questions treated in this chapter. ``Lean'' means a kernel-checked statement in the
+toolchain of Chapter~2, with axiom footprint inside $\{\texttt{propext},\texttt{Classical.choice},\texttt{Quot.sound}\}$.}
+\label{ch5:tab:open-status}
+\begin{tabular}{@{}p{4.6cm}p{4.4cm}p{4.6cm}@{}}
+\toprule
+Question & Mathematical status & Lean status\\
+\midrule
+Riesz $s>2$, Gaussians, every completely monotone $g$ & proved upstream \cite{oai} & kernel-checked (upstream + our D1, D1b, D2)\\
+Raw energies for $0<s\le2$ & infinite for every competitor (\S\ref{ch5:sec:div}) & divergence of the lattice sum not formalised\\
+Renormalised / jellium, $0\le s<2$ & proved in upstream's manuscript, \S8 \cite{oai}; implication from Petrache--Serfaty \cite{ps} & not formalised anywhere\\
+Endpoint $s=2$ & open; outside upstream's statement & ---\\
+Strong (per-potential) Cohn--Kumar & open & ---\\
+Open vs closed disks & resolved in this project (D4) & see \S\ref{ch5:sec:disks}\\
+Uniqueness among periodic configurations & open & ---\\
+Non-uniqueness among all configurations & proved (D3) & kernel-checked\\
+Positive temperature & open & ---\\
+Dimension $3$ & no universal optimum known & ---\\
+Dimensions $8$, $24$ & proved \cite{ckmrv} & not formalised here\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%=====================================================================
+\section{The divergent regime \texorpdfstring{$0<s\le2$}{0<s<=2} and the logarithm}
+\label{ch5:sec:div}
+
+\subsection{Why the raw sums diverge}
+
+Write $N(r)=\#\{a\in\Lat:0<|a|\le r\}$. The lattice has covolume one, so $N(r)$ is close to the area $\pi r^2$.
+
+\begin{lemma}[Lattice point count]\label{ch5:lem:count}
+There is a constant $C$ such that $|N(r)-\pi r^2|\le C(r+1)$ for all $r\ge0$.
+\end{lemma}
+
+\begin{humanproof}
+\tierC{} Let $P$ be a fundamental parallelogram of $\Lat$ with $0\in P$, of area $1$ and diameter $\delta$. The
+translates $a+P$, $a\in\Lat$, tile the plane. Every translate with $|a|\le r$ lies in the disk of radius $r+\delta$,
+and every point of the disk of radius $r-\delta$ lies in a translate with $|a|\le r$. Comparing areas,
+\[
+\pi(r-\delta)^2\le N(r)+1\le\pi(r+\delta)^2\qquad(r\ge\delta),
+\]
+so $|N(r)-\pi r^2|\le 2\pi\delta r+\pi\delta^2+1$. For $r<\delta$ both $N(r)$ and $\pi r^2$ are bounded.
+\end{humanproof}
+
+\begin{proposition}[Divergence rates]\label{ch5:prop:divrate}
+Let $r_0=\min_{a\ne0}|a|$. As $R\to\infty$,
+\begin{gather*}
+\sum_{0<|a|\le R}|a|^{-2}=2\pi\log R+O(1),\\
+\sum_{0<|a|\le R}|a|^{-s}=\frac{2\pi}{2-s}R^{2-s}+O(R^{1-s}+\log R+1)\qquad(0<s<2).
+\end{gather*}
+\end{proposition}
+
+\begin{humanproof}
+\tierC{} Summation by parts (Stieltjes integration against the step function $N$) gives, for $s>0$,
+\[
+\sum_{0<|a|\le R}|a|^{-s}=\int_{r_0^-}^{R}r^{-s}\,\mathrm{d}N(r)
+=N(R)R^{-s}+s\int_{r_0}^{R}N(r)\,r^{-s-1}\,\mathrm{d}r .
+\]
+Insert $N(r)=\pi r^2+E(r)$ with $|E(r)|\le C(r+1)$ from Lemma~\ref{ch5:lem:count}. For $s=2$:
+\begin{gather*}
+N(R)R^{-2}=\pi+O(R^{-1}),\qquad
+2\int_{r_0}^{R}\pi r^2\,r^{-3}\,\mathrm{d}r=2\pi\log R-2\pi\log r_0,\\
+2\int_{r_0}^{R}|E(r)|\,r^{-3}\,\mathrm{d}r\le 2C\int_{r_0}^{\infty}(r+1)r^{-3}\,\mathrm{d}r<\infty .
+\end{gather*}
+The error integral converges absolutely, so the sum is $2\pi\log R+O(1)$. For $0<s<2$ the main term is
+$\pi R^{2-s}+s\pi\int_{r_0}^{R}r^{1-s}\,\mathrm{d}r=\pi R^{2-s}+\frac{s\pi}{2-s}(R^{2-s}-r_0^{2-s})
+=\frac{2\pi}{2-s}R^{2-s}+O(1)$, and the error is $s\int_{r_0}^R C(r+1)r^{-s-1}\,\mathrm{d}r$, which is $O(R^{1-s})$ for
+$s<1$, $O(\log R)$ for $s=1$ and $O(1)$ for $s>1$.
+\end{humanproof}
+
+The heuristic behind the proof is worth keeping: a lattice of density one looks, from far away, like a uniform area
+density, and $\int_{1\le|x|\le R}|x|^{-s}\,\mathrm{d}x=2\pi\int_1^R r^{1-s}\,\mathrm{d}r$, which is $2\pi\log R$ for
+$s=2$ and grows like $R^{2-s}$ for $s<2$. The sum diverges at infinity exactly when this integral does, namely when
+$s\le d=2$.
+
+\begin{numbox}[(illustration of Proposition~\ref{ch5:prop:divrate})]
+\tierX{} The script below sums $|a|^{-2}$ over $0<|a|\le R$ for the covolume-one triangular lattice
+$p(j,k)=b^{-1/2}(j+k/2,\,kb)$, $b=\sqrt3/2$, the parametrisation of Chapter~1. It was run as
+\texttt{taskset -c 2,3 .venv/bin/python -I ch5\_checks.py}.
+\begin{lstlisting}[language=Python]
+def tri_s2_partial(R: float) -> float:
+    b = math.sqrt(3) / 2
+    sc = 1 / math.sqrt(b)
+    K = int(R * 1.2 / (sc * b)) + 3
+    j, k = np.meshgrid(np.arange(-K, K + 1), np.arange(-K, K + 1), indexing="ij")
+    x = sc * (j + k / 2.0)
+    y = sc * (k * b)
+    r2 = x * x + y * y
+    m = (r2 > 0) & (r2 <= R * R)
+    return float(np.sum(1.0 / r2[m]))
+\end{lstlisting}
+Output:
+\begin{lstlisting}
+R=    50  S=27.101261  S-2pi logR=2.521295
+R=   100  S=31.457323  S-2pi logR=2.522185
+R=   200  S=35.808069  S-2pi logR=2.517760
+R=   400  S=40.163973  S-2pi logR=2.518491
+R=   800  S=44.519131  S-2pi logR=2.518477
+\end{lstlisting}
+The partial sums grow by about $2\pi\log 2\approx4.36$ per doubling of $R$, and $S(R)-2\pi\log R$ stays near $2.52$
+over this range. The fluctuations come from the lattice-point error $E(r)$. We claim no more digits of the constant
+and no closed form for it.
+\end{numbox}
+
+\subsection{What the Lean theorem says in this regime}
+
+Upstream's Lean theorem (Chapter~2) states, for admissible $g$,
+\begin{center}
+\lean{latticeEnergy g} $\le$ \lean{energy g C} $\wedge$ \lean{latticeEnergy g} $=$ \lean{energy g A},
+\end{center}
+with both sides in $[0,\infty]$. Our \lean{riesz_admissible} shows that $t\mapsto t^{-s/2}$ is admissible for every
+$s>0$ \tierA{}. For $0<s\le2$, Proposition~\ref{ch5:prop:divrate} shows that the lattice sum is $+\infty$
+(the sum of nonnegative terms dominates every partial sum). The Lean inequality then forces
+\lean{energy (riesz s) C} $=\top$ for every locally finite density-one competitor $C$. That is a true statement, but
+the comparison it contains is $\infty\le\infty$, so it carries no information about which configuration is better.
+This deduction is \tierC{}: our D1b proves \lean{latticeEnergy_riesz_lt_top} for $s>2$ \tierA{}, but the
+complementary statement \lean{latticeEnergy (riesz s)} $=\top$ for $0<s\le2$ has not been formalised (it is
+Project~M2 in \S\ref{ch5:sec:projects}).
+
+The logarithm $g(t)=-\tfrac12\log t$ (that is, $-\log|x|$) is not even in the class: it is negative for $t>1$, and
+\lean{AdmissiblePotential} requires $g\ge0$. So the theorem says nothing at all about the true two-dimensional
+Coulomb interaction. Yet the cases $s=1$ (the electron gas, \S\ref{ch5:sec:industry}) and $s=0$ (the one-component
+plasma, vortices) are the physically central ones. To say something there, the energy itself has to be redefined.
+
+\subsection{Local integrability and the jellium energy}
+
+The standard cure is to neutralise the points against a uniform background of opposite charge and the same density,
+so that the divergent far-field contributions cancel. This needs the background to have a finite self-interaction,
+and that is a local question:
+\begin{equation}\label{ch5:eq:locint}
+\int_{|x|<1}|x|^{-s}\,\mathrm{d}x=2\pi\int_0^1 r^{1-s}\,\mathrm{d}r=
+\begin{cases}\dfrac{2\pi}{2-s},& s<2,\\[1ex] +\infty,& s\ge2.\end{cases}
+\end{equation}
+So $|x|^{-s}$ is locally integrable in $\R^2$ if and only if $s<2$, and the logarithm is locally integrable as well.
+Put $g_s(x)=|x|^{-s}$ for $0<s<2$ and $g_0(x)=-\log|x|$. Upstream \cite[\S8, eq.~(finite-ordered-jellium)]{oai}
+defines, for $N$ distinct points $a_1,\dots,a_N$ and the square $K_R=[-R/2,R/2]^2$ with $R=\sqrt N$, the
+\emph{finite ordered-pair jellium energy}
+\begin{equation}\label{ch5:eq:jellium}
+J_{s,R}(a_1,\dots,a_N)=\sum_{i\ne j}g_s(a_i-a_j)-2\sum_{i=1}^N\int_{K_R}g_s(a_i-x)\,\mathrm{d}x
++\int_{K_R}\int_{K_R}g_s(x-x')\,\mathrm{d}x\,\mathrm{d}x',
+\end{equation}
+with $J=+\infty$ at collisions, and the density-one thermodynamic minimum
+\[
+e^{(s)}_{\mathrm{Jel}}=\lim_{N\to\infty}\frac1N\min_{a_1,\dots,a_N\in K_{\sqrt N}}J_{s,\sqrt N}(a_1,\dots,a_N).
+\]
+The three terms are point--point, point--background and background--background. Each of the last two is finite
+precisely by~\eqref{ch5:eq:locint}. Note the convention: the sum is over \emph{ordered} pairs, so each pair is counted
+twice. Physics papers often count each pair once; a factor $2$ between conventions must be checked before comparing
+numbers. The existence of the limit is part of upstream's argument; it relies on scalar thermodynamic results of
+Lewin--Lieb--Seiringer ($0<s<2$) and Lauritsen ($s=0$), both cited in \cite[\S8]{oai}.
+
+\subsection{Upstream's renormalised corollary}
+
+Upstream also uses the \emph{renormalised energy} $W_s$ of Petrache and Serfaty. It is defined through a field
+(electric-field) formulation: for $0<s<2$ one passes to $\R^2\times\R$ with the weight $|y|^{\gamma}$, $\gamma=s-1$,
+so that $g_s$ becomes the fundamental solution of $-\operatorname{div}(|y|^\gamma\nabla\,\cdot)$ with constant
+$\kappa_s=4\pi$ ($\kappa_0=2\pi$ for the logarithm). The fields are taken in $L^p_{\mathrm{loc}}$ with
+\[
+1<p<\min\Bigl(2,\frac2s,\frac3{s+1}\Bigr)\qquad(0<s<2),
+\]
+the energy is truncated at a small radius $\eta$, averaged over large squares and the truncation removed; $W_s(C)$
+is the infimum over compatible fields. We do not reproduce the full definition; it follows Petrache--Serfaty's
+2017 field construction as cited in \cite[\S8]{oai}. On a torus $T=\R^2/L$ of area $N$ with distinct points
+$a_1,\dots,a_N$, the periodic value $W_{s,L}$ has the closed form
+\[
+W_{s,L}(a_1,\dots,a_N)=\kappa_s^2\Bigl[\frac1N\sum_{i\ne j}\mathcal G_L(a_i-a_j,0)
++\lim_{x\to0}\Bigl(\mathcal G_L(x,0)-\frac{g_s(x)}{\kappa_s}\Bigr)\Bigr],
+\]
+where $\mathcal G_L$ is the mean-zero unit-source Green function of the extension problem \cite[\S8]{oai}. For a
+periodic configuration $C=\bigcup_{i=1}^N(a_i+L)$ of density one write $V_s(C)=W_{s,L}(a_1,\dots,a_N)$.
+
+\begin{corollary}[Planar renormalised and jellium energies; upstream, \S8]\label{ch5:cor:jellium}
+\tierL{} Let $0\le s<2$. For every positive integer $n$ put $N=n^2$ and enumerate $\Lat/(n\Lat)$ by
+$a^\triangle_1,\dots,a^\triangle_N$. Every configuration of $N$ distinct points in $\R^2/(n\Lat)$ satisfies
+\[
+W_{s,n\Lat}(a_1,\dots,a_N)\ge W_{s,n\Lat}(a^\triangle_1,\dots,a^\triangle_N).
+\]
+Moreover, $\Lat$ minimises $W_s$ among density-one planar configurations, and
+$e^{(s)}_{\mathrm{Jel}}=\kappa_s^{-1}W_s(\Lat)$.
+\end{corollary}
+
+The engine of the proof is an identity that compares two periodic configurations \emph{with different period
+lattices} through heat kernels.
+
+\begin{lemma}[Heat comparison across period lattices; upstream, \S8]\label{ch5:lem:heat}
+\tierL{} Let $0\le s<2$ and let $C$, $D$ be simple periodic configurations of density one. Put
+\[
+q_0=2\pi,\qquad q_s=\frac{2^{2-s}\pi\,\Gamma(1-s/2)}{\Gamma(s/2)}\ (0<s<2),\qquad
+\Psi_t(x)=(4\pi t)^{-1}e^{-|x|^2/(4t)}.
+\]
+If $C=\bigcup_{i=1}^N(a_i+L)$ with $|\R^2/L|=N$, define
+\[
+P_{t,L}(x)=\sum_{v\in L}\Psi_t(x-v),\qquad
+H_C(t)=\frac1N\sum_{i,j=1}^N P_{t,L}(a_i-a_j)-\Psi_t(0),
+\]
+and define $H_D$ with its own period lattice and point count. Then the following integral converges absolutely and
+\[
+V_s(C)-V_s(D)=\frac{\kappa_s q_s}{\Gamma(1-s/2)}\int_0^\infty\bigl(H_C(t)-H_D(t)\bigr)\,t^{-s/2}\,\mathrm{d}t .
+\]
+\end{lemma}
+
+\paragraph{How the Gaussian theorem enters.}
+\tierL{} The subtraction of $\Psi_t(0)$ removes only the coincident point. Counting periodic images in large disks
+gives \cite[\S8]{oai}
+\[
+H_C(t)=\frac1{4\pi t}\,E_{g_t}(C),\qquad g_t(u)=e^{-u/(4t)},
+\]
+the Gaussian energy with parameter $\alpha=1/(4\pi t)$ in the normalisation $e^{-\pi\alpha u}$. The Gaussian case of
+the main theorem gives $E_{g_t}(C)\ge E_{g_t}(\Lat)$, hence $H_C(t)\ge H_\Lat(t)$ for every $t>0$. The prefactor is
+positive: $\kappa_sq_s/\Gamma(1-s/2)=\kappa_s2^{2-s}\pi/\Gamma(s/2)>0$, and $t^{-s/2}>0$. Lemma~\ref{ch5:lem:heat} with
+$D=\Lat$ then gives $V_s(C)\ge V_s(\Lat)$ for every periodic $C$. Upstream passes to the infinite system by a
+square-periodic approximation of the field infimum, which is why the lemma must allow \emph{different} period
+lattices: the approximants are square-periodic while the minimiser is triangular. The identification of
+$e_{\mathrm{Jel}}$ uses the scalar thermodynamic inputs cited above and a confinement argument based on a weighted
+strong minimum principle (Fabes--Kenig--Serapioni, cited in \cite[\S8]{oai}), which needs $-1<\gamma<1$.
+
+The structure is the same as in the Bernstein step of Chapter~2: a nonnegative superposition of Gaussian
+inequalities. Here the weight is $t^{-s/2}\,\mathrm{d}t$, and the superposition is applied to \emph{differences}, so
+the divergent parts cancel before anything is integrated. This is why the renormalised problem follows from the
+Gaussian theorem even though the raw energies are infinite.
+
+Petrache and Serfaty had earlier shown \tierL{} that universal optimality of the triangular lattice, in the form
+conjectured by Cohn and Kumar, implies the crystallisation results for the Coulomb and Riesz renormalised energies
+\cite[Theorem~2]{ps}. Upstream's \S8 carries out that transfer for its stated field normalisation and order of
+limits, starting from its own Gaussian theorem rather than from the conjecture.
+
+\begin{warnbox}[(what is not formalised)]
+\tierC{} \emph{Nothing} in this section is in Lean. No Lean file in openai/math mentions jellium or renormalised
+energy (checked by grep on the pinned tree, as recorded in the extension plan of this project). Our own Lean work
+(Chapter~2) covers only summable interactions. Corollary~\ref{ch5:cor:jellium} and Lemma~\ref{ch5:lem:heat} are \tierL{}:
+they are proved in an AI-generated manuscript that has not been peer reviewed \cite{oai}. The field formulation,
+the thermodynamic limits and the confinement argument would each be a substantial formalisation project.
+\end{warnbox}
+
+\subsection{A Lean roadmap}
+
+The extension plan of this project (\texttt{docs/EXTENSION\_RENORMALIZED\_JELLIUM\_2026-10-11.md}) splits off
+the pieces that look reachable. Its priors are subjective, recorded in the plan before any attempt; they are not
+results.
+
+\begin{center}\small
+\begin{tabular}{@{}lp{6.8cm}cp{3.6cm}@{}}
+\toprule
+\# & Target & Prior & Kill criterion\\
+\midrule
+E3 & For every periodic density-one $C$ and $t>0$: $H_C(t)\ge H_\Lat(t)$, derived from upstream's Gaussian theorem
+  & $\sim30\%$ & lower energy of a periodic $C$ cannot be identified with its periodic Gaussian sum\\
+E4 & $t^{-s/2}=\Gamma(s/2)^{-1}\int_0^\infty u^{s/2-1}e^{-tu}\,\mathrm{d}u$, and the positivity transfer: if
+  $H_C\ge H_\Lat$ pointwise then the $t^{-s/2}$-weighted integrals compare & $\sim70\%$ & Mathlib's Gamma-integral
+  API does not reach the needed form\\
+E5 & Definition of $J_{s,R}$ in~\eqref{ch5:eq:jellium}, with a non-vacuity check (finite at distinct points) &
+  $\sim60\%$ & the double integral needs an integrability lemma Mathlib lacks for $s$ near $2$\\
+E6 & Endpoint $s=2$ & --- & outside upstream's statement; not attempted\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+None of E3--E5 had been started when this chapter was written. If E3 and E4 both succeed, they give a kernel-checked
+version of the second half of the heat-comparison argument (the inequality $V_s(C)\ge V_s(\Lat)$, \emph{given} the
+identity of Lemma~\ref{ch5:lem:heat}). They would not give the field formulation, the identity itself or the
+thermodynamic limit. Even the easiest step, E4, is low value on its own; its point is to be the first brick.
+
+\subsection{A numerical check at \texorpdfstring{$s=1$}{s=1}}
+
+\begin{numbox}[(2D Wigner crystal, $s=1$ jellium)]
+\tierX{} On the branch \texttt{physics/jellium-wigner-2026-10-11} of the rusty-SUNDIALS crate
+\texttt{qf-yukawa-crystal} \cite{rusty} (preregistration e706f85, code 3bc55fa), the $s=1$ jellium energy per
+particle at density one was computed by Ewald summation. The triangular value is $e_{\mathrm{tri}}=-1.960515789320$,
+against the literature value $-1.960515789825$ credited to Alves et al.\ \cite{alves} (relative difference
+$2.6\times10^{-10}$). The square lattice gives $e_{\mathrm{sq}}=-1.950132460$, which agrees with the corresponding literature value for
+the square lattice to relative $4.3\times10^{-10}$, so $e_{\mathrm{tri}}<e_{\mathrm{sq}}$, in agreement with the classical lattice comparison of
+Bonsall and Maradudin \cite{bm}. The square lattice is a saddle (64 unstable modes in the tested cell), and the
+result is invariant under the Ewald splitting parameter to better than $10^{-10}$ over a factor-$4$ range. The
+crate's energy convention (pairs counted once or twice, as in~\eqref{ch5:eq:jellium}) has not been matched to upstream's
+here; the \emph{ordering} triangular below square does not depend on it.
+
+Status of the main relaxation study (no relaxed periodic configuration below $e_{\mathrm{tri}}$, hypothesis E1):
+\JelliumMainStatus.
+
+Even a perfect outcome is Tier X: it would be a consistency check of Corollary~\ref{ch5:cor:jellium} in one case, not
+evidence for it.
+\end{numbox}
+
+\subsection{The endpoint \texorpdfstring{$s=2$}{s=2}}
+
+The endpoint $s=d=2$ is open, and it lies outside upstream's statement. Here is precisely what breaks.
+\begin{enumerate}[leftmargin=*]
+\item \textbf{The background is not integrable.} By~\eqref{ch5:eq:locint}, $\int_{K_R}|a-x|^{-2}\,\mathrm{d}x=+\infty$ for
+  every $a\in K_R$, and so is the background self-energy. In~\eqref{ch5:eq:jellium} the second and third terms are both
+  infinite and enter with opposite signs: $J_{2,R}$ is of the form $\infty-\infty$ and has no definition. This is the
+  basic obstruction; the next three are what it looks like inside upstream's proof.
+\item \textbf{The field class is empty.} The admissible range $1<p<\min(2,2/s,3/(s+1))$ becomes $1<p<1$ at $s=2$.
+\item \textbf{The weight leaves the good class.} The extension weight $|y|^{\gamma}$ has $\gamma=s-1=1$, outside the
+  range $-1<\gamma<1$ used for the weighted minimum principle in the confinement step.
+\item \textbf{The fractional Laplacian degenerates.} In the proof of Lemma~\ref{ch5:lem:heat} the operator is
+  $(-\Delta)^{1-s/2}$; at $s=2$ it is the identity, which has no Green function, and $q_s$ has a pole from
+  $\Gamma(1-s/2)$.
+\end{enumerate}
+Items 2--4 are \tierC{} observations read off the formulas of \cite[\S8]{oai}, not theorems about every possible
+approach. They do not say that $s=2$ is meaningless. They say that a different renormalisation would be needed.
+
+\begin{remark}[a possible periodic quantity at $s=2$]\label{ch5:rem:s2}
+\tierC{} (unverified sketch). The bounds that make the integral in Lemma~\ref{ch5:lem:heat} converge,
+$|H_C(t)-H_D(t)|\le Ct^{-1}e^{-c/t}$ as $t\downarrow0$ and $\le Ce^{-\lambda t}$ as $t\to\infty$, do not involve $s$.
+The prefactor $\kappa_sq_s/\Gamma(1-s/2)=\kappa_s2^{2-s}\pi/\Gamma(s/2)$ also has a finite limit at $s=2$. So for
+periodic configurations the right-hand side
+$\int_0^\infty(H_C-H_\Lat)(t)\,t^{-1}\,\mathrm{d}t$ is a finite number, and it is nonnegative by the Gaussian theorem.
+What is missing is a left-hand side: an independently defined $s=2$ renormalised energy whose differences this
+integral computes, and an infinite-system theory that reduces to it. We have not checked whether such a quantity
+appears in the literature. This is Project P2 in \S\ref{ch5:sec:projects}, and it should not be quoted as a result.
+\end{remark}
+
+%=====================================================================
+\section{The strong (per-potential) Cohn--Kumar conjecture}
+\label{ch5:sec:ck}
+
+\subsection{Statement}
+
+Cohn and Kumar conjectured that the triangular, $E_8$ and Leech lattices are universally optimal
+\cite[Conjecture~9.4]{ck}. The form of the conjecture is stronger than an energy inequality: it asks for a
+\emph{certificate} for each potential.
+
+\begin{definition}[Sharp auxiliary function]\label{ch5:def:sharp}
+Let $g$ be completely monotone on $(0,\infty)$ with sufficient decay. A \emph{sharp auxiliary function} for $g$ and
+$\Lat$ is a radial function $f:\R^2\to\R$ in an admissible class (integrable, with integrable Fourier transform and
+enough decay of both for Poisson summation over $\Lat$ and $\Lat^*$; see \cite[Conjecture~9.4]{ck} and its context for the exact class) such
+that
+\begin{gather*}
+f(x)\le g(|x|^2)\ \ (x\ne0),\qquad \hat f(\xi)\ge0\ \ (\xi\in\R^2),\\
+f(a)=g(|a|^2)\ \ (a\in\Lat\setminus\{0\}),\qquad \hat f(w)=0\ \ (w\in\Lat^*\setminus\{0\}).
+\end{gather*}
+\end{definition}
+
+The \emph{strong Cohn--Kumar conjecture} in the plane is the statement: \emph{for each} completely monotone $g$ with
+sufficient decay, a sharp auxiliary function exists. \tierL{} In upstream's words, the conjecture ``asks for a sharp
+auxiliary function for each sufficiently decaying completely monotone squared-distance interaction: a Fourier lower
+bound that attains the lattice energy and therefore proves the comparison for periodic competitors''
+\cite[\S1]{oai}.
+
+Why the conditions certify optimality is the Cohn--Elkies-type argument of Chapter~2: the two inequalities give
+$E_g(C)\ge\hat f(0)-f(0)$ for every competitor of density one, and Poisson summation on $\Lat$ with both contact
+conditions gives
+\[
+f(0)+\sum_{a\ne0}g(|a|^2)=\sum_{a\in\Lat}f(a)=\sum_{w\in\Lat^*}\hat f(w)=\hat f(0),
+\]
+so the bound equals the lattice energy.
+
+\begin{warnbox}[(status)]
+The strong per-potential conjecture is \textbf{open} in the plane. Upstream proves the energy inequality for every
+completely monotone $g$, and constructs sharp auxiliary functions $f_\alpha$ for every Gaussian
+$G_\alpha(x)=e^{-\pi\alpha|x|^2}$. It states \tierL{}: ``Integrating the resulting energy inequalities does not
+construct a sharp auxiliary for each mixed potential in the class required by Cohn and Kumar's conjecture. That
+stronger per-potential quantifier is not claimed here.'' \cite[\S1]{oai}
+\end{warnbox}
+
+In dimensions $8$ and $24$, Cohn, Kumar, Miller, Radchenko and Viazovska proved universal optimality and constructed
+sharp Gaussian bounds and Fourier interpolation formulas \cite[Theorems~1.4, 1.7 and 1.9]{ckmrv}. We say no more
+about the per-potential form there than that.
+
+\subsection{What integrating the Gaussians does and does not give}
+
+It is tempting to think that the per-potential statement follows at once. Write a completely monotone $g$ (with no
+constant part: by upstream's lemma \lean{energy_one}, a constant has infinite energy at density one) as
+\[
+g(t)=\int_{(0,\infty)}e^{-\pi\alpha t}\,\mathrm{d}\mu(\alpha),
+\]
+with $\mu$ a positive measure, and try
+\begin{equation}\label{ch5:eq:mixture}
+f(x)=\int f_\alpha(x)\,\mathrm{d}\mu(\alpha).
+\end{equation}
+\emph{Formally}, every condition of Definition~\ref{ch5:def:sharp} holds by linearity: $f\le g$ integrates
+$f_\alpha\le G_\alpha$; $\hat f=\int\hat f_\alpha\,\mathrm{d}\mu\ge0$; at $a\in\Lat\setminus\{0\}$,
+$f(a)=\int G_\alpha(a)\,\mathrm{d}\mu=g(|a|^2)$; at $w\in\Lat^*\setminus\{0\}$, $\hat f(w)=0$. So the issue is not that
+mixing destroys the contact conditions or the signs. It does not.
+
+What upstream actually integrates is different. It integrates the \emph{scalar} inequalities
+$E_{G_\alpha}(C)\ge\theta_\Lat(\alpha):=\sum_{a\ne0}e^{-\pi\alpha|a|^2}$, which are explicit and measurable in
+$\alpha$ on both sides; Tonelli and the lower-limit argument of upstream's \S5 then give the energy inequality for $g$.
+No function is ever mixed. To turn the formal computation~\eqref{ch5:eq:mixture} into a proof, one would need at least
+the following \tierC{}:
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Measurability.} The construction is carried out for each $\alpha$ separately, with finite reference
+  lists and certified inequalities chosen per range of parameters. One needs a choice $\alpha\mapsto f_\alpha$ for
+  which $(\alpha,x)\mapsto f_\alpha(x)$ is jointly measurable.
+\item \textbf{Absolute integrability.} To exchange Fourier transform and $\mu$-integral (Fubini), one needs
+  $\int\|f_\alpha\|_{L^1}\,\mathrm{d}\mu(\alpha)<\infty$, and similarly for $\hat f_\alpha$.
+\item \textbf{The admissible class.} The mixture must again have the decay that Poisson summation and the class of
+  \cite[Conjecture~9.4]{ck} require. This needs bounds on the decay constants of $f_\alpha$ and $\hat f_\alpha$ that are uniform,
+  or at least $\mu$-integrable, in $\alpha$.
+\item \textbf{Finite values at the origin.} The quantities $f(0)=\int f_\alpha(0)\,\mathrm{d}\mu$ and
+  $\hat f(0)=\int\hat f_\alpha(0)\,\mathrm{d}\mu$ must be finite separately, not only their difference.
+\end{enumerate}
+Upstream gives none of these estimates, and neither does this book.
+
+\paragraph{A Riesz example shows where each end matters.}
+\tierC{} For $g(t)=t^{-s/2}$, the Gamma integral gives $t^{-s/2}=\frac{\pi^{s/2}}{\Gamma(s/2)}\int_0^\infty
+\alpha^{s/2-1}e^{-\pi\alpha t}\,\mathrm{d}\alpha$, so $\mathrm{d}\mu\propto\alpha^{s/2-1}\,\mathrm{d}\alpha$.
+\begin{itemize}[leftmargin=*]
+\item As $\alpha\to0$: Poisson summation gives $\theta_\Lat(\alpha)=\alpha^{-1}\sum_{w\in\Lat^*}e^{-\pi|w|^2/\alpha}-1
+  \sim\alpha^{-1}$, so $\int_0\theta_\Lat\,\mathrm{d}\mu<\infty$ iff $s>2$. This is the finiteness of the lattice
+  energy (D1b), and it is the same at the level of functions, since $\hat f_\alpha(0)-f_\alpha(0)=\theta_\Lat(\alpha)$.
+\item As $\alpha\to\infty$: $\mu$ has infinite mass ($\int^\infty\alpha^{s/2-1}\mathrm{d}\alpha=\infty$ for $s>0$). The
+  constraints give only $-\theta_\Lat(\alpha)\le f_\alpha(0)\le1$: the upper bound from $f_\alpha\le G_\alpha$, the lower
+  from $\hat f_\alpha(0)=f_\alpha(0)+\theta_\Lat(\alpha)\ge0$. So $f(0)$ is finite only if $f_\alpha(0)$ decays fast
+  enough as $\alpha\to\infty$. Upstream gives no such estimate. Note also that $g(|x|^2)\to\infty$ at $x=0$, so
+  $f\le g$ does not bound $f(0)$.
+\end{itemize}
+For a $g$ whose measure $\mu$ is finite and supported in a compact interval $[\alpha_0,\alpha_1]\subset(0,\infty)$,
+items~2--4 reduce to bounds that are locally uniform in $\alpha$. In that case the obstruction may well be technical,
+but we have not checked that the construction satisfies such bounds, so we do not claim it. For Riesz potentials,
+the large-$\alpha$ end is a genuine quantitative question about the construction, not a formality.
+
+\paragraph{Why one would want the certificate anyway.}
+\tierC{} The energy inequality is already proved, so a per-potential certificate would not change the minimum value.
+It would give an explicit object that can be checked numerically for each $g$. It would match the form of the
+conjecture as Cohn and Kumar posed it. It could also carry information that the integrated inequality loses: the
+gap $g(|x|^2)-f(x)$ and the function $\hat f$ measure how far a competitor is from optimal, and that is the kind of
+input that stability and uniqueness questions (\S\ref{ch5:sec:unique}) need.
+
+\paragraph{Small research projects.}
+(i) Take $g(t)=\int_1^2e^{-\pi\alpha t}\,\mathrm{d}\alpha$ and try to establish items~1--4 for upstream's construction
+on $[1,2]$. (ii) Measure numerically how $f_\alpha(0)$ behaves for large $\alpha$, using upstream's verification
+scripts. (iii) Build a sharp auxiliary function directly, by linear programming, for one non-Gaussian $g$
+(Project M4). Each of these is a step, not a solution.
+
+%=====================================================================
+\section{Open versus closed disks: resolved (D4)}
+\label{ch5:sec:disks}
+
+Upstream measures density and energy in \emph{closed} disks $\overline B(0,R)$. A reviewer asked whether open disks
+would change the theorem. They do not.
+
+\begin{proposition}[D4]\label{ch5:prop:d4}
+\tierC{} (human proof; Lean status below). For every locally finite $C\subset\R^2$: $C$ has density one in closed
+disks if and only if it has density one in open disks; and for every $g$, the lower energy computed with open disks
+equals the lower energy computed with closed disks. Hence upstream's theorem holds verbatim with open disks.
+\end{proposition}
+
+\begin{humanproof}
+Local finiteness makes $C\cap\overline B(0,R)$ finite, so only finitely many norms $|x|$, $x\in C$, lie in $[0,R]$.
+Hence there is $\delta\in(0,1)$ with no point of $C$ of norm in $[R-\delta,R)$, and then the open-disk point set at
+radius $R$ equals the closed-disk point set at radius $R-\delta$. Likewise the closed-disk set at $R$ equals the
+open-disk set at some $R+\delta'$ with $\delta'\in(0,1)$. So each disk-energy function takes the values of the
+other at radii within distance $1$: $E^{\mathrm{open}}(R)=E^{\mathrm{closed}}(R-\delta_R)\ge
+\inf_{r\ge R-1}E^{\mathrm{closed}}(r)$. Letting $R\to\infty$ gives $\liminf E^{\mathrm{open}}\ge\liminf
+E^{\mathrm{closed}}$, and the symmetric argument gives the reverse. For the counts,
+$N_{\mathrm{closed}}(R-1)\le N_{\mathrm{open}}(R)\le N_{\mathrm{closed}}(R)$, and $(R-1)^2/R^2\to1$, so the two densities
+have the same limit. The full proof is in Chapter~2.
+\end{humanproof}
+
+Lean status: \DFourStatus.
+
+What D4 does \emph{not} touch is uniqueness. Even with both disk conventions settled, whether $\Lat$ is the unique
+minimiser among \emph{periodic} configurations of density one remains open in the plane.
+
+%=====================================================================
+\section{Uniqueness, temperature and other dimensions}
+\label{ch5:sec:unique}
+
+\subsection{Uniqueness}
+
+Upstream is explicit \tierL{}: its theorem ``identifies the minimum value, not all minimizers'' \cite{oai}. Among
+all locally finite configurations, uniqueness is in fact false. Our D3 \tierA{} proves that the configuration
+$\Lat\setminus\{0\}$ (\lean{vacancy}) has density one and the same lower energy as $\Lat$ for every admissible $g$
+(\lean{vacancy_energy}, \lean{vacancy_universally_optimal}), and that it is not an isometric image of $\Lat$
+(\lean{vacancy_not_isometric_image}); hence \lean{universal_optimum_not_unique}. A single vacancy changes a
+density-one average by nothing. The meaningful uniqueness questions are therefore of the following kinds \tierC{}:
+\begin{itemize}[leftmargin=*]
+\item \textbf{Periodic uniqueness.} Is $\Lat$ (up to isometry) the only periodic density-one minimiser for, say,
+  every Gaussian? Open in the plane.
+\item \textbf{Uniqueness up to negligible sets.} Is every minimiser equal to an isometric image of $\Lat$ outside a
+  set of density zero? Even formulating this needs care with lower energies.
+\item \textbf{Local versions.} Several restricted results are cited in \cite[\S1]{oai}: Faulhuber et al.\ (honeycomb,
+  products of one-dimensional configurations, unions of two translates), Hardin--Tenpas (four-point and six-point
+  periodic classes, under a rapid-decay assumption) and Lebl\'e (sufficiently small bounded displacements cannot
+  lower the energy). We cite them only through \cite{oai}.
+\end{itemize}
+
+\subsection{Positive temperature}
+
+The theorem is a statement at zero temperature: it compares energies, not free energies. Whether particles with a
+completely monotone repulsion crystallise into a triangular arrangement at small positive temperature, and in what
+sense of order, is not addressed by any result in this book's references. Physicists expect that two-dimensional
+positional order at positive temperature is weaker than at zero temperature; we do not cite that literature, so
+treat it as a pointer, not a claim \tierC{}.
+
+The numerics of Chapter~3 show the gap between ``is the minimum'' and ``is reached'' \tierX{}. In the Yukawa study,
+annealing reached the perfect lattice in only $1$ of $20$ runs per initial-condition family at $\kappa=2$, and in $0$
+of $10$ and $2$ of $10$ runs at $\kappa=1$ (prediction P2 failed there); zero-temperature quenches at $\kappa=2$ ended
+defected in $15$ of $20$ and $14$ of $20$ runs. Energetic optimality and kinetic accessibility are different
+questions.
+
+\subsection{Other dimensions}
+
+\tierL{} Per CKMRV, Ventevogel and Nijboer proved universal optimality of $\Z$ in dimension $1$, and Cohn and Kumar
+gave another proof; before CKMRV no universal optimum was known in any dimension above $1$, and the case of $A_2$
+``in full generality is an important open problem'' \cite[\S1.2]{ckmrv}. CKMRV settled dimensions $8$ and $24$
+($E_8$ and Leech) \cite{ckmrv}; upstream claims dimension $2$ \cite{oai}. Cohn and Kumar's conjecture singled out the
+triangular, $E_8$ and Leech lattices \cite{ck,oai}. None of this is formalised here.
+
+\paragraph{Dimension 3: fcc against bcc.}
+\tierC{} Scale the face-centred cubic lattice $D_3=\{x\in\Z^3:x_1+x_2+x_3\text{ even}\}$ by $2^{-1/3}$ and the
+body-centred cubic lattice $\Z^3\cup(\Z^3+\tfrac12(1,1,1))$ by $2^{1/3}$, so both have covolume one. With these scalings the two
+lattices are exactly dual to each other, since $D_3^*=\Z^3\cup(\Z^3+\tfrac12(1,1,1))$ and $(c\Lambda)^*=c^{-1}\Lambda^*$. Poisson summation for a
+covolume-one lattice $\Lambda\subset\R^3$ gives $\sum_{x\in\Lambda}e^{-\pi\alpha|x|^2}=\alpha^{-3/2}
+\sum_{w\in\Lambda^*}e^{-\pi|w|^2/\alpha}$, hence
+\[
+\Theta_{\mathrm{fcc}}(\alpha)=\alpha^{-3/2}\,\Theta_{\mathrm{bcc}}(1/\alpha),\qquad
+\Theta(\alpha):=\sum_{x\in\Lambda}e^{-\pi\alpha|x|^2},
+\]
+and at $\alpha=1$ the two Gaussian energies are exactly equal. Consequently, if fcc has strictly lower Gaussian energy
+than bcc at some $\alpha_*>1$, then bcc has strictly lower Gaussian energy than fcc at $1/\alpha_*$ (because
+$\Theta-1$ is the energy and the identity transfers the strict inequality of $\Theta$). Neither lattice can then be
+universally optimal.
+
+\begin{numbox}[(fcc against bcc at density one)]
+\tierX{} Same script (\texttt{ch5\_checks.py}), summing $e^{-\pi\alpha|x|^2}$ over $x\ne0$ in the box
+$\{-12,\dots,12\}^3$ before scaling:
+\begin{lstlisting}[language=Python]
+def theta3(kind: str, alpha: float, K: int = 12) -> float:
+    rng = np.arange(-K, K + 1)
+    X, Y, Zc = np.meshgrid(rng, rng, rng, indexing="ij")
+    pts = np.stack([X.ravel(), Y.ravel(), Zc.ravel()], axis=1).astype(float)
+    if kind == "fcc":
+        pts = pts[(pts.sum(axis=1) % 2) == 0]  # D3, covolume 2
+        pts = pts * 2.0 ** (-1.0 / 3.0)
+    else:
+        pts = np.vstack([pts, pts + 0.5])  # bcc, covolume 1/2
+        pts = pts * 2.0 ** (1.0 / 3.0)
+    r2 = (pts ** 2).sum(axis=1)
+    r2 = r2[r2 > 0]
+    return float(np.sum(np.exp(-math.pi * alpha * r2)))
+\end{lstlisting}
+Output:
+\begin{lstlisting}
+alpha= 0.50  fcc=1.8419799351  bcc=1.8408091753  fcc-bcc=+1.171e-03
+alpha= 0.80  fcc=0.5182946954  bcc=0.5170433085  fcc-bcc=+1.251e-03
+alpha= 1.00  fcc=0.2315362662  bcc=0.2315362662  fcc-bcc=-2.776e-17
+alpha= 1.25  fcc=0.0855078280  bcc=0.0864032476  fcc-bcc=-8.954e-04
+alpha= 2.00  fcc=0.0043777160  bcc=0.0047916420  fcc-bcc=-4.139e-04
+\end{lstlisting}
+fcc is lower for $\alpha>1$ (short range) and bcc for $\alpha<1$ (long range), with equality at $\alpha=1$ to rounding
+error, as the duality predicts. The crossing is a floating-point observation and supports no claim by itself; a
+student can make it rigorous with interval arithmetic (Project U2).
+\end{numbox}
+
+This shows only that neither fcc nor bcc is universally optimal. It does not show that no configuration in
+$\R^3$ is universally optimal; that stronger statement remains conjectural, and in this book it is \tierC{}.
+
+%=====================================================================
+\section{Industry and engineering implications}
+\label{ch5:sec:industry}
+
+Everything in this section is \tierC{}. We give no performance numbers, because none of the references in this book
+measures an engineering benefit of the theorem, and we will not invent one.
+
+\begin{warnbox}[(what the theorem does and does not say)]
+\begin{itemize}[leftmargin=*]
+\item It is about \textbf{energy minimisation} for pair potentials that are completely monotone functions of
+  squared distance, at fixed density, at zero temperature. It says the triangular lattice achieves the least lower
+  energy.
+\item It does \emph{not} say that a physical system reaches that state (Chapter~3: kinetics, defects), that it is the
+  unique ground state (D3), or anything about non-pair, anisotropic, attractive or three-body interactions.
+\item Packing, quantisation, covering and sampling optimisation are \emph{different functionals}. The theorem settles
+  none of them directly.
+\end{itemize}
+\end{warnbox}
+
+\subsection{Which interactions are covered}
+
+A physical system is in scope if its effective pair potential is $V(r)=g(r^2)$ with $g$ completely monotone. Three
+families matter.
+\begin{itemize}[leftmargin=*]
+\item \textbf{Screened Coulomb (Yukawa)} $V(r)=e^{-\kappa r}/r$. In $t=r^2$ this is $t^{-1/2}e^{-\kappa\sqrt t}$. Here
+  $\sqrt t$ is a Bernstein function, so $e^{-\kappa\sqrt t}$ is completely monotone; $t^{-1/2}$ is completely monotone;
+  and products of completely monotone functions are completely monotone. So Yukawa is covered directly. This is the
+  model of Chapter~3 (shifted-force cutoffs in the simulations are a modelling choice and are not covered).
+\item \textbf{Inverse powers} $r^{-s}$ with $s>2$: covered (our D1, D1b). Dipolar repulsion $r^{-3}$ is the case $s=3$.
+\item \textbf{Unscreened Coulomb} $r^{-1}$ ($s=1$) and the logarithm ($s=0$): \emph{not} covered by the main theorem;
+  only by the renormalised Corollary~\ref{ch5:cor:jellium} (\tierL{}, not formalised), which assumes a neutralising
+  uniform background.
+\end{itemize}
+
+\subsection{Colloidal self-assembly and coatings}
+
+Two-dimensional colloidal crystals are studied by video microscopy \cite{zahn} and in confined geometries
+\cite{bubeck}. Where the effective interaction is a screened Coulomb repulsion or, for magnetic colloids in a field,
+a dipolar repulsion (check the interaction model in each paper before relying on it), the theorem identifies the
+triangular lattice as the minimum-energy arrangement at the given density. For monolayer coatings and colloidal
+masks, this is a useful \emph{target statement}: an assembly process that ends in a non-triangular, defect-free
+monolayer of purely repulsive, isotropic particles is not at its energy minimum, and something (kinetics, the
+substrate, anisotropy, attraction) is responsible. The Chapter~3 numerics are a warning in the other direction:
+defects and incomplete annealing are typical, so the theorem says what the target is, not that it is reached.
+
+\subsection{Photonic and phononic crystals}
+
+Many photonic and phononic devices use triangular (hexagonal) arrays of holes or rods. The design criterion there is
+a band-structure property (a band gap, a dispersion), which depends on the geometry through a wave equation, not
+through a pair energy. The theorem does not imply that the triangular lattice gives the best band gap. Its relevance
+is indirect: if such arrays are fabricated by self-assembly of repulsive particles, the triangular arrangement is
+the energetically favoured one, so the fabrication route and the design target agree. Any stronger statement needs
+its own argument.
+
+\subsection{Wigner crystals: electrons on helium, ion traps, two-dimensional materials}
+
+Electrons on the surface of liquid helium form a two-dimensional crystal \cite{grimes}; dusty plasmas form
+``plasma crystals'' \cite{thomas}. Bare electrons interact by $r^{-1}$, so the relevant mathematics is the $s=1$
+jellium problem, covered only by Corollary~\ref{ch5:cor:jellium}; our numerical check above agrees with the classical
+lattice comparison \cite{bm,alves}. Dusty plasmas are commonly modelled with screened (Yukawa) interactions, which
+are in scope of the main theorem. Trapped-ion crystals and electron crystals in two-dimensional materials are
+quantum, often confined by a non-uniform trap, and sometimes not purely two-dimensional. The theorem is classical
+and assumes uniform density, so it gives a reference arrangement for the bulk of a large, nearly uniform layer at
+best; edge structure and quantum fluctuations are outside it. For device engineers the value is a clean benchmark:
+simulation codes for such crystals can be tested against the exact minimum (Chapter~3 used exactly that control).
+
+\subsection{Hexagonal sampling, quantisation and sensor arrays}
+
+Hexagonal grids are used in image sensors, antenna arrays and sampling of two-dimensional fields. The reasons there
+are of three kinds, and it matters which.
+\begin{itemize}[leftmargin=*]
+\item \textbf{Packing.} As $\alpha\to\infty$, a Gaussian energy is dominated by the shortest distances. A heuristic
+  argument therefore relates universal optimality to optimal packing: a density-one configuration with larger
+  minimal distance than $\Lat$ would beat it for large $\alpha$. In the plane the optimal packing is classical and
+  is not new information.
+\item \textbf{Sampling.} The efficiency of a sampling lattice for an isotropic band-limited field is a packing-type
+  statement about the \emph{dual} lattice in frequency space. Grating lobes of an antenna array are likewise governed
+  by the dual lattice. The duality $\Lat\leftrightarrow\Lat^*$ appears in the theorem's proof too, but the theorem is not
+  a sampling theorem.
+\item \textbf{Quantisation.} The mean-squared quantisation error of a lattice is the normalised second moment of its
+  Voronoi cell: a single-cell integral, not a pair energy. The theorem says nothing about it.
+\end{itemize}
+The honest summary: the triangular lattice is optimal for several unrelated planar criteria, and universal
+optimality adds one more, the strongest one for pair energies. It does not imply the others, and an engineer
+choosing a hexagonal array should justify it by the criterion that actually matters for the device.
+
+\subsection{Verified numerical software for safety-critical simulation}
+
+The most transferable lesson of this project is methodological. Its pipeline has four layers.
+\begin{enumerate}[leftmargin=*]
+\item A theorem is checked by the Lean kernel against stated definitions, with an axiom audit. The audit flags
+  planted controls (Chapter~2). This is Tier A for the formal statement only. Statement adequacy, meaning whether the
+  Lean definitions say what the prose means, is a separate human audit. In this project it has not been done: 6
+  ledger flags are open.
+\item Inequalities used by the proof are certified with ball arithmetic (upstream's verification scripts use
+  python-flint).
+\item Floating-point simulations (CVODE in rusty-SUNDIALS \cite{rusty}) are preregistered and carry positive and
+  negative controls: the perfect lattice, the square-lattice saddle, incommensurate boxes (Chapter~3).
+\item Each claim carries a tier, so that a reader can see what supports it \cite{elenchus}.
+\end{enumerate}
+For safety-critical simulation (structural, nuclear, aerospace, medical), the same separation is useful. Prove the
+properties that can be proved. Certify the finite computations that can be certified. Label the rest as evidence
+of a weaker kind, and test the simulation against exactly known solutions, of which a universally optimal lattice is
+a clean example. We make no claim that this pipeline is ready for certification regimes; that would need its own
+assessment.
+
+\subsection{Fluid dynamics: vortex arrays, mixing and superfluids}
+
+Point vortices in two-dimensional ideal flow interact through the logarithm. Experiments have observed relaxation of
+two-dimensional turbulence in magnetised electron columns to ``vortex crystals'' \cite{fine}, and triangular vortex
+lattices in rotating Bose--Einstein condensates \cite{aboshaeer}. The mathematics here is the $s=0$ case: in a
+rotating frame, the uniform rotation plays a role analogous to the neutralising background, and the relevant
+statement is the logarithmic part of Corollary~\ref{ch5:cor:jellium} (\tierL{}, not formalised). The analogy is a
+modelling statement \tierC{}: real systems are finite, have boundaries, and (for the electron-column experiments) do
+not form a uniform-density lattice. For superfluid devices such as rotation sensors, the theorem gives the reference
+bulk arrangement of a large vortex array; for mixing applications, where vortex arrays are a transient structure,
+it is a statement about the end state of a relaxation, not about the mixing rate.
+
+%=====================================================================
+\section{Student projects}
+\label{ch5:sec:projects}
+
+Each project has a level, a concrete first step and a deliverable that can fail. ``U'' is undergraduate, ``M''
+master's level, ``P'' doctoral. Respect the book's rules: tier every claim, run a positive and a negative control
+before reporting a number, and never cite a Lean name you have not checked exists.
+
+\begin{enumerate}[leftmargin=*,label=\textbf{\arabic*.}]
+\item \textbf{U1. An explicit lattice-point bound.} \emph{First step:} compute the diameter $\delta$ of a fundamental
+  parallelogram of $\Lat$ and make Lemma~\ref{ch5:lem:count} explicit. \emph{Deliverable:} a constant $C$ with
+  $|N(r)-\pi r^2|\le C(r+1)$ for all $r\ge0$, checked exactly (integer arithmetic on $j^2+jk+k^2$) for all $r\le1000$.
+  It fails if one value violates it.
+\item \textbf{U2. The fcc/bcc crossing, rigorously.} \emph{First step:} prove the duality $\Theta_{\mathrm{fcc}}(\alpha)=
+  \alpha^{-3/2}\Theta_{\mathrm{bcc}}(1/\alpha)$ with the scalings above. \emph{Deliverable:} an interval-arithmetic
+  certificate that $\Theta_{\mathrm{fcc}}(2)<\Theta_{\mathrm{bcc}}(2)$, including a rigorous bound on the truncated
+  tail. It fails if the intervals overlap.
+\item \textbf{U3 / M. The $s=0$ jellium (logarithmic) Ewald energy.} \emph{First step:} implement the mean-zero
+  periodic Green function of $-\Delta$ on a torus by Ewald splitting, and check that the energy does not depend on
+  the splitting parameter (positive control). Choose the pair-counting convention of~\eqref{ch5:eq:jellium} and say so.
+  \emph{Deliverable:} the log-jellium energies per particle of the triangular and square lattices at density one,
+  with an independent second method (for example a direct Fourier-side formula you derive) agreeing to stated
+  precision, and the sign of $e_{\mathrm{tri}}-e_{\mathrm{sq}}$. Corollary~\ref{ch5:cor:jellium} predicts triangular
+  lower. The project fails, and the failure must be reported, if the two methods disagree or the sign is reversed.
+\item \textbf{M1. Formalise the Laplace-transform step (E4).} \emph{First step:} in the pinned toolchain, find
+  Mathlib's Gamma-integral lemmas. In the Mathlib checkout used by this repository's \texttt{formal/} directory,
+  \lean{Real.integral_rpow_mul_exp_neg_mul_Ioi} states
+  $\int_{t>0}t^{a-1}e^{-rt}\,\mathrm{d}t=(1/r)^a\,\Gamma(a)$ for $a,r>0$. Check that it exists in Mathlib
+  d13f23b7 before relying on it. \emph{Deliverable:} a kernel-checked proof that
+  $t^{-s/2}=\Gamma(s/2)^{-1}\int_0^\infty u^{s/2-1}e^{-tu}\,\mathrm{d}u$ for $t,s>0$, and the positivity transfer: if
+  $h\ge0$ is integrable against $t^{-s/2}$, the integral is $\ge0$. Gate it as in Chapter~2: axiom audit, and a
+  planted \texttt{sorry} control that the audit flags.
+\item \textbf{M2. Divergence in Lean.} \emph{First step:} state \lean{latticeEnergy (riesz s)} $=\top$ for
+  $0<s\le2$, the complement of D1b. \emph{Deliverable:} a kernel-checked proof, for example by bounding the sum
+  below by a constant times $\sum_{n\ge1}n\cdot n^{-s}$ using shells of $\Lat$. A negative control is
+  $s=3$, where the proof must fail because D1b proves finiteness.
+\item \textbf{M3. The jellium energy as a Lean definition (E5).} \emph{First step:} define $J_{s,R}$
+  of~\eqref{ch5:eq:jellium} for $0<s<2$ using the Bochner integral. \emph{Deliverable:} a kernel-checked non-vacuity
+  lemma, namely that $J_{s,R}$ is finite at distinct points. This requires the local integrability~\eqref{ch5:eq:locint}
+  in Lean. It fails if the integrability lemma cannot be established.
+\item \textbf{M4. A sharp auxiliary function for one non-Gaussian $g$.} \emph{First step:} take
+  $g(t)=\int_1^2e^{-\pi\alpha t}\,\mathrm{d}\alpha=(e^{-\pi t}-e^{-2\pi t})/(\pi t)$, a radial basis such as Gaussians
+  times Laguerre polynomials (whose Fourier transforms are explicit), and set up a linear program: impose
+  $f\le g$ and $\hat f\ge0$ on fine radial grids, impose the contact conditions on the first shells of $\Lat$ and
+  $\Lat^*$, and maximise $\hat f(0)-f(0)$. Positive control: run it for a Gaussian, where the optimum must reach
+  $\theta_\Lat(\alpha)$. \emph{Deliverable:} the gap between the LP optimum and $\sum_{a\ne0}g(|a|^2)$ as the basis
+  grows, and a report of where it fails: which constraint is active off the grid, and which shell's contact
+  condition cannot be met. This is evidence, not proof (Tier X), unless the final function is certified with ball
+  arithmetic.
+\item \textbf{M5. Jellium relaxation at other $s$.} \emph{First step:} reproduce the $s=1$ Ewald controls of
+  \S\ref{ch5:sec:div} (triangular against literature, square-lattice saddle). \emph{Deliverable:} the same relaxation
+  test (no periodic configuration below triangular) at $s=1/2$ or $s=3/2$, preregistered, with the outcome reported
+  whatever it is.
+\item \textbf{P1. The strong conjecture for compactly supported mixtures.} \emph{First step:} read upstream's
+  construction and decide whether $\alpha\mapsto f_\alpha$ can be chosen measurably on $[\alpha_0,\alpha_1]$.
+  \emph{Deliverable:} either a proof of items~1--4 of \S\ref{ch5:sec:ck} for every $\mu$ supported in a compact
+  subinterval of $(0,\infty)$, hence a sharp auxiliary function for each such $g$, or an explicit point where the
+  construction's bounds are not uniform in $\alpha$.
+\item \textbf{P2. A periodic $s=2$ energy.} \emph{First step:} make Remark~\ref{ch5:rem:s2} rigorous, that is, prove the
+  convergence of $\int_0^\infty(H_C-H_\Lat)(t)\,t^{-1}\,\mathrm{d}t$ for periodic $C$. \emph{Deliverable:} an
+  identification of this integral with the difference of an independently defined periodic quantity (for example a
+  finite part of the divergent lattice sums of Proposition~\ref{ch5:prop:divrate}), or a proof that no such
+  identification holds.
+\item \textbf{P3. The heat-trace comparison in Lean (E3).} \emph{First step:} for a periodic $C$, prove in Lean that
+  upstream's lower energy \lean{energy g C} for a Gaussian $g$ equals the periodic sum $\frac1N\sum_{i,j}\sum_{v\in L}'$
+  that defines $H_C$. \emph{Deliverable:} the kernel-checked inequality $H_C(t)\ge H_\Lat(t)$ for all $t>0$, derived
+  from the upstream theorem. The prior recorded before any attempt is about $30\%$.
+\item \textbf{P4. Periodic uniqueness for Gaussians.} \emph{First step:} use the Gaussian auxiliary functions and
+  their equality cases: a periodic minimiser must have all its difference vectors where $f_\alpha=G_\alpha$.
+  \emph{Deliverable:} a proof that every periodic density-one minimiser for one fixed Gaussian is an isometric image
+  of $\Lat$, or a description of what the contact sets of the known $f_\alpha$ allow. It fails if the equality set of
+  $f_\alpha$ is larger than $\Lat\setminus\{0\}$.
+\end{enumerate}
+
+\section*{Exercises}
+\addcontentsline{toc}{section}{Exercises}
+
+\begin{exercise}
+Show that the sum $\sum_{0<|a|\le R}|a|^{-s}$ over $\Z^2$ also behaves like $2\pi\log R$ for $s=2$. Explain why the
+leading term does not depend on the lattice, and why the constant term can.
+\end{exercise}
+
+\begin{exercise}
+Compute $\int_{K_R}|a-x|^{-s}\,\mathrm{d}x$ for $a$ at the centre of $K_R$, show that it is finite for $s<2$, and
+find its behaviour as $s\uparrow2$.
+\end{exercise}
+
+\begin{exercise}
+Verify that $q_s\kappa_s/\Gamma(1-s/2)=\kappa_s2^{2-s}\pi/\Gamma(s/2)$, and use the Gamma integral to show
+$\int_0^\infty(4\pi t)^{-1}e^{-r^2/(4t)}t^{-s/2}\,\mathrm{d}t=(4\pi)^{-1}\Gamma(s/2)\,4^{s/2}r^{-s}$ for $r,s>0$.
+\end{exercise}
+
+\begin{exercise}
+Prove that $t\mapsto t^{-1/2}e^{-\kappa\sqrt t}$ is completely monotone on $(0,\infty)$ directly from the definition,
+for $\kappa>0$.
+\end{exercise}
+
+\begin{exercise}
+In the proof of Proposition~\ref{ch5:prop:d4}, where exactly is local finiteness used? Describe what goes wrong in the
+choice of $\delta$ if infinitely many points of $C$ accumulate at the circle $|x|=R$ from inside, and recall how
+upstream's \lean{diskPoints} treats an infinite intersection.
+\end{exercise}
+
+\section*{Summary}
+\addcontentsline{toc}{section}{Summary}
+For $0<s\le2$ the raw energies are infinite: at $s=2$ the partial sums grow like $2\pi\log R$. The renormalised and
+jellium energies for $0\le s<2$ are minimised by $\Lat$ according to upstream's \S8 \tierL{}, and none of it is in
+Lean. At $s=2$ even the jellium energy is undefined, because $|x|^{-2}$ is not locally integrable in the plane. The
+strong per-potential Cohn--Kumar conjecture is open. Mixing the Gaussian certificates satisfies its conditions
+formally, but needs measurability, integrability and decay estimates that nobody has supplied. Open versus closed
+disks is settled (D4). Uniqueness of the minimiser fails among all locally finite
+configurations (D3) and is open among periodic ones. In engineering the theorem gives a clean target and a clean
+benchmark for repulsive, isotropic pair interactions, and nothing more.

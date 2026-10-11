@@ -1,0 +1,1016 @@
+\chapter{Mathematical foundations}
+\label{ch:foundations}
+
+This chapter sets up everything needed to read the main theorem of the book precisely: what a configuration is,
+what ``density one'' and ``energy'' mean, which potentials are allowed, why Gaussians are the key case, and how a
+single auxiliary function gives a lower bound on the energy of \emph{every} competitor. We give a complete human proof
+of that bound for periodic configurations, explain how the bound passes from Gaussians to all completely monotone
+potentials, and introduce just enough Lean~4 to read the formal statements. The chapter ends by reviewing a student
+draft, the way a referee would.
+
+\begin{warnbox}[: whose theorem is this?]
+The main theorem (Theorem~\ref{thm:main-statement} below) is \emph{upstream's}: it was produced by an AI system and
+released by OpenAI~\cite{oai} on 2026-09-23. It is not peer reviewed. Its Lean proof is kernel-checked and its
+statement was accepted by the Comparator tool against the challenge statement in our pinned build. That is
+\tierA{} for the \emph{formal statement}, conditional on the fidelity of the Lean definitions to the intended
+mathematics. No human has audited that fidelity. Our own contribution, presented in Chapter~2, consists of corollaries
+and an audit.
+\end{warnbox}
+
+Throughout, the tiers of the preface apply. In this chapter a \tierC{} label on a result that comes with a human
+proof means that a human-readable argument is given here and has not been machine-checked. It does not mean the result
+is doubtful.
+
+% ====================================================================================================
+\section{Point configurations, density and energy}
+\label{sec:configs}
+
+We work in the Euclidean plane $\R^2$ with the usual norm $|x|$. A \emph{configuration} is a subset $C\subseteq\R^2$.
+Its points are the positions of identical particles. Because $C$ is a set, two particles never sit at the same place.
+
+\begin{definition}[Local finiteness]\label{def:lf}
+A configuration $C$ is \emph{locally finite} if $C\cap \overline{B}(0,R)$ is finite for every $R\in\R$, where
+$\overline{B}(0,R)=\{x:|x|\le R\}$ is the closed disk of radius $R$ about the origin.
+\end{definition}
+
+For a locally finite $C$ we write $C_R = C\cap\overline B(0,R)$ for the finite set of points in the closed disk and
+$n_C(R)=\#C_R$ for their number.
+
+\begin{definition}[Centred density]\label{def:density}
+A locally finite configuration $C$ has \emph{density one} if
+\[
+  \lim_{R\to\infty}\frac{n_C(R)}{\pi R^2}=1 .
+\]
+More generally it has density $\rho$ if the limit equals $\rho$.
+\end{definition}
+
+The density is \emph{centred}: it is measured in disks about the origin only, and the disks are \emph{closed}. Both
+choices matter in principle. Centred density says nothing \emph{uniform}: a configuration of centred density one can
+contain, far from the origin, unit disks holding $k^2$ points each (one such cluster near radius $2^k$ for each $k$),
+because these add only $O((\log R)^3)$ points to the disk of radius $R$ \tierC{}. (For a \emph{fixed} other centre $c$,
+the disks $\overline B(c,R)$ give the same limit, since
+$\overline B(0,R-|c|)\subseteq\overline B(c,R)\subseteq\overline B(0,R+|c|)$.) And a point lying exactly on the circle $|x|=R$ is counted in the closed disk but not in the open
+one. For locally finite configurations, the open-disk and closed-disk density and lower energy coincide
+\tierC{} (human proof in the preregistration of D4). For the formal status of this fact: \DFourStatus.
+
+\begin{leanbox}[: upstream's definitions of local finiteness, disk points, count and density]
+Quoted verbatim from \lean{lean/ComparatorChallenges/TriangularEnergy.lean} (openai/math \lean{adc7f124}); the
+empty-set symbol is typeset through an escape because the book's listing setup has no glyph for it.
+\begin{lstlisting}[language=Lean,escapeinside={(*}{*)}]
+abbrev Plane := EuclideanSpace ℝ (Fin 2)
+
+def LocallyFinite (C : Set Plane) : Prop :=
+  ∀ R : ℝ, (C ∩ Metric.closedBall (0 : Plane) R).Finite
+
+def diskPoints (C : Set Plane) (R : ℝ) : Finset Plane :=
+  if h : (C ∩ Metric.closedBall (0 : Plane) R).Finite then h.toFinset else (*$\emptyset$*)
+
+def diskCount (C : Set Plane) (R : ℝ) : ℕ := (diskPoints C R).card
+
+def DensityOne (C : Set Plane) : Prop :=
+  Tendsto (fun R : ℝ => (diskCount C R : ℝ) / (Real.pi * R ^ 2))
+    atTop (𝓝 1)
+\end{lstlisting}
+\end{leanbox}
+
+Three details of the Lean text deserve attention, because a reader of the human definition could miss them.
+\begin{itemize}
+\item \lean{diskPoints} returns the empty set when $C_R$ is infinite. The definition is therefore total, and every
+theorem that needs the count to mean something must assume \lean{LocallyFinite C}.
+\item \lean{Tendsto ... atTop} $(\mathcal N\,1)$ is Lean's way of writing $\lim_{R\to\infty}=1$, with $R$ a \emph{real} parameter.
+It is not a limit along integers.
+\item At $R=0$ the denominator $\pi R^2$ is zero, and Lean's convention $x/0=0$ makes the quotient $0$. This is
+harmless because only large $R$ matter.
+\end{itemize}
+
+\subsection{Pair potentials and the lower energy}
+
+A \emph{pair potential} is written as a function $g$ of the \emph{squared} distance $t=|x-y|^2$. This convention, used by
+CKMRV~\cite{ckmrv} and by upstream~\cite{oai}, makes Gaussians $e^{-\alpha t}$ the basic building blocks. The Riesz
+potential $|x-y|^{-s}$ becomes $g(t)=t^{-s/2}$.
+
+\begin{definition}[Disk energy and lower energy]\label{def:energy}
+Let $g:(0,\infty)\to[0,\infty)$ and let $C$ be locally finite. The \emph{disk energy} at radius $R$ is
+\[
+  E_g(C;R)=\frac{1}{n_C(R)}\sum_{x\in C_R}\ \sum_{\substack{y\in C_R\\ y\ne x}} g\bigl(|x-y|^2\bigr)\ \in[0,\infty],
+\]
+with the convention $1/0=\infty$ in $[0,\infty]$ (and $\infty\cdot 0=0$). The \emph{lower energy} of $C$ is
+\[
+  E_g(C)=\liminf_{R\to\infty}E_g(C;R)\ \in[0,\infty].
+\]
+\end{definition}
+
+Each unordered pair $\{x,y\}$ is counted twice, as $(x,y)$ and $(y,x)$. This is the ``ordered-pair'' normalisation:
+for a lattice it gives $\sum_{a\ne0}g(|a|^2)$, the energy seen by one particle, without a factor $\tfrac12$.
+
+\begin{leanbox}[: upstream's disk energy and energy]
+Quoted verbatim from \lean{TriangularEnergy.lean}.
+\begin{lstlisting}[language=Lean]
+def diskEnergy (g : ℝ → ℝ) (C : Set Plane) (R : ℝ) : ℝ≥0∞ :=
+  (diskCount C R : ℝ≥0∞)⁻¹ *
+    ∑ x ∈ diskPoints C R, ∑ y ∈ (diskPoints C R).erase x,
+      ENNReal.ofReal (g (‖x - y‖ ^ 2))
+
+def energy (g : ℝ → ℝ) (C : Set Plane) : ℝ≥0∞ :=
+  Filter.liminf (diskEnergy g C) atTop
+\end{lstlisting}
+\end{leanbox}
+
+The values live in $\mathbb R_{\ge0}\cup\{\infty\}$ (Lean: \lean{ENNReal}), the extended non-negative reals $[0,\infty]$. Then every energy is defined, possibly
+infinite, and no summability hypothesis is needed to \emph{state} the theorem. The function \lean{ENNReal.ofReal} sends
+negative reals to $0$, which is irrelevant for the non-negative potentials used here.
+
+\begin{warnbox}[: lower energy, not energy]
+$E_g(C)$ is a $\liminf$. CKMRV's Definition~1.3~\cite{ckmrv} of universal optimality also requires the limit to
+\emph{exist} for the optimal configuration. The Lean notion used in this book uses only the lower energy, and is
+therefore weaker than CKMRV's \tierC{}. When we say ``energy'' below we always mean the lower energy unless the limit is
+shown to exist.
+\end{warnbox}
+
+\begin{example}[Why the liminf]\label{ex:liminf}
+The $\liminf$ is the smallest value that the disk energies approach infinitely often. A competitor whose disk energies
+oscillate, for example because of rings of extra points at sparse radii, is judged by its \emph{best} radii. A lower
+bound $\liminf\ge L$ is therefore a strong kind of lower bound: for every $\varepsilon>0$, all sufficiently large radii
+have disk energy at least $L-\varepsilon$. \tierC{}
+\end{example}
+
+% ====================================================================================================
+\section{Lattices and the triangular lattice}
+\label{sec:lattices}
+
+A \emph{lattice} in $\R^2$ is a set $\Lambda=\{jv_1+kv_2:(j,k)\in\Z^2\}$ for linearly independent $v_1,v_2$. Its
+\emph{covolume} $|\Lambda|=|\det(v_1,v_2)|$ is the area of a fundamental parallelogram. A lattice has density
+$1/|\Lambda|$, so a density-one lattice has covolume one.
+
+\begin{definition}[The triangular lattice $\Lat$]\label{def:A}
+Let $b=\sqrt3/2$ and
+\[
+  p(j,k)=\frac{1}{\sqrt b}\Bigl(j+\frac k2,\ k\,b\Bigr),\qquad (j,k)\in\Z^2,
+  \qquad \Lat=\{p(j,k):(j,k)\in\Z^2\}.
+\]
+\end{definition}
+
+\begin{leanbox}[: upstream's lattice]
+Quoted verbatim from \lean{TriangularEnergy.lean}.
+\begin{lstlisting}[language=Lean]
+def b : ℝ := Real.sqrt 3 / 2
+
+def triangularPoint (jk : ℤ × ℤ) : Plane :=
+  (Real.sqrt b)⁻¹ •
+    (EuclideanSpace.single 0 ((jk.1 : ℝ) + (jk.2 : ℝ) / 2) +
+      EuclideanSpace.single 1 ((jk.2 : ℝ) * b))
+
+def A : Set Plane := Set.range triangularPoint
+
+/-- The full nonzero-lattice energy, allowing a divergent series. -/
+def latticeEnergy (g : ℝ → ℝ) : ℝ≥0∞ :=
+  ∑' a : {x : Plane // x ∈ A ∧ x ≠ 0}, ENNReal.ofReal (g (‖a.val‖ ^ 2))
+\end{lstlisting}
+\end{leanbox}
+
+The basis vectors are $v_1=p(1,0)=b^{-1/2}(1,0)$ and $v_2=p(0,1)=b^{-1/2}(\tfrac12,b)$.
+
+\begin{proposition}[Covolume and Gram form]\label{prop:gram}
+$|\det(v_1,v_2)|=1$, so $\Lat$ has covolume one. The Gram matrix is
+\[
+  G=\begin{pmatrix} v_1\cdot v_1 & v_1\cdot v_2\\ v_2\cdot v_1 & v_2\cdot v_2\end{pmatrix}
+   =\frac1b\begin{pmatrix}1&\tfrac12\\ \tfrac12&1\end{pmatrix},
+\]
+and consequently
+\begin{equation}\label{eq:normsq}
+  |p(j,k)|^2=\frac1b\,(j^2+jk+k^2)=\frac{2}{\sqrt3}\,(j^2+jk+k^2).
+\end{equation}
+\end{proposition}
+\begin{humanproof}
+$\det(v_1,v_2)=b^{-1}\det\begin{pmatrix}1&\tfrac12\\0&b\end{pmatrix}=b^{-1}\cdot b=1$. Next,
+$v_1\cdot v_1=b^{-1}$, $v_1\cdot v_2=b^{-1}\cdot\tfrac12$ and $v_2\cdot v_2=b^{-1}(\tfrac14+b^2)=b^{-1}(\tfrac14+\tfrac34)=b^{-1}$.
+Finally $|jv_1+kv_2|^2=(j,k)\,G\,(j,k)^{\mathsf T}=b^{-1}(j^2+jk+k^2)$. \tierC{} for the covolume and the Gram
+matrix (human proof). The norm identity~\eqref{eq:normsq} is also kernel-checked \tierA{}.
+\end{humanproof}
+
+\begin{leanbox}[: the norm identity (our file \lean{formal_cert/Triangular/RieszFinite.lean})]
+\begin{lstlisting}[language=Lean]
+/-- The squared norm of a lattice point. -/
+lemma norm_sq_triangularPoint (j k : ℤ) :
+    ‖triangularPoint (j, k)‖ ^ 2 = (1 / b) * ((j : ℝ) ^ 2 + (j : ℝ) * k + (k : ℝ) ^ 2) := by
+\end{lstlisting}
+\end{leanbox}
+
+All six nearest neighbours of the origin are at squared distance $1/b=2/\sqrt3$. The minimal distance of the
+density-one triangular lattice is therefore $(2/\sqrt3)^{1/2}\approx1.0746$ \tierC{}. In the physics chapters the same
+lattice appears with spacing $a=\sqrt{2/\sqrt3}$.
+
+\subsection{The dual lattice}
+
+\begin{definition}[Dual lattice]
+The dual of a lattice $\Lambda$ is $\Lambda^*=\{w\in\R^2: w\cdot\lambda\in\Z\text{ for all }\lambda\in\Lambda\}$.
+Its Gram matrix in the dual basis is $G^{-1}$, and $|\Lambda^*|=1/|\Lambda|$.
+\end{definition}
+
+\begin{proposition}[$\Lat^*$ is a rotated copy of $\Lat$]\label{prop:dual}
+Let $J$ be the rotation by $90^\circ$. Then $\Lat^*=J\Lat$. In particular $\Lat^*$ is isometric to $\Lat$ and has
+covolume one.
+\end{proposition}
+\begin{humanproof}
+$Jv_1=b^{-1/2}(0,1)$ and $Jv_2=b^{-1/2}(-b,\tfrac12)$. Compute $Jv_1\cdot v_1=0$, $Jv_1\cdot v_2=b^{-1}b=1$,
+$Jv_2\cdot v_1=-b^{-1}b=-1$ and $Jv_2\cdot v_2=b^{-1}(-\tfrac b2+\tfrac b2)=0$. All four are integers, so
+$J\Lat\subseteq\Lat^*$. Both lattices have covolume $1$: $J$ preserves area, and $|\Lat^*|=1/|\Lat|=1$. A sublattice of
+the same covolume is the whole lattice, so $J\Lat=\Lat^*$. As a cross-check, $G^{-1}=b^{-1}\begin{pmatrix}1&-\frac12\\-\frac12&1\end{pmatrix}$
+(note $\det G=b^{-2}\cdot\tfrac34=1$), whose quadratic form $b^{-1}(j^2-jk+k^2)$ becomes $b^{-1}(j^2+jk+k^2)$ under
+$k\mapsto-k$. \tierC{}
+\end{humanproof}
+
+\subsection{Lattice energy as an Epstein-type sum}
+
+For a lattice the natural energy is the energy seen from one lattice point:
+\[
+  \mathcal E_g(\Lat)=\sum_{a\in\Lat\setminus\{0\}}g\bigl(|a|^2\bigr)
+  =\sum_{(j,k)\ne(0,0)} g\Bigl(\tfrac{2}{\sqrt3}(j^2+jk+k^2)\Bigr)\in[0,\infty],
+\]
+which is upstream's \lean{latticeEnergy}. Group the terms by the value $n=j^2+jk+k^2$, and let $r(n)$ be the number of
+$(j,k)$ with that value. Then $\mathcal E_g(\Lat)=\sum_{n\ge1}r(n)\,g(2n/\sqrt3)$. For the Riesz potential
+$g(t)=t^{-s/2}$ this is
+\[
+  \mathcal E_{t^{-s/2}}(\Lat)=b^{s/2}\sum_{(j,k)\ne0}(j^2+jk+k^2)^{-s/2},
+\]
+an Epstein zeta function of the form $j^2+jk+k^2$ evaluated at $s/2$. It is finite exactly when $s>2$. Finiteness for
+$s>2$ is kernel-checked as \lean{latticeEnergy_riesz_lt_top} \tierA{}. Divergence for $s\le2$ follows by comparing the
+sum with $\int_{|x|\ge1}|x|^{-s}\,dx$ \tierC{}.
+
+\begin{example}[The first shells]\label{ex:shells}
+The smallest values of $j^2+jk+k^2$ and their multiplicities can be checked by hand \tierC{}.
+\begin{itemize}
+\item $n=1$: $(\pm1,0)$, $(0,\pm1)$, $\pm(1,-1)$, so $r(1)=6$.
+\item $n=3$: $\pm(1,1)$, $\pm(2,-1)$, $\pm(1,-2)$, so $r(3)=6$.
+\item $n=4$: twice the $n=1$ vectors, so $r(4)=6$.
+\item $n=7$: the twelve vectors $\pm(2,1)$, $\pm(1,2)$, $\pm(3,-1)$, $\pm(3,-2)$, $\pm(1,-3)$, $\pm(2,-3)$, so $r(7)=12$.
+\item $n=2,5,6$ do not occur.
+\end{itemize}
+The script below cross-checks these counts \tierX{}. Running it printed the line shown.
+\begin{lstlisting}[language=Python]
+from collections import Counter
+
+M = 20
+count = Counter(j * j + j * k + k * k
+                for j in range(-M, M + 1) for k in range(-M, M + 1))
+print([(n, count[n]) for n in range(1, 14) if count[n] > 0])
+\end{lstlisting}
+\begin{lstlisting}
+[(1, 6), (3, 6), (4, 6), (7, 12), (9, 6), (12, 6), (13, 12)]
+\end{lstlisting}
+For the Gaussian $g(t)=e^{-\pi t}$ (that is, $\alpha=1$ in the normalisation of \S\ref{sec:lp}), the shell
+contributions $r(n)e^{-\pi n/b}$ decay very fast. The following script was run and printed the output shown \tierX{}.
+\begin{lstlisting}[language=Python]
+import math
+
+b = math.sqrt(3) / 2
+shells = [(1, 6), (3, 6), (4, 6), (7, 12)]
+for n, m in shells:
+    print(n, m, m * math.exp(-math.pi * n / b))
+print(sum(m * math.exp(-math.pi * n / b) for n, m in shells))
+\end{lstlisting}
+\begin{lstlisting}
+1 6 0.15947960085851695
+3 6 0.00011267119989805458
+4 6 2.9947929979986557e-06
+7 12 1.1247564017693356e-10
+0.15959526696388865
+\end{lstlisting}
+So $\sum_{a\in\Lat\setminus0}e^{-\pi|a|^2}\approx0.1595953$, and the first shell alone carries more than $99.9\%$ of it
+\tierX{}. Compare this with the full truncated theta sum in Exercise~\ref{ex:py-theta}.
+\end{example}
+
+% ====================================================================================================
+\section{Completely monotone potentials}
+\label{sec:cm}
+
+\begin{definition}[Completely monotone; admissible potential]\label{def:cm}
+A function $g:(0,\infty)\to\R$ is \emph{completely monotone} if it is $C^\infty$ on $(0,\infty)$ and
+\[
+  (-1)^r g^{(r)}(t)\ \ge\ 0\qquad\text{for all } r=0,1,2,\dots\ \text{and all } t>0.
+\]
+Upstream calls $g$ \emph{admissible} if it is $C^\infty$ on $(0,\infty)$, non-negative there, and completely monotone.
+The non-negativity is the case $r=0$.
+\end{definition}
+
+\begin{leanbox}[: upstream's admissible potentials]
+Quoted verbatim from \lean{TriangularEnergy.lean}.
+\begin{lstlisting}[language=Lean]
+def AdmissiblePotential (g : ℝ → ℝ) : Prop :=
+  ContDiffOn ℝ (⊤ : ℕ∞) g (Set.Ioi 0) ∧
+  (∀ t : ℝ, 0 < t → 0 ≤ g t) ∧
+  ∀ (r : ℕ) (t : ℝ), 0 < t → 0 ≤ (-1 : ℝ) ^ r * iteratedDeriv r g t
+\end{lstlisting}
+\end{leanbox}
+
+Note three things.
+\begin{enumerate}
+\item The inequalities are \emph{weak}: $g\equiv1$ is admissible, and so is $g\equiv0$. A definition with strictly
+alternating signs would be a different (smaller) class.
+\item The smoothness is $C^\infty$ (\lean{ContDiffOn} with smoothness index $\top$). It is \emph{not} real-analyticity. Analyticity is a
+consequence, through Bernstein's theorem below, but it is not part of the definition.
+\item Only $t>0$ matters. The value of $g$ at $0$ (or at negative $t$) never enters the energy, because distinct points
+have $|x-y|^2>0$.
+\end{enumerate}
+
+\begin{example}[Gaussians]\label{ex:gauss}
+For $\alpha\ge0$, $g(t)=e^{-\alpha t}$ satisfies $(-1)^rg^{(r)}(t)=\alpha^re^{-\alpha t}\ge0$. So it is admissible
+\tierC{}. In space, $g(|x|^2)=e^{-\alpha|x|^2}$ is a Gaussian. The case $\alpha=0$ is the constant potential.
+\end{example}
+
+\begin{example}[Riesz potentials]\label{ex:riesz}
+For $s>0$, $g(t)=t^{-s/2}$ has $(-1)^rg^{(r)}(t)=\tfrac s2(\tfrac s2+1)\cdots(\tfrac s2+r-1)\,t^{-s/2-r}>0$. It is
+admissible, and this is kernel-checked as \lean{TriangularRiesz.riesz_admissible} \tierA{}. The Lean proof rewrites
+the $r$-th derivative with \lean{Real.iter_deriv_rpow_const}, converts the falling factorial at $-s/2$ into a rising
+factorial at $s/2$ (\lean{ascPochhammer_eval_neg_eq_descPochhammer}), and uses positivity of the rising factorial
+(\lean{ascPochhammer_pos}). At $s=0$ it is the constant $1$, which is admissible. For $s<0$ it is not: for instance
+$t\mapsto t$ (the case $s=-2$) has first derivative $1>0$. That case is kernel-checked as
+\lean{riesz_neg_two_not_admissible} (statement: not \lean{AdmissiblePotential (TriangularRiesz.riesz (-2))}) \tierA{}.
+\end{example}
+
+\begin{example}[Yukawa in the variable $t=r^2$]\label{ex:yukawa}
+The screened Coulomb (Yukawa) potential $V(r)=e^{-\kappa r}/r$, $\kappa>0$, becomes
+$g(t)=e^{-\kappa\sqrt t}/\sqrt t$. We claim it is completely monotone \tierC{}. The argument uses the classical integral
+\begin{equation}\label{eq:yukawa-laplace}
+  \frac{e^{-\kappa\sqrt t}}{\sqrt t}=\frac{1}{\sqrt\pi}\int_0^\infty e^{-tu}\,u^{-1/2}e^{-\kappa^2/(4u)}\,du\qquad(t>0).
+\end{equation}
+It follows from $\int_0^\infty u^{-1/2}e^{-tu-a/u}\,du=\sqrt{\pi/t}\,e^{-2\sqrt{at}}$ with $a=\kappa^2/4$.
+Formula~\eqref{eq:yukawa-laplace} writes $g$ as a positive mixture of exponentials $e^{-tu}$. Differentiating under the
+integral (dominated convergence, since $u^re^{-tu}$ is integrable against the weight for $t>0$) gives
+$(-1)^rg^{(r)}(t)=\pi^{-1/2}\int_0^\infty u^r e^{-tu}u^{-1/2}e^{-\kappa^2/(4u)}\,du\ge0$. A numerical spot check of
+\eqref{eq:yukawa-laplace} at $\kappa=2$ ran as follows \tierX{}:
+\begin{lstlisting}[language=Python]
+import math
+from scipy.integrate import quad
+
+kappa = 2.0
+for t in (0.25, 1.0, 4.0):
+    lhs = math.exp(-kappa * math.sqrt(t)) / math.sqrt(t)
+    integrand = lambda u: u ** -0.5 * math.exp(-kappa ** 2 / (4 * u)) * math.exp(-t * u)
+    val, err = quad(integrand, 0, math.inf)
+    print(f"t={t:4.2f}  lhs={lhs:.12f}  rhs={val / math.sqrt(math.pi):.12f}")
+\end{lstlisting}
+\begin{lstlisting}
+t=0.25  lhs=0.735758882343  rhs=0.735758882343
+t=1.00  lhs=0.135335283237  rhs=0.135335283237
+t=4.00  lhs=0.009157819444  rhs=0.009157819444
+\end{lstlisting}
+The spot check steers but does not prove. The proof is the integral identity. No Lean proof of Yukawa admissibility
+exists in this book's files.
+\end{example}
+
+Two closure properties are useful \tierC{}. Positive combinations of completely monotone functions are completely
+monotone, which is obvious from the definition. Products of completely monotone functions are completely monotone,
+because Leibniz's rule gives $(-1)^r(fg)^{(r)}=\sum_i\binom ri\,[(-1)^if^{(i)}]\,[(-1)^{r-i}g^{(r-i)}]\ge0$.
+
+\begin{theorem}[Bernstein's theorem]\label{thm:bernstein}
+A function $g:(0,\infty)\to\R$ is completely monotone if and only if there is a non-negative Borel measure $\mu$ on
+$[0,\infty)$ such that
+\[
+  g(t)=\int_{[0,\infty)}e^{-\alpha t}\,d\mu(\alpha)\qquad\text{for all }t>0,
+\]
+the integral being finite for every $t>0$. The measure $\mu$ is then unique. \tierL{} (classical result of Bernstein,
+in the form attributed by upstream~\cite{oai} to Bernstein--Hausdorff--Widder. Not proved in this book.)
+\end{theorem}
+
+Two features of the statement matter for energy problems.
+\begin{itemize}
+\item \textbf{The measure lives on $[0,\infty)$, closed at $0$.} An atom $\mu(\{0\})=c>0$ contributes the constant $c$
+to $g$. For instance $g(t)=1+t^{-2}$ is completely monotone with $\mu=\delta_0+(\text{a density on }(0,\infty))$.
+\item \textbf{A constant potential has infinite energy at density one.} If $g\equiv1$ then $E_1(C;R)=n_C(R)-1$ (each of
+the $n_C(R)$ points sees $n_C(R)-1$ others), and $n_C(R)\to\infty$ at density one. Hence $E_1(C)=\infty$ for every
+density-one $C$ \tierC{} (the human proof is this one line). Upstream proves the same fact in Lean as
+\lean{energy_one} (file \lean{OAI/Analysis/Triangular/Energy/Potentials.lean}), with the formal statement
+\lean{energy (fun _ => 1) C} $=\infty$ under \lean{DensityOne C}. It is part of the build whose main theorem is kernel-checked.
+The lattice energy of the constant is also $\infty$, so the atom at $0$ never breaks the inequality: both sides are
+$\infty$.
+\end{itemize}
+
+% ====================================================================================================
+\section{Fourier analysis and Poisson summation}
+\label{sec:fourier}
+
+We use the normalisation of upstream~\cite{oai}:
+\[
+  \widehat f(\xi)=\int_{\R^2}f(x)\,e^{-2\pi i\,x\cdot\xi}\,dx .
+\]
+With this choice $\widehat{\widehat f}(x)=f(-x)$ for Schwartz $f$ (Fourier inversion, \tierL{}, classical), and no
+factors of $2\pi$ appear in the Poisson summation formula.
+
+\begin{proposition}[Gaussians]\label{prop:gauss-ft}
+For $\alpha>0$ let $G_\alpha(x)=e^{-\pi\alpha|x|^2}$ on $\R^2$. Then
+\[
+  \widehat{G_\alpha}(\xi)=\frac1\alpha\,e^{-\pi|\xi|^2/\alpha}.
+\]
+In particular $\widehat{G_\alpha}>0$, and $G_1=\widehat{G_1}$.
+\end{proposition}
+\begin{humanproof}
+In one variable, $\int_\R e^{-\pi\alpha x^2}e^{-2\pi ix\xi}\,dx=\alpha^{-1/2}e^{-\pi\xi^2/\alpha}$. This is the standard
+computation: complete the square and shift the contour, or check that both sides solve the same first-order ODE in
+$\xi$ with the same value at $\xi=0$. In two variables the integral factorises into a product of two such integrals,
+giving $\alpha^{-1/2}\cdot\alpha^{-1/2}=\alpha^{-1}$. \tierC{}
+\end{humanproof}
+
+\begin{theorem}[Poisson summation for a lattice]\label{thm:poisson}
+Let $\Lambda\subset\R^2$ be a lattice of covolume $|\Lambda|$ and $f$ a Schwartz function on $\R^2$. For every
+$v\in\R^2$,
+\[
+  \sum_{\lambda\in\Lambda}f(\lambda+v)=\frac{1}{|\Lambda|}\sum_{w\in\Lambda^*}\widehat f(w)\,e^{2\pi i\,w\cdot v},
+\]
+both sides converging absolutely. \tierL{} (classical. The sketch below is \tierC{}.)
+\end{theorem}
+\begin{proof}[Sketch for Schwartz functions]
+Let $F(v)=\sum_{\lambda}f(\lambda+v)$. Since $f$ and all its derivatives decay faster than any power, the series and all
+its term-by-term derivatives converge uniformly on compact sets. So $F$ is $C^\infty$, and it is $\Lambda$-periodic.
+The characters of $\R^2/\Lambda$ are $e^{2\pi iw\cdot v}$ with $w\in\Lambda^*$. The Fourier coefficient of $F$ is
+\[
+  c_w=\frac1{|\Lambda|}\int_{D}F(v)e^{-2\pi iw\cdot v}\,dv=\frac1{|\Lambda|}\int_{\R^2}f(x)e^{-2\pi iw\cdot x}\,dx
+  =\frac{\widehat f(w)}{|\Lambda|},
+\]
+where $D$ is a fundamental domain. We unfold the integral over $D$ and the sum over $\lambda$ into one integral over
+$\R^2$, using $e^{-2\pi iw\cdot\lambda}=1$. A smooth periodic function has rapidly decaying Fourier coefficients and
+equals its absolutely convergent Fourier series everywhere. This gives the formula.
+\end{proof}
+
+\begin{example}[Theta functions of $\Lat$]\label{ex:theta}
+Apply Theorem~\ref{thm:poisson} to $f=G_\alpha$, $\Lambda=\Lat$ and $v=0$. Proposition~\ref{prop:gauss-ft} gives
+$\widehat{G_\alpha}$. By Proposition~\ref{prop:dual}, $|w|$ runs over the same values on $\Lat^*$ as $|a|$ on $\Lat$, with
+the same multiplicities. Writing $\theta_\Lat(\alpha)=\sum_{a\in\Lat}e^{-\pi\alpha|a|^2}$ we get the functional equation
+\[
+  \theta_\Lat(\alpha)=\frac1\alpha\,\theta_\Lat(1/\alpha)\qquad(\alpha>0).
+\]
+\tierC{} (it follows from the two propositions and the theorem). Exercise~\ref{ex:py-theta} checks it in floating
+point.
+\end{example}
+
+% ====================================================================================================
+\section{The linear-programming bound}
+\label{sec:lp}
+
+The idea goes back to Cohn and Elkies for sphere packing and to Cohn and Kumar~\cite{ck} for energy. It turns the
+problem ``bound the energy of every configuration'' into the problem ``find one good auxiliary function''. We state it
+for the Gaussian $g_\alpha(t)=e^{-\pi\alpha t}$, so that $g_\alpha(|x|^2)=G_\alpha(x)$.
+
+\begin{definition}[Auxiliary function]\label{def:aux}
+Let $\alpha>0$. A radial Schwartz function $f:\R^2\to\R$ is an \emph{auxiliary function for $G_\alpha$} if
+\begin{enumerate}
+\item[(i)] $f(x)\le G_\alpha(x)$ for all $x\ne0$ ($f$ is a \emph{minorant} of the potential), and
+\item[(ii)] $\widehat f(\xi)\ge0$ for all $\xi$.
+\end{enumerate}
+It is \emph{sharp for $\Lat$} if in addition
+\begin{enumerate}
+\item[(iii)] $f(a)=G_\alpha(a)$ for all $a\in\Lat\setminus\{0\}$, and
+\item[(iv)] $\widehat f(w)=0$ for all $w\in\Lat^*\setminus\{0\}$.
+\end{enumerate}
+\end{definition}
+
+Since $f$ is radial and real, $\widehat f$ is real and radial, so (ii) makes sense. Conditions (iii) and (iv) are the
+``root conditions''. In (iii), since $G_\alpha-f\ge0$, every point of $\Lat\setminus0$ is a minimum of $G_\alpha-f$.
+
+\subsection{Periodic configurations: a complete proof}
+
+\begin{definition}[Periodic configuration and its energy]\label{def:periodic}
+Let $\Lambda$ be a lattice and $v_1,\dots,v_N\in\R^2$ with $v_i-v_j\notin\Lambda$ for $i\ne j$. The configuration
+$C=\bigcup_{i=1}^N(\Lambda+v_i)$ is \emph{$\Lambda$-periodic with $N$ points per period}. Its density is
+$N/|\Lambda|$. Its \emph{periodic energy} is
+\[
+  E^{\mathrm{per}}_g(C)=\frac1N\sum_{i=1}^N\sum_{j=1}^N\ \sum_{\substack{\lambda\in\Lambda\\ \lambda+v_j-v_i\ne0}}
+  g\bigl(|\lambda+v_j-v_i|^2\bigr),
+\]
+the average over the $N$ cosets of the energy seen by one particle.
+\end{definition}
+
+The condition $\lambda+v_j-v_i\ne0$ excludes exactly one term: $i=j$ and $\lambda=0$. For $i\ne j$ the vector
+$\lambda+v_j-v_i$ is never zero, because the cosets are distinct.
+
+\begin{theorem}[LP bound, periodic case]\label{thm:lp-periodic}
+Let $\alpha>0$, let $f$ be an auxiliary function for $G_\alpha$, and let $C$ be a $\Lambda$-periodic configuration of
+density one ($|\Lambda|=N$). Then
+\[
+  E^{\mathrm{per}}_{g_\alpha}(C)\ \ge\ \widehat f(0)-f(0).
+\]
+If $f$ is sharp for $\Lat$, then $E^{\mathrm{per}}_{g_\alpha}(\Lat)=\widehat f(0)-f(0)=\sum_{a\in\Lat\setminus0}e^{-\pi\alpha|a|^2}$.
+Hence $\Lat$ minimises the periodic Gaussian energy among periodic density-one configurations. \tierC{} (complete
+human proof below.)
+\end{theorem}
+\begin{humanproof}
+All series below converge absolutely, because $G_\alpha$ and $f$ are Schwartz.
+
+\emph{Step 1 (minorant).} By (i), each term of $E^{\mathrm{per}}$ is at least the corresponding value of $f$:
+\[
+  N\,E^{\mathrm{per}}_{g_\alpha}(C)=\sum_{i,j}\sum_{\lambda+v_j-v_i\ne0}G_\alpha(\lambda+v_j-v_i)
+  \ \ge\ \sum_{i,j}\sum_{\lambda+v_j-v_i\ne0}f(\lambda+v_j-v_i).
+\]
+\emph{Step 2 (put back the diagonal).} The excluded terms are exactly the $N$ terms with $i=j$ and $\lambda=0$, each
+equal to $f(0)$:
+\[
+  \sum_{i,j}\sum_{\lambda+v_j-v_i\ne0}f(\lambda+v_j-v_i)=\sum_{i,j}\sum_{\lambda\in\Lambda}f(\lambda+v_j-v_i)\;-\;N f(0).
+\]
+\emph{Step 3 (Poisson).} By Theorem~\ref{thm:poisson} with $v=v_j-v_i$ and $|\Lambda|=N$,
+\[
+  \sum_{i,j}\sum_{\lambda}f(\lambda+v_j-v_i)=\frac1N\sum_{w\in\Lambda^*}\widehat f(w)\sum_{i,j}e^{2\pi i\,w\cdot(v_j-v_i)}
+  =\frac1N\sum_{w\in\Lambda^*}\widehat f(w)\,\Bigl|\sum_{j=1}^Ne^{2\pi i\,w\cdot v_j}\Bigr|^2 .
+\]
+The interchange of the finite sum over $(i,j)$ with the sum over $w$ is harmless.\\
+\emph{Step 4 (positivity).} Each term on the right is $\ge0$ by (ii). Keeping only $w=0$, where the inner sum equals
+$N$, gives a lower bound of $\frac1N\widehat f(0)N^2=N\widehat f(0)$.
+
+Combining the four steps, $N\,E^{\mathrm{per}}\ge N\widehat f(0)-Nf(0)$. Divide by $N$.
+
+\emph{Equality on $\Lat$.} Take $\Lambda=\Lat$, $N=1$, $v_1=0$. In Step~1, (iii) makes every term an equality. In
+Step~4, (iv) makes every dropped term zero. So both inequalities are equalities:
+$\sum_{a\ne0}G_\alpha(a)=\widehat f(0)-f(0)$. Since $G_\alpha(a)=e^{-\pi\alpha|a|^2}$, this is the stated value.
+\end{humanproof}
+
+\begin{remark}[Other densities]
+The same proof at density $\rho=N/|\Lambda|$ gives $E^{\mathrm{per}}\ge\rho\,\widehat f(0)-f(0)$. The upstream theorem
+is stated at density one. Chapter~2 transfers it to every density by scaling. \tierC{}
+\end{remark}
+
+\subsection{From the periodic energy to the lower energy}
+
+Theorem~\ref{thm:lp-periodic} uses $E^{\mathrm{per}}$, not the disk energy of Definition~\ref{def:energy}. These are
+different definitions, and we connect them explicitly rather than silently identifying them.
+
+\begin{proposition}[Disk energy of a periodic configuration]\label{prop:periodic-limit}
+Let $C$ be periodic as in Definition~\ref{def:periodic} and $\alpha>0$. Then
+$\lim_{R\to\infty}E_{g_\alpha}(C;R)=E^{\mathrm{per}}_{g_\alpha}(C)$. In particular the lower energy $E_{g_\alpha}(C)$ equals
+the periodic energy, and the limit exists. \tierC{}
+\end{proposition}
+\begin{humanproof}
+For $x\in C$ let $e(x)=\sum_{y\in C,\,y\ne x}G_\alpha(x-y)$. It is constant on each coset $\Lambda+v_i$, say equal to
+$e_i$, and $E^{\mathrm{per}}=\frac1N\sum_ie_i$. Let $n_i(R)$ be the number of points of $\Lambda+v_i$ in
+$\overline B(0,R)$. Lattice point counting, done by comparing the disk with the union of fundamental parallelograms
+centred at the points it contains, gives $n_i(R)/(\pi R^2)\to1/|\Lambda|$. Hence $n_i(R)/n_C(R)\to1/N$.
+
+\emph{Upper bound.} Dropping the restriction $y\in C_R$ only adds non-negative terms, so
+$E(C;R)\le\frac1{n_C(R)}\sum_{x\in C_R}e(x)=\sum_i\frac{n_i(R)}{n_C(R)}e_i\to E^{\mathrm{per}}$.
+
+\emph{Lower bound.} Let $\tau(L)=\sup_{u\in\R^2}\sum_{\lambda\in\Lambda,\,|\lambda+u|>L}G_\alpha(\lambda+u)$. This tends
+to $0$ as $L\to\infty$ by Gaussian decay. If $x\in C_{R-L}$, every $y\in C$ with $|x-y|\le L$ lies in $C_R$, so the
+inner sum at $x$ is at least $e(x)-N\tau(L)$. Discarding the points of $C_R\setminus C_{R-L}$, which only lowers the sum,
+\[
+  E(C;R)\ \ge\ \frac{1}{n_C(R)}\sum_{x\in C_{R-L}}\bigl(e(x)-N\tau(L)\bigr)\ \xrightarrow[R\to\infty]{}\ E^{\mathrm{per}}-N\tau(L).
+\]
+The limit uses $n_i(R-L)/n_C(R)\to1/N$. Letting $L\to\infty$ shows that the $\liminf$ is at least $E^{\mathrm{per}}$.
+\end{humanproof}
+
+Together, Theorem~\ref{thm:lp-periodic} and Proposition~\ref{prop:periodic-limit} prove: \emph{for every periodic
+density-one configuration $C$ and every $\alpha>0$ for which a sharp auxiliary function exists,
+$E_{g_\alpha}(C)\ge\sum_{a\in\Lat\setminus0}e^{-\pi\alpha|a|^2}=E_{g_\alpha}(\Lat)$} \tierC{}.
+
+\subsection{What upstream adds}
+
+Two things are missing from the argument above. Upstream~\cite{oai} supplies both.
+\begin{enumerate}
+\item \textbf{Existence of sharp auxiliary functions for every $\alpha>0$.} This is the hard part. In dimension two no
+construction by modular forms is known; that is the method of CKMRV~\cite{ckmrv} in dimensions 8 and 24. Upstream
+instead builds $f_\alpha$ from a sine product with double zeros encoding the periodic contact set. Multiplying by
+double-pole and simple-pole terms gives entire functions with prescribed values and slopes. Compactly supported
+spectral measures, Gaussian damping, and finite reference lists handled by positive quadrature complete the
+construction. The quadrature rests on certified matrix and polynomial inequalities, checked with python-flint ball
+arithmetic. \tierL{}~\cite{oai}
+\item \textbf{Arbitrary competitors.} The competitor need not be periodic. Upstream compares sums over disk points with
+area integrals, with a uniform error, and obtains $E_{g_\alpha}(C)\ge\widehat f_\alpha(0)-f_\alpha(0)$ for every locally
+finite configuration of centred density one. \tierL{}~\cite{oai}. The full theorem, including this step, is
+kernel-checked in Lean \tierA{} (Theorem~\ref{thm:main-statement}).
+\end{enumerate}
+
+% ====================================================================================================
+\section{From Gaussians to all completely monotone potentials}
+\label{sec:mixtures}
+
+Suppose we know, for every $\alpha>0$ and every admissible competitor $C$,
+\begin{equation}\label{eq:gauss-bound}
+  E_{g_\alpha}(C)\ \ge\ L(\alpha):=\sum_{a\in\Lat\setminus0}e^{-\pi\alpha|a|^2}.
+\end{equation}
+How do we get the bound for a general admissible $g$? Here is the human argument in outline \tierC{}.
+
+\emph{Step 1 (Bernstein).} Write $g(t)=\int_{[0,\infty)}e^{-\beta t}\,d\mu(\beta)$ as in Theorem~\ref{thm:bernstein}.
+In the normalisation of \eqref{eq:gauss-bound} this reads $e^{-\beta t}=g_{\beta/\pi}(t)$.
+
+\emph{Step 2 (finite sums commute with the integral).} For fixed $R$ the disk energy is a \emph{finite} sum of
+non-negative terms, so
+\[
+  E_g(C;R)=\int_{[0,\infty)}E_{g_{\beta/\pi}}(C;R)\,d\mu(\beta).
+\]
+\emph{Step 3 (Fatou, not linearity).} The $\liminf$ is not linear: in general
+$\liminf(u_R+w_R)\ne\liminf u_R+\liminf w_R$. The correct tool is Fatou's lemma, which gives exactly the inequality we
+need. Fatou is a statement about \emph{sequences}, while our $\liminf$ is over a real parameter $R\to\infty$. So first
+choose radii $R_n\to\infty$ with $E_g(C;R_n)\to E_g(C)$, and then apply Fatou along $(R_n)$:
+\[
+  E_g(C)=\lim_n\int E_{g_{\beta/\pi}}(C;R_n)\,d\mu\ \ge\ \int\liminf_n E_{g_{\beta/\pi}}(C;R_n)\,d\mu
+  \ \ge\ \int E_{g_{\beta/\pi}}(C)\,d\mu(\beta).
+\]
+The last step holds because a $\liminf$ along a subsequence of radii is at least the $\liminf$ over all radii.
+
+\emph{Step 4 (the Gaussian bound, then Tonelli).} On $(0,\infty)$ use \eqref{eq:gauss-bound}. On the lattice side,
+Tonelli's theorem (non-negative terms) swaps sum and integral:
+\[
+  \int_{(0,\infty)}L(\beta/\pi)\,d\mu(\beta)=\sum_{a\in\Lat\setminus0}\int_{(0,\infty)}e^{-\beta|a|^2}d\mu(\beta).
+\]
+\emph{Step 5 (the atom at $0$).} If $\mu(\{0\})=c>0$ then $g\ge c$, so $E_g(C)\ge c\,E_1(C)=\infty$ by the constant-potential
+fact of \S\ref{sec:cm}, and the bound is trivial. If $\mu(\{0\})=0$, Steps 3--4 give
+$E_g(C)\ge\sum_{a\ne0}g(|a|^2)=\mathcal E_g(\Lat)$.
+
+\emph{Step 6 (attainment).} $\Lat$ is itself locally finite and of density one (kernel-checked in our file
+\lean{AnyDensity.lean} as \lean{A_lf} and \lean{A_d1}, which are used in the proof of the audited
+\lean{TriangularDensity.attained} \tierA{}), so the bound applies to it. For $C=\Lat$, each point sees at most the full lattice sum, so
+$E_g(\Lat;R)\le\mathcal E_g(\Lat)$ for every $R$ (the upper-bound step of Proposition~\ref{prop:periodic-limit}). Then
+$\limsup\le\mathcal E_g(\Lat)\le\liminf$, the second inequality being the bound just proved for $C=\Lat$.
+
+\subsection{How upstream completes it}
+
+Upstream completes the passage with lower-limit, endpoint and infinite-energy arguments (upstream manuscript, \S5)
+\tierL{}~\cite{oai}. Its Lean proof follows a route that avoids Bernstein's theorem on the open interval and its endpoint
+difficulties at $t\to0$. We read the following off upstream's Lean files; the description of the route is ours
+\tierC{}. The proof of \lean{universal_energy_minimum} in \lean{Universal.lean} calls
+\lean{universal_from_gaussian_bounds}, which is built from the lemmas below. So they lie in the dependency cone of
+the audited theorem, whose axiom footprint is the allowlist (\S\ref{sec:lean}). We did not print their axioms
+separately.
+\begin{itemize}
+\item \emph{Shift.} For $\varepsilon>0$ the shifted function $g(\varepsilon+t)$ is a mixture
+$\int_{[0,1]}v^t\,d\rho(v)$ of \emph{power potentials} $v^t$. Here $\rho$ is a finite measure on $[0,1]$ of mass
+$g(\varepsilon)$, obtained by upstream's own finite-difference argument (Lean: \lean{CM.shifted_mixture}). With
+$v=e^{-\pi\alpha}$ one has $v^t=e^{-\pi\alpha t}$: $v\in(0,1)$ are Gaussians, $v=1$ is the constant, and $v=0$ is the
+zero potential.
+\item \emph{Gaussian to power bounds.} The case split $v=0$ / $v=1$ / $0<v<1$ is the following lemma.
+\item \emph{Removing the shift.} Since $g$ is antitone, $E_{g(\varepsilon+\cdot)}(C)\le E_g(C)$
+(\lean{shifted_energy_le}). The lattice energy is the supremum of the shifted ones over $\varepsilon=1/(n+1)$
+(\lean{latticeEnergy_shift_iSup}). Fatou and Tonelli enter through \lean{shifted_mixture_energy}.
+\end{itemize}
+
+\begin{leanbox}[: upstream, \lean{OAI/Analysis/Triangular/Energy/Potentials.lean} (verbatim)]
+\begin{lstlisting}[language=Lean]
+lemma power_bounds_from_gaussians {C : Set Plane} (hD : DensityOne C)
+    (hgauss : ∀ α : ℝ, 0<α → latticeEnergy (gaussPot α)≤energy (gaussPot α) C)
+    (v : I) : latticeEnergy (powerPotential v)≤energy (powerPotential v) C := by
+  by_cases h0 : (v:ℝ)=0
+  · have hl : latticeEnergy (powerPotential v)=0 := by
+\end{lstlisting}
+(\dots) and, in the case $v=1$:
+\begin{lstlisting}[language=Lean]
+  by_cases h1 : (v:ℝ)=1
+  · have he : powerPotential v=(fun _ => (1:ℝ)) := by
+      funext t
+      simp only [powerPotential,h1,Real.one_rpow]
+    rw [he,energy_one hD]
+    exact le_top
+\end{lstlisting}
+\end{leanbox}
+
+So the atom at $\alpha=0$ ($v=1$) is handled exactly as in Step~5, by \lean{energy_one}.
+
+% ====================================================================================================
+\section{A Lean 4 primer for this book}
+\label{sec:lean}
+
+You do not need to write Lean to use this book, but you must be able to \emph{read} a statement and know what a
+``kernel-checked'' label does and does not certify.
+
+\subsection{Reading a theorem statement}
+
+\begin{leanbox}[: the main theorem as stated in the challenge file (verbatim)]
+\begin{lstlisting}[language=Lean]
+/-- Universal energy minimality for smooth completely monotone potentials, with attainment. -/
+theorem universal_energy_minimum (g : ℝ → ℝ) (C : Set Plane)
+    (hg : AdmissiblePotential g) (hC : LocallyFinite C) (hd : DensityOne C) :
+    latticeEnergy g ≤ energy g C ∧ latticeEnergy g = energy g A := by
+  sorry
+\end{lstlisting}
+\end{leanbox}
+
+Read it left to right.
+\begin{itemize}
+\item \lean{(g :} $\R\to\R$\lean{) (C : Set Plane)} are the objects: a potential and a configuration.
+\item \lean{(hg : ...) (hC : ...) (hd : ...)} are \emph{hypotheses}. Each is a named proof that the stated property holds.
+To apply the theorem you must supply all three.
+\item After the final colon comes the \emph{conclusion}. Here it is a conjunction ($\wedge$) of the bound and the
+attainment.
+\item \lean{:= by sorry} is the proof. In the \emph{challenge} file it is \lean{sorry} \emph{by design}. The proved version
+is \lean{OAI/Analysis/Triangular/Energy/Universal.lean}. The Comparator tool certifies that the two statements agree, and
+the build of the proved file is kernel-checked.
+\end{itemize}
+
+In human language:
+
+\begin{theorem}[Upstream's main theorem~\cite{oai}]\label{thm:main-statement}
+Let $g$ be admissible (Definition~\ref{def:cm}) and $C\subseteq\R^2$ locally finite with centred density one. Then
+\[
+  \mathcal E_g(\Lat)\ \le\ E_g(C)\qquad\text{and}\qquad \mathcal E_g(\Lat)=E_g(\Lat),
+\]
+with values in $[0,\infty]$, and $E_g$ the lower energy over closed centred disks. \tierA{} for the Lean statement
+\lean{OAI.AtomicTriangular.universal_energy_minimum} (kernel-checked, conditional on the fidelity of the definitions).
+The proof is AI-generated and not peer reviewed.
+\end{theorem}
+
+\subsection{Corollaries are short}
+
+Once the main theorem is available, a corollary only needs to check the hypothesis. Here is the Riesz case, quoted
+verbatim from our file \lean{formal_cert/Triangular/Riesz.lean}:
+
+\begin{leanbox}[: \lean{formal_cert/Triangular/Riesz.lean} (verbatim excerpt)]
+\begin{lstlisting}[language=Lean]
+/-- Riesz potential in the variable `t = r²`. -/
+noncomputable def riesz (s : ℝ) : ℝ → ℝ := fun t => t ^ (-(s / 2))
+
+theorem riesz_admissible {s : ℝ} (hs : 0 < s) : AdmissiblePotential (riesz s) := by
+  refine ⟨?_, ?_, ?_⟩
+  · intro x hx
+    exact (Real.contDiffAt_rpow_const_of_ne (ne_of_gt hx)).contDiffWithinAt
+  · intro t ht
+    exact (Real.rpow_pos_of_pos ht _).le
+\end{lstlisting}
+\dots
+\begin{lstlisting}[language=Lean]
+theorem triangular_riesz_optimal {s : ℝ} (hs : 0 < s) (C : Set Plane) (hC : LocallyFinite C) (hd : DensityOne C) :
+    latticeEnergy (riesz s) ≤ energy (riesz s) C :=
+  (universal_energy_minimum (riesz s) C (riesz_admissible hs) hC hd).1
+\end{lstlisting}
+\end{leanbox}
+
+The anonymous constructor $\langle$\lean{?_, ?_, ?_}$\rangle$ splits \lean{AdmissiblePotential} into its three
+conjuncts: smoothness, non-negativity and complete monotonicity. Each bullet ($\cdot$) proves one of them. The last line applies
+the main theorem and takes the first component \lean{.1} of the conjunction. The docstring in the file also remarks that
+for $s\le2$ the lattice energy is $\infty$, so the corollary is then vacuous. That remark is a comment, not a theorem
+\tierC{}. The \emph{finite} side ($s>2$) is the kernel-checked \lean{latticeEnergy_riesz_lt_top} \tierA{}.
+
+\subsection{\texttt{sorry}, axioms and the allowlist}
+
+Lean accepts a file containing \lean{sorry}. It prints a warning and \emph{exits with code $0$}; the recorded compile
+below shows exactly this (return code $0$ with a \lean{sorry} warning). Behind the scenes,
+\lean{sorry} is the axiom \lean{sorryAx}, which proves anything. A user can also declare a new \lean{axiom}, for example
+one asserting \lean{False}, and prove anything from it; again the compiler exits $0$. The exit code is therefore
+\emph{not} a proof check. What is checked is the list of axioms a declaration depends on, printed by \lean{#print axioms}.
+This book accepts exactly the allowlist
+\[
+  \{\texttt{propext},\ \texttt{Classical.choice},\ \texttt{Quot.sound}\},
+\]
+the standard axioms of Lean's classical mathematics. Anything else, in particular \lean{sorryAx}, rejects the result.
+
+Our audit file \lean{formal_cert/Triangular/Axioms.lean} prints the axioms of 22 declarations and of two planted
+controls. The controls, quoted verbatim, are:
+\begin{lstlisting}[language=Lean]
+theorem ctl_sorry : TriangularRiesz.riesz 1 1 = 0 := by sorry
+axiom ctl_cheat : False
+theorem ctl_axiom : TriangularRiesz.riesz 1 1 = 0 := ctl_cheat.elim
+#print axioms ctl_sorry
+#print axioms ctl_axiom
+\end{lstlisting}
+Both controls ``prove'' the false statement $1^{-1/2}=0$. The recorded compile of this file
+(\lean{results/discovery/D1/compile_Axioms.json}, return code $0$) contains, among its output lines:
+\begin{lstlisting}
+'TriangularRiesz.triangular_riesz_optimal' depends on axioms: [propext, Classical.choice, Quot.sound]
+'OAI.AtomicTriangular.universal_energy_minimum' depends on axioms: [propext, Classical.choice, Quot.sound]
+.../formal_cert/Triangular/Axioms.lean:32:8: warning: declaration uses `sorry`
+'ctl_sorry' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
+'ctl_axiom' depends on axioms: [ctl_cheat, propext, Classical.choice, Quot.sound]
+\end{lstlisting}
+(The path in the warning line is shortened here.) The return code is $0$ even though two false theorems were
+``proved''. The audit catches them, because their footprints contain \lean{sorryAx} and \lean{ctl_cheat}. This is the
+positive and negative control of the audit: it must flag the planted cheats, and it does.
+
+\subsection{What ``kernel-checked'' attaches to}
+
+Following the Elenchus method~\cite{elenchus}, the label \tierA{} attaches to the \emph{formal statement}, never to its
+gloss in English. Lean certifies that \lean{universal_energy_minimum}, \emph{as written with upstream's definitions},
+follows from the allowlisted axioms. It does not certify that \lean{DensityOne} is the density a physicist means, or that
+\lean{energy} (a $\liminf$ over closed centred disks) is the energy CKMRV mean. Those are questions of \emph{statement
+adequacy}, and this chapter's \S\ref{sec:configs} raises several of them: centred disks, closed disks, $\liminf$, and
+the empty-set convention of \lean{diskPoints}. No human has audited statement adequacy for these files. The ledger
+records 6 open flags. So the correct phrase is ``kernel-checked, conditional on the fidelity of the definitions''.
+Avoid ``proved true'', ``certified physics'' or ``100\% verified''.
+
+% ====================================================================================================
+\section{Reviewing a draft}
+\label{sec:review}
+
+A student draft titled \emph{``Universal Optimality of the Planar Triangular Lattice: A Formal Proof Architecture''}
+(header: ``Statement-Adequacy Review Draft'') summarised the material of this chapter. Reviewing it is a good exercise.
+Before reading the tables, try to find what is wrong with each quoted claim yourself.
+
+\begin{center}\small
+\begin{tabular}{@{}p{0.4cm}p{3.4cm}p{5.4cm}p{4.7cm}@{}}
+\toprule
+& \textbf{Draft says} & \textbf{Correct statement} & \textbf{Why}\tabularnewline
+\midrule
+1 & \raggedright ``derivatives strictly alternate in sign'' &
+\raggedright $(-1)^rg^{(r)}(t)\ge0$ for all $r\ge0$, $t>0$ (weak inequalities), with $g$ $C^\infty$ on $(0,\infty)$. &
+\raggedright Constants are admissible. The Lean definition \lean{AdmissiblePotential} uses $0\le$, not $0<$.
+\tabularnewline\addlinespace
+2 & \raggedright Bernstein's representation is ``strictly sufficient''; the passage from Gaussians to mixtures is not
+justified &
+\raggedright $g(t)=\int_{[0,\infty)}e^{-\alpha t}d\mu(\alpha)$ with $\mu\ge0$, and $\mu$ may charge $\alpha=0$. Gaussian
+bounds are \emph{sufficient}. The passage needs Tonelli, Fatou along a sequence of radii, and the atom at $0$ treated
+separately. &
+\raggedright $\liminf$ is not linear (\S\ref{sec:mixtures}). The constant part has infinite energy at density one
+(\lean{energy_one}).
+\tabularnewline\addlinespace
+3 & \raggedright Cohn--Elkies-type lemma by ``majorization'' &
+\raggedright $f\le G_\alpha$ (a \emph{minorant}) and $\widehat f\ge0$ give $E(C)\ge\widehat f(0)-f(0)$ at density one.
+Root conditions on $\Lat\setminus0$ and $\Lat^*\setminus0$ give equality on $\Lat$ by Poisson summation. Here
+$G_\alpha=e^{-\pi\alpha|x|^2}$. &
+\raggedright Theorem~\ref{thm:lp-periodic}. A majorant gives no lower bound. The draft also omits the bound itself, the
+density, and the normalisation.
+\tabularnewline\addlinespace
+4 & \raggedright auxiliary functions from ``integral transforms of weakly holomorphic modular forms adapted to hexagonal
+symmetry'' &
+\raggedright Upstream uses sine-product cardinal interpolation, Gaussian damping and certified finite quadrature. &
+\raggedright Modular forms are the CKMRV method in dimensions 8 and 24~\cite{ckmrv}. No modular-form construction is
+known in dimension 2.
+\tabularnewline
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{center}\small
+\begin{tabular}{@{}p{0.4cm}p{3.4cm}p{5.4cm}p{4.7cm}@{}}
+\toprule
+& \textbf{Draft says} & \textbf{Correct statement} & \textbf{Why}\tabularnewline
+\midrule
+5 & \raggedright ``We demonstrate'' the theorem; author line ``Statement-Adequacy Review Draft'' &
+\raggedright The main theorem is upstream's~\cite{oai}: AI-generated, kernel-checked, Comparator-accepted, not peer
+reviewed. Our contribution is corollaries and an audit. &
+\raggedright Attribution, and honesty about the review status.
+\tabularnewline\addlinespace
+6 & \raggedright Theorem 2 (arbitrary densities) without the hypotheses of local finiteness and density $\rho$ &
+\raggedright For $\rho>0$ and $C$ locally finite with density $\rho$ (\lean{DensityRho}): $E_g(C)\ge\mathcal
+E_{g(\rho^{-1}\cdot)}(\Lat)$, attained by $\rho^{-1/2}\Lat$. The energy is the lower energy. &
+\raggedright Without local finiteness the counts are meaningless. Lean: \lean{universal_any_density} (D2, see
+Chapter~2).
+\tabularnewline\addlinespace
+7 & \raggedright Theorem 3 (non-uniqueness), with no qualifier on the class of configurations &
+\raggedright Non-uniqueness holds among \emph{all} locally finite configurations: $\Lat\setminus\{0\}$ is optimal and is
+not an isometric image of $\Lat$. Uniqueness among \emph{periodic} configurations is open in 2D and not claimed. &
+\raggedright $\Lat\setminus\{0\}$ is not periodic. Lean:\\{\footnotesize\lean{universal_optimum_not_unique}}.\\ Upstream: ``It identifies
+the minimum value, not all minimizers.''
+\tabularnewline\addlinespace
+8 & \raggedright (missing) &
+\raggedright $E_g$ is the \emph{lower} energy ($\liminf$). CKMRV Def.~1.3 also requires the limit to exist. Disks are
+closed and centred. &
+\raggedright The Lean notion is weaker than CKMRV's. Open vs closed disks: \DFourStatus.
+\tabularnewline
+\bottomrule
+\end{tabular}
+\end{center}
+
+The tiers in the tables are those of the sources cited in each row. Rows 1, 6 and 7 point to kernel-checked Lean
+declarations \tierA{}. Row 3 rests on Theorem~\ref{thm:lp-periodic} \tierC{} for periodic competitors and on
+upstream \tierL{}~\cite{oai} for arbitrary ones. Row 4 is \tierL{}~\cite{oai,ckmrv}. Row 8 is a statement-adequacy
+remark \tierC{}. Row 2 combines \tierL{} (Bernstein) and \tierC{} (the Fatou
+argument).
+
+\subsection{The corrected statement on one page}
+
+\begin{definition}[Setting]
+A configuration $C\subseteq\R^2$ is locally finite. It has density one if $\#(C\cap\overline B(0,R))/(\pi R^2)\to1$
+(closed, centred disks). A potential $g$ of the squared distance is admissible if it is $C^\infty$ on $(0,\infty)$ and
+$(-1)^rg^{(r)}\ge0$ there for all $r\ge0$. The lower energy is
+$E_g(C)=\liminf_{R\to\infty}\frac{1}{\#C_R}\sum_{x\ne y\in C_R}g(|x-y|^2)\in[0,\infty]$.
+\end{definition}
+
+\begin{lemma}[LP bound, density one]
+Let $\alpha>0$ and $G_\alpha(x)=e^{-\pi\alpha|x|^2}$, $\widehat f(\xi)=\int f(x)e^{-2\pi ix\cdot\xi}dx$. If $f$ is radial
+Schwartz with $f\le G_\alpha$ on $\R^2\setminus0$ and $\widehat f\ge0$, then every density-one configuration $C$
+satisfies $E_{e^{-\pi\alpha t}}(C)\ge\widehat f(0)-f(0)$. This is \tierC{} for periodic $C$ (Theorem~\ref{thm:lp-periodic}
+with Proposition~\ref{prop:periodic-limit}) and \tierL{}~\cite{oai} for arbitrary locally finite $C$. If moreover
+$f=G_\alpha$ on $\Lat\setminus0$ and $\widehat f=0$ on $\Lat^*\setminus0$, then
+$\widehat f(0)-f(0)=\sum_{a\in\Lat\setminus0}e^{-\pi\alpha|a|^2}=E_{e^{-\pi\alpha t}}(\Lat)$ \tierC{}.
+\end{lemma}
+
+\begin{theorem}[Upstream~\cite{oai}; AI-generated, not peer reviewed]
+For every admissible $g$ and every locally finite $C$ of density one,
+$\sum_{a\in\Lat\setminus0}g(|a|^2)\le E_g(C)$, and equality holds for $C=\Lat$. The values are in $[0,\infty]$. The
+theorem identifies the minimum value, not all minimisers. \tierA{} for the Lean statement
+\lean{OAI.AtomicTriangular.universal_energy_minimum}, conditional on the fidelity of the definitions. The strong
+(per-potential) Cohn--Kumar conjecture is \emph{not} claimed and remains open.
+\end{theorem}
+
+% ====================================================================================================
+\section{Exercises}
+\label{sec:ex1}
+
+Difficulty: (E) easy, (M) medium, (H) hard.
+
+\begin{exercise}[(E)]
+Show that $\Z^2$ and $\Lat$ both have density one in the sense of Definition~\ref{def:density}. You may use the lattice
+point count $n(R)=\pi R^2/|\Lambda|+O(R)$. Why does Definition~\ref{def:density} need local finiteness?
+\end{exercise}
+
+\begin{exercise}[(E)]
+Verify the Gram matrix of Proposition~\ref{prop:gram} and find all $(j,k)$ with $j^2+jk+k^2=13$. Check that there are
+twelve.
+\end{exercise}
+
+\begin{exercise}[(E)]
+Which of these are admissible in the sense of Definition~\ref{def:cm}? (a) $e^{-t}+3$; (b) $t^{-1}$; (c) $e^{-t^2}$;
+(d) $1/(1+t)$; (e) $\sqrt t$. For (c), compute $g''(t)$ near $t=0$.
+\end{exercise}
+
+\begin{exercise}[(E)]
+Show that $E_1(C;R)=n_C(R)-1$ for the constant potential $g\equiv1$, and deduce that $E_1(C)=\infty$ at density one.
+Find the corresponding upstream Lean lemma and compare its hypotheses with yours.
+\end{exercise}
+
+\begin{exercise}[(M)]
+Prove that a product of two completely monotone functions is completely monotone. Use this and
+\eqref{eq:yukawa-laplace} to give two different proofs that $e^{-\kappa\sqrt t}/\sqrt t$ is completely monotone. (For
+the first proof you also need: $e^{-\kappa\sqrt t}$ is completely monotone. Prove it from
+\eqref{eq:yukawa-laplace} with an extra differentiation in $\kappa$, or via the composition rule.)
+\end{exercise}
+
+\begin{exercise}[(M)]
+Prove Proposition~\ref{prop:gauss-ft} in one variable by showing that $\phi(\xi)=\int e^{-\pi\alpha x^2}e^{-2\pi ix\xi}dx$
+satisfies $\phi'(\xi)=-(2\pi\xi/\alpha)\phi(\xi)$.
+\end{exercise}
+
+\begin{exercise}[(M)]
+Repeat the proof of Theorem~\ref{thm:lp-periodic} at density $\rho=N/|\Lambda|$ and show that the bound becomes
+$\rho\widehat f(0)-f(0)$. Where exactly does the density enter?
+\end{exercise}
+
+\begin{exercise}[(M)]
+Give an example of real sequences with $\liminf(u_n+w_n)>\liminf u_n+\liminf w_n$. Explain why Step~3 of
+\S\ref{sec:mixtures} would be wrong if it claimed equality, and why the inequality that Fatou gives is the one needed.
+\end{exercise}
+
+\begin{exercise}[(M)]
+Let $C=\Lat\setminus\{0\}$. Show directly that $C$ has density one, and that $E_g(C)=E_g(\Lat)$ for $g$ Gaussian. Why is
+$C$ not periodic? Which Lean declaration states the general version?
+\end{exercise}
+
+\begin{exercise}[(H)]
+Complete the lattice point counting step of Proposition~\ref{prop:periodic-limit}: show that
+$n_i(R)=\pi R^2/|\Lambda|+O(R)$ for a translate $\Lambda+v_i$, uniformly in $v_i$.
+\end{exercise}
+
+\begin{exercise}[(H)]
+Suppose a radial Schwartz $f$ satisfies (i)--(iv) of Definition~\ref{def:aux}. Show that $\nabla(G_\alpha-f)=0$ at every
+$a\in\Lat\setminus0$. In one radial variable, explain why the roots of $G_\alpha-f$ at $|a|$ have even order. Why does
+this suggest a construction from a product with double zeros?
+\end{exercise}
+
+\begin{exercise}[(H)]
+The draft review (\S\ref{sec:review}) lists eight problems. Find a \emph{ninth} adequacy question about upstream's
+definitions that the table does not cover. Hint: think about \lean{diskPoints} on a configuration that is not locally
+finite, or about centred versus uncentred disks. State it precisely and say which tier an answer could reach.
+\end{exercise}
+
+\begin{exercise}[(M, Python)]\label{ex:py-theta}
+\emph{Poisson summation and the theta comparison.} The script below computes truncated theta sums
+$\theta_\Lat(\alpha)$, the Poisson-dual expression $\theta_\Lat(1/\alpha)/\alpha$ (Example~\ref{ex:theta}), and
+$\theta_{\Z^2}(\alpha)$ for the square lattice, which also has density one. It was run and printed the output below
+\tierX{}.
+\begin{lstlisting}[language=Python]
+import math
+
+B = math.sqrt(3) / 2  # b = sqrt(3)/2, as in upstream
+
+
+def norm_sq(j: int, k: int) -> float:
+    """|p(j,k)|^2 = (1/b)(j^2 + jk + k^2) for the covolume-one triangular lattice A."""
+    return (j * j + j * k + k * k) / B
+
+
+def theta_A(alpha: float, M: int = 40) -> float:
+    """Truncated theta sum over A: sum of exp(-pi*alpha*|a|^2), |j|,|k| <= M."""
+    return sum(math.exp(-math.pi * alpha * norm_sq(j, k))
+               for j in range(-M, M + 1) for k in range(-M, M + 1))
+
+
+def theta_Z2(alpha: float, M: int = 40) -> float:
+    """Theta sum over the square lattice Z^2 (also covolume one)."""
+    s = sum(math.exp(-math.pi * alpha * n * n) for n in range(-M, M + 1))
+    return s * s
+
+
+print("alpha   theta_A(alpha)      theta_A(1/alpha)/alpha   theta_Z2(alpha)")
+for alpha in (0.5, 1.0, 2.0):
+    lhs = theta_A(alpha)
+    rhs = theta_A(1.0 / alpha) / alpha
+    print(f"{alpha:4.1f}  {lhs:.15f}  {rhs:.15f}  {theta_Z2(alpha):.15f}")
+\end{lstlisting}
+\begin{lstlisting}
+alpha   theta_A(alpha)      theta_A(1/alpha)/alpha   theta_Z2(alpha)
+ 0.5  2.008477918597919  2.008477918597920  2.014967440690170
+ 1.0  1.159595266963928  1.159595266963928  1.180340599016097
+ 2.0  1.004238959298960  1.004238959298960  1.007483720345085
+\end{lstlisting}
+(a) Explain why columns 2 and 3 agree, citing the two propositions and the theorem used. Why do they agree only to
+about $10^{-15}$? (b) Compute $\theta_\Lat(1)-1$ and compare with Example~\ref{ex:shells}. (c) The Gaussian energies at
+$\alpha=1$ are $\theta-1$: about $0.15960$ for $\Lat$ and $0.18034$ for $\Z^2$ \tierX{}. This is consistent with the main
+theorem, but it supports nothing (Tier X). Which theorem in the literature compares theta functions of all lattices of
+covolume one? (See~\cite{montgomery}.) (d) Change \texttt{M} to $5$ and explain why the output barely changes.
+\end{exercise}
+
+\begin{exercise}[(E, Python)]
+Modify the shell-count script of Example~\ref{ex:shells} to list the values $n\le 50$ represented by $j^2+jk+k^2$, and
+the corresponding $r(n)$. Conjecture which primes $p$ occur, then check your conjecture by hand for $p\le 13$. Report
+only what your run prints.
+\end{exercise}
+
+\begin{exercise}[(H)]
+Using Theorem~\ref{thm:lp-periodic}, show that among \emph{lattices} of covolume one, the triangular lattice minimises
+$\sum_{\lambda\ne0}e^{-\pi\alpha|\lambda|^2}$ for every $\alpha$ for which a sharp auxiliary function exists. Explain why
+this lattice statement is much weaker than Theorem~\ref{thm:main-statement}.
+\end{exercise}

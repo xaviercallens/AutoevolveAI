@@ -1,0 +1,1059 @@
+\chapter{Numerical validation in Python and Rust (Tier X)}\label{ch:numerics}
+
+Chapters~1 and~2 proved, and checked in Lean, that the triangular lattice $\Lat$ has the least lower energy among all
+locally finite configurations of density one, for every admissible potential $g$. This chapter does something much
+weaker, and the weakness is the subject of its first section. We put a few hundred particles in a periodic box, let
+them interact through a screened Coulomb (Yukawa) law, let the energy run downhill, and look at where it ends. The
+code is the Rust crate \texttt{qf-yukawa-crystal} in rusty-SUNDIALS~\cite{rusty} (PR~\#72), and a short Python
+companion written for this book. Every number in the chapter is \tierX{} unless a different tier is shown.
+
+All Rust code below is quoted verbatim from the files
+\texttt{crates/\allowbreak qf-yukawa-crystal/\allowbreak src/\allowbreak \{lib.rs,\allowbreak jellium.rs,\allowbreak main.rs\}} on the branch
+\texttt{physics/\allowbreak jellium-\allowbreak wigner-\allowbreak 2026-10-11} of rusty-SUNDIALS, with the line numbers given in each listing title.
+Lines left out are marked \texttt{// [...]} (an insertion of ours, not part of the file).
+
+\section{What numerics can and cannot do}\label{sec:num-can}
+
+\subsection{The gap between the theorem and the computer}
+The theorem of Chapter~2 is about objects that a computer cannot hold.
+\begin{itemize}
+\item \emph{Infinite configurations.} $C$ is an arbitrary locally finite subset of $\R^2$, and its lower energy is a
+$\liminf$ over disks of radius $R\to\infty$. A simulation holds finitely many particles, here $N=288$.
+\item \emph{All competitors.} The theorem quantifies over every $C$. A simulation visits the few end states that a
+particular algorithm reaches from a few hundred starting points.
+\item \emph{Exact potentials.} The theorem uses $g$ exactly. The code truncates the potential at a cutoff $r_c$ and
+modifies it near $r_c$ (Section~\ref{sec:num-model}). The truncated potential is \emph{not} completely monotone, so the
+theorem does not even apply to it.
+\item \emph{Exact arithmetic.} The code uses IEEE double precision, with relative rounding $\approx 1.1\times10^{-16}$ per
+operation and sums of tens of thousands of terms.
+\end{itemize}
+A periodic box is itself a competitor of a special kind. A configuration with $N$ particles in a periodic rectangle
+of area $N$ is, after periodic extension, a locally finite configuration of density one in the plane. Its energy per
+particle in the box (with the minimum-image rule and $r_c$ less than half the box) equals the lower energy of the
+periodic extension for the truncated potential. So the box computes honest energies of honest competitors, but only of
+\emph{periodic} ones, with one fixed period cell, and only for the truncated potential.
+
+\begin{warnbox}[: Tier X never supports a claim]
+In the Elenchus scheme~\cite{elenchus} a floating-point experiment is \tierX: it may steer a search, suggest a
+conjecture or expose a bug, but it is never evidence for a theorem. ``No relaxation went below the lattice'' is
+consistent with Chapter~2. It does not support it: the theorem is already kernel-checked (conditional on the fidelity
+of its definitions), and a few hundred periodic states say nothing about the infinitely many non-periodic ones.
+\end{warnbox}
+
+What, then, is the point? There are four honest uses.
+\begin{enumerate}
+\item \emph{Testing code against a theorem.} If a relaxation ever ended below the lattice energy, the first suspect
+would be the code, the second the truncation, and only a distant third the mathematics. A theorem is a strong test
+oracle for numerical software.
+\item \emph{Exploring the landscape.} The theorem identifies the minimum \emph{value}, not the local minima, their
+depths or basins. Numerics can explore those.
+\item \emph{Checking statement adequacy.} If the Lean definitions of Chapter~1 described the wrong object, the energies
+computed from the same formulas would disagree with physical intuition or with the literature (for example the
+Madelung constants of Section~\ref{sec:num-jellium}).
+\item \emph{Connecting to physics} (Chapter~4): what finite systems at finite temperature actually do.
+\end{enumerate}
+
+\subsection{Preregistration and commit order}
+An experiment whose success criterion is chosen after the results are seen can always be declared a success. The study
+in this chapter was therefore \emph{preregistered}: its predictions, tolerances, potentials, box, initial conditions and
+analysis were written into \texttt{results/preregistration.json} and committed (rusty-SUNDIALS commit
+\texttt{636c514}) \emph{before} the simulation code (\texttt{968b0f2}) and before the results (\texttt{1f46e70}). The
+order of commits is the evidence: anyone can check with \texttt{git log} that the criteria predate the code. The three
+predictions read, verbatim:
+\begin{quote}\small
+\textbf{P1} \texttt{no\_undercut}: ``Over all runs (T = 0 quenches and annealed runs, all initial conditions), no
+relaxed configuration has e < e\_tri - 1e-9 * |e\_tri| (kappa = 2). A violation would contradict the theorem (or reveal
+a truncation artefact, to be checked at kappa = 1 and with larger r\_c).''\\[0.3em]
+\textbf{P2} \texttt{annealed\_reaches\_lattice}: ``At least one annealed run per initial-condition family reaches the
+perfect lattice: zero defects and |e - e\_tri| < 1e-8 |e\_tri|. Expected but not guaranteed (annealing is heuristic);
+failure is reported, not hidden.''\\[0.3em]
+\textbf{P3} \texttt{quench\_glassy}: ``T = 0 quenches from disordered starts mostly end in defected local minima (e >
+e\_tri, defects > 0). This is a property of gradient flow, not evidence against the theorem.''
+\end{quote}
+P1 is the only prediction connected to the theorem. P2 is a prediction about an algorithm (annealing), and P3 about
+another (gradient descent). A failed P2 is reported as failed (Section~\ref{sec:num-results}); it says nothing about the
+theorem.
+
+The P1 wording contains a hedge worth noticing: the potential is truncated, so a genuine undercut \emph{could} be a
+truncation artefact. In the preregistration this is not an escape hatch but a test plan, fixed in advance: an undercut
+would have to be re-examined at another $\kappa$ and a larger $r_c$.
+
+\subsection{Controls must be shown to fire}
+A check that cannot fail carries no information. Before any production number is reported, every observable is run on
+inputs for which the right answer is known, in both directions.
+\begin{itemize}
+\item A \emph{positive control} is an input on which the check must pass: the perfect lattice must stay put, a slightly
+perturbed lattice must relax back to it.
+\item A \emph{negative control} is an input on which the check must fire: the square lattice must be detected as
+defected and as a saddle, and a box that cannot hold the triangular lattice must produce defected states above
+$e_{\rm tri}$.
+\end{itemize}
+If the defect counter reported zero defects for the square lattice, every ``zero defects'' in the results would be
+worthless. The same goes for the Hessian test and for the energy comparison. This is the numerical twin of the negative
+controls of the Lean work (\lean{unscaled_false}, \lean{riesz_neg_two_not_admissible}): an auditor that accepts
+everything is not an auditor.
+
+\section{The model}\label{sec:num-model}
+
+\subsection{The Yukawa potential and complete monotonicity}
+Two particles at distance $r$ interact through
+\begin{equation}\label{eq:yukawa}
+V(r)=\frac{e^{-\kappa r}}{r},\qquad \kappa>0 .
+\end{equation}
+In the language of Chapter~1, the potential is $g(t)=V(\sqrt t)=e^{-\kappa\sqrt t}\,t^{-1/2}$ as a function of the
+squared distance $t=r^2$.
+
+\begin{proposition}\label{prop:yukawa-cm}
+For every $\kappa\ge0$, $g(t)=e^{-\kappa\sqrt t}\,t^{-1/2}$ is completely monotone on $(0,\infty)$.
+\end{proposition}
+\begin{humanproof}
+\tierC{} (a standard argument, not formalised here). The function $t^{-1/2}$ is completely monotone:
+$(-1)^r\frac{d^r}{dt^r}t^{-1/2}=\frac12\cdot\frac32\cdots\frac{2r-1}2\,t^{-1/2-r}\ge0$; this is the $s=1$ case of
+\lean{riesz_admissible}. The function $h(t)=\kappa\sqrt t$ has a completely monotone derivative, and the composition
+$e^{-h}$ of the completely monotone $u\mapsto e^{-u}$ with such an $h$ is completely monotone (differentiate
+$e^{-h}$ repeatedly: every term is a product of $e^{-h}$ and derivatives of $-h$, each with the right sign). The product
+of two completely monotone functions is completely monotone by the Leibniz rule, since every term of
+$(-1)^r(fg)^{(r)}=\sum_k\binom rk\,(-1)^kf^{(k)}\,(-1)^{r-k}g^{(r-k)}$ is non-negative.
+\end{humanproof}
+
+So the theorem predicts that no density-one configuration has lower energy per particle than $\Lat$ for the exact
+Yukawa potential. The values $\kappa=2$ (main) and $\kappa=1$ (check) are used throughout.
+
+\subsection{Shifted-force cutoff}
+The sum of $V$ over a lattice converges quickly, but a simulation needs a finite neighbour list. We cut at $r_c=8$
+and \emph{shift the force}:
+\begin{equation}\label{eq:vsf}
+V_{\rm sf}(r)=\begin{cases}V(r)-V(r_c)-(r-r_c)\,V'(r_c), & r<r_c,\\ 0, & r\ge r_c.\end{cases}
+\end{equation}
+Then $V_{\rm sf}(r_c)=0$ and $V_{\rm sf}'(r_c^-)=V'(r_c)-V'(r_c)=0$: energy and force are continuous at $r_c$. The second
+derivative is \emph{not} shifted, $V_{\rm sf}''=V''$ for $r<r_c$, so the Hessian jumps by $V''(r_c)$ when a pair
+crosses $r_c$. The derivatives are
+\begin{equation}\label{eq:vprime}
+V'(r)=-\frac{e^{-\kappa r}(\kappa r+1)}{r^2},\qquad V''(r)=\frac{e^{-\kappa r}(\kappa^2r^2+2\kappa r+2)}{r^3}.
+\end{equation}
+In the code (\texttt{lib.rs}, lines 42--63):
+\begin{lstlisting}[language={},title={lib.rs, lines 42--63}]
+    fn v(&self, r: f64) -> f64 {
+        (-self.kappa * r).exp() / r
+    }
+    fn dv(&self, r: f64) -> f64 {
+        -(-self.kappa * r).exp() * (self.kappa * r + 1.0) / (r * r)
+    }
+    fn d2v(&self, r: f64) -> f64 {
+        let k = self.kappa;
+        (-k * r).exp() * (k * k * r * r + 2.0 * k * r + 2.0) / (r * r * r)
+    }
+    /// Shifted-force pair potential and its first two derivatives (zero for `r >= rc`).
+    pub fn pair(&self, r: f64) -> (f64, f64, f64) {
+        if r >= self.rc {
+            return (0.0, 0.0, 0.0);
+        }
+        let (vc, dvc) = (self.v(self.rc), self.dv(self.rc));
+        (
+            self.v(r) - vc - (r - self.rc) * dvc,
+            self.dv(r) - dvc,
+            self.d2v(r),
+        )
+    }
+\end{lstlisting}
+The \texttt{refs} command records $V(r_c)=e^{-\kappa r_c}/r_c$ as \texttt{truncation\_v\_rc}:
+$e^{-16}/8\approx1.41\times10^{-8}$ at $\kappa=2$ and $e^{-8}/8\approx4.19\times10^{-5}$ at
+$\kappa=1$.\footnote{\texttt{python -I -c "import math; print(math.exp(-16)/8, math.exp(-8)/8)"}, output
+\texttt{1.406689683990739e-08 4.193282848781398e-05}.} This is the pointwise value of $V$ at the cut, \emph{not} the
+change in the energy. The linear shift $-V(r_c)-(r-r_c)V'(r_c)$ acts on every pair inside $r_c$, and there are many such
+pairs (about $\pi r_c^2\approx200$ neighbours per particle), so the energy per particle moves much more. For the
+triangular lattice, a scratch sum of the \emph{unshifted} $V$ out to $r=60$ gives $0.3935428489$ at $\kappa=2$ and
+$1.6253213396$ at $\kappa=1$, against the shifted-force values $0.3935333668$ and $1.6076092172$ of
+Table~\ref{tab:num-refs}: differences $9.5\times10^{-6}$ and $1.77\times10^{-2}$.\footnote{\label{fn:unshifted}Scratch
+double loop over $|i|,|j|\le200$ (not shipped), $\frac12\sum_{0<|v|<60}e^{-\kappa|v|}/|v|$. Output (triangular, square):
+$\kappa=1$: \texttt{1.6253213396062602}, \texttt{1.6348554953171857}; $\kappa=2$: \texttt{0.3935428489323898},
+\texttt{0.40097424876505755}.} At $\kappa=1$ the shift is larger than $e_{\rm sq}-e_{\rm tri}$ itself. It is almost the
+same for the two lattices, though: the unshifted square-minus-triangular differences are $9.53\times10^{-3}$ ($\kappa=1$)
+and $7.43\times10^{-3}$ ($\kappa=2$), close to the shifted ones. Section~\ref{sec:num-python} shows the same effect when
+$r_c$ goes from 6 to 8 at $\kappa=2$: the shifted-force lattice energy moves by $3.0\times10^{-4}$, while $V(6)$ is about
+$10^{-6}$. What saves the study is that the lattice reference is computed with the same $V_{\rm sf}$: every energy
+comparison in this chapter is between equally truncated energies.
+
+\begin{remark}
+$V_{\rm sf}$ is not completely monotone (it vanishes on $[r_c,\infty)$, is positive just below, and its second
+derivative jumps), so P1 is a prediction for a potential the theorem does not cover. The modification is not small at
+$\kappa=1$, only nearly constant per particle, which suggests (\tierC) that it preserves the ordering of
+configurations.
+\end{remark}
+
+\subsection{The periodic box at density one}
+At density one the triangular lattice has spacing $a$ with $a^2\sqrt3/2=1$, i.e.
+\begin{equation}
+a=\sqrt{2/\sqrt3}\approx1.074570 .
+\end{equation}
+The box is $L_x\times L_y=16a\times9\sqrt3\,a\approx17.1931\times16.7509$.\footnote{Evaluated with
+\texttt{python -I -c "import math; a=math.sqrt(2/math.sqrt(3)); print(a, 16*a, 9*math.sqrt(3)*a)"}, output
+\texttt{1.074569931823542 17.193118909176672 16.750887463837792}.} It holds $16$ sites per row and $18$ rows (rows
+are $a\sqrt3/2$ apart, and $18\cdot a\sqrt3/2=9\sqrt3\,a$), so $N=288$ and the area is
+$16\cdot9\sqrt3\,a^2=288$: density one, and the triangular lattice fits periodically. Such a box is called
+\emph{commensurate} with $\Lat$. A square box of side $\sqrt{289}=17$ holds the square lattice ($N=289$) but not the
+triangular one; it is used as a negative control.
+
+Displacements use the minimum-image convention: \texttt{delta} (\texttt{lib.rs}, lines 65--72) replaces each coordinate
+difference $d_x$ by \texttt{dx -= lx * (dx / lx).round()}, i.e.\ $d_x-L_x\,\mathrm{round}(d_x/L_x)\in[-L_x/2,L_x/2]$, and
+likewise for $d_y$. The minimum image is the correct nearest copy as long as $r_c\le\min(L_x,L_y)/2$, which holds here ($8<8.375$). Under
+this condition each pair contributes at most once, and the energy of the box is
+\begin{equation}\label{eq:Ebox}
+E(x)=\sum_{1\le i<j\le N}V_{\rm sf}\bigl(\lvert x_i-x_j\rvert_{\rm mi}\bigr),\qquad e(x)=E(x)/N .
+\end{equation}
+The minimum-image map jumps when a coordinate difference crosses $\pm L/2$, but there $|x_i-x_j|_{\rm mi}\ge L/2>r_c$
+and $V_{\rm sf}=0$, so $E$ is continuously differentiable everywhere and smooth away from the pair distances $r_c$.
+
+The energy per particle of the infinite lattice with basis $b_1,b_2$ is
+\begin{equation}\label{eq:elat}
+e_{\rm lat}=\frac12\sum_{v\in\Lambda\setminus\{0\}}V_{\rm sf}(|v|),
+\end{equation}
+which \texttt{lattice\_energy} (\texttt{lib.rs}, lines 224--239) computes by a direct double loop. For the commensurate
+box the two must agree, and the unit test \texttt{periodic\_\allowbreak lattice\_\allowbreak energy\_\allowbreak equals\_\allowbreak direct\_\allowbreak lattice\_\allowbreak sum} checks this to
+$10^{-12}$ relative; the study's references agree to about $10^{-14}$ (Table~\ref{tab:num-refs}).
+
+\subsection{Force and Hessian}
+Write $d=x_i-x_j$ (minimum image), $r=|d|$, $u=d/r$, and $\varphi(d)=V_{\rm sf}(|d|)$.
+
+\begin{proposition}\label{prop:grad-hess}
+For $0<r<r_c$,
+\begin{equation}\label{eq:pairgrad}
+\nabla_d\varphi=V_{\rm sf}'(r)\,u,\qquad
+\nabla_d^2\varphi=K(d):=V''(r)\,uu^{\mathsf T}+\frac{V_{\rm sf}'(r)}{r}\bigl(I-uu^{\mathsf T}\bigr).
+\end{equation}
+Consequently the force on particle $i$ is $F_i=-\partial E/\partial x_i=-\sum_{j\ne i}V_{\rm sf}'(r_{ij})\,u_{ij}$, and
+the Hessian $H=\nabla^2E\in\R^{2N\times2N}$ is the sum over pairs $i<j$ with $r_{ij}<r_c$ of the $2\times2$ blocks
+\begin{equation}\label{eq:Hblocks}
+H_{ii}\mathrel{+}=K,\qquad H_{jj}\mathrel{+}=K,\qquad H_{ij}\mathrel{-}=K,\qquad H_{ji}\mathrel{-}=K .
+\end{equation}
+\end{proposition}
+\begin{humanproof}
+$\partial r/\partial d_a=d_a/r=u_a$, so $\partial_a\varphi=V_{\rm sf}'(r)u_a$. Differentiating again,
+$\partial_bu_a=(\delta_{ab}-u_au_b)/r$, hence
+$\partial_b\partial_a\varphi=V_{\rm sf}''(r)u_au_b+V_{\rm sf}'(r)(\delta_{ab}-u_au_b)/r$, and $V_{\rm sf}''=V''$ below
+$r_c$. Since $d=x_i-x_j$, $\partial d/\partial x_i=I$ and $\partial d/\partial x_j=-I$, which gives the signs in
+\eqref{eq:Hblocks} and, for the gradient, $\partial E/\partial x_i=+\nabla_d\varphi$ and $\partial E/\partial x_j=-\nabla_d\varphi$.
+\end{humanproof}
+
+Three facts follow at once. (i) $\sum_iF_i=0$ (Newton's third law), so the gradient is orthogonal to rigid
+translations. (ii) Each row of blocks of $H$ sums to zero, so the two translation vectors
+$\tau_x=(1,0,1,0,\dots)$ and $\tau_y=(0,1,0,1,\dots)$ lie in $\ker H$. (iii) The radial part $V''uu^{\mathsf T}$ is
+positive (since $V''>0$), while the transverse part $V_{\rm sf}'/r$ is negative (repulsion), which is what allows
+saddles.
+
+The force in the code, with the external (disk) terms trimmed:
+\begin{lstlisting}[language={},title={lib.rs, lines 105--121 (external-potential part trimmed)}]
+    /// Force `F = -grad E` written into `f`.
+    pub fn force(&self, x: &[f64], f: &mut [f64]) {
+        let n = x.len() / 2;
+        f.iter_mut().for_each(|v| *v = 0.0);
+        for i in 0..n {
+            for j in (i + 1)..n {
+                let (dx, dy) = self.delta(x[2 * i], x[2 * i + 1], x[2 * j], x[2 * j + 1]);
+                let r = (dx * dx + dy * dy).sqrt();
+                let (_, dv, _) = self.pair(r);
+                if dv != 0.0 {
+                    let (fx, fy) = (-dv * dx / r, -dv * dy / r);
+                    f[2 * i] += fx;
+                    f[2 * i + 1] += fy;
+                    f[2 * j] -= fx;
+                    f[2 * j + 1] -= fy;
+                }
+            }
+            // [...] external potential U(r) for the disk geometries (lines 122-131)
+\end{lstlisting}
+and the Hessian, exactly \eqref{eq:Hblocks}:
+\begin{lstlisting}[language={},title={lib.rs, lines 135--160 (external-potential part trimmed)}]
+    /// Hessian of `E` (dense, row-major, `2n x 2n`).
+    pub fn hessian(&self, x: &[f64]) -> Vec<f64> {
+        let n = x.len() / 2;
+        let m = 2 * n;
+        let mut h = vec![0.0; m * m];
+        let mut add = |a: usize, b: usize, v: f64| h[a * m + b] += v;
+        for i in 0..n {
+            for j in (i + 1)..n {
+                let (dx, dy) = self.delta(x[2 * i], x[2 * i + 1], x[2 * j], x[2 * j + 1]);
+                let r = (dx * dx + dy * dy).sqrt();
+                let (_, dv, d2v) = self.pair(r);
+                if r >= self.rc {
+                    continue;
+                }
+                let u = [dx / r, dy / r];
+                for a in 0..2 {
+                    for b in 0..2 {
+                        let id = if a == b { 1.0 } else { 0.0 };
+                        let k = d2v * u[a] * u[b] + dv / r * (id - u[a] * u[b]);
+                        add(2 * i + a, 2 * i + b, k);
+                        add(2 * j + a, 2 * j + b, k);
+                        add(2 * i + a, 2 * j + b, -k);
+                        add(2 * j + a, 2 * i + b, -k);
+                    }
+                }
+            }
+            // [...] bowl / wall terms for the disk geometries (lines 161-183)
+\end{lstlisting}
+Formulas are checked against finite differences in the crate's unit tests:
+\texttt{force\_\allowbreak matches\_\allowbreak finite\_\allowbreak difference\_\allowbreak of\_\allowbreak energy} (central difference $h=10^{-6}$, tolerance $10^{-6}$) and
+\texttt{hessian\_\allowbreak matches\_\allowbreak finite\_\allowbreak difference\_\allowbreak of\_\allowbreak force} (tolerance $10^{-5}$), on a lattice perturbed by Gaussian noise of
+standard deviation $0.05$. We ran the whole test suite once for this book (2 build jobs, 2 test threads):
+\begin{lstlisting}[language={},title={cargo test -q --release -j 2 --offline -p qf-yukawa-crystal --manifest-path .../Cargo.toml -- --test-threads=2}]
+running 10 tests
+..........
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+[...] two further blocks "running 0 tests ... 0 passed; 0 failed"
+\end{lstlisting}
+The ten tests are the five of \texttt{lib.rs} (force and Hessian against finite differences, box energy against the
+direct lattice sum, a Jacobi eigenvalue check on a matrix with known spectrum, square above triangular) and the five of
+\texttt{jellium.rs} (Section~\ref{sec:num-jellium}). The line marked \texttt{[...]} is our summary of the omitted output (two further test targets with no tests, presumably
+the binary and the doc-tests; \texttt{-q} hides their names).
+
+\section{Gradient flow, stiffness and CVODE}\label{sec:num-flow}
+
+\subsection{Relaxation as an ODE}
+The relaxation is the \emph{gradient flow}
+\begin{equation}\label{eq:gflow}
+\dot x(t)=F(x(t))=-\nabla E(x(t)),\qquad x(0)=x_0\in\R^{2N}.
+\end{equation}
+Physically it is the overdamped motion of particles in a viscous fluid at zero temperature, which is how colloids move
+(Chapter~4). Mathematically it has a Lyapunov function:
+\begin{equation}
+\frac{d}{dt}E(x(t))=\nabla E\cdot\dot x=-|\nabla E(x(t))|^2\le0 .
+\end{equation}
+The energy decreases strictly unless $x$ is a critical point. Since $E$ is bounded below on the box (it is a finite
+sum of terms bounded below by $V_{\rm sf}\ge0$) and blows up when two particles collide, trajectories stay away from
+collisions and approach the set of critical points. Generic starting points converge to local minima; a nondegenerate saddle attracts
+only a measure-zero set of starting points (its stable manifold). A gradient flow ends where it ends: in whatever basin it started. This is
+why P3 expects most quenches to end in defected minima.
+
+Near a critical point $x^*$, the linearisation $\dot\delta=-H(x^*)\delta$ decays along each eigenvector of $H$ at rate
+equal to its eigenvalue $\lambda_k$. The Jacobian of the right-hand side is
+\begin{equation}
+J(x)=\frac{\partial F}{\partial x}=-H(x).
+\end{equation}
+
+\subsection{Why stiff, and why BDF}
+An ODE is \emph{stiff} when its Jacobian has eigenvalues of very different sizes, so that an explicit method must
+take steps set by the fastest mode while the solution evolves on the slowest. For the perfect lattice at $\kappa=2$ we
+computed the full spectrum of $H$ with the formula of Proposition~\ref{prop:grad-hess}: two zero modes, then the
+smallest positive eigenvalue $2.355\times10^{-2}$ (twice), and the largest $5.700$, a ratio of about
+$242$.\footnote{\label{fn:hess}A scratch check written for this chapter (not shipped with the book; it re-implements
+\eqref{eq:Hblocks} in numpy and calls \texttt{numpy.linalg.eigvalsh}). Output:
+\texttt{kappa=2.0 N=288 lowest=[-2.77382284e-15 2.77729229e-15 2.35534976e-02 2.35534976e-02]
+largest=5.700435e+00 ratio\_max\_over\_third=2.4202e+02}. The lowest positive value agrees with the study's control
+value $0.0236$.} At defected minima the study recorded positive eigenvalues as small as $5.4\times10^{-5}$
+($\kappa=2$), so the slowest relaxation times are of order $1/(5.4\times10^{-5})\approx2\times10^4$ time units while the
+fastest are below one. And far from equilibrium, in a random start where two particles sit at distance $0.5a$, the
+local curvature $V''(0.5a)$ is larger still.
+
+An explicit method such as forward Euler is stable for this linear problem only if the step satisfies
+$h<2/\lambda_{\max}$; integrating to $t\sim10^5$ would need on the order of $10^5$ steps even where nothing happens.
+Backward differentiation formulas (BDF) are implicit. They are A-stable for orders 1 and~2 and A($\alpha$)-stable for
+orders 3 to~5, so in every case the whole negative real axis, where the eigenvalues $-\lambda_k$ of $J=-H$ lie, is
+inside the stability region, and the step size is chosen by accuracy alone. The price
+is a nonlinear solve per step,
+\begin{equation}
+x_{n+1}-h\beta_0F(x_{n+1})=\text{(known combination of past values)},
+\end{equation}
+solved by Newton's method with the matrix $I-h\beta_0J$. Here the Jacobian is available exactly: $J=-H$, from
+Proposition~\ref{prop:grad-hess}. An exact Jacobian costs one Hessian evaluation ($O(N^2)$ pair work plus a dense
+$2N\times2N$ matrix) but makes Newton converge in few iterations.
+
+\subsection{CVODE in rusty-SUNDIALS}
+rusty-SUNDIALS~\cite{rusty} is a Rust implementation of the SUNDIALS solver family. Its \texttt{cvode} crate provides
+CVODE's variable-step BDF method of orders 1 to~5 in Nordsieck form (\texttt{constants.rs}, \texttt{nordsieck.rs}),
+and forms the Newton matrix $M=I-\gamma J$ from a user-supplied dense Jacobian or, if none is given, from finite
+differences (\texttt{solver.rs}). The relaxation driver, verbatim:
+\begin{lstlisting}[language={},title={lib.rs, lines 252--300}]
+/// Overdamped relaxation `dx/dt = F(x)` with CVODE (BDF, analytic Jacobian) until `max |F| < ftol` or `t > tmax`.
+pub fn relax(sys: &System, x0: &[f64], ftol: f64, tmax: f64) -> Result<Relaxed, String> {
+    let s1 = *sys;
+    let s2 = *sys;
+    let rhs = move |_t: f64, y: &[f64], ydot: &mut [f64]| -> Result<(), String> {
+        s1.force(y, ydot);
+        Ok(())
+    };
+    let jac = move |_t: f64, y: &[f64], j: &mut DenseMat| -> Result<(), String> {
+        let h = s2.hessian(y);
+        let m = y.len();
+        for c in 0..m {
+            for r in 0..m {
+                j.cols[c][r] = -h[r * m + c];
+            }
+        }
+        Ok(())
+    };
+    let mut solver = Cvode::builder(Method::Bdf)
+        .rtol(1e-10)
+        .atol(1e-12)
+        .max_steps(2_000_000)
+        .jacobian(jac)
+        .build(rhs, 0.0, SerialVector::from_slice(x0))
+        .map_err(|e| format!("CVODE setup failed: {e}"))?;
+    let mut f = vec![0.0; x0.len()];
+    let mut tout = 1.0;
+    loop {
+        let (t, y) = solver
+            .solve(tout, Task::Normal)
+            .map_err(|e| format!("CVODE failed at t = {tout}: {e}"))?;
+        let y = y.to_vec();
+        sys.force(&y, &mut f);
+        let fmax = f.iter().fold(0.0_f64, |a, &b| a.max(b.abs()));
+        if fmax < ftol || t >= tmax {
+            let mut x = y;
+            sys.wrap(&mut x);
+            return Ok(Relaxed {
+                x,
+                t,
+                max_force: fmax,
+                steps: solver.num_steps(),
+                rhs_evals: solver.num_rhs_evals(),
+                converged: fmax < ftol,
+            });
+        }
+        tout *= 2.0;
+    }
+}
+\end{lstlisting}
+Points to notice:
+\begin{itemize}
+\item The right-hand side is the force; the Jacobian callback writes $-H$ into CVODE's column-major dense matrix
+(\texttt{j.cols[c][r]} is row $r$, column $c$).
+\item Tolerances are tight ($10^{-10}$ relative, $10^{-12}$ absolute): we want the end point, not a pretty trajectory, but
+a sloppy trajectory can cross into a different basin.
+\item The solver is asked for output at $t=1,2,4,8,\dots$ (\texttt{tout *= 2.0}). The doubling matches the multiscale
+spectrum: each output is a checkpoint, and the time horizon grows geometrically up to $t_{\max}=10^7$
+(\texttt{TMAX} in \texttt{main.rs}).
+\item The run stops when $\max_k|F_k|<10^{-9}$ (\texttt{FTOL} in \texttt{main.rs}). A run that hits $t_{\max}$ first is
+returned with \texttt{converged: false}, and the summary counts it; it is not silently dropped.
+\end{itemize}
+Two absences, for the record: the rusty-SUNDIALS workspace has no KINSOL (a Newton solver for $F(x)=0$ directly), and
+its \texttt{crates/ida} is a documented fixed-step prototype that the study does not use.
+
+\subsection{What the stopping rule guarantees}
+\begin{proposition}\label{prop:stop}
+\tierC{} Suppose $E$ is exactly quadratic near a local minimum $x^*$, $E(x)=E(x^*)+\frac12\delta^{\mathsf T}H\delta$
+with $\delta=x-x^*$, $H\succeq0$, $\ker H$ spanned by translations, and smallest positive eigenvalue $\lambda_*$. If the
+gradient $g=\nabla E(x)=H\delta$ satisfies $\max_k|g_k|<\varepsilon$, then
+\begin{equation}
+0\le E(x)-E(x^*)\le\frac{|g|^2}{2\lambda_*}<\frac{2N\varepsilon^2}{2\lambda_*}.
+\end{equation}
+\end{proposition}
+\begin{humanproof}
+Translations do not change $E$, so we may take $\delta\perp\ker H$. Then $\delta=H^+g$ and
+$E(x)-E(x^*)=\frac12g^{\mathsf T}H^+g\le|g|^2/(2\lambda_*)$, and $|g|^2\le2N\max_k|g_k|^2$.
+\end{humanproof}
+With $N=288$, $\varepsilon=10^{-9}$ and $\lambda_*\ge5.4\times10^{-5}$ this gives $E(x)-E(x^*)<5.3\times10^{-12}$, i.e.
+less than $2\times10^{-14}$ per particle, far below the P1 tolerance $10^{-9}|e_{\rm tri}|\approx4\times10^{-10}$. The
+argument is \tierC: real energies are not exactly quadratic and the bound uses the measured $\lambda_*$, but it shows that
+the stopping rule is not the weak point.
+
+\subsection{The Hessian spectrum as a minimum check}
+A converged run is a critical point; it could still be a saddle. The second-order test settles it.
+\begin{proposition}\label{prop:strictmin}
+Let $E$ be $C^2$ near a critical point $x^*$, invariant under translations, with $H(x^*)\succeq0$ and $\ker H(x^*)$
+equal to the translation plane $\mathrm{span}\{\tau_x,\tau_y\}$. Then $x^*$ is a strict local minimum modulo
+translation: there is $\rho>0$ with $E(x)>E(x^*)$ for every $x$ with $0<\mathrm{dist}(x,x^*+\mathrm{span}\{\tau_x,\tau_y\})<\rho$.
+\end{proposition}
+\begin{humanproof}
+Restrict $E$ to the affine slice $x^*+W$, $W=\mathrm{span}\{\tau_x,\tau_y\}^\perp$. There the Hessian is positive
+definite, so $x^*$ is a strict local minimum on the slice (the usual second-order sufficient condition). Every point
+near the orbit $x^*+\mathrm{span}\{\tau_x,\tau_y\}$ is a translate of a point of the slice near $x^*$, and $E$ is
+translation invariant.
+\end{humanproof}
+On a torus, rotations are \emph{not} symmetries (they do not preserve the box), so for a periodic configuration we expect
+exactly two zero modes. (For the disk with a harmonic bowl, translations are broken and a rotation is a symmetry, so
+one expects one zero mode there; the disk runs were not Hessian-checked.)
+
+The eigenvalues come from cyclic Jacobi rotations (\texttt{symmetric\_eigenvalues}, \texttt{lib.rs} lines 302--343),
+which are slow ($O(m^3)$ per sweep, $m=576$) but simple, and accurate for small eigenvalues of symmetric matrices. The
+crate checks it on the tridiagonal matrix with known eigenvalues $2-2\cos(k\pi/(m+1))$. The verdict on each run:
+\begin{lstlisting}[language={},title={main.rs, lines 65--72}]
+/// Lowest Hessian eigenvalues (after the two translation zero modes are included) for a periodic configuration.
+fn hessian_summary(sys: &System, x: &[f64]) -> (f64, f64, f64, usize) {
+    let m = x.len();
+    let ev = symmetric_eigenvalues(&sys.hessian(x), m);
+    let scale = ev[m - 1].abs();
+    let neg = ev.iter().filter(|&&v| v < -1e-9 * scale).count();
+    (ev[0], ev[1], ev[2], neg)
+}
+\end{lstlisting}
+An eigenvalue counts as negative if it is below $-10^{-9}\lambda_{\max}$; the three lowest eigenvalues are recorded so
+that one can see the two translation modes and the gap above them.
+
+\subsection{Annealing, outside SUNDIALS}
+A $T=0$ quench gets stuck. To give the lattice a chance, the study first \emph{anneals}: overdamped Langevin dynamics
+\begin{equation}\label{eq:sde}
+dX_t=F(X_t)\,dt+\sqrt{2T(t)}\,dW_t,
+\end{equation}
+with $W$ a standard Brownian motion in $\R^{2N}$ and a temperature lowered from $T_0=0.05$ to $T_1=10^{-5}$. At fixed
+$T$ the stationary law is the Boltzmann distribution $\propto e^{-E/T}$, so slow cooling concentrates near low
+minima; how slow is ``slow enough'' is exactly what the study tests (P2).
+
+Equation~\eqref{eq:sde} is a stochastic differential equation, not an ODE. Brownian paths are nowhere differentiable,
+so there is no smooth right-hand side for CVODE to interpolate, and CVODE's local error estimates, which compare
+polynomial predictors with correctors, have no meaning. A stochastic scheme is needed. The code uses Euler--Maruyama,
+$X_{k+1}=X_k+F(X_k)\,\Delta t+\sqrt{2T_k\Delta t}\,\xi_k$ with $\xi_k$ standard Gaussian, and a geometric schedule
+$T_{k+1}=T_k(T_1/T_0)^{1/K}$:
+\begin{lstlisting}[language={},title={lib.rs, lines 488--503}]
+    let mut rng = Rng::new(seed);
+    let mut x = x0.to_vec();
+    let mut f = vec![0.0; x.len()];
+    let ratio = (t1 / t0).powf(1.0 / steps as f64);
+    let mut temp = t0;
+    for _ in 0..steps {
+        sys.force(&x, &mut f);
+        let amp = (2.0 * temp * dt).sqrt();
+        for k in 0..x.len() {
+            let d = (f[k] * dt + amp * rng.gauss()).clamp(-cap, cap);
+            x[k] += d;
+        }
+        sys.wrap(&mut x);
+        temp *= ratio;
+    }
+    x
+\end{lstlisting}
+The study calls it with $K=300\,000$ steps, $\Delta t=0.01$ and \texttt{cap}$\,=0.05$
+(\texttt{anneal(sys, x0, 0.05, 1e-5, 300\_000, 0.01, 0.05, seed)} in \texttt{main.rs}). Note the \texttt{clamp}: each
+coordinate increment is capped at $0.05$ so that a close encounter cannot throw a particle across the box. With the cap
+the scheme is a \emph{capped} Euler--Maruyama scheme, not a consistent discretisation of \eqref{eq:sde}; it is a
+heuristic search, which is all P2 asks of it. Every annealed state is then quenched with CVODE as above, so the
+reported end states are critical points of $E$, whatever the annealing did.
+
+\section{Results of the preregistered study}\label{sec:num-results}
+
+Every number in this section is \tierX{} and comes from the study's recorded results (rusty-SUNDIALS commit
+\texttt{1f46e70}). Initial conditions are of three kinds: the perfect and noisy lattices (controls), uniform random
+points with minimum separation $0.5a$, and points derived from the Hugging Face dataset
+\texttt{colabfit/OC20\_IS2RES\_val\_id}~\cite{oc20} (CC-BY-4.0, shard \texttt{co/co\_10.parquet}): atomic structures
+rotated at random in 3D, projected onto the plane and accepted with minimum separation $0.5a$. The dataset supplies
+disorder only; nothing depends on its chemistry.
+
+\subsection{References}
+\begin{table}[h]\centering
+\begin{tabular}{lccc}
+\toprule
+& $e_{\rm tri}$ & $e_{\rm sq}$ & $e_{\rm sq}-e_{\rm tri}$\\
+\midrule
+$\kappa=2$ & $0.3935333668$ & $0.4009647699$ & $7.43\times10^{-3}$\\
+$\kappa=1$ & $1.6076092172$ & $1.6171455730$ & $9.54\times10^{-3}$\\
+\bottomrule
+\end{tabular}
+\caption{Lattice energies per particle at density one, shifted-force Yukawa with $r_c=8$ (\tierX). The periodic-box
+energy of the perfect lattice and the direct lattice sum agree to about $10^{-14}$. The Python companion of
+Section~\ref{sec:num-python} reproduces $e_{\rm tri}(\kappa=2)$ independently.}\label{tab:num-refs}
+\end{table}
+The triangular lattice is below the square one at both screening lengths, as the theorem (and, for lattices alone, the
+older results of Rankin, Cassels and Montgomery~\cite{rankin,cassels,montgomery} on Epstein zeta and theta functions)
+predicts. Figure~\ref{fig:num-lattices} shows the references.
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.8\textwidth]{lattices.pdf}
+\caption{Reference energies per particle at density one (the vertical axes do not start at zero). Left and middle:
+shifted-force Yukawa at the two values of $\kappa$, triangular below square. Right: the jellium extension of
+Section~\ref{sec:num-jellium}. \tierX.}\label{fig:num-lattices}
+\end{figure}
+
+\subsection{Controls}
+\begin{table}[h]\centering\small
+\begin{tabular}{p{0.26\textwidth}p{0.30\textwidth}p{0.34\textwidth}}
+\toprule
+control & expected & observed\\
+\midrule
+perfect lattice (positive) & stays at $e_{\rm tri}$ & gap $5.2\times10^{-14}$\\
+lattice $+$ noise $0.1a$ (positive) & relaxes back to $e_{\rm tri}$ & gap $2.5\times10^{-14}$\\
+Hessian at the lattice (positive) & exactly 2 zero modes, then a gap & 2 zero modes, then $0.0236$\\
+square lattice in $17\times17$ box (negative) & a saddle: negative eigenvalues & 72 negative eigenvalues ($\kappa=2$), 64 ($\kappa=1$)\\
+incommensurate square box, $N=289$ (negative) & every relaxed state defected, above $e_{\rm tri}$ & all defected, minimum gap $9.6\times10^{-4}$ ($\kappa=2$)\\
+\bottomrule
+\end{tabular}
+\caption{Positive and negative controls (\tierX). Each check is shown to pass where it must and to fire where it must
+before any production number is read.}\label{tab:num-controls}
+\end{table}
+The negative controls matter most. The square lattice is a critical point of $E$ (by symmetry every particle feels zero
+net force), so a code that only checked $\max|F|$ would accept it as an equilibrium. The Hessian test rejects it with
+dozens of negative eigenvalues. The incommensurate box cannot hold the triangular lattice, and indeed no relaxed state
+there reaches $e_{\rm tri}$ or is defect-free: the defect counter and the energy gap both fire.
+
+\subsection{The three predictions}
+\paragraph{P1 (no undercut): PASS.} At $\kappa=2$, 0 undercuts in 100 relaxations, 20 of them in the incommensurate
+control box. At $\kappa=1$, 0 undercuts in 50 relaxations. (Each run of the main study is counted twice, as a $T=0$
+quench and as an annealed-then-quenched state.) Figure~\ref{fig:num-gaps} shows every relaxation's gap.
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.75\textwidth]{gaps.pdf}
+\caption{Each relaxation's relative energy gap $(e-e_{\rm tri})/e_{\rm tri}$, one marker per run, on a logarithmic
+axis. P1 concerns the sign of the gap: no gap is negative. Markers at the far left are runs that reached the lattice to
+round-off. \tierX.}\label{fig:num-gaps}
+\end{figure}
+
+\paragraph{P2 (annealing reaches the lattice at least once per family).} At $\kappa=2$: PASS, narrowly. One of 20
+OC20-derived and one of 20 uniform annealed runs reached the perfect lattice (zero defects and
+$|e-e_{\rm tri}|<10^{-8}|e_{\rm tri}|$). At $\kappa=1$: \textbf{FAIL as preregistered}: 0 of 10 (OC20-derived) and 2 of 10
+(uniform). The failure is a statement about the annealing schedule ($3\times10^5$ steps of capped Euler--Maruyama),
+which is a weak instrument at $N=288$. It says nothing about the theorem in either direction, and it is reported, not
+hidden, as the preregistration requires.
+
+\paragraph{P3 (quenches are glassy): as expected.} At $\kappa=2$, 15 of 20 (OC20-derived) and 14 of 20 (uniform)
+$T=0$ quenches end with defects.
+
+\paragraph{Hessian coverage.} The final Hessian was computed for the 80 ($\kappa=2$) and 40 ($\kappa=1$) non-control
+runs. None has a negative eigenvalue. The two translation modes satisfy $|\lambda|\le1.5\times10^{-15}$ ($\kappa=2$) and
+$\le1.8\times10^{-15}$ ($\kappa=1$), and every other eigenvalue is at least $5.4\times10^{-5}$ ($\kappa=2$) and
+$5.0\times10^{-5}$ ($\kappa=1$). By Proposition~\ref{prop:strictmin}, up to floating point, these end states are strict
+local minima modulo translation. Ten orders of magnitude separate the zero modes from the smallest genuine eigenvalue,
+so the classification is not borderline. The incommensurate-box and disk runs were not Hessian-checked.
+
+Read together: many distinct local minima exist, every one found lies above the lattice, and annealing finds the
+lattice only occasionally. The theorem provides none of this landscape information.
+
+\subsection{Open versus closed disk (confounded)}
+The Lean energy counts points in \emph{closed} disks (Chapter~1); the D4 work asks whether open disks give the same
+answer. A tempting ``experiment'' is to confine $N=300$ particles ($\kappa=2$) in an open disk (harmonic bowl
+$U=kr^2/2$, $k=0.02$) and in a closed disk (soft wall $U=\varepsilon(r-R)^4$ for $r>R$, $\varepsilon=100$), anneal and
+quench, and compare. Results: interior defect fraction $0.086$ (open) versus $0.033$ (closed); edge defect fraction
+$0.965$ versus $0.602$; interior mean $|\psi_6|$ $0.913$ versus $0.931$.
+
+\begin{warnbox}[: a confounded comparison]
+These numbers do not measure an open-versus-closed effect. The bowl produces a non-uniform density; the wall
+compresses particles against the edge; and the two ``edge'' layers (within two spacings of the outermost particle)
+contain different numbers of particles. The study describes finite-size edge effects in two different set-ups. It is
+not a test of upstream's closed-disk counting, which is a question about measure-zero boundary terms in a limit $R\to\infty$
+and is settled (or not) by proof, not by simulation.
+\end{warnbox}
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.7\textwidth]{disks.pdf}
+\caption{Open (harmonic bowl) versus closed (soft wall) disk, $N=300$, $\kappa=2$: Voronoi cells coloured by
+coordination, one run of each regenerated from its published seed. Defects concentrate at the edge in both cases.
+\tierX, and confounded as stated in the text.}\label{fig:num-disks}
+\end{figure}
+
+The order parameters used throughout are those of \texttt{order} (\texttt{lib.rs}, lines 360--420): $d_0$ is the median
+nearest-neighbour distance, two particles are neighbours if they are closer than $1.35\,d_0$, a particle is a defect if
+it does not have exactly 6 neighbours, and $\psi_6(i)=\frac1{c_i}\sum_{j\sim i}e^{6\mathrm i\theta_{ij}}$ is the
+bond-orientational order of particle $i$, with $\theta_{ij}$ the angle of the bond. For the perfect triangular lattice
+$|\psi_6(i)|=1$; for the square lattice $\psi_6(i)=0$, since $\sum_{m=0}^3e^{6\mathrm i(m\pi/2)}=0$.
+
+\section{The jellium extension: $s=1$ with Ewald summation}\label{sec:num-jellium}
+
+\subsection{Why a background}
+For the Coulomb potential $1/r$ (Riesz $s=1$ in the plane) the lattice sum $\sum_{v\ne0}|v|^{-1}$ diverges: there are
+about $2\pi r\,dr$ points at distance $r$, and $\int^\infty2\pi r\cdot r^{-1}\,dr=\infty$. Every competitor of
+density one has infinite energy, and the theorem says nothing (\lean{latticeEnergy_riesz_lt_top} needs $s>2$, and
+the inequality $\infty\le\infty$ is empty). Physics removes the divergence with a uniform neutralising background of
+opposite charge: the \emph{one-component plasma}, or \emph{jellium}. Its energy per particle is finite, and for $s=1$ the
+classical ground state is the two-dimensional Wigner crystal. Upstream's manuscript treats renormalized energies for
+$0\le s<2$ in its Section~8, following Petrache and Serfaty~\cite{ps}, and concludes that the triangular lattice
+minimizes them~\cite{oai} \tierL. This is \emph{not} formalised in Lean anywhere. The computation below is a numerical
+first step, \tierX.
+
+\subsection{The Ewald energy}
+Let $N$ unit charges sit at $x_1,\dots,x_N$ in a periodic rectangle of area $\mathcal A=L_xL_y$, with background density
+$n=N/\mathcal A$. Choose a splitting parameter $\alpha>0$ and write
+\begin{equation}
+\frac1r=\underbrace{\frac{\operatorname{erfc}(\alpha r)}{r}}_{\text{short range}}+\underbrace{\frac{\operatorname{erf}(\alpha r)}{r}}_{\text{smooth, long range}} .
+\end{equation}
+\begin{proposition}\label{prop:ewald}
+With $S(k)=\sum_je^{\mathrm ik\cdot x_j}$ and $k$ ranging over the reciprocal lattice $\{(2\pi m/L_x,2\pi n'/L_y)\}$,
+the energy of the neutral periodic system (particles plus background) is
+\begin{equation}\label{eq:ewald}
+E=\frac12{\sum_{i,j}}'\frac{\operatorname{erfc}(\alpha r_{ij})}{r_{ij}}
++\frac{\pi}{\mathcal A}\sum_{k\ne0}\frac{\operatorname{erfc}(k/2\alpha)}{k}\,|S(k)|^2
+-\frac{N\alpha}{\sqrt\pi}-\frac{N^2\sqrt\pi}{\alpha\mathcal A},
+\end{equation}
+where $\sum'$ runs over all pairs and periodic images except $i=j$ in the same cell. $E$ does not depend on $\alpha$.
+\end{proposition}
+\begin{humanproof}
+\tierC{} (the classical derivation; we give its steps.)
+\emph{Long-range part.} The function $\operatorname{erf}(\alpha r)/r$ is smooth and its two-dimensional Fourier
+transform is $\frac{2\pi}{k}\operatorname{erfc}\bigl(\frac{k}{2\alpha}\bigr)$. Summing it over all pairs and images
+(including $i=j$) is a sum over the periodic charge density, which by the Poisson summation formula equals
+$\frac1{2\mathcal A}\sum_k\frac{2\pi}k\operatorname{erfc}(\frac k{2\alpha})|S(k)|^2$. The $k\ne0$ terms give the
+second term of \eqref{eq:ewald}. The $k=0$ term diverges, like $2\pi N^2/(2\mathcal A k)$, and is cancelled exactly by
+the long-range interaction of the particles with the background and of the background with itself: a neutral system
+has no $k=0$ Fourier component.
+\emph{Self term.} The long-range sum included $i=j$ at distance $0$, which is not a real interaction. Its value
+$\lim_{r\to0}\operatorname{erf}(\alpha r)/r=2\alpha/\sqrt\pi$, with the factor $\frac12$ and $N$ particles, gives
+$-N\alpha/\sqrt\pi$.
+\emph{Background in the short-range part.} The background also interacts through the short-range kernel. With
+$\int_{\R^2}\frac{\operatorname{erfc}(\alpha r)}r\,d^2x=2\pi\int_0^\infty\operatorname{erfc}(\alpha r)\,dr=\frac{2\sqrt\pi}\alpha$,
+the particle--background energy is $-Nn\frac{2\sqrt\pi}\alpha$ and the background--background energy is
+$+\frac12Nn\frac{2\sqrt\pi}\alpha$; the sum is $-\frac{N^2\sqrt\pi}{\alpha\mathcal A}$.
+\emph{Independence of $\alpha$.} Only the splitting of $1/r$ changes with $\alpha$, not the total.
+\end{humanproof}
+
+The code states the same formula in its header and implements it with a half-space $k$-sum (since $|S(-k)|=|S(k)|$,
+each $k$ is taken once with weight~2):
+\begin{lstlisting}[language={},title={jellium.rs, lines 4--9}]
+//! Energy (with `A = Lx Ly`, `S(k) = sum_j exp(i k.x_j)`):
+//! `E = 1/2 sum'_{i,j} erfc(a r_ij)/r_ij + (pi/A) sum_{k != 0} erfc(k/(2a))/k |S(k)|^2 - N a/sqrt(pi) - N^2 sqrt(pi)/(a A)`,
+//! with the real-space sum over minimum images inside `rc` (requires `rc <= min(Lx, Ly)/2`).
+//! The last term is what remains of the particle-background and background-background interactions after the
+//! divergent `k = 0` parts cancel. This is the renormalized (jellium) energy of upstream's Section 8 for `s = 1`, up to
+//! upstream's normalisation constant.
+\end{lstlisting}
+The last sentence of that comment is a \tierC{} identification (the normalisation constant is not computed here).
+The constructor \texttt{Jellium::new} (lines 27--61) stores, for each half-space vector $k$ with $|k|<k_{\rm cut}$, the
+coefficient \texttt{c = 2.0 * libm::erfc(k / (2.0 * alpha)) / k}; the factor 2 is the weight of the pair $\pm k$.
+\begin{lstlisting}[language={},title={jellium.rs, lines 85--110}]
+    /// Total energy.
+    pub fn energy(&self, x: &[f64]) -> f64 {
+        let n = x.len() / 2;
+        let geo = self.geometry_system();
+        let area = self.lx * self.ly;
+        let mut real = 0.0;
+        for i in 0..n {
+            for j in (i + 1)..n {
+                let (dx, dy) = geo.delta(x[2 * i], x[2 * i + 1], x[2 * j], x[2 * j + 1]);
+                let r = (dx * dx + dy * dy).sqrt();
+                if r < self.rc {
+                    real += libm::erfc(self.alpha * r) / r;
+                }
+            }
+        }
+        let mut recip = 0.0;
+        for &(kx, ky, c) in &self.kvecs {
+            let (re, im) = self.structure(x, kx, ky);
+            recip += c * (re * re + im * im);
+        }
+        recip *= std::f64::consts::PI / area;
+        let nf = n as f64;
+        real + recip
+            - nf * self.alpha / std::f64::consts::PI.sqrt()
+            - nf * nf * std::f64::consts::PI.sqrt() / (self.alpha * area)
+    }
+\end{lstlisting}
+The real-space sum keeps only minimum images inside $r_c=8$ and the reciprocal sum only $|k|<k_{\rm cut}=7$, with
+$\alpha=0.66$ (\texttt{tri\_jellium} in \texttt{main.rs}). Both truncations are tiny:
+$\operatorname{erfc}(\alpha r_c)=\operatorname{erfc}(5.28)\approx8.2\times10^{-14}$ and
+$\operatorname{erfc}(k_{\rm cut}/2\alpha)\approx6.4\times10^{-14}$.\footnote{Printed by the scratch check of
+footnote~\ref{fn:hess}: \texttt{erfc(0.66*8) = 8.201410123512745e-14  erfc(7/(2*0.66)) = 6.400438678401495e-14}.}
+
+The force follows by differentiating \eqref{eq:ewald}. The real-space pair force has magnitude
+$-\frac{d}{dr}\frac{\operatorname{erfc}(\alpha r)}r=\frac{\operatorname{erfc}(\alpha r)}{r^2}+\frac{2\alpha}{\sqrt\pi}\frac{e^{-\alpha^2r^2}}{r}$.
+For the reciprocal part, with $\phi_i=k\cdot x_i$,
+$\partial_{x_i}|S(k)|^2=2\,\mathrm{Re}\bigl(\mathrm ik\,e^{\mathrm i\phi_i}\overline{S(k)}\bigr)=-2k\,\mathrm{Im}\bigl(e^{\mathrm i\phi_i}\overline{S(k)}\bigr)$
+and $\mathrm{Im}(e^{\mathrm i\phi}\overline S)=\mathrm{Re}S\sin\phi-\mathrm{Im}S\cos\phi$. The code (lines 134--145)
+implements exactly this, with the comment \texttt{// Im(conj(S) e\^{}\{i ph\}) = sre sin(ph) - sim cos(ph)} and the
+prefactor \texttt{pref = 2.0 * std::f64::consts::PI / area}, and the unit test
+\texttt{force\_\allowbreak matches\_\allowbreak finite\_\allowbreak difference} checks it against the energy.
+Unlike the Yukawa case, the jellium relaxation does \emph{not} pass an analytic Jacobian: \texttt{Jellium::relax} builds
+CVODE without \texttt{.jacobian(...)}, so CVODE forms its own difference-quotient Jacobian (the doc comment says
+``finite-difference Jacobian''). The Hessian used for the spectrum checks is \texttt{hessian\_fd}: central finite
+differences of the analytic force with step $10^{-5}$, symmetrised. Annealing uses the same capped Euler--Maruyama with
+$10^5$ steps, because each force costs a $k$-sum.
+
+\subsection{Controls}
+The jellium extension was preregistered separately (rusty-SUNDIALS branch \texttt{physics/\allowbreak jellium-\allowbreak wigner-\allowbreak 2026-10-11};
+preregistration \texttt{e706f85}, code \texttt{3bc55fa}, credit to Alves et al.\ \texttt{b7e4380}). Its controls:
+\begin{itemize}
+\item \emph{Madelung energies against the literature.} At density one ($r_s=1/\sqrt\pi$) the energy per particle is
+$\eta\sqrt\pi$, with $\eta$ the Madelung constant in Hartree$\times r_s$. The crate uses the ten-digit values of Alves,
+Bendazzoli, Evangelisti and Berger~\cite{alves}, which agree with Bonsall and Maradudin~\cite{bm}:
+\begin{lstlisting}[language={},title={jellium.rs, lines 252--253}]
+pub const ETA_TRIANGULAR: f64 = -1.106102587;
+pub const ETA_SQUARE: f64 = -1.100244420;
+\end{lstlisting}
+The Ewald code gives $e_{\rm tri}=-1.960515789320$ against the literature value $-1.960515789825$ (relative difference
+$2.6\times10^{-10}$), and $e_{\rm sq}=-1.950132460$ (relative difference $4.3\times10^{-10}$). This is the rounding level
+of nine-decimal published constants. \tierL{} for the literature values, \tierX{} for ours.
+\item \emph{Square saddle.} The square lattice has 64 unstable modes (negative eigenvalues of \texttt{hessian\_fd}),
+consistent with the imaginary phonon branch reported by Bonsall and Maradudin~\cite{bm}.
+\item \emph{$\alpha$-invariance.} Proposition~\ref{prop:ewald} says $E$ does not depend on $\alpha$. The test perturbs
+the lattice by noise of standard deviation $0.2$ and compares three values of $\alpha$:
+\begin{lstlisting}[language={},title={jellium.rs, lines 304--311}]
+        // A 4x range of the splitting parameter, each with its k-space cutoff scaled so both truncations stay ~1e-13.
+        let e: Vec<f64> = [0.66, 1.32, 2.64]
+            .iter()
+            .map(|&al| Jellium::new(lx, ly, al, 8.0, 10.6 * al).energy(&x))
+            .collect();
+        for v in &e[1..] {
+            assert!(((v - e[0]) / e[0]).abs() < 1e-10, "{:?}", e);
+        }
+\end{lstlisting}
+The energy changes by less than $10^{-10}$ relative over this $4\times$ range. A wrong self term or background term
+would break this test, because those terms depend on $\alpha$ explicitly: it is a control that fires on the most
+likely bugs.
+\end{itemize}
+
+\subsection{The main jellium relaxation study}
+The preregistered prediction (J1) is the analogue of P1: no relaxed configuration below the triangular Madelung
+energy. Status of the main study: \JelliumMainStatus.
+
+\section{A from-scratch Python companion}\label{sec:num-python}
+
+The Rust crate is the instrument of record; for learning, a script short enough to read in one sitting is better.
+The script below, \texttt{code/ch3\_yukawa\_small.py} (78 lines, numpy and scipy only), builds the same shifted-force
+Yukawa model in a small commensurate box, $n\times2n$ triangular sites, $N=2n^2$, area $N$, and minimises the energy
+with L-BFGS from a perturbed lattice and from five random starts.
+
+\begin{warnbox}[: L-BFGS is not CVODE]
+L-BFGS is a quasi-Newton \emph{minimiser}: it takes line-search steps downhill using a low-rank curvature model. It
+does not follow the gradient-flow trajectory \eqref{eq:gflow}, so from the same start it can end in a different local
+minimum than CVODE. The script computes no Hessian, so it cannot distinguish a minimum from a saddle. Everything
+it prints is \tierX.
+\end{warnbox}
+
+\lstinputlisting[language=Python,title={code/ch3\_yukawa\_small.py}]{code/ch3_yukawa_small.py}
+
+One design point differs from the Rust code. At $n=6$ the box is $6.447\times11.167$, so $r_c=6$ (or $8$) exceeds
+$L_x/2$, and the minimum image alone would miss pairs. The script therefore adds image shells, $M=\lceil r_c/L+\frac12\rceil$
+copies in each direction beyond the minimum image, and sums over all images inside $r_c$, including a particle's own
+images. The Rust code can use the minimum image only because its box is large enough ($8<8.375$). The gradient is
+$\sum_{j,\text{images}}V_{\rm sf}'(r)\,d/r$; the factor $\frac12$ of the energy disappears because each pair appears twice
+in the double sum (Exercise~\ref{ex:num-grad}).
+
+We ran the script with its defaults ($n=6$, $\kappa=2$, $r_c=6$) on two cores (\texttt{taskset -c 2,3}); it took
+26.8~s of wall-clock time. The exact output:
+\begin{lstlisting}[language={},title={python -I code/ch3\_yukawa\_small.py}]
+N=72 kappa=2.0 rc=6.0 box=6.447420x11.167258
+e_tri box sum = 0.393231076156  direct lattice sum = 0.393231076156
+perturbed lattice 0.1a   e-e_tri =  1.332e-15  max|grad| = 1.2e-07  iters =    62  defects = 0
+random start seed 1      e-e_tri =  7.772e-16  max|grad| = 4.0e-08  iters =    95  defects = 0
+random start seed 2      e-e_tri =  1.903e-03  max|grad| = 4.8e-08  iters =   165  defects = 4
+random start seed 3      e-e_tri =  2.220e-16  max|grad| = 7.5e-08  iters =   112  defects = 0
+random start seed 4      e-e_tri =  6.661e-16  max|grad| = 3.6e-08  iters =   146  defects = 0
+random start seed 5      e-e_tri =  1.833e-03  max|grad| = 2.1e-07  iters =   222  defects = 4
+\end{lstlisting}
+And with the study's cutoff, \texttt{python -I code/ch3\_yukawa\_small.py 6 2 8}:
+\begin{lstlisting}[language={},title={python -I code/ch3\_yukawa\_small.py 6 2 8}]
+N=72 kappa=2.0 rc=8.0 box=6.447420x11.167258
+e_tri box sum = 0.393533366826  direct lattice sum = 0.393533366826
+perturbed lattice 0.1a   e-e_tri =  1.388e-15  max|grad| = 1.2e-07  iters =    62  defects = 0
+random start seed 1      e-e_tri =  7.772e-16  max|grad| = 7.5e-08  iters =    94  defects = 0
+random start seed 2      e-e_tri =  1.903e-03  max|grad| = 1.3e-07  iters =   160  defects = 4
+random start seed 3      e-e_tri =  8.882e-16  max|grad| = 5.6e-08  iters =   114  defects = 0
+random start seed 4      e-e_tri =  9.437e-16  max|grad| = 4.4e-08  iters =   145  defects = 0
+random start seed 5      e-e_tri =  1.833e-03  max|grad| = 4.7e-08  iters =   221  defects = 4
+\end{lstlisting}
+How to read this output honestly:
+\begin{itemize}
+\item \emph{An independent reference check.} With $r_c=8$ the script's box energy and direct lattice sum,
+$0.393533366826$, agree with the Rust reference $e_{\rm tri}(\kappa=2)=0.3935333668$ of Table~\ref{tab:num-refs}, from
+an independent implementation in another language with a different image scheme and $N=72$ instead of $288$. (The
+lattice energy per particle does not depend on $N$ for a commensurate box.) With $r_c=6$ the value is
+$0.393231076156$: the cutoff changes the fourth significant digit at $\kappa=2$, which is why both codes compare
+equally truncated energies.
+\item \emph{The stopping rule was not met as asked.} The script requests \texttt{gtol=1e-10}, but the final
+$\max|\nabla E|$ is between $4\times10^{-8}$ and $2\times10^{-7}$: L-BFGS stopped on its relative energy-decrease
+criterion \texttt{ftol}. (A scratch rerun of two starts, the perturbed lattice and seed~2, printed scipy's message
+\texttt{CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH} for both.) This is looser than the Rust rule $\max|F|<10^{-9}$. For the lattice runs the energy agrees with
+$e_{\rm tri}$ to about $10^{-15}$ anyway, as Proposition~\ref{prop:stop} leads one to expect (the error is quadratic in
+the gradient).
+\item \emph{No undercut}, in twelve relaxations. Three of the five random starts (seeds 1, 3, 4) reached the
+lattice (within $10^{-15}$, zero defects); two (seeds 2, 5) ended $1.8$--$1.9\times10^{-3}$ above it with 4 defects. Do
+\emph{not} compare ``2 of 5 defected'' with P3 (15 of 20 quenches defected): system size ($72$ versus $288$), algorithm (L-BFGS versus gradient
+flow) and cutoff all differ.
+\item \emph{No designed negative control.} The two defected end states show that the defect counter and the energy gap
+\emph{can} fire, but that is incidental, not designed. By the standard of Section~\ref{sec:num-can} the script is
+incomplete until you add one; Exercises~\ref{ex:num-neg} and~\ref{ex:num-square} do that.
+\end{itemize}
+
+\section{How to reproduce the Rust study}\label{sec:num-repro}
+
+All commands are run from the rusty-SUNDIALS checkout (branch \texttt{physics/\allowbreak jellium-\allowbreak wigner-\allowbreak 2026-10-11} for the jellium
+commands). The binary is \texttt{yukawa\_crystal} (\texttt{[[bin]]} in the crate's \texttt{Cargo.toml}); every subcommand takes
+the crate directory and writes JSON lines under \texttt{<crate\_dir>/results/} (\texttt{main.rs}, lines 1--3: the
+``Experiment driver for the preregistered study \texttt{results/preregistration.json} (YUK-TRI-1)''). The number of worker threads is read from the environment:
+\begin{lstlisting}[language={},title={main.rs, lines 260--265}]
+    // Worker threads: YUKAWA_THREADS if set, else 2 (the machine is shared; the owner asked for 2 cores overnight).
+    let threads = std::env::var("YUKAWA_THREADS")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+        .filter(|&t| t > 0)
+        .unwrap_or(2);
+\end{lstlisting}
+The workflow:
+\begin{lstlisting}[language={},title={Reproduction (one command per line; run from the repository root)}]
+cargo test --release -p qf-yukawa-crystal
+cargo build --release -p qf-yukawa-crystal
+
+# initial conditions: OC20 shard co/co_10.parquet from colabfit/OC20_IS2RES_val_id
+python crates/qf-yukawa-crystal/scripts/hf_initial_conditions.py co_10.parquet crates/qf-yukawa-crystal/data/initial
+
+YUKAWA_THREADS=2 target/release/yukawa_crystal refs     crates/qf-yukawa-crystal
+YUKAWA_THREADS=2 target/release/yukawa_crystal controls crates/qf-yukawa-crystal
+YUKAWA_THREADS=2 target/release/yukawa_crystal main     crates/qf-yukawa-crystal 2 20
+YUKAWA_THREADS=2 target/release/yukawa_crystal main     crates/qf-yukawa-crystal 1 10
+YUKAWA_THREADS=2 target/release/yukawa_crystal disk     crates/qf-yukawa-crystal
+YUKAWA_THREADS=2 target/release/yukawa_crystal snapshot crates/qf-yukawa-crystal
+python crates/qf-yukawa-crystal/scripts/summarize.py crates/qf-yukawa-crystal
+
+YUKAWA_THREADS=2 target/release/yukawa_crystal jel-controls crates/qf-yukawa-crystal
+YUKAWA_THREADS=2 target/release/yukawa_crystal jel-main     crates/qf-yukawa-crystal 20
+\end{lstlisting}
+The initial-conditions script writes 20 periodic ($N=288$), 10 square-box ($N=289$) and 10 disk ($N=300$) CSV files
+plus a \texttt{provenance.json}; every command except \texttt{refs} and \texttt{controls} reads them.
+\texttt{main <dir> <kappa> <nrun>} runs \texttt{nrun} OC20-derived and \texttt{nrun} uniform starts, each quenched and
+annealed-then-quenched with Hessian, plus \texttt{nrun/2} incommensurate-box controls; the counts of
+Section~\ref{sec:num-results} correspond to $\texttt{nrun}=20$ at $\kappa=2$ ($2\cdot(20+20)+2\cdot10=100$) and
+$\texttt{nrun}=10$ at $\kappa=1$ ($2\cdot(10+10)+2\cdot5=50$). \texttt{snapshot} re-runs selected published runs with
+their seeds for the figures; \texttt{summarize.py} checks P1--P3 with the preregistered tolerances
+(\texttt{REL\_\allowbreak TOL\_\allowbreak UNDERCUT = 1e-9}, \texttt{REL\_\allowbreak TOL\_\allowbreak LATTICE = 1e-8});
+the jellium commands write under \texttt{results/jellium/}. Run times: the only times measured for this book are those of the unit tests (0.15~s for the ten tests, after
+compilation) and of the Python companion (26.8~s). The production commands perform hundreds of CVODE relaxations of a
+576-dimensional system with dense Jacobians and $3\times10^5$-step anneals; we did not time them here and quote no
+figure. Start with \texttt{refs} and \texttt{controls}.
+
+\section{The laboratory analysis script}\label{sec:num-lab}
+
+The tiered paper~\cite{tiered} proposes laboratory tests with colloids and dusty plasmas (protocols L1--L4, \tierC{}
+proposals; none has been run; Chapter~4 discusses the physics). They share
+one analysis script, \texttt{papers/\allowbreak universal\_\allowbreak optimality\_\allowbreak tiered/\allowbreak lab/\allowbreak lab\_analysis.py}, which takes tracked 2D
+positions and computes the same observables as the simulations: density from the mean Voronoi cell area of the
+particles over which the energy is averaged; coordination with the $1.35\,d_0$ rule; local and global $|\psi_6|$; and the
+interaction energy per interior particle for a stated law (\texttt{dipolar} $r^{-3}$, or \texttt{yukawa:<kappa>} with
+$\kappa$ in the experiment's units), truncated at $r_c$ with a uniform tail correction
+$\frac12\int_{r_c}^\infty2\pi r\,V(r)\,dr$ and compared with a triangular patch of the same density and truncation. Its
+self-test feeds it four synthetic frames: a triangular patch in arbitrary units (scaled by $3.7$), the same with Gaussian
+noise $0.08$, a square patch, and a Yukawa case that checks the unit conversion of $\kappa$. We ran
+\texttt{taskset -c 2,3 python -I lab\_analysis.py --selftest}; exit code 0. The output is below; we left out fields,
+marked \texttt{[...]} (our insertion), that repeat across blocks or are not discussed.
+\begin{lstlisting}[language={},basicstyle=\ttfamily\scriptsize,title={lab\_analysis.py --selftest}]
+{
+ "triangular": {
+  "n": 1600,
+  "measured_density_input_units": 0.07304601899196492,
+  "law": "dipolar",
+  "law_density1": "dipolar",
+  "rcut": 6.0,
+  "counted": 728,
+  "defect_fraction": 0.0,
+  "psi6_local_mean": 1.0,
+  "psi6_global": 1.0,
+  "d0": 1.0745699318235395,
+  [...]
+  "e_per_particle": 4.464518999036898,
+  "e_tri_same_density": 4.464518999036646,
+  "rel_gap": 5.6399935141796596e-14,
+  "prediction_e_ge_e_tri": true
+ },
+ "noisy_triangular": {
+  "n": 1600,
+  "measured_density_input_units": 1.0006342525142475,
+  [...]
+  "defect_fraction": 0.2625994694960212,
+  "psi6_local_mean": 0.8244091272609662,
+  "psi6_global": 0.8076197599391082,
+  [...]
+  "rel_gap": 0.029497434514365446,
+  "prediction_e_ge_e_tri": true
+ },
+ "square": {
+  "n": 1600,
+  "measured_density_input_units": 1.0,
+  [...]
+  "defect_fraction": 1.0,
+  "psi6_local_mean": 1.8369701987210297e-16,
+  "psi6_global": 1.8369701987210538e-16,
+  [...]
+  "rel_gap": 0.011590527342694872,
+  "prediction_e_ge_e_tri": true
+ },
+ "yukawa_units": {
+  "n": 1600,
+  "measured_density_input_units": 0.07304601899196492,
+  "law": "yukawa:0.5405405405405405",
+  "law_density1": "yukawa:2.0",
+  [...]
+  "defect_fraction": 0.0,
+  [...]
+  "e_per_particle_truncated": 0.39353696637141355,
+  "e_tri_truncated": 0.3935369663713675,
+  "tail_correction": 9.65130619565578e-06,
+  [...]
+  "rel_gap": 1.1707445433997635e-13,
+  "prediction_e_ge_e_tri": true
+ }
+}
+SELFTEST PASS
+\end{lstlisting}
+What the self-test shows, and what it does not:
+\begin{itemize}
+\item \emph{Unit invariance.} The triangular patch was given in units $3.7$ times too large (density $0.0730\ldots$ in
+input units, about $1/3.7^2$); after rescaling, the defect fraction is $0$, $|\psi_6|=1$ and the relative gap is
+$5.6\times10^{-14}$. The Yukawa case recovers $\kappa_1=2$ from $\kappa_{\rm input}=2/3.7$.
+\item \emph{Thermal noise raises the energy.} The noisy patch has relative gap $+0.029$ and local $|\psi_6|=0.82$.
+\item \emph{The defect detector fires on the square patch}: defect fraction $1.0$, $\psi_6\approx10^{-16}$.
+\item \emph{What it does not show}: no self-test case returns \texttt{prediction\_e\_ge\_e\_tri = false}. Every input is a
+configuration at or above the lattice energy, so the energy comparison is never shown to fire. A too-short cutoff
+does make it fire (Exercise~\ref{ex:num-lab}).
+\end{itemize}
+The Yukawa value $0.393537$ (plain truncation at $r_c=6$) is not the same quantity as the shifted-force values $0.393231$
+and $0.393533$ of Section~\ref{sec:num-python}: only equal truncation conventions may be compared.
+
+\section{Exercises}\label{sec:num-ex}
+All exercises are numerical experiments; their results are \tierX. Use at most two cores
+(\texttt{taskset -c 2,3}). Before you report any number, run a positive and a negative control.
+
+\begin{exercise}[Derivatives]\label{ex:num-grad}
+Derive $\nabla E$ for the image-sum energy $E=\frac12\sum_{i,j}\sum_{s}{}'V_{\rm sf}(|x_i-x_j+s|)$ of the Python script
+and show that the factor $\frac12$ disappears. Then check \texttt{energy\_grad} against central finite differences at
+a random configuration (step $10^{-6}$), and verify Proposition~\ref{prop:grad-hess} by finite differences of the
+gradient for one $2\times2$ block.
+\end{exercise}
+
+\begin{exercise}[Varying $\kappa$]
+Run the Python script with $\kappa\in\{0.5,1,2,4\}$ at $n=6$, $r_c=8$. Record $e_{\rm tri}$ and how many of the five
+random starts reach it. Is there a trend? What happens to the image-shell count $M$ and to the run time as
+$\kappa\to0$ with $r_c$ fixed, and why must $r_c$ grow as $\kappa$ decreases for the truncation to stay at the same level?
+\end{exercise}
+
+\begin{exercise}[Varying $N$]
+Run $n=4,5,6,7,8$ at $\kappa=2$. Plot the fraction of random starts that reach the lattice against $N=2n^2$, with more
+seeds (say 20) for small $n$. Explain, in terms of the number of local minima, why the fraction should fall with $N$.
+Is your result comparable with P3? List every difference between your experiment and the Rust study.
+\end{exercise}
+
+\begin{exercise}[Varying the cutoff]
+At $n=6$, $\kappa=1$, compute $e_{\rm tri}$ with $r_c\in\{3,4,6,8,10\}$ and compare $|e_{\rm tri}(r_c)-e_{\rm tri}(10)|$
+with $e^{-\kappa r_c}/r_c$ and with the unshifted sum of footnote~\ref{fn:unshifted}; explain why the shift dominates. Then replace the shifted-force potential by plain truncation ($V(r)$ for $r<r_c$, $0$
+beyond) and observe what happens to L-BFGS: the energy is discontinuous at $r_c$. Why does that break a gradient-based
+minimiser, and why does it not matter for the shifted-force form?
+\end{exercise}
+
+\begin{exercise}[A designed negative control]\label{ex:num-neg}
+Reproduce the incommensurate-box negative control in Python. Put $N=n^2$ particles in a square box of side $n$
+(density one) and relax from random starts. Check whether any end state is defect-free (at small $n$ a strained,
+6-coordinated state is possible) and whether every one lies above the triangular value $e_{\rm tri}$ computed in a
+commensurate box. Then plant a bug that affects only one side of a comparison, e.g.\ drop the factor $\frac12$ in
+\texttt{energy\_grad} but not in \texttt{lattice\_sum}, and check that the box-sum versus direct-sum line of the output
+now disagrees. (Dropping it everywhere would double $e$ and $e_{\rm tri}$ alike, and the comparison would not fire.) A
+control that does not fire on a planted bug is not a control.
+\end{exercise}
+
+\begin{exercise}[Find the square-lattice saddle]\label{ex:num-square}
+In the square box of side $n$ with $N=n^2$, place the perfect square lattice. (a) Show that $\max|\nabla E|$ is at
+round-off level, so a gradient-based stopping rule accepts it. (b) Build the Hessian from \eqref{eq:Hblocks} and count
+its negative eigenvalues with \texttt{numpy.linalg.eigvalsh} using the criterion $\lambda<-10^{-9}\lambda_{\max}$. The
+Rust study found 72 at $\kappa=2$ and 64 at $\kappa=1$ for $N=289$, $r_c=8$; your count at smaller $n$ will differ.
+(c) Perturb the lattice by $10^{-3}$ along the eigenvector of the most negative eigenvalue and relax. Where does it go,
+and how far below $e_{\rm sq}$? (d) At the end state, check that exactly two eigenvalues are at round-off level, with
+eigenvectors close to $\tau_x,\tau_y$; then put the particles in a harmonic bowl instead and explain why one zero mode
+remains.
+\end{exercise}
+
+\begin{exercise}[L-BFGS versus gradient flow]
+Integrate the gradient flow \eqref{eq:gflow} for the $n=4$ system with \texttt{scipy.integrate.solve\_ivp}, once with
+\texttt{method="RK45"} and once with \texttt{method="BDF"} and the analytic Jacobian $-H$. Compare the number of
+right-hand-side evaluations needed to reach $\max|F|<10^{-9}$. From the same random start, do L-BFGS and the gradient flow
+end in the same state? Relate the RK45 cost to the stability bound $h<2/\lambda_{\max}$.
+\end{exercise}
+
+\begin{exercise}[Ewald by hand]\label{ex:num-ewald}
+Write a Python version of \eqref{eq:ewald} for $N=72$ in the box of the script. With the minimum image you need
+$r_c\le L_x/2\approx3.2$, so choose $\alpha$ large enough that $\operatorname{erfc}(\alpha r_c)$ is negligible, and
+raise $k_{\rm cut}$ accordingly. (a) Check the Madelung energy of the
+triangular lattice against $\eta\sqrt\pi$ with $\eta=-1.106102587$. (b) Check $\alpha$-invariance over a $4\times$ range,
+scaling $k_{\rm cut}$ with $\alpha$. (c) Plant a bug: drop the background term $-N^2\sqrt\pi/(\alpha\mathcal A)$, and
+show that the $\alpha$-invariance test fires.
+\end{exercise}
+
+\begin{exercise}[Make the lab self-test fire]\label{ex:num-lab}
+Find an input for which \texttt{lab\_analysis.py} reports \texttt{prediction\_e\_ge\_e\_tri} as \texttt{false}, and
+explain why this is a failure of the analysis assumptions and not of the theorem. Hint: a wrong $\kappa$ alone will not
+do it, because the reference uses the same law. A cutoff shorter than the square lattice's second-neighbour distance
+will: in a scratch call of \texttt{analyse} on the self-test's $40\times40$ square patch with the dipolar law and
+$r_c=1.1$, we obtained a truncated energy $2.0$ against $2.4178$ for the triangular patch, and the flag \texttt{False}.
+Why does the comparison invert?
+\end{exercise}

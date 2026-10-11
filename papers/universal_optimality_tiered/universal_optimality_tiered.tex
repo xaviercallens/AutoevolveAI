@@ -7,6 +7,8 @@
 \usepackage{array}
 \usepackage{url}
 \usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{caption}
 \usepackage[hidelinks]{hyperref}
 \makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.}\makeatother
 \DeclareUrlCommand\lean{\urlstyle{tt}}
@@ -17,11 +19,19 @@
 
 \title{Planar universal optimality, tiered:\\ kernel-checked consequences, a non-uniqueness theorem,\\ and a CVODE $N$-body consistency check for the Yukawa interaction}
 \author{Xavier Callens (SocrateAI Lab)}
-\date{Preprint v1, 2026-10-11. doi:10.5281/zenodo.23293112}
+\date{Preprint v2, 2026-10-11 (v1: doi:10.5281/zenodo.23293112)}
 \hypersetup{pdftitle={Planar universal optimality, tiered}, pdfauthor={Xavier Callens}}
 
 \begin{document}
 \maketitle
+\begin{center}
+\includegraphics[width=\textwidth]{figures/cover.pdf}
+\captionof{figure}{Cover. Three stages of one CVODE study (Tier~X), Voronoi cells coloured by local hexagonal order
+$|\psi_6|$, with 5-fold (blue) and 7-fold (red) defects marked. Left: a disordered initial condition derived from the
+Hugging Face OC20 dataset. Middle: its zero-temperature CVODE quench, a defected local minimum. Right: an annealed run
+followed by a CVODE quench, which reaches the perfect triangular lattice. Every panel is regenerated from a published
+seed by \texttt{yukawa\_crystal snapshot}.}\label{fig:cover}
+\end{center}
 
 \begin{abstract}
 The openai/math release contains a Lean~4 proof that the triangular lattice minimises the lower $g$-energy among all
@@ -106,7 +116,14 @@ by $N_R/(N_R-1)\to1$; the $\liminf$ comparison closes with \lean{ENNReal.liminf_
 the reverse inequality. For the isometry statement, isometries of the plane are affine (Mathlib's
 \lean{Isometry.affineIsometryOfStrictConvexSpace}), so $f(2a-b)=2f(a)-f(b)$. Write $p$ for \lean{triangularPoint}
 and pick $a,b\in A$ with $f(a)=p(1,0)$ and $f(b)=p(2,0)$. Then $2a-b\in A$ and $f(2a-b)=2p(1,0)-p(2,0)=p(0,0)=0$,
-contradicting $0\notin A\setminus\{0\}$.
+contradicting $0\notin A\setminus\{0\}$ (Figure~\ref{fig:vacancy}).
+
+\begin{figure}[!ht]\centering
+\includegraphics[width=0.86\textwidth]{figures/vacancy.pdf}
+\caption{The non-uniqueness theorem (UO-A-0006). Removing the origin leaves the lower energy unchanged for every
+admissible $g$. No isometry carries $A$ onto $A\setminus\{0\}$: an isometry of the plane is affine, so it would send
+$2a-b$ to $2p(1,0)-p(2,0)=0$.}\label{fig:vacancy}
+\end{figure}
 
 This is the remark after~\cite[Thm.~1.4]{ckmrv} (UO-L-0002), also noted by upstream (``it identifies the minimum
 value, not all minimizers''~\cite[\S1]{oai}, UO-L-0006), now as a theorem in this setting. Its interpretation (UO-C-0002) is
@@ -166,6 +183,13 @@ registered $1.4a$. (b) At $\kappa=1$ ten initial conditions per family were run,
 instead of the registered twenty per family; the number of incommensurate runs was not registered. (c) The incommensurate control's automatic pass test checks only that every state
 is above $e_{\rm tri}$; that the states are defected, also registered, is read from the table (all are).
 
+\begin{figure}[!ht]\centering
+\includegraphics[width=\textwidth]{figures/lattices.pdf}
+\caption{Reference energies per particle at density~1. Left and middle: Yukawa, triangular below square at both
+$\kappa$. Right: the jellium extension (Section~\ref{sec:extension}), where this code's Ewald energies match Bonsall
+and Maradudin~\cite{bm} to $\le 4\times10^{-10}$ and the square lattice is a saddle point.}\label{fig:lattices}
+\end{figure}
+
 \paragraph{Controls.} References: $e_{\rm tri}=\ETriTwo$ and $e_{\rm sq}=\ESqTwo$ at $\kappa=2$
 ($e_{\rm sq}-e_{\rm tri}=\DSqTwo$); the periodic box reproduces the direct lattice sum to $\BoxVsSumTwo$. A perfect
 lattice stays put (relative gap $\PosGap$); a lattice with $0.1a$ noise relaxes back (gap $\NoisyGap$); the Hessian at
@@ -208,13 +232,99 @@ computed). The incommensurate
 family uses a square box and is a negative control. Tier~X throughout.}\label{tab:num}
 \end{table}
 
+\begin{figure}[!ht]\centering
+\includegraphics[width=\textwidth]{figures/gaps.pdf}
+\caption{Every relaxation's relative energy gap to the triangular lattice, one marker per run, on a logarithmic axis.
+P1 concerns the sign of the gap, which the summary script checks for every run (no gap is negative). Markers at the
+far left are runs that reached the lattice to round-off. Generated from \texttt{main\_kappa\{2,1\}.jsonl}.}\label{fig:gaps}
+\end{figure}
+
 \paragraph{Open versus closed disk.} $N=300$, $\kappa=2$, annealed and quenched: harmonic bowl (open) versus soft
 wall (closed). Interior defect fraction \DiskOpenInt{} (open) versus \DiskClosedInt{} (closed); edge \DiskOpenEdge{}
 versus \DiskClosedEdge; interior mean $|\psi_6|$ \DiskOpenPsi{} versus \DiskClosedPsi. The comparison is confounded:
 the bowl produces a non-uniform density, the closed disk compresses particles against the wall, and the two ``edge''
 layers (within two spacings of the outermost particle) contain different numbers of particles. It describes
 finite-size edge effects in these two set-ups and is not a controlled measurement of either. It is not a test of whether upstream's closed-disk counting differs from an open-disk one, which is a question
-about measure-zero boundary terms in a limit.
+about measure-zero boundary terms in a limit. Figure~\ref{fig:disks} shows one run of each.
+
+\begin{figure}[!ht]\centering
+\includegraphics[width=0.92\textwidth]{figures/disks.pdf}
+\caption{Open (harmonic bowl) versus closed (soft wall) disk, $N=300$: Voronoi cells coloured by coordination.
+Defects concentrate at the edge in both cases, with a near-triangular interior. One run each (\texttt{disk\_00},
+regenerated from its published seed); the averages are in the text. Tier~X, and confounded as stated.}\label{fig:disks}
+\end{figure}
+
+\section{Extension: long-range interactions and jellium (Tier~X, in progress)}\label{sec:extension}
+For $0<s\le2$ and for the logarithm, the raw lattice sum diverges. The comparison of Section~2 then reads $E(C)=\infty$
+for every competitor and says nothing. Upstream's manuscript treats this range through renormalized energies against a
+neutralizing background (its Section~8, after Petrache and Serfaty~\cite{ps}): for $0\le s<2$ the triangular lattice
+minimizes the renormalized energy, and the jellium minimum equals it up to normalisation~\cite{oai}. That corollary is
+\emph{not} in upstream's Lean. As a first, numerical step we treat $s=1$, the classical 2D electron gas (Wigner
+crystal), by Ewald summation in the same periodic box, with CVODE relaxation and a preregistration (rusty-SUNDIALS
+\texttt{e706f85}) committed before the code. Its controls pass: the triangular and square Madelung energies equal
+Bonsall and Maradudin's~\cite{bm} to $\le4\times10^{-10}$ relative (Figure~\ref{fig:lattices}); the energy does not
+change over a $4\times$ range of the Ewald parameter; and the square lattice is a saddle point with 64 unstable modes,
+consistent with the imaginary phonon branch reported in~\cite{bm}. The relaxation study (prediction J1: no relaxed
+configuration below the triangular Madelung energy) is reported in the companion record when it completes. The $s=2$
+endpoint is outside upstream's statement. The formal targets for this range (a heat-trace comparison, and the
+Laplace-transform step of upstream's Lemma ``Heat comparison across period lattices'') are listed with priors in
+\texttt{docs/EXTENSION\_RENORMALIZED\_JELLIUM\_2026-10-11.md}.
+
+\section{Laboratory protocols (Tier~C proposals)}\label{sec:lab}
+The theorem is about exact potentials and infinite configurations. A laboratory has finite temperature, finite $N$,
+polydispersity and imperfect interaction laws. Experiments therefore cannot test the Lean statement. What they can do
+is test whether real two-dimensional repulsive systems behave as the theorem and our numerics suggest. Each protocol
+below is a proposal (Tier~C); none has been run. All four share one analysis script,
+\texttt{lab/lab\_analysis.py}, which takes tracked particle coordinates and computes the same observables as the
+simulations. Density comes from the mean Voronoi cell area, coordination from the $1.35\,d_0$ rule; the script also
+gives the local and global $|\psi_6|$ and the interaction energy per interior particle for a stated law, compared with
+the triangular lattice at the same density. Its self-test passes: a perfect lattice gives gap $6\times10^{-14}$ in any
+length unit, thermal noise raises the energy above the lattice, and a square lattice is detected and placed above it.
+Every protocol should be preregistered with that script, a predicted bracket, and the kill criterion below.
+
+\paragraph{L1. Superparamagnetic colloids at a flat air--water interface (Riesz $s=3$).} Following Zahn, Wille,
+Maret, Sengupta and Nielaba~\cite{zahn}, a perpendicular field $B$ induces parallel dipoles. The pair energy is
+$\propto\chi^2B^2/r^3$, a Riesz potential with $s=3$: in the theorem's class, with finite lattice energy (D1b). This
+is the most direct realisation of D1.
+\emph{Procedure.} Ramp $B$ slowly from the fluid to the crystal (the laboratory analogue of annealing) at fixed area
+fraction. Track positions by video microscopy, and record $\chi$ and $B$ so that the law's prefactor is known.
+\emph{Predictions.}
+\begin{itemize}
+\item (a) At large coupling, $|\psi_6|\to1$ and the defect fraction $\to0$ in the interior.
+\item (b) The measured dipolar energy per interior particle exceeds the triangular value at the measured density, by
+an amount that shrinks as $B$ grows (the thermal excess).
+\item (c) A particle removed with optical tweezers leaves a vacancy that relaxes locally, without global
+restructuring.
+\item (d) A square arrangement imposed with holographic tweezers and then released relaxes away from square. This is
+the laboratory version of our square-saddle control.
+\end{itemize}
+\emph{Kill criterion.} A slowly ramped, defect-free interior whose dipolar energy lies below the triangular value
+beyond the measurement error, with the law's prefactor independently confirmed.
+
+\paragraph{L2. Dusty-plasma monolayer (Yukawa).} Thomas et al.~\cite{thomas} observed Coulomb crystallization of
+charged microparticles levitated in a plasma sheath. The interaction is screened Coulomb (Yukawa), and the radial
+confinement is close to parabolic, the analogue of our open bowl.
+\emph{Procedure.} Measure $\kappa$ and the coupling from the phonon spectrum or the pair correlation. Image the
+monolayer, run the shared script, and simulate our bowl model at the measured $\kappa$ and $N$.
+\emph{Predictions.} A near-triangular interior, with defects concentrated at the rim. The interior defect fraction is
+compared with the simulation at matched $\kappa$ and $N$ (Figure~\ref{fig:disks}, left).
+\emph{Confounds.} Ion-wake attraction (non-reciprocal forces), neutral drag and vertical oscillations. Any of these
+moves the system outside the theorem's class.
+
+\paragraph{L3. Charged colloids in circular, hexagonal and square cavities (closed disk).} Bubeck, Neser, Bechinger
+and Leiderer~\cite{bubeck} confined 10--100 screened-Coulomb colloids in lithographic cavities and found structures
+dominated by the cavity shape.
+\emph{Procedure.} Repeat the circular-cavity case at $N\approx300$ and image the interior; compare with our
+closed-wall runs at matched $N$ and wall stiffness.
+\emph{Prediction.} The edge defect fraction exceeds the interior one, as in Figure~\ref{fig:disks}, right. Compared
+with L2 at matched $N$ and density, this is the experimental open-versus-closed comparison.
+
+\paragraph{L4. Electrons on liquid helium (jellium, $s=1$).} Grimes and Adams~\cite{grimes} observed the
+liquid-to-crystal transition of a classical 2D sheet of electrons held above liquid helium. The electrodes supply the
+neutralizing background, so this is the jellium case of Section~\ref{sec:extension}.
+\emph{Prediction.} The crystal is triangular. The evidence in~\cite{grimes} is spectroscopic, not a direct image, so a
+test here compares spectroscopic signatures with the triangular Madelung and phonon structure~\cite{bm}. Direct
+imaging of the lattice would need a different detection method, which we do not specify.
 
 \section{Limitations}
 \begin{enumerate}
@@ -232,6 +342,11 @@ theorem.
 \texttt{e1a6083}. Ledger and evidence:
 \texttt{results/discovery/ledger/} (gate: \texttt{tools/ledger.py} of~\cite{elenchus}, exit \LedgerExit{}:
 \LedgerClaims{} claims, \LedgerBlocks{} blocks, \LedgerFlags{} flags).
+
+\paragraph{Version history.} v1 (doi:10.5281/zenodo.23293112): the text, tables and ledger. v2 adds the figures,
+all generated by \texttt{make\_figures.py} from the result files and from snapshots that re-run published seeds. It
+also adds the jellium extension's preregistration and controls (Section~\ref{sec:extension}) and the laboratory
+protocols (Section~\ref{sec:lab}). No v1 result changed.
 
 \paragraph{Publication decision.} The Elenchus publish gate requires the ledger gate to exit~0, and it exits~1
 because of the \LedgerFlags{} unaudited-statement flags. The author reviewed the draft and decided to publish with
@@ -254,6 +369,18 @@ universal-optimality theorem, kernel-checked in Lean 4, Zenodo (2026), doi:10.52
 \bibitem{elenchus} X.~Callens, SocrateAI-Scientific-Elenchus,
 \url{https://github.com/xaviercallens/SocrateAI-Scientific-Elenchus} (commit \texttt{c9ae8cd}).
 \bibitem{rusty} X.~Callens, rusty-SUNDIALS, \url{https://github.com/xaviercallens/rusty-SUNDIALS}.
+\bibitem{bm} L.~Bonsall, A.~A.~Maradudin, Some static and dynamical properties of a two-dimensional Wigner crystal,
+Phys.\ Rev.\ B 15 (1977) 1959, doi:10.1103/PhysRevB.15.1959; Madelung values as recalculated in arXiv:2103.01622.
+\bibitem{ps} M.~Petrache, S.~Serfaty, Crystallization for Coulomb and Riesz interactions as a consequence of the
+Cohn--Kumar conjecture, Proc.\ AMS 148 (2020) 3047--3057, doi:10.1090/proc/15003.
+\bibitem{zahn} K.~Zahn, A.~Wille, G.~Maret, S.~Sengupta, P.~Nielaba, Elastic properties of 2D colloidal crystals
+from video microscopy, Phys.\ Rev.\ Lett.\ 90 (2003) 155506, doi:10.1103/PhysRevLett.90.155506.
+\bibitem{thomas} H.~Thomas, G.~E.~Morfill, V.~Demmel, J.~Goree, B.~Feuerbacher, D.~M\"ohlmann, Plasma crystal:
+Coulomb crystallization in a dusty plasma, Phys.\ Rev.\ Lett.\ 73 (1994) 652, doi:10.1103/PhysRevLett.73.652.
+\bibitem{bubeck} R.~Bubeck, S.~Neser, C.~Bechinger, P.~Leiderer, Structure and dynamics of two-dimensional colloidal
+crystals in confined geometry, Prog.\ Colloid Polym.\ Sci.\ (1998) 41--45, doi:10.1007/BFb0118046.
+\bibitem{grimes} C.~C.~Grimes, G.~Adams, Evidence for a liquid-to-crystal phase transition in a classical,
+two-dimensional sheet of electrons, Phys.\ Rev.\ Lett.\ 42 (1979) 795, doi:10.1103/PhysRevLett.42.795.
 \bibitem{oc20} L.~Chanussot et al., OC20 IS2RES val id, ColabFit (2024), doi:10.60732/b4005525; Open Catalyst 2020,
 ACS Catal.\ 11 (2021) 6059, doi:10.1021/acscatal.0c04525.
 \end{thebibliography}

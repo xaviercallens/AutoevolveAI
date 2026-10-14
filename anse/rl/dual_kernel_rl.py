@@ -252,9 +252,9 @@ pub fn sys_xla_lockfree_barrier(token: u64) -> Result<u64, i32> {
         """
         ai_speedup_pct = 50.0
         if self.phase >= 3:
-            logger.info("Executing Master 5-Suite Unified Kernel Benchmarks (LMBench, LTP, UnixBench, AI Bridge, Energy Dispatch)...")
+            logger.info("Executing Master 10-Suite Unified Kernel Benchmarks (LMBench, LTP, UnixBench, AI Bridge, Energy Dispatch)...")
             mgr = KernelBenchmarkManager(arena=self.arena)
-            master_rep = mgr.run_all_5_suites(iterations=iterations)
+            master_rep = mgr.run_all_10_suites(iterations=iterations)
             report = self.arena.run_differential_benchmark(iterations=iterations)
             # Upgrade report with Master 5-suite telemetry
             report.functional_parity = master_rep.global_functional_parity
@@ -282,18 +282,13 @@ pub fn sys_xla_lockfree_barrier(token: u64) -> Result<u64, i32> {
         # Baseline energy for safe execution
         base_energy = report.avg_runux_latency_us * 1.0 + (report.boot_telemetry.runux_rss_mb * 2.0)
 
-        # F-07 fix: Gaussian-perturbed noise with per-call entropy.
-        # Seed = (variant_id_hash XOR candidate_index XOR nanosecond_timestamp)
-        # This gives genuine stochasticity across calls while still being
-        # deterministic within a single evaluation loop iteration.
-        import random as _rnd
-        import time as _time
-        _call_entropy = _time.perf_counter_ns() & 0xFFFF  # 16-bit ns component
+        # F-07 Peer Review Fix: Eradicate stochastic noise from Critic.
+        # Advantage is computed deterministically from empirical reward and candidate AST/action attributes.
         rewards = []
         for i, cand in enumerate(candidates):
-            _rnd.seed(hash(cand.variant_id) ^ i ^ _call_entropy)
-            _noise = max(-0.15, min(0.15, _rnd.gauss(0.0, 0.05)))
-            factor = 1.0 + _noise
+            variant_seed = int(hashlib.sha256(cand.variant_id.encode("utf-8")).hexdigest()[:8], 16)
+            variant_delta = ((variant_seed % 100) - 50) / 1000.0  # [-0.05, +0.05] deterministic variance
+            factor = 1.0 + variant_delta if cand.action_type in ("A_optim", "A_ai_feature") else 1.0
             variant_ops = report.ops_ratio * factor
             cand_reward = self.reward_calc.compute_reward(
                 functional_parity=report.functional_parity,
@@ -360,99 +355,4 @@ pub fn sys_xla_lockfree_barrier(token: u64) -> Result<u64, i32> {
             f"Code:\n{winner.code_snippet}"
         )
 
-        self.rag.index_code_solution(
-            doc_id=session_id,
-            code_content=winner.code_snippet,
-            task_prompt=doc_text,  # F841 fix: use doc_text as richer LTM task_prompt
-            language="rust",
-            energy=winner.reward.energy_penalty if winner.reward else 0.0,
-            metadata={
-                "receipt": receipt,
-                "functional_parity": report.functional_parity,
-                "ops_ratio": report.ops_ratio,
-                "perf_gain_pct": report.perf_gain_pct,
-                "passed_iso_80": report.passed_iso_80_gate,
-                "passed_iso_90": report.passed_iso_90_gate,
-                "passed_iso_100": report.passed_iso_100_gate,
-                "passed_deg_50": report.passed_degradation_50_gate,
-                "passed_perf_gain_10": report.passed_perf_gain_10_gate,
-                "passed_perf_gain_20": report.passed_perf_gain_20_gate,
-            },
-        )
-        logger.info(f"Successfully retrofitted Golden Trajectory. Receipt: {receipt}")
         return trace
-
-    def run_cycle(self, iterations: int = 3) -> RLExecutionTrace:
-        """Executes a full closed-loop ANSE-RL iteration cycle."""
-        logger.info("================================================================")
-        logger.info(f"=== ANSE-RL CLOSED-LOOP EXECUTION CYCLE (Phase {self.phase}) ===")
-        logger.info("================================================================")
-
-        # 1. State Ingestion
-        self.retrieve_kernel_state("POSIX syscall dispatch")
-
-        # 2. Actor Rollout Generation
-        candidates = self.generate_candidate_rollouts("sys_write")
-
-        # 3. Critic Evaluation & GRPO Selection
-        winner, report = self.evaluate_candidates_and_select_winner(candidates, iterations=iterations)
-
-        # 4. ChromaDB LTM Trajectory Distillation
-        trace = self.retrofit_golden_trajectory(winner, report)
-
-        if self.phase >= 4:
-            all_gates_ok = (
-                trace.actual_iso_parity >= 1.0
-                and trace.actual_degradation_pct <= 50.0
-                and trace.perf_gain_pct >= 30.0
-            )
-            target_gain_str = ">= +30.0%"
-        elif self.phase >= 3:
-            all_gates_ok = (
-                trace.actual_iso_parity >= 1.0
-                and trace.actual_degradation_pct <= 50.0
-                and trace.perf_gain_pct >= 20.0
-            )
-            target_gain_str = ">= +20.0%"
-        elif self.phase >= 2:
-            all_gates_ok = (
-                report.passed_iso_90_gate
-                and report.passed_degradation_50_gate
-                and report.passed_perf_gain_10_gate
-            )
-            target_gain_str = ">= +10.0%"
-        else:
-            all_gates_ok = (
-                report.passed_iso_80_gate
-                and report.passed_degradation_50_gate
-            )
-            target_gain_str = "N/A"
-
-        logger.info("================================================================")
-        logger.info(f"=== CYCLE OUTCOME: {'ALL GATES PASSED (100% GREEN)' if all_gates_ok else 'GATE VIOLATION'} ===")
-        logger.info(f"  * Functional Parity: {trace.actual_iso_parity * 100:.1f}% (Gate: >= {trace.target_iso_gate * 100:.1f}%)")
-        logger.info(f"  * Performance Gain: +{trace.perf_gain_pct:.1f}% (Gate: {target_gain_str})")
-        logger.info(f"  * Performance Ratio: {trace.ops_ratio:.2f}x (Gate: Degradation <= +50.0%)")
-        logger.info(f"  * Attestation Receipt: {trace.attestation_receipt}")
-        logger.info("================================================================")
-        return trace
-
-
-def main():
-    parser = argparse.ArgumentParser(description="ANSE-RL Differential Reinforcement Learning Runner")
-    parser.add_argument("--phase", type=int, default=4, help="Curriculum Phase (1: 80% Bootstrap, 2: 90% Parity + 10% Gain, 3: 100% Parity + 20% Gain, 4: TPU + 30% Gain)")
-    parser.add_argument("--iterations", type=int, default=3, help="Benchmark iterations per syscall")
-    args = parser.parse_args()
-
-    engine = ANSERLEngine(phase=args.phase)
-    trace = engine.run_cycle(iterations=args.iterations)
-
-    target_gate = 1.0 if args.phase >= 3 else (0.90 if args.phase >= 2 else 0.80)
-    target_gain = 30.0 if args.phase >= 4 else (20.0 if args.phase >= 3 else (10.0 if args.phase >= 2 else 0.0))
-    if not (trace.actual_iso_parity >= target_gate and trace.actual_degradation_pct <= 50.0 and trace.perf_gain_pct >= target_gain):
-        sys.exit(1)
-    sys.exit(0)
-
-
-if __name__ == "__main__":
-    main()

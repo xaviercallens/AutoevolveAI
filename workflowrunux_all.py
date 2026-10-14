@@ -64,7 +64,7 @@ class RunuxMasterTierOrchestrator:
     """Coordinates execution across all RunuX Tiers under ANSE thermodynamic laws."""
 
     def __init__(self, tiers: Optional[List[str]] = None):
-        self.tiers_to_run = tiers or ["T1", "T2", "T3", "T4", "T5"]
+        self.tiers_to_run = tiers or ["T1", "T2", "T3", "T4", "T5", "T6", "T7"]
         self.results: List[TierExecutionResult] = []
         SECONDARY_TARGET_DIR.mkdir(parents=True, exist_ok=True)
         os.environ["CARGO_TARGET_DIR"] = str(SECONDARY_TARGET_DIR)
@@ -187,6 +187,8 @@ class RunuxMasterTierOrchestrator:
             "T3": "workflowrunuxT3.py",
             "T4": "workflowrunuxT4.py",
             "T5": "workflowrunuxT5_rl.py",
+            "T6": "workflowrunuxT6_matrix.py",
+            "T7": "workflowrunuxT7_tpu_convergence.py",
         }
 
         all_success = True
@@ -220,7 +222,7 @@ class RunuxMasterTierOrchestrator:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="RunuX Master Multi-Tier Workflow Orchestrator")
-    parser.add_argument("--tiers", nargs="+", choices=["T1", "T2", "T3", "T4", "T5"], help="Specific tiers to run")
+    parser.add_argument("--tiers", nargs="+", choices=["T1", "T2", "T3", "T4", "T5", "T6", "T7"], help="Specific tiers to run")
     args = parser.parse_args()
 
     orchestrator = RunuxMasterTierOrchestrator(tiers=args.tiers)

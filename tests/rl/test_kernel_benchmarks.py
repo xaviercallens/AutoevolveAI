@@ -27,7 +27,7 @@ def mgr() -> KernelBenchmarkManager:
 
 @pytest.fixture(scope="module")
 def master_report(mgr: KernelBenchmarkManager) -> MasterBenchmarkReport:
-    return mgr.run_all_5_suites(iterations=2)
+    return mgr.run_all_10_suites(iterations=2)
 
 
 # ── BM1 LMBench ────────────────────────────────────────────────────────────────
@@ -118,8 +118,8 @@ class TestBM5EnergyDispatch:
 # ── Master Report ──────────────────────────────────────────────────────────────
 
 class TestMasterBenchmarkReport:
-    def test_total_suites_is_five(self, master_report: MasterBenchmarkReport) -> None:
-        assert master_report.total_suites == 5
+    def test_total_suites_is_ten(self, master_report: MasterBenchmarkReport) -> None:
+        assert master_report.total_suites == 10
 
     def test_global_parity_between_0_and_1(self, master_report: MasterBenchmarkReport) -> None:
         assert 0.0 <= master_report.global_functional_parity <= 1.0

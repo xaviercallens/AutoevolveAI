@@ -36,14 +36,24 @@ logger = logging.getLogger("gcp_spot_manager")
 class GCPSpotConfig:
     project_id: str
     zone: str = "us-central1-a"
-    machine_type: str = "e2-small"  # 2 vCPU, 2GB RAM (~$0.005/hr spot)
+    machine_type: str = "e2-small"
     image_family: str = "debian-12"
     image_project: str = "debian-cloud"
     disk_size_gb: int = 15
-    disk_type: str = "pd-standard"  # Lowest cost persistent disk
-    max_duration_seconds: int = 600  # 10 minutes hard cap
-    max_budget_usd: float = 0.05
-    spot_hourly_rate_usd: float = 0.00504  # us-central1 e2-small spot rate
+    disk_type: str = "pd-standard"
+    max_duration_seconds: int = 600
+    max_budget_usd: float = 0.50  # Increased to support g2-standard-4
+
+    @property
+    def spot_hourly_rate_usd(self) -> float:
+        rates = {
+            "e2-small": 0.00504,
+            "t2a-standard-1": 0.009,
+            "c2-standard-4": 0.04,
+            "n2d-standard-2": 0.015,
+            "g2-standard-4": 0.20,
+        }
+        return rates.get(self.machine_type, 0.01)
 
 
 class GCPSpotMicroVMManager:
@@ -171,7 +181,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Validate and calculate costs without creating VM")
     parser.add_argument("--provision", action="store_true", help="Create GCP spot microVM")
     parser.add_argument("--teardown", action="store_true", help="Delete GCP spot microVM")
-    parser.add_argument("--machine-type", default="e2-small", help="GCP Machine Type (e2-micro or e2-small)")
+    parser.add_argument("--machine-type", default="e2-small", help="GCP Machine Type (e2-small, t2a-standard-1, c2-standard-4, n2d-standard-2, g2-standard-4)")
     args = parser.parse_args()
 
     manager = GCPSpotMicroVMManager()

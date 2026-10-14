@@ -9,11 +9,11 @@ import time
 import pytest
 
 from anse.rl.differential_arena import (
-    DualKernelDifferentialArena,
-    DifferentialBenchmarkReport,
     SYS_GETPID,
-    SYS_SCHED_YIELD,
     SYS_MPROTECT,
+    SYS_SCHED_YIELD,
+    DifferentialBenchmarkReport,
+    DualKernelDifferentialArena,
     RunuXCandidateExecutor,
 )
 

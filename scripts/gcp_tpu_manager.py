@@ -18,15 +18,15 @@ import logging
 import os
 import sys
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from anse.rl.tpu_benchmarks import GoogleTPUBenchmarkSuite, TPUMasterBenchmarkReport
+from anse.rl.tpu_benchmarks import GoogleTPUBenchmarkSuite
 
 logging.basicConfig(
     level=logging.INFO,
@@ -62,18 +62,18 @@ class GCPSpotTPUConfig:
 class GCPSpotTPUManager:
     """Manages ephemeral Cloud TPU Spot lifecycle and collects dual telemetry."""
 
-    def __init__(self, config: Optional[GCPSpotTPUConfig] = None) -> None:
+    def __init__(self, config: GCPSpotTPUConfig | None = None) -> None:
         self.config = config or GCPSpotTPUConfig()
         if not self.config.project_id:
             self.config.project_id = _resolve_project_id()
         self.instance_name = f"{self.config.ephemeral_prefix}-{int(time.time())}"
 
-    def estimate_session_cost(self, duration_seconds: Optional[int] = None) -> float:
+    def estimate_session_cost(self, duration_seconds: int | None = None) -> float:
         secs = duration_seconds or self.config.max_session_seconds
         hours = secs / 3600.0
         return round(hours * self.config.spot_hourly_rate_usd, 6)
 
-    def dry_run(self) -> Dict[str, Any]:
+    def dry_run(self) -> dict[str, Any]:
         """Validates configuration, budget safety, and gcloud CLI command strings."""
         logger.info("--- GCP SPOT TPU VM DRY RUN ---")
         cost = self.estimate_session_cost()
@@ -123,7 +123,7 @@ class GCPSpotTPUManager:
             "status": "DRY_RUN_PASSED" if within_budget else "BUDGET_EXCEEDED",
         }
 
-    def execute_dual_tpu_benchmark(self, iterations: int = 5) -> Dict[str, Any]:
+    def execute_dual_tpu_benchmark(self, iterations: int = 5) -> dict[str, Any]:
         """
         Executes the dual TPU benchmark suite and archives GCP Spot telemetry.
         Raises ValueError if projected session cost exceeds the budget cap before execution.

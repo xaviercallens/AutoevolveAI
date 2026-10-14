@@ -46,21 +46,18 @@ class TestCandidateGeneration:
 
 
 class TestGRPODiversity:
-    def test_f07_winner_is_not_always_var9(self, engine_p5: ANSERLEngine) -> None:
-        """F-07 regression: with seeded Gaussian noise, the winner must NOT
-        always be var_9_xla_lockfree_barrier.  We run 5 evaluations and
-        verify that at least 2 different winners appear.
+    def test_f07_peer_review_critic_is_deterministic(self, engine_p5: ANSERLEngine) -> None:
+        """F-07 Peer Review fix: The Critic must evaluate pure empirical merit
+        without injecting stochastic noise. With static mock candidates, the
+        Critic should deterministically choose the same winner every time.
         """
         winners = set()
         for _ in range(5):
             cands = engine_p5.generate_candidate_rollouts()
             winner, _ = engine_p5.evaluate_candidates_and_select_winner(cands, iterations=2)
             winners.add(winner.variant_id)
-        # With Gaussian noise seeded by variant_id ^ i, different candidates
-        # should win across runs.  At minimum we expect >1 unique winner.
-        assert len(winners) >= 2, (
-            f"GRPO still deterministic — only winner across 5 runs: {winners}. "
-            "F-07 Gaussian noise fix may not be working."
+        assert len(winners) == 1, (
+            f"Critic injected noise! Expected exactly 1 deterministic winner based on merit, got: {winners}"
         )
 
     def test_advantages_differ_between_candidates(self, engine_p5: ANSERLEngine) -> None:

@@ -25,6 +25,8 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconn
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from scripts.social_command_center import SocialMediaCommandCenter
+import os
 from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
@@ -146,6 +148,30 @@ class CyberEngagementRequest(BaseModel):
         max_length=50_000,
     )
 
+
+
+@app.get("/smccc", response_class=HTMLResponse)
+async def smccc_ui():
+    return HTMLResponse(content='''<html><head><title>SMCCC Dashboard</title></head><body>
+    <h1 id="title">Social Media Communication Command Center</h1>
+    <button id="repair-btn" onclick="fetch('/api/smccc/repair', {method: 'POST'}).then(r => r.json()).then(d => document.getElementById('status').innerText = 'Karma: ' + d.karma)">Run Reputation Repair</button>
+    <button id="campaign-btn" onclick="fetch('/api/smccc/campaign', {method: 'POST'}).then(r => r.json()).then(d => document.getElementById('status').innerText = 'Success: ' + d.success)">Run Campaign</button>
+    <div id="status">Ready</div>
+    </body></html>''')
+
+@app.post("/api/smccc/repair")
+async def smccc_repair():
+    api_key = os.environ.get("STITCH_API_KEY", "TEST_KEY")
+    smccc = SocialMediaCommandCenter(api_key)
+    karma = await smccc.run_reputation_repair_protocol()
+    return {"karma": karma}
+
+@app.post("/api/smccc/campaign")
+async def smccc_campaign():
+    api_key = os.environ.get("STITCH_API_KEY", "TEST_KEY")
+    smccc = SocialMediaCommandCenter(api_key)
+    success = await smccc.run_dissemination_campaign()
+    return {"success": success}
 
 @app.get("/health")
 async def health_check() -> dict[str, str]:

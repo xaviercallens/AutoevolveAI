@@ -219,13 +219,60 @@ def handle_prescribe_mode(
     console.print(f"\n[dim green]✓ DPO Preference Triplet exported to {dpo_path} for Hugging Face TRL fine-tuning.[/dim green]\n")
 
 
+def handle_karma_audit_mode(comment: str, karma: int = -8, subreddit: str = "r/Physics") -> None:
+    from anse.community.audience_reward import audit_comment_reputation
+    from anse.community.cognitive_shield import CognitiveShield
+
+    console.print("\n[bold cyan]=== Phase 1 Karma Repair & Gatekeeping Pre-Flight Audit ===[/bold cyan]\n")
+    shield = CognitiveShield()
+    tone_audit = shield.audit_draft_tone(comment)
+    link_audit = shield.audit_link_policy(comment, is_comment=True, comment_karma=karma)
+    rep_audit = audit_comment_reputation(comment, karma=karma, target_sub=subreddit)
+
+    is_safe = rep_audit["is_safe_to_post"] and tone_audit["is_safe_tone"]
+    status_color = "green" if is_safe else "red"
+    status_text = "PASSED (Safe to post)" if is_safe else "REJECTED (High gatekeeping/moderation risk)"
+
+    panel_text = (
+        f"[bold]Target Subreddit:[/bold] {subreddit}\n"
+        f"[bold]Current Account Karma:[/bold] {karma} (Repair Mode: {'ACTIVE' if karma < 25 else 'INACTIVE'})\n"
+        f"[bold]Pre-Flight Decision:[/bold] [{status_color}]{status_text}[/{status_color}]\n\n"
+        f"[bold]Candidate Text:[/bold]\n\"{comment}\"\n\n"
+        f"[bold]1. Zero-Link Rule Compliance:[/bold] {'[green]PASSED[/green]' if link_audit['is_compliant'] else '[red]FAILED - Links in comment[/red]'}\n"
+        f"   • Rule: {link_audit['rule']}\n"
+        f"   • Reason: {link_audit['reason']}\n\n"
+        f"[bold]2. Academic Credibility & Tone Audit:[/bold] {'[green]CLEAN[/green]' if tone_audit['is_safe_tone'] else '[red]RISK DETECTED[/red]'}\n"
+    )
+    if tone_audit["tone_warnings"]:
+        for w in tone_audit["tone_warnings"]:
+            panel_text += f"   • [yellow]{w}[/yellow]\n"
+    if tone_audit["suggestions"]:
+        for s in tone_audit["suggestions"]:
+            panel_text += f"   • [dim]{s}[/dim]\n"
+
+    panel_text += (
+        f"\n[bold]3. Telemetry Scores:[/bold]\n"
+        f"   • Grounding: {rep_audit['grounding_score'] * 100:.1f}%\n"
+        f"   • Modesty: {rep_audit['modesty_score'] * 100:.1f}%\n"
+        f"   • Moderation Risk: {rep_audit['moderation_risk'] * 100:.1f}%\n"
+    )
+
+    console.print(
+        Panel(
+            panel_text,
+            title="🛡️ Karma Repair Pre-Flight Verifier",
+            border_style=status_color,
+        )
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description="ANSE Scientific Community Advocate Agent")
     parser.add_argument(
         "--mode",
-        choices=["scout", "draft", "shield", "prescribe", "full_audit"],
+        choices=["scout", "draft", "shield", "prescribe", "full_audit", "karma_audit"],
         default="prescribe",
-        help="Operating mode: scout (trends), draft (post), shield (defense), prescribe (RL optimal post), full_audit (all)",
+        help="Operating mode: scout (trends), draft (post), shield (defense), prescribe (RL optimal post), full_audit (all), karma_audit (comment pre-flight)",
     )
     parser.add_argument(
         "--domain",
@@ -235,7 +282,8 @@ def main():
     )
     parser.add_argument("--paper", type=str, default=None, help="Path to local paper file (PDF, TeX, MD)")
     parser.add_argument("--subreddit", type=str, default=None, help="Target subreddit name")
-    parser.add_argument("--comment", type=str, default=None, help="Comment text to test with Cognitive Shield")
+    parser.add_argument("--comment", type=str, default=None, help="Comment text to test with Cognitive Shield or Karma Audit")
+    parser.add_argument("--karma", type=int, default=-8, help="Current account comment karma (default: -8)")
     parser.add_argument(
         "--use-hf-models",
         action="store_true",
@@ -257,11 +305,17 @@ def main():
         handle_prescribe_mode(
             orchestrator, domain, args.paper, args.subreddit, use_hf_models=args.use_hf_models
         )
+    elif args.mode == "karma_audit":
+        comment = args.comment or (
+            "In Hylleraas-CI expansions, resolving the Kato electron-electron cusp condition requires explicit r12 terms. "
+            "Korobov bases optimize the non-linear exponential decay parameters, while Nakatsuji FC achieves arbitrary precision with MPFR."
+        )
+        sub = args.subreddit or "r/Physics"
+        handle_karma_audit_mode(comment, karma=args.karma, subreddit=sub)
     elif args.mode == "full_audit":
         console.print("[bold green]=== Full Cross-Domain Strategic Intelligence Sweep ===[/bold green]")
         for d in ResearchDomain:
             console.print(f"\n[bold cyan]>>> Auditing Domain: {d.value}[/bold cyan]")
-
             handle_scout_mode(orchestrator, d)
 
 

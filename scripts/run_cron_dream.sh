@@ -16,5 +16,8 @@ CRON_LOG="$LOG_DIR/cron_dream.log"
 echo "==============================================================================" >> "$CRON_LOG"
 echo "🌙 CRON DREAM PHASE LAUNCH: $(date --iso-8601=seconds)" >> "$CRON_LOG"
 echo "==============================================================================" >> "$CRON_LOG"
+echo "🧠 HARVESTING WAKE EPISODES & SYNCING REDIS LTM..." >> "$CRON_LOG"
+"$HOME/.local/bin/uv" run python "$REPO_ROOT/scripts/sync_conversations_to_redis.py" >> "$CRON_LOG" 2>&1
 
+echo "🌙 RUNNING REM DREAM CONSOLIDATION..." >> "$CRON_LOG"
 exec "$HOME/.local/bin/uv" run python "$REPO_ROOT/scripts/nightly_dream_phase.py" >> "$CRON_LOG" 2>&1

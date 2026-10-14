@@ -16,7 +16,12 @@ DEFAULT_ACTION_SPACE = [
     {"id": 2, "subreddit": "r/MachineLearning", "archetype": "formal_invariant"},
     {"id": 3, "subreddit": "r/Physics", "archetype": "problem_curiosity"},
     {"id": 4, "subreddit": "r/Physics", "archetype": "benchmark_comparison"},
-    {"id": 5, "subreddit": "r/rust", "archetype": "benchmark_comparison"},
+    {"id": 5, "subreddit": "r/rust", "archetype": "systems_optimization"},
+    {"id": 6, "subreddit": "r/FluidMechanics", "archetype": "physical_friction"},
+    {"id": 7, "subreddit": "r/LocalLLaMA", "archetype": "hardware_audit"},
+    {"id": 8, "subreddit": "r/LLMmathematics", "archetype": "statement_adequacy"},
+    {"id": 9, "subreddit": "r/AskPhysics", "archetype": "zero_link_pedagogy"},
+    {"id": 10, "subreddit": "r/rust", "archetype": "zero_link_technical"},
 ]
 
 
@@ -30,8 +35,15 @@ def extract_context_features(
     """
     Construct a normalized 10-dimensional context vector for the bandit.
     """
-    domain_map = {"ai": 0, "physics": 1, "math": 2, "systems": 3, "rust": 4}
-    domain_idx = domain_map.get(domain.lower(), 0)
+    domain_map = {
+        "ai": 0, "machinelearning": 0, "localllama": 0,
+        "physics": 1, "fluidmechanics": 1, "fluids": 1, "cfd": 1, "askphysics": 1,
+        "math": 2, "llmmathematics": 2, "formal": 2,
+        "systems": 3, "hpc": 3, "linux": 3,
+        "rust": 4,
+    }
+    clean_dom = domain.lower().replace("r/", "").strip()
+    domain_idx = domain_map.get(clean_dom, 0)
     domain_one_hot = [1.0 if i == domain_idx else 0.0 for i in range(5)]
 
     # Cyclical hour encoding
@@ -54,14 +66,21 @@ class DisjointLinUCB:
 
     def __init__(
         self,
-        n_actions: int = len(DEFAULT_ACTION_SPACE),
+        n_actions: int | None = None,
         d_features: int = 10,
         alpha: float = 1.0,
+        action_space: list[dict[str, Any]] | None = None,
     ) -> None:
-        self.n_actions = n_actions
+        self.action_space = action_space if action_space is not None else DEFAULT_ACTION_SPACE
+        if n_actions is not None:
+            self.n_actions = n_actions
+            if action_space is None and n_actions < len(self.action_space):
+                self.action_space = self.action_space[:n_actions]
+        else:
+            self.n_actions = len(self.action_space)
+
         self.d = d_features
         self.alpha = alpha
-        self.action_space = DEFAULT_ACTION_SPACE
 
         # Initialize inverse covariance matrices to identity and bias vectors to zeros
         self.A_inv: list[list[list[float]]] = [
@@ -137,18 +156,30 @@ class DisjointLinUCB:
         path.write_text(json.dumps(state, indent=2), encoding="utf-8")
 
     def load_state(self, filepath: Path | str) -> bool:
-        """Load bandit state from JSON file."""
+        """Load bandit state from JSON file with dynamic action expansion support."""
         path = Path(filepath)
         if not path.exists():
             return False
         try:
             state = json.loads(path.read_text(encoding="utf-8"))
-            self.n_actions = state["n_actions"]
+            loaded_actions = state["n_actions"]
             self.d = state["d_features"]
             self.alpha = state["alpha"]
             self.A_inv = state["A_inv"]
             self.b = state["b"]
-            self.action_space = state.get("action_space", DEFAULT_ACTION_SPACE)
+            stored_space = state.get("action_space", DEFAULT_ACTION_SPACE)
+            if len(DEFAULT_ACTION_SPACE) > len(stored_space):
+                self.action_space = DEFAULT_ACTION_SPACE
+            else:
+                self.action_space = stored_space
+
+            # If default action space has more actions than stored state, expand dynamically:
+            target_n = max(loaded_actions, len(self.action_space))
+            if target_n > loaded_actions:
+                for _ in range(target_n - loaded_actions):
+                    self.A_inv.append([[1.0 if i == j else 0.0 for j in range(self.d)] for i in range(self.d)])
+                    self.b.append([0.0 for _ in range(self.d)])
+            self.n_actions = target_n
             return True
         except Exception:
             return False

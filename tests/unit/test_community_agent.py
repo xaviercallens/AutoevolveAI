@@ -114,10 +114,15 @@ def test_cognitive_shield_classification():
     assert res_tech.category == CommentCategory.TECHNICAL_CRITIQUE
     assert res_tech.recommended_action == "reply_rigorous"
 
-    # 4. Collaboration Interest
+    # 4. Collaboration Interest & Paper Requests
     res_collab = shield.classify_comment("Very interesting paper! Can we reproduce this from the github repo and contribute a PR?")
     assert res_collab.category == CommentCategory.COLLABORATION_INTEREST
     assert res_collab.recommended_action == "reply_collaborate"
+
+    res_paper_req = shield.classify_comment("That is fantastic Id kill to read that paper")
+    assert res_paper_req.category == CommentCategory.COLLABORATION_INTEREST
+    assert res_paper_req.recommended_action == "reply_collaborate"
+    assert "zenodo" in res_paper_req.suggested_reply.lower()
 
     # 5. Honest Skepticism
     res_skep = shield.classify_comment("I am skeptical that this generalizes across all hardware. Can you explain why?")

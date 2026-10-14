@@ -39,10 +39,70 @@ class LeanVerificationResult:
     energy_score: float
     output: str
     untrusted_axioms: list[str] = None  # type: ignore[assignment]
+    footprint_status: str = ""
 
     def __post_init__(self) -> None:
         if self.untrusted_axioms is None:
             self.untrusted_axioms = []
+        if not self.footprint_status:
+            if not self.compiled_successfully:
+                self.footprint_status = "missing"
+            elif self.untrusted_axioms:
+                self.footprint_status = "rejected"
+            elif self.has_sorry:
+                self.footprint_status = "target"
+            else:
+                self.footprint_status = "proven"
+
+    @property
+    def verification_label(self) -> str:
+        """Explicit epistemic status label (Reviewer 2 W7: sorry obligations are targets, never verified)."""
+        if self.footprint_status == "proven":
+            return "[Verified — Tier A kernel-checked]"
+        if self.footprint_status == "target":
+            return "[Unverified — sorry obligation pending]"
+        if self.footprint_status == "rejected":
+            return f"[Rejected — untrusted axioms: {', '.join(self.untrusted_axioms)}]"
+        return "[Unchecked — missing or failed elaboration]"
+
+
+def classify_axiom_footprint(axioms: list[str] | None) -> dict[str, object]:
+    """Classify a `#print axioms` footprint per OptimalEnergyAI H0.3 contract.
+
+    Returns a dict with:
+      - status: 'proven' | 'target' | 'rejected' | 'missing'
+      - axioms: list[str] | None
+      - untrusted: list[str]
+      - verification_label: human/audit-readable epistemic label
+    """
+    if axioms is None:
+        return {
+            "status": "missing",
+            "axioms": None,
+            "untrusted": [],
+            "verification_label": "[Unchecked — missing or failed elaboration]",
+        }
+    untrusted = [a for a in axioms if a not in TRUSTED_AXIOMS and a != "sorryAx"]
+    if untrusted:
+        return {
+            "status": "rejected",
+            "axioms": list(axioms),
+            "untrusted": untrusted,
+            "verification_label": f"[Rejected — untrusted axioms: {', '.join(untrusted)}]",
+        }
+    if "sorryAx" in axioms:
+        return {
+            "status": "target",
+            "axioms": list(axioms),
+            "untrusted": [],
+            "verification_label": "[Unverified — sorry obligation pending]",
+        }
+    return {
+        "status": "proven",
+        "axioms": list(axioms),
+        "untrusted": [],
+        "verification_label": "[Verified — Tier A kernel-checked]",
+    }
 
 
 class LeanKernelVerifier:
@@ -50,10 +110,12 @@ class LeanKernelVerifier:
         self,
         formal_dir: Path | None = None,
         lean_cmd: Sequence[str] | None = None,
+        env: dict[str, str] | None = None,
     ):
         self.formal_dir = Path(formal_dir) if formal_dir else FORMAL_DIR
         # None -> `lake env lean` (needs a built formal_dir). Tests pass ["lean"] for import-free files.
         self.lean_cmd = list(lean_cmd) if lean_cmd else None
+        self.env = dict(env) if env is not None else None
 
     def compile_formal_specs(self) -> tuple[bool, str, float]:
         """Runs 'lake build' in the formal directory and measures duration."""
@@ -139,7 +201,10 @@ class LeanKernelVerifier:
                 temp_check_file.unlink()
 
     def verify_file(
-        self, lean_file: Path | str, timeout_s: float = 1800.0
+        self,
+        lean_file: Path | str,
+        timeout_s: float = 1800.0,
+        env: dict[str, str] | None = None,
     ) -> list[LeanVerificationResult]:
         """Gate a standalone ``.lean`` file that lives anywhere (e.g. a git worktree).
 
@@ -160,12 +225,14 @@ class LeanKernelVerifier:
         t0 = time.perf_counter()
         source = path.read_text(encoding="utf-8")
         declared = declared_theorems(source)
+        run_env = env if env is not None else self.env
 
         cmd = list(self.lean_cmd) if self.lean_cmd else self._lake_env_cmd()
         try:
             res = subprocess.run(
                 [*cmd, str(path)],
                 cwd=str(self.formal_dir),
+                env=run_env,
                 capture_output=True,
                 text=True,
                 timeout=timeout_s,
@@ -206,6 +273,56 @@ class LeanKernelVerifier:
                 untrusted_axioms=untrusted,
             ))
         return results
+
+    def probe_footprints(
+        self,
+        module_name: str,
+        theorem_names: Sequence[str],
+        timeout_s: float = 900.0,
+        env: dict[str, str] | None = None,
+    ) -> dict[str, object]:
+        """Probe `#print axioms` footprints for a list of theorems in `module_name` (OptimalEnergyAI H0.3).
+
+        Also runs the negative control `__anse_ctl_does_not_exist__` to verify that a theorem nobody
+        printed is classified as `'missing'` and never silently passes.
+        """
+        import tempfile
+
+        sentinel = f"{module_name}.__anse_ctl_does_not_exist__"
+        probe_names = [*theorem_names, sentinel]
+        src = f"import {module_name}\n" + "".join(f"#print axioms {n}\n" for n in probe_names)
+        run_env = env if env is not None else self.env
+        cmd = list(self.lean_cmd) if self.lean_cmd else self._lake_env_cmd()
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            probe_file = Path(tmp_dir) / "Probe.lean"
+            probe_file.write_text(src, encoding="utf-8")
+            res = subprocess.run(
+                [*cmd, str(probe_file)],
+                cwd=str(self.formal_dir),
+                env=run_env,
+                capture_output=True,
+                text=True,
+                timeout=timeout_s,
+            )
+        raw = res.stdout + "\n" + res.stderr
+        printed = parse_axiom_lines(raw)
+        footprints: dict[str, dict[str, object]] = {}
+        for name in probe_names:
+            ax = _lookup_axioms(name, printed)
+            footprints[name] = classify_axiom_footprint(ax)
+
+        sentinel_entry = footprints.pop(sentinel)
+        controls = {
+            "unknown_name_is_missing": sentinel_entry["status"] == "missing",
+            "probe_ran": any(v["status"] != "missing" for v in footprints.values()),
+        }
+        return {
+            "module": module_name,
+            "footprints": footprints,
+            "controls": controls,
+            "raw_output": raw.strip(),
+        }
 
     def _lake_env_cmd(self) -> list[str]:
         """``lake env lean``, but only inside a directory whose Mathlib is already BUILT.

@@ -1,7 +1,7 @@
 # 🗺️ SocrateAI / ANSE Google Cloud Data Lake Cartography
 
 **GCP Project:** `gen-lang-client-0625573011` (`SocrateAI`)
-**Generated At:** `2026-09-30T03:24:05Z`
+**Generated At:** `2026-10-14T03:24:35Z`
 
 ---
 
@@ -46,33 +46,40 @@ gs://socrateai-datalake-gen-lang-client-0625573011/
 ## 📦 Bucket Inventory & Topology
 
 ### 🪣 `gs://socrateai-datalake-gen-lang-client-0625573011`
-- **Total Objects:** `1,413`
-- **Total Volume:** `13.277 GB` (14,256,303,266 bytes)
+- **Total Objects:** `1,824`
+- **Total Volume:** `24.904 GB` (26,740,952,559 bytes)
 
 | Prefix / Subdirectory | Objects | Size (MB) | Purpose & Key Artifacts |
 | :--- | :--- | :--- | :--- |
+| `artifacts/` | `7` | `1.21 MB` | Scientific and neural model artifacts |
 | `audit/` | `2` | `0.01 MB` | Quality gate audits, verification receipts, and security reviews |
-| `autoevolve_anse_datalake/` | `46` | `2,936.17 MB` | Complete ANSE Neuro-Symbolic Suite, JEPA, Qwen, RL, Redis LTM, Chroma, and VM bootstrap |
-| `checkpoints/` | `304` | `2.6 MB` | Historical evolutionary checkpoints from 300+ scientific simulations |
+| `autoevolve_anse_datalake/` | `55` | `3,066.38 MB` | Complete ANSE Neuro-Symbolic Suite, JEPA, Qwen, RL, Redis LTM, Chroma, and VM bootstrap |
+| `benchmarks/` | `2` | `0.02 MB` | Scientific and neural model artifacts |
+| `checkpoints/` | `309` | `575.42 MB` | Historical evolutionary checkpoints from 300+ scientific simulations |
 | `dark_matter/` | `687` | `3.59 MB` | N-body dark matter simulation halos and velocity dispersion profiles |
 | `dualscale_r3/` | `159` | `9,749.56 MB` | Scientific and neural model artifacts |
 | `euclid_q1/` | `12` | `193.03 MB` | Scientific and neural model artifacts |
 | `formal_verification/` | `16` | `521.03 MB` | Lean 4 theorem formalizations, AST proofs, and proof invariants |
+| `gwaya_bench/` | `41` | `10,744.23 MB` | Scientific and neural model artifacts |
+| `gwenlaya_v4/` | `278` | `433.87 MB` | Scientific and neural model artifacts |
 | `mcmc_chains/` | `40` | `0.71 MB` | Monte Carlo Markov Chain parameter exploration traces |
 | `mcmc_posteriors/` | `2` | `0.0 MB` | Posterior distributions for cosmological and thermodynamic parameters |
 | `nanograv_15yr/` | `3` | `26.0 MB` | NANOGrav 15-year stochastic gravitational wave background timing residuals |
+| `papers/` | `2` | `0.25 MB` | Scientific and neural model artifacts |
 | `planck_2018/` | `24` | `6.72 MB` | Planck 2018 CMB temperature and polarization power spectra |
-| `publications/` | `14` | `6.01 MB` | Scientific whitepapers, formal dossiers, and publication PDFs |
+| `publications/` | `16` | `6.33 MB` | Scientific whitepapers, formal dossiers, and publication PDFs |
 | `root/` | `2` | `0.03 MB` | Scientific and neural model artifacts |
-| `runux-boot-images/` | `8` | `5.11 MB` | Scientific and neural model artifacts |
+| `runux-boot-images/` | `16` | `12.65 MB` | Scientific and neural model artifacts |
 | `stream2_cy4_ml/` | `14` | `87.29 MB` | Calabi-Yau 4-fold neural geometry and topological Hodge diamond tensors |
 | `stream3_desi_dr1/` | `58` | `57.93 MB` | DESI DR1 cosmological data, baryon acoustic oscillations, and redshift surveys |
 | `stream3_euclid_q2/` | `19` | `0.07 MB` | Euclid Space Telescope Q2 gravitational lensing and galaxy cluster catalogs |
 | `stream4_bridge/` | `3` | `0.0 MB` | Multi-messenger cross-correlation tensors uniting cosmological datasets |
+| `xautoresearch/` | `40` | `0.21 MB` | Scientific and neural model artifacts |
+| `xavuntu-images/` | `17` | `15.62 MB` | Scientific and neural model artifacts |
 
 ### 🪣 `gs://symbrain-v2-models`
 - **Total Objects:** `82`
-- **Total Volume:** `2.888 GB` (3,100,947,059 bytes)
+- **Total Volume:** `2.888 GB` (3,100,946,827 bytes)
 
 | Prefix / Subdirectory | Objects | Size (MB) | Purpose & Key Artifacts |
 | :--- | :--- | :--- | :--- |

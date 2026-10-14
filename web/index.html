@@ -208,6 +208,10 @@
       <button onclick="switchTab('factory')" id="tab-factory" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
         <span>🏭</span> PR Factory
       </button>
+      <button onclick="switchTab('ascd')"       <button onclick="switchTab('smccc')" id="tab-smccc" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+        <span>🌐</span>
+        <span>SMCCC</span>
+      </button>
       <button onclick="switchTab('ascd')" id="tab-ascd" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
         <span>🎮</span> Command Deck (ASCD)
       </button>
@@ -1452,6 +1456,62 @@
     <!-- ================================================================= -->
     <!-- TAB 9: ANTIGRAVITY SWARM COMMAND DECK (ASCD) - CONTROL CENTER -->
     <!-- ================================================================= -->
+    
+    <!-- SMCCC -->
+    <section id="section-smccc" class="hidden space-y-8">
+      <div class="glass-panel p-6">
+        <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <span>🌐</span> Social Media Communication Command Center
+        </h2>
+        <p class="text-slate-400 text-sm mb-6">Orchestrate autonomous agent-driven dissemination across Reddit and other platforms via Stitch MCP.</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+            <h3 class="text-brand-400 font-bold mb-2">Reputation Repair</h3>
+            <p class="text-xs text-slate-400 mb-4">Engage safely with friendly subreddits to build comment karma.</p>
+            <button onclick="runSmcccRepair()" id="btn-smccc-repair" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded font-mono text-sm w-full">Run Reputation Protocol</button>
+          </div>
+          <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+            <h3 class="text-cyber-400 font-bold mb-2">Dissemination Campaign</h3>
+            <p class="text-xs text-slate-400 mb-4">Broadcast Navier-Stokes audit artifacts to technical communities.</p>
+            <button onclick="runSmcccCampaign()" id="btn-smccc-campaign" class="px-4 py-2 bg-cyber-600 hover:bg-cyber-500 text-white rounded font-mono text-sm w-full">Run Campaign Broadcast</button>
+          </div>
+        </div>
+        
+        <div class="mt-6 bg-slate-950 p-4 rounded-xl font-mono text-sm border border-slate-800">
+          <div class="text-slate-500 mb-2">Terminal Output:</div>
+          <div id="smccc-output" class="text-green-400 min-h-[100px] whitespace-pre-wrap">Ready. Waiting for command...</div>
+        </div>
+      </div>
+      
+      <script>
+        function runSmcccRepair() {
+          const out = document.getElementById('smccc-output');
+          out.innerText = 'Initializing Reputation Repair via Stitch MCP...\n';
+          fetch('/api/smccc/repair', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+              out.innerText += 'Success! Karma acquired: ' + data.karma + '\n';
+            })
+            .catch(err => {
+              out.innerText += 'Error: ' + err.message + '\n';
+            });
+        }
+        function runSmcccCampaign() {
+          const out = document.getElementById('smccc-output');
+          out.innerText = 'Initializing Dissemination Campaign via Stitch MCP...\n';
+          fetch('/api/smccc/campaign', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+              out.innerText += 'Broadcast success: ' + data.success + '\n';
+            })
+            .catch(err => {
+              out.innerText += 'Error: ' + err.message + '\n';
+            });
+        }
+      </script>
+    </section>
+
     <section id="section-ascd" class="hidden space-y-8">
 
       <!-- ASCD Hero & Swarm Master Controls -->
@@ -3298,6 +3358,9 @@ def vectorize_matmul(A, B):
     </button>
     <button onclick="switchTab('factory')" data-tab="factory" class="active">
       <span class="icon">🏭</span><span>Factory</span>
+    </button>
+    <button onclick="switchTab('ascd')"     <button onclick="switchTab('smccc')" data-tab="smccc">
+      <span>🌐</span><span>SMCCC</span>
     </button>
     <button onclick="switchTab('ascd')" data-tab="ascd">
       <span class="icon">🎮</span><span>Deck</span>

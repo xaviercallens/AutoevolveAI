@@ -99,9 +99,16 @@ not a gate** — if you add one, add its negative control in the same PR.
 
 ## Commits and PRs
 
+- **PR-Only Collaboration:** Direct pushes to `main` are restricted. All contributions from outside collaborators must be submitted via Pull Requests.
+- **Owner Review Gate:** All Pull Requests require explicit review and merge approval from repository owner (@xaviercallens).
+- **Automated Gatekeeper:** Every PR triggers the Antigravity CI Gatekeeper (`.github/workflows/antigravity-gate.yml`) enforcing anti-stub AST validation and `make verify-all`.
 - Explain **why**, not what — the diff shows what.
-- Quote real command output for any claim you make.
+- Quote real command output for any claim you make in the PR template.
 - If you fixed something the README lists as a known gap, update that list.
+
+## Immutable Releases and Tag Protection
+
+Release tags (`v*`) in this repository represent verified mathematical and empirical checkpoints. Once created, release tags are immutable. Upstream modifications must be tagged as new semantic releases.
 
 ## Licence
 

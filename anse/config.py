@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 from dotenv import load_dotenv
 
@@ -365,7 +365,9 @@ class DeepThinkConfig:
     enabled: bool = True
     """Whether to use the Deep Think LangGraph PRM."""
 
-    environment: Literal["local_cpu", "rtx_2080", "pod_gpu"] = os.getenv("ANSE_ENV", "local_cpu")
+    environment: Literal["local_cpu", "rtx_2080", "pod_gpu"] = cast(
+        Literal["local_cpu", "rtx_2080", "pod_gpu"], os.getenv("ANSE_ENV", "local_cpu")
+    )
     """Hardware environment."""
 
     @property

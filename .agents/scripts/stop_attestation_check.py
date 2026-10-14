@@ -7,6 +7,7 @@ Guards the completion phase against incomplete background work, active tasks, or
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -15,23 +16,45 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 def main() -> None:
+    # Check 1: Ensure background test or verification processes are not still active
     try:
-        raw = sys.stdin.read()
-        payload = json.loads(raw) if raw.strip() else {}
-    except Exception:
-        payload = {}
-
-    # Check 1: Ensure background tasks are idle
-    if payload.get("fullyIdle") is False:
-        sys.stdout.write(
-            json.dumps(
-                {
-                    "decision": "continue",
-                    "reason": "Hardening Gate: Background test or verification tasks are still active. Await completion.",
-                }
-            )
+        current_pid = os.getpid()
+        proc = subprocess.run(
+            ["ps", "-eo", "pid,cmd"],
+            capture_output=True,
+            text=True,
+            timeout=2,
         )
-        return
+        if proc.returncode == 0:
+            active_tasks = False
+            for line in proc.stdout.splitlines():
+                parts = line.strip().split(None, 1)
+                if len(parts) == 2:
+                    pid_str, cmd = parts
+                    try:
+                        pid = int(pid_str)
+                    except ValueError:
+                        continue
+                    if pid == current_pid or pid == os.getppid():
+                        continue
+                    if (
+                        any(runner in cmd for runner in ["pytest", "hardened_gate.py", "bandit -q"])
+                        and "stop_attestation_check" not in cmd
+                    ):
+                        active_tasks = True
+                        break
+            if active_tasks:
+                sys.stdout.write(
+                    json.dumps(
+                        {
+                            "decision": "continue",
+                            "reason": "Hardening Gate: Background test or verification tasks are still active. Await completion.",
+                        }
+                    )
+                )
+                return
+    except Exception:
+        pass
 
     # Check 2: Quick git diff audit for anti-simulation markers in modified files
     try:

@@ -590,7 +590,7 @@ Fully implemented, documented (`docs/ANTIGRAVITY_HARNESS.md`), and tested (`test
   - Target URI: `gs://socrateai-datalake-gen-lang-client-0625573011/xavuntu-images/`
   - Public HTTP 200 confirmed on all artifacts including `xavuntu_gnome_cyberpunk_hud.png`, `xavuntu_widget_validation_report.json`, `gwaya_ai_hud.py`, and `README.md`.
 
-## 29. Xavuntu RunuX v12.0.0 Core Kernel Deployment, GCP Disk Archival & Linked Cloud TPU v5e Validation (`v14.3.0`)
+## 29. Xavuntu RunuX v12.0.0 Core Kernel Deployment, GCP Disk Archival & Linked Cloud TPU v5e Validation (`v14.2.0`)
 
 - **Full GCP Disk Protection & Archival (`us-central1-c`)**:
   - Locked `xavuntu-desktop-1791007070` (50 GB boot disk) and `xavuntu-desktop-1791007070-data-1tb` (1000 GB `/data` disk) with `--no-auto-delete`.

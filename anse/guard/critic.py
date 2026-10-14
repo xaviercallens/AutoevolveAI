@@ -259,7 +259,7 @@ else:
     class EnergyCriticPolicy:  # type: ignore[no-redef]
         pass
 
-    def tokenize_string(text: str, max_len: int = 512) -> Any:  # type: ignore[no-redef]
+    def tokenize_string(text: str, max_len: int = 512) -> Any:  # type: ignore[no-redef,misc]
         raise RuntimeError("PyTorch is required for tokenize_string")
 
 

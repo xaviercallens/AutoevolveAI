@@ -526,3 +526,60 @@ built independently and validated each other on first contact with real data.
 attends to the retrieved context; measuring the SAME intervention on multiple models can
 reveal that one model benefits and another doesn't, from identical inputs -- don't generalize
 a retrieval result across models without testing each one.
+
+## 16. openai/math: another model's manuscripts are claims, not results (2026-10-07)
+
+Study of github.com/openai/math for the `openai_math` discovery sub-project
+(`docs/OPENAI_MATH_STUDY.md`). Upstream itself says some unformalized results "could have
+issues"; only its Comparator-checked Lean theorems are its verified tier, and those certify
+the Lean statement, not its fidelity to the paper.
+
+- **Summarised web reads are not counts.** The study was done through WebFetch (`git clone`
+  and `git ls-remote` were refused in-session; `git push` to origin worked). Its summariser reported "100 challenge files" while
+  listing ~54 names, "150 docs" while listing ~138, and tagged a family "Lean" that has no
+  scope note. The clone then measured 405 challenges and 235 notes: both web numbers were
+  far too low. Every count goes through `scripts/openai_math/index_corpus.py`.
+- **Toolchains do not mix.** Upstream is Lean v4.34.1 + a pinned full Mathlib + 30 pinned
+  dependencies (23 patched for v4.34.1), and the challenge read (`Catalan.lean`) starts with
+  `import Mathlib`. `formal/` is v4.34.0-rc2 with a
+  partial Mathlib. Never copy an upstream file into `formal/`; building `OAI` needs its own
+  Lake project and a user decision on the downloads.
+- **Adopt the Comparator split.** Statement module (reviewed) + solution module (untrusted)
+  + environment-level type/axiom comparison in a sandbox closes the in-file `#print`/`#exit`
+  forgery class. The run-two `#exit` guard lives only on unmerged branch
+  `worktree-master-math-regen2`; main's `lean_runner.py` file mode is likely still forgeable
+  (untested).
+
+- **A Comparator pass does not cover definition holes.** Comparator's
+  `definitionHoleMatches` compares a hole's name, levels, type and safety, not its body.
+  Upstream lists fully defined statement-carrying definitions as holes (KServer's theorem
+  is `main_theorem : MainStatement`, and `MainStatement` is a hole), so a solution with
+  `MainStatement := True` would pass (read from source, not executed). 9 of 405 challenges
+  have holes. Their bodies need our own comparison.
+- **The indexer's first flags were mostly its own bugs.** 3 of 4 first-run flags were
+  indexer limitations (universe-polymorphic names, definition-only configs). A clean audit
+  on real data only counted after planted defects in a real challenge were all caught.
+
+**Apply:** before using any upstream theorem as a premise or target, (1) recount it from the
+clone, (2) review the challenge statement against the paper, (3) re-run Comparator ourselves
+(producer != verifier). Re-verifying is the instrument check, not discovery.
+
+## 17. Hypothesis lab on openai/math: preregistration caught our own first conjecture (2026-10-07)
+
+`docs/OPENAI_MATH_HYPOTHESES.md`, `scripts/openai_math/hypotheses/`. Five hypotheses (three
+Riemann corollaries/conjectures anchored on upstream family 003, Lienard degree 6, the dyadic
+triangular Hilbert constant), each preregistered and committed before its confirmatory run.
+
+- **The preregistered H5 (C* = 2) was refuted by its own run.** Smoke tests at N <= 4 with 3
+  restarts all said 2.0; the real run (40 restarts) found 5/2 at N = 4. Smoke-test numbers are
+  not evidence; disclosing them in the preregistration is what kept the record honest.
+- **Turn a float optimum into an exact certificate when you can.** The 2.5 optimum had +-1
+  entries, so the ratio is an exact dyadic rational: C* >= 5/2 is Tier B, not Tier X.
+- **Corollaries are not discoveries.** H1-H3 are classical implications of a zero-free
+  half-plane; they matter only because upstream 003 would make them unconditional. Label them.
+- **A wall-clock budget checked between samples is not a budget.** Two of eight Lienard seeds
+  ran >4x past their 1200 s budget inside single stiff samples (explicit DOP853 on relaxation
+  oscillations). Check the budget inside the sample loop or use a stiff solver.
+- **LeanBert does not exist here**; the named-but-absent tool was reported, not simulated.
+- **Pipes still hide exit codes.** A Lean compile piped to `head` showed exit 0 over two type
+  errors; the recorded run redirects to a file and appends Lean's own exit code.

@@ -137,7 +137,7 @@ Fully implemented, documented (`docs/ANTIGRAVITY_HARNESS.md`), and tested (`test
 
 ---
 
-## 9. v14.2.0 — AlphaEvolve + Biomimetic Genetic Algorithm, Gemini 4 Argon Strong Hardness & Continual RL (2026-10-14)
+## 9. v14.4.0 — AlphaEvolve + Biomimetic Genetic Algorithm, Gemini 4 Argon Strong Hardness & Continual RL (2026-10-14)
 
 - **AlphaEvolve + Biomimetic MAP-Elites + NSGA-II Genetic Algorithm (`anse/autopoiesis/alphaevolve_biomimetic.py`):**
   - Multi-island Quality-Diversity archipelago with diploid dominance masking (`DiploidGenome`), epigenetic chromatin methylation/acetylation (`EpigeneticChromatinState`), Artificial Immune System (AIS) negative selection + clonal somatic hypermutation (`ArtificialImmuneSystem`), and allostatic metabolic complexity regularization.

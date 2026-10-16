@@ -171,3 +171,148 @@ def test_cli_exit_code_follows_the_gate(tmp_path: Path, capsys: pytest.CaptureFi
     assert ok_good and not ok_bad
     with pytest.raises(LeanEnvironmentError):
         main([str(good), "--formal-dir", str(tmp_path)])
+
+
+@needs_lean
+def test_exit_forgery_and_print_string_spoof_are_rejected(tmp_path: Path) -> None:
+    """TODO 27: A proof with forged `#print "... depends on axioms: [propext]"` + `#exit`
+    before a sorried theorem must be rejected by `verify_file`."""
+    forged = (
+        '#print "\'forged_thm\' depends on axioms: [propext]"\n'
+        "#exit\n"
+        "theorem forged_thm : 1 = 2 := by sorry\n"
+    )
+    _, res = _verify(tmp_path, forged)
+    assert len(res) == 1
+    assert not res[0].compiled_successfully
+    assert res[0].energy_score == 1000000.0
+    assert "FORGERY_EXIT_TRUNCATION" in res[0].output
+    assert "FORGERY_PRINT_STRING" in res[0].output
+
+
+@needs_lean
+def test_eval_stdout_spoof_and_vacuous_true_are_rejected(tmp_path: Path) -> None:
+    """Reject `#eval IO.println` stdout spoofing and vacuous `: True := trivial` theorems."""
+    eval_spoof = (
+        '#eval IO.println "\'spoofed\' depends on axioms: [propext]"\n'
+        "theorem spoofed : 1 = 1 := rfl\n"
+    )
+    _, res_eval = _verify(tmp_path, eval_spoof)
+    assert not res_eval[0].compiled_successfully
+    assert "FORGERY_META_STDOUT" in res_eval[0].output
+
+    vacuous = "theorem vac : True := trivial\n#print axioms vac\n"
+    _, res_vac = _verify(tmp_path, vacuous)
+    assert not res_vac[0].compiled_successfully
+    assert "VACUOUS_TRUE_THEOREM" in res_vac[0].output
+
+
+REPO = Path(__file__).resolve().parents[2]
+FORMAL = REPO / "formal"
+
+
+@needs_lean
+def test_todo7_deep_think_auditor_uses_lean_runner(tmp_path: Path) -> None:
+    """TODO 7: DeepThinkAuditor verdicts come from lean_runner, with zero 'Simulated PRM'."""
+    from anse.core.red_team import DeepThinkAuditor
+
+    red_team_src = (REPO / "anse" / "core" / "red_team.py").read_text(encoding="utf-8")
+    regen_src = (REPO / "scripts" / "regenerate_10_math_problems_dspy.py").read_text(encoding="utf-8")
+    assert "Simulated PRM" not in red_team_src
+    assert "Simulated PRM" not in regen_src
+
+    good = tmp_path / "AuditGood.lean"
+    good.write_text("theorem audit_ok : 2 + 2 = 4 := rfl\n#print axioms audit_ok\n")
+    auditor = DeepThinkAuditor()
+    res_good = auditor.verify_with_lean_kernel(good, formal_dir=tmp_path, lean_cmd=["lean"])
+    assert res_good["clean"] is True
+    assert res_good["verdict"] == "ACCEPT: KERNEL VERIFIED"
+
+    bad = tmp_path / "AuditBad.lean"
+    bad.write_text("theorem audit_bad : 2 + 2 = 5 := by sorry\n#print axioms audit_bad\n")
+    res_bad = auditor.verify_with_lean_kernel(bad, formal_dir=tmp_path, lean_cmd=["lean"])
+    assert res_bad["clean"] is False
+    assert res_bad["verdict"].startswith("REJECT:")
+
+
+def test_todo8_and_9_formal_anse_statement_review() -> None:
+    """TODO 8 & 9: NavierStokesSmoothness maps Clay hypotheses; formal/ANSE has 0 sorry and 0 vacuous True."""
+    import re
+    from anse.formal.lean_runner import _BLOCK_COMMENT, _LINE_COMMENT, detect_lean_source_forgeries
+
+    ns_src = (FORMAL / "ANSE" / "NavierStokesSmoothness.lean").read_text(encoding="utf-8")
+    assert "Clay Millennium Problem Formulation (Fefferman 2000/2006)" in ns_src
+    assert "Statement-Review Note" in ns_src
+    assert "def HasSchwartzRapidDecay" in ns_src
+    assert "def HasBoundedKineticEnergy" in ns_src
+
+    for lean_file in sorted((FORMAL / "ANSE").glob("*.lean")):
+        raw = lean_file.read_text(encoding="utf-8")
+        stripped = _LINE_COMMENT.sub("", _BLOCK_COMMENT.sub("", raw))
+        assert not re.search(r"\bsorry\b", stripped), f"Unexpected sorry in {lean_file.name}"
+        assert detect_lean_source_forgeries(raw) == [], f"Source forgery/vacuous theorem in {lean_file.name}"
+
+
+def test_todo11_and_23_ltm_mix_and_heldout_baseline_provenance() -> None:
+    """TODO 11 & 23: ltm_mix.jsonl is wired into night_training_workflow and heldout_baseline matches retrieval_ab."""
+    import hashlib
+    import json
+
+    ntw_src = (REPO / "scripts" / "night_training_workflow.py").read_text(encoding="utf-8")
+    assert 'LTM_MIX_PATH = REPO / "data" / "training" / "ltm_mix.jsonl"' in ntw_src
+    ltm_mix = REPO / "data" / "training" / "ltm_mix.jsonl"
+    assert ltm_mix.exists()
+    rows = [json.loads(line) for line in ltm_mix.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert len(rows) > 0
+    assert all(r["verified"] is True and r["verdict"] is True for r in rows)
+
+    rab_path = REPO / "results" / "hardness" / "retrieval_ab.json"
+    hb_path = REPO / "results" / "v2" / "heldout_baseline.json"
+    rab_sha = hashlib.sha256(rab_path.read_bytes()).hexdigest()
+    hb = json.loads(hb_path.read_text(encoding="utf-8"))
+    assert hb["sha256"]["retrieval_ab"] == rab_sha
+    for arm in ("deepseek", "goedel", "deepseek+premises", "goedel+premises"):
+        assert hb["models"][arm]["n_items"] == 46
+        assert hb["models"][arm]["false_accepted"] == 0
+
+
+def test_todo16_ledger_builder_hardened_against_stale_or_untyped_audits(tmp_path: Path) -> None:
+    """TODO 16: Audit objects must carry auditor_kind and audited_file_sha256; changed file yields audit: null."""
+    from scripts.openai_math.hypotheses.build_ledger import claim, resolve_audit, sha256_hex
+
+    audited = tmp_path / "formal" / "ANSE" / "Sample.lean"
+    audited.parent.mkdir(parents=True, exist_ok=True)
+    audited.write_text("theorem sample : 1 + 1 = 2 := rfl\n", encoding="utf-8")
+    initial_sha = sha256_hex(audited)
+
+    ev = tmp_path / "evidence.json"
+    ev.write_text('{"ok": true}\n', encoding="utf-8")
+
+    valid_audit = {
+        "by": "automated model referee",
+        "auditor_kind": "model",
+        "audited_file": "formal/ANSE/Sample.lean",
+        "audited_file_sha256": initial_sha,
+        "faithful": True,
+    }
+    c_fresh = claim("TEST-A-1", "Sample claim", "A", "lean_axioms", ev, audit=valid_audit, repo_root=tmp_path)
+    assert c_fresh["audit"] is not None
+    assert c_fresh["audit"]["auditor_kind"] == "model"
+    assert c_fresh["audit"]["audited_file_sha256"] == initial_sha
+
+    # Negative control 1: missing or invalid auditor_kind is rejected
+    with pytest.raises(ValueError, match="auditor_kind"):
+        resolve_audit({"audited_file": "formal/ANSE/Sample.lean", "audited_file_sha256": initial_sha}, repo_root=tmp_path)
+
+    # Negative control 2: missing or malformed audited_file_sha256 is rejected
+    with pytest.raises(ValueError, match="audited_file_sha256"):
+        resolve_audit({"auditor_kind": "human", "audited_file": "formal/ANSE/Sample.lean", "audited_file_sha256": "bad"}, repo_root=tmp_path)
+
+    # Negative control 3: modifying the audited file makes the sha256 stale -> yields audit: None (audit: null in JSON)
+    audited.write_text("theorem sample : 1 + 1 = 2 := by rfl -- modified\n", encoding="utf-8")
+    c_changed = claim("TEST-A-1", "Sample claim", "A", "lean_axioms", ev, audit=valid_audit, repo_root=tmp_path)
+    assert c_changed["audit"] is None
+    with pytest.raises(ValueError, match="stale audit sha256"):
+        resolve_audit(valid_audit, repo_root=tmp_path, refuse_stale=True)
+
+

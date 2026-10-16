@@ -394,6 +394,172 @@ def evaluate_math_kernel(code: str) -> dict[str, float]:
     }
 
 
+# ---------------------------------------------------------------------------
+# Kernel 3: Lie Algebra / Gauge Theory — Compact Cartan-Killing Form & Jacobi Identity
+# ---------------------------------------------------------------------------
+
+def _build_su_generators(n: int = 4) -> np.ndarray:
+    """Construct anti-Hermitian su(n) Lie algebra basis matrices (dim = n^2 - 1)."""
+    gens: list[np.ndarray] = []
+    # Off-diagonal real & imaginary anti-Hermitian generators
+    for j in range(n):
+        for k in range(j + 1, n):
+            m_re = np.zeros((n, n), dtype=np.complex128)
+            m_re[j, k] = 0.5
+            m_re[k, j] = -0.5
+            gens.append(m_re)
+            m_im = np.zeros((n, n), dtype=np.complex128)
+            m_im[j, k] = 0.5j
+            m_im[k, j] = 0.5j
+            gens.append(m_im)
+    # Diagonal traceless anti-Hermitian generators
+    for m in range(1, n):
+        d_mat = np.zeros((n, n), dtype=np.complex128)
+        norm = 1.0 / float(np.sqrt(2.0 * m * (m + 1.0)))
+        for idx in range(m):
+            d_mat[idx, idx] = 1j * norm
+        d_mat[m, m] = -1j * m * norm
+        gens.append(d_mat)
+    return np.asarray(gens, dtype=np.complex128)
+
+
+SU4_BASIS = _build_su_generators(4)  # 15 generators of su(4), each 4x4
+
+LIE_BASELINE_CODE = """import numpy as np
+
+def killing_form_and_jacobi(basis):
+    dim, n, _ = basis.shape
+    # Explicit structure constants f[a, b, c] = -2 * Tr([T_a, T_b] @ T_c)
+    f_struct = np.zeros((dim, dim, dim), dtype=np.float64)
+    for a in range(dim):
+        for b in range(dim):
+            comm_ab = basis[a] @ basis[b] - basis[b] @ basis[a]
+            for c in range(dim):
+                val = 0.0j
+                for r in range(n):
+                    for s in range(n):
+                        val += comm_ab[r, s] * basis[c, s, r]
+                f_struct[a, b, c] = float((-2.0 * val).real)
+
+    # Killing form B[a, b] = sum_{c, d} f[a, c, d] * f[b, d, c]
+    killing = np.zeros((dim, dim), dtype=np.float64)
+    for a in range(dim):
+        for b in range(dim):
+            s = 0.0
+            for c in range(dim):
+                for d in range(dim):
+                    s += f_struct[a, c, d] * f_struct[b, d, c]
+            killing[a, b] = s
+
+    # Jacobi identity residual on (0, 1, 2)
+    t0, t1, t2 = basis[0], basis[1], basis[2]
+    c01 = t0 @ t1 - t1 @ t0
+    c12 = t1 @ t2 - t2 @ t1
+    c20 = t2 @ t0 - t0 @ t2
+    jac = (c01 @ t2 - t2 @ c01) + (c12 @ t0 - t0 @ c12) + (c20 @ t1 - t1 @ c20)
+    jac_err = float(np.linalg.norm(jac))
+    return killing, jac_err
+"""
+
+LIE_ALPHAEVOLVE_DIFF = """<<<<<<< SEARCH
+    # Explicit structure constants f[a, b, c] = -2 * Tr([T_a, T_b] @ T_c)
+    f_struct = np.zeros((dim, dim, dim), dtype=np.float64)
+    for a in range(dim):
+        for b in range(dim):
+            comm_ab = basis[a] @ basis[b] - basis[b] @ basis[a]
+            for c in range(dim):
+                val = 0.0j
+                for r in range(n):
+                    for s in range(n):
+                        val += comm_ab[r, s] * basis[c, s, r]
+                f_struct[a, b, c] = float((-2.0 * val).real)
+
+    # Killing form B[a, b] = sum_{c, d} f[a, c, d] * f[b, d, c]
+    killing = np.zeros((dim, dim), dtype=np.float64)
+    for a in range(dim):
+        for b in range(dim):
+            s = 0.0
+            for c in range(dim):
+                for d in range(dim):
+                    s += f_struct[a, c, d] * f_struct[b, d, c]
+            killing[a, b] = s
+=======
+    ab = np.einsum("aij,bjk->abik", basis, basis)
+    comm = ab - np.swapaxes(ab, 0, 1)
+    f_struct = -2.0 * np.einsum("abij,cji->abc", comm, basis).real
+    killing = np.einsum("acd,bdc->ab", f_struct, f_struct)
+>>>>>>> REPLACE"""
+
+
+def _compute_lie_ref() -> tuple[np.ndarray, float]:
+    ref_ns: dict[str, Any] = {}
+    exec(LIE_BASELINE_CODE, ref_ns)  # noqa: S102
+    return ref_ns["killing_form_and_jacobi"](SU4_BASIS)
+
+
+REF_LIE_KILLING, REF_LIE_JAC = _compute_lie_ref()
+
+
+def evaluate_lie_kernel(code: str) -> dict[str, float]:
+    """Evaluate su(4) Cartan-Killing form kernel for negative-definiteness, Jacobi identity, and latency."""
+    ns: dict[str, Any] = {}
+    try:
+        exec(code, ns)  # noqa: S102
+    except Exception:
+        return {
+            "physical_energy": MAX_APOPTOSIS_ENERGY,
+            "latency_ms": 9999.0,
+            "memory_mb": 0.0,
+            "invariant_error": 1.0,
+        }
+    fn = ns.get("killing_form_and_jacobi")
+    if not callable(fn):
+        return {
+            "physical_energy": MAX_APOPTOSIS_ENERGY,
+            "latency_ms": 9999.0,
+            "memory_mb": 0.0,
+            "invariant_error": 1.0,
+        }
+
+    samples_ms: list[float] = []
+    try:
+        for _ in range(3):
+            t0 = time.perf_counter()
+            k_out, jac_err = fn(SU4_BASIS)
+            samples_ms.append((time.perf_counter() - t0) * 1000.0)
+    except Exception:
+        return {
+            "physical_energy": MAX_APOPTOSIS_ENERGY,
+            "latency_ms": 9999.0,
+            "memory_mb": 0.0,
+            "invariant_error": 1.0,
+        }
+    samples_ms.sort()
+    elapsed_ms = samples_ms[len(samples_ms) // 2]
+
+    k_arr = np.asarray(k_out, dtype=np.float64)
+    max_diff = float(np.max(np.abs(k_arr - REF_LIE_KILLING)))
+    # Cartan criterion: compact semisimple su(4) has negative-definite Killing form (all eigvals < 0)
+    eigvals = np.linalg.eigvalsh(0.5 * (k_arr + k_arr.T))
+    pos_eig_violation = float(max(0.0, float(np.max(eigvals)) + 1.0))
+    inv_err = float(max(abs(jac_err), max_diff, pos_eig_violation))
+    if inv_err > 1e-11:
+        return {
+            "physical_energy": MAX_APOPTOSIS_ENERGY,
+            "latency_ms": elapsed_ms,
+            "memory_mb": 2.0,
+            "invariant_error": inv_err,
+        }
+
+    energy = elapsed_ms * 10.0 + inv_err * 1e6
+    return {
+        "physical_energy": float(energy),
+        "latency_ms": float(elapsed_ms),
+        "memory_mb": 2.2,
+        "invariant_error": inv_err,
+    }
+
+
 def main() -> int:
     out_dir = ROOT / "results" / "alphaevolve_kernels"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -445,6 +611,29 @@ def main() -> int:
         f"  Hardened gate promoted  : {math_res['promoted']}"
     )
 
+    print("\n=== 3. Lie Algebra / Gauge Theory Kernel: Compact su(4) Cartan-Killing Form & Jacobi Identity ===")
+    lie_base = evaluate_lie_kernel(LIE_BASELINE_CODE)
+    lie_engine = AlphaEvolveBiomimeticEngine(
+        evaluator_fn=evaluate_lie_kernel,
+        num_islands=3,
+        migration_interval=2,
+        seed=20261013,
+    )
+    lie_res = lie_engine.run_evolution_with_hardened_gate(
+        initial_codes=[LIE_BASELINE_CODE],
+        generations=4,
+        candidate_proposals=[LIE_ALPHAEVOLVE_DIFF],
+    )
+    lie_champ_metrics = evaluate_lie_kernel(lie_res["champion"]["dominant_code"])
+    lie_speedup = round(lie_base["latency_ms"] / max(lie_champ_metrics["latency_ms"], 1e-6), 2)
+    print(
+        f"  Baseline latency : {lie_base['latency_ms']:.3f} ms (E_bio={lie_res['baseline_energy']:.2f})\n"
+        f"  Champion latency : {lie_champ_metrics['latency_ms']:.3f} ms (E_bio={lie_res['champion_energy']:.2f})\n"
+        f"  Measured speedup : {lie_speedup:.2f}x | dE = {lie_res['delta_energy']:+.2f}\n"
+        f"  Jacobi & Killing err    : {lie_champ_metrics['invariant_error']:.3e}\n"
+        f"  Hardened gate promoted  : {lie_res['promoted']}"
+    )
+
     report = {
         "physics_symplectic_kepler": {
             "baseline_latency_ms": round(phys_base["latency_ms"], 4),
@@ -470,12 +659,24 @@ def main() -> int:
             "promoted": math_res["promoted"],
             "archive_elites": math_res["archive_total_elites"],
         },
+        "lie_algebra_su4_killing_form": {
+            "baseline_latency_ms": round(lie_base["latency_ms"], 4),
+            "champion_latency_ms": round(lie_champ_metrics["latency_ms"], 4),
+            "speedup": lie_speedup,
+            "baseline_energy": round(lie_res["baseline_energy"], 3),
+            "champion_energy": round(lie_res["champion_energy"], 3),
+            "delta_energy": round(lie_res["delta_energy"], 3),
+            "invariant_error": lie_champ_metrics["invariant_error"],
+            "promoted": lie_res["promoted"],
+            "archive_elites": lie_res["archive_total_elites"],
+        },
     }
     report_path = out_dir / "results.json"
     report_path.write_text(json.dumps(report, indent=2))
     print(f"\nSaved kernel evolution report to {report_path}")
-    return 0 if (phys_res["promoted"] and math_res["promoted"]) else 1
+    return 0 if (phys_res["promoted"] and math_res["promoted"] and lie_res["promoted"]) else 1
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

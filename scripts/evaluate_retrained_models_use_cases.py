@@ -74,20 +74,19 @@ def evaluate_laya_system_one_use_cases() -> dict[str, Any]:
     model.eval()
 
     # CPU Threading and Dynamic INT8 Quantization Optimization
-    if not torch.cuda.is_available():
-        import os
-        optimal_threads = max(1, min(4, os.cpu_count() or 4))
-        if torch.get_num_threads() != optimal_threads:
-            torch.set_num_threads(optimal_threads)
-        import warnings
-        try:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                import torch.ao.quantization as tq
-                model.encoder = tq.quantize_dynamic(model.encoder, {torch.nn.Linear}, dtype=torch.qint8)
-            logger.info("⚡ Laya System 1: Dynamic INT8 quantization active on %d CPU threads", optimal_threads)
-        except Exception as exc:
-            logger.warning("Dynamic INT8 quantization not applied: %s", exc)
+    import os
+    optimal_threads = max(1, min(4, os.cpu_count() or 4))
+    if torch.get_num_threads() != optimal_threads:
+        torch.set_num_threads(optimal_threads)
+    import warnings
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            import torch.ao.quantization as tq
+            model.encoder = tq.quantize_dynamic(model.encoder, {torch.nn.Linear}, dtype=torch.qint8)
+        logger.info("⚡ Laya System 1: Dynamic INT8 quantization active on %d CPU threads", optimal_threads)
+    except Exception as exc:
+        logger.warning("Dynamic INT8 quantization not applied: %s", exc)
 
     use_cases = [
         {
@@ -288,12 +287,11 @@ def evaluate_qwen_lora_generation() -> dict[str, Any]:
         return {"status": "SKIPPED", "reason": "LoRA adapter not found"}
 
     tokenizer = AutoTokenizer.from_pretrained(str(adapter_path), trust_remote_code=True)
-    if not torch.cuda.is_available():
-        import os
-        optimal_threads = max(1, min(4, os.cpu_count() or 4))
-        if torch.get_num_threads() != optimal_threads:
-            torch.set_num_threads(optimal_threads)
-        logger.info("⚡ Qwen CPU Generation: Tuned to %d CPU threads", optimal_threads)
+    import os
+    optimal_threads = max(1, min(4, os.cpu_count() or 4))
+    if torch.get_num_threads() != optimal_threads:
+        torch.set_num_threads(optimal_threads)
+    logger.info("⚡ Qwen CPU Generation: Tuned to %d CPU threads", optimal_threads)
 
     base = AutoModelForCausalLM.from_pretrained(
         base_model_id,

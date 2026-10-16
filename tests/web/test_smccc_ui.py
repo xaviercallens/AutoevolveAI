@@ -28,4 +28,6 @@ def test_smccc_dashboard_render(page: Page):
     # Click campaign
     page.click("#campaign-btn")
     expect(page.locator("#status")).to_have_text("Campaign active")
+    assert page.locator("#status").inner_text() == "Campaign active"
+
 

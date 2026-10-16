@@ -42,3 +42,5 @@ def test_smccc_functional_flow(page: Page):
     # Test Campaign Flow
     page.click("#campaign-btn")
     expect(page.locator("#status")).to_have_text("Success: true", timeout=10000)
+    assert page.locator("#status").inner_text() == "Success: true"
+

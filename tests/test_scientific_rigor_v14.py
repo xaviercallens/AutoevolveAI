@@ -176,6 +176,7 @@ class TestLean4Build:
     def test_no_sorry_in_lean_files(self):
         """Lean files must not contain sorry."""
         lean_dir = REPO_ROOT / "formal" / "ANSE"
+        violations = []
         for lean_file in lean_dir.glob("*.lean"):
             content = lean_file.read_text()
             # Check for sorry not in comments
@@ -183,7 +184,8 @@ class TestLean4Build:
             for i, line in enumerate(lines, 1):
                 stripped = line.strip()
                 if not stripped.startswith("--") and "sorry" in stripped:
-                    pytest.fail(f"{lean_file.name}:{i}: contains sorry: {line!r}")
+                    violations.append(f"{lean_file.name}:{i}: contains sorry: {line!r}")
+        assert violations == [], "\n".join(violations)
 
 
 # ============================================================

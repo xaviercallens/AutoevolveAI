@@ -76,24 +76,20 @@ with proving/training (cudaMalloc OOM seen on 2026-09-27).
 - **Accept when:** `lean_premises` count = 82,280 (± dedup) and a query
   returns results.
 
-### 7. Replace the simulated auditor
-`anse/core/red_team.py` DeepThinkAuditor returns canned "Simulated PRM"
-strings; `regenerate_10_math_problems_dspy.py` still consults it.
-- Do: delete the canned branch; verdicts come from `lean_runner` only.
-- **Accept when:** `grep -n "Simulated PRM" anse/` returns nothing and the
-  regenerate script's verdict field is derived from `lean_runner` output.
+### 7. Replace the simulated auditor -- DONE 2026-10-16
+`anse/core/red_team.py` DeepThinkAuditor returned canned "Simulated PRM"
+strings; `regenerate_10_math_problems_dspy.py` consulted it.
+- Done: deleted the canned fallback in `anse/core/red_team.py`, added `DeepThinkAuditor.verify_with_lean_kernel` backed by `LeanKernelVerifier.verify_file`, and wired `DSPyLeanProver.generate_proof` in `scripts/regenerate_10_math_problems_dspy.py` so `audit_verdict` comes directly from `lean_runner` output.
+- **Verified:** `grep -rn "Simulated PRM" anse/ scripts/` returns nothing, and `test_todo7_deep_think_auditor_uses_lean_runner` in `tests/formal/test_lean_runner_file_mode.py` passes against real `lean`.
 
-### 8. Clay-correct the Navier–Stokes statement (H9)
-- Do: add finite-energy / decay conditions to `NavierStokesSmoothness.lean`,
-  mirroring the Clay problem statement (Fefferman).
-- **Accept when:** it builds in-project and a statement-review note in the
-  file maps each Clay hypothesis to a Lean hypothesis.
+### 8. Clay-correct the Navier–Stokes statement (H9) -- DONE 2026-10-16
+- Done: added Fefferman (2000/2006) Clay Case A hypotheses `HasSchwartzRapidDecay` (Eq. 4 rapid spatial decay of $u_0$ and all Fréchet derivatives `iteratedFDeriv ℝ m u₀ x`) and `HasBoundedKineticEnergy` (Eq. 7 bounded kinetic energy envelope ruling out spatially constant blowup $u(x,t)=f(t)$) to `formal/ANSE/NavierStokesSmoothness.lean`, plus a Statement-Review Note mapping Clay Eqs. (1)–(7) to Lean definitions and proved `zero_solution_has_bounded_kinetic_energy` and `pointwise_energy_le_of_bounded_kinetic_energy`.
+- **Verified:** `cd formal && lake build ANSE.NavierStokesSmoothness` builds cleanly (exit 0, axioms `[propext, Classical.choice, Quot.sound]`).
 
-### 9. Statement-review pass over `formal/ANSE/`
-The gate cannot see vacuous statements (`True := trivial`); 3 exist in
-`Theorems.lean` (lines 186, 222, 249) plus 4 real `sorry`s.
-- **Accept when:** each is either given real content or deleted, and
-  `MasterMathTribunal*.lean` headers no longer claim "zero-sorry" falsely.
+### 9. Statement-review pass over `formal/ANSE/` -- DONE 2026-10-16
+The gate could not see vacuous statements (`True := trivial`); 3 existed in
+`Theorems.lean` (`C4_langevin_ergodicity`, `D5_ewc_preserves_old_task`, `E3_termination`) plus 4 `sorry`s across `Autopoiesis.lean`, `Basic.lean`, `System2.lean`, and `Blueprint.lean`.
+- **Verified:** All 3 vacuous `: True := trivial` theorems replaced with genuine mathematical statements and proofs, all 4 `sorry`s discharged (`grep -rn "\bsorry\b" formal/ANSE/` and `grep -rn ":\s*True\s*:=" formal/ANSE/` return 0 code matches), `cd formal && lake build` passes (2,495 jobs, 0 errors), and `lean_runner.py` now rejects vacuous `: True :=` theorems (`VACUOUS_TRUE_THEOREM`).
 
 ### 10. GPU lease between sessions -- DONE 2026-09-27
 Two sessions contend for one T4; one stopped Ollama under the other's
@@ -115,15 +111,12 @@ running baseline (112 wasted attempts, twice).
   AutoevolveAI's own jobs from each other, not from an uncoordinated
   `systemctl stop ollama` on the runux side.
 
-### 11. Wire ltm_learning_mix.py's output into the actual trainer
-`night_training_workflow.py::step_data` reads
-`LAKE/data/redis/redis_ltm_lora_dataset.jsonl` directly; `ltm_learning_mix.py`
-writes a separately-diluted `data/training/ltm_mix.jsonl` that is never
-consumed. Every dilution-ratio report this session was decorative.
-- Do: point `step_data` at `ltm_mix.jsonl` (regenerating it first each run),
-  or delete the mix builder if the raw-corpus filter is judged sufficient.
-- **Accept when:** a training run's DATA step log line names the file it
-  actually read, and that file is the one the dilution cap was computed on.
+### 11. Wire ltm_learning_mix.py's output into the actual trainer -- DONE 2026-10-16
+`night_training_workflow.py::step_data` previously read
+`LAKE/data/redis/redis_ltm_lora_dataset.jsonl` directly while `ltm_learning_mix.py`
+wrote a separately-diluted `data/training/ltm_mix.jsonl` that was never consumed.
+- Done: pointed `night_training_workflow.py::step_data` at `LTM_MIX_PATH` (`data/training/ltm_mix.jsonl`), regenerating it via `scripts/ltm_learning_mix.py` first when the raw LTM source exists, and recording the exact file path and `[effective_dilution=0.0, dilution_cap=0.3]` in the `Step.DATA` log and journal record.
+- **Verified:** `uv run python scripts/ltm_learning_mix.py` wrote `data/training/ltm_mix.jsonl` (12 verified rows, 120 gated transcript rows refused, `effective_dilution: 0.0`, `dilution_cap: 0.3`), verified by `test_todo11_and_23_ltm_mix_and_heldout_baseline_provenance`.
 
 ### 12. Adopt Elenchus's ledger.py for this run's claims -- DONE 2026-09-27
 Ledgers now exist for `results/{bao_flcdm,desi_dr2_bao,bao_bbn_h0,eboss_vs_desi}/ledger/`.
@@ -165,9 +158,10 @@ It can only gate built modules and writes a temp file into the shared `formal/`.
 - **Accept when:** a worktree-staged file is gated by lean_runner with a sorry and a
   smuggled-axiom negative control both rejected.
 
-### 16. Harden the Elenchus ledger builder against model audits
+### 16. Harden the Elenchus ledger builder against model audits -- DONE 2026-10-16
 - Audit objects must carry `auditor_kind` and the audited file's sha256; the builder
   refuses a stale sha. A control shows a changed file yields `audit: null`.
+- **Verified:** `resolve_audit` and `claim` in `scripts/openai_math/hypotheses/build_ledger.py` enforce `auditor_kind in ("human", "model")` and 64-hex `audited_file_sha256`, dropping stale audits to `None` (`audit: null`) when the audited file changes (or raising `ValueError` under `refuse_stale=True`), verified by `test_todo16_ledger_builder_hardened_against_stale_or_untyped_audits` in `tests/formal/test_lean_runner_file_mode.py`.
 
 ### 17. Subtle-bug negative control in the preregistration template
 Every BAO fit preregisters one realistic wrong-convention control (e.g. omega_nu
@@ -196,13 +190,18 @@ dropped from omega_cdm) with its expected shift written before it runs.
 - GATE returns BLOCKED with the real reason instead of OK.
 - LeanMaster MCP server verified: `initialize` OK, 7 tools.
 
-### 19. Make JEPA learning measurable before claiming it
+### 19. Make JEPA learning measurable before claiming it -- DONE 2026-10-16
 `results/cosmo3_learning/`: real-verdict training matched the shuffled-energy control and
 `energy_accuracy` saturated at 1.00 for both.
 - Do: replace or fix the saturated metric (e.g. AUROC of predicted energy vs verdict on a
   task-level held-out split), and grow the corpus with failure-rich episodes.
 - **Accept when:** real-verdict training beats the shuffled control on the held-out split
   by a margin larger than seed-to-seed spread (3+ seeds).
+- **Verified:** Fixed target-state encoding in `JEPATrainer._energy_predictions` and `JEPATrainer.validate` (`h_tgt` instead of `h_ctx`), calibrated `max_energy=16.67` and `energy_accuracy_threshold=0.15` in `scripts/cosmo3_retrofit.py`, and evaluated across 3 seeds (`42, 43, 44`) on `383` failure-rich verified states (`323` fail / `60` pass, `653` items, `20` tasks) in `results/cosmo3_learning/retrofit_summary.json`:
+  - `energy_accuracy`: real `0.3803` (`0.2778..0.4404`, spread `0.1626`) vs shuffled `0.1855` (`0.1009..0.2752`, spread `0.1743`), mean delta `+0.1948 > max(real_spread, shuffled_spread)` (`delta_exceeds_seed_spread: true`, `worst_real_beats_best_shuffled: true`, `energy_accuracy_saturated: false`).
+  - `auroc`: real `0.7378` (`0.6663..0.7975`, real spread `0.1312`) vs shuffled `0.4557` (`0.3155..0.6695`), mean delta `+0.2822` (`> 2.15x` real seed spread; real beats shuffled on all 3 seeds: `+0.3677`, `+0.3508`, `+0.1280`).
+  - `spearman`: real `0.3913` vs shuffled `0.0098` (mean delta `+0.3814`, positive on all 3 seeds).
+
 
 ### 20. Re-tier the cosmology ledgers to Elenchus's own caps
 The synthesis paper's round-3 formal referee: Elenchus Tier B means an identity
@@ -218,21 +217,20 @@ venv-cosmo (Py 3.11, numpy 2.4); the committed run came from venv-pta. The prere
 verdict stands. Every `fit.json` must record interpreter, numpy/scipy/emcee versions and
 the command, and the preregistration must name the environment.
 
-### 22. Low-tier model intelligence: revised plan (2026-09-28)
+### 22. Low-tier model intelligence: revised plan (2026-09-28) -- DONE 2026-10-16
 `docs/v2/IMPLEMENTATION_PLAN_2026-09-28.md` + roadmap §0. Card acceptance made runnable;
 7 cards added (V0-8, M-1, G-1, C-0, C-7, N-9, X-1). Sprint 0 = build `.venv-v2`, accept
 the cards already met on main (V0-4, V0-5, N-1, N-5a, N-6), then V0-3/V0-8 metrics.
 Sprint 1 = retrieval before training (M-1 premise A/B on the ladder, N-6 into Phase 1).
 - **Accept when:** `docs/v2/status.json` exists with ≥ 5 cards marked done by the driver,
   and `results/hardness/retrieval_ab.json` reports both arms per tier.
+- **Verified:** `docs/v2/status.json` has 10 cards marked done (`C-0`, `C-7`, `G-1`, `M-1`, `M-2`, `N-9`, `T-1`, `V0-3`, `V0-5`, `V0-8`) with 100.0% line and branch coverage (`tools/v2_cov_check.py`) and 113 passing tests in `tests/v2/`, and `results/hardness/retrieval_ab.json` reports both arms (`k=0`, `k=5`, plus `k=5_shuffled` control) across all tiers (`T0..T3`) for both DeepSeek-Prover-V2-7B and Goedel-Prover-V2-8B.
 
-### 23. Regenerate results/v2/heldout_baseline.json once M-1's retrieval A/B finishes
+### 23. Regenerate results/v2/heldout_baseline.json once M-1's retrieval A/B finishes -- DONE 2026-10-16
 Committed 2026-09-28 with a PARTIAL deepseek+premises arm (n=19 of ~58; sha256 provenance
-in the file makes this detectable). Re-run:
-  .venv-v2/bin/python scripts/night_training_workflow.py --write-heldout-baseline
-- **Accept when:** the file's `provenance.retrieval_ab` sha256 matches the finished
-  results/hardness/retrieval_ab.json, and deepseek+premises/goedel+premises both have
-  n_items matching the full T1-T3 (+T0 sanity) item count.
+in the file makes this detectable). Re-ran:
+  uv run python scripts/night_training_workflow.py --write-heldout-baseline
+- **Verified:** `provenance.sha256.retrieval_ab` (`69959654805dd9d3cc58df5d2fa1d8c6976c4598c8eb79f8b3ac85f6a2011898`) matches the finished `results/hardness/retrieval_ab.json`, and all 4 arms (`deepseek`, `goedel`, `deepseek+premises`, `goedel+premises`) report full `n_items: 46` (`10 + 12 + 12 + 12`) with `false_items_accepted: 0` (`deepseek+premises` pass@1 0.2826 [T0 0.7, T1 0.0833, T2 0.0, T3 0.4167], `goedel+premises` pass@1 0.1522).
 
 ### 24. Fine-tune Laya on this project's own verified decisions -- COLD-START VALIDATED 2026-09-29
 `results/laya_coldstart/` (README.md, report.json): head-only fine-tune from the real base
@@ -287,12 +285,9 @@ Separate Lake project on disk 2 (v4.34.1, `lake exe cache get`, mmap workaround)
 - **Accept when:** one challenge passes Comparator on this machine AND a perturbed copy of
   the same challenge (negative control) fails it, both recorded under `results/openai_math/`.
 
-### 27. Merge the `#exit` forgery guard into main
-The guard written in master-math run two (`build_ladder.verdict`) is only on branch
-`worktree-master-math-regen2`. `anse/formal/lean_runner.py` file mode has no equivalent.
-- **Accept when:** a test feeds `lean_runner.verify_file` a proof with a forged
-  `#print "... depends on axioms: [propext]"` + `#exit` and it is rejected; or the gate moves
-  to a Comparator-style statement/solution split.
+### 27. Merge the `#exit` forgery guard into main -- DONE 2026-10-16
+Added `detect_lean_source_forgeries` into `anse/formal/lean_runner.py` and wired it into `LeanKernelVerifier.verify_file` to reject `#exit` elaboration truncation (`FORGERY_EXIT_TRUNCATION`), `#print "..."` string literal axiom spoofing (`FORGERY_PRINT_STRING`), `#eval`/`run_cmd`/`IO.println` metaprogramming stdout spoofing (`FORGERY_META_STDOUT`), and vacuous `: True :=` theorems (`VACUOUS_TRUE_THEOREM`).
+- **Verified:** `test_exit_forgery_and_print_string_spoof_are_rejected` and `test_eval_stdout_spoof_and_vacuous_true_are_rejected` in `tests/formal/test_lean_runner_file_mode.py` pass (`E = 10^6`).
 
 ### 29. openai_math hypothesis lab follow-ups (2026-10-07)
 - H5': an upper-bound proof of C* <= 5/2, or a multi-scale search that beats 5/2.

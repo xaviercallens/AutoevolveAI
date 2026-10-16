@@ -367,3 +367,34 @@ def test_strong_ai_coding_hardness_rules_and_generate_and_evolve(tmp_path) -> No
     assert "lru_cache" in summary["final_code"]
     assert summary["attestation_token"] != ""
 
+
+def test_ast_genomic_distance_and_differential_evolution() -> None:
+    c_ident = "def f(x: float) -> float:\n    return 0.25 * x + 0.75\n"
+    c_homologous = "def f(x: float) -> float:\n    return 0.50 * x + 0.50\n"
+    c_divergent = (
+        "def f(x: float) -> float:\n"
+        "    s = 0.0\n"
+        "    for i in range(10):\n"
+        "        if i % 2 == 0:\n"
+        "            s += x * i\n"
+        "    return s\n"
+    )
+    assert ASTGeneticOperators.compute_ast_genomic_distance(c_ident, c_homologous) == 0.0
+    dist_div = ASTGeneticOperators.compute_ast_genomic_distance(c_ident, c_divergent)
+    assert 0.2 < dist_div <= 1.0
+
+    c_d1 = "def f(x: float) -> float:\n    return 0.40 * x + 0.60\n"
+    c_d2 = "def f(x: float) -> float:\n    return 0.20 * x + 0.80\n"
+    de_code, applied = ASTGeneticOperators.apply_differential_evolution_mutation(
+        target_code=c_ident,
+        pbest_code=c_homologous,
+        donor1_code=c_d1,
+        donor2_code=c_d2,
+        scale_f=0.5,
+        crossover_cr=1.0,
+        rng=random.Random(7),
+    )
+    assert applied is True
+    assert "0.475" in de_code and "0.525" in de_code
+
+

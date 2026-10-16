@@ -55,15 +55,19 @@ def test_full_dashboard_navigation(page: Page):
             expect(section.locator("h2")).to_contain_text("Social Media Communication Command Center")
             expect(section.locator("#btn-smccc-repair")).to_be_visible()
             expect(section.locator("#btn-smccc-campaign")).to_be_visible()
+    assert len(tabs) == 15
 
 def test_smccc_repair_functional(page: Page):
     page.goto("http://127.0.0.1:8002/")
     page.locator("button[onclick=\"switchTab('smccc')\"]").first.click()
     page.click("#btn-smccc-repair")
     expect(page.locator("#smccc-output")).to_contain_text("Karma acquired: 15", timeout=10000)
+    assert "Karma acquired: 15" in page.locator("#smccc-output").inner_text()
 
 def test_smccc_campaign_functional(page: Page):
     page.goto("http://127.0.0.1:8002/")
     page.locator("button[onclick=\"switchTab('smccc')\"]").first.click()
     page.click("#btn-smccc-campaign")
     expect(page.locator("#smccc-output")).to_contain_text("Broadcast success: true", timeout=10000)
+    assert "Broadcast success: true" in page.locator("#smccc-output").inner_text()
+

@@ -608,6 +608,107 @@ class ASTGeneticOperators:
             return ast.unparse(tree), "somatic_numeric_tuner"
         return genome.dominant_code, "epigenetic_conserved"
 
+    @classmethod
+    def compute_ast_genomic_distance(cls, code_a: str, code_b: str) -> float:
+        r"""Compute normalized NEAT-style AST structural genomic distance $\delta_{\text{AST}} \in [0, 1]$."""
+        try:
+            tree_a = ast.parse(code_a)
+            tree_b = ast.parse(code_b)
+        except SyntaxError:
+            return 1.0
+
+        counts_a: dict[str, int] = {}
+        counts_b: dict[str, int] = {}
+        for node in ast.walk(tree_a):
+            k = type(node).__name__
+            counts_a[k] = counts_a.get(k, 0) + 1
+        for node in ast.walk(tree_b):
+            k = type(node).__name__
+            counts_b[k] = counts_b.get(k, 0) + 1
+
+        all_keys = set(counts_a) | set(counts_b)
+        if not all_keys:
+            return 0.0
+        l1_diff = sum(abs(counts_a.get(k, 0) - counts_b.get(k, 0)) for k in all_keys)
+        total_mass = sum(counts_a.values()) + sum(counts_b.values())
+        return min(1.0, l1_diff / max(1, total_mass))
+
+    @classmethod
+    def apply_differential_evolution_mutation(
+        cls,
+        target_code: str,
+        pbest_code: str,
+        donor1_code: str,
+        donor2_code: str,
+        scale_f: float = 0.5,
+        crossover_cr: float = 0.8,
+        rng: random.Random | None = None,
+    ) -> tuple[str, bool]:
+        r"""DE/current-to-pbest/1 numeric constant evolution across homologous ASTs:
+        $v_k = x_{i,k} + F (x_{\text{pbest},k} - x_{i,k}) + F (x_{r1,k} - x_{r2,k})$.
+        """
+        rng = rng or random.Random(42)
+
+        def _extract_floats(code_str: str) -> list[float]:
+            try:
+                t = ast.parse(code_str)
+            except SyntaxError:
+                return []
+            return [
+                float(n.value)
+                for n in ast.walk(t)
+                if isinstance(n, ast.Constant)
+                and isinstance(n.value, float)
+                and n.value not in (0.0, 1.0, -1.0)
+            ]
+
+        x_i = _extract_floats(target_code)
+        x_pb = _extract_floats(pbest_code)
+        x_r1 = _extract_floats(donor1_code)
+        x_r2 = _extract_floats(donor2_code)
+        min_len = min(len(x_i), len(x_pb), len(x_r1), len(x_r2))
+        if min_len == 0:
+            return target_code, False
+
+        trial_vals: list[float] = []
+        mutated_any = False
+        j_rand = rng.randrange(min_len)
+        for idx in range(min_len):
+            if rng.random() < crossover_cr or idx == j_rand:
+                v = (
+                    x_i[idx]
+                    + scale_f * (x_pb[idx] - x_i[idx])
+                    + scale_f * (x_r1[idx] - x_r2[idx])
+                )
+                if abs(v - x_i[idx]) > 1e-12:
+                    mutated_any = True
+                trial_vals.append(round(v, 8))
+            else:
+                trial_vals.append(x_i[idx])
+
+        if not mutated_any:
+            return target_code, False
+
+        tree = ast.parse(target_code)
+        cursor = 0
+
+        class _DEInjector(ast.NodeTransformer):
+            def visit_Constant(self, node: ast.Constant) -> ast.AST:
+                nonlocal cursor
+                if (
+                    isinstance(node.value, float)
+                    and node.value not in (0.0, 1.0, -1.0)
+                    and cursor < len(trial_vals)
+                ):
+                    new_val = trial_vals[cursor]
+                    cursor += 1
+                    return ast.copy_location(ast.Constant(value=new_val), node)
+                return node
+
+        tree = _DEInjector().visit(tree)
+        ast.fix_missing_locations(tree)
+        return ast.unparse(tree), True
+
 
 def compute_pareto_fronts(genomes: Sequence[DiploidGenome]) -> list[list[DiploidGenome]]:
     """NSGA-II fast non-dominated sorting + crowding distance across 4 minimization objectives:

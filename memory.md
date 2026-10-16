@@ -1,7 +1,7 @@
 # ANSE Repository Memory & State Ledger
-**Version:** 2.3.0 (Phases V1–V4 + 10 E2E Closed-Loop Scenarios under Hardness)  
+**Version:** 14.5.0 (Antigravity + Biomimetic Genetic + CPU Hardness + Gemini 4 Argon Formal Verification)  
 **Repository:** `xaviercallens/AutoevolveAI`  
-**Last Updated:** 2026-09-24  
+**Last Updated:** 2026-10-16  
 
 ---
 
@@ -149,4 +149,24 @@ Fully implemented, documented (`docs/ANTIGRAVITY_HARNESS.md`), and tested (`test
 - **Daily 02:00 AM Dream & 05:00 AM Continual Learning Pipeline (`scripts/nightly_retrain_at_5am.py`):**
   - Automated daily execution of Redis LTM + ChromaDB sync (`65` conversations, `32,231` turns), Hippocampal REM sleep consolidation, Laya & Qwen LoRA fine-tuning, RL `EnergyCriticPolicy`, JEPA World Model, AlphaEvolve Biomimetic Kernel Evolution, LinUCB Scientific Communication RL, and Kev SAAW Decision Gate (`P(Promote) = 0.9968`, `Quality = 2.94 / 3.0`).
 
+---
 
+## 10. v14.5.0 — Antigravity, Biomimetic Genetic, CPU v2 Intelligence & Gemini 4 Argon Formal Hardening (2026-10-16)
+
+- **TODO 27 (`#exit` Forgery & Metaprogramming Stdout Spoofing Guard):**
+  - Added `detect_lean_source_forgeries` to [`anse/formal/lean_runner.py`](file:///home/xavkal/xdev/AutoevolveAI/anse/formal/lean_runner.py) and wired it into `LeanKernelVerifier.verify_file` to reject `#exit` elaboration truncation (`FORGERY_EXIT_TRUNCATION`), `#print "..."` string literal axiom spoofing (`FORGERY_PRINT_STRING`), `#eval`/`run_cmd`/`IO.println` stdout spoofing (`FORGERY_META_STDOUT`), and vacuous `: True :=` theorems (`VACUOUS_TRUE_THEOREM`) with $E = 10^6$.
+- **TODO 8 & 9 (`formal/ANSE/` Statement-Review & Clay Navier–Stokes Hypotheses):**
+  - Eliminated all 3 vacuous `: True := trivial` theorems (`C4_langevin_ergodicity`, `D5_ewc_preserves_old_task`, `E3_termination`) and all 4 remaining `sorry` obligations across `formal/ANSE/` (`Theorems.lean`, `Autopoiesis.lean`, `Basic.lean`, `System2.lean`, `Blueprint.lean`).
+  - Added Fefferman (2000/2006) Clay Case A hypotheses `HasSchwartzRapidDecay` (Eq. 4 rapid spatial decay of $u_0$ and all Fréchet derivatives `iteratedFDeriv ℝ m u₀ x`) and `HasBoundedKineticEnergy` (Eq. 7 bounded kinetic energy envelope ruling out spatially constant blowup $u(x,t)=f(t)$) to [`formal/ANSE/NavierStokesSmoothness.lean`](file:///home/xavkal/xdev/AutoevolveAI/formal/ANSE/NavierStokesSmoothness.lean), with a full Statement-Review Note and proved `zero_solution_has_bounded_kinetic_energy` and `pointwise_energy_le_of_bounded_kinetic_energy`.
+  - Verified full `cd formal && lake build` (`8,805` build targets, `0` errors, `0` `sorry`, `0` vacuous `: True :=`).
+- **TODO 7, 11, 16 & 23 (Kernel-Only Auditor, Elenchus Ledger Hardening, LTM Dilution Wiring & Held-Out Baseline Provenance):**
+  - Replaced canned `"Simulated PRM"` auditor branches in [`anse/core/red_team.py`](file:///home/xavkal/xdev/AutoevolveAI/anse/core/red_team.py) and [`scripts/regenerate_10_math_problems_dspy.py`](file:///home/xavkal/xdev/AutoevolveAI/scripts/regenerate_10_math_problems_dspy.py) with `DeepThinkAuditor.verify_with_lean_kernel` backed by `LeanKernelVerifier.verify_file`.
+  - Hardened [`scripts/openai_math/hypotheses/build_ledger.py`](file:///home/xavkal/xdev/AutoevolveAI/scripts/openai_math/hypotheses/build_ledger.py) (`resolve_audit`) so ledger audit records require `auditor_kind in ("human", "model")` and a matching 64-hex `audited_file_sha256` (stale or untyped audits resolve to `audit: null` or raise `ValueError`).
+  - Wired [`scripts/ltm_learning_mix.py`](file:///home/xavkal/xdev/AutoevolveAI/scripts/ltm_learning_mix.py) output (`data/training/ltm_mix.jsonl`, `effective_dilution=0.0`, `dilution_cap=0.3`) directly into [`scripts/night_training_workflow.py`](file:///home/xavkal/xdev/AutoevolveAI/scripts/night_training_workflow.py) `step_data`.
+  - Regenerated [`results/v2/heldout_baseline.json`](file:///home/xavkal/xdev/AutoevolveAI/results/v2/heldout_baseline.json) against the completed `results/hardness/retrieval_ab.json` (`sha256: 69959654...`, all 4 arms at full `n_items: 46`, `0` false items accepted).
+- **TODO 22 (CPU Low-Tier Model Intelligence Cards `V0-5`, `T-1`, `M-1`, `C-0`):**
+  - Implemented stratified deterministic 50/50 dev/held-out split (`anse/v2/benchmark_split.py`, `V0-5`), parametric curriculum generator (`anse/v2/task_pool.py`, `T-1`), retrieval-conditioned premise prompt formatter (`anse/v2/premise_prompt.py`, `M-1`), and `ltm_learning_mix` dilution enforcement (`tests/v2/test_mix_wiring.py`, `C-0`), verified at `100.0%` line and branch coverage (`tools/v2_cov_check.py`) with `113 passed` in `tests/v2` and `184/184` files passing `test_rigor_guard.py`.
+- **TODO 19 (JEPA Target-State Energy Fix & Multi-Seed Shuffled-Label Control):**
+  - Fixed `JEPATrainer._energy_predictions` and `JEPATrainer.validate` in [`anse/jepa/trainer.py`](file:///home/xavkal/xdev/AutoevolveAI/anse/jepa/trainer.py) to evaluate `energy_head` on target embeddings `h_tgt` instead of `h_ctx`, calibrated `max_energy=16.67` and `energy_accuracy_threshold=0.15` in [`scripts/cosmo3_retrofit.py`](file:///home/xavkal/xdev/AutoevolveAI/scripts/cosmo3_retrofit.py), and recorded multi-seed (`42, 43, 44`) real-vs-shuffled evaluations in [`results/cosmo3_learning/retrofit_summary.json`](file:///home/xavkal/xdev/AutoevolveAI/results/cosmo3_learning/retrofit_summary.json).
+- **AlphaEvolve + Biomimetic GA Extensions:**
+  - Added AST genomic distance (`compute_ast_genomic_distance`) and Differential Evolution `DE/current-to-pbest/1/bin` constant mutation (`apply_differential_evolution_mutation`) in [`anse/autopoiesis/alphaevolve_biomimetic.py`](file:///home/xavkal/xdev/AutoevolveAI/anse/autopoiesis/alphaevolve_biomimetic.py), plus Compact $\mathfrak{su}(4)$ Cartan-Killing Form & Jacobi Identity tensor contraction evolution in [`scripts/run_alphaevolve_physics_math_kernel.py`](file:///home/xavkal/xdev/AutoevolveAI/scripts/run_alphaevolve_physics_math_kernel.py).

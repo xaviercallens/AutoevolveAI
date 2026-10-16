@@ -205,6 +205,7 @@ class LeanKernelVerifier:
         lean_file: Path | str,
         timeout_s: float = 1800.0,
         env: dict[str, str] | None = None,
+        reject_vacuous: bool = True,
     ) -> list[LeanVerificationResult]:
         """Gate a standalone ``.lean`` file that lives anywhere (e.g. a git worktree).
 
@@ -215,15 +216,24 @@ class LeanKernelVerifier:
         an existing built environment) and reads the kernel's own ``#print axioms``
         output that the file must contain for every ``theorem``/``lemma`` it declares.
 
-        One result is returned per declared theorem. A file is only clean when the
-        compile exits 0 AND every declared theorem has an axioms line AND none of those
-        depends on ``sorryAx`` or a non-whitelisted axiom. A missing axioms line is a
-        failure (a theorem nobody printed is a theorem nobody checked), and so is a
-        file that declares no theorem at all.
+        One result is returned per declared theorem. A file is only clean when:
+          1. Source-level forgery scan passes (no ``#exit`` truncation, no ``#print "..."``
+             string spoofing, no ``#eval``/``run_cmd``/``IO.println`` stdout injection, and
+             no vacuous ``: True :=`` theorem statements when ``reject_vacuous=True``).
+          2. The compile exits 0 without ``using 'exit' to interrupt Lean``.
+          3. Every declared theorem has an axioms line AND none of those depends on
+             ``sorryAx`` or a non-whitelisted axiom.
         """
         path = Path(lean_file).resolve()
         t0 = time.perf_counter()
         source = path.read_text(encoding="utf-8")
+        forgeries = detect_lean_source_forgeries(source, reject_vacuous=reject_vacuous)
+        if forgeries:
+            elapsed = (time.perf_counter() - t0) * 1000.0
+            reason = "Lean source forgery/vacuity guard rejected file: " + "; ".join(forgeries)
+            logger.error("%s (%s)", reason, path.name)
+            return [_failed(path.name, -2, elapsed, reason)]
+
         declared = declared_theorems(source)
         run_env = env if env is not None else self.env
 
@@ -244,6 +254,9 @@ class LeanKernelVerifier:
         raw = (res.stdout + "\n" + res.stderr).strip()
         if res.returncode != 0:
             return [_failed(path.name, res.returncode, elapsed, raw)]
+        if "using 'exit' to interrupt Lean" in raw:
+            return [_failed(path.name, -2, elapsed,
+                            "Lean elaboration interrupted early by #exit: unchecked\n" + raw)]
         if not declared:
             return [_failed(path.name, 0, elapsed,
                             "file declares no theorem/lemma: nothing was verified\n" + raw)]
@@ -379,6 +392,30 @@ def declared_theorems(source: str) -> list[str]:
     """Names of every ``theorem``/``lemma`` declared outside comments and docstrings."""
     code = _LINE_COMMENT.sub("", _BLOCK_COMMENT.sub("", source))
     return [m.group(1) for m in _DECL.finditer(code)]
+
+
+def detect_lean_source_forgeries(source: str, reject_vacuous: bool = True) -> list[str]:
+    """Detect source-level formal verification bypasses and vacuous statements (TODO 27, TODO 9).
+
+    Checks stripped Lean source code (outside comments/docstrings) for:
+      - ``#exit`` directive (truncates elaboration before broken proofs or after forged prints)
+      - ``#print "..."`` string literals (spoofs ``'thm' depends on axioms: ...`` lines)
+      - ``#eval`` / ``run_cmd`` / ``IO.println`` metaprogramming stdout spoofing
+      - Vacuous ``theorem/lemma ... : True :=`` statements (when ``reject_vacuous=True``)
+    """
+    code = _LINE_COMMENT.sub("", _BLOCK_COMMENT.sub("", source))
+    violations: list[str] = []
+    if re.search(r"(?:^|\s)#exit\b", code):
+        violations.append("FORGERY_EXIT_TRUNCATION: '#exit' command truncates Lean elaboration")
+    if re.search(r"#print\s+\"", code):
+        violations.append("FORGERY_PRINT_STRING: '#print \"...\"' string literal spoofs axiom output")
+    if re.search(r"(?:^|\s)(?:#eval|run_cmd)\b|\bIO\.print(?:ln)?\b", code):
+        violations.append("FORGERY_META_STDOUT: '#eval'/'run_cmd'/'IO.println' stdout spoofing")
+    if reject_vacuous and re.search(
+        r"\b(?:theorem|lemma)\s+([^\s:({\[]+)[^:=]*:\s*True\s*:=", code
+    ):
+        violations.append("VACUOUS_TRUE_THEOREM: vacuous ': True :=' theorem statement")
+    return violations
 
 
 def parse_axiom_lines(output: str) -> dict[str, list[str]]:

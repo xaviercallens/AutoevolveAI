@@ -57,3 +57,4 @@ def test_smccc_e2e_and_screenshot(page: Page):
     
     # Final Screenshot
     page.screenshot(path="docs/images/smccc_dashboard_final.png")
+    assert os.path.exists("docs/images/smccc_dashboard_final.png")

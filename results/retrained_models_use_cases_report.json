@@ -1,24 +1,24 @@
 {
-  "timestamp": "2026-10-14T03:23:17Z",
+  "timestamp": "2026-10-16T03:08:36Z",
   "laya_system_one": {
     "status": "PARTIAL",
-    "accuracy": 0.6667,
-    "mean_latency_ms": 2582.44,
+    "accuracy": 0.5,
+    "mean_latency_ms": 849.99,
     "total_use_cases": 6,
     "cases": [
       {
         "use_case": "UC1-Physics-Symplectic-Sound",
         "domain": "physics",
         "expected": "sound",
-        "predicted": "sound",
+        "predicted": "unsound",
         "probabilities": {
-          "sound": 0.495,
-          "unsound": 0.2701,
-          "needs_investigation": 0.235
+          "sound": 0.319,
+          "unsound": 0.5178,
+          "needs_investigation": 0.1632
         },
-        "confidence": 0.0516,
-        "latency_ms": 4012.14,
-        "correct": true
+        "confidence": 0.0888,
+        "latency_ms": 981.89,
+        "correct": false
       },
       {
         "use_case": "UC2-Physics-Euler-Unsound",
@@ -26,12 +26,12 @@
         "expected": "unsound",
         "predicted": "sound",
         "probabilities": {
-          "sound": 0.6,
-          "unsound": 0.258,
-          "needs_investigation": 0.142
+          "sound": 0.6444,
+          "unsound": 0.21,
+          "needs_investigation": 0.1455
         },
-        "confidence": 0.1505,
-        "latency_ms": 2524.34,
+        "confidence": 0.1886,
+        "latency_ms": 902.06,
         "correct": false
       },
       {
@@ -40,12 +40,12 @@
         "expected": "sound",
         "predicted": "sound",
         "probabilities": {
-          "sound": 0.4412,
-          "unsound": 0.229,
-          "needs_investigation": 0.3298
+          "sound": 0.5107,
+          "unsound": 0.3839,
+          "needs_investigation": 0.1054
         },
-        "confidence": 0.0311,
-        "latency_ms": 2476.2,
+        "confidence": 0.1373,
+        "latency_ms": 905.06,
         "correct": true
       },
       {
@@ -54,41 +54,41 @@
         "expected": "unsound",
         "predicted": "unsound",
         "probabilities": {
-          "sound": 0.2315,
-          "unsound": 0.4004,
-          "needs_investigation": 0.3681
+          "sound": 0.184,
+          "unsound": 0.6278,
+          "needs_investigation": 0.1882
         },
-        "confidence": 0.0232,
-        "latency_ms": 3013.9,
+        "confidence": 0.1643,
+        "latency_ms": 831.02,
         "correct": true
       },
       {
         "use_case": "UC5-Symbolic-Banach-Sound",
         "domain": "symbolic",
         "expected": "sound",
-        "predicted": "unsound",
+        "predicted": "sound",
         "probabilities": {
-          "sound": 0.3074,
-          "unsound": 0.3795,
-          "needs_investigation": 0.3131
+          "sound": 0.4786,
+          "unsound": 0.3593,
+          "needs_investigation": 0.1621
         },
-        "confidence": 0.0043,
-        "latency_ms": 1861.74,
-        "correct": false
+        "confidence": 0.0757,
+        "latency_ms": 747.18,
+        "correct": true
       },
       {
         "use_case": "UC6-Symbolic-Divergent-Unsound",
         "domain": "symbolic",
         "expected": "unsound",
-        "predicted": "unsound",
+        "predicted": "sound",
         "probabilities": {
-          "sound": 0.2955,
-          "unsound": 0.4032,
-          "needs_investigation": 0.3013
+          "sound": 0.5071,
+          "unsound": 0.3091,
+          "needs_investigation": 0.1838
         },
-        "confidence": 0.0097,
-        "latency_ms": 1606.32,
-        "correct": true
+        "confidence": 0.0728,
+        "latency_ms": 732.71,
+        "correct": false
       }
     ]
   },
@@ -99,19 +99,19 @@
       {
         "id": "MCTS-Hamiltonian-Symplectic",
         "candidates_explored": 16,
-        "mcts_latency_ms": 49.48,
-        "speedup_vs_sandbox": 2.4,
-        "best_advantage": 2.7491,
-        "best_predicted_energy": 3.467,
+        "mcts_latency_ms": 6.9,
+        "speedup_vs_sandbox": 17.4,
+        "best_advantage": 2.4608,
+        "best_predicted_energy": 3.2051,
         "best_proposal": "grad = grad_V(q); q_next = q + dt * p - 0.5 * dt**2 * grad"
       },
       {
         "id": "MCTS-Hodge-Duality",
         "candidates_explored": 16,
-        "mcts_latency_ms": 55.66,
-        "speedup_vs_sandbox": 2.7,
-        "best_advantage": 2.7491,
-        "best_predicted_energy": 3.467,
+        "mcts_latency_ms": 2.35,
+        "speedup_vs_sandbox": 63.8,
+        "best_advantage": 2.4608,
+        "best_predicted_energy": 3.2051,
         "best_proposal": "involution_check = norm(star_inv @ star_k - I)"
       }
     ]
@@ -122,16 +122,16 @@
       {
         "id": "Qwen-LoRA-Symplectic-Python",
         "tokens_generated": 128,
-        "duration_sec": 91.8,
-        "tokens_per_sec": 1.39,
-        "generated_preview": "```python\nimport numpy as np\n\ndef verify_hamiltonian(q0, p0, dt, steps):\n    \"\"\"\n    Implement leapfrog integration to compute the Hamiltonian for a simple harmonic oscillator.\n    \n    Parameters:\n    - q0 (np.array): Initial position vector of the"
+        "duration_sec": 40.59,
+        "tokens_per_sec": 3.15,
+        "generated_preview": "```python\nimport numpy as np\n\ndef verify_hamiltonian(q0, p0, dt, steps):\n    \"\"\"\n    Implement leapfrog integration to verify the Hamiltonian drift.\n    \n    Parameters:\n    q0 (np.array): Initial position vector.\n    p0 (np.array): Initial momentum"
       },
       {
         "id": "Qwen-LoRA-Hodge-DEC",
         "tokens_generated": 128,
-        "duration_sec": 88.94,
-        "tokens_per_sec": 1.44,
-        "generated_preview": "To formulate Discrete Exterior Calculus (DEC) and Hodge star duality for a 2-form in Python, we can use the `numpy` library to handle numerical computations. DEC is a method of representing differential forms as linear combinations of exterior deriva"
+        "duration_sec": 40.16,
+        "tokens_per_sec": 3.19,
+        "generated_preview": "To formulate Discrete Exterior Calculus (DEC) and Hodge star duality for a 2-form in Python, we can use the `numpy` library to handle numerical computations and `scipy` for symbolic computation.\n\nHere's a step-by-step guide on how to do this:\n\n1. **D"
       }
     ]
   }

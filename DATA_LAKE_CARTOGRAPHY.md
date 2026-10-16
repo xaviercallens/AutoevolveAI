@@ -1,7 +1,7 @@
 # 🗺️ SocrateAI / ANSE Google Cloud Data Lake Cartography
 
 **GCP Project:** `gen-lang-client-0625573011` (`SocrateAI`)
-**Generated At:** `2026-10-14T03:24:35Z`
+**Generated At:** `2026-10-16T03:09:43Z`
 
 ---
 
@@ -46,14 +46,14 @@ gs://socrateai-datalake-gen-lang-client-0625573011/
 ## 📦 Bucket Inventory & Topology
 
 ### 🪣 `gs://socrateai-datalake-gen-lang-client-0625573011`
-- **Total Objects:** `1,824`
-- **Total Volume:** `24.904 GB` (26,740,952,559 bytes)
+- **Total Objects:** `1,829`
+- **Total Volume:** `24.923 GB` (26,760,360,540 bytes)
 
 | Prefix / Subdirectory | Objects | Size (MB) | Purpose & Key Artifacts |
 | :--- | :--- | :--- | :--- |
 | `artifacts/` | `7` | `1.21 MB` | Scientific and neural model artifacts |
 | `audit/` | `2` | `0.01 MB` | Quality gate audits, verification receipts, and security reviews |
-| `autoevolve_anse_datalake/` | `55` | `3,066.38 MB` | Complete ANSE Neuro-Symbolic Suite, JEPA, Qwen, RL, Redis LTM, Chroma, and VM bootstrap |
+| `autoevolve_anse_datalake/` | `55` | `3,066.48 MB` | Complete ANSE Neuro-Symbolic Suite, JEPA, Qwen, RL, Redis LTM, Chroma, and VM bootstrap |
 | `benchmarks/` | `2` | `0.02 MB` | Scientific and neural model artifacts |
 | `checkpoints/` | `309` | `575.42 MB` | Historical evolutionary checkpoints from 300+ scientific simulations |
 | `dark_matter/` | `687` | `3.59 MB` | N-body dark matter simulation halos and velocity dispersion profiles |
@@ -61,7 +61,7 @@ gs://socrateai-datalake-gen-lang-client-0625573011/
 | `euclid_q1/` | `12` | `193.03 MB` | Scientific and neural model artifacts |
 | `formal_verification/` | `16` | `521.03 MB` | Lean 4 theorem formalizations, AST proofs, and proof invariants |
 | `gwaya_bench/` | `41` | `10,744.23 MB` | Scientific and neural model artifacts |
-| `gwenlaya_v4/` | `278` | `433.87 MB` | Scientific and neural model artifacts |
+| `gwenlaya_v4/` | `283` | `452.27 MB` | Scientific and neural model artifacts |
 | `mcmc_chains/` | `40` | `0.71 MB` | Monte Carlo Markov Chain parameter exploration traces |
 | `mcmc_posteriors/` | `2` | `0.0 MB` | Posterior distributions for cosmological and thermodynamic parameters |
 | `nanograv_15yr/` | `3` | `26.0 MB` | NANOGrav 15-year stochastic gravitational wave background timing residuals |

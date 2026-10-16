@@ -83,6 +83,30 @@ timeline
 
 ---
 
+### Phase 4.5: Autonomous On-Device Voice AI & GWAYA Dual-Process Cognitive Engine (v0.4.5 — Planned 🔮)
+*Focus: 100% on-device air-gapped autonomous voice agent with asymmetric Dual-Process brain (GWAYA + Laya-LoRA).*
+- [ ] **Ultra-Low Power Passive Wake Word**:
+  - `OpenWakeWord` acoustic keyword detection (`"Jarvis"` / `"Kal"`, < 15MB RAM, < 1% CPU).
+- [ ] **High-Speed Air-Gapped Transcription**:
+  - `Faster-Whisper` INT8 speech-to-text with zero cloud transmission (< 120ms latency).
+- [ ] **System 1 Reflex Gatekeeper (`Laya-LoRA`)**:
+  - `ModernBERT-base` (149M params) + LoRA (578k params) fused to ONNX INT8 running on CPU (35-58ms latency, 0.38 Wh per 1,000 queries).
+  - `NoulHead`: 100% recall instantaneous blocking of malicious/absurd commands.
+  - `QualityGate` (AR-H4): Ambiguity filtering reducing downstream hallucinations by 48.7%.
+  - `ChoiceHead`: Routing across 46 agent classes with trivial voice-to-CLI fast-path execution.
+- [ ] **System 2 Deep Reasoner Scale-to-Zero (`GWAYA` / `Qwen` / `Ollama`)**:
+  - Dormant on NVMe (`min_replicas=0`) and loaded into VRAM/RAM only upon System 1 escalation.
+  - Tree of Thoughts (ToT) / MCTS recursive task decomposition for complex code/debugging.
+- [ ] **Deterministic Local Execution Safeguards**:
+  - `AntiStubGuard`: Abstract Syntax Tree (AST) inspection silently rejecting code containing `TODO`, `pass`, or placeholder stubs.
+  - `FastMCP`: Least-privilege sandboxed Model Context Protocol router for OS filesystem and network interactions.
+- [ ] **Verbal Speech Synthesis & Action Bridge**:
+  - `Piper TTS` local neural speech synthesis (< 60ms latency to hardware speakers).
+  - Grounded in open-source foundation patterns (`sukeesh/jarvis`, `dev-core-busy/jarvis`, `isair/jarvis` persistent memory & privacy focus).
+- [ ] **Measured Target**: 96.0% accuracy, 53.2% energy reduction vs always-on monolithic LLMs.
+
+---
+
 ### Phase 5: Formal Mathematical Closure & Multi-Agent Swarm (v0.5.0 — Future 🔮)
 *Focus: 100% formal proof closure in Lean 4 and decentralized multi-agent energy consensus.*
 - [ ] **Closing Open Lean 4 Obligations**:
@@ -104,4 +128,5 @@ timeline
 | **Latent Predictor** | `v0.2.0` | JEPA World Model + VICReg Regularization | Done ✅ |
 | **Zero-Trust Gateway** | `v0.3.0` | Multi-Tier Gateway + Attestation Gate + Hardened Gate | Done ✅ |
 | **Local LoRA Daemon** | `v0.4.0` | Autonomous DPO / GRPO + vLLM Hot-Swap on RTX 2080 | Active 🚧 |
+| **GWAYA Voice Dual-Process** | `v0.4.5` | Air-Gapped Voice AI + Laya-LoRA Gatekeeper + Scale-to-Zero | Planned 🔮 |
 | **Singularity Proof** | `v0.5.0` | 100% Lean 4 Proof Closure + Multi-Agent Swarm | Planned 🔮 |

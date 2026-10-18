@@ -1,0 +1,762 @@
+{
+  "frontier_summary": {
+    "total_frontier_hypotheses": 10,
+    "proved_positive_hypotheses": 6,
+    "formally_refuted_or_obstructed_hypotheses": 4,
+    "positive_provability_ratio": 0.6,
+    "total_lean_theorems_certified": 12,
+    "total_lean_declarations_audited": 19,
+    "hypotheses": [
+      {
+        "hypothesis_id": "H1",
+        "domain": "Generalized Ratio-r Katz-Pavlovic Hierarchy",
+        "statement": "Under inter-shell scaling k_{n+1} = r k_n and truncation a_{N+1} = 0, nonlinear enstrophy production satisfies sum_{n<=N} k_n^2 a_n NL_n = (r^2 - 1) sum_{n<N} k_n^3 a_n^2 a_{n+1}.",
+        "outcome": "PROVED_POSITIVE",
+        "lean_theorem": "thm_general_ratio_enstrophy_production",
+        "exact_witness": "r = 2, N = 2, a = (1,2,3,0): LHS = 294 = (2^2 - 1) * 98"
+      },
+      {
+        "hypothesis_id": "H2",
+        "domain": "Shifted Enstrophy Flux Identity & Sub-Half Constant Obstruction",
+        "statement": "Exact identity sum_{n<N} k_n^2 a_{n+1}^2 = Omega_N/2 - (1/4) k_0^2 a_0^2 <= Omega_N/2 (Proved), whereas any tighter constant c <= 1/4 is refuted whenever k_0^2 a_0^2 < Omega_N.",
+        "outcome": "FORMALLY_REFUTED_OBSTRUCTED (c <= 1/4) / PROVED_POSITIVE (Exact Identity)",
+        "lean_theorem": "thm_dyadic_step1_flux_bound_half & thm_dyadic_flux_bound_quarter_refuted",
+        "exact_witness": "N = 2, k_n = 2^n, a = (1,2,3,0): flux = 40 = 161/4 - 1/4 > Omega_2/4 = 161/8 = 20.125"
+      },
+      {
+        "hypothesis_id": "H3",
+        "domain": "Local Cubic Enstrophy Production Bound",
+        "statement": "Unconditional square-root-free cubic enstrophy production inequality S_N^2 <= 2 Omega_N^3 for all shell states a and cutoffs N under dyadic doubling.",
+        "outcome": "PROVED_POSITIVE",
+        "lean_theorem": "thm_dyadic_local_enstrophy_production_bound",
+        "exact_witness": "N = 2, a = (1,2,3,0): S_2^2 = 9604 <= 2 Omega_2^3 = 4173281/4 = 1043320.25"
+      },
+      {
+        "hypothesis_id": "H4",
+        "domain": "Fractional Dissipation Riccati Integrability Threshold",
+        "statement": "The Cheskidov bilinear/Young/Riccati exponent chain collapses via s(alpha) - 1 = 1 / rho(alpha) with rho(alpha) = 3 - 1/alpha, and non-integrability of the blow-up rate (rho >= 1) holds iff alpha >= 1/2.",
+        "outcome": "PROVED_POSITIVE",
+        "lean_theorem": "thm_riccati_exponent_chain_and_threshold",
+        "exact_witness": "alpha = 1/2 => p = 1, q = 2, r = 4, s = 2, rho = 1, theta* = 2 (exact energy match)"
+      },
+      {
+        "hypothesis_id": "H5",
+        "domain": "Open Fractional Band alpha in (1/3, 1/2) & 3D-NSE Equivalent alpha = 2/5",
+        "statement": "Single-step Young absorption + L^2_t energy integrability (theta = 2) is obstructed in alpha in (1/3, 1/2) and at the 3D-NSE-equivalent exponent alpha = 2/5.",
+        "outcome": "FORMALLY_REFUTED_OBSTRUCTED",
+        "lean_theorem": "thm_cheskidov_ns3d_equivalent_obstruction",
+        "exact_witness": "alpha = 2/5 => rho(2/5) = 1/2 < 1, r(2/5) = 6, required exponent theta*(2/5) = 4 > 2 (deficit Delta_theta = 2)"
+      },
+      {
+        "hypothesis_id": "H6",
+        "domain": "Unit-Energy Sphere (2E = 1) Coercive Damping vs Supercritical Reynolds Obstruction",
+        "statement": "On the unit-energy sphere a_0^2 + a_1^2 = 1 with Pythagorean positive-cone wavepacket (15/17, 8/17), alpha = 1/2 damping holds for nu = 1 but fails at supercritical Reynolds number nu = 1/3 (Re = 3).",
+        "outcome": "FORMALLY_REFUTED_OBSTRUCTED (Uniform Unit-Sphere Damping)",
+        "lean_theorem": "thm_single_step_coercive_damping_counterexample",
+        "exact_witness": "2E_1 = (15/17)^2 + (8/17)^2 = 1: 3 S_1 = 5400/4913, D_{1/2,1} = 12529/4913 => 3 S_1 - (1/3) D_{1/2,1} = +3671/14739 > 0"
+      },
+      {
+        "hypothesis_id": "H7",
+        "domain": "Complexified SHG Dispersive Regulator at sigma = 3",
+        "statement": "With graded Hamiltonian weights g_n = 2^{-n} and third-order dispersion omega_n = D k_n^3, the conserved SHG Hamiltonian H controls 2 D Omega_{N+1} <= H + M_inf S uniformly in the cutoff N.",
+        "outcome": "PROVED_POSITIVE",
+        "lean_theorem": "thm_sigma_three_cutoff_uniform_enstrophy_bound",
+        "exact_witness": "g_n * D k_n^3 = D * 2^{-n} * 2^{3n} = D * 4^n = D k_n^2 (exact cutoff-independent weight ratio 1/1)"
+      },
+      {
+        "hypothesis_id": "H8",
+        "domain": "Gross-Pitaevskii Quantum Pressure Regulator at sigma = 2",
+        "statement": "Standard Gross-Pitaevskii quantum pressure (sigma = 2, omega_n = D k_n^2) fails to control enstrophy uniformly in the cutoff N via the graded SHG Hamiltonian.",
+        "outcome": "FORMALLY_REFUTED_OBSTRUCTED",
+        "lean_theorem": "thm_sigma_two_and_odd_parity_obstructions (Part a)",
+        "exact_witness": "At sigma = 2, g_N * D k_N^2 = D k_N (H^{1/2} norm); enstrophy-to-Hamiltonian weight ratio = 2^N -> infinity"
+      },
+      {
+        "hypothesis_id": "H9",
+        "domain": "Quadratic Energy-Observable Sym^2 Transfer Operator & Kolmogorov UV/IR Scale Inversion",
+        "statement": "Second-order linear shell recurrences u_{n+2} = a u_{n+1} + b u_n induce the 3rd-order Sym^2 recurrence on quadratic shell energies v_n = u_n^2, and the UV/IR effective scale R_eff(l_nu^2, k_n^{-1}) satisfies R_eff^2 >= l_nu^2.",
+        "outcome": "PROVED_POSITIVE",
+        "lean_theorem": "thm_sym2_clausen_recurrence_and_spectral_lock & thm_tdual_effective_radius_self_dual_barrier",
+        "exact_witness": "u_n = 2^n with (a,b)=(1,2) => v_n = 4^n satisfies v_{n+3} = 3 v_{n+2} + 6 v_{n+1} - 8 v_n; R_eff(4, 1) = 4 >= 2"
+      },
+      {
+        "hypothesis_id": "H10",
+        "domain": "Toroidal 2-Section Spectrum & Z^3 Prime-Shell Depletion vs Odd/Square Obstructions",
+        "statement": "On (Z_m)^3 \\ {0} (m odd), A = 6J - 6I - 2P gives odd-sector normalized Laplacian eigenvalue (6n-4)/(6n-8) > 1 (Proved); on Lambda_6 subset Z^3, odd |k|^2 suffers D=0 amputation and square |k|^2=m^2 suffers D=1.3305 collinear enrichment, whereas prime |k|^2 in P achieves D=0.5716 depletion.",
+        "outcome": "PROVED_POSITIVE (Toroidal Spectrum & Prime Depletion) / FORMALLY_REFUTED_OBSTRUCTED (Odd & Square Locks)",
+        "lean_theorem": "thm_torus_two_section_spectral_degree_identity & thm_sigma_two_and_odd_parity_obstructions (Part b)",
+        "exact_witness": "|Lambda_6| = 924, |T| = 398,190: odd-|k|^2 has D=0; square-|k|^2 has D=1.3305; prime-|k|^2 has D=0.5716"
+      }
+    ]
+  },
+  "ratio_enstrophy_production_verifications": [
+    {
+      "r_str": "1",
+      "r_float": 1.0,
+      "prefactor_r2_minus_1_str": "0",
+      "N": 8,
+      "lhs_str": "0",
+      "rhs_str": "0",
+      "residual_zero": true
+    },
+    {
+      "r_str": "3/2",
+      "r_float": 1.5,
+      "prefactor_r2_minus_1_str": "5/4",
+      "N": 8,
+      "lhs_str": "2731044380467/131533373440",
+      "rhs_str": "2731044380467/131533373440",
+      "residual_zero": true
+    },
+    {
+      "r_str": "2",
+      "r_float": 2.0,
+      "prefactor_r2_minus_1_str": "3",
+      "N": 8,
+      "lhs_str": "98702557/7350",
+      "rhs_str": "98702557/7350",
+      "residual_zero": true
+    },
+    {
+      "r_str": "5/2",
+      "r_float": 2.5,
+      "prefactor_r2_minus_1_str": "21/4",
+      "N": 8,
+      "lhs_str": "8602628950099383/3758096384",
+      "rhs_str": "8602628950099383/3758096384",
+      "residual_zero": true
+    },
+    {
+      "r_str": "3",
+      "r_float": 3.0,
+      "prefactor_r2_minus_1_str": "8",
+      "N": 8,
+      "lhs_str": "1506017358311/9800",
+      "rhs_str": "1506017358311/9800",
+      "residual_zero": true
+    }
+  ],
+  "dyadic_shell_progression_N1_to_16": [
+    {
+      "N": 1,
+      "profile": "(n+1)/2^n",
+      "Omega_N_str": "5/2",
+      "Omega_N_float": 2.5,
+      "S_N_str": "1",
+      "S_N_float": 1.0,
+      "step1_ratio_to_half_Omega": 0.8,
+      "step1_violates_quarter_Omega": true,
+      "step2_ratio_to_4Omega2": 0.04,
+      "cubic_ratio_S2_to_2Omega3": 0.032,
+      "bound_certified": true
+    },
+    {
+      "N": 2,
+      "profile": "canonical_witness_(1,2,3)",
+      "Omega_N_str": "161/2",
+      "Omega_N_float": 80.5,
+      "S_N_str": "98",
+      "S_N_float": 98.0,
+      "step1_ratio_to_half_Omega": 0.9937888198757764,
+      "step1_violates_quarter_Omega": true,
+      "step2_ratio_to_4Omega2": 0.009914740943636435,
+      "cubic_ratio_S2_to_2Omega3": 0.009205227254047835,
+      "bound_certified": true
+    },
+    {
+      "N": 3,
+      "profile": "(n+1)/2^n",
+      "Omega_N_str": "15",
+      "Omega_N_float": 15.0,
+      "S_N_str": "25",
+      "S_N_float": 25.0,
+      "step1_ratio_to_half_Omega": 0.9666666666666667,
+      "step1_violates_quarter_Omega": true,
+      "step2_ratio_to_4Omega2": 0.10888888888888888,
+      "cubic_ratio_S2_to_2Omega3": 0.09259259259259259,
+      "bound_certified": true
+    },
+    {
+      "N": 4,
+      "profile": "(n+1)/2^n",
+      "Omega_N_str": "55/2",
+      "Omega_N_float": 27.5,
+      "S_N_str": "65",
+      "S_N_float": 65.0,
+      "step1_ratio_to_half_Omega": 0.9818181818181818,
+      "step1_violates_quarter_Omega": true,
+      "step2_ratio_to_4Omega2": 0.11702479338842975,
+      "cubic_ratio_S2_to_2Omega3": 0.10157776108189331,
+      "bound_certified": true
+    },
+    {
+      "N": 5,
+      "profile": "(n+1)/2^n",
+      "Omega_N_str": "91/2",
+      "Omega_N_float": 45.5,
+      "S_N_str": "140",
+      "S_N_float": 140.0,
+      "step1_ratio_to_half_Omega": 0.989010989010989,
+      "step1_violates_quarter_Omega": true,
+      "step2_ratio_to_4Omega2": 0.11822243690375558,
+      "cubic_ratio_S2_to_2Omega3": 0.10403797386045907,
+      "bound_certified": true
+    },
+    {
+      "N": 6,
+      "profile": "(n+1)/2^n",
+      "Omega_N_str": "70",
+      "Omega_N_float": 70.0,
+      "S_N_str": "266",
+      "S_N_float": 266.0,
+      "step1_ratio_to_half_Omega": 0.9928571428571429,
+      "step1_violates_quarter_Omega": true,
+      "step2_ratio_to_4Omega2": 0.11607142857142858,
+      "cubic_ratio_S2_to_2Omega3": 0.10314285714285715,
+      "bound_certified": true
+    },
+    {
+      "N": 7,
+      "profile": "(n+1)/2^n",
+      "Omega_N_str": "102",
+      "Omega_N_float": 102.0,
+      "S_N_str": "462",
+      "S_N_float": 462.0,
+      "step1_ratio_to_half_Omega": 0.9950980392156863,
+      "step1_violates_quarter_Omega": true,
+      "step2_ratio_to_4Omega2": 0.11236063052672049,
+      "cubic_ratio_S2_to_2Omega3": 0.10056652418752968,
+      "bound_certified": true
+    },
+    {
+      "N": 8,
+      "profile": "(n+1)/2^n",
+      "Omega_N_str": "285/2",
+      "Omega_N_float": 142.5,
+      "S_N_str": "750",
+      "S_N_float": 750.0,
+      "step1_ratio_to_half_Omega": 0.9964912280701754,
+      "step1_violates_quarter_Omega": true,
+      "step2_ratio_to_4Omega2": 0.10799630655586334,
+      "cubic_ratio_S2_to_2Omega3": 0.09719589833309035,
+      "bound_certified": true
+    },
+    {
+      "N": 9,
+      "profile": "(n+1)/2^n",
+      "Omega_N_str": "385/2",
+      "Omega_N_float": 192.5,
+      "S_N_str": "1155",
+      "S_N_float": 1155.0,
+      "step1_ratio_to_half_Omega": 0.9974025974025974,
+      "step1_violates_quarter_Omega": true,
+      "step2_ratio_to_4Omega2": 0.10344408837915331,
+      "cubic_ratio_S2_to_2Omega3": 0.09350649350649351,
+      "bound_certified": true
+    },
+    {
+      "N": 10,
+      "profile": "(n+1)/2^n",
+      "Omega_N_str": "253",
+      "Omega_N_float": 253.0,
+      "S_N_str": "1705",
+      "S_N_float": 1705.0,
+      "step1_ratio_to_half_Omega": 0.9980237154150198,
+      "step1_violates_quarter_Omega": true,
+      "step2_ratio_to_4Omega2": 0.09894311737411926,
+      "cubic_ratio_S2_to_2Omega3": 0.08975470161465066,
+      "bound_certified": true
+    },
+    {
+      "N": 11,
+      "profile": "(n+1)/2^n",
+      "Omega_N_str": "325",
+      "Omega_N_float": 325.0,
+      "S_N_str": "2431",
+      "S_N_float": 2431.0,
+      "step1_ratio_to_half_Omega": 0.9984615384615385,
+      "step1_violates_quarter_Omega": true,
+      "step2_ratio_to_4Omega2": 0.09461301775147929,
+      "cubic_ratio_S2_to_2Omega3": 0.08607753846153846,
+      "bound_certified": true
+    },
+    {
+      "N": 12,
+      "profile": "(n+1)/2^n",
+      "Omega_N_str": "819/2",
+      "Omega_N_float": 409.5,
+      "S_N_str": "3367",
+      "S_N_float": 3367.0,
+      "step1_ratio_to_half_Omega": 0.9987789987789988,
+      "step1_violates_quarter_Omega": true,
+      "step2_ratio_to_4Omega2": 0.09050913812818574,
+      "cubic_ratio_S2_to_2Omega3": 0.0825457121753418,
+      "bound_certified": true
+    },
+    {
+      "N": 13,
+      "profile": "(n+1)/2^n",
+      "Omega_N_str": "1015/2",
+      "Omega_N_float": 507.5,
+      "S_N_str": "4550",
+      "S_N_float": 4550.0,
+      "step1_ratio_to_half_Omega": 0.9990147783251232,
+      "step1_violates_quarter_Omega": true,
+      "step2_ratio_to_4Omega2": 0.08665194496347885,
+      "cubic_ratio_S2_to_2Omega3": 0.07919261025169426,
+      "bound_certified": true
+    },
+    {
+      "N": 14,
+      "profile": "(n+1)/2^n",
+      "Omega_N_str": "620",
+      "Omega_N_float": 620.0,
+      "S_N_str": "6020",
+      "S_N_float": 6020.0,
+      "step1_ratio_to_half_Omega": 0.9991935483870967,
+      "step1_violates_quarter_Omega": true,
+      "step2_ratio_to_4Omega2": 0.08304305411030177,
+      "cubic_ratio_S2_to_2Omega3": 0.07603051257091067,
+      "bound_certified": true
+    },
+    {
+      "N": 15,
+      "profile": "(n+1)/2^n",
+      "Omega_N_str": "748",
+      "Omega_N_float": 748.0,
+      "S_N_str": "7820",
+      "S_N_float": 7820.0,
+      "step1_ratio_to_half_Omega": 0.9993315508021391,
+      "step1_violates_quarter_Omega": true,
+      "step2_ratio_to_4Omega2": 0.07967413995252938,
+      "cubic_ratio_S2_to_2Omega3": 0.0730598400141424,
+      "bound_certified": true
+    },
+    {
+      "N": 16,
+      "profile": "(n+1)/2^n",
+      "Omega_N_str": "1785/2",
+      "Omega_N_float": 892.5,
+      "S_N_str": "9996",
+      "S_N_float": 9996.0,
+      "step1_ratio_to_half_Omega": 0.9994397759103641,
+      "step1_violates_quarter_Omega": true,
+      "step2_ratio_to_4Omega2": 0.07653194611177805,
+      "cubic_ratio_S2_to_2Omega3": 0.07027450980392157,
+      "bound_certified": true
+    }
+  ],
+  "fractional_riccati_exponent_table": [
+    {
+      "alpha_str": "1/4",
+      "alpha_float": 0.25,
+      "regime_label": "Sub-Young local-existence barrier (alpha = 1/4 < 1/3)",
+      "p_exp_str": "3",
+      "q_exp_str": "0",
+      "r_exp_str": "0",
+      "r_exp_float": 0.0,
+      "s_exp_str": "0",
+      "rho_exp_str": "-1",
+      "rho_exp_float": -1.0,
+      "theta_star_str": "-2",
+      "theta_star_float": -2.0,
+      "energy_deficit_theta_star_minus_2_str": "-4",
+      "energy_deficit_float": -4.0,
+      "young_absorbable": false,
+      "unconditional_riccati_nonintegrable": false
+    },
+    {
+      "alpha_str": "7/20",
+      "alpha_float": 0.35,
+      "regime_label": "Just above Young absorption threshold (alpha = 7/20 > 1/3)",
+      "p_exp_str": "13/7",
+      "q_exp_str": "8/7",
+      "r_exp_str": "16",
+      "r_exp_float": 16.0,
+      "s_exp_str": "8",
+      "rho_exp_str": "1/7",
+      "rho_exp_float": 0.14285714285714285,
+      "theta_star_str": "14",
+      "theta_star_float": 14.0,
+      "energy_deficit_theta_star_minus_2_str": "12",
+      "energy_deficit_float": 12.0,
+      "young_absorbable": true,
+      "unconditional_riccati_nonintegrable": false
+    },
+    {
+      "alpha_str": "3/8",
+      "alpha_float": 0.375,
+      "regime_label": "Lower open fractional band (alpha = 3/8)",
+      "p_exp_str": "5/3",
+      "q_exp_str": "4/3",
+      "r_exp_str": "8",
+      "r_exp_float": 8.0,
+      "s_exp_str": "4",
+      "rho_exp_str": "1/3",
+      "rho_exp_float": 0.3333333333333333,
+      "theta_star_str": "6",
+      "theta_star_float": 6.0,
+      "energy_deficit_theta_star_minus_2_str": "4",
+      "energy_deficit_float": 4.0,
+      "young_absorbable": true,
+      "unconditional_riccati_nonintegrable": false
+    },
+    {
+      "alpha_str": "2/5",
+      "alpha_float": 0.4,
+      "regime_label": "3D Navier-Stokes scaling equivalent (Cheskidov alpha = 2/5, BMR positive-cone)",
+      "p_exp_str": "3/2",
+      "q_exp_str": "3/2",
+      "r_exp_str": "6",
+      "r_exp_float": 6.0,
+      "s_exp_str": "3",
+      "rho_exp_str": "1/2",
+      "rho_exp_float": 0.5,
+      "theta_star_str": "4",
+      "theta_star_float": 4.0,
+      "energy_deficit_theta_star_minus_2_str": "2",
+      "energy_deficit_float": 2.0,
+      "young_absorbable": true,
+      "unconditional_riccati_nonintegrable": false
+    },
+    {
+      "alpha_str": "9/20",
+      "alpha_float": 0.45,
+      "regime_label": "Upper open sign-changing band (alpha = 9/20 < 1/2)",
+      "p_exp_str": "11/9",
+      "q_exp_str": "16/9",
+      "r_exp_str": "32/7",
+      "r_exp_float": 4.571428571428571,
+      "s_exp_str": "16/7",
+      "rho_exp_str": "7/9",
+      "rho_exp_float": 0.7777777777777778,
+      "theta_star_str": "18/7",
+      "theta_star_float": 2.5714285714285716,
+      "energy_deficit_theta_star_minus_2_str": "4/7",
+      "energy_deficit_float": 0.5714285714285714,
+      "young_absorbable": true,
+      "unconditional_riccati_nonintegrable": false
+    },
+    {
+      "alpha_str": "1/2",
+      "alpha_float": 0.5,
+      "regime_label": "Critical Cheskidov unconditional Riccati threshold (alpha = 1/2)",
+      "p_exp_str": "1",
+      "q_exp_str": "2",
+      "r_exp_str": "4",
+      "r_exp_float": 4.0,
+      "s_exp_str": "2",
+      "rho_exp_str": "1",
+      "rho_exp_float": 1.0,
+      "theta_star_str": "2",
+      "theta_star_float": 2.0,
+      "energy_deficit_theta_star_minus_2_str": "0",
+      "energy_deficit_float": 0.0,
+      "young_absorbable": true,
+      "unconditional_riccati_nonintegrable": true
+    },
+    {
+      "alpha_str": "3/4",
+      "alpha_float": 0.75,
+      "regime_label": "Supercritical fractional dissipation (alpha = 3/4)",
+      "p_exp_str": "1/3",
+      "q_exp_str": "8/3",
+      "r_exp_str": "16/5",
+      "r_exp_float": 3.2,
+      "s_exp_str": "8/5",
+      "rho_exp_str": "5/3",
+      "rho_exp_float": 1.6666666666666667,
+      "theta_star_str": "6/5",
+      "theta_star_float": 1.2,
+      "energy_deficit_theta_star_minus_2_str": "-4/5",
+      "energy_deficit_float": -0.8,
+      "young_absorbable": true,
+      "unconditional_riccati_nonintegrable": true
+    },
+    {
+      "alpha_str": "1",
+      "alpha_float": 1.0,
+      "regime_label": "Standard viscous Navier-Stokes dissipation (alpha = 1)",
+      "p_exp_str": "0",
+      "q_exp_str": "3",
+      "r_exp_str": "3",
+      "r_exp_float": 3.0,
+      "s_exp_str": "3/2",
+      "rho_exp_str": "2",
+      "rho_exp_float": 2.0,
+      "theta_star_str": "1",
+      "theta_star_float": 1.0,
+      "energy_deficit_theta_star_minus_2_str": "-1",
+      "energy_deficit_float": -1.0,
+      "young_absorbable": true,
+      "unconditional_riccati_nonintegrable": true
+    },
+    {
+      "alpha_str": "5/4",
+      "alpha_float": 1.25,
+      "regime_label": "Lions hyperviscous 3D threshold (alpha = 5/4)",
+      "p_exp_str": "-1/5",
+      "q_exp_str": "16/5",
+      "r_exp_str": "32/11",
+      "r_exp_float": 2.909090909090909,
+      "s_exp_str": "16/11",
+      "rho_exp_str": "11/5",
+      "rho_exp_float": 2.2,
+      "theta_star_str": "10/11",
+      "theta_star_float": 0.9090909090909091,
+      "energy_deficit_theta_star_minus_2_str": "-12/11",
+      "energy_deficit_float": -1.0909090909090908,
+      "young_absorbable": true,
+      "unconditional_riccati_nonintegrable": true
+    }
+  ],
+  "dispersive_sigma_rule_table": [
+    {
+      "sigma": 0,
+      "dispersion_relation": "omega_n = D k_n^0",
+      "controlled_sob_norm": "sum D k_n^-1 |v_n|^2",
+      "enstrophy_to_hamiltonian_weight_ratio_formula": "2^(3*N)",
+      "ratios_by_cutoff": {
+        "N=2": "64",
+        "N=4": "4096",
+        "N=8": "16777216",
+        "N=12": "68719476736",
+        "N=16": "281474976710656"
+      },
+      "cutoff_uniform_enstrophy_control": false
+    },
+    {
+      "sigma": 1,
+      "dispersion_relation": "omega_n = D k_n^1",
+      "controlled_sob_norm": "sum D k_n^0 |v_n|^2",
+      "enstrophy_to_hamiltonian_weight_ratio_formula": "2^(2*N)",
+      "ratios_by_cutoff": {
+        "N=2": "16",
+        "N=4": "256",
+        "N=8": "65536",
+        "N=12": "16777216",
+        "N=16": "4294967296"
+      },
+      "cutoff_uniform_enstrophy_control": false
+    },
+    {
+      "sigma": 2,
+      "dispersion_relation": "omega_n = D k_n^2",
+      "controlled_sob_norm": "sum D k_n^1 |v_n|^2",
+      "enstrophy_to_hamiltonian_weight_ratio_formula": "2^(1*N)",
+      "ratios_by_cutoff": {
+        "N=2": "4",
+        "N=4": "16",
+        "N=8": "256",
+        "N=12": "4096",
+        "N=16": "65536"
+      },
+      "cutoff_uniform_enstrophy_control": false
+    },
+    {
+      "sigma": 3,
+      "dispersion_relation": "omega_n = D k_n^3",
+      "controlled_sob_norm": "sum D k_n^2 |v_n|^2",
+      "enstrophy_to_hamiltonian_weight_ratio_formula": "2^(0*N)",
+      "ratios_by_cutoff": {
+        "N=2": "1",
+        "N=4": "1",
+        "N=8": "1",
+        "N=12": "1",
+        "N=16": "1"
+      },
+      "cutoff_uniform_enstrophy_control": true
+    },
+    {
+      "sigma": 4,
+      "dispersion_relation": "omega_n = D k_n^4",
+      "controlled_sob_norm": "sum D k_n^3 |v_n|^2",
+      "enstrophy_to_hamiltonian_weight_ratio_formula": "2^(-1*N)",
+      "ratios_by_cutoff": {
+        "N=2": "1/4",
+        "N=4": "1/16",
+        "N=8": "1/256",
+        "N=12": "1/4096",
+        "N=16": "1/65536"
+      },
+      "cutoff_uniform_enstrophy_control": true
+    }
+  ],
+  "z3_lattice_hypergraph_baseline": [
+    {
+      "M": 2,
+      "mode_count": 32,
+      "ordered_triads": 426,
+      "avg_degree_str": "639/16",
+      "avg_degree_float": 39.9375
+    },
+    {
+      "M": 3,
+      "mode_count": 122,
+      "ordered_triads": 6642,
+      "avg_degree_str": "9963/61",
+      "avg_degree_float": 163.327868852459
+    },
+    {
+      "M": 4,
+      "mode_count": 256,
+      "ordered_triads": 30360,
+      "avg_degree_str": "11385/32",
+      "avg_degree_float": 355.78125
+    },
+    {
+      "M": 5,
+      "mode_count": 514,
+      "ordered_triads": 122472,
+      "avg_degree_str": "183708/257",
+      "avg_degree_float": 714.817120622568
+    },
+    {
+      "M": 6,
+      "mode_count": 924,
+      "ordered_triads": 398190,
+      "avg_degree_str": "199095/154",
+      "avg_degree_float": 1292.8246753246754
+    }
+  ],
+  "z3_depletion_screen_M6": {
+    "M": 6,
+    "ball_definition": "Lambda_6 = {k in Z^3 \\ {0} : 0 < |k|^2 <= 36} (closed Euclidean ball)",
+    "full_mode_count": 924,
+    "full_triad_count": 398190,
+    "candidates": [
+      {
+        "candidate": "Random Thinning Control ($f \\approx 0.48$)",
+        "short_label": "Random\nControl",
+        "mode_count": 447,
+        "density_f_str": "149/308",
+        "density_f_float": 0.4838,
+        "triad_count": 45727,
+        "null_expectation_float": 45081.4,
+        "depletion_D_float": 1.0143,
+        "cross_scale_triad_fraction_float": 0.999,
+        "verdict": "Vacuous Thinning ($D \\approx 1$)"
+      },
+      {
+        "candidate": "Even Sublattice $(2\\mathbb{Z})^3$",
+        "short_label": "Sublattice\n(2Z)^3",
+        "mode_count": 122,
+        "density_f_str": "61/462",
+        "density_f_float": 0.132,
+        "triad_count": 6642,
+        "null_expectation_float": 916.5,
+        "depletion_D_float": 7.2468,
+        "cross_scale_triad_fraction_float": 0.9783,
+        "verdict": "Subgroup / Planar Enrichment ($D \\gg 1$)"
+      },
+      {
+        "candidate": "Coordinate Planes $k_x k_y k_z = 0$",
+        "short_label": "Coord.\nPlanes",
+        "mode_count": 300,
+        "density_f_str": "25/77",
+        "density_f_float": 0.3247,
+        "triad_count": 25518,
+        "null_expectation_float": 13628.2,
+        "depletion_D_float": 1.8724,
+        "cross_scale_triad_fraction_float": 0.9925,
+        "verdict": "Subgroup / Planar Enrichment ($D \\gg 1$)"
+      },
+      {
+        "candidate": "Perfect-Square Shell $|k|^2 = m^2$",
+        "short_label": "Square\n|k|^2=m^2",
+        "mode_count": 108,
+        "density_f_str": "9/77",
+        "density_f_float": 0.1169,
+        "triad_count": 846,
+        "null_expectation_float": 635.8,
+        "depletion_D_float": 1.3305,
+        "cross_scale_triad_fraction_float": 1.0,
+        "verdict": "Collinear Axis Enrichment ($D > 1$)"
+      },
+      {
+        "candidate": "Modular Shell $|k|^2 \\equiv 0 \\pmod 3$",
+        "short_label": "Mod 3\n|k|^2=0",
+        "mode_count": 336,
+        "density_f_str": "4/11",
+        "density_f_float": 0.3636,
+        "triad_count": 20034,
+        "null_expectation_float": 19146.6,
+        "depletion_D_float": 1.0463,
+        "cross_scale_triad_fraction_float": 0.9856,
+        "verdict": "Vacuous Thinning ($D \\approx 1$)"
+      },
+      {
+        "candidate": "Prime Norm-Square Shell $|k|^2 \\in \\mathbb{P}$",
+        "short_label": "Prime\n|k|^2 in P",
+        "mode_count": 236,
+        "density_f_str": "59/231",
+        "density_f_float": 0.2554,
+        "triad_count": 3792,
+        "null_expectation_float": 6634.5,
+        "depletion_D_float": 0.5716,
+        "cross_scale_triad_fraction_float": 0.9873,
+        "verdict": "Genuine Arithmetic Depletion ($0 < D < 1$)"
+      },
+      {
+        "candidate": "Odd Norm-Square Shell $|k|^2 \\equiv 1 \\pmod 2$",
+        "short_label": "Odd\n|k|^2=1",
+        "mode_count": 466,
+        "density_f_str": "233/462",
+        "density_f_float": 0.5043,
+        "triad_count": 0,
+        "null_expectation_float": 51077.8,
+        "depletion_D_float": 0.0,
+        "cross_scale_triad_fraction_float": 0.0,
+        "verdict": "Total Parity Amputation ($D = 0$, Thm 5.1(4))"
+      }
+    ]
+  },
+  "torus_two_section_spectrum": [
+    {
+      "m": 3,
+      "nonzero_modes_n": 26,
+      "incidence_degree_6n_minus_8": 148,
+      "normalized_laplacian_even_eig_str": "39/37",
+      "normalized_laplacian_even_eig_float": 1.054054054054054,
+      "normalized_laplacian_odd_eig_str": "38/37",
+      "normalized_laplacian_odd_eig_float": 1.027027027027027
+    },
+    {
+      "m": 5,
+      "nonzero_modes_n": 124,
+      "incidence_degree_6n_minus_8": 736,
+      "normalized_laplacian_even_eig_str": "93/92",
+      "normalized_laplacian_even_eig_float": 1.0108695652173914,
+      "normalized_laplacian_odd_eig_str": "185/184",
+      "normalized_laplacian_odd_eig_float": 1.0054347826086956
+    },
+    {
+      "m": 7,
+      "nonzero_modes_n": 342,
+      "incidence_degree_6n_minus_8": 2044,
+      "normalized_laplacian_even_eig_str": "513/511",
+      "normalized_laplacian_even_eig_float": 1.0039138943248533,
+      "normalized_laplacian_odd_eig_str": "512/511",
+      "normalized_laplacian_odd_eig_float": 1.0019569471624266
+    },
+    {
+      "m": 9,
+      "nonzero_modes_n": 728,
+      "incidence_degree_6n_minus_8": 4360,
+      "normalized_laplacian_even_eig_str": "546/545",
+      "normalized_laplacian_even_eig_float": 1.001834862385321,
+      "normalized_laplacian_odd_eig_str": "1091/1090",
+      "normalized_laplacian_odd_eig_float": 1.0009174311926605
+    },
+    {
+      "m": 11,
+      "nonzero_modes_n": 1330,
+      "incidence_degree_6n_minus_8": 7972,
+      "normalized_laplacian_even_eig_str": "1995/1993",
+      "normalized_laplacian_even_eig_float": 1.0010035122930256,
+      "normalized_laplacian_odd_eig_str": "1994/1993",
+      "normalized_laplacian_odd_eig_float": 1.0005017561465128
+    }
+  ],
+  "execution_time_s": 16.432
+}

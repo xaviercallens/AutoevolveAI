@@ -999,6 +999,7 @@ def build_latex_manuscript(
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{hyperref}
+\usepackage{xurl}
 
 \hypersetup{
     colorlinks=true,

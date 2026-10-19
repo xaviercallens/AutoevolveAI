@@ -9,22 +9,22 @@ import Mathlib.Tactic
 
 This file defines the canonical mathematical physics objects and 12 target theorem propositions
 for the 10-Hypothesis Frontier Investigation across `SocrateAI-Scientific-MechanicaFluidorum` and
-`SocrateAI-Scientific-QuantumFluids`, structured at the 60% positive-provability / 40% formal-obstruction frontier:
+`SocrateAI-Scientific-QuantumFluids`, six hypotheses proved and four refuted or obstructed (three of the ten, H2b, H8 and H9b, are elementary controls):
 
-- **Proved Positive Frontier Theorems (6 / 10 hypotheses = 60.0%, 8 Lean 4 theorems):**
+- **Proved Positive Frontier Theorems (6 of 10 hypotheses, 8 Lean 4 theorems):**
   1. `Spec_thm_general_ratio_enstrophy_production` (`H1` — Proved): General ratio-`r` inter-shell scaling `k_{n+1} = r k_n` yields exact non-telescoping enstrophy production with universal anomalous prefactor `r^2 - 1` (`3` for dyadic `r = 2`).
   2. `Spec_thm_dyadic_step1_flux_bound_half` (`H2a` — Proved): Sharp dyadic shifted-flux inequality `∑_{n<N} k_n^2 a_{n+1}^2 ≤ Ω_N / 2`.
   3. `Spec_thm_dyadic_local_enstrophy_production_bound` (`H3` — Proved): Unconditional square-root-free cubic enstrophy production bound `S_N^2 ≤ 2 Ω_N^3` via `ℓ^2 ↪ ℓ^4` embedding and Cauchy–Schwarz.
   4. `Spec_thm_riccati_exponent_chain_and_threshold` (`H4` — Proved): Exact collapse of the Cheskidov fractional-dissipation exponent chain `s(α) - 1 = 1 / ρ(α)` (`ρ(α) = 3 - 1/α`), Young absorption threshold `p(α) < 2 ↔ α > 1/3`, and Riccati blow-up rate threshold `1 ≤ ρ(α) ↔ 1/2 ≤ α`.
-  5. `Spec_thm_sigma_three_cutoff_uniform_enstrophy_bound` (`H7` — Proved): In the complexified dispersive SHG shell model with graded Hamiltonian weights `g_n = 2^{-n}`, the `σ = 3` regulator (`ω_n = D k_n^3`) controls the enstrophy `2 D Ω_{N+2} ≤ H + M_∞ S` uniformly in the cutoff `N`.
+  5. `Spec_thm_sigma_three_cutoff_uniform_enstrophy_bound` (`H7` — Proved): In the complexified dispersive SHG shell model with graded Hamiltonian weights `g_n = 2^{-n}`, the `σ = 3` regulator (`ω_n = D k_n^3`) controls the enstrophy `2 D Ω_{N+1} ≤ H + M_∞ S` (inclusive shells `0 ≤ n ≤ N+1`) uniformly in the cutoff `N`.
   6. `Spec_thm_sym2_clausen_recurrence_and_spectral_lock` (`H9a` — Proved): Second-order linear shell recurrences `u_{n+2} = a u_{n+1} + b u_n` induce the exact third-order `Sym^2` recurrence on `v_n = u_n^2` with elementary symmetric characteristic coefficients of `{λ^2, λμ, μ^2}`.
   7. `Spec_thm_tdual_effective_radius_self_dual_barrier` (`H9b` — Proved): The T-dual effective radius `R_eff(α, R) = max R (α/R)` satisfies exact T-duality `R_eff(α, α/R) = R_eff(α, R)` and the sharp self-dual lower barrier `α ≤ R_eff(α, R)^2`.
   8. `Spec_thm_torus_two_section_spectral_degree_identity` (`H10a` — Proved): On the toroidal mode lattice `Λ = G \ {0}` of cardinality `n = m^3 - 1`, the 2-section incidence degree is `6n - 8` and the odd-sector normalized Laplacian eigenvalue is `(6n - 4)/(6n - 8) > 1`.
 
-- **Formally Refuted / Obstructed Frontier Conjectures (4 / 10 hypotheses = 40.0%, 4 Lean 4 counterexample/obstruction theorems):**
+- **Formally Refuted / Obstructed Frontier Conjectures (4 of 10 hypotheses, 4 Lean 4 counterexample/obstruction theorems):**
   9. `Spec_thm_dyadic_flux_bound_quarter_refuted` (`H2b` — Refuted): The conjectured strengthening `∑_{n<N} k_n^2 a_{n+1}^2 ≤ Ω_N / 4` is refuted by the explicit witness `k_n = 2^n, a = (1, 2, 3, 0, …)` at `N = 2` (`40 > 161/8`), and the dyadic coefficient `3` fails on arithmetic wavenumbers `k_n = n + 1` (`13 ≠ 27`).
-  10. `Spec_thm_cheskidov_ns3d_equivalent_obstruction` (`H5` — Obstructed): In the open fractional dissipation band `α ∈ (1/3, 1/2)` — and specifically at the 3D-Navier–Stokes-equivalent exponent `α = 2/5` — single-step energy integrability (`θ = 2`) is strictly below the required blow-up refutation exponent `θ*(α) = 2 / ρ(α) > 2`, with exact deficit `θ*(2/5) - 2 = 2`.
-  11. `Spec_thm_single_step_coercive_damping_counterexample` (`H6` — Refuted): Instantaneous single-step coercive enstrophy damping `3 S_N - ν D_{α,N} ≤ 0` fails even on positive shell data `a_n ≥ 0` at `α = 1, ν = 1` (`a_0 = 10, a_1 = 2` yields net production `+436 > 0`).
+  10. `Spec_thm_cheskidov_ns3d_equivalent_obstruction` (`H5` — Obstructed): In the fractional dissipation band `α ∈ (1/3, 1/2)` (a method obstruction; positive solutions are globally smooth there by Barbato–Morandin–Romito 2011) — and specifically at the 3D-Navier–Stokes-equivalent exponent `α = 2/5` — single-step energy integrability (`θ = 2`) is strictly below the required blow-up refutation exponent `θ*(α) = 2 / ρ(α) > 2`, with exact deficit `θ*(2/5) - 2 = 2`.
+  11. `Spec_thm_single_step_coercive_damping_counterexample` (`H6` — Refuted): Instantaneous single-step coercive enstrophy damping `3 S_N - ν D_{α,N} ≤ 0` fails on the unit-energy sphere at `α = 1/2`: for `(a_0, a_1) = (15/17, 8/17)` damping holds at `ν = 1` (`3 S_1 - D_{1/2,1} = -7129/4913 < 0`) but fails at `ν = 1/3` (`+3671/14739 > 0`).
   12. `Spec_thm_sigma_two_and_odd_parity_obstructions` (`H8` & `H10b` — Obstructed/Refuted): (a) Standard `σ = 2` Gross–Pitaevskii quantum pressure leaves an unbounded dyadic enstrophy-to-Hamiltonian weight ratio `k_N^2 / (g_N k_N^2) = 2^N`; (b) restricting `ℤ^3` to the odd-norm-square shell `|k|^2 ≡ 1 (mod 2)` forces `|k_1 + k_2|^2 ≡ 0 (mod 2)` for all `k_1, k_2`, causing total nonlinear triad amputation (`D = 0`).
 -/
 

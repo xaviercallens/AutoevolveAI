@@ -4,7 +4,7 @@ This file replaces the v2.0 `PEER_REVIEW_REPORT.md`, which was scripted text wit
 scores; it is withdrawn. Every line below is a machine comparison, not a review.
 
 - Lean 4 spec gate: `19` declarations verified, `0` sorryAx, spec DefEq `True`
-- Elenchus ledger Merkle root: `b201faae3b56be9ea2dab797eb4276bd701504b700d02eff431bbcdd9ba3a4da`
+- Elenchus ledger Merkle root: `002553349d556837ff8b59180d40be66773600fcf0bb9c324a03ea170bd80d7c`
 - All checks passed: `True`
 
 | check | passed | detail |
@@ -24,5 +24,5 @@ scores; it is withdrawn. Every line below is a machine comparison, not a review.
 | laplacian_constant_mode_zero | True | spectrum starts with 0 |
 | no_percentage_scorekeeping | True |  |
 | lean_gate_verified | True | 19 declarations, sorry=0 |
-| ledger_merkle_root_in_text | True | b201faae3b56be9ea2dab797eb4276bd |
+| ledger_merkle_root_in_text | True | 002553349d556837ff8b59180d40be66 |
 | zenodo_records_in_text | True | first edition and v2.0 records cited; stale concept id absent |

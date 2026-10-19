@@ -72,6 +72,8 @@ def bundle_members() -> list[Path]:
                 p
                 for p in d.rglob("*")
                 if p.is_file() and p.suffix not in {".aux", ".log", ".out", ".pyc"}
+                and not any(part.startswith("review") or part == "__pycache__" for part in p.relative_to(REPO).parts)
+                and p.name != "zenodo_publication_receipt.json"
             ]
     extra_files = [
         REPO / "formal" / "ANSE" / "DyadicNavierStokesRegulatorSpec.lean",

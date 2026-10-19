@@ -8,8 +8,8 @@ import Mathlib.Tactic
 /-!
 # Cutoff-Uniform Enstrophy Bounds, Fractional Riccati Integrability Thresholds, and Resonant-Triad Depletion in Dyadic and Toroidal Fluid Hierarchies
 
-Formal Lean 4 proof module for the 10-Hypothesis Frontier Investigation (60.0% positively proved
-at Tier A/B, 40.0% formally refuted/obstructed by machine-checked counterexample & obstruction theorems).
+Formal Lean 4 proof module for the 10-Hypothesis Frontier Investigation (six hypotheses proved
+at Tier A/B, four refuted or obstructed by machine-checked counterexample and obstruction theorems).
 Every theorem in this module is checked against its read-only canonical specification in
 `ANSE.DyadicNavierStokesRegulatorSpec` via environment-level definitional equality (`example : Spec.<Target> := <Candidate>`).
 -/

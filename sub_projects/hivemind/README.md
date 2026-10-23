@@ -3,7 +3,7 @@
 - **GitHub Repository**: [`https://github.com/xaviercallens/HiveMind`](https://github.com/xaviercallens/HiveMind)
 - **Local Checkout**: [`sub_projects/hivemind/HiveMind/`](./HiveMind/README.md) (`origin` & `upstream` remotes configured)
 - **Foundation Paper**: [`sub_projects/hivemind/HiveMind/paper/hivemind_foundation_article.pdf`](./HiveMind/paper/hivemind_foundation_article.pdf)
-- **Lean 4 Specification**: [`sub_projects/hivemind/formal/HiveMindSpec.lean`](./formal/HiveMindSpec.lean) (`77` machine-checked `theorem` declarations, `0 sorry`, `0` custom axioms)
+- **Lean 4 Specification**: [`sub_projects/hivemind/formal/HiveMindSpec.lean`](./formal/HiveMindSpec.lean) (`120` machine-checked `theorem` declarations, `0 sorry`, `0` custom axioms; Theorems 117–120 added 2026-10-23 for the Decoupled DiLoCo syncer)
 - **Master Roadmap & Season 7 Community Tasks**: [`sub_projects/hivemind/HiveMind/ROADMAP.md`](./HiveMind/ROADMAP.md) (`45/45` Community PRs merged across Waves 1–5; Season 7 Tasks `HM-S7-01`..`HM-S7-08`)
 - **Architectural Vision & Non-Monetary Reciprocal Compute Points Model**: [`sub_projects/hivemind/HiveMind/vision.md`](./HiveMind/vision.md) (Zero financial payment `0.00 EUR/USD`; "points" grant computing processing benefits only when the live production Swarm is deployed and used by a large community)
 - **Opt-In Community GPU Benchmark Suite**: [`sub_projects/hivemind/HiveMind/scripts/run_community_gpu_benchmark.py`](./HiveMind/scripts/run_community_gpu_benchmark.py) (`tests/test_community_gpu_benchmark.py`)

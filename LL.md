@@ -1164,6 +1164,45 @@ one false obligation fails whole and must be re-run individually to isolate, so
 batching is a net loss only above an **84.2%** failure rate, which no realistic
 search reaches.
 
+### 29.16 Both mechanism-targeted repairs failed their own bars (2026-10-24)
+
+Having measured that random subtree crossover significantly lowers the solve rate
+(47.0% to 29.0%, p = 2.98e-04), I derived the exact mechanism and proposed two
+repairs. Both fail, and both failures are recorded against bars I fixed before
+running rather than after seeing the data.
+
+**Repair 1, matching `sign(B)`.** Refuted by its own negative control: the
+anti-homologous arm, built to be worse, scored *higher* (0.395 vs 0.350) and is
+indistinguishable from the treatment (p = 0.408) -- exactly the outcome I had
+registered as meaning the signature carries nothing.
+
+**Repair 2, preserving `B*v` exactly.** The successor Paper I edition 1 named as
+untested. A site is admissible only when `B_donor = k*B_site` for a single
+rational k at every point; the donor then goes in as `k*D`. The invariant is
+measured, not asserted: 1614 of 1614 contribution comparisons exactly equal,
+admissible sites in 269 of 400 random pairs. Result 73/200 (0.365), **not**
+significantly above random crossover (p = 0.136). The registered falsifier
+fired.
+
+**The one positive signal, and why I did not promote it.** A sharper control --
+the same constant-ratio sites with the scaling omitted -- separates choosing a
+site from correcting the contribution. Scaling on beats scaling off at p = 0.031,
+and the sanity check holds (unscaled is indistinguishable from random crossover,
+p = 0.576), so site selection alone buys nothing and any effect lives in the
+scaling. That is the first positive mechanistic signal in the programme. It is
+also not enough: five comparisons were run, a family-wise 0.05 needs alpha =
+0.01, and **nothing survives correction** -- and it is the comparison against the
+*weakest* arm. Promoting it would be choosing the test after seeing the data.
+
+**The rule this reinforces.** A pre-registered bar is only worth setting if you
+report it when it fires. The temptation here was real and specific: one
+sub-comparison at p = 0.031 would have supported a headline of "contribution
+preservation causally improves recombination", and it would have been the third
+time in this session that a sub-sample estimate did not survive scrutiny -- the
+48-seed paired ratio of 1.500 became 0.959 at 200, and a 6-seed smoke test of
+3/6 became 73/200 and a failed bar. Three small-n estimates, none replicated.
+State the registered result; offer the sub-comparison as a hint, labelled.
+
 ### 29.14 The atomicity I measured was my own wrapper, and it invalidated three rounds of economics (2026-10-24)
 
 Everything in §29.13 and its follow-up about batching economics rested on a

@@ -29,6 +29,7 @@ PAPER = SUBPROJECT / "papers" / "PaperI_Recombination_Does_Not_Help_Lean4.tex"
 ARTIFACTS = (
     "lean_gated_recombination",
     "lean_gated_recombination_homology",
+    "lean_gated_recombination_contribution",
     "lean_gated_recombination_calibration",
     "lean_atomicity_is_the_wrapper",
     "lean_batching",
@@ -43,6 +44,8 @@ MUST_APPEAR = (
     r"2.98\times10^{-4}",
     "0.238", "0.408", "0.019", "0.959",
     "0.5117", "0.5196", r"94\,872",
+    # Edition 2.
+    "73/200", "52/200", "0.136", "0.835", "0.576", "1614", "1011",
 )
 
 
@@ -131,6 +134,31 @@ def collect(art: dict[str, Any]) -> List[Tuple[str, Any, Any, str]]:
     for row in atom["measured"]:
         rows.append((f"invocations at {row['actually_false']} false", "1",
                      row["invocations"], "atomicity"))
+
+    contribution = art["lean_gated_recombination_contribution"]
+    cpa = contribution["per_arm"]
+    for arm, solved, median in (
+        ("contribution_preserving", "73", 1011),
+        ("same_sites_unscaled", "52", 1358.5),
+    ):
+        rows.append((f"{arm} solved", solved, cpa[arm]["solved"], "contribution"))
+        rows.append((f"{arm} median evals", median,
+                     cpa[arm]["median_evaluations_when_solved"], "contribution"))
+    ctests = contribution["verdict"]["tests"]
+    for key, want in (
+        ("contribution_preserving_vs_crossover", 0.1357),
+        ("contribution_preserving_vs_same_sites_unscaled", 0.0308),
+        ("contribution_preserving_vs_mutation_only", 0.0424),
+        ("same_sites_unscaled_vs_crossover", 0.5757),
+        ("contribution_preserving_vs_homologous", 0.8348),
+    ):
+        rows.append((f"p {key}", want, ctests[key]["p"], "contribution"))
+    rows.append(("bonferroni alpha", 0.01,
+                 contribution["verdict"]["multiple_comparisons"]["bonferroni_alpha"],
+                 "contribution"))
+    rows.append(("anything survives correction", False,
+                 contribution["verdict"]["multiple_comparisons"]["anything_survives"],
+                 "contribution"))
 
     bisection = {
         r["scenario"].split()[0]: r

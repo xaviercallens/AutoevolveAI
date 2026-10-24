@@ -47,7 +47,7 @@ from typing import Any, Dict, List
 REPO = Path(__file__).resolve().parents[1]
 SUBPROJECT = REPO / "sub_projects" / "socrateai_scientific_genetic" / "SocrateAI-Scientific-Genetic"
 ZENODO = "https://zenodo.org/api"
-RECEIPT = REPO / "results" / "zenodo_paper_i_edition1_receipt.json"
+RECEIPT = REPO / "results" / "zenodo_paper_i_edition2_receipt.json"
 STEM = "PaperI_Recombination_Does_Not_Help_Lean4"
 
 TITLE = (
@@ -114,15 +114,42 @@ of 0.5117 and 0.5196 against 0.5000 cannot produce a 10.5 point spread. The
 ordering of the three crossover arms is left <em>unexplained</em> rather than
 given a story, since no adjacent pair is significant.</p>
 
-<p><strong>What survives</strong> is the negative result from five independent
-directions, the last of them against an idea of our own. In this representation
-the only operator that reliably works is mutation. What it does <em>not</em>
-license is also recorded: matching sign(B) failing does not show that no
-contribution-preserving recombination can work, and a scheme that
-<em>rescales</em> the donor to preserve B&middot;v is untested and is the obvious
-next candidate. The failure is reported now rather than after hunting for a
-variant that wins, because the prediction and its falsifier were fixed before the
-run.</p>
+<p><strong>EDITION 2 tests the successor edition 1 recorded as untested</strong>
+&mdash; inserting the donor <em>rescaled</em> so its contribution transfers
+exactly. A site is admissible only when B_donor = k&middot;B_site for a single
+rational k at every sample point, and the donor goes in as k&middot;D; the
+invariant is measured, not asserted, at <strong>1614 of 1614</strong>
+contribution comparisons exactly equal, with admissible sites in 269 of 400
+random pairs. Its pre-registered falsifier fires too: <strong>73/200
+(36.5%)</strong>, not significantly above random crossover
+(<strong>p = 0.136</strong>), still significantly below mutation-only
+(p = 0.042), and indistinguishable from the weaker sign-matching operator
+(p = 0.835).</p>
+
+<p><strong>One positive mechanistic signal, which we decline to promote.</strong>
+A sharper control than edition 1's &mdash; the <em>same</em> constant-ratio sites
+with the scaling omitted &mdash; separates choosing a site from correcting the
+contribution. Holding site selection fixed, scaling on beats scaling off at
+p = 0.031, and the sanity check holds (unscaled is indistinguishable from random
+crossover, p = 0.576), so site selection alone buys nothing and any effect lives
+in the scaling. But five comparisons were run, a family-wise rate of 0.05 needs
+alpha = 0.01, and <em>nothing survives correction</em>; it is also the comparison
+against the weakest arm. Elevating it to the headline would be choosing the test
+after seeing the data. Also not claimed: that the operator is faster conditional
+on solving (median 1011 against 1286.5 evaluations, p = 0.057, suggestive and
+not significant).</p>
+
+<p><strong>What survives</strong> is the negative result from six independent
+directions, the last two against ideas of our own. In this representation the
+only operator that reliably works is mutation, and <em>both</em>
+mechanism-targeted repairs fail their pre-registered bars. The
+contribution-transfer account survives only as a hint from one uncorrected
+sub-comparison, which is not enough to call it the cause. A 6-seed smoke test of
+the edition-2 operator had shown 3/6 at a median 475 evaluations; it was reported
+as a reason to run at 200 seeds rather than as a result, and at 200 it fails its
+bar &mdash; the third small-sample estimate in this work not to replicate. We
+state that rather than keep proposing variants until one clears a bar set
+afterwards.</p>
 
 <p><strong>Transferable method:</strong> a measured <em>limit</em> reported by
 code you own is a property of that code until you check it one layer below. Three
@@ -215,6 +242,7 @@ def bundle() -> List[Path]:
         REPO / "results" / "lean_gated_recombination.json",
         REPO / "results" / "lean_gated_recombination_homology.json",
         REPO / "results" / "lean_gated_recombination_calibration.json",
+        REPO / "results" / "lean_gated_recombination_contribution.json",
         # The verifier artifact, and the two artifacts it superseded. These are
         # deposited BECAUSE they record conclusions of ours that were wrong: the
         # bisection-versus-fall-back comparison was real and was the evidence for
@@ -230,6 +258,7 @@ def bundle() -> List[Path]:
         REPO / "tests" / "integration" / "test_batched_gate.py",
         REPO / "tests" / "integration" / "test_numeric_screen.py",
         REPO / "tests" / "unit" / "test_context_coefficients.py",
+        REPO / "tests" / "unit" / "test_contribution_preserving.py",
         REPO / "tests" / "unit" / "test_lean_spec_obligations.py",
     ]
 
@@ -244,6 +273,30 @@ def bundle() -> List[Path]:
     if collisions:
         raise RuntimeError(f"duplicate upload names in the bundle: {collisions}")
     return files
+
+
+def new_version(previous: int, tok: str, metadata):
+    """Deposit as a NEW VERSION of an existing record, never as a fresh record.
+
+    The project rule, learned the hard way: a corrected edition published as a
+    new record leaves the old one as a separate citable artefact with no link to
+    its correction. `/actions/newversion` keeps one concept DOI resolving to the
+    latest edition.
+    """
+    draft = req("POST", f"{ZENODO}/deposit/depositions/{previous}/actions/newversion", tok)
+    latest = draft["links"]["latest_draft"]
+    deposition = req("GET", latest, tok)
+    deposition_id = deposition["id"]
+    print(f"new version draft {deposition_id} of record {previous}")
+    # A new version inherits the previous version's files; drop them so the
+    # bundle is exactly what this edition says it is.
+    inherited = deposition.get("files", [])
+    for old in inherited:
+        req("DELETE", f"{ZENODO}/deposit/depositions/{deposition_id}/files/{old['id']}", tok)
+    print(f"  cleared {len(inherited)} inherited files")
+    req("PUT", f"{ZENODO}/deposit/depositions/{deposition_id}", tok,
+        json.dumps(metadata).encode())
+    return deposition_id, deposition["links"]["bucket"]
 
 
 def adopt_draft(deposition_id: int, tok: str, metadata):
@@ -284,6 +337,16 @@ def main() -> int:
         help="assemble and check the bundle, contact nothing",
     )
     parser.add_argument(
+        "--new-version-of",
+        type=int,
+        default=0,
+        help=(
+            "deposit as a new version of this published record id, which is the "
+            "only correct way to publish a corrected edition; 0 creates a fresh "
+            "record and is only right for a first deposit"
+        ),
+    )
+    parser.add_argument(
         "--use-draft",
         type=int,
         default=0,
@@ -314,13 +377,15 @@ def main() -> int:
             "keywords": KEYWORDS,
             "license": "cc-by-4.0",
             "access_right": "open",
-            "version": "edition-1",
+            "version": "edition-2",
             "language": "eng",
         }
     }
 
     if args.use_draft:
         deposition_id, bucket = adopt_draft(args.use_draft, tok, metadata)
+    elif args.new_version_of:
+        deposition_id, bucket = new_version(args.new_version_of, tok, metadata)
     else:
         deposition = req(
             "POST",
@@ -378,7 +443,7 @@ def main() -> int:
         "state": published.get("state"),
         "submitted": published.get("submitted"),
         "title": TITLE,
-        "version": "edition-1",
+        "version": "edition-2",
         "files_uploaded": uploaded,
         "peer_reviewed": False,
         "note": (

@@ -1149,3 +1149,25 @@ difference that says nothing about A or B. The floor is the measurement that
 makes an attribution meaningful, and it is usually one cheap run away. This is
 why all three proposals in §29.12 were optimising something that was not the
 cost — and why I repeated their mistake one level down before measuring it.
+
+**Follow-up, which demonstrates the one surviving lever and corrects a magnitude
+above.** Batching eight candidates into a single Lean invocation instead of eight
+(`scripts/measure_lean_batching.py`, `results/lean_batching.json`) gives a median
+**7.16×**, and the batched condition's same-input spread is **1.02×** — so unlike
+every claim in §29.12 this one sits far above the noise that made those
+unmeasurable. The decomposition is then exact: a candidate's own elaboration
+costs about **0.14 s** while **97%** of a single verification is fixed
+per-invocation overhead, which is precisely why caching a verdict, modularising a
+genome or importing the spec cannot help — none of them touches the fixed term —
+and why batching can. Atomicity prices the downside honestly: a batch containing
+one false obligation fails whole and must be re-run individually to isolate, so
+batching is a net loss only above an **84.2%** failure rate, which no realistic
+search reaches.
+
+The magnitude correction: §29.13 above quotes the fixed cost as a median 17.61 s,
+measured **before** `lake build ANSE.VerletSymplectic` had produced an olean, so
+the spec was re-elaborated from source on every run and the caches were colder.
+On a warm host a single candidate verifies in 5.37 s. The structure of the
+conclusion is unchanged and sharper, but **17.61 s is not the cost of a
+verification on a warm host** and should not be quoted as one. A fixed cost whose
+magnitude depends on build state has to be reported with that state.

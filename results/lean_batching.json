@@ -1,0 +1,96 @@
+{
+  "measurement": "does batching candidates into one Lean invocation pay?",
+  "premise": "results/rung2_gate_cost.json showed the whole cost is a fixed Mathlib.Tactic.Ring load per invocation (bare floor median 17.61 s, the slowest of four conditions). Batching pays that once for many candidates. This tests that prediction instead of asserting it.",
+  "candidates": 8,
+  "repeats": 3,
+  "conditions": {
+    "A_one_invocation_per_candidate": {
+      "n": 3,
+      "median": 45.47,
+      "min": 42.31,
+      "max": 53.12,
+      "same_input_spread": 1.26,
+      "runs": [
+        53.12,
+        42.31,
+        45.47
+      ]
+    },
+    "A_per_single_candidate": {
+      "n": 24,
+      "median": 5.37,
+      "min": 5.15,
+      "max": 15.91,
+      "same_input_spread": 3.09,
+      "runs": [
+        15.91,
+        5.38,
+        5.39,
+        5.3,
+        5.3,
+        5.31,
+        5.28,
+        5.25,
+        5.27,
+        5.15,
+        5.16,
+        5.17,
+        5.25,
+        5.24,
+        5.6,
+        5.46,
+        5.36,
+        5.43,
+        5.82,
+        5.75,
+        5.96,
+        5.86,
+        5.5,
+        5.79
+      ]
+    },
+    "B_all_in_one_invocation": {
+      "n": 3,
+      "median": 6.35,
+      "min": 6.26,
+      "max": 6.39,
+      "same_input_spread": 1.02,
+      "runs": [
+        6.39,
+        6.35,
+        6.26
+      ]
+    },
+    "C_failing_batch": {
+      "n": 3,
+      "median": 7.32,
+      "min": 7.01,
+      "max": 7.51,
+      "same_input_spread": 1.07,
+      "runs": [
+        7.01,
+        7.51,
+        7.32
+      ]
+    }
+  },
+  "batched_speedup_median": 7.16,
+  "isolation_cost_when_a_batch_fails_median_seconds": 52.79,
+  "break_even_failure_rate": 0.842,
+  "atomicity": "A batch containing one false obligation fails as a whole and yields no per-candidate verdict, so it must be re-run individually to isolate. That is the measured cost of the lever, not a caveat.",
+  "how_to_read_it": "The same-input spread on this host reaches 2.60x, so a saving below that is unmeasurable (LL.md 29.12). Compare the speedup against the spreads reported per condition, not against zero.",
+  "not_established": [
+    "N=8, R=3. Small samples; medians with spreads, not distributions.",
+    "A persistent Lean server was not built; this measures batching into one file, which is the cheap approximation of process reuse.",
+    "The break-even failure rate assumes isolation re-runs every candidate; a bisection would be cheaper and is not measured."
+  ],
+  "decomposition": {
+    "single_candidate_median_seconds": 5.37,
+    "marginal_seconds_per_extra_candidate_in_a_batch": 0.14,
+    "fixed_overhead_seconds": 5.23,
+    "fixed_fraction_of_a_single_verification": 0.974,
+    "reading": "A candidate's own elaboration costs about 0.14 s; roughly 97% of a single verification is fixed per-invocation overhead. That is why batching pays and why caching a verdict, modularising a genome or importing the spec instead of inlining it cannot: none of them touches the fixed term."
+  },
+  "a_magnitude_correction_to_LL_29_13": "LL.md 29.13 quoted the fixed per-invocation cost as a median 17.61 s, from results/rung2_gate_cost.json. Here a single candidate verifies in a median 5.37 s. The earlier figures were taken BEFORE `lake build ANSE.VerletSymplectic` had produced an olean, so the spec was re-elaborated from source and the toolchain caches were colder. The STRUCTURE of that conclusion is unchanged and is in fact sharper here -- the fixed term dominates at ~97% and the candidate's own work is negligible -- but the absolute magnitude is cache-state dependent and the 17.61 s figure should not be quoted as the cost of a verification on a warm host.",
+  "verdict": "The lever is REAL and large: 7.16x over 8 candidates, with a batch spread of 1.02x, so it is resolvable far above the host noise that made every proposal-round claim unmeasurable. Batching loses only above a failure rate of 84.2%, which no realistic search reaches. It remains a process-architecture change with no evolutionary or biological content."
+}

@@ -1223,11 +1223,24 @@ not to exist -- the `{*,/}` arm scored *higher* than the full grammar, so the
 contrast the design rested on was absent. That is the third independent refutation
 of a heritable-unit proposal and it agrees with §F1. `AR.H1-audit` (a three-rule
 AST detector for forced controls) was REFUTED, and found something against my own
-wording: of the four forced controls I reported as found "in committed code", two
-(`verify_against_spec`, `defeq_checked`) appear nowhere before the fix commit and
-were introduced already corrected -- so its labelled positive set could only ever
-hold four, and its own 5-of-6 recall bar was unreachable before a line of
-detector ran.
+wording, which I then verified directly in git:
+
+| forced control | in committed code? |
+|---|---|
+| `h_fn = heldout_eval_fn or (lambda code: champion.total_energy)` + its `r_fn` sibling | YES, `alphaevolve_biomimetic.py:1175` |
+| `negative_control_ok=True` | YES, `alphaevolve_biomimetic.py:1183` |
+| `verify_against_spec` passing on an empty obligation map | NO -- the method did not exist before the fix commit |
+| `defeq_checked` derived from the pass flag | NO -- same |
+
+So "four forced controls found in committed code" is accurate for **two** of the
+four. The other two were in `lean_runner.py` code I wrote during that same
+session and fixed before committing: real defects, caught in flight, never
+shipped. The distinction matters because the original wording made pre-existing
+technical debt out of what was half my own fresh work, and it inflated the
+apparent severity in the direction that flattered the finding. The detector's
+labelled positive set could therefore only ever hold four, and its 5-of-6 recall
+bar was unreachable before a line of it ran -- a bar set against a ground truth
+that did not exist.
 
 A dispatch defect worth recording because it is mine: the triage renamed
 hypothesis ids with `-gp`/`-lean`/`-audit` suffixes the formulating agents never

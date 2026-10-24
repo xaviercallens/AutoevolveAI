@@ -519,6 +519,208 @@ class LeanKernelVerifier:
             "results": results,
         }
 
+    def screen_obligations_numerically(
+        self,
+        candidates: "Sequence[tuple[str, Path | str, str]]",
+        spec_module: str,
+        spec_fn: str,
+        arity: int,
+        sample_points: "Sequence[tuple[tuple[int, int], ...]]",
+        timeout_s: float = 600.0,
+    ) -> dict[str, object]:
+        """Refute candidates by evaluation before paying to prove them.
+
+        WHY THIS IS SOUND IN ONE DIRECTION ONLY, WHICH IS THE WHOLE POINT. For an
+        identity between two functions, disagreement at a single rational point
+        REFUTES it: no proof of a false equation exists, so rejecting on a
+        witness cannot reject anything provable. Agreement proves nothing at all
+        -- a survivor has only failed to be refuted, and still has to pass the
+        real Lean proof through `verify_batch_against_spec`. So this screen can
+        subtract work but can never grant acceptance, and it adds no trust
+        surface. If it wrongly keeps a false candidate the proof stage rejects it
+        anyway; the cost is an isolation round, never a wrong verdict.
+
+        WHY IT BEATS THE BATCHING LIMIT. `verify_batch_against_spec` pays off only
+        while (1-p)^b > 1/b, because one false candidate spoils a whole batch and
+        an evolutionary search fails most candidates by construction. That bound
+        assumes falsity is discoverable ONLY by proving. It is not: all b
+        candidates are evaluated inside ONE invocation, so the false ones are
+        removed before the batch is formed and the proof batch then contains only
+        survivors. Cost becomes 2 invocations regardless of the failure rate,
+        against b for individual runs and 1+b for batch-then-fall-back.
+
+        MEASURED, at n=8 with four candidates false, five interleaved warm
+        repeats (`results/lean_numeric_screen.json`):
+
+            screen (8 candidates)      median  8.85 s   spread 2.81x
+            batch-prove 4 survivors    median  7.55 s   spread 1.82x
+            prove one candidate        median  6.36 s   spread 1.61x
+            screen -> prove            16.40 s, 2 invocations
+            eight individual proofs    50.88 s, 8 invocations   -> 3.10x
+
+        Two honest limits on that. The 3.10x exceeds the host's own same-input
+        spread of 2.81x by only about ten percent, so the WALL-CLOCK claim is thin
+        at five repeats; the INVOCATION COUNT (2 against 8, flat in the failure
+        rate) is exact and is the robust part. And a screen invocation costs 1.39x
+        a proof invocation -- evaluating `Rat` arithmetic is dearer than `ring` --
+        so the saving comes entirely from sharing one invocation across all b
+        candidates, not from screening being individually cheap.
+
+        SCOPE. This only applies to obligations of the form "these two functions
+        agree pointwise", which is the kernel-equivalence case this repository
+        actually searches over. An obligation that is not an evaluable equation
+        cannot be screened and must go straight to proof.
+        """
+        import re
+        import tempfile
+
+        if arity < 1:
+            raise ValueError(f"arity must be at least 1, got {arity}")
+        if not sample_points:
+            raise ValueError(
+                "a screen with no sample points can refute nothing and would pass "
+                "every candidate, which is exactly the forced control this "
+                "repository keeps finding"
+            )
+        for point in sample_points:
+            if len(point) != arity:
+                raise ValueError(f"sample point {point!r} does not have arity {arity}")
+            for _, den in point:
+                if den == 0:
+                    raise ValueError(f"sample point {point!r} has a zero denominator")
+
+        # The screen reads its answer off stdout, so a candidate able to WRITE to
+        # stdout can forge a verdict. One-sided soundness means a forged "true"
+        # only sends that candidate on to the prover, which rejects it -- but a
+        # candidate could forge a "false" for a RIVAL and have provable work
+        # discarded. That is a liveness attack rather than a soundness one, and it
+        # is cheap to close, so a candidate carrying any command that prints is
+        # refused outright instead of screened.
+        FORGING_COMMANDS = ("#eval", "#print", "run_cmd", "IO.println", "#exit", "dbg_trace")
+        loaded: list[tuple[str, str, str]] = []
+        for cand_id, cand_file, cand_fn in candidates:
+            src = Path(cand_file).resolve().read_text(encoding="utf-8")
+            if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.]*", cand_id):
+                raise ValueError(f"candidate id {cand_id!r} is not a plain identifier")
+            if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.]*", cand_fn):
+                raise ValueError(f"candidate function {cand_fn!r} is not a plain identifier")
+            offending = sorted({c for c in FORGING_COMMANDS if c in src})
+            if offending:
+                raise ValueError(
+                    f"candidate {cand_id!r} contains {', '.join(offending)}, which can "
+                    "write to the stdout this screen reads its verdicts from; it cannot "
+                    "be screened and must go straight to proof"
+                )
+            loaded.append((cand_id, src, cand_fn))
+
+        rat_type = " → ".join(["Rat"] * (arity + 1))
+        # Nested-pair projections: t.1, t.2.1, t.2.2.1, ... for an n-tuple.
+        projections = [
+            "t." + ".".join(["2"] * i + ["1"]) if i < arity - 1 else "t." + ".".join(["2"] * i)
+            for i in range(arity)
+        ]
+        args = " ".join(projections)
+        tuple_type = " × ".join(["Rat"] * arity)
+        point_lines = ", ".join(
+            "(" + ", ".join(f"({num} : Rat)/{den}" for num, den in point) + ")"
+            for point in sample_points
+        )
+
+        header = [
+            f"import {spec_module}",
+            "",
+            "namespace NumericScreen",
+            f"def pts : List ({tuple_type}) := [{point_lines}]",
+            f"def agrees (f g : {rat_type}) : Bool :=",
+            f"  pts.all (fun t => f {args} == g {args})",
+            "end NumericScreen",
+            "",
+        ]
+        bodies: list[str] = []
+        for _, src, _ in loaded:
+            for line in src.splitlines():
+                stripped = line.strip()
+                if stripped.startswith("import ") or stripped.startswith("#print axioms"):
+                    continue
+                bodies.append(line)
+        evals = [
+            f'#eval (("{cand_id}"), NumericScreen.agrees {cand_fn} {spec_fn})'
+            for cand_id, _, cand_fn in loaded
+        ]
+        combined = "\n".join(header + bodies + [""] + evals) + "\n"
+
+        cmd = list(self.lean_cmd) if self.lean_cmd else self._lake_env_cmd()
+        with tempfile.TemporaryDirectory(prefix="lean_numeric_screen_") as td:
+            screen_file = Path(td) / "NumericScreen.lean"
+            screen_file.write_text(combined, encoding="utf-8")
+            try:
+                res = subprocess.run(
+                    [*cmd, str(screen_file)],
+                    cwd=str(self.formal_dir),
+                    env=self.env,
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout_s,
+                )
+            except subprocess.TimeoutExpired:
+                return {
+                    "screened": False,
+                    "blocked": f"BLOCKED: the screen timed out after {timeout_s:.0f}s; "
+                               "every candidate is passed through to proof unscreened",
+                    "invocations": 1,
+                    "refuted": [],
+                    "survivors": sorted(cand_id for cand_id, _, _ in loaded),
+                    "verdicts": {},
+                }
+
+        # This deliberately does NOT go through verify_file: that rejects `#eval`
+        # as stdout injection, and `#eval` is this screen's mechanism. The bypass
+        # is safe only because the screen cannot grant acceptance -- every
+        # survivor still faces the real gate -- and because candidates able to
+        # print were refused above.
+        stdout = res.stdout or ""
+        verdicts: dict[str, bool] = {}
+        for match in re.finditer(r'\("([A-Za-z_][A-Za-z0-9_.]*)",\s*(true|false)\)', stdout):
+            verdicts[match.group(1)] = match.group(2) == "true"
+
+        expected = {cand_id for cand_id, _, _ in loaded}
+        missing = sorted(expected - set(verdicts))
+        if missing:
+            # A candidate with no verdict has NOT been screened. It must be
+            # treated as a survivor and proved, never as refuted -- a screen that
+            # silently rejected what it failed to evaluate would reject provable
+            # work.
+            return {
+                "screened": False,
+                "blocked": (
+                    "BLOCKED: the screen produced no verdict for "
+                    + ", ".join(missing)
+                    + "; they are passed through to proof unscreened rather than "
+                    "rejected. stderr: " + (res.stderr or "")[:600]
+                ),
+                "invocations": 1,
+                "refuted": [],
+                "survivors": sorted(expected),
+                "verdicts": verdicts,
+            }
+
+        refuted = sorted(k for k, ok in verdicts.items() if not ok)
+        survivors = sorted(k for k, ok in verdicts.items() if ok)
+        return {
+            "screened": True,
+            "invocations": 1,
+            "candidates": len(loaded),
+            "sample_points": len(sample_points),
+            "refuted": refuted,
+            "survivors": survivors,
+            "verdicts": verdicts,
+            "soundness": (
+                "One-sided: a refutation is a witness of inequality and is final, "
+                "a survivor has only failed to be refuted and still requires the "
+                "Lean proof."
+            ),
+        }
+
     def verify_batch_against_spec(
         self,
         candidates: "Sequence[tuple[str, Path | str, dict[str, str]]]",

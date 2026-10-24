@@ -237,6 +237,149 @@ def replace_at(node: Node, address: tuple[int, ...], replacement: Node) -> Node:
     return binary(node.op or "+", node.left, replace_at(node.right, rest, replacement))
 
 
+def all_context_coefficients(
+    tree: Node, env: dict[str, Fraction],
+) -> dict[tuple[int, ...], Fraction]:
+    """Every address's coefficient B in `output = A + B * v`, in ONE pass pair.
+
+    The first implementation computed B per address with two whole-tree
+    evaluations, costing O(size) evaluations per address and O(size^2) per
+    sample point. Measured, that made the homologous arms spend 5.5x the
+    tree-point evaluations of the others -- a hidden cost large enough to make
+    any win on fitness evaluations meaningless.
+
+    B has exact reverse-mode structure, so it needs no such thing. Forward pass
+    for every node's value; backward pass seeded with B(root) = 1, where
+      '+'  sends B to both children,
+      '-'  sends B left and -B right,
+      '*'  sends B * value(sibling) to each child.
+    That is exact rational arithmetic, O(size) per point, and it makes the
+    homology probe cost about one fitness evaluation instead of hundreds.
+    """
+    values: dict[tuple[int, ...], Fraction] = {}
+
+    def forward(node: Node, address: tuple[int, ...]) -> Fraction:
+        if node.op is None:
+            value = node.leaf if isinstance(node.leaf, Fraction) else env[str(node.leaf)]
+            values[address] = value
+            return value
+        assert node.left is not None and node.right is not None
+        a = forward(node.left, address + (0,))
+        b = forward(node.right, address + (1,))
+        if node.op == "+":
+            out = a + b
+        elif node.op == "-":
+            out = a - b
+        elif node.op == "*":
+            out = a * b
+        else:
+            raise ValueError(f"unknown operator {node.op!r}")
+        values[address] = out
+        return out
+
+    forward(tree, ())
+    coefficients: dict[tuple[int, ...], Fraction] = {}
+
+    def backward(node: Node, address: tuple[int, ...], upstream: Fraction) -> None:
+        coefficients[address] = upstream
+        if node.op is None:
+            return
+        assert node.left is not None and node.right is not None
+        left_address = address + (0,)
+        right_address = address + (1,)
+        if node.op == "+":
+            backward(node.left, left_address, upstream)
+            backward(node.right, right_address, upstream)
+        elif node.op == "-":
+            backward(node.left, left_address, upstream)
+            backward(node.right, right_address, -upstream)
+        else:
+            backward(node.left, left_address, upstream * values[right_address])
+            backward(node.right, right_address, upstream * values[left_address])
+
+    backward(tree, (), Fraction(1))
+    return coefficients
+
+
+def context_coefficient(
+    tree: Node, address: tuple[int, ...], points: Sequence[dict[str, Fraction]],
+    counter: list[int],
+) -> tuple[Fraction, ...]:
+    """The exact coefficient B in `output = A + B * v` for the subtree at `address`.
+
+    In the grammar {+, -, *} an address occurs once, so the whole expression is
+    AFFINE in that subtree's value v. Therefore B = f(v=1) - f(v=0), computed
+    exactly in two evaluations per sample point and with no derivative
+    approximation anywhere.
+
+    B is the measured cause of crossover's failure. A donor subtree contributing
+    B_donor * v inside its own parent contributes B_site * v once transplanted, so
+    unless the two coefficients agree the donor's CONTRIBUTION is rescaled or
+    sign-flipped even though its syntax arrived intact. That is why a subtree swap
+    behaves as a macromutation, and it is what hypothesis AR.H3-gp found from the
+    other direction when transfer fidelity fell with the multiplicative operators
+    on the root-to-insertion path.
+    """
+    one = replace_at(tree, address, leaf(Fraction(1)))
+    zero = replace_at(tree, address, leaf(Fraction(0)))
+    counter[0] += 2 * len(points)
+    return tuple(
+        evaluate(one, env) - evaluate(zero, env) for env in points
+    )
+
+
+def sign_pattern(coefficients: Sequence[Fraction]) -> tuple[int, ...]:
+    """The sign of B at each sample point: the homology signature."""
+    return tuple((0 if c == 0 else (1 if c > 0 else -1)) for c in coefficients)
+
+
+def homologous_crossover(
+    a: Node, b: Node, rng: random.Random, max_size: int,
+    points: Sequence[dict[str, Fraction]], counter: list[int], anti: bool = False,
+) -> tuple[Node, bool]:
+    """Recombine only where the donor's context coefficient matches the site's.
+
+    Biology recombines at HOMOLOGOUS positions; a random subtree swap is the
+    non-homologous analogue, which in biology is catastrophic rather than
+    creative. Homology here is the sign pattern of B across the sample points,
+    so a donor is admitted only into a site that preserves the DIRECTION of its
+    contribution at every point.
+
+    With `anti=True` it does the opposite and recombines only where the sign
+    pattern is inverted. That is the negative control: if homology is what
+    matters, anti-homology must do WORSE than choosing at random, and if both
+    arms behave alike then the signature is not carrying anything.
+
+    Returns the child and whether a matching site was found. When none is found
+    the caller falls back to mutation, and the fallback is counted, because an
+    arm that silently became mutation-only would look like a success of
+    recombination.
+    """
+    # One forward/backward pass per sample point gives every address's
+    # coefficient in both trees, so the whole probe costs about two fitness
+    # evaluations rather than hundreds.
+    donor_coefficients = [all_context_coefficients(b, env) for env in points]
+    site_coefficients = [all_context_coefficients(a, env) for env in points]
+    counter[0] += 2 * len(points)
+
+    donor_address = rng.choice(all_addresses(b))
+    donor = subtree_at(b, donor_address)
+    donor_signature = sign_pattern(
+        [table[donor_address] for table in donor_coefficients]
+    )
+
+    sites = all_addresses(a)
+    rng.shuffle(sites)
+    for site in sites:
+        site_signature = sign_pattern([table[site] for table in site_coefficients])
+        matches = (site_signature == donor_signature)
+        if matches != anti:
+            candidate = replace_at(a, site, donor)
+            if candidate.size() <= max_size:
+                return candidate, True
+    return a, False
+
+
 def mutate(node: Node, rng: random.Random, max_size: int) -> Node:
     address = rng.choice(all_addresses(node))
     replacement = random_tree(rng, rng.randint(0, 2))
@@ -251,41 +394,77 @@ def crossover(a: Node, b: Node, rng: random.Random, max_size: int) -> Node:
     return candidate if candidate.size() <= max_size else a
 
 
+ARMS: tuple[str, ...] = (
+    "mutation_only", "crossover", "homologous_crossover", "anti_homologous_crossover",
+)
+
+
 def run_arm(
     seed: int,
-    use_crossover: bool,
+    arm: str,
     budget: int,
     spec: Callable[[dict[str, Fraction]], Fraction],
     points: Sequence[dict[str, Fraction]],
     population_size: int = 40,
     max_size: int = 25,
 ) -> dict[str, object]:
-    """One arm. Returns evaluations used and the solution if one was found.
+    """One arm. Every arm draws its initial population from the SAME seeded
+    stream, so a difference between arms cannot come from a luckier start.
 
-    Both arms draw from the SAME seeded stream for the initial population, so a
-    difference between them cannot come from a luckier start.
+    TWO COST METRICS ARE REPORTED, and that is deliberate. `evaluations` counts
+    fitness evaluations, the budget the search is given. `tree_point_evaluations`
+    counts EVERY evaluation of a tree at a point, including the probes the
+    homologous arms spend finding a matching site. Comparing the arms on fitness
+    evaluations alone would let a homology-seeking arm spend unbounded hidden
+    compute and still look cheaper -- the incommensurable-comparison defect this
+    programme keeps finding. An arm must win on both metrics for the win to be
+    unqualified.
     """
+    if arm not in ARMS:
+        raise ValueError(f"unknown arm {arm!r}")
     rng = random.Random(seed)
+    counter = [0]
     population = [random_tree(rng, 3) for _ in range(population_size)]
-    scored = [(fitness(ind, points, spec), ind) for ind in population]
+    scored = []
+    for ind in population:
+        counter[0] += len(points)
+        scored.append((fitness(ind, points, spec), ind))
     evaluations = len(scored)
     best = min(scored, key=lambda t: t[0])
+    recombinations = 0
+    homology_failures = 0
     while evaluations < budget:
         if best[0] == 0:
             break
-        # Tournament of 3, the same pressure in both arms.
+        # Tournament of 3, the same selection pressure in every arm.
         def pick() -> Node:
             contenders = [scored[rng.randrange(len(scored))] for _ in range(3)]
             return min(contenders, key=lambda t: t[0])[1]
 
         parent = pick()
-        if use_crossover and rng.random() < 0.5:
-            child = crossover(parent, pick(), rng, max_size)
+        if arm != "mutation_only" and rng.random() < 0.5:
+            donor_parent = pick()
+            if arm == "crossover":
+                child = crossover(parent, donor_parent, rng, max_size)
+                recombinations += 1
+            else:
+                child, found = homologous_crossover(
+                    parent, donor_parent, rng, max_size, points, counter,
+                    anti=(arm == "anti_homologous_crossover"),
+                )
+                if found:
+                    recombinations += 1
+                else:
+                    # No admissible site: fall back to mutation and COUNT it, so
+                    # an arm that quietly became mutation-only cannot be read as
+                    # a success of recombination.
+                    homology_failures += 1
+                    child = mutate(parent, rng, max_size)
         else:
             child = mutate(parent, rng, max_size)
+        counter[0] += len(points)
         score = fitness(child, points, spec)
         evaluations += 1
-        # Steady state: replace the worst.
         worst_index = max(range(len(scored)), key=lambda i: scored[i][0])
         if score < scored[worst_index][0]:
             scored[worst_index] = (score, child)
@@ -293,8 +472,11 @@ def run_arm(
             best = (score, child)
     return {
         "seed": seed,
-        "arm": "crossover" if use_crossover else "mutation_only",
+        "arm": arm,
         "evaluations": evaluations,
+        "tree_point_evaluations": counter[0],
+        "recombinations": recombinations,
+        "homology_failures": homology_failures,
         "solved": best[0] == 0,
         "best_fitness": str(best[0]),
         "solution_lean": render_lean(best[1]) if best[0] == 0 else None,
@@ -390,9 +572,12 @@ def main() -> int:
             def rung_spec(env: dict[str, Fraction], _n: Node = node) -> Fraction:
                 return evaluate(_n, env)
             assert fitness(node, points, rung_spec) == 0, f"{name} unreachable"
+            # Calibration uses only the two original arms, so the band is not
+            # defined by the arm under test.
             runs = [
-                run_arm(seed, xo, args.budget, rung_spec, points)
-                for seed in range(args.seeds) for xo in (False, True)
+                run_arm(seed, arm, args.budget, rung_spec, points)
+                for seed in range(args.seeds)
+                for arm in ("mutation_only", "crossover")
             ]
             solved = sum(1 for r in runs if r["solved"])
             pooled = solved / len(runs)
@@ -448,21 +633,39 @@ def main() -> int:
         return env["q"] / (env["h"] + Fraction(97, 13)) + env["p"]
 
     negative_results = [
-        run_arm(seed, use_crossover, args.budget // 4, unreachable_spec, points)
-        for seed in range(4) for use_crossover in (False, True)
+        run_arm(seed, arm, args.budget // 4, unreachable_spec, points)
+        for seed in range(4) for arm in ARMS
     ]
     negative_solved = [r for r in negative_results if r["solved"]]
 
     arms: list[dict[str, object]] = []
     for seed in range(args.seeds):
-        for use_crossover in (False, True):
-            arms.append(run_arm(seed, use_crossover, args.budget, spec, points))
+        for arm in ARMS:
+            arms.append(run_arm(seed, arm, args.budget, spec, points))
 
-    def evals(arm_name: str, solved_only: bool) -> list[int]:
+    def evals(arm_name: str, solved_only: bool, key: str = "evaluations") -> list[int]:
         return [
-            int(r["evaluations"]) for r in arms
+            int(r[key]) for r in arms
             if r["arm"] == arm_name and (r["solved"] or not solved_only)
         ]
+
+    per_arm: dict[str, dict[str, object]] = {}
+    for arm in ARMS:
+        runs = [r for r in arms if r["arm"] == arm]
+        solved_runs = [r for r in runs if r["solved"]]
+        per_arm[arm] = {
+            "runs": len(runs),
+            "solved": len(solved_runs),
+            "solve_rate": round(len(solved_runs) / len(runs), 4) if runs else None,
+            "median_evaluations_when_solved": (
+                statistics.median([int(r["evaluations"]) for r in solved_runs])
+                if solved_runs else None),
+            "median_tree_point_evaluations": (
+                statistics.median([int(r["tree_point_evaluations"]) for r in runs])
+                if runs else None),
+            "total_recombinations": sum(int(r["recombinations"]) for r in runs),
+            "homology_failures": sum(int(r["homology_failures"]) for r in runs),
+        }
 
     mut_solved = [r for r in arms if r["arm"] == "mutation_only" and r["solved"]]
     xo_solved = [r for r in arms if r["arm"] == "crossover" and r["solved"]]
@@ -536,6 +739,20 @@ def main() -> int:
             "grammar": list(BINARY_OPS), "variables": list(VARIABLES),
             "constants": [str(c) for c in CONSTANTS],
         },
+        "per_arm": per_arm,
+        "prediction_registered_before_running": {
+            "homologous_crossover": (
+                "if homology is what crossover lacks, restricting recombination to sites whose "
+                "context-coefficient sign pattern matches the donor's should raise the solve rate "
+                "above random crossover's, and ideally to at least mutation-only's"),
+            "anti_homologous_crossover": (
+                "the negative control: restricting to INVERTED sign patterns should be no better "
+                "than random crossover, and if the two homology arms behave alike then the "
+                "signature carries nothing and the mechanism is not what was claimed"),
+            "cost_caveat": (
+                "the homology arms spend extra tree-point evaluations probing for a site, so a win "
+                "on fitness evaluations alone is qualified; both metrics are reported"),
+        },
         "results": {
             "mutation_only_solved": len(mut_solved),
             "crossover_solved": len(xo_solved),
@@ -560,6 +777,16 @@ def main() -> int:
           f"median {statistics.median(evals('mutation_only', True)) if mut_solved else '-'} evals")
     print(f"crossover         : {len(xo_solved)}/{args.seeds} solved, "
           f"median {statistics.median(evals('crossover', True)) if xo_solved else '-'} evals")
+    print()
+    for arm in ARMS:
+        s = per_arm[arm]
+        print(f"  {arm:<28} solved {s['solved']:>3}/{s['runs']:<3} "
+              f"({(s['solve_rate'] or 0):.3f})  "
+              f"med_evals={s['median_evaluations_when_solved'] or '-':<7} "
+              f"tree_pt={s['median_tree_point_evaluations']:<8} "
+              f"xovers={s['total_recombinations']:<6} "
+              f"homology_fail={s['homology_failures']}")
+    print()
     print(f"paired both-solved: {len(paired)} seeds, crossover cheaper on {wins}")
     if median_ratio is not None:
         print(f"paired median ratio (xo/mut): {median_ratio:.3f}  "

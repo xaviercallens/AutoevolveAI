@@ -1164,6 +1164,79 @@ one false obligation fails whole and must be re-run individually to isolate, so
 batching is a net loss only above an **84.2%** failure rate, which no realistic
 search reaches.
 
+### 29.14 The atomicity I measured was my own wrapper, and it invalidated three rounds of economics (2026-10-24)
+
+Everything in §29.13 and its follow-up about batching economics rested on a
+premise I recorded as a measured fact: *a Lean compile is atomic -- one failing
+obligation fails the whole file and yields no per-declaration rows.* **That is
+false, and it was never Lean's behaviour.** It was `verify_file`, which returns a
+single aggregate failure the instant `returncode != 0`, discarding the
+per-declaration axiom lines the kernel had already printed.
+
+One invocation on 8 candidates with indices 2 and 5 false exits 1 and prints all
+eight lines:
+
+```
+'At0.At0_m' depends on axioms: [propext, Classical.choice, Quot.sound]
+'At2.At2_m' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
+```
+
+A failed tactic proof is admitted as `sorryAx` and reported by name -- exactly
+what the gate already rejects on. Nothing ever needed isolating.
+
+What that cost: a bisection, then a flat fall-back measured as better than the
+bisection, then a break-even law `(1-p)^b > 1/b` derived from the cost of
+isolation, then a one-sided numeric screen built to escape that law. Four rounds
+of work, three of them sound in their own terms, all downstream of one wrong
+premise. The shipped path is now ONE invocation at any failure rate: measured
+1 invocation at 0, 1, 2, 4 and 8 failures of 8, every culprit correctly named,
+no false candidate accepted at any rate, against 8 individual proofs at 50.88 s.
+
+**The lesson is not "check your premises".** It is narrower and checkable: *I
+measured a property of the apparatus and recorded it as a property of the
+system.* Every one of those four rounds would have been avoided by one command --
+reading Lean's raw stdout instead of my wrapper's return value. The guard to add:
+when a measurement establishes a LIMIT, and the limit is reported by code I own,
+measure it once at the layer below that code. §29.9 said a gate can be measuring
+your own choice; this is the same defect one level down, and it survived §29.9
+because the gate's output looked like physics rather than like a choice.
+
+Corollary, and the reason this sits in the binding rules: the numeric screen of
+`screen_obligations_numerically` is sound and its measurements are real, but it
+was *motivated* as an escape from a limit that did not exist. A correct artifact
+built for a void reason is still debt -- it is now marked `MOTIVATION_VOID` in
+`results/lean_numeric_screen.json` rather than quietly kept as a win.
+
+### 29.15 An autoresearch funnel, and what it refuted (2026-10-24)
+
+Ten hypotheses formulated against the nine established findings, scored and
+triaged (`LL.md` §26b's funnel). The two the triage rejected dead-on-arrival are
+the useful part of the record: `AR.H4-lean` rested on a timing difference inside
+this host's noise floor -- and the triage *ran its core arm* to show it rather
+than arguing -- and `AR.H3-audit`'s control could not fail, since a Python
+generator and a Rust subprocess statistic share no identifier by construction.
+
+Of the three tested: `AR.H1-gp` (an address-indexed ablation contribution is a
+site-wise heritable character) was REFUTED at 0.200-0.545 transmitted fraction
+against its own >= 0.70 bar, and its pre-registered control ordering turned out
+not to exist -- the `{*,/}` arm scored *higher* than the full grammar, so the
+contrast the design rested on was absent. That is the third independent refutation
+of a heritable-unit proposal and it agrees with §F1. `AR.H1-audit` (a three-rule
+AST detector for forced controls) was REFUTED, and found something against my own
+wording: of the four forced controls I reported as found "in committed code", two
+(`verify_against_spec`, `defeq_checked`) appear nowhere before the fix commit and
+were introduced already corrected -- so its labelled positive set could only ever
+hold four, and its own 5-of-6 recall bar was unreachable before a line of
+detector ran.
+
+A dispatch defect worth recording because it is mine: the triage renamed
+hypothesis ids with `-gp`/`-lean`/`-audit` suffixes the formulating agents never
+emitted, so the `byId` lookup returned nothing and all three test agents were
+handed `"hypothesis body missing"`. Two recovered the body from the workflow
+journal and ran the real test anyway; the third reported BLOCKED and said
+explicitly that it would not invent a plausible hypothesis and then confirm it.
+A fan-out stage must assert it received a body before claiming to test one.
+
 **And a correction to the follow-up itself, which I got wrong twice.** The 7.16×
 is the all-pass case only, and I reported it as a win "for any realistic search".
 It is not. Two further measurements settled it.

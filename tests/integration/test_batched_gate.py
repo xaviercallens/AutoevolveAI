@@ -94,16 +94,21 @@ def test_all_honest_candidates_pass_in_one_invocation(verifier) -> None:
         f"{out['invocations']}; otherwise there is no amortisation"
     )
     assert out["invocations"] < out["invocations_if_run_individually"]
+    assert "none needed" in str(out["isolation_strategy"]).lower()
 
 
-def test_isolation_names_the_single_culprit(verifier) -> None:
-    """Atomicity means the batch fails as a whole; the culprit must still be named.
+def test_the_single_culprit_is_named_in_one_invocation(verifier) -> None:
+    """The culprit is named by the kernel, so nothing has to be isolated.
 
-    Isolation is a flat fall-back to individual runs, not a bisection. Bisection
-    was implemented first and measured worse: with ~97% of an invocation being
-    fixed cost, every branch re-pays nearly a whole verification, so at n=8 it
-    cost 11 and 15 invocations against a flat re-run's 9. See
-    results/lean_batching_bisection.json.
+    This file twice encoded a worse strategy. First a bisection, measured worse
+    than a flat re-run (11 and 15 invocations against 9 at n=8, because ~97% of
+    an invocation is fixed cost so every branch re-pays a near-whole
+    verification). Then the flat re-run itself, 1+n. BOTH were solving a problem
+    the wrapper had invented: `verify_file` returned one aggregate failure as soon
+    as the compile exited nonzero, discarding the per-declaration axiom lines Lean
+    had already printed. A failed tactic proof is admitted as `sorryAx` and named,
+    so one invocation yields every verdict. See
+    results/lean_atomicity_is_the_wrapper.json.
     """
     with tempfile.TemporaryDirectory() as td:
         tmp = Path(td)
@@ -119,9 +124,9 @@ def test_isolation_names_the_single_culprit(verifier) -> None:
     assert out["verdicts"]["BisA"] is True
     assert out["verdicts"]["BisB"] is True
     assert out["verdicts"]["BisD"] is True
-    # Flat fall-back: the failed batch, then each of the four individually.
-    assert out["invocations"] == 1 + len(batch), (
-        f"isolation must be flat in the number of failures, got {out['invocations']}"
+    assert out["invocations"] == 1, (
+        f"one invocation must name the culprit, got {out['invocations']}; any more "
+        "means the wrapper is re-running work the kernel already reported"
     )
 
 
@@ -140,10 +145,10 @@ def test_two_culprits_are_both_named(verifier) -> None:
     assert out["failed"] == ["TwoA", "TwoD"], f"both culprits, got {out['failed']}"
     assert out["verdicts"]["TwoB"] is True
     assert out["verdicts"]["TwoC"] is True
-    # The point of the flat strategy: cost does not grow with the failure count.
-    assert out["invocations"] == 1 + len(batch), (
-        "two failures must cost the same as one, which is what makes the "
-        "fall-back preferable to a bisection here"
+    # The property that matters: cost is ONE invocation whatever the failure
+    # count, so the batching break-even condition (1-p)^b > 1/b does not apply.
+    assert out["invocations"] == 1, (
+        f"two failures must still cost one invocation, got {out['invocations']}"
     )
 
 

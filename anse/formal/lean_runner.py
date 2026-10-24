@@ -364,6 +364,110 @@ class LeanKernelVerifier:
             ))
         return results
 
+    def verify_file_per_declaration(
+        self,
+        lean_file: Path | str,
+        timeout_s: float = 1800.0,
+        reject_vacuous: bool = True,
+    ) -> list[LeanVerificationResult]:
+        """Like ``verify_file`` but keeps the kernel's per-declaration report when
+        the compile exits nonzero.
+
+        WHY THIS EXISTS, AND A CORRECTION. `verify_file` returns a single
+        aggregate failure the instant ``returncode != 0``, which made a batch look
+        ATOMIC: one false candidate appeared to destroy every verdict in the file.
+        That was this wrapper's behaviour, not Lean's. Measured on 8 candidates
+        with 2 false, a single invocation exits 1 and still prints all 8 axiom
+        lines -- the 6 true ones carrying exactly the whitelist and the 2 false
+        ones carrying ``sorryAx``:
+
+            'At0.At0_m' depends on axioms: [propext, Classical.choice, Quot.sound]
+            'At2.At2_m' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
+
+        A failed tactic proof is admitted as ``sorryAx``, so it is reported rather
+        than hidden, which is exactly the signal the gate already rejects on.
+
+        WHY DROPPING THE EXIT CODE IS STILL SOUND. Acceptance never rests on the
+        exit code; it rests on three things that remain enforced here:
+          1. the source-forgery scan, which rejects ``#exit`` truncation and
+             ``#print "..."`` spoofing -- so a file cannot fake an axioms line or
+             stop the kernel early and look complete;
+          2. every declared theorem having its OWN axioms line -- a declaration
+             that never elaborated prints nothing and is failed as unchecked;
+          3. that line being free of ``sorryAx`` and of non-whitelisted axioms.
+        A nonzero exit therefore only tells us some declaration failed, which
+        condition 2 or 3 catches by name. Nothing is accepted that
+        ``verify_file`` would have accepted, so this widens the report, never the
+        trust surface.
+        """
+        path = Path(lean_file).resolve()
+        t0 = time.perf_counter()
+        source = path.read_text(encoding="utf-8")
+        forgeries = detect_lean_source_forgeries(source, reject_vacuous=reject_vacuous)
+        if forgeries:
+            elapsed = (time.perf_counter() - t0) * 1000.0
+            reason = "Lean source forgery/vacuity guard rejected file: " + "; ".join(forgeries)
+            logger.error("%s (%s)", reason, path.name)
+            return [_failed(path.name, -2, elapsed, reason)]
+
+        declared = declared_theorems(source)
+        cmd = list(self.lean_cmd) if self.lean_cmd else self._lake_env_cmd()
+        try:
+            res = subprocess.run(
+                [*cmd, str(path)],
+                cwd=str(self.formal_dir),
+                env=self.env,
+                capture_output=True,
+                text=True,
+                timeout=timeout_s,
+            )
+        except subprocess.TimeoutExpired:
+            return [_failed(path.name, -1, (time.perf_counter() - t0) * 1000.0,
+                            f"lean timed out after {timeout_s:.0f}s")]
+        elapsed = (time.perf_counter() - t0) * 1000.0
+        raw = (res.stdout + "\n" + res.stderr).strip()
+        # An interrupted elaboration leaves later declarations unchecked while
+        # earlier axiom lines still look clean, so it is still fatal for the file.
+        if "using 'exit' to interrupt Lean" in raw:
+            return [_failed(path.name, -2, elapsed,
+                            "Lean elaboration interrupted early by #exit: unchecked\n" + raw)]
+        if not declared:
+            return [_failed(path.name, res.returncode, elapsed,
+                            "file declares no theorem/lemma: nothing was verified\n" + raw)]
+
+        printed = parse_axiom_lines(raw)
+        results: list[LeanVerificationResult] = []
+        for name in declared:
+            axioms = _lookup_axioms(name, printed)
+            if axioms is None:
+                results.append(_failed(name, res.returncode, elapsed,
+                                       f"no '#print axioms' line for {name}: unchecked\n" + raw))
+                continue
+            has_sorry = "sorryAx" in axioms
+            untrusted = [a for a in axioms if a not in TRUSTED_AXIOMS and a != "sorryAx"]
+            clean = not has_sorry and not untrusted
+            if untrusted:
+                logger.error("Untrusted axioms in %s: %s -- rejecting", name, untrusted)
+            results.append(LeanVerificationResult(
+                theorem_name=name,
+                compiled_successfully=clean,
+                returncode=res.returncode,
+                elapsed_ms=elapsed,
+                axioms=axioms,
+                has_sorry=has_sorry,
+                energy_score=0.05 + elapsed / 1000.0 if clean else 1000000.0,
+                output=raw,
+                untrusted_axioms=untrusted,
+                hierarchical_energy=compute_hierarchical_lean_energy(
+                    source=source,
+                    output=raw,
+                    compiled_successfully=clean,
+                    has_sorry=has_sorry,
+                    untrusted_axioms=untrusted,
+                ),
+            ))
+        return results
+
     def verify_against_spec(
         self,
         candidate_file: Path | str,
@@ -738,35 +842,44 @@ class LeanKernelVerifier:
         spec instead of inlining it all failed to help: none of them touches the
         fixed term.
 
-        ATOMICITY, AND WHY ISOLATION IS A FLAT FALL-BACK RATHER THAN A
-        BISECTION. A Lean compile is all-or-nothing: one candidate whose
-        obligation is false fails the whole file and yields no per-candidate
-        verdict at all, so a failing batch has to be taken apart.
+        THERE IS NO ISOLATION STAGE, AND TWO EARLIER VERSIONS OF THIS METHOD
+        WERE BUILT AROUND ONE THAT WAS NEVER NEEDED. The belief was that a Lean
+        compile is all-or-nothing, so one false obligation destroyed every verdict
+        in the file and a failing batch had to be taken apart. First by bisection,
+        then -- after measuring bisection as worse (11 and 15 invocations at 2 and
+        4 failures of 8, against 9 for a flat re-run, because at ~97% fixed cost
+        each branch re-pays a near-whole verification) -- by a flat fall-back of
+        1 + n.
 
-        Bisection is the obvious choice and it is the WRONG one here, which was
-        settled by measuring it (`results/lean_batching_bisection.json`). Because
-        roughly 97% of an invocation is fixed cost, every bisection branch
-        re-pays almost a whole verification, so its O(k log n) invocations
-        overtake the n of a flat re-run almost immediately. Measured at n = 8:
+        Both were solving a problem the WRAPPER had invented. `verify_file`
+        returned a single aggregate failure the instant the compile exited
+        nonzero, discarding the per-declaration axiom lines the kernel had
+        already printed. Measured on 8 candidates with 2 false, one invocation
+        exits 1 and still prints all 8 lines, the false ones carrying `sorryAx`:
 
-            failures   bisection   flat fall-back   individual
-                   0           1                1            8
-                   1           7                9            8
-                   2          11                9            8
-                   4          15                9            8
+            'At0.At0_m' depends on axioms: [propext, Classical.choice, Quot.sound]
+            'At2.At2_m' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
 
-        So isolation runs every candidate once instead: 1 + n invocations, flat
-        in the number of failures, never worse than 9 here against bisection's
-        11 and 15.
+        So this method now runs ONE invocation at any failure rate, via
+        `verify_file_per_declaration`, and reads a verdict per candidate off the
+        kernel's own report. Measured at n = 8, with every culprit correctly
+        named and no false candidate accepted at any rate:
 
-        THE SAVING IS CONFINED TO A HIGH ACCEPTANCE RATE, and this is the honest
-        limit of the whole idea. Batching is 8x when everything passes and a net
-        LOSS from two failures in eight onward -- a break-even acceptance rate
-        somewhere around 75-88%, not the 84% FAILURE rate an earlier and
-        incorrect calculation suggested. An evolutionary search in which most
-        candidates fail is therefore the regime where batching costs more than
-        verifying one at a time, and `invocations` is returned so a caller can
-        measure that rather than assume the saving.
+            failures   invocations   wall clock
+                   0             1      10.38 s
+                   1             1      10.21 s
+                   2             1      10.88 s
+                   4             1      12.73 s
+                   8             1      14.19 s
+
+        against 8 individual proofs at a 6.36 s median, i.e. 50.88 s.
+
+        THE BREAK-EVEN CONDITION NO LONGER BINDS. An earlier version of this
+        docstring derived that batching pays only while `(1-p)^b > 1/b`, making
+        the high-failure regime an evolutionary search occupies a barrier. That
+        condition was a consequence of charging for isolation. With none to
+        charge for, the saving is b at ANY failure rate. `invocations` is still
+        returned so a caller measures the saving rather than assuming it.
 
         NAME COLLISIONS ARE REFUSED UP FRONT. `_lookup_axioms` resolves a
         namespace-relative name by unique suffix and returns None when two
@@ -826,8 +939,12 @@ class LeanKernelVerifier:
 
         invocations = [0]
 
-        def compile_group(group: "list[dict[str, object]]") -> bool:
-            """True when every candidate in the group elaborates cleanly."""
+        def compile_group(group: "list[dict[str, object]]") -> dict[str, bool]:
+            """Per-candidate verdicts from ONE invocation.
+
+            A failing candidate is admitted as `sorryAx` and reported by name, so
+            there is nothing to isolate -- see verify_file_per_declaration.
+            """
             imports: list[str] = []
             spec_body: list[str] = []
             for line in spec_src.splitlines():
@@ -868,38 +985,35 @@ class LeanKernelVerifier:
                 audit = Path(td) / "BatchDefEqAudit.lean"
                 audit.write_text(combined, encoding="utf-8")
                 invocations[0] += 1
-                results = self.verify_file(audit, timeout_s=timeout_s, reject_vacuous=True)
-            if not results:
-                return False
-            wanted = {
-                defeq_theorem_name(name)
-                for entry in group
-                for name in entry["obligations"]  # type: ignore[union-attr]
-            }
-            checked = sum(
-                1
-                for r in results
-                if r.theorem_name in wanted
-                and r.compiled_successfully
-                and not r.has_sorry
-                and not r.untrusted_axioms
-            )
-            every_clean = all(
-                r.compiled_successfully and not r.has_sorry and not r.untrusted_axioms
-                for r in results
-            )
-            return every_clean and checked == len(wanted)
+                results = self.verify_file_per_declaration(
+                    audit, timeout_s=timeout_s, reject_vacuous=True
+                )
+            by_name = {r.theorem_name: r for r in results}
+            verdicts_local: dict[str, bool] = {}
+            for entry in group:
+                cand_id = str(entry["id"])
+                obligations = entry["obligations"]  # type: ignore[assignment]
+                ok = True
+                for thm_name in obligations:  # type: ignore[union-attr]
+                    r = by_name.get(defeq_theorem_name(thm_name))
+                    # No row at all means the obligation was never elaborated, so
+                    # it is unchecked and must fail -- never pass by omission.
+                    if (
+                        r is None
+                        or not r.compiled_successfully
+                        or r.has_sorry
+                        or r.untrusted_axioms
+                    ):
+                        ok = False
+                        break
+                verdicts_local[cand_id] = ok
+            return verdicts_local
 
-        verdicts: dict[str, bool] = {}
-        # Batch once; if it fails, verify each candidate individually. Flat in
-        # the number of failures, and measured cheaper than bisecting -- see the
-        # table in this method's docstring.
-        if compile_group(loaded):
-            for entry in loaded:
-                verdicts[str(entry["id"])] = True
-        else:
-            for entry in loaded:
-                verdicts[str(entry["id"])] = compile_group([entry])
+        # ONE invocation, whatever the failure rate. There is no isolation stage
+        # because there is nothing to isolate: the kernel names every candidate.
+        verdicts: dict[str, bool] = compile_group(loaded)
+        for entry in loaded:
+            verdicts.setdefault(str(entry["id"]), False)
         return {
             "passed": all(verdicts.get(str(e["id"]), False) for e in loaded),
             "spec_file": str(spec_path),
@@ -907,7 +1021,10 @@ class LeanKernelVerifier:
             "candidates": len(loaded),
             "invocations": invocations[0],
             "invocations_if_run_individually": len(loaded),
-            "isolation_strategy": "batch once, then flat fall-back to individual runs",
+            "isolation_strategy": (
+                "none needed: one invocation yields a per-candidate verdict, since a "
+                "failed proof is admitted as sorryAx and reported by name"
+            ),
             "saving_realised": round(len(loaded) / max(1, invocations[0]), 2),
             "verdicts": verdicts,
             "failed": sorted(k for k, v in verdicts.items() if not v),

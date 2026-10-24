@@ -823,3 +823,238 @@ triangular Hilbert constant), each preregistered and committed before its confir
 - **LeanBert does not exist here**; the named-but-absent tool was reported, not simulated.
 - **Pipes still hide exit codes.** A Lean compile piped to `head` showed exit 0 over two type
   errors; the recorded run redirects to a file and appends Lean's own exit code.
+
+
+## 25. Peer-Review Hardening & Cross-Corpus Synthesis (`openai/math` + `MavNan` / `NavierStokesAndEuler`) (2026-10-18)
+
+Lessons derived from the external peer review of the 10-hypothesis fluid-hierarchy manuscript (`DyadicNavierStokesRegulator`, v2.0 DOI `10.5281/zenodo.23459268`), the 405-challenge `openai/math` Comparator audit (`docs/OPENAI_MATH_STUDY.md`), and the `OpenAINavierStokesEuler` / `MechanicaFluidorum` (`MavNan`) formalization (`lean_formalization/Validity/ModelValidity.lean`):
+
+### 25a. Single-Source-of-Truth JSON-to-LaTeX Synchronization Gate
+- **What went wrong in v1.0:** Figure 3(a) plotted a preliminary bar height ($D = 1.33$) for the perfect-square shell $|k|^2 = m^2$ while Table 3 and Section 5 reported $D = 0.4278$ from a different candidate slice, and the Abstract contained a transcription typo ($0.4288$ vs. $0.4278$).
+- **Rule produced:** Never hardcode numbers separately in figure plotting code, LaTeX `tabular` rows, or abstract prose. Every table row and figure bar height must be dynamically populated from the exact same Python dictionary written to `results/<study>/exact_*_harness.json`, and gated by `verify_manuscript_data_consistency` in `anse/formal/lean_runner.py`.
+
+### 25b. Scale-Invariant Unit-Energy Sphere Witnesses (No Unnormalized Scaling Strawmen)
+- **What went wrong in v1.0:** Refuting instantaneous coercive enstrophy damping $\frac{d\Omega}{dt} = 3S - \nu D_\alpha \le 0$ using an unnormalized state $a = (2, 2, 0, \dots)$ with kinetic energy $2E_1 = 8$ was rightly criticized by referees as a scaling-homogeneity artifact (since $S$ is cubic and $D_\alpha$ is quadratic in $a$).
+- **Rule produced:** Every finite-dimensional counterexample witness in a homogeneous PDE/ODE hierarchy must be normalized onto the **unit-energy sphere** ($2E = \sum a_n^2 = 1$, e.g. rational Pythagorean wavepackets $(a_0, a_1) = (15/17, 8/17)$ with $15^2 + 8^2 = 17^2$) and expressed in terms of an explicit dimensionless control parameter (Reynolds number $Re = 1/\nu$).
+
+### 25c. Closed vs. Open Lattice Balls & The 1D Collinear Axis Enrichment Trap
+- **What went wrong in v1.0:** Text wrote $\Lambda_6 = \{k \in \mathbb{Z}^3 \setminus \{0\} : |k|^2 \le 36\}$ ($924$ modes) while a legacy script used strict inequality $|k|^2 < 36$ ($894$ modes, omitting the $30$ modes on $|k|^2 = 36$). Furthermore, the perfect-square radial shell $S_{\mathrm{sq}} = \{|k|^2 = m^2\}$ ($|S_{\mathrm{sq}}| = 108$) actually *enriches* triads ($D = 1.3305 > 1$) because it contains all coordinate-axis modes $(\pm m, 0, 0)$, whose 1D collinear sums $(\pm(m_1 \pm m_2), 0, 0)$ remain perfect squares.
+- **Rule produced:** Always assert exact mode counts ($|\Lambda_6| = 924$, $|T(\Lambda_6)| = 398{,}190$) in the harness. To achieve genuine arithmetic triad depletion on $\mathbb{Z}^3 \setminus \{0\}$, restrict to **prime norm-square shells** $S_{\mathrm{prime}} = \{|k|^2 \in \mathbb{P}\}$ ($|S_{\mathrm{prime}}| = 236$, $D = 0.5716 < 1$), which eliminate all coordinate-axis modes ($m^2 \notin \mathbb{P}$) and force every triad to couple through the unique even prime shell $|k|^2 = 2$ by parity.
+
+### 25d. Closing the `openai/math` Comparator Definition-Hole & `MavNan` `def ... := sorry` Exploits
+- **What we found across `openai/math` and `MavNan`:**
+  1. In `openai/math` (`Comparator/Compare.lean`), `definitionHoleMatches` checks only `(name, levelParams, type, safety)` of definitions listed in `definition_names`, not their bodies (`9/405` challenges: `Brenier`, `DefocusingNLS`, `ElementaryPositivity`, `EuclideanFiveColor`, `KServer`, `Naimark`, `OccupiedOverlap`, `Rokhlin`, `SpinAngle`). A candidate setting `def MainStatement : Prop := True` passes signature-only verification.
+  2. In `OpenAINavierStokesEuler` (`EulerCensorship.lean`, documented in `REVIEW_AND_NEW_DIRECTION.md` §2), a helper filter was defined via `def ... := sorry` while the downstream theorem concluded `True`.
+- **Rule produced:** `detect_lean_source_forgeries` and `verify_definition_holes_against_spec` in `anse/formal/lean_runner.py` now reject both `FORGERY_VACUOUS_ALIAS` (`def/abbrev ... := True/Trivial`) and `FORGERY_DEFINITION_SORRY` (`def/abbrev ... := sorry`), and verify body-level equality between `Spec.lean` and candidate modules.
+
+### 25e. Mandatory Analytical Proofs & Zero Overfull-Box Typesetting Gate
+- **Rule produced:** Every `\begin{theorem}` in an Elenchus manuscript must be followed by a complete analytical `\begin{proof}...\end{proof}` (verified by `verify_manuscript_data_consistency`), Lean 4 theorem names must be cited via `\path{...}` inside the theorem body rather than overflowing `\begin{theorem}[...]`, and wide tables must use `\resizebox{\textwidth}{!}{...}`.
+
+## 26. Karpathy `autoresearch` / `leanautoresearch` 10-to-5 Funnel & Multi-Corpus Synthesis (`FLT` + `OpenAI NSE` + `OpenAI Math` + `LeanMaster`) (2026-10-19)
+
+When tackling complex cross-domain mathematical problems spanning number theory (`anthropics-flt`, `xaviercallens-xflt`), PDE/kinetic censorship (`OpenAI-NSE-Epistemic-Audit`, `OpenAINavierStokesEuler`), analytic number theory / harmonic analysis (`results/openai_math`), and modular lattices (`SocrateAI-Scientific-Agora-LeanMaster`), we integrate Karpathy's `autoresearch` / `leanautoresearch` architecture (`/home/xavkal/xdev/SocrateAI-Scientific-Agora-LeanMaster/leanautoresearch/`) with the ANSE 5-tier Elenchus ledger:
+
+### 26a. Upfront 10-Hypothesis Formulation (`prepare.py` / Screening Registry)
+- Rather than committing blindly to a single monolithic conjecture or cherry-picking trivial arithmetic lemmas (such as `2^4 = 16` or `1 + 22 + 1 = 24` in early `FermatModularBridge.lean`), elaborate **10 mathematically distinct, falsifiable hypotheses (`AR.H1`–`AR.H10`) upfront** across the target corpora.
+- Each upfront hypothesis must specify:
+  1. Its **source corpus anchor** (`anthropics-flt`, `OpenAI-NSE-Epistemic-Audit`, `openai/math`, `LeanMaster`),
+  2. Its **formal Lean 4 statement** (without `True` aliases or `def ... := sorry`),
+  3. Its **exact-$\mathbb{Q}$ / integer symbolic witness test** in Python, and
+  4. Whether it is a **positive structural law** or a **sharp obstruction / counterexample**.
+
+### 26b. Fast `autoresearch` Triage & `results.tsv` Ranking (`10 -> Top 5`)
+- Run an automated screening loop over all 10 upfront hypotheses under a fixed evaluation budget, logging every candidate to `results/<study>/autoresearch_10_hypotheses.tsv` with columns:
+  `hypothesis_id`, `corpus_domain`, `epistemic_polarity`, `lean_status`, `sorry_count`, `def_holes_verified`, `witness_count`, `compile_ms`, `autoresearch_score`, `funnel_decision` (`TOP5_DEEP_DIVE` vs. `SCREENED_BASELINE`).
+- Compute the composite **Karpathy `autoresearch` selection score**:
+  $$S_{\mathrm{AR}}(H_i) = 0.35 \, \mathcal{D}_{\mathrm{proof}}(H_i) + 0.25 \, \mathcal{C}_{\mathrm{bridge}}(H_i) + 0.20 \, \mathcal{W}_{\mathbb{Q}}(H_i) + 0.20 \, \mathcal{F}_{\mathrm{sharp}}(H_i)$$
+  where $\mathcal{D}_{\mathrm{proof}}$ measures non-tautological Lean 4 proof depth (penalizing single-line `norm_num` arithmetic while rewarding multi-step algebraic/analytic derivations such as coprime $c_4$ non-divisibility, $p$-adic valuation divisibility, Fréchet derivative vanishing, or Gibbs convex entropy minimization), $\mathcal{C}_{\mathrm{bridge}}$ measures cross-corpus synthesis, $\mathcal{W}_{\mathbb{Q}}$ measures exact rational witness richness, and $\mathcal{F}_{\mathrm{sharp}}$ measures obstruction/threshold sharpness.
+- Select the **5 highest-scoring hypotheses (`TOP-5`)** for exhaustive multi-part deep-dive formalization and analytical proof exposition, while retaining the full 10-hypothesis screening table in `results.tsv` and the manuscript for complete preregistered transparency.
+
+### 26c. Non-Vacuous Cross-Corpus Mathematical Anchors
+- **Fermat's Last Theorem (`anthropics-flt`):** Formalize genuine Frey–Hellegouarch Weierstrass invariants ($E_P : y^2 + xy = x^3 + \frac{b^p - 1 - a^p}{4}x^2 - \frac{a^p b^p}{16}x$), proving $\Delta(E_P) \cdot 2^8 = (abc)^{2p}$, $c_4(E_P) = (c^p)^2 - (ab)^p$, coprime semistability $q \mid abc \implies q \nmid c_4(E_P)$, and the Ribet level-lowering $p$-adic valuation dichotomy ($p \mid v_\ell(\Delta(E_P))$ for odd $\ell \neq 2$ vs. $p \nmid v_2(\Delta(E_P))$ at $\ell = 2$ for prime $p \ge 5$).
+- **OpenAI Navier–Stokes Claim Audit (`OpenAI-NSE-Epistemic-Audit`):** Formalize the periodic mean-velocity / BKM admissibility exit (`CandidateProperties` $\implies$ every gradient bound $C$ and Knudsen/Mach admissibility threshold $c^2/\nu$ is violated near $t = 1$), the Fréchet linearization invisibility of Leray-$\alpha$ regularization at rest ($D N_\alpha(0) = 0$ while viscous damping $\nu k^2$ exceeds any kinetic collision cap $1/\tau$), the von Kármán–Tao cascade Reynolds divergence ($Re_n = Re_0 s^{3n}$), and the nonlinear discrete-velocity BGK Gibbs $H$-theorem ($H_w(f_{\mathrm{eq}}) \le H_w(f)$).
+
+## 27. External Referee Peer-Review Remediation & `ARGOS-PEER-001..007` Gates (2026-10-19)
+
+Lessons derived from the external Peer Review Report on Paper 1 (*"Frey-Hellegouarch Weierstrass Semistability, Ribet Level-Lowering p-Adic Valuation Dichotomy, and Exact Hamiltonian Conservation via Dual-Number Relaxation"*) and codified into [`anse/elenchus/scientific_swarm.py`](file:///home/xavkal/xdev/AutoevolveAI/anse/elenchus/scientific_swarm.py) (`EXTERNAL_REFEREE_REMEDIATION_LEDGER`) and [`.agents/skills/elenchus-scientific-swarm/SKILL.md`](file:///home/xavkal/xdev/AutoevolveAI/.agents/skills/elenchus-scientific-swarm/SKILL.md):
+
+1. **`ARGOS-PEER-001` (Epistemic Domain Disconnect & Bifurcation Gate):**
+   - *Finding:* Stitching discrete arithmetic geometry over $\mathbb{Z}, \mathbb{Q}, \mathbb{F}_q$ (Frey–Hellegouarch curve $E_P$) with continuous real-valued Hamiltonian ODE integration is a category error—simulating a continuous real ODE flow on a Weierstrass curve provides zero insight into Fermat's Last Theorem or modularity.
+   - *Rule & Gate:* Never claim that continuous real ODE integration of an elliptic curve informs discrete arithmetic modularity. Bifurcated Paper 1 into two standalone domain-pure companion manuscripts—**Paper 1A** (`Paper1A_Frey_Ribet_Lean4_Arithmetic_Geometry.pdf`, pure Lean 4 number theory) and **Paper 1B** (`Paper1B_RRK_DualJVP_HenonHeiles_RustySundials.pdf`, structure-preserving Dual-RRK benchmarked on the physical Hénon–Heiles Hamiltonian $\mathcal{H}_{\mathrm{HH}}$)—and decoupled Part I and Part II in the combined edition.
+2. **`ARGOS-PEER-002` (Level-Set & Governing Equation Algebraic Identity Gate):**
+   - *Finding:* Defining $\mathcal{H}_E(x,y) = \frac{1}{2}y^2 + \frac{1}{2}xy - \frac{1}{3}x^3 - \frac{1}{2}a_2 x^2 - a_4 x$ yields $2\mathcal{H}_E = 0 \iff y^2 + xy = \frac{2}{3}x^3 + a_2 x^2 + 2a_4 x$, mismatching the Weierstrass curve coefficients on $x^3$ and $x$.
+   - *Rule & Gate:* Corrected $\mathcal{H}_E(x,y) = \frac{1}{2}(y^2 + a_1 xy - x^3 - a_2 x^2 - a_4 x)$ in Lean 4 (`weierstrassHamiltonianDual`), Python telemetry, and LaTeX, and formally proved the exact polynomial identity $2\mathcal{H}_E(x,y) = (y^2 + a_1 xy) - (x^3 + a_2 x^2 + a_4 x)$ in `P1_T4_dual_weierstrass_hamiltonian_jvp.1`.
+3. **`ARGOS-PEER-003` (Diophantine Witness & Reductio-ad-Absurdum Validity Gate):**
+   - *Finding:* By Fermat's Last Theorem, no non-zero integer $c$ satisfies $a^p + b^p = c^p$ for $p \ge 5$, so `FreyPackage` is a *reductio ad absurdum* object; furthermore, claiming $a=3, b=64$ in a caption while tabulating $v_3=1, v_2=2$ (which correspond to $(3,4,5)$) is a mathematical contradiction.
+   - *Rule & Gate:* Explicitly distinguish conditional *reductio ad absurdum* theorems over `FreyPackage` from concrete integer valuations evaluated on the generalized Hellegouarch curve $E_{A,B,C}$ attached to coprime $abc$-triples $A + B = C$ ($A = 3^p, B = 4^p, C = 3^p + 4^p$, $\Delta(E_{A,B,C})\cdot 2^8 = (ABC)^2$) with full $v_\ell(A), v_\ell(B), v_\ell(C)$ accounting.
+4. **`ARGOS-PEER-004` (Table Boolean & Remainder Logic Gate):**
+   - *Finding:* Writing `$2 \neq 0$ (False)` under column `$v_2(\Delta_E) \bmod p$` conflates the true inequality $2 \neq 0$ with the boolean `False` of $p \mid v_2(\Delta_E)$.
+   - *Rule & Gate:* Separate integer remainders ($\mathrm{rem} = v_2(\Delta) \bmod p$) from boolean divisibility predicates ($p \mid v_2(\Delta)$ is `False`, $p \nmid v_2(\Delta)$ is `True`), enforced via regex gate in Round 3.
+5. **`ARGOS-PEER-005` (Initial Condition & Exact Rational Energy $\mathcal{H}_0$ Audit Gate):**
+   - *Finding:* Reporting $\mathcal{H}_0 = -0.145395833333$ mismatched the true evaluation at $(-0.35, 0.35)$ due to a parameter swap.
+   - *Rule & Gate:* Every initial energy $\mathcal{H}_0$ must be verified in exact rational arithmetic (`fractions.Fraction`) in Python and cross-checked in Round 3 ($\mathcal{H}_{E,0}(-0.35, 0.35) = -203/4000 = -0.05075$; $\mathcal{H}_{\mathrm{HH},0}(0, 0.2, 0.3, 0.2) = 247/3000 \approx 0.082333333333$).
+6. **`ARGOS-PEER-006` (Anti-Orphan Physics Axiom Gate):**
+   - *Finding:* Including Lorentz magnetic zero-work gyrokinetics $\langle v, v \times B \rangle = 0$ inside `P1_T4` was an unmotivated prompt-leakage artifact.
+   - *Rule & Gate:* Removed the orphan Lorentz clause from `Stmt_P1_T4_DualWeierstrassJVP` and replaced it with the exact level-set identity and the physical Hénon–Heiles Dual JVP, gated in Round 4.
+7. **`ARGOS-PEER-007` (Single-Column OCR-Safe Layout & Divisibility Glyph Gate):**
+   - *Finding:* Two-column 10pt layout caused horizontal line interleaving in linear PDF/OCR parsers and corrupted `\nmid` glyphs.
+   - *Rule & Gate:* Switched all Elenchus Trilogy manuscripts to single-column `\documentclass[11pt]{article}` with `\usepackage{cmap}` and `\usepackage{lmodern}`, verbal disambiguation ("does not divide, $q \nmid c_4(E_P)$"), and `0` `Overfull \hbox` warnings in Round 5.
+
+## 28. 4-Pillar Human-AI Centaur & Humanitarian Frontier Architecture (`ARGOS-CENTAUR-001..004`) (2026-10-19)
+
+In response to the late-2026 autoformalization alignment challenges (13M-line brute-force FLT proofs, `arXiv:2610.08144` *"Navier-Stokes lost in translation"*, and the Fields Medalists' declaration on AI impedance mismatch), the Elenchus Scientific Swarm was upgraded to **Centaur Architecture v4.0** across `formal/ANSE/ElenchusTrilogySpec.lean`, `formal/ANSE/ElenchusTrilogy.lean`, `anse/elenchus/scientific_swarm.py`, and the 5-paper suite:
+
+1. **Pillar 1 (`ARGOS-CENTAUR-001` — Conceptual Compression, Proof-Golfing & Cross-Domain Structural Isomorphism):**
+   - Instead of brute-forcing thousands of lines of unstructured tactics, proofs are compressed via `LeanMaster` reusable tactic combinators (`auto_bound`, `auto_eq`, `prove_pos`, `conv_rate_lt_one`, `energy_monotone`) to **25.88 lines/theorem** across all 16 theorems ($17.39\times$ compression factor vs. unfolded proofs).
+   - Cross-domain connections are restricted to explicit **structural scaling isomorphisms** ($p$-adic valuation filtrations $v_\ell(\Delta)$ $\leftrightarrow$ dyadic Littlewood–Paley cascade shells $2^{n\alpha}$; Ketcheson RRK secant step $\gamma_n$ $\leftrightarrow$ Radii-Polynomial Newton–Kantorovich contraction) without forced equation mashups.
+2. **Pillar 2 (`ARGOS-CENTAUR-002` & `ARGOS-CENTAUR-003` — Closing the "Lost in Translation" Gap, `arXiv:2610.08144`):**
+   - **Mandatory Inhabitation Gate (`ARGOS-CENTAUR-002`):** Because `FreyPackage` is uninhabited for $p \ge 5$ by Wiles' theorem (used strictly for *reductio ad absurdum*), positive arithmetic geometry theorems are paired with `InhabitedHellegouarchPackage` ($A+B=C, \gcd(A,B)=1, A \equiv 3 \pmod 4, 16 \mid B$) and a formal Lean 4 proof of `Nonempty InhabitedHellegouarchPackage` (`instNonemptyInhabitedHellegouarchPackage`, `P1_T5_inhabited_hellegouarch_and_pqc_isogeny.1`) via the concrete witness $(A,B,C) = (15,16,31)$ ($\Delta_{\mathrm{scaled}} = 55353600, c_4 = 721$).
+   - **Bidirectional Back-Translation Critic & Multi-Kernel Axiom Audit (`ARGOS-CENTAUR-003`):** Verifies 100% symbolic parity between back-translated Lean 4 definitions and LaTeX equations and audits `#print axioms` across all 16 theorems (`[propext, Classical.choice, Quot.sound]` only, `0 sorryAx`, 14 `rfl` `DefEq` locks).
+3. **Pillar 3 (Humanitarian Physics-Math Frontiers & Complete Weierstrass ODE Elimination in Paper 1B):**
+   - **Clean Fusion Energy (`P1B_T5_stellarator_fusion_gyrokinetics`):** In Companion **Paper 1B**, the artificial continuous Weierstrass curve ODE is completely discarded in favor of Littlejohn's **3D Stellarator Guiding-Center Plasma Confinement Hamiltonian** $\mathcal{H}_{\mathrm{GC}}(r,z,v_\parallel) = \frac{1}{2}v_\parallel^2 + \mu(B_0 + \frac{1}{2}\beta_r r^2 + \frac{1}{2}\beta_z z^2)$ ($\mathcal{H}_{\mathrm{GC},0} = 5601/10000 = 0.5601$, Dual-RRK drift $9.2149 \times 10^{-15}$ vs. RK4 $6.9490 \times 10^{-9}$) paired with 3D Lorentz magnetic zero-work orthogonality $\langle v, v \times B\rangle = 0$ and the physical Hénon–Heiles potential ($\mathcal{H}_{\mathrm{HH},0} = 247/3000$).
+   - **Computer-Assisted Proofs (CAP) in Navier–Stokes & Climate Fluid Dynamics (`P2_T6_cap_interval_banach_contraction_bridge`):** Formalizes the Radii-Polynomial Banach Contraction Bridge $Y_0 + Z_0 r + Z_2 r^2 < r \implies \kappa = Z_0 + Z_2 r < 1$ ($\kappa = 181/500 = 0.362 < 1$).
+   - **Post-Quantum Cryptography (PQC) (`P1_T5_inhabited_hellegouarch_and_pqc_isogeny`):** Formalizes supersingular $\ell$-isogeny walk degree multiplicativity $\deg(\phi_{k_1+k_2}) = \ell^{k_1+k_2} = \ell^{k_1}\ell^{k_2}$ ($\ell^8 \in \{256, 6561, 390625\}$ for $\ell \in \{2,3,5\}$).
+4. **Pillar 4 (`ARGOS-CENTAUR-004` — Human-AI Centaur Loop, Calibrated Epistemic Doubt & Hypothesis-Necessity Counterexamples):**
+   - Separates technical gate pass rate (`overall_epistemic_score: 1.0`) from non-echo-chamber calibrated epistemic confidence (`centaur_calibrated_epistemic_score: 0.915`), and requires explicit **Hypothesis-Necessity Counterexamples** (e.g., dropping $\gcd(A,B)=1$ at $(3,6,9) \implies 3 \mid 162 \wedge 3 \mid 63$), surfaced analytical obstructions, and interactive human mathematician conjectures.
+
+
+## 29. Reticulata: ten failures that became binding rules (2026-10-23/24)
+
+One sub-project, two days, eight releases. Almost every advance came from a
+control that failed, and the failures fall into a small number of reusable
+shapes. These are binding on any measurement in this repository.
+
+### 29.1 A check that both candidate answers pass is not a check
+
+The Bandelt--Dress isolation index was defined with a `min` where the definition
+takes a `max`, and the error reached two deposited DOIs. The test used to choose
+between the two forms was "the index should equal the internal edge length on a
+tree" --- which **both** forms satisfy, because on a tree the two crossing sums
+are equal. The forms differ only where the four-point condition fails, i.e. only
+on the data the method exists for.
+
+**Rule.** Before asserting a definition, write down what would distinguish it
+from the nearest plausible alternative and check *that*. If your test passes for
+both, you have checked nothing. Reconcile new definitions against anything
+already formalised in the same codebase: a Gromov-product theorem two files away
+would have settled this in one line.
+
+### 29.2 A control must be able to fail; a null must be able to vary
+
+Three separate instances in two days. A prediction asked whether a planted
+recombinant was "implicated", accepting it anywhere in an incompatible split
+pair --- and a split's two sides cover every taxon, so the test was true whenever
+any pair existed. Two experiments reported counts against nulls that produced no
+violating quadruple at all, where any positive observation is significant.
+
+**Rule.** Every control gets an explicit demonstration that it can fail. Every
+null reports its own spread as a computed field, and a null with zero spread
+reports BLOCKED rather than a p-value.
+
+### 29.3 An uncertainty band must be structurally capable of being large
+
+Reaching one resolution band took three attempts. Largest-minus-second-largest
+replicate margin is identically zero whenever two replicates tie --- common with
+small integer counts --- and a zero band declares every verdict resolved.
+Bootstrapping a maximum by resampling the observed values cannot exceed the
+observed maximum *by construction*, so it measures only how much lower the
+quantity might have been. Only drawing more replicates and reporting the running
+maximum answered the question.
+
+**Rule.** For any uncertainty estimate, construct the case where the true
+uncertainty is large and verify the estimator returns a large number. An
+estimator bounded by the statistic it bounds is decorative, not conservative.
+
+### 29.4 Matching a null in expectation is not matching it
+
+Matched-null floors were tuned so the null's *mean* divergence equalled the
+population's. At fixed mutation rate the relaxed-clock simulator's realised
+divergence has a coefficient of variation near 50% spanning 10--28x, so the
+floor --- a maximum over replicates --- was set by whichever replicate drew a
+fast-rate tree. Averaging more replicates does not repair this: averaging shrinks
+the standard error of the *tuning*, not the spread of the *replicates the
+statistic is computed on*.
+
+**Rule.** Measure the across-realisation CV of any quantity you match on. If it
+is comparable to the range being matched, reject-sample on the **realised** value
+per replicate and report the acceptance rate; a population that cannot be matched
+gets no verdict rather than a verdict from an unmatched null.
+
+### 29.5 Never bisect a stochastic objective whose RNG stream is coupled to the tuned parameter
+
+`clonal_tree_relaxed` drew per-branch rate multipliers from the same stream as
+`mutate`, and `mutate` consumes a number of draws that depends on the rate.
+Changing the rate shifted every downstream multiplier, making the objective
+chaotic and non-monotone; bisection wandered and missed its target by up to 77%,
+and only on the relaxed-clock path, because the strict-clock simulator has
+nothing downstream of its mutations.
+
+**Rule.** Separate RNG streams for structure and for noise, or average the
+objective over fixed seeds before optimising it.
+
+### 29.6 Compare exact counts before forming ratios
+
+A margin of `4/5108` against a floor of `4/5123` is greater as a rational and
+means nothing: the same differing-site count, with denominators differing only
+because one alignment was fifteen columns shorter. The guard then needed three
+branches, not two --- written `margin <= floor` it collapsed "below" into
+"unresolved" and erased the one correct negative-control result.
+
+**Rule.** Decide on the integer comparison first (fewer / **equal** / more), then
+the rate. Equal counts over different denominators are UNRESOLVED.
+
+### 29.7 State the axis your difficulty scales in, and validate at the real size
+
+A split certificate requires every straddling quadruple to clear a floor. That
+is `C(n/2,2)^2` conjuncts for a balanced split: 36 at n=8, **784 at n=16**. The
+method scored 35/35 on an 8--10 taxon grid and had **zero power** on real
+16-taxon data. The scope had been written as "one grid, 8--10 taxa", which lists
+parameters without naming the one the requirement scales in.
+
+**Rule.** For any all-must-hold criterion, write down how the conjunct count
+grows with problem size before claiming a result, and test at the size the real
+data has. Emit a near-miss distribution: "failed by 1 of 91" and "failed by 40 of
+91" demand opposite conclusions and are indistinguishable in a pass/fail.
+
+### 29.8 Direction of a defect is a measurement, not an argument
+
+Asked which way a bug biased published floors, I argued "conservative", then
+predicted a specific floor would rise, and was wrong both times. Two defects
+acted oppositely: a non-converging bisection misses either way, while a maximum
+over over-dispersed replicates is always inflated. Measured, inflation dominated
+and every corrected floor came out lower --- and a published *negative* turned out
+to be a near-miss rather than the comfortable clearance reported.
+
+**Rule.** When two defects act in opposite directions, measure the net. And a
+published ratio can be wrong in the safe-looking direction too.
+
+### 29.9 A gate can be measuring your own choice
+
+The admissibility gate refused seven of ten populations, and five of them passed
+the gap clause and failed only the insertion-rate clause. Insertions "dropped"
+are content absent from the *reference*, which projection discards --- a property
+of the reference we picked, not of the data. Anchoring on the longest sequence
+instead of the 6-mer centroid doubled the usable sample, with one insertion rate
+falling **440x** on the reference change alone.
+
+**Rule.** For every gate that refuses data, identify which clause binds and
+whether that clause measures the data or the apparatus. Any rule change must be
+mechanistic, verdict-blind, and applied uniformly --- the sweep that motivates it
+should read no margin and no verdict, so it structurally cannot select for an
+answer.
+
+### 29.10 Verify the artifact changed before reading results
+
+Twice in one session I read numbers off a stale binary: unasserted `str.replace`
+calls silently no-op'd while the build still succeeded, and `echo BUILD_OK` after
+a grep is not a build gate. A test module that failed to compile meant seven new
+tests had never run while I assumed they passed. Separately, a paper's three
+near-miss figures no longer matched the emitted artifact, caught only by a
+mechanical provenance check over all 22 of its quantitative claims.
+
+**Rule.** Assert the match count on every programmatic edit. Gate every run on
+the build with `&&`, never a trailing unconditional echo. Before reading an
+experiment, assert a field only the new code could produce. Read test-result
+lines, not the absence of errors --- a grep that matches nothing looks exactly
+like success. And machine-check every quantitative claim against its artifact
+before deposit.

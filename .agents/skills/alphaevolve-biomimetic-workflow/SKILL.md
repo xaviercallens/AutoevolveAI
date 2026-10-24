@@ -7,6 +7,26 @@ description: Execute the AlphaEvolve + Genetic Algorithm + Biomimetic MAP-Elites
 
 This workflow executes multi-island MAP-Elites + NSGA-II neuro-symbolic genetic evolution ([`anse/autopoiesis/alphaevolve_biomimetic.py`](file:///home/xavkal/xdev/AutoevolveAI/anse/autopoiesis/alphaevolve_biomimetic.py)) integrated with the ANSE Phase 3 Autopoiesis Hypervisor ([`run_phase3_evolution.py --uc 7`](file:///home/xavkal/xdev/AutoevolveAI/run_phase3_evolution.py)), the Gemini 4 Argon evolutionary self-healer ([`generate_and_evolve_hardened`](file:///home/xavkal/xdev/AutoevolveAI/anse/core/self_healing.py)), and the Antigravity CLI Harness (`python -m antigravity_harness alphaevolve`).
 
+## 0. Next generation: ReticuLean
+
+Two things this engine does not do are addressed by
+[`reticulean-evolution`](../reticulean-evolution/SKILL.md) and
+[`docs/RETICULEAN_PROPOSAL.md`](file:///home/xavkal/xdev/AutoevolveAI/docs/RETICULEAN_PROPOSAL.md):
+
+* **No rung of the fitness vector is kernel-checked.** `(latency, memory,
+  metabolic_energy, invariant_error)` are all empirical, and `ARGOS-HARD-008`
+  blocks only the crudest input-ignoring gaming. ReticuLean adds a Lean-4 rung
+  read via `#print axioms`, which `sorry` cannot pass.
+* **Whether `homologous_crossover` actually recombines is never measured.**
+  ReticuLean treats a candidate's behavioural profile over a probe battery as an
+  aligned sequence, so the Reticulata quartet certificate decides it. Validated
+  on synthetic arms: the margin separates clonal from recombinant populations,
+  the violating count does not survive saturation, and both rate extremes are
+  unusable.
+
+Use this skill to run the existing engine; use `reticulean-evolution` when adding
+an operator, or when asked whether crossover contributes at all.
+
 ## 1. Biomimetic Total Free Energy & 4D NSGA-II Pareto Objective
 
 Every candidate genome is evaluated against both the scalar biomimetic Hamiltonian:

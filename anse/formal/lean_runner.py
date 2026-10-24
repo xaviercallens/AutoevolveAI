@@ -519,6 +519,198 @@ class LeanKernelVerifier:
             "results": results,
         }
 
+    def verify_batch_against_spec(
+        self,
+        candidates: "Sequence[tuple[str, Path | str, dict[str, str]]]",
+        spec_file: Path | str,
+        timeout_s: float = 1800.0,
+    ) -> dict[str, object]:
+        """Verify many candidates against one frozen spec, amortising the fixed cost.
+
+        Measured on this host (`results/lean_batching.json`, 8 candidates, 3
+        repeats): 97% of a single verification is fixed per-invocation overhead
+        -- a candidate's own elaboration is about 0.14 s against 5.23 s fixed --
+        so eight candidates in one invocation take a median 6.35 s against 45.47 s
+        for eight invocations, a 7.16x saving with a 1.02x same-input spread.
+        That is why caching a verdict, modularising a genome or importing the
+        spec instead of inlining it all failed to help: none of them touches the
+        fixed term.
+
+        ATOMICITY, AND WHY ISOLATION IS A FLAT FALL-BACK RATHER THAN A
+        BISECTION. A Lean compile is all-or-nothing: one candidate whose
+        obligation is false fails the whole file and yields no per-candidate
+        verdict at all, so a failing batch has to be taken apart.
+
+        Bisection is the obvious choice and it is the WRONG one here, which was
+        settled by measuring it (`results/lean_batching_bisection.json`). Because
+        roughly 97% of an invocation is fixed cost, every bisection branch
+        re-pays almost a whole verification, so its O(k log n) invocations
+        overtake the n of a flat re-run almost immediately. Measured at n = 8:
+
+            failures   bisection   flat fall-back   individual
+                   0           1                1            8
+                   1           7                9            8
+                   2          11                9            8
+                   4          15                9            8
+
+        So isolation runs every candidate once instead: 1 + n invocations, flat
+        in the number of failures, never worse than 9 here against bisection's
+        11 and 15.
+
+        THE SAVING IS CONFINED TO A HIGH ACCEPTANCE RATE, and this is the honest
+        limit of the whole idea. Batching is 8x when everything passes and a net
+        LOSS from two failures in eight onward -- a break-even acceptance rate
+        somewhere around 75-88%, not the 84% FAILURE rate an earlier and
+        incorrect calculation suggested. An evolutionary search in which most
+        candidates fail is therefore the regime where batching costs more than
+        verifying one at a time, and `invocations` is returned so a caller can
+        measure that rather than assume the saving.
+
+        NAME COLLISIONS ARE REFUSED UP FRONT. `_lookup_axioms` resolves a
+        namespace-relative name by unique suffix and returns None when two
+        declarations share one, so colliding names across batched candidates do
+        not silently confuse them -- they fail as unverified. That is the safe
+        direction but an opaque one, so a collision is reported here as a
+        collision instead of surfacing later as a mystery verification failure.
+        """
+        import hashlib
+        import tempfile
+
+        spec_path = Path(spec_file).resolve()
+        spec_src = spec_path.read_text(encoding="utf-8")
+        spec_sha256 = hashlib.sha256(spec_src.encode("utf-8")).hexdigest()
+
+        loaded: list[dict[str, object]] = []
+        for cand_id, cand_file, obligations in candidates:
+            cand_path = Path(cand_file).resolve()
+            src = cand_path.read_text(encoding="utf-8")
+            loaded.append({
+                "id": cand_id,
+                "path": str(cand_path),
+                "source": src,
+                "obligations": dict(obligations),
+                "declared": declared_theorems(src),
+            })
+
+        # Refuse collisions before compiling anything.
+        seen: dict[str, str] = {}
+        collisions: list[str] = []
+        for entry in loaded:
+            for name in entry["declared"]:  # type: ignore[union-attr]
+                owner = seen.get(name)
+                if owner is not None and owner != entry["id"]:
+                    collisions.append(f"{name!r} declared by both {owner!r} and {entry['id']!r}")
+                seen[name] = str(entry["id"])
+        if collisions:
+            return {
+                "passed": False,
+                "blocked": "BLOCKED: declaration name collisions across batched candidates; "
+                           "each must declare globally unique names: " + "; ".join(collisions),
+                "spec_sha256": spec_sha256,
+                "invocations": 0,
+                "verdicts": {str(e["id"]): None for e in loaded},
+            }
+
+        empty = [str(e["id"]) for e in loaded if not e["obligations"]]
+        if empty:
+            return {
+                "passed": False,
+                "blocked": "BLOCKED: candidates with an empty obligation map cannot pass, "
+                           "since a vacuous audit verifies nothing: " + ", ".join(empty),
+                "spec_sha256": spec_sha256,
+                "invocations": 0,
+                "verdicts": {str(e["id"]): None for e in loaded},
+            }
+
+        invocations = [0]
+
+        def compile_group(group: "list[dict[str, object]]") -> bool:
+            """True when every candidate in the group elaborates cleanly."""
+            imports: list[str] = []
+            spec_body: list[str] = []
+            for line in spec_src.splitlines():
+                stripped = line.strip()
+                if stripped.startswith("import "):
+                    if stripped not in imports:
+                        imports.append(stripped)
+                else:
+                    spec_body.append(line)
+            bodies: list[str] = []
+            obligation_lines: list[str] = []
+            axiom_lines: list[str] = []
+            for entry in group:
+                for line in str(entry["source"]).splitlines():
+                    stripped = line.strip()
+                    if stripped.startswith("import "):
+                        if stripped.endswith(spec_path.stem):
+                            continue
+                        if stripped not in imports:
+                            imports.append(stripped)
+                    else:
+                        bodies.append(line)
+                obligation_lines.extend(
+                    defeq_obligation_lines(entry["obligations"])  # type: ignore[arg-type]
+                )
+                axiom_lines.extend(
+                    f"#print axioms {defeq_theorem_name(name)}"
+                    for name in entry["obligations"]  # type: ignore[union-attr]
+                )
+            combined = (
+                "\n".join(imports) + "\n\n"
+                + "\n".join(spec_body) + "\n\n"
+                + "\n".join(bodies) + "\n"
+                + "\n".join(obligation_lines) + "\n"
+                + "\n".join(axiom_lines) + "\n"
+            )
+            with tempfile.TemporaryDirectory(prefix="lean_batch_audit_") as td:
+                audit = Path(td) / "BatchDefEqAudit.lean"
+                audit.write_text(combined, encoding="utf-8")
+                invocations[0] += 1
+                results = self.verify_file(audit, timeout_s=timeout_s, reject_vacuous=True)
+            if not results:
+                return False
+            wanted = {
+                defeq_theorem_name(name)
+                for entry in group
+                for name in entry["obligations"]  # type: ignore[union-attr]
+            }
+            checked = sum(
+                1
+                for r in results
+                if r.theorem_name in wanted
+                and r.compiled_successfully
+                and not r.has_sorry
+                and not r.untrusted_axioms
+            )
+            every_clean = all(
+                r.compiled_successfully and not r.has_sorry and not r.untrusted_axioms
+                for r in results
+            )
+            return every_clean and checked == len(wanted)
+
+        verdicts: dict[str, bool] = {}
+        # Batch once; if it fails, verify each candidate individually. Flat in
+        # the number of failures, and measured cheaper than bisecting -- see the
+        # table in this method's docstring.
+        if compile_group(loaded):
+            for entry in loaded:
+                verdicts[str(entry["id"])] = True
+        else:
+            for entry in loaded:
+                verdicts[str(entry["id"])] = compile_group([entry])
+        return {
+            "passed": all(verdicts.get(str(e["id"]), False) for e in loaded),
+            "spec_file": str(spec_path),
+            "spec_sha256": spec_sha256,
+            "candidates": len(loaded),
+            "invocations": invocations[0],
+            "invocations_if_run_individually": len(loaded),
+            "isolation_strategy": "batch once, then flat fall-back to individual runs",
+            "saving_realised": round(len(loaded) / max(1, invocations[0]), 2),
+            "verdicts": verdicts,
+            "failed": sorted(k for k, v in verdicts.items() if not v),
+        }
+
     def probe_footprints(
         self,
         module_name: str,

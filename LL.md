@@ -1164,6 +1164,37 @@ one false obligation fails whole and must be re-run individually to isolate, so
 batching is a net loss only above an **84.2%** failure rate, which no realistic
 search reaches.
 
+**And a correction to the follow-up itself, which I got wrong twice.** The 7.16×
+is the all-pass case only, and I reported it as a win "for any realistic search".
+It is not. Two further measurements settled it.
+
+First, isolation. Atomicity means a failing batch names nobody, so it must be
+taken apart, and I asserted without measuring that a bisection would beat
+re-running everyone. The opposite is true: because ~97% of an invocation is fixed
+cost, every bisection branch re-pays almost a whole verification. Measured at
+n = 8, bisection cost **11 and 15** invocations at two and four failures against
+**8** for plain individual runs and a flat **9** for batch-then-fall-back. The
+flat fall-back is shipped; the bisection is kept in
+`results/lean_batching_bisection.json` so the comparison stays auditable.
+
+Second, the break-even. My 84.2% figure was computed for a strategy I then
+replaced, and never recomputed. The correct model is exact and cross-checks
+against both measurements (8.00× predicted against 8.0× measured at all-pass;
+0.89× against 0.89× conditional on a failure): for batch size `b` and
+per-candidate failure rate `p`, expected invocations per candidate are
+`[q + (1-q)(1+b)] / b` with `q = (1-p)^b`, so
+
+> **batching pays if and only if `(1-p)^b > 1/b`.**
+
+That is a break-even failure rate of about 29% at `b = 4`, 23% at `b = 8` and 10%
+at `b = 32`, and the optimal batch size *shrinks* as failures rise — 5 at
+`p = 0.05`, 3 at `p = 0.20`. Above roughly a 30% failure rate no batch size
+helps at all. So the lever is real for a gate with a high acceptance rate and
+worthless for one with a low acceptance rate — which is the regime an
+evolutionary search sits in by construction, since most candidates fail by
+design. **The 7.16× headline was measured in the one regime the intended
+application is not in.**
+
 The magnitude correction: §29.13 above quotes the fixed cost as a median 17.61 s,
 measured **before** `lake build ANSE.VerletSymplectic` had produced an olean, so
 the spec was re-elaborated from source on every run and the caches were colder.

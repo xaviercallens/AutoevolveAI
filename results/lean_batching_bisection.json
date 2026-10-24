@@ -1,0 +1,121 @@
+{
+  "measurement": "realised invocation cost of batched verification, and why isolation is a flat fall-back rather than a bisection",
+  "why": "LL.md 29.13's follow-up left isolation unmeasured and asserted a bisection would be cheaper than re-running every candidate. Measuring it refuted that: with ~97% of an invocation fixed, each bisection branch re-pays nearly a whole verification.",
+  "bisection_measured_first": [
+    {
+      "scenario": "0 of 8",
+      "invocations": 1
+    },
+    {
+      "scenario": "1 of 8",
+      "invocations": 7
+    },
+    {
+      "scenario": "2 of 8",
+      "invocations": 11
+    },
+    {
+      "scenario": "4 of 8",
+      "invocations": 15
+    }
+  ],
+  "flat_fallback_shipped": [
+    {
+      "scenario": "0 of 8 false",
+      "actually_false": 0,
+      "invocations": 1,
+      "individual_would_cost": 8,
+      "wall_clock_s": 7.68,
+      "named_failures": [],
+      "correct": true,
+      "saving_vs_individual": 8.0
+    },
+    {
+      "scenario": "1 of 8 false",
+      "actually_false": 1,
+      "invocations": 9,
+      "individual_would_cost": 8,
+      "wall_clock_s": 61.03,
+      "named_failures": [
+        "Fb3"
+      ],
+      "correct": true,
+      "saving_vs_individual": 0.89
+    },
+    {
+      "scenario": "2 of 8 false",
+      "actually_false": 2,
+      "invocations": 9,
+      "individual_would_cost": 8,
+      "wall_clock_s": 61.73,
+      "named_failures": [
+        "Fb0",
+        "Fb5"
+      ],
+      "correct": true,
+      "saving_vs_individual": 0.89
+    },
+    {
+      "scenario": "4 of 8 false",
+      "actually_false": 4,
+      "invocations": 9,
+      "individual_would_cost": 8,
+      "wall_clock_s": 61.92,
+      "named_failures": [
+        "Fb0",
+        "Fb2",
+        "Fb4",
+        "Fb6"
+      ],
+      "correct": true,
+      "saving_vs_individual": 0.89
+    }
+  ],
+  "conclusion": "Bisection cost 11 and 15 invocations at 2 and 4 failures of 8, against 8 for plain individual runs and a flat 9 for batch-then-fall-back. The flat strategy is shipped. Batching is 8x only at a 100% acceptance rate and is a net loss from two failures in eight onward, so the break-even acceptance rate is roughly 75-88% -- NOT the 84% failure rate an earlier incorrect calculation gave. An evolutionary search where most candidates fail is the regime in which batching costs more than verifying one at a time.",
+  "not_established": [
+    "One run per scenario; invocation counts are exact, wall-clock is a single sample.",
+    "n=8 only. A larger batch raises the all-pass saving and does not change the break-even logic.",
+    "A persistent Lean server was never built; this is batching into one file as the cheap approximation of process reuse."
+  ],
+  "cost_model": {
+    "note": "The measured rows fix the number of failures, so they are CONDITIONAL costs. Over many batches at a per-candidate failure rate p, some batches pass entirely, so the expected cost is more favourable than the conditional-on-failure row suggests. This model is the honest reading and it changes the conclusion.",
+    "expected_invocations_per_candidate": "[q + (1-q)(1+b)] / b, where q = (1-p)^b",
+    "break_even_condition": "batching pays iff (1-p)^b > 1/b",
+    "break_even_failure_rate_by_batch_size": {
+      "2": 0.293,
+      "4": 0.293,
+      "8": 0.229,
+      "16": 0.159,
+      "32": 0.103
+    },
+    "best_batch_size_by_failure_rate": {
+      "0.05": {
+        "batch": 5,
+        "saving": 2.35
+      },
+      "0.1": {
+        "batch": 4,
+        "saving": 1.68
+      },
+      "0.2": {
+        "batch": 3,
+        "saving": 1.22
+      },
+      "0.3": {
+        "batch": 3,
+        "saving": 1.01
+      },
+      "0.5": {
+        "batch": 64,
+        "saving": 0.98
+      }
+    },
+    "cross_check": {
+      "model_all_pass_b8": 8.0,
+      "measured_all_pass": 8.0,
+      "model_conditional_on_failure_b8": 0.89,
+      "measured_conditional": 0.89
+    },
+    "conclusion": "Conditional on a batch containing a failure, batching costs about 12% more than individual runs. In EXPECTATION it still pays while (1-p)^b > 1/b: at b=8 that is a failure rate below about 24%, and the optimal batch size falls as the failure rate rises. So batching is worth having for a gate with a high acceptance rate and the batch size must be tuned to the realised acceptance rate -- it is not a free win and at a 50% failure rate no batch size above 2 helps."
+  }
+}

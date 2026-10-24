@@ -12,6 +12,7 @@ import logging
 import os
 import re
 import subprocess
+import tempfile
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -210,8 +211,20 @@ class LeanKernelVerifier:
         
         # Build check script
         check_script = f"import {module_name}\n#print axioms {theorem_name}\n"
-        temp_check_file = self.formal_dir / ".tmp_axiom_check.lean"
-        
+        # A UNIQUE name, in the same directory as before. This used to be the
+        # fixed `.tmp_axiom_check.lean`, which two concurrent calls would clobber
+        # -- and since the `finally` below unlinks it, one call could delete the
+        # file another was still compiling. No caller runs this concurrently
+        # today (the one concurrent site in the repo submits two `verify_file`
+        # calls, which compile in place and need no temp file), so the hazard was
+        # latent rather than live; it is removed because this function has seven
+        # call sites and nothing stops the eighth from being threaded.
+        handle, temp_name = tempfile.mkstemp(
+            dir=str(self.formal_dir), prefix=".tmp_axiom_check_", suffix=".lean"
+        )
+        os.close(handle)
+        temp_check_file = Path(temp_name)
+
         try:
             temp_check_file.write_text(check_script, encoding="utf-8")
             res = subprocess.run(
@@ -225,15 +238,29 @@ class LeanKernelVerifier:
 
             if res.returncode != 0:
                 logger.error("Lean axiom check failed for %s: %s", theorem_name, raw_output)
+                # `has_sorry` reports what the KERNEL said about the proof, and on
+                # a failed compile it said nothing: the module may simply not
+                # build, or the name may be misspelled. This used to return
+                # has_sorry=True, which fails closed but mislabels the reason --
+                # and these results are serialised into artifacts and training
+                # rows, where "the proof used sorry" and "the module did not
+                # compile" are different facts. Every caller gates on
+                # `compiled_successfully` before reading `has_sorry`, so the
+                # rejection is unchanged; only the attribution is corrected, and
+                # the output now names the clause that bound.
                 return LeanVerificationResult(
                     theorem_name=theorem_name,
                     compiled_successfully=False,
                     returncode=res.returncode,
                     elapsed_ms=elapsed,
                     axioms=[],
-                    has_sorry=True,
+                    has_sorry=False,
                     energy_score=1000000.0,
-                    output=raw_output,
+                    output=(
+                        f"REJECTED: the compile exited {res.returncode}, so the kernel "
+                        f"reported no axioms for {theorem_name}. This is not a sorry "
+                        f"finding -- nothing was verified.\n" + raw_output
+                    ),
                 )
 
             # Parse axioms from output (e.g., depends on axioms: [propext, Classical.choice, Quot.sound])

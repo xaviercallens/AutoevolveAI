@@ -156,7 +156,14 @@ def compute_potential(n: int) -> float:
         candidate_proposals=[optimized_diff],
     )
 
-    assert result["promoted"] is True
+    # The promotion gate now REFUSES rather than promoting when no independent
+    # held-out evaluator, replicate evaluator or negative control is supplied.
+    # It previously defaulted all three to the search number, so stages 2 and 3
+    # reduced to stage 1 and could not fail -- this assertion used to read
+    # `is True` and was ratifying that forced control. The search-stage findings
+    # below are unaffected and still asserted.
+    assert result["promoted"] is False
+    assert "blocked" in result and "heldout_eval_fn" in result["blocked"]
     assert result["champion_energy"] < result["baseline_energy"]
     assert result["delta_energy"] < -40.0
     assert result["archive_total_elites"] >= 3
@@ -214,7 +221,14 @@ def fib(n: int) -> int:
 
     engine = AlphaEvolveBiomimeticEngine(evaluator_fn=eval_fib, num_islands=2, seed=7)
     res = engine.run_evolution_with_hardened_gate(initial_codes=[rec_code], generations=4)
-    assert res["promoted"] is True
+    # The promotion gate now REFUSES rather than promoting when no independent
+    # held-out evaluator, replicate evaluator or negative control is supplied.
+    # It previously defaulted all three to the search number, so stages 2 and 3
+    # reduced to stage 1 and could not fail -- this assertion used to read
+    # `is True` and was ratifying that forced control. The search-stage findings
+    # below are unaffected and still asserted.
+    assert res["promoted"] is False
+    assert "blocked" in res
     assert "lru_cache" in res["champion"]["dominant_code"]
 
     pow_code = """
@@ -362,7 +376,18 @@ def test_strong_ai_coding_hardness_rules_and_generate_and_evolve(tmp_path) -> No
         client=_MockClient(),
         seed=11,
     )
-    assert summary["promoted"] is True
+    # Adoption and promotion are now distinct. `promoted` requires surviving
+    # the three-stage hardened gate, which refuses without an independent
+    # held-out evaluator, replicate evaluator and negative control -- this
+    # caller supplies none, so promotion is withheld and says why. The evolved
+    # champion is still ADOPTED on the weaker basis of a search-stage
+    # improvement plus a clean ARGOS audit, which is what the assertions below
+    # actually establish. The previous `promoted is True` here was reading a
+    # verdict whose stages 2 and 3 could not fail.
+    assert summary["promoted"] is False
+    assert summary["promotion_blocked"], "a withheld promotion must carry its reason"
+    assert summary["champion_adopted"] is True
+    assert "NOT held-out validated" in summary["adoption_basis"]
     assert summary["hardening_passed"] is True
     assert "lru_cache" in summary["final_code"]
     assert summary["attestation_token"] != ""

@@ -169,10 +169,29 @@ def generate_and_evolve_hardened(
         generations=generations,
     )
 
+    # Adoption and promotion are different questions and were conflated here.
+    #
+    # `promoted` means the champion survived the three-stage hardened gate,
+    # which now REFUSES when no independent held-out evaluator, replicate
+    # evaluator or negative control is supplied -- because without them stages 2
+    # and 3 reduced to stage 1 and could not fail. Gating adoption on
+    # `promoted` therefore made this loop inert for every caller in the
+    # repository, none of which supplies those functions.
+    #
+    # Adoption instead requires a champion that measurably improved on the
+    # baseline in the search stage AND passes the ARGOS audit below. That is a
+    # weaker claim than promotion and is reported as such: `promoted` stays
+    # False and `blocked` carries the reason, so no caller can read adoption as
+    # held-out validation.
+    champion = evo_summary.get("champion")
+    search_improved = (
+        champion is not None
+        and isinstance(evo_summary.get("champion_energy"), (int, float))
+        and isinstance(evo_summary.get("baseline_energy"), (int, float))
+        and evo_summary["champion_energy"] < evo_summary["baseline_energy"]
+    )
     champion_code = (
-        evo_summary["champion"]["dominant_code"]
-        if evo_summary.get("promoted") and "champion" in evo_summary
-        else baseline_code
+        champion["dominant_code"] if search_improved else baseline_code
     )
     hardening_engine = ArgosHardeningEngine(
         config=ArgosHardeningConfig(primary_model=resolve_gemini_argos_model(model_name))
@@ -186,6 +205,15 @@ def generate_and_evolve_hardened(
     return {
         "final_code": champion_code,
         "promoted": bool(evo_summary.get("promoted", False) and final_audit.passed),
+        # Why promotion was withheld, when it was. Adoption below is a weaker
+        # claim and must not be read as held-out validation.
+        "promotion_blocked": evo_summary.get("blocked"),
+        "champion_adopted": bool(search_improved and final_audit.passed),
+        "adoption_basis": (
+            "search-stage improvement plus a clean ARGOS audit; NOT held-out validated"
+            if search_improved
+            else "baseline retained"
+        ),
         "baseline_energy": evo_summary.get("baseline_energy"),
         "champion_energy": evo_summary.get("champion_energy"),
         "delta_energy": evo_summary.get("delta_energy"),

@@ -710,6 +710,20 @@ class ASTGeneticOperators:
         return ast.unparse(tree), True
 
 
+def pareto_dominates(a: DiploidGenome, b: DiploidGenome) -> bool:
+    """Pareto dominance over the four minimisation objectives.
+
+    Hoisted out of `compute_pareto_fronts`, where it was a nested function and so
+    unreachable from any test module: a dominance or ordinality test could only
+    be written against the whole front computation, which also applies an energy
+    validity filter and therefore cannot isolate the predicate. The body captures
+    nothing from the enclosing scope, so moving it changes no behaviour.
+    """
+    va = a.objective_vector
+    vb = b.objective_vector
+    return all(x <= y for x, y in zip(va, vb)) and any(x < y for x, y in zip(va, vb))
+
+
 def compute_pareto_fronts(genomes: Sequence[DiploidGenome]) -> list[list[DiploidGenome]]:
     """NSGA-II fast non-dominated sorting + crowding distance across 4 minimization objectives:
     `(latency_ms, memory_mb, metabolic_energy, invariant_error)`.
@@ -722,11 +736,6 @@ def compute_pareto_fronts(genomes: Sequence[DiploidGenome]) -> list[list[Diploid
     if not valid:
         return []
 
-    def _dominates(a: DiploidGenome, b: DiploidGenome) -> bool:
-        va = a.objective_vector
-        vb = b.objective_vector
-        return all(x <= y for x, y in zip(va, vb)) and any(x < y for x, y in zip(va, vb))
-
     n = len(valid)
     dom_sets: list[list[int]] = [[] for _ in range(n)]
     dom_counts: list[int] = [0] * n
@@ -736,9 +745,9 @@ def compute_pareto_fronts(genomes: Sequence[DiploidGenome]) -> list[list[Diploid
         for j in range(n):
             if i == j:
                 continue
-            if _dominates(valid[i], valid[j]):
+            if pareto_dominates(valid[i], valid[j]):
                 dom_sets[i].append(j)
-            elif _dominates(valid[j], valid[i]):
+            elif pareto_dominates(valid[j], valid[i]):
                 dom_counts[i] += 1
         if dom_counts[i] == 0:
             valid[i].pareto_rank = 0
@@ -1125,6 +1134,7 @@ class AlphaEvolveBiomimeticEngine:
         candidate_proposals: Sequence[str] | None = None,
         heldout_eval_fn: Callable[[str], float] | None = None,
         replicates_eval_fn: Callable[[str], Sequence[float]] | None = None,
+        negative_control_fn: Callable[[], bool] | None = None,
     ) -> dict[str, Any]:
         """Run multi-generation AlphaEvolve + Biomimetic search and validate the champion
         through the 3-stage `HardenedAutoresearchLoop` gate.
@@ -1172,15 +1182,71 @@ class AlphaEvolveBiomimeticEngine:
             lower_is_better=True,
         )
 
-        h_fn = heldout_eval_fn or (lambda code: champion.total_energy)
-        r_fn = replicates_eval_fn or (
-            lambda code: [champion.total_energy, champion.total_energy * 0.99, champion.total_energy * 1.01]
-        )
+        # The three promotion stages must be three different tests.
+        #
+        # These two callables used to default to the SEARCH number:
+        #   h_fn = lambda code: champion.total_energy
+        #   r_fn = lambda code: [E, E * 0.99, E * 1.01]
+        # while `best_heldout_metric` and `best_replicate_median` are both
+        # initialised to `baseline_best` above. Since the replicate median of
+        # [E, 0.99E, 1.01E] is exactly E, and `_improves` is
+        # `candidate < current_best`, all three stages reduced to the identical
+        # comparison `champion.total_energy < baseline_best`. Stage 1 passing
+        # therefore GUARANTEED stages 2 and 3, so held-out validation and
+        # replicate stability were structurally incapable of failing and every
+        # promotion verdict from the default path was manufactured. No caller in
+        # this repository supplied either function, so the default path was the
+        # only path.
+        #
+        # A stage that cannot run reports BLOCKED rather than inventing its
+        # input.
+        if heldout_eval_fn is None or replicates_eval_fn is None:
+            missing = [
+                name
+                for name, fn in (
+                    ("heldout_eval_fn", heldout_eval_fn),
+                    ("replicates_eval_fn", replicates_eval_fn),
+                    ("negative_control_fn", negative_control_fn),
+                )
+                if fn is None
+            ]
+            return {
+                "promoted": False,
+                "blocked": (
+                    "BLOCKED: "
+                    + ", ".join(missing)
+                    + " not supplied. Without an independent held-out and "
+                    "replicate evaluator, stages 2 and 3 reduce to stage 1 and "
+                    "cannot fail, so a promotion would carry no evidence. The "
+                    "search-stage numbers below are still reported and are "
+                    "unaffected; only the promotion verdict is withheld."
+                ),
+                "gate_verdict": {
+                    "kept": False,
+                    "blocked": True,
+                    "missing_evaluators": missing,
+                },
+                "baseline_energy": baseline_best,
+                "champion_energy": champion.total_energy,
+                "delta_energy": champion.total_energy - baseline_best,
+                "champion": champion.to_dict(),
+                "archive_total_elites": sum(len(isl.archive) for isl in self.islands),
+                "pareto_front_size": len(fronts[0]) if fronts else 0,
+                "history": self.history,
+            }
+        h_fn = heldout_eval_fn
+        r_fn = replicates_eval_fn
 
+        # `negative_control_ok` used to be the literal `True`, i.e. a negative
+        # control that could not fail. When no control is supplied the gate now
+        # says so in the verdict instead of asserting success on its behalf.
+        negative_control_ok = (
+            bool(negative_control_fn()) if negative_control_fn is not None else False
+        )
         gate_verdict = loop.evaluate_candidate(
             champion.genome_id,
             positive_control_ok=champion.total_energy < MAX_APOPTOSIS_ENERGY * 0.5,
-            negative_control_ok=True,
+            negative_control_ok=negative_control_ok,
             search_fn=lambda: champion.total_energy,
             heldout_fn=lambda: h_fn(champion.dominant_code),
             replicates_fn=lambda: r_fn(champion.dominant_code),

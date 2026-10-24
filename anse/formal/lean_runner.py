@@ -22,10 +22,71 @@ logger = logging.getLogger("LeanRunner")
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 FORMAL_DIR = PROJECT_ROOT / "formal"
 
+import math
+
 # The only axioms a kernel-checked Mathlib proof may depend on. Anything else
 # (e.g. a smuggled `axiom cheat : False`) compiles with exit code 0 and would
 # previously pass this gate — verified empirically on 2026-09-27.
 TRUSTED_AXIOMS: frozenset[str] = frozenset({"propext", "Classical.choice", "Quot.sound"})
+
+
+def compute_hierarchical_lean_energy(
+    source: str,
+    output: str,
+    compiled_successfully: bool,
+    has_sorry: bool,
+    untrusted_axioms: Sequence[str] = (),
+    has_forgery: bool = False,
+    alpha: float = 1.5,
+) -> float:
+    """Compute the Hierarchical Continuous Energy Functional E(tau) for Lean 4 trajectories.
+
+     Implements the 4-regime dense progress-based energy shaping:
+      1. Sound & kernel-verified (E <= 0): -alpha * CompressionRatio(tau)
+      2. Partial elaboration (unsolved goals / localized type errors):
+         100 * (N_unsolved / N_total) + 10 * N_type_errors
+      3. Syntax failure, sorryAx, untrusted axiom, or forgery attempt: 10^6
+    """
+    if has_forgery or has_sorry or untrusted_axioms:
+        return 1000000.0
+    if compiled_successfully:
+        non_empty_lines = [ln for ln in source.splitlines() if ln.strip() and not ln.strip().startswith("--")]
+        compression_ratio = max(0.25, min(4.0, 20.0 / max(len(non_empty_lines), 5)))
+        return round(-alpha * compression_ratio, 4)
+
+    lowered = output.lower()
+    if "unknown identifier" in lowered or "expected token" in lowered or "unexpected end of input" in lowered:
+        return 1000000.0
+
+    unsolved = len(re.findall(r"unsolved goals", lowered))
+    type_errors = len(
+        re.findall(r"type mismatch|application type mismatch|failed to synthesize|linarith failed|omega_1|norm_num failed", lowered)
+    )
+    if unsolved > 0 or type_errors > 0:
+        n_total = max(unsolved + 2, 3)
+        return round(100.0 * (unsolved / n_total) + 10.0 * max(type_errors, 1), 4)
+    return 1000000.0
+
+
+def compute_hierarchical_numeric_energy(
+    ham_drift: float,
+    dec_drift: float = 0.0,
+    eps_ham: float = 1e-8,
+    eps_dec: float = 1e-12,
+    compression_ratio: float = 1.0,
+    alpha: float = 1.5,
+) -> float:
+    """Compute the Hierarchical Continuous Energy Functional E(tau) for numeric/topological trajectories.
+
+    If ham_drift <= eps_ham and dec_drift <= eps_dec, returns -alpha * compression_ratio <= 0.
+    Otherwise returns 10^3 * log10(1 + ham_drift/eps_ham + dec_drift/eps_dec).
+    """
+    if math.isnan(ham_drift) or math.isnan(dec_drift) or math.isinf(ham_drift) or math.isinf(dec_drift):
+        return 1000000.0
+    if ham_drift <= eps_ham and dec_drift <= eps_dec:
+        return round(-alpha * max(compression_ratio, 0.1), 4)
+    ratio = max(0.0, ham_drift / max(eps_ham, 1e-30)) + max(0.0, dec_drift / max(eps_dec, 1e-30))
+    return round(min(1000000.0, 1000.0 * math.log10(1.0 + ratio)), 4)
 
 
 @dataclass
@@ -40,6 +101,7 @@ class LeanVerificationResult:
     output: str
     untrusted_axioms: list[str] = None  # type: ignore[assignment]
     footprint_status: str = ""
+    hierarchical_energy: float = 0.0
 
     def __post_init__(self) -> None:
         if self.untrusted_axioms is None:
@@ -53,6 +115,14 @@ class LeanVerificationResult:
                 self.footprint_status = "target"
             else:
                 self.footprint_status = "proven"
+        if self.hierarchical_energy == 0.0:
+            self.hierarchical_energy = compute_hierarchical_lean_energy(
+                source="",
+                output=self.output,
+                compiled_successfully=self.compiled_successfully,
+                has_sorry=self.has_sorry,
+                untrusted_axioms=self.untrusted_axioms,
+            )
 
     @property
     def verification_label(self) -> str:
@@ -284,8 +354,170 @@ class LeanKernelVerifier:
                 energy_score=0.05 + elapsed / 1000.0 if clean else 1000000.0,
                 output=raw,
                 untrusted_axioms=untrusted,
+                hierarchical_energy=compute_hierarchical_lean_energy(
+                    source=source,
+                    output=raw,
+                    compiled_successfully=clean,
+                    has_sorry=has_sorry,
+                    untrusted_axioms=untrusted,
+                ),
             ))
         return results
+
+    def verify_against_spec(
+        self,
+        candidate_file: Path | str,
+        spec_file: Path | str,
+        theorem_to_spec_map: dict[str, str],
+        timeout_s: float = 1800.0,
+        require_coverage_of_spec: bool = False,
+    ) -> dict[str, object]:
+        """Environment-level DefEq & ConstantInfo audit against a read-only Spec.lean file.
+
+        Combines the frozen `Spec.lean` propositions with the candidate proofs in a fresh
+        kernel environment and checks `example : <SpecProp> := <CandidateThm>` for every
+        target theorem, preventing macro/notation hijacking or type-alias obfuscation.
+        """
+        import hashlib
+        import tempfile
+
+        # `len(theorem_to_spec_map) >= 1` below rejects a vacuous audit, but it
+        # does not require the obligations to COVER the spec: a caller may check
+        # one easy proposition and ignore the rest. For a generic verifier that
+        # is correct -- only the caller knows which propositions matter -- but it
+        # means a search could be judged against a weak subset it chose itself.
+        # `require_coverage_of_spec` lets a caller close that without hard-coding
+        # a spec-specific count: coverage is derived from the spec's own declared
+        # theorems.
+        cand_path = Path(candidate_file).resolve()
+        spec_path = Path(spec_file).resolve()
+        cand_src = cand_path.read_text(encoding="utf-8")
+        spec_src = spec_path.read_text(encoding="utf-8")
+        spec_sha256 = hashlib.sha256(spec_src.encode("utf-8")).hexdigest()
+
+        forgeries = detect_lean_source_forgeries(cand_src, reject_vacuous=True)
+        if forgeries:
+            return {
+                "passed": False,
+                "rc": -2,
+                "spec_sha256": spec_sha256,
+                "forgeries": forgeries,
+                "defeq_checked": 0,
+                "results": [],
+                "error": "; ".join(forgeries),
+            }
+
+        # Collect union of imports from spec and candidate
+        imports: list[str] = []
+        spec_body_lines: list[str] = []
+        cand_body_lines: list[str] = []
+        for line in spec_src.splitlines():
+            if line.strip().startswith("import "):
+                if line.strip() not in imports:
+                    imports.append(line.strip())
+            else:
+                spec_body_lines.append(line)
+        for line in cand_src.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("import "):
+                if stripped.endswith(spec_path.stem):
+                    continue
+                if stripped not in imports:
+                    imports.append(stripped)
+            else:
+                cand_body_lines.append(line)
+
+        defeq_lines = defeq_obligation_lines(theorem_to_spec_map)
+
+        combined_src = (
+            "\n".join(imports)
+            + "\n\n"
+            + "\n".join(spec_body_lines)
+            + "\n\n"
+            + "\n".join(cand_body_lines)
+            + "\n"
+            + "\n".join(defeq_lines)
+            + "\n"
+        )
+        # `verify_file` wants an `#print axioms` line for the declarations it
+        # gates, and the obligations emitted above are new top-level theorems
+        # that no input file could have anticipated, so their axiom lines are
+        # supplied here.
+        #
+        # Only the obligations. An earlier attempt added a line for every name
+        # `declared_theorems` returned, which silently broke everything: that
+        # helper yields UNQUALIFIED names (`det_eq_one`) while a spec's own
+        # directives are fully qualified (`#print axioms ANSE.Verlet.det_eq_one`),
+        # so nothing matched, seven unresolvable directives were appended after
+        # the namespace had closed, and the audit file stopped compiling. The
+        # obligations are emitted at top level, so their bare names resolve.
+        obligation_axiom_lines = [
+            f"#print axioms {defeq_theorem_name(name)}" for name in theorem_to_spec_map
+        ]
+        if obligation_axiom_lines:
+            combined_src += "\n".join(obligation_axiom_lines) + "\n"
+
+        with tempfile.TemporaryDirectory(prefix="lean_spec_audit_") as td:
+            audit_file = Path(td) / "SpecDefEqAudit.lean"
+            audit_file.write_text(combined_src, encoding="utf-8")
+            results = self.verify_file(audit_file, timeout_s=timeout_s, reject_vacuous=True)
+
+        # `defeq_checked` is MEASURED, not derived. It previously read
+        # `len(theorem_to_spec_map) if all_ok else 0`, which made it a tautology
+        # of `passed`: a caller asserting `defeq_checked == len(map)` learned
+        # nothing beyond `passed`, so the conjunct carried no information. The
+        # obligations are now emitted as NAMED theorems, so each one produces its
+        # own `#print axioms` row and can be counted independently.
+        spec_declared = set(declared_theorems(spec_src))
+        # An obligation key may be qualified (`Ns.thm`); the spec's declarations
+        # come back unqualified, so compare on the final component.
+        covered = {name.rsplit(".", 1)[-1] for name in theorem_to_spec_map}
+        uncovered = sorted(spec_declared - covered)
+        obligation_names = {defeq_theorem_name(name) for name in theorem_to_spec_map}
+        defeq_checked = sum(
+            1
+            for r in results
+            if r.theorem_name in obligation_names
+            and r.compiled_successfully
+            and not r.has_sorry
+            and not r.untrusted_axioms
+        )
+        every_result_clean = all(
+            r.compiled_successfully and not r.has_sorry and not r.untrusted_axioms
+            for r in results
+        )
+        # An EMPTY obligation set must not pass. The old predicate was
+        # `len(results) >= len(theorem_to_spec_map) and all(...)`, and with an
+        # empty map `len(results) >= 0` is vacuously true while `all()` over an
+        # empty sequence is also true -- so `verify_against_spec` returned
+        # passed=True having checked nothing at all. That is the one gate the
+        # proof-carrying fitness ladder calls load-bearing, so a vacuous pass
+        # there collapses the whole ladder back to the empirical objective it
+        # was written to replace.
+        all_ok = (
+            len(theorem_to_spec_map) >= 1
+            and len(results) >= len(theorem_to_spec_map)
+            and defeq_checked == len(theorem_to_spec_map)
+            and every_result_clean
+            and not (require_coverage_of_spec and uncovered)
+        )
+        return {
+            "passed": all_ok,
+            "rc": 0 if all_ok else 1,
+            "spec_file": str(spec_path),
+            "spec_sha256": spec_sha256,
+            "forgeries": [],
+            "obligations_requested": len(theorem_to_spec_map),
+            "defeq_checked": defeq_checked,
+            # Spec propositions the caller did NOT ask about. Reported always,
+            # enforced only under `require_coverage_of_spec`, so a caller that
+            # checks a weak subset can at least be seen doing it.
+            "spec_theorems_declared": sorted(spec_declared),
+            "spec_theorems_uncovered": uncovered,
+            "coverage_enforced": bool(require_coverage_of_spec),
+            "every_result_clean": every_result_clean,
+            "results": results,
+        }
 
     def probe_footprints(
         self,
@@ -394,14 +626,47 @@ def declared_theorems(source: str) -> list[str]:
     return [m.group(1) for m in _DECL.finditer(code)]
 
 
+DEFEQ_PREFIX = "defeqAudit_"
+
+
+def defeq_theorem_name(theorem_name: str) -> str:
+    """The name given to the definitional-equality obligation for `theorem_name`.
+
+    Obligations used to be emitted as anonymous ``example : P := thm``, which
+    declares nothing, so no obligation could be counted and `defeq_checked` had
+    to be derived from the overall pass flag -- making it a tautology. Naming
+    each obligation is what lets it be measured.
+    """
+    safe = "".join(ch if (ch.isalnum() or ch == "_") else "_" for ch in theorem_name)
+    return f"{DEFEQ_PREFIX}{safe}"
+
+
+def defeq_obligation_lines(theorem_to_spec_map: dict[str, str]) -> list[str]:
+    """Named definitional-equality obligations, one per mapped theorem.
+
+    Each becomes a real declaration, so `verify_file` reports a row for it and
+    the caller can count how many obligations actually elaborated with clean
+    axioms rather than trusting an aggregate flag.
+    """
+    lines = ["", "section EnvironmentDefEqAudit"]
+    for thm_name, spec_prop in theorem_to_spec_map.items():
+        lines.append(
+            f"theorem {defeq_theorem_name(thm_name)} : {spec_prop} := {thm_name}"
+        )
+    lines.append("end EnvironmentDefEqAudit")
+    return lines
+
+
 def detect_lean_source_forgeries(source: str, reject_vacuous: bool = True) -> list[str]:
-    """Detect source-level formal verification bypasses and vacuous statements (TODO 27, TODO 9).
+    """Detect source-level, definition-hole, and macro/alias formal verification bypasses.
 
     Checks stripped Lean source code (outside comments/docstrings) for:
       - ``#exit`` directive (truncates elaboration before broken proofs or after forged prints)
       - ``#print "..."`` string literals (spoofs ``'thm' depends on axioms: ...`` lines)
       - ``#eval`` / ``run_cmd`` / ``IO.println`` metaprogramming stdout spoofing
-      - Vacuous ``theorem/lemma ... : True :=`` statements (when ``reject_vacuous=True``)
+      - Macro / notation hijacking (``macro_rules``, ``local notation``, ``scoped notation``)
+      - Vacuous ``theorem/lemma ... : True :=`` or type-alias ``abbrev/def ... := True``
+      - Definition-hole ``sorry`` smuggling (``def/abbrev ... := sorry``, from OpenAI-NSE/MavNan audit)
     """
     code = _LINE_COMMENT.sub("", _BLOCK_COMMENT.sub("", source))
     violations: list[str] = []
@@ -411,11 +676,102 @@ def detect_lean_source_forgeries(source: str, reject_vacuous: bool = True) -> li
         violations.append("FORGERY_PRINT_STRING: '#print \"...\"' string literal spoofs axiom output")
     if re.search(r"(?:^|\s)(?:#eval|run_cmd)\b|\bIO\.print(?:ln)?\b", code):
         violations.append("FORGERY_META_STDOUT: '#eval'/'run_cmd'/'IO.println' stdout spoofing")
-    if reject_vacuous and re.search(
-        r"\b(?:theorem|lemma)\s+([^\s:({\[]+)[^:=]*:\s*True\s*:=", code
-    ):
-        violations.append("VACUOUS_TRUE_THEOREM: vacuous ': True :=' theorem statement")
+    if re.search(r"(?:^|\s)(?:macro_rules|(?:local|scoped)\s+notation)\b", code):
+        violations.append("FORGERY_NOTATION_HIJACK: macro_rules or local/scoped notation override")
+    if reject_vacuous:
+        if re.search(r"\b(?:theorem|lemma)\s+([^\s:({\[]+)(?:(?!:=)[\s\S])*:\s*True\s*:=", code):
+            violations.append("VACUOUS_TRUE_THEOREM: vacuous ': True :=' theorem statement")
+        if re.search(r"\b(?:abbrev|def)\s+([^\s:({\[]+)(?:(?!:=)[^\n])*:=\s*(?:True|Trivial)\b", code):
+            violations.append("FORGERY_VACUOUS_ALIAS: type alias ':= True' obfuscation (Comparator definition-hole exploit)")
+        if re.search(r"\b(?:abbrev|def)\s+([^\s:({\[]+)(?:(?!:=)[^\n])*:=\s*(?:by\s+)?sorry\b", code):
+            violations.append("FORGERY_DEFINITION_SORRY: 'def/abbrev ... := sorry' definition-hole smuggling")
     return violations
+
+
+def extract_lean_definition_bodies(source: str) -> dict[str, str]:
+    """Extract normalized bodies of top-level `def`/`abbrev` declarations for Comparator hole auditing."""
+    code = _LINE_COMMENT.sub("", _BLOCK_COMMENT.sub("", source))
+    pattern = re.compile(
+        r"^[ \t]*(?:noncomputable[ \t]+)?(?:def|abbrev)[ \t]+([^\s:({\[]+)(?:(?!:=|\bwhere\b)[\s\S])*?(?::=|\bwhere\b)\s*(.*?)(?=\n[ \t]*(?:noncomputable[ \t]+)?(?:def|abbrev|theorem|lemma|structure|inductive|end|namespace|#print)\b|\Z)",
+        re.M | re.S,
+    )
+    bodies: dict[str, str] = {}
+    for m in pattern.finditer(code):
+        name = m.group(1).strip()
+        body = " ".join(m.group(2).split())
+        bodies[name] = body
+    return bodies
+
+
+def verify_definition_holes_against_spec(
+    candidate_src: str,
+    spec_src: str,
+    definition_names: Sequence[str],
+) -> dict[str, object]:
+    """Close the `openai/math` Comparator `definitionHoleMatches` vulnerability (LL.md §16, §25d).
+
+    Comparator's `definitionHoleMatches` checks only `(name, levelParams, type, safety)` of a
+    definition in `definition_names`, allowing a candidate to replace `def MainStatement : Prop := ...`
+    with `def MainStatement : Prop := True`. This verifier enforces that every listed definition exists
+    in both `spec_src` and `candidate_src`, is neither `True` nor `sorry`, and has an identical
+    normalized body.
+    """
+    spec_defs = extract_lean_definition_bodies(spec_src)
+    cand_defs = extract_lean_definition_bodies(candidate_src)
+    mismatches: list[str] = []
+    checked: list[str] = []
+    for dname in definition_names:
+        short = dname.split(".")[-1]
+        s_body = spec_defs.get(dname) or spec_defs.get(short)
+        c_body = cand_defs.get(dname) or cand_defs.get(short)
+        if s_body is None:
+            mismatches.append(f"MISSING_IN_SPEC:{dname}")
+            continue
+        if c_body is None:
+            mismatches.append(f"MISSING_IN_CANDIDATE:{dname}")
+            continue
+        if c_body in {"True", "Trivial", "sorry", "by sorry"}:
+            mismatches.append(f"VACUOUS_OR_SORRY_HOLE:{dname}={c_body}")
+            continue
+        if s_body != c_body:
+            mismatches.append(f"BODY_DRIFT:{dname}: spec='{s_body}' vs cand='{c_body}'")
+            continue
+        checked.append(dname)
+    return {
+        "sound": len(mismatches) == 0,
+        "passed": len(mismatches) == 0,
+        "checked_count": len(checked),
+        "checked_definitions": checked,
+        "mismatches": mismatches,
+    }
+
+
+def verify_manuscript_data_consistency(
+    tex_source: str,
+    required_tokens: Sequence[str],
+    require_proof_per_theorem: bool = True,
+) -> dict[str, object]:
+    """Audit a LaTeX manuscript against single-source JSON tokens and proof completeness (LL.md §25a, §25e)."""
+    thm_count = len(re.findall(r"\\begin\{theorem\}", tex_source))
+    proof_count = len(re.findall(r"\\begin\{proof\}", tex_source))
+    missing_tokens = [tok for tok in required_tokens if tok not in tex_source]
+    neg_zero_hits = re.findall(r"\$-0\$|\\mathbf\{-0\}", tex_source)
+    errors: list[str] = []
+    if require_proof_per_theorem and proof_count < thm_count:
+        errors.append(f"MISSING_PROOFS: {proof_count} proofs for {thm_count} theorems")
+    if missing_tokens:
+        errors.append(f"MISSING_HARNESS_TOKENS: {missing_tokens}")
+    if neg_zero_hits:
+        errors.append(f"NEGATIVE_ZERO_ARTIFACT: {neg_zero_hits}")
+    return {
+        "sound": len(errors) == 0,
+        "passed": len(errors) == 0,
+        "theorem_count": thm_count,
+        "proof_count": proof_count,
+        "missing_tokens": missing_tokens,
+        "negative_zero_hits": neg_zero_hits,
+        "errors": errors,
+    }
 
 
 def parse_axiom_lines(output: str) -> dict[str, list[str]]:

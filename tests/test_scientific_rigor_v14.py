@@ -8,6 +8,7 @@ Validates that:
 5. DPO retraining dataset is properly structured
 """
 from __future__ import annotations
+import re
 import json
 import subprocess
 import sys
@@ -173,19 +174,85 @@ class TestLean4Build:
         assert result.returncode == 0, f"lake build failed:\n{result.stderr}"
         assert "error" not in result.stdout.lower() or "Build completed" in result.stdout
 
+    @staticmethod
+    def _strip_lean_comments(content: str) -> list[tuple[int, str]]:
+        """Return (line number, code) with Lean comments removed.
+
+        This test used to match the substring ``sorry`` on any line not starting
+        with ``--``, which flagged twelve files whose every "violation" was prose
+        asserting the ABSENCE of sorry -- for instance VerletSymplectic.lean's
+        "None is `True`, and none uses `sorry`". Lean block comments ``/- ... -/``
+        and docstrings were never excluded. A rigor check that always fails is
+        noise, and noise is worse than nothing here: it trains the reader to
+        ignore the one signal that matters.
+        """
+        out: list[tuple[int, str]] = []
+        depth = 0
+        for number, raw in enumerate(content.splitlines(), 1):
+            line = raw
+            rebuilt = ""
+            index = 0
+            while index < len(line):
+                if depth > 0:
+                    close = line.find("-/", index)
+                    if close == -1:
+                        index = len(line)
+                    else:
+                        depth -= 1
+                        index = close + 2
+                    continue
+                opener = line.find("/-", index)
+                dashes = line.find("--", index)
+                if opener != -1 and (dashes == -1 or opener < dashes):
+                    rebuilt += line[index:opener]
+                    depth += 1
+                    index = opener + 2
+                elif dashes != -1:
+                    rebuilt += line[index:dashes]
+                    index = len(line)
+                else:
+                    rebuilt += line[index:]
+                    index = len(line)
+            out.append((number, rebuilt))
+        return out
+
     def test_no_sorry_in_lean_files(self):
-        """Lean files must not contain sorry."""
+        """Lean files must not contain a real `sorry` outside comments."""
         lean_dir = REPO_ROOT / "formal" / "ANSE"
+        scanned = 0
         violations = []
-        for lean_file in lean_dir.glob("*.lean"):
-            content = lean_file.read_text()
-            # Check for sorry not in comments
-            lines = content.splitlines()
-            for i, line in enumerate(lines, 1):
-                stripped = line.strip()
-                if not stripped.startswith("--") and "sorry" in stripped:
-                    violations.append(f"{lean_file.name}:{i}: contains sorry: {line!r}")
+        for lean_file in sorted(lean_dir.glob("*.lean")):
+            scanned += 1
+            for number, code in self._strip_lean_comments(lean_file.read_text()):
+                if re.search(r"\bsorry\b", code):
+                    violations.append(f"{lean_file.name}:{number}: {code.strip()!r}")
+        # The scan must actually have looked at something; an empty glob would
+        # make this pass while verifying nothing.
+        assert scanned > 0, f"no .lean files found under {lean_dir}"
         assert violations == [], "\n".join(violations)
+
+    def test_the_sorry_scan_catches_a_real_sorry(self):
+        """Control: the stripper must not blind the check it serves.
+
+        A comment-stripping scan that removed too much would pass everything, so
+        this asserts the two directions separately on fixed inputs: prose about
+        `sorry` inside comments is ignored, and a real `sorry` in code is caught.
+        """
+        honest = (
+            "/- A docstring that says: no `sorry`, no custom axiom. -/\n"
+            "theorem t : 1 = 1 := rfl  -- not a sorry\n"
+        )
+        cheating = "theorem t : 1 = 1 := by\n  sorry\n"
+        honest_hits = [
+            n for n, code in self._strip_lean_comments(honest)
+            if re.search(r"\bsorry\b", code)
+        ]
+        cheating_hits = [
+            n for n, code in self._strip_lean_comments(cheating)
+            if re.search(r"\bsorry\b", code)
+        ]
+        assert honest_hits == [], f"prose about sorry must not be flagged: {honest_hits}"
+        assert cheating_hits == [2], f"a real sorry must be caught: {cheating_hits}"
 
 
 # ============================================================

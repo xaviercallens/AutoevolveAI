@@ -1,44 +1,78 @@
-"""Does the rung-2 gate work at more than ONE obligation?
+"""The rung-2 gate at more than one obligation.
 
-The stored controls (results/rung2_gate_controls.json) were all recorded at
-`obligations_requested: 1`, so the multi-obligation path had never been
-exercised -- guard G9 says validate at the real size, not a convenient one.
+Every stored control had been recorded at `obligations_requested: 1`, so the
+multi-obligation path had never been exercised -- guard G9 says validate at
+the real size rather than a convenient one.
 
-Two cases, and the second is the decisive one:
+The second test also records a corrected prediction. I expected a partial
+count (1 of 2) and argued it would prove `defeq_checked` measured rather than
+derived. That was WRONG: a Lean compile is atomic, so one failing obligation
+fails the audit file, `verify_file` returns a single file-level row, and no
+obligation rows exist to count. The value is 0 or len(map) and nothing
+between. What naming the obligations actually buys is that each one's axiom
+footprint is read at all -- the previous anonymous `example : P := thm`
+declared nothing, so it was never axiom-checked.
 
-* m=2, both obligations honest  -> passed=True,  defeq_checked=2
-* m=2, ONE obligation wrong     -> passed=False, defeq_checked=0
+A NOTE ON WHY THIS FILE IS SHAPED LIKE THIS. It was first committed as a script
+with a `main()` and no pytest test function, under a `test_*.py` name. pytest
+collected ZERO tests from it, so the suite reported nothing while appearing to
+cover the gate -- a file shaped like a check that cannot fail, which is the
+defect this project has had to label repeatedly. It is now real tests.
 
-The second expectation was originally written as 1, on the theory that a counted
-witness would report a partial tally and so prove itself measured rather than
-derived. That prediction was WRONG and this test is what refuted it: a Lean
-compile is atomic, so one obligation that fails to elaborate fails the whole
-audit file, `verify_file` returns a single file-level failure row, and no
-obligation rows exist to count. The value is therefore 0 or len(map) and nothing
-between -- operationally the same range as the derived version it replaced.
-
-The fix is still worth having, for a different reason: `verify_file` reads
-`#print axioms` only for DECLARED theorems, and the previous anonymous
-`example : P := thm` declared nothing, so an obligation could elaborate without
-its axiom footprint ever being read. Naming the obligations puts each one under
-the sorryAx and whitelist check. That, and the refusal of an empty obligation
-map, are the real gains -- not a graduated witness.
+The Lean toolchain is apparatus, not data. If it is absent the tests SKIP with a
+reason that says BLOCKED and names what is missing, so a missing toolchain can
+never be mistaken for a passing gate. The probe is a real invocation, not a
+swallowed exception.
 """
+
 from __future__ import annotations
 
 import json
-import sys
+import subprocess
 import tempfile
 from pathlib import Path
 
-sys.path.insert(0, "/home/xavkal/xdev/AutoevolveAI")
-from anse.formal.lean_runner import LeanKernelVerifier  # noqa: E402
+import pytest
 
-FORMAL = Path("/home/xavkal/xdev/AutoevolveAI/formal")
+from anse.formal.lean_runner import LeanKernelVerifier
+
+REPO = Path(__file__).resolve().parents[2]
+FORMAL = REPO / "formal"
 SPEC = FORMAL / "ANSE" / "VerletSymplectic.lean"
 
 
-def candidate(ns: str, q_coeff: int, p_coeff: int) -> str:
+def _toolchain_available() -> tuple[bool, str]:
+    """Probe the Lean toolchain. A failure here is an apparatus failure."""
+    if not SPEC.exists():
+        return False, f"spec missing: {SPEC}"
+    try:
+        done = subprocess.run(
+            ["lake", "env", "lean", "--version"],
+            cwd=str(FORMAL), capture_output=True, text=True, timeout=180,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return False, f"lake env lean unavailable: {type(exc).__name__}"
+    if done.returncode != 0:
+        return False, f"lake env lean exited {done.returncode}"
+    return True, done.stdout.strip()[:60]
+
+
+@pytest.fixture(scope="module")
+def verifier() -> LeanKernelVerifier:
+    ok, detail = _toolchain_available()
+    if not ok:
+        pytest.skip(f"BLOCKED: apparatus unavailable, not a passing gate ({detail})")
+    return LeanKernelVerifier(formal_dir=FORMAL)
+
+
+def _run(verifier: LeanKernelVerifier, source: str, mapping: dict) -> dict:
+    with tempfile.TemporaryDirectory() as td:
+        cand = Path(td) / "Candidate.lean"
+        cand.write_text(source, encoding="utf-8")
+        return verifier.verify_against_spec(cand, SPEC, mapping, timeout_s=1200.0)
+
+
+def _pair(ns: str, q_coeff: int, p_coeff: int) -> str:
     return f"""import Mathlib.Tactic.Ring
 import ANSE.VerletSymplectic
 
@@ -62,7 +96,7 @@ end {ns}
 """
 
 
-def obligations(ns: str) -> dict[str, str]:
+def _two_obligations(ns: str) -> dict[str, str]:
     return {
         f"{ns}.candQ_matches":
             f"∀ h w q p : Rat, {ns}.candQ h w q p = ANSE.Verlet.qNext h w q p",
@@ -71,44 +105,19 @@ def obligations(ns: str) -> dict[str, str]:
     }
 
 
-CASES = [
-    ("m=2 both obligations honest", candidate("TwoHonest", 2, 2), obligations("TwoHonest"), True, 2),
-    ("m=2 one obligation wrong", candidate("OneWrong", 2, 3), obligations("OneWrong"), False, 0),
-]
+def test_two_honest_obligations_both_count(verifier) -> None:
+    out = _run(verifier, _pair("TwoHonest", 2, 2), _two_obligations("TwoHonest"))
+    assert out["passed"] is True, f"both obligations are true: {out.get('results')}"
+    assert out["obligations_requested"] == 2
+    assert out["defeq_checked"] == 2, "both obligations must be counted"
 
 
-def main() -> int:
-    v = LeanKernelVerifier(formal_dir=FORMAL)
-    rows = []
-    for label, src, mapping, expect_pass, expect_checked in CASES:
-        with tempfile.TemporaryDirectory() as td:
-            cand = Path(td) / "Candidate.lean"
-            cand.write_text(src, encoding="utf-8")
-            out = v.verify_against_spec(cand, SPEC, mapping, timeout_s=1200.0)
-        got_pass = bool(out.get("passed"))
-        got_checked = out.get("defeq_checked")
-        ok = got_pass == expect_pass and got_checked == expect_checked
-        rows.append({
-            "case": label,
-            "obligations_requested": out.get("obligations_requested"),
-            "expected_pass": expect_pass, "passed": got_pass,
-            "expected_defeq_checked": expect_checked, "defeq_checked": got_checked,
-            "every_result_clean": out.get("every_result_clean"),
-            "as_expected": ok,
-        })
-        print(f"{'OK ' if ok else '!! '}{label:<32} passed={got_pass!s:<5} "
-              f"obligations={out.get('obligations_requested')} "
-              f"defeq_checked={got_checked} (expected {expect_checked})")
-    Path("/home/xavkal/.claude/jobs/6eb13034/tmp/rung2_multi_result.json").write_text(
-        json.dumps(rows, indent=2) + "\n")
-    agreed = sum(1 for r in rows if r["as_expected"])
-    print(f"\n{agreed}/{len(rows)} as required")
-    if agreed == len(rows):
-        print("Multi-obligation path works at m=2. defeq_checked is 0 or len(map) "
-              "and never partial, because a Lean compile is atomic -- so it is a "
-              "binary witness, not a graduated one.")
-    return 0 if agreed == len(rows) else 1
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+def test_one_false_obligation_fails_the_whole_audit(verifier) -> None:
+    """Atomicity: the count is 0, not a partial 1. See the module docstring."""
+    out = _run(verifier, _pair("OneWrong", 2, 3), _two_obligations("OneWrong"))
+    assert out["passed"] is False
+    assert out["obligations_requested"] == 2
+    assert out["defeq_checked"] == 0, (
+        "a Lean compile is atomic, so a failed obligation yields no obligation "
+        "rows at all and the count is 0 rather than a partial tally"
+    )

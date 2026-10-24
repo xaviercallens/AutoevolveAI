@@ -1086,3 +1086,33 @@ the data's **generative structure** — heritability, independence, exchangeabil
 — not merely its surface form; matching the alphabet was necessary and nowhere
 near sufficient. This is §29.1 with the non-discriminating check hidden inside a
 data generator rather than inside a test.
+
+### 29.12 An efficiency claim below the host's noise floor is not a claim
+
+A workflow round proposed three life-inspired algorithms — gene-level modularity
+with proof reuse, neutral drift, regulatory indirect encoding — and adversarial
+screening killed all three. The shared failure is the lesson: **every claimed
+saving reduced, on measurement, to memoising a deterministic function, and the
+apparent size of the saving was set entirely by the choice of cache key.** One
+proposal's 4× came from keying a verdict on the Python source rather than the
+generated Lean file (the correct key gives a ratio below 1.0); another priced a
+640-bit encoding that exists nowhere in the repository, against an incumbent
+operator that already makes a correlated multi-locus change in one event; the
+third priced a glue term at 0.9 s that is really a ~33 s compile. The biology
+contributed no measured leverage in any of them.
+
+Then the arithmetic that settles it. The surviving fragment set itself a 1.65×
+efficiency threshold. Measured on this host with `n = 5` warm compiles, the
+spread on **byte-identical input** is **1.88×** — larger than the effect the
+proposal wanted to claim. Separately, the frozen spec turned out to be ~76% of
+each verification's cost (median 12.55 s of 16.49 s), because the verifier
+inlines the spec body into every audit file, so the only real saving available
+was a build-system change with no evolutionary layer in it at all.
+
+**Rule.** Before accepting any efficiency claim, measure the spread on identical
+input and compare it to the claimed effect. A claim smaller than the noise floor
+is not weakly supported, it is **unmeasurable**, and no amount of replication of
+the *treatment* fixes it — the fix is to reduce the noise or abandon the claim.
+And when a saving is claimed for a cache, state the key: a cache keyed on the
+wrong object manufactures an arbitrary speedup, and the key is where the whole
+claim lives. Relates to [[variability-estimates-that-cannot-vary]] and §29.3.

@@ -1,34 +1,85 @@
 {
-  "measurement": "where the cost of one rung-2 verification goes",
-  "why": "The life-inspired-algorithm round's one surviving efficiency claim reduced to caching a deterministic verifier, and its pre-registered kill condition was: if importing a precompiled spec beats inlining it by more than the host noise floor, the remaining win is a build-system fix with no evolutionary layer and no biology. verify_against_spec inlines the frozen spec body into every audit file, so every call re-elaborates the spec.",
-  "host_note": "Timings are wall-clock `lake env lean` on a warm host, n=5 each. They are NOT a characterised distribution; the point of reporting the spread is that it bounds what any efficiency claim here can resolve.",
-  "spec_alone_seconds": {
-    "n": 5,
-    "median": 12.55,
-    "min": 8.53,
-    "max": 16.05,
-    "spread_max_over_min": 1.88
+  "measurement": "where the cost of one rung-2 Lean verification actually goes",
+  "conditions": {
+    "mathlib_floor_only": "a file containing only `import Mathlib.Tactic.Ring` and one trivial theorem -- the irreducible per-invocation cost",
+    "spec_alone": "the frozen spec compiled by itself",
+    "audit_file_inlined": "what verify_against_spec does today: spec body inlined, plus candidate, plus named obligations",
+    "candidate_imports_spec": "spec built once as an olean (77.9 s, 734 jobs) and imported instead of inlined"
   },
-  "audit_file_seconds": {
-    "n": 5,
-    "median": 16.49,
-    "min": 15.4,
-    "max": 23.52,
-    "spread_max_over_min": 1.53
+  "stats": {
+    "mathlib_floor_only": {
+      "n": 5,
+      "median": 17.61,
+      "min": 14.59,
+      "max": 23.45,
+      "same_input_spread": 1.61,
+      "runs": [
+        18.62,
+        14.59,
+        23.45,
+        17.24,
+        17.61
+      ]
+    },
+    "spec_alone": {
+      "n": 5,
+      "median": 12.55,
+      "min": 8.53,
+      "max": 16.05,
+      "same_input_spread": 1.88,
+      "runs": [
+        12.55,
+        13.56,
+        16.05,
+        8.53,
+        9.88
+      ]
+    },
+    "audit_file_inlined": {
+      "n": 5,
+      "median": 16.49,
+      "min": 15.4,
+      "max": 23.52,
+      "same_input_spread": 1.53,
+      "runs": [
+        16.49,
+        15.5,
+        16.72,
+        15.4,
+        23.52
+      ]
+    },
+    "candidate_imports_spec": {
+      "n": 5,
+      "median": 14.52,
+      "min": 11.76,
+      "max": 30.59,
+      "same_input_spread": 2.6,
+      "runs": [
+        30.59,
+        25.83,
+        13.35,
+        11.76,
+        14.52
+      ]
+    }
   },
-  "audit_over_spec_median_ratio": 1.31,
-  "noise_floor": {
-    "worst_same_input_spread": 1.88,
-    "reading": "Identical input varies by up to this factor, so an efficiency claim below it is unmeasurable on this host. The round's own threshold was 1.65x."
+  "median_band": {
+    "lowest": 12.55,
+    "highest": 17.61,
+    "ratio": 1.4,
+    "worst_same_input_spread": 2.6
   },
-  "findings": [
-    "The frozen spec dominates: its median elaboration is 12.6s of the audit file's 16.5s, so the candidate and its obligation add a minority of the cost.",
-    "Same-input spread reaches 1.88x (spec) and 1.53x (audit). A 1.65x efficiency threshold sits close to that, so the round was right that no pre-registration is legitimate until resolution is characterised with many more repeats.",
-    "Because the spec is re-elaborated per call, importing it as a precompiled module is a build-system change available with no evolutionary layer -- which is exactly the pre-registered condition under which the remaining claim must re-justify itself or be dropped."
+  "conclusion": "Essentially the entire cost is loading Mathlib.Tactic.Ring. The bare import floor (median 17.61 s) is the SLOWEST of the four conditions -- higher than the full audit file (16.49 s) and the spec alone (12.55 s). All four medians lie in a 1.40x band while same-input spreads reach 2.60x, so they are indistinguishable on this host. The spec body, the candidate and the obligations contribute nothing measurable.",
+  "a_correction_to_my_own_claim": "I previously reported that the frozen spec is ~76% of a verification's cost, inferred from spec-alone (12.55 s) against the audit file (16.49 s). That was wrong: spec-alone ALSO pays the Mathlib import, so the figure attributed a shared fixed cost to the spec. Measuring the import floor separately is what exposed it.",
+  "consequences": [
+    "No per-candidate saving is available from caching a verdict, modularising a genome, or importing the spec instead of inlining it. Building the spec as an olean cost 77.9 s and bought a 1.14x median change, which is inside the noise.",
+    "This retroactively explains why all three life-inspired proposals' savings were illusory: every one of them optimised something that is not the cost.",
+    "The only lever the measurement supports is amortising the Mathlib load across many candidates in ONE process -- a persistent Lean process or server verifying candidates in sequence -- which is a process-architecture change with no evolutionary or biological content whatsoever."
   ],
   "not_established": [
-    "n=5 is too small to characterise the distribution; the recommended k=20 was not run.",
-    "The spec-as-import path was NOT built or measured, so the size of that saving is unknown -- only that the cost it would remove is the majority of a call.",
-    "Nothing here measures any evolutionary or biological mechanism."
+    "n=5 per condition. These are medians with large spreads, adequate to show the conditions are indistinguishable but not to characterise any distribution.",
+    "Process reuse was NOT built or measured; its saving is predicted by the decomposition, not demonstrated.",
+    "A spec with heavier proofs than 7 ring-closable theorems could shift the balance; this result is for this spec."
   ]
 }

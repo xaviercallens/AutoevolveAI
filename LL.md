@@ -1116,3 +1116,36 @@ the *treatment* fixes it — the fix is to reduce the noise or abandon the claim
 And when a saving is claimed for a cache, state the key: a cache keyed on the
 wrong object manufactures an arbitrary speedup, and the key is where the whole
 claim lives. Relates to [[variability-estimates-that-cannot-vary]] and §29.3.
+
+### 29.13 Measure the floor before optimising anything above it
+
+Having killed three life-inspired efficiency proposals (§29.12), one lever
+appeared to survive: the rung-2 Lean gate inlines its frozen spec into every
+audit file, so every verification re-elaborates it. Comparing the spec alone
+(median 12.55 s) against the full audit file (16.49 s), I reported the spec as
+**~76% of a verification's cost** and predicted that importing a precompiled
+spec would give a ~4× saving — comfortably above the measured 1.88× noise floor,
+and therefore resolvable where the proposals' claims were not.
+
+Both halves were wrong, and one measurement settled it. Building the spec as an
+olean took 77.9 s and bought a median 14.52 s against 16.49 s — a 1.14× change,
+inside the noise. Then measuring the thing I had never isolated: a file
+containing only `import Mathlib.Tactic.Ring` and one trivial theorem takes a
+median **17.61 s**, which is the SLOWEST of the four conditions — slower than the
+full audit file and slower than the spec alone. All four medians lie in a 1.40×
+band while same-input spreads reach 2.60×.
+
+So essentially the entire cost is a fixed Mathlib load per process invocation.
+The spec body, the candidate and the obligations contribute nothing measurable,
+and my 76% figure had attributed a **shared fixed cost** to one of the parties
+sharing it. The only lever the decomposition supports is amortising that load
+across many candidates in one process — a process-architecture change with no
+evolutionary or biological content at all.
+
+**Rule.** Before attributing cost to a component, measure the configuration with
+that component REMOVED, not merely a configuration containing less of it.
+Comparing A+F against B+F, where F is a large shared fixed cost, yields a
+difference that says nothing about A or B. The floor is the measurement that
+makes an attribution meaningful, and it is usually one cheap run away. This is
+why all three proposals in §29.12 were optimising something that was not the
+cost — and why I repeated their mistake one level down before measuring it.

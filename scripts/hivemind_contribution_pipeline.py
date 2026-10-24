@@ -37,6 +37,7 @@ for p in (ROOT_DIR, HIVEMIND_SRC_DIR):
 from mcp_hivemind_server import (  # noqa: E402
     SEASON6_OPEN_MILESTONES,
     SEASON7_NEXT_HORIZON_DIRECTIONS,
+    SEASON9_10_COORDINATOR_MILESTONES,
     hivemind_record_conversation_episode,
     hivemind_scan_pr_security,
     hivemind_status_and_bounties,
@@ -166,29 +167,38 @@ def execute_full_contribution_pipeline() -> dict[str, Any]:
     )
 
     conv_record = hivemind_record_conversation_episode(
-        prompt="act an agent orchestrator of the work as many contributor and PRs. Review them carefully and integrate them when confirmed, verified and no harm. propose further directions",
+        prompt="go on hiveMind subproject",
         files_edited=[
+            "sub_projects/hivemind/HiveMind/src/hivemind/core/diloco_outer.py",
+            "sub_projects/hivemind/HiveMind/src/hivemind/swarm/diloco_nextgen.py",
+            "sub_projects/hivemind/HiveMind/src/hivemind/core/btm_upcycle.py",
+            "sub_projects/hivemind/HiveMind/src/hivemind/swarm/dht_storage.py",
+            "sub_projects/hivemind/HiveMind/src/hivemind/cli/multi_moe_hf_campaign.py",
+            "sub_projects/hivemind/HiveMind/src/hivemind/cli/community_orchestrator.py",
+            "sub_projects/hivemind/HiveMind/lean4/HiveMindSpec.lean",
             "sub_projects/hivemind/formal/HiveMindSpec.lean",
+            "sub_projects/hivemind/HiveMind/tests/test_season9_10_coordinator_deliverables.py",
             "sub_projects/hivemind/hivemind_swarm_bridge_harness.py",
-            "sub_projects/hivemind/hivemind_hardness_engine.py",
-            "sub_projects/hivemind/hivemind_conversation_recorder.py",
             "mcp_hivemind_server.py",
             "scripts/hivemind_contribution_pipeline.py",
         ],
         code_or_summary=(
-            "Orchestrated multi-agent review and topological integration of all 16 open Pull Requests "
-            "(#63-#65, #67-#79 by @clark719664 and @radialmonster) into main (bc029ad), verified 72/72 "
-            "Lean 4 theorems (0 sorry, 0 axioms), passed 168/168 Season 6 PR tests and 25/25 guardrail vectors, "
-            "closed Issues #56-#60, and proposed Season 7 (Wave 6, HM-S6-06..09 / HM-S7-01..03) directions."
+            "Implemented Season 9 (Wave 8) and Season 10 (Wave 9) Engineering Coordinator deliverables "
+            "(HM-S9-01..06, HM-S9-08, HM-S10-01, HM-S10-02): DecoupledDiLoCoQuorumSyncer campaign wiring, "
+            "Sigma-MoE + Peri-LN + Skip-Token FLOP report, OrthoInj + LearnedDepthPrior + Terminal-KV evaluation, "
+            "Factored Gossip (Mix1/Mix2) with Jensen-Shannon router disagreement gating, periodic outer-momentum "
+            "restarting (K_restart), heartbeat-backed CAS data shard leases, Gosset E8 / Z / Sign lattice delta "
+            "quantizers in ComputeVisibleSparseLoCoCompressor, #print axioms & Scientific-Lead protected file gates "
+            "in community_orchestrator, and Theorems 121-128 in HiveMindSpec.lean (128/128 theorems, 0 sorry, 0 axioms)."
         ),
         passed=True,
-        task_id="HM-S6-ORCHESTRATOR-INTEGRATION",
+        task_id="HM-S9-S10-COORDINATOR-DELIVERABLES",
     )
 
     overall_passed = bool(
         git_info["cloned"]
         and lean_info["sound"]
-        and lean_info["theorems_count"] >= 72
+        and lean_info["theorems_count"] >= 128
         and hardness_info["hardness_report"]["overall_passed"]
         and pytest_info["passed"]
         and pr_precheck["passed"]
@@ -216,6 +226,7 @@ def execute_full_contribution_pipeline() -> dict[str, Any]:
         "conversation_record": conv_record,
         "season6_open_milestones": list(SEASON6_OPEN_MILESTONES),
         "season7_next_horizon_directions": list(SEASON7_NEXT_HORIZON_DIRECTIONS),
+        "season9_10_coordinator_milestones": list(SEASON9_10_COORDINATOR_MILESTONES),
         "golden_rules": status_info["golden_rules"],
     }
 

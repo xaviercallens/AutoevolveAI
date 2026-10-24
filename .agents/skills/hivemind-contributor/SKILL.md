@@ -40,10 +40,10 @@ Use this skill whenever contributing features, bug fixes, Hugging Face QLoRA dom
 
 ## 3. MCP Tools (`mcp_hivemind_server.py` / Server: `hivemind-contributor`)
 
-- `hivemind_status_and_bounties()`: Lists repository status, the 4 Golden Rules, exact-$\mathbb{Q}$ certificates, and Season 6 (`Wave 5`, `HM-S6-01`..`HM-S6-05`) open milestones.
+- `hivemind_status_and_bounties()`: Lists repository status, the 4 Golden Rules, exact-$\mathbb{Q}$ certificates, and Season 6–10 (`HM-S6-01`..`HM-S10-08`) contributor milestones.
 - `hivemind_scan_pr_security(pr_title, pr_body, author, changed_filenames)`: Runs the 5-Layer `PRSecurityScanner` + `AntiStubGuard` on a proposed PR.
-- `hivemind_run_hardness_gate(include_redteam_25_vectors=True)`: Runs all 6 hardness layers (Anti-Stub + 5-Layer Repo Audit + S-2/S-3/S-4 Runtime Self-Tests + 25-Vector Attack Simulator + 64-Theorem Lean 4 Spec + Execution Attestation).
-- `hivemind_verify_lean4_spec()`: Verifies all 64 machine-checked Lean 4 theorems (`0 sorry`, `0` axioms) in `sub_projects/hivemind/formal/HiveMindSpec.lean`.
+- `hivemind_run_hardness_gate(include_redteam_25_vectors=True)`: Runs all 6 hardness layers (Anti-Stub + 5-Layer Repo Audit + S-2/S-3/S-4 Runtime Self-Tests + 25-Vector Attack Simulator + 128-Theorem Lean 4 Spec + Execution Attestation).
+- `hivemind_verify_lean4_spec()`: Verifies all 128 machine-checked Lean 4 theorems (`0 sorry`, `0` axioms) in `sub_projects/hivemind/formal/HiveMindSpec.lean`.
 - `hivemind_record_conversation_episode(prompt, files_edited, code_or_summary, passed, task_id)`: Scrubs PII/secrets and records the contribution episode to `results/hivemind_conversation_spool.jsonl` and `data/hivemind_episodes.db`.
 
 ---

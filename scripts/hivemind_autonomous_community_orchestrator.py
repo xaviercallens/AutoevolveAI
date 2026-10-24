@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Top-level AutoevolveAI entry point for the 3-Hour Project HiveMind PR & Discussion Orchestrator."""
+"""Top-level AutoevolveAI entry point for the 1-Hour Project HiveMind PR, Roadmap, Experimentation & Discussion Orchestrator."""
 
 from __future__ import annotations
 

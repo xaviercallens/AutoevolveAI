@@ -45,6 +45,7 @@ async def test_hivemind_mcp_tools_via_router() -> None:
     )
     assert res_status["success"] is True
     assert len(res_status["result"]["season6_wave5_milestones"]) == 5
+    assert len(res_status["result"]["season9_10_coordinator_milestones"]) == 13
     assert res_status["result"]["bridge_certificate"]["gate_passed"] is True
 
     res_lean = await router.call_tool(
@@ -54,7 +55,7 @@ async def test_hivemind_mcp_tools_via_router() -> None:
     )
     assert res_lean["success"] is True
     assert res_lean["result"]["sound"] is True
-    assert res_lean["result"]["theorems_count"] == 77
+    assert res_lean["result"]["theorems_count"] == 128
     assert res_lean["result"]["sorry_count"] == 0
     assert res_lean["result"]["axiom_count"] == 0
 
@@ -118,7 +119,7 @@ def test_hivemind_full_contribution_pipeline_and_anti_stub() -> None:
     """Execute the end-to-end HiveMind contribution pipeline and verify AntiStubGuard cleanliness."""
     report = execute_full_contribution_pipeline()
     assert report["overall_passed"] is True
-    assert report["lean4_verification"]["theorems_count"] == 77
+    assert report["lean4_verification"]["theorems_count"] == 128
     assert report["hardness_gate"]["redteam_attacks_blocked"] == 25
     assert report["hardness_gate"]["redteam_attacks_total"] == 25
     assert report["pytest_gate"]["passed"] is True

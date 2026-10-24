@@ -10,6 +10,32 @@ Working name **ReticuLean** — reticulate evolution, Lean-checked fitness.
 
 ---
 
+> ## REFUTED IN PART — read this first
+>
+> §2's central transfer has been **tested on real program populations and it
+> fails**. The certificate does not detect recombination there; it detects
+> behavioural divergence, and a mutation-only population — which is a tree *by
+> construction* and cannot recombine — produces certificates at the same rate
+> once spread is controlled (4 of 4 at high spread). Three pre-registered
+> controls fail together: 0/24, 0/23 at matched fitness, 0/22 at matched realised
+> spread.
+>
+> **Why.** The four-point condition detects recombination only when characters
+> are independently *heritable*, because recombination's signature is mosaic
+> ancestry along the sequence. A probe outcome is computed from the whole
+> program, not inherited. §2.1's synthetic validation was **circular**: it
+> generated profiles by mutating profile *strings*, building site-wise
+> heritability in by construction.
+>
+> Full result, dataset and diagnosis: **Paper H**,
+> [10.5281/zenodo.23611425](https://doi.org/10.5281/zenodo.23611425).
+>
+> **What still stands:** §3 (the proof-carrying fitness ladder), §5 (the twelve
+> guards — three of which caught this), and §4's operator catalogue, whose
+> members must now be measured by some instrument other than this one. §6's
+> build order is superseded: Phase 0 returned a negative and Phase 1 is the live
+> next step.
+
 ## 1. The gap this closes
 
 The existing system already has MAP-Elites islands, NSGA-II Pareto fronts,

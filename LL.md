@@ -1058,3 +1058,31 @@ experiment, assert a field only the new code could produce. Read test-result
 lines, not the absence of errors --- a grep that matches nothing looks exactly
 like success. And machine-check every quantitative claim against its artifact
 before deposit.
+
+### 29.11 A synthetic validation can confirm its own assumption
+
+The ReticuLean proposal claimed that a program's behavioural profile over a probe
+battery is an aligned sequence, so a quartet certificate would reveal whether a
+crossover operator recombines. A synthetic test appeared to confirm it, cleanly,
+with a usable window of mutation rates. On real evolved programs three
+pre-registered controls failed together — 0/24, 0/23 at matched fitness, 0/22 at
+matched realised spread — and stratifying 49 populations showed why: behavioural
+spread accounts for every certificate, and the mutation-only arm, a tree *by
+construction*, carries them at the same rate.
+
+The synthetic test had generated profiles by **mutating profile strings position
+by position**, which builds site-wise heritability in by construction. It
+therefore confirmed that the method works on site-wise-heritable data, which was
+never in question, while appearing to validate an application where that property
+fails. A probe outcome is not inherited; it is computed from the whole program,
+so unrelated mutations alter overlapping probe sets and manufacture the same
+conflicting distances that recombination does.
+
+**Rule.** When a synthetic benchmark validates a method, write down which of the
+method's assumptions the *generator* supplies, and check that the real data
+supplies it too. A generator built from the method's own model cannot test the
+model. For a transfer between domains, interrogate what the method assumes about
+the data's **generative structure** — heritability, independence, exchangeability
+— not merely its surface form; matching the alphabet was necessary and nowhere
+near sufficient. This is §29.1 with the non-discriminating check hidden inside a
+data generator rather than inside a test.

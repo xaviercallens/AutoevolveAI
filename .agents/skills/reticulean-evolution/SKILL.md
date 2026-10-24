@@ -9,6 +9,26 @@ Full rationale: [`docs/RETICULEAN_PROPOSAL.md`](file:///home/xavkal/xdev/Autoevo
 Binding rules: [`LL.md`](file:///home/xavkal/xdev/AutoevolveAI/LL.md) §29.
 This skill is the operating procedure; it does not restate the argument.
 
+## 0. Status: the recombination instrument is REFUTED
+
+§3's diagnostic does not work. Tested on real program populations it detects
+**behavioural divergence, not recombination**: a mutation-only population, which
+is a tree by construction, carries certificates at the same rate once spread is
+controlled (4 of 4 at high spread), and the recombinant arm exceeded the clonal
+floor in 0 of 24 runs, 0 of 23 at matched fitness, 0 of 22 at matched realised
+spread. The cause is that the four-point condition needs independently
+**heritable** characters, and a probe outcome is computed from the whole program
+rather than inherited. Paper H,
+[10.5281/zenodo.23611425](https://doi.org/10.5281/zenodo.23611425).
+
+**Do not use §2–§3 to decide whether a crossover operator contributes.** They are
+retained because the mapping, the dataset and the failure mode are all reusable,
+and because an operator still needs *some* measured justification (§5) — just not
+this one.
+
+**Live and unaffected:** §4 the fitness ladder, §6 the twelve guards, §7
+verification. Those are what this skill is now for.
+
 ## 1. The two additions to the existing engine
 
 The AlphaEvolve engine (`alphaevolve-biomimetic-workflow`) already has MAP-Elites

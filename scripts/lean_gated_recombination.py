@@ -380,6 +380,84 @@ def homologous_crossover(
     return a, False
 
 
+def constant_ratio(
+    donor: Sequence[Fraction], site: Sequence[Fraction]
+) -> Fraction | None:
+    """The single rational k with donor = k * site at every point, or None.
+
+    This is the condition under which a transplant can preserve the donor's
+    CONTRIBUTION exactly rather than merely its direction. The donor contributes
+    B_d * v inside its own parent and B_s * v at the site, so inserting k * D
+    with k = B_d / B_s restores B_d * v -- but only if that ratio is the same
+    rational at every sample point, since one scalar cannot correct a
+    point-varying ratio.
+
+    A point where the site coefficient is zero kills the donor's contribution
+    there and cannot be corrected by any scaling, so it is admissible only if the
+    donor's coefficient is zero too; then it constrains nothing.
+    """
+    found: Fraction | None = None
+    for d, s in zip(donor, site):
+        if s == 0:
+            if d != 0:
+                return None
+            continue
+        ratio = d / s
+        if found is None:
+            found = ratio
+        elif ratio != found:
+            return None
+    # All-zero site coefficients: the donor is in a dead position either way.
+    return found
+
+
+def contribution_preserving_crossover(
+    a: Node, b: Node, rng: random.Random, max_size: int,
+    points: Sequence[dict[str, Fraction]], counter: list[int], rescale: bool = True,
+) -> tuple[Node, bool]:
+    """Transplant only where the donor's contribution can be preserved exactly.
+
+    The successor this programme recorded as untested after matching sign(B)
+    failed. A site is admissible only when the coefficient ratio is a single
+    rational across every sample point; the donor is then inserted scaled by that
+    ratio, so its contribution to the output is EXACTLY what it was in its own
+    parent -- not merely the same sign, which is what the refuted homology arm
+    matched.
+
+    With `rescale=False` the same sites are chosen and the donor is inserted
+    UNSCALED. That is the control that separates the two things this operator
+    does: selecting a constant-ratio site, and correcting the contribution once
+    there. If the two arms agree, the scaling is doing nothing and only the site
+    selection matters; if both match plain crossover, neither does.
+    """
+    donor_tables = [all_context_coefficients(b, env) for env in points]
+    site_tables = [all_context_coefficients(a, env) for env in points]
+    counter[0] += 2 * len(points)
+
+    donor_address = rng.choice(all_addresses(b))
+    donor = subtree_at(b, donor_address)
+    donor_coefficients = [table[donor_address] for table in donor_tables]
+
+    sites = all_addresses(a)
+    rng.shuffle(sites)
+    for site in sites:
+        site_coefficients = [table[site] for table in site_tables]
+        k = constant_ratio(donor_coefficients, site_coefficients)
+        if k is None:
+            continue
+        if rescale:
+            # k == 1 needs no wrapper, which keeps the child smaller and is the
+            # common case: B is 1 at every address reached through only '+' and
+            # the left of '-'.
+            graft = donor if k == 1 else binary("*", leaf(k), donor)
+        else:
+            graft = donor
+        candidate = replace_at(a, site, graft)
+        if candidate.size() <= max_size:
+            return candidate, True
+    return a, False
+
+
 def mutate(node: Node, rng: random.Random, max_size: int) -> Node:
     address = rng.choice(all_addresses(node))
     replacement = random_tree(rng, rng.randint(0, 2))
@@ -396,6 +474,7 @@ def crossover(a: Node, b: Node, rng: random.Random, max_size: int) -> Node:
 
 ARMS: tuple[str, ...] = (
     "mutation_only", "crossover", "homologous_crossover", "anti_homologous_crossover",
+    "contribution_preserving", "same_sites_unscaled",
 )
 
 
@@ -447,6 +526,16 @@ def run_arm(
             if arm == "crossover":
                 child = crossover(parent, donor_parent, rng, max_size)
                 recombinations += 1
+            elif arm in ("contribution_preserving", "same_sites_unscaled"):
+                child, found = contribution_preserving_crossover(
+                    parent, donor_parent, rng, max_size, points, counter,
+                    rescale=(arm == "contribution_preserving"),
+                )
+                if found:
+                    recombinations += 1
+                else:
+                    homology_failures += 1
+                    child = mutate(parent, rng, max_size)
             else:
                 child, found = homologous_crossover(
                     parent, donor_parent, rng, max_size, points, counter,
@@ -741,6 +830,23 @@ def main() -> int:
         },
         "per_arm": per_arm,
         "prediction_registered_before_running": {
+            "contribution_preserving": (
+                "the successor recorded as untested after matching sign(B) failed. The donor is "
+                "inserted scaled so its contribution to the output is EXACTLY what it was in its "
+                "own parent, verified at 1614 of 1614 comparisons. If contribution transfer is "
+                "what crossover lacks, this arm should beat random crossover's 29.0% and approach "
+                "or exceed mutation-only's 47.0%"),
+            "same_sites_unscaled": (
+                "the control that separates the two things the operator does. Same constant-ratio "
+                "sites, donor inserted UNSCALED. If it matches contribution_preserving then the "
+                "scaling does nothing and only site selection matters; if both match plain "
+                "crossover, neither does"),
+            "the_falsifier_that_matters": (
+                "if contribution_preserving does not significantly exceed random crossover, then "
+                "exact contribution preservation is ALSO not the missing ingredient, and the "
+                "contribution-transfer story for why crossover fails is refuted as an EXPLANATION "
+                "rather than merely in its sign-matching operationalisation. That would leave the "
+                "five refutations standing with no mechanism behind them"),
             "homologous_crossover": (
                 "if homology is what crossover lacks, restricting recombination to sites whose "
                 "context-coefficient sign pattern matches the donor's should raise the solve rate "

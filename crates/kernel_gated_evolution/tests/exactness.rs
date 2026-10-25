@@ -110,6 +110,52 @@ fn targets_are_reachable_and_the_search_solves_the_easy_rung() {
 }
 
 #[test]
+fn prefix_parser_rebuilds_the_ladder_and_refuses_the_outside() {
+    // Every ladder target, written in prefix notation, must parse to exactly
+    // the tree the ladder constructs -- structural equality, not just equal
+    // values -- so a target given on the command line is the target searched.
+    let written = [
+        ("L1_base", "(+ q (* h p))"),
+        ("L2_minus_q", "(- (+ q (* h p)) q)"),
+        ("L3_minus_wq", "(- (+ q (* h p)) (* w q))"),
+        ("L4_minus_hwq", "(- (+ q (* h p)) (* (* h w) q))"),
+        ("L5_minus_half_hwq", "(- (+ q (* h p)) (* (* (* h w) 1/2) q))"),
+        ("L6_full", "(- (+ q (* h p)) (* (* (* (* h h) (* w w)) 1/2) q))"),
+    ];
+    let ladder = target_ladder();
+    for (name, text) in written {
+        let built = &ladder.iter().find(|(n, _)| *n == name).unwrap().1;
+        let parsed = parse_prefix(text).expect(name);
+        assert_eq!(&parsed, built, "{name} parsed differently from the ladder's construction");
+    }
+    // Outside the grammar is refused, not approximated.
+    assert!(parse_prefix("(/ q h)").is_err(), "division is outside {{+,-,*}}");
+    assert!(parse_prefix("(+ q)").is_err(), "arity");
+    assert!(parse_prefix("(+ q x)").is_err(), "unknown variable");
+    assert!(parse_prefix("(+ q 1/0)").is_err(), "zero denominator");
+}
+
+#[test]
+fn random_search_is_a_real_floor_and_reports_its_cost() {
+    let mut rng = Pcg64::seed_from_u64(20261024);
+    let points = sample_points(&mut rng, 12);
+    let l1 = target_ladder().into_iter().find(|(n, _)| *n == "L1_base").unwrap().1;
+    let r = random_search(3, &l1, &points, 500);
+    assert!(r.evaluations <= 500, "must respect the budget");
+    assert!(r.best_size >= 1);
+    // Either it solved (and stopped early, reporting fewer evaluations) or it
+    // spent the whole budget; a run that claims a solution with nonzero fitness
+    // would be a bug.
+    if r.solved {
+        assert_eq!(r.best_fitness, "0");
+        assert!(r.solution_lean.is_some());
+    } else {
+        assert_eq!(r.evaluations, 500);
+        assert!(r.solution_lean.is_none());
+    }
+}
+
+#[test]
 fn inert_fraction_is_zero_for_a_minimal_target_and_positive_with_dead_code() {
     let points = sample_points(&mut Pcg64::seed_from_u64(9), 6);
     let l1 = target_ladder().into_iter().find(|(n, _)| *n == "L1_base").unwrap().1;

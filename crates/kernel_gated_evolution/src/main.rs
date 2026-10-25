@@ -318,14 +318,179 @@ fn run_hillclimb(args: &[String]) {
     println!("wrote {}", out.display());
 }
 
+#[derive(Serialize)]
+struct MethodSummary {
+    method: String,
+    solved: usize,
+    rate: f64,
+    median_evaluations_when_solved: Option<f64>,
+    distinct_solutions: usize,
+}
+
+#[derive(Serialize)]
+struct SolveReport {
+    target_name: String,
+    target_prefix: String,
+    target_lean: String,
+    target_size: usize,
+    variable_mapping: Option<String>,
+    seeds: usize,
+    budget: usize,
+    points_source: String,
+    methods: Vec<MethodSummary>,
+    paired_kge_only_vs_hillclimb: usize,
+    paired_hillclimb_only_vs_kge: usize,
+    paired_kge_only_vs_random: usize,
+    paired_random_only_vs_kge: usize,
+    kge_solutions_lean: Vec<String>,
+}
+
+/// `kge solve`: KGE against the naive and simple baselines on ONE target given in
+/// prefix notation, same seeds, points and budget for every method.
+fn run_solve(args: &[String]) {
+    let seeds: usize = arg(args, "--seeds").and_then(|s| s.parse().ok()).unwrap_or(50);
+    let budget: usize = arg(args, "--budget").and_then(|s| s.parse().ok()).unwrap_or(4000);
+    let neighbours: usize = arg(args, "--neighbours").and_then(|s| s.parse().ok()).unwrap_or(8);
+    let out = PathBuf::from(arg(args, "--out").expect("--out is required"));
+    let name = arg(args, "--name").unwrap_or_else(|| "target".to_string());
+    let mapping = arg(args, "--mapping");
+    let lean_out = arg(args, "--lean-out").map(PathBuf::from);
+    let text = arg(args, "--target").expect("--target '(prefix expr)' is required");
+    let target = match kernel_gated_evolution::parse_prefix(&text) {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("target refused: {e}");
+            std::process::exit(2);
+        }
+    };
+    let (points, points_source) = load_points(args);
+    let want: Vec<Rat> = points.iter().map(|e| target.eval(e)).collect();
+    assert!(fitness(&target, &points, &want).is_zero(), "target is not a solution of itself");
+    let config = SearchConfig { budget, ..SearchConfig::default() };
+
+    let kge: Vec<_> = (0..seeds as u64).map(|s| evolve(s, &target, &points, &config)).collect();
+    let rnd: Vec<_> = (0..seeds as u64)
+        .map(|s| kernel_gated_evolution::random_search(s, &target, &points, budget))
+        .collect();
+    let climb: Vec<bool> = (0..seeds as u64)
+        .map(|s| hill_climb(s, &target, &points, budget, config.max_size, neighbours, true).solved)
+        .collect();
+
+    fn summary(method: &str, solved: &[bool], evals: &[usize], distinct: usize) -> MethodSummary {
+        let n = solved.iter().filter(|s| **s).count();
+        let when: Vec<f64> = solved
+            .iter()
+            .zip(evals)
+            .filter(|(s, _)| **s)
+            .map(|(_, e)| *e as f64)
+            .collect();
+        MethodSummary {
+            method: method.to_string(),
+            solved: n,
+            rate: n as f64 / solved.len() as f64,
+            median_evaluations_when_solved: median(when),
+            distinct_solutions: distinct,
+        }
+    }
+    let kge_solved: Vec<bool> = kge.iter().map(|a| a.solved).collect();
+    let rnd_solved: Vec<bool> = rnd.iter().map(|a| a.solved).collect();
+    let mut kge_terms: Vec<String> = Vec::new();
+    for a in &kge {
+        if let Some(t) = &a.solution_lean {
+            if !kge_terms.contains(t) {
+                kge_terms.push(t.clone());
+            }
+        }
+    }
+    let mut rnd_terms: Vec<String> = Vec::new();
+    for a in &rnd {
+        if let Some(t) = &a.solution_lean {
+            if !rnd_terms.contains(t) {
+                rnd_terms.push(t.clone());
+            }
+        }
+    }
+    let methods = vec![
+        summary("kge_mutation_selection", &kge_solved,
+                &kge.iter().map(|a| a.evaluations).collect::<Vec<_>>(), kge_terms.len()),
+        summary("hillclimb_with_restarts", &climb, &vec![budget; seeds], 0),
+        summary("random_search", &rnd_solved,
+                &rnd.iter().map(|a| a.evaluations).collect::<Vec<_>>(), rnd_terms.len()),
+    ];
+    let pair = |a: &[bool], b: &[bool]| -> (usize, usize) {
+        let ab = a.iter().zip(b).filter(|(x, y)| **x && !**y).count();
+        let ba = a.iter().zip(b).filter(|(x, y)| !**x && **y).count();
+        (ab, ba)
+    };
+    let (k_only_h, h_only_k) = pair(&kge_solved, &climb);
+    let (k_only_r, r_only_k) = pair(&kge_solved, &rnd_solved);
+
+    if let Some(dir) = &lean_out {
+        fs::create_dir_all(dir).expect("cannot create --lean-out");
+        let safe = name.replace(|c: char| !c.is_ascii_alphanumeric(), "_");
+        fs::write(
+            dir.join(format!("RungSpec_{safe}.lean")),
+            format!(
+                "import Mathlib.Tactic.Ring\nnamespace RungSpec\n\
+                 def specQ (h w q p : Rat) : Rat := {}\nend RungSpec\n",
+                target.render_lean()
+            ),
+        )
+        .expect("write spec");
+        for (i, term) in kge_terms.iter().enumerate() {
+            let ns = format!("{safe}_S{i}");
+            fs::write(
+                dir.join(format!("{safe}_S{i}.lean")),
+                format!(
+                    "import Mathlib.Tactic.Ring\nnamespace {ns}\n\
+                     def candQ (h w q p : Rat) : Rat := {term}\n\
+                     theorem {ns}_m (h w q p : Rat) : candQ h w q p = RungSpec.specQ h w q p := by\n\
+                     \x20 unfold candQ RungSpec.specQ; ring\nend {ns}\n"
+                ),
+            )
+            .expect("write candidate");
+        }
+    }
+
+    for m in &methods {
+        println!(
+            "  {:<26} solved {:>3}/{}  ({:.3})  med_evals={:?}  distinct={}",
+            m.method, m.solved, seeds, m.rate, m.median_evaluations_when_solved, m.distinct_solutions
+        );
+    }
+    println!(
+        "  paired: KGE-only vs climb {} / climb-only {}   KGE-only vs random {} / random-only {}",
+        k_only_h, h_only_k, k_only_r, r_only_k
+    );
+    let report = SolveReport {
+        target_name: name,
+        target_prefix: text,
+        target_lean: target.render_lean(),
+        target_size: target.size(),
+        variable_mapping: mapping,
+        seeds,
+        budget,
+        points_source,
+        methods,
+        paired_kge_only_vs_hillclimb: k_only_h,
+        paired_hillclimb_only_vs_kge: h_only_k,
+        paired_kge_only_vs_random: k_only_r,
+        paired_random_only_vs_kge: r_only_k,
+        kge_solutions_lean: kge_terms,
+    };
+    fs::write(&out, serde_json::to_string_pretty(&report).unwrap()).expect("write report");
+    println!("wrote {}", out.display());
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     match args.get(1).map(String::as_str) {
         Some("ladder") => run_ladder(&args),
         Some("hillclimb") => run_hillclimb(&args),
+        Some("solve") => run_solve(&args),
         _ => {
             eprintln!(
-                "usage:\n  kge ladder    --seeds N --budget B --out FILE [--rungs A,B] [--lean-out DIR] [--points-file F]\n  kge hillclimb --seeds N --budget B --out FILE [--rungs A,B] [--neighbours K] [--points-file F]"
+                "usage:\n  kge ladder    --seeds N --budget B --out FILE [--rungs A,B] [--lean-out DIR] [--points-file F]\n  kge hillclimb --seeds N --budget B --out FILE [--rungs A,B] [--neighbours K] [--points-file F]\n  kge solve     --target '(prefix expr over h w q p)' --name NAME --out FILE [--seeds N] [--budget B] [--mapping TEXT] [--lean-out DIR]"
             );
             std::process::exit(2);
         }

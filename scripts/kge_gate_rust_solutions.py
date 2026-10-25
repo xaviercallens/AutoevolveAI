@@ -51,7 +51,11 @@ def main() -> int:
     parser.add_argument("--per-rung", type=int, default=8,
                         help="distinct candidates to gate per rung (one invocation each)")
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--names", type=str, default="",
+                        help="comma-separated candidate names to gate instead of the ladder rungs "
+                             "(e.g. the --name values given to `kge solve`)")
     args = parser.parse_args()
+    names = tuple(n for n in args.names.split(",") if n) or RUNGS
 
     verifier = LeanKernelVerifier(formal_dir=FORMAL)
     report: dict[str, object] = {
@@ -63,7 +67,7 @@ def main() -> int:
     total_candidates = 0
     total_accepted = 0
 
-    for rung in RUNGS:
+    for rung in names:
         spec = args.candidates / f"RungSpec_{rung}.lean"
         if not spec.exists():
             report["rungs"][rung] = {"blocked": f"BLOCKED: no RungSpec for {rung}"}

@@ -497,6 +497,103 @@ pub fn evolve(seed: u64, target: &Node, points: &[Env], config: &SearchConfig) -
 }
 
 // --------------------------------------------------------------------------
+// Targets from outside the ladder: a prefix-notation parser
+// --------------------------------------------------------------------------
+
+/// Parse a target written in prefix notation over the genome's grammar, e.g.
+/// `(- (+ q (* h p)) (* w q))`. Leaves are the variable names `h w q p`, or
+/// rationals written `n` or `n/d`. Only `+ - *` are accepted: a target outside
+/// the grammar cannot be a solution and is refused rather than approximated.
+pub fn parse_prefix(text: &str) -> Result<Node, String> {
+    let tokens: Vec<String> = text
+        .replace('(', " ( ")
+        .replace(')', " ) ")
+        .split_whitespace()
+        .map(|s| s.to_string())
+        .collect();
+    let mut index = 0usize;
+    let node = parse_tokens(&tokens, &mut index)?;
+    if index != tokens.len() {
+        return Err(format!("trailing tokens after position {index}"));
+    }
+    Ok(node)
+}
+
+fn parse_tokens(tokens: &[String], index: &mut usize) -> Result<Node, String> {
+    let token = tokens.get(*index).ok_or("unexpected end of input")?.clone();
+    *index += 1;
+    if token == "(" {
+        let op = tokens.get(*index).ok_or("operator expected")?.clone();
+        *index += 1;
+        let code = match op.as_str() {
+            "+" => Opcode::Add,
+            "-" => Opcode::Sub,
+            "*" => Opcode::Mul,
+            other => return Err(format!("operator {other:?} is outside the grammar {{+,-,*}}")),
+        };
+        let left = parse_tokens(tokens, index)?;
+        let right = parse_tokens(tokens, index)?;
+        match tokens.get(*index).map(String::as_str) {
+            Some(")") => {
+                *index += 1;
+                Ok(Node::op(code, left, right))
+            }
+            _ => Err("')' expected".to_string()),
+        }
+    } else if let Some(i) = VARIABLES.iter().position(|v| *v == token) {
+        Ok(Node::Var(i))
+    } else {
+        let mut parts = token.split('/');
+        let n: i64 = parts.next().unwrap().parse().map_err(|_| format!("bad leaf {token:?}"))?;
+        let d: i64 = match parts.next() {
+            Some(d) => d.parse().map_err(|_| format!("bad denominator in {token:?}"))?,
+            None => 1,
+        };
+        if d == 0 {
+            return Err("zero denominator".to_string());
+        }
+        Ok(Node::Const(rat(n, d)))
+    }
+}
+
+// --------------------------------------------------------------------------
+// The naive baseline: random search at the same budget
+// --------------------------------------------------------------------------
+
+/// Draw `budget` random trees and keep the best. No selection, no inheritance:
+/// the floor any search must clear to claim it searched at all.
+pub fn random_search(seed: u64, target: &Node, points: &[Env], budget: usize) -> ArmResult {
+    let mut rng = Pcg64::seed_from_u64(seed);
+    let want: Vec<Rat> = points.iter().map(|env| target.eval(env)).collect();
+    let mut best: Option<(Rat, Node)> = None;
+    let mut evaluations = 0usize;
+    while evaluations < budget {
+        let depth = rng.random_range(2..=4);
+        let candidate = random_tree(&mut rng, depth);
+        let score = fitness(&candidate, points, &want);
+        evaluations += 1;
+        if best.as_ref().map_or(true, |(s, _)| score < *s) {
+            let done = score.is_zero();
+            best = Some((score, candidate));
+            if done {
+                break;
+            }
+        }
+    }
+    let (score, node) = best.unwrap();
+    let solved = score.is_zero();
+    ArmResult {
+        seed,
+        solved,
+        evaluations,
+        best_fitness: score.to_string(),
+        best_size: node.size(),
+        inert_fraction_of_best: inert_fraction(&node, points),
+        solution_lean: if solved { Some(node.render_lean()) } else { None },
+    }
+}
+
+// --------------------------------------------------------------------------
 // The control that the population must beat: a plain hill-climber
 // --------------------------------------------------------------------------
 

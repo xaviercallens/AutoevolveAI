@@ -68,6 +68,16 @@ the candidate — swap the layer, keep the gate.
 
 ---
 
+### Turn on lifetime learning for mid-sized targets
+
+`--tuning baldwin` solves each constant locus exactly when its required value
+`v* = v + (want − out)/B` agrees at every sample point (proved:
+`xav_required_value`). Measured over 1,200 paired seeds it never lost a solve the
+plain population found, and at **matched total work** it stays ahead on L3
+(0.450 vs 0.395) and L5 (0.060 vs 0.040) and is level on L4. `--tuning lamarck`
+gives identical results — exact tuning is all-or-nothing. It costs 2.3–2.8× the
+tree-point work per run from L3 up, so compare at matched work, as above.
+
 ## 2. How to use it — the discipline
 
 Each rule below is there because skipping it produced a wrong conclusion in this

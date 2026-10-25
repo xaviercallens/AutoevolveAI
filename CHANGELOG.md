@@ -2,6 +2,17 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [14.11.0] — Kernel-Gated Evolution: exact lifetime learning of constants (2026-10-25)
+
+Summary: Paper J edition 3 (DOI [10.5281/zenodo.23638652](https://doi.org/10.5281/zenodo.23638652)).
+`tune_constants` and `--tuning none|baldwin|lamarck`: each constant locus is set to its required value
+`v* = v + (want − out)/B` when that value agrees at every sample point — the Baldwin effect made exact.
+Over 1,200 paired seeds it never lost a solve the plain population found (L1 0.550→0.835, p = 1e-17;
+L3 0.255→0.450, p = 4e-12; L5 0.015→0.060, p = 0.004); 40/40 gated solutions kernel-proved. At matched
+total work (plain population at 11,000 evaluations) it stays ahead on L3 (0.450 vs 0.395) and L5 (0.060 vs
+0.040), level on L4; L6 unsolved by every arm. Baldwin and Lamarck coincide on all 1,200 seeds: exact tuning
+is all-or-nothing. 10 Rust tests.
+
 ## [14.10.0] — Kernel-Gated Evolution: Hub benchmark, Lean-proved identities, guidelines (2026-10-25)
 
 Summary: Paper J edition 2 (DOI [10.5281/zenodo.23636412](https://doi.org/10.5281/zenodo.23636412),

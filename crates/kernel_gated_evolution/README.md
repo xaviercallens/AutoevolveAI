@@ -49,6 +49,8 @@ cd ../.. && .venv/bin/python scripts/kge_gate_rust_solutions.py \
     --candidates results/my_candidates --names my_law --per-rung 8 --out results/my_law_gate.json
 ```
 
+`--tuning none|baldwin|lamarck` (all subcommands) turns on exact lifetime learning of
+constants; `baldwin` is the recommended setting for mid-sized targets.
 `--points-file` replays a run on exactly another implementation's sample points
 (a JSON array of `["n/d","n/d","n/d","n/d"]` rows). Seeds are replayable (`rand_pcg`).
 

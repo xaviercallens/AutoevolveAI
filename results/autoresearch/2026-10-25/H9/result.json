@@ -1,0 +1,57 @@
+{
+  "id": "H9",
+  "verdict": "FAITHFUL_WITH_CAVEATS",
+  "scope": "statement-fidelity audit only; read-only; no build, no proof, no Comparator run",
+  "followup": "prereg says 'a Lean implication proof only if they match'; (C) matches, but the implication proof was NOT attempted because the caller forbade building. H9 is not fully closed.",
+  "corpus_self_discussion": "none: only docstrings in NavierStokes/ComparatorDefinitions.lean cite Fefferman condition numbers and the errata; formalization.yaml review status 'self-assessed'",
+  "public_discussion": "arXiv 2610.08144 (Bastounis-Circelli-Hansen), checked by grepping the full text: NL-proof vs Lean-proof mismatches in intermediate lemmas (Lemma 8.6 eq. 8.19; Lemma 10.5 pressure flux); no claim about the top-level (C)/(D) statement fidelity",
+  "mismatches": [
+    {
+      "vs": "main text only (matches the errata-corrected official statement)",
+      "statement": "navier_stokes_breakdown_periodic (D)",
+      "element": "pressure periodicity",
+      "lean": "isOnePeriodic_pressure : ∀ t ≥ 0, IsOnePeriodic (p · t)  (ComparatorChallenges/NavierStokes.lean:269)",
+      "fefferman": "absent from main text (10)-(11); added by Clay errata: 'The further condition p(x + e_j, t) = p(x, t) should be made explicit in Eqn (8).'",
+      "mark": "DIFFERENT vs main text (Lean 'no solution' is weaker: smaller solution class); MATCH vs errata-corrected statement"
+    }
+  ],
+  "mismatches_C": [],
+  "caveats": [
+    "'Smooth on R^3 x [0,inf)' encoded as Mathlib ContDiffOn ℝ ∞ on univ ×ˢ Ici 0 (one-sided at t=0); Fefferman does not define it further",
+    "Quantifier is ∀ν>0 ∃u0 f (strong reading of 'Take ν>0'); ∀/∃ readings are equivalent by NS scaling (informal)",
+    "Equivalence of iteratedFDeriv operator norm vs multi-index partials, sup vs Euclidean norm on ℝ³×ℝ, and K:ℝ vs K∈ℕ argued by hand, not mechanized",
+    "Bochner-integral junk-value trap in bounded energy is blocked by the extra MemLp conjunct (L:250), which is implied by (7) so adds no restriction",
+    "Non-vacuity (nonzero divergence-free Schwartz u0; solution class non-empty, e.g. v=p=0 for u0=f=0) argued informally",
+    "Mathlib definitions (∞ notation, Laplacian) checked in Mathlib v4.32.2 on disk, not the pinned v4.34.0-rc2; nothing compiled",
+    "Not diffed byte-for-byte against upstream formal-conjectures@8bf45ed (upstream path renamed Millenium -> Millennium)",
+    "Audit covers the challenge statement only; that NavierStokes/ComparatorSolution.lean proves this exact statement is Comparator's job, not run here",
+    "'Forced vs unforced' press criticism concerns (A)/(B); Fefferman (C) explicitly allows smooth f satisfying (5)"
+  ],
+  "C_table_summary": {
+    "domain_R3": "MATCH (L:67)",
+    "viscosity_quantifier": "MATCH ∀ν>0 ∃u0 f (L:273-274)",
+    "u0_smooth_divfree": "MATCH (L:137,139)",
+    "u0_decay_(4)": "MATCH (L:155)",
+    "f_smooth": "MATCH (L:177)",
+    "f_decay_(5)": "MATCH (L:190-191)",
+    "pressure_present": "MATCH (L:219,276)",
+    "eq_(1)": "MATCH (L:222-224)",
+    "eq_(2)": "MATCH (L:227)",
+    "eq_(3)": "MATCH (L:229)",
+    "(6)_smoothness_u_p_on_[0,inf)": "MATCH (L:232,235)",
+    "(7)_bounded_energy": "MATCH (L:250,253)",
+    "no_solution_scope": "MATCH, all solutions in class, no restriction (L:276)"
+  },
+  "sources": [
+    "https://www.claymath.org/wp-content/uploads/2022/06/navierstokes.pdf (Fefferman, official Clay statement + errata; fetched 2026-10-25, pdftotext)",
+    "/mnt/disks/disk-socrateai-local-1/callensxavier_home_data/SocrateAI-Scientific-Agora-LeanMaster/lean4basesource/openai-navierstokes/ComparatorChallenges/NavierStokes.lean",
+    "/mnt/disks/disk-socrateai-local-1/callensxavier_home_data/SocrateAI-Scientific-Agora-LeanMaster/lean4basesource/openai-navierstokes/ComparatorChallenges/NavierStokes.json",
+    "/mnt/disks/disk-socrateai-local-1/callensxavier_home_data/SocrateAI-Scientific-Agora-LeanMaster/lean4basesource/openai-navierstokes/NavierStokes/ComparatorSolution.lean",
+    "/mnt/disks/disk-socrateai-local-1/callensxavier_home_data/SocrateAI-Scientific-Agora-LeanMaster/lean4basesource/openai-navierstokes/README.md",
+    "/mnt/disks/disk-socrateai-local-1/callensxavier_home_data/SocrateAI-Scientific-Agora-LeanMaster/lean4basesource/openai-navierstokes/formalization.yaml",
+    "https://github.com/google-deepmind/formal-conjectures/blob/main/FormalConjectures/Millennium/NavierStokes.lean (upstream; summary via web-fetch agent)",
+    "https://www.alphaxiv.org/abs/2610.08144 (Bastounis-Circelli-Hansen, 'Navier-Stokes lost in translation': NL-proof vs Lean-proof mismatches in intermediate lemmas, not a top-level statement-fidelity claim)",
+    "https://aiweekly.co/alerts/paper-flags-gap-in-openais-lean-verified-navier-stokes-proof",
+    "https://thenextweb.com/news/openai-navier-stokes-claim-verification-credit"
+  ]
+}

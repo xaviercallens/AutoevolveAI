@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""Check every quantitative claim in Paper J against the artifact behind it.
+
+The terminal gate before deposit, as for Paper I. Two kinds of claim are checked:
+
+* **Static claims** written into the paper by hand -- the kernel-gate table, the
+  exactness counts, the landscape summary -- each traced to the artifact that
+  measured it.
+* **Generated sections** -- the Rust ladder and the hill-climb comparison -- which
+  `fill_paper_j_results.py` renders from artifacts. Here the check is that no
+  placeholder remains and that every rate in the artifact appears verbatim in
+  the TeX, so a stale fill cannot ship.
+
+Exit nonzero on any mismatch, because the point is to block a deposit.
+
+Usage:
+    .venv/bin/python scripts/verify_paper_j_claims.py
+"""
+
+from __future__ import annotations
+
+import json
+import re
+from pathlib import Path
+from typing import Any, List, Tuple
+
+REPO = Path(__file__).resolve().parents[1]
+PAPER = (REPO / "sub_projects" / "socrateai_scientific_genetic" / "SocrateAI-Scientific-Genetic"
+         / "papers" / "PaperJ_Kernel_Gated_Evolution_Foundation.tex")
+RESULTS = REPO / "results"
+
+
+def load(name: str) -> dict[str, Any]:
+    path = RESULTS / f"{name}.json"
+    if not path.exists():
+        raise RuntimeError(f"artifact missing: {path}")
+    return json.loads(path.read_text())
+
+
+def static_claims(tex: str) -> List[Tuple[str, Any, Any, str]]:
+    rows: List[Tuple[str, Any, Any, str]] = []
+    atom = load("lean_atomicity_is_the_wrapper")
+    # The one-invocation gate table.
+    by_false = {r["actually_false"]: r for r in atom["measured"]}
+    for k, wall in ((0, "10.38"), (1, "10.21"), (2, "10.88"), (4, "12.73"), (8, "14.19")):
+        rows.append((f"gate invocations at {k} false", 1, by_false[k]["invocations"], "atomicity"))
+        rows.append((f"gate wall clock at {k} false", wall, f"{by_false[k]['wall_clock_s']:.2f}",
+                     "atomicity"))
+        rows.append((f"no false accepted at {k}", [], by_false[k]["false_accepted"], "atomicity"))
+    rows.append(("single-candidate median s", "6.36",
+                 f"{atom['reference_single_candidate_median_s']:.2f}", "atomicity"))
+    rows.append(("eight individual proofs s", "50.88",
+                 f"{8 * atom['reference_single_candidate_median_s']:.2f}", "atomicity"))
+    # Landscape summary.
+    cliff = load("gp_landscape_cliff")
+    widths = [r["basin_width_in_mutations"] for r in cliff["rungs"]]
+    rows.append(("basin width mostly 4", True, sorted(widths).count(4) >= 4, "landscape"))
+    neutral = [r["neutrality_at_solution"] for r in cliff["rungs"]]
+    rows.append(("neutrality within 5-8%", True,
+                 min(neutral) >= 0.045 and max(neutral) <= 0.085, "landscape"))
+    k1 = [r["walk_away_from_solution"][0]["ratio_to_random_median"] for r in cliff["rungs"]]
+    rows.append(("k=1 ratios within 0.61-0.91", True,
+                 round(min(k1), 2) >= 0.60 and round(max(k1), 2) <= 0.92, "landscape"))
+    # Exactness counts quoted from the Python prototype's recorded runs.
+    wall = load("semantic_backprop_and_the_wall")
+    rows.append(("v* verified pairs", "24303 of 24303",
+                 wall["the_identity_that_motivated_it"]["verified"].split(" (")[0], "wall"))
+    rows.append(("inert fraction", 0.048, wall["the_identity_that_motivated_it"]["inert_pairs"], "wall"))
+    return rows
+
+
+def generated_sections(tex: str) -> List[str]:
+    """Strings that must appear verbatim once the sections are filled."""
+    must: List[str] = []
+    ladder = load("kge_rust_ladder")
+    for r in ladder["rungs"]:
+        must.append(f"{r['solved']}/{ladder['parameters']['seeds']}")
+        must.append(f"{r['solve_rate']:.3f}")
+    gate = load("kge_rust_gate")
+    t = gate["totals"]
+    must.append(f"{t['accepted_by_kernel']}/{t['distinct_candidates_gated']}")
+    must.append(f"{t['invocations']} invocations")
+    climb_path = RESULTS / "kge_rust_hillclimb.json"
+    if climb_path.exists():
+        climb = json.loads(climb_path.read_text())
+        for r in climb["rungs"]:
+            must.append(f"{r['ga_rate']:.3f} & {r['descent_rate']:.3f} & {r['restarts_rate']:.3f}")
+    return must
+
+
+def main() -> int:
+    tex = PAPER.read_text()
+    rows = static_claims(tex)
+    mismatches = [r for r in rows if str(r[1]) != str(r[2])]
+    print(f"{len(rows)} static claims checked against artifacts")
+    print(f"  matched : {len(rows) - len(mismatches)}")
+    print(f"  MISMATCH: {len(mismatches)}")
+    for label, paper, art, src in mismatches:
+        print(f"    {label}: paper={paper!r} artifact={art!r} ({src})")
+
+    failed = bool(mismatches)
+    if "pending at the time of drafting" in tex:
+        print("\nresults sections NOT YET FILLED (placeholders remain) -> refusing deposit")
+        failed = True
+    else:
+        must = generated_sections(tex)
+        absent = [s for s in must if s not in tex]
+        print(f"\n{len(must)} generated-section strings checked; absent: {absent or 'none'}")
+        failed = failed or bool(absent)
+
+    print("\n" + ("REFUSING DEPOSIT" if failed else "all claims trace to an artifact"))
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

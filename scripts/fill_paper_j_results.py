@@ -184,6 +184,30 @@ def hf_section() -> str:
             f"(null.\\ {r12['nullity']}) & "
             f"{'exact' if r40['particular_solution_agrees_on_20_heldout'] else 'no'} \\\\"
         )
+    # Where the population loses to the simplest baselines, say so by count.
+    beaten = [p for p in sel["selected_top"]
+              if (lambda m: m["kge_mutation_selection"]["rate"] < max(m["hillclimb_with_restarts"]["rate"],
+                                                                      m["random_search"]["rate"]))(
+                  {x["method"]: x for x in json.loads(
+                      (REPO / "results" / f"kge_hf_{p['problem'].replace('-', '_').replace('.', '_')}.json").read_text()
+                  )["methods"]})]
+    won = [p for p in sel["selected_top"] if p not in beaten and
+           (lambda m: m["kge_mutation_selection"]["rate"] > max(m["hillclimb_with_restarts"]["rate"],
+                                                                 m["random_search"]["rate"]))(
+               {x["method"]: x for x in json.loads(
+                   (REPO / "results" / f"kge_hf_{p['problem'].replace('-', '_').replace('.', '_')}.json").read_text()
+               )["methods"]})]
+    verdict = (
+        f" The population wins outright on {len(won)} of the five laws"
+        f" ({', '.join(p['problem'].replace('feynman-', '').upper() for p in won) or 'none'})"
+        f" and is beaten by at least one of the two naive baselines on {len(beaten)}"
+        f" ({', '.join(p['problem'].replace('feynman-', '').upper() for p in beaten) or 'none'}). "
+        "Every Hub law here has at most four leaves, which is the regime where the ladder "
+        "already showed the population to be overhead (\\S\\ref{sec:climb}): for tiny targets, "
+        "random search over small trees and a restart hill-climber are the better search layer, "
+        "and the guideline in \\S\\ref{sec:guidelines} says so. The kernel gate is indifferent to "
+        "which layer found the candidate."
+    )
     return (
         "\\begin{center}\n\\small\n\\begin{tabular}{llrrrrrll}\n\\toprule\n"
         " & & & \\multicolumn{2}{c}{KGE} & climber & random & \\multicolumn{2}{c}{exact regression} \\\\\n"
@@ -200,7 +224,7 @@ def hf_section() -> str:
         "exact samples the search for a small expression recovers what a dense fit cannot "
         "pin down, and with enough samples linear algebra is faster and certain. KGE's "
         "distinctive contribution is not the recovery but what follows it --- a kernel proof "
-        "that the recovered form equals the law."
+        "that the recovered form equals the law." + verdict
     )
 
 

@@ -1240,6 +1240,34 @@ them in their own section, once, plainly, and to let the design be the thing the
 measurements supported: mutation-driven because recombination failed six
 pre-registered tests, population-backed because the climber loses from L3 on.
 
+### 29.18 The Hub benchmark: the population loses to naive baselines on tiny targets, and the gate does not care (2026-10-25)
+
+Five SRSD-Feynman laws inside the `{+,-,*}` dyadic grammar, 100 seeds each,
+KGE's population against random search and a restart hill-climber on the same
+seeds, points and budget. The population won outright on one law (I.39.10,
+`3/2 pV`: 0.51 vs 0.21 vs 0.10), tied the trivial one, and LOST to both naive
+baselines on three (I.14.4 `kx^2/2`: 0.07 vs 0.27/0.20; II.34.2: 0.22 vs
+0.31/0.31; II.37.1: 0.10 vs 0.16/0.15). Every Hub law has at most four leaves.
+
+This is the ladder's lesson again, now on external data: the population is
+overhead for tiny targets and earns its place only from about nine nodes. A
+"new algorithm" paper that reported only the law it won would have been the
+defect this programme keeps finding. The guideline that came out of it is
+operational rather than apologetic -- choose the search layer by target size --
+and the part of KGE that is actually novel was untouched by the loss: all 39
+distinct recovered laws were proved by the kernel in five invocations with a
+planted wrong candidate rejected in every batch. The gate is indifferent to which
+layer found the candidate; that indifference is the design.
+
+Two small things worth keeping. The traditional baseline (exact degree-3
+regression) was ambiguous on the twelve points the search solved from and exact
+on forty: which method wins depends on how much data there is, and the honest
+table says so rather than picking the regime. And a reporting defect was found
+before deposit: `kge solve` recorded the budget as the climber's evaluation count
+instead of its real one, so the artifact would have read 4000 for a method that
+stops early. Fixed and re-run with the same seeds before anything was deposited;
+rates are unchanged by construction.
+
 ### 29.14 The atomicity I measured was my own wrapper, and it invalidated three rounds of economics (2026-10-24)
 
 Everything in §29.13 and its follow-up about batching economics rested on a

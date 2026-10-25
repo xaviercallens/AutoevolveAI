@@ -41,7 +41,8 @@ REPO = Path(__file__).resolve().parents[1]
 SUBPROJECT = REPO / "sub_projects" / "socrateai_scientific_genetic" / "SocrateAI-Scientific-Genetic"
 CRATE = REPO / "crates" / "kernel_gated_evolution"
 ZENODO = "https://zenodo.org/api"
-RECEIPT = REPO / "results" / "zenodo_paper_j_edition1_receipt.json"
+RECEIPT = REPO / "results" / "zenodo_paper_j_edition2_receipt.json"
+EDITION = "edition-2"
 STEM = "PaperJ_Kernel_Gated_Evolution_Foundation"
 
 TITLE = (
@@ -111,6 +112,21 @@ density at scale; a properly powered study of contribution-preserving transfer
 (positive signal p = 0.031 against its matched control, not surviving
 correction); a persistent kernel; adaptive checkpoints; and application to the
 project's Python-genome kernel path.</p>
+
+<p><strong>Edition 2</strong> adds: the identities proved in Lean
+(<code>formal/ANSE/AlixKalSpec.lean</code>, six theorems, zero sorry, one of them
+axiom-free); a benchmark on the SRSD-Feynman datasets from the Hugging Face Hub
+(yoshitomo-matsubara/srsd-feynman_{easy,medium,hard}, CC-BY-4.0) &mdash; 8 of
+120 laws lie inside the reference grammar, five were run against random search,
+a restart hill-climber and exact polynomial regression on the same seeds, points
+and budget, and <strong>every one of the 39 distinct recovered laws was proved by
+the kernel</strong> with a planted wrong candidate rejected in each batch; the
+honest finding that on tiny targets (four leaves or fewer) the population is
+beaten by the naive baselines on three of the five laws, which becomes the
+guideline "choose the search layer by target size"; a "where and how to use it"
+guide; a statement of significance; and seven figures rendered from the
+artifacts. The engine's codename is ALIX (Apoptotic checkpoint, Lean-gated,
+Inheritance by mutation, eXact).</p>
 
 <p>Every number is produced by a committed script or test and checked against
 its artefact before deposit. <strong>Not peer reviewed.</strong></p>
@@ -189,6 +205,21 @@ def bundle() -> List[Path]:
         REPO / "scripts" / "kge_gate_rust_solutions.py",
         REPO / "scripts" / "fill_paper_j_results.py",
         REPO / "scripts" / "verify_paper_j_claims.py",
+        # Edition 2: the Lean-proved identities, the Hub benchmark and its
+        # baselines, the guidelines, and the figure script.
+        REPO / "formal" / "ANSE" / "AlixKalSpec.lean",
+        REPO / "results" / "kge_hf_selection.json",
+        REPO / "results" / "kge_hf_traditional_baseline.json",
+        REPO / "results" / "kge_hf_gate.json",
+        REPO / "results" / "kge_hf_feynman_i_12_1.json",
+        REPO / "results" / "kge_hf_feynman_i_39_10.json",
+        REPO / "results" / "kge_hf_feynman_i_14_4.json",
+        REPO / "results" / "kge_hf_feynman_ii_34_2.json",
+        REPO / "results" / "kge_hf_feynman_ii_37_1.json",
+        REPO / "scripts" / "kge_select_hf_problems.py",
+        REPO / "scripts" / "kge_traditional_baseline.py",
+        REPO / "scripts" / "kge_figures.py",
+        REPO / "docs" / "KGE_GUIDELINES.md",
     ]
     missing = [str(f) for f in files if not f.exists()]
     if missing:
@@ -201,6 +232,25 @@ def bundle() -> List[Path]:
     if collisions:
         raise RuntimeError(f"duplicate upload names in the bundle: {collisions}")
     return files
+
+
+def new_version(previous: int, tok: str, metadata):
+    """Deposit as a NEW VERSION of an existing record, never as a fresh record.
+
+    A corrected edition published as a new record leaves the old one as a
+    separate citable artefact with no link to its correction; /actions/newversion
+    keeps one concept DOI resolving to the latest edition.
+    """
+    draft = req("POST", f"{ZENODO}/deposit/depositions/{previous}/actions/newversion", tok)
+    deposition = req("GET", draft["links"]["latest_draft"], tok)
+    deposition_id = deposition["id"]
+    print(f"new version draft {deposition_id} of record {previous}")
+    inherited = deposition.get("files", [])
+    for old in inherited:
+        req("DELETE", f"{ZENODO}/deposit/depositions/{deposition_id}/files/{old['id']}", tok)
+    print(f"  cleared {len(inherited)} inherited files")
+    req("PUT", f"{ZENODO}/deposit/depositions/{deposition_id}", tok, json.dumps(metadata).encode())
+    return deposition_id, deposition["links"]["bucket"]
 
 
 def adopt_draft(deposition_id: int, tok: str, metadata):
@@ -223,6 +273,9 @@ def main() -> int:
                         help="assemble and check the bundle, contact nothing")
     parser.add_argument("--use-draft", type=int, default=0,
                         help="finish this existing unsubmitted draft after a 5xx")
+    parser.add_argument("--new-version-of", type=int, default=0,
+                        help="deposit as a new version of this published record id; the only "
+                             "correct way to publish a corrected edition")
     args = parser.parse_args()
 
     files = bundle()
@@ -244,7 +297,7 @@ def main() -> int:
             "keywords": KEYWORDS,
             "license": "cc-by-4.0",
             "access_right": "open",
-            "version": "edition-1",
+            "version": EDITION,
             "language": "eng",
             "related_identifiers": [
                 {"identifier": "10.5281/zenodo.23622868", "relation": "isSupplementedBy",
@@ -255,6 +308,8 @@ def main() -> int:
 
     if args.use_draft:
         deposition_id, bucket = adopt_draft(args.use_draft, tok, metadata)
+    elif args.new_version_of:
+        deposition_id, bucket = new_version(args.new_version_of, tok, metadata)
     else:
         deposition = req("POST", f"{ZENODO}/deposit/depositions", tok,
                          json.dumps(metadata).encode())
@@ -294,11 +349,11 @@ def main() -> int:
         "state": published.get("state"),
         "submitted": published.get("submitted"),
         "title": TITLE,
-        "version": "edition-1",
+        "version": EDITION,
         "files_uploaded": uploaded,
         "peer_reviewed": False,
-        "note": ("First Zenodo deposit of Paper J, so a new record. Later editions must use "
-                 "/actions/newversion on the concept record above, never a fresh record. "
+        "note": (f"Paper J {EDITION}. Editions after the first are deposited with "
+                 "/actions/newversion on the concept record above, never as a fresh record. "
                  "This paper has not been peer reviewed."),
     }
     RECEIPT.write_text(json.dumps(receipt, indent=2) + "\n")

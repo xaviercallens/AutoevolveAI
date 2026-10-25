@@ -34,6 +34,14 @@ Use KGE when **all three** hold:
 If one is missing, keep the kernel gate and swap the search layer. The gate is the
 part with the guarantee; the search is the part that is allowed to be creative.
 
+**Choose the search layer by target size.** Measured on the ladder and on five
+SRSD-Feynman laws: for targets of about four leaves or fewer, random search over
+small trees and a restart hill-climber match or beat the population (on three of
+the five Hub laws the population lost to both); the population earns its place
+from about nine nodes (L3: 49 vs 9 discordant pairs, p = 9e‑8). The checkpoint,
+the dosage analysis and the kernel gate are indifferent to which layer produced
+the candidate — swap the layer, keep the gate.
+
 ### Where it applies today (the reference grammar `{+,−,*}`, dyadic constants, ≤4 variables)
 
 - **Lean-gated numerical kernels**: integrator steps, stencils, update rules,

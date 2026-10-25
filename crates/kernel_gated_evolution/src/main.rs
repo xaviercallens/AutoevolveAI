@@ -372,9 +372,13 @@ fn run_solve(args: &[String]) {
     let rnd: Vec<_> = (0..seeds as u64)
         .map(|s| kernel_gated_evolution::random_search(s, &target, &points, budget))
         .collect();
-    let climb: Vec<bool> = (0..seeds as u64)
-        .map(|s| hill_climb(s, &target, &points, budget, config.max_size, neighbours, true).solved)
+    let climb_runs: Vec<_> = (0..seeds as u64)
+        .map(|s| hill_climb(s, &target, &points, budget, config.max_size, neighbours, true))
         .collect();
+    let climb: Vec<bool> = climb_runs.iter().map(|c| c.solved).collect();
+    // The climber's own evaluation counts, not the budget: a solved run stops
+    // early and reports fewer evaluations, exactly as the other two methods do.
+    let climb_evals: Vec<usize> = climb_runs.iter().map(|c| c.evaluations).collect();
 
     fn summary(method: &str, solved: &[bool], evals: &[usize], distinct: usize) -> MethodSummary {
         let n = solved.iter().filter(|s| **s).count();
@@ -413,7 +417,7 @@ fn run_solve(args: &[String]) {
     let methods = vec![
         summary("kge_mutation_selection", &kge_solved,
                 &kge.iter().map(|a| a.evaluations).collect::<Vec<_>>(), kge_terms.len()),
-        summary("hillclimb_with_restarts", &climb, &vec![budget; seeds], 0),
+        summary("hillclimb_with_restarts", &climb, &climb_evals, 0),
         summary("random_search", &rnd_solved,
                 &rnd.iter().map(|a| a.evaluations).collect::<Vec<_>>(), rnd_terms.len()),
     ];

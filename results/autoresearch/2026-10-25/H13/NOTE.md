@@ -76,3 +76,14 @@ arithmetic consistency check, not a derivation of the geometry. The Lean docstri
   `Autoresearch_Tadpole_controls.lean` is the same file plus `ctl_sorry` and `ctl_axiom`. Both are caught there.
 - No LeanMaster file was created or changed.
 - Producer ≠ verifier is still pending (an independent recompile and statement audit are needed for Tier A).
+
+## Independent verification: ACCEPT_WITH_CORRECTIONS (verification.md)
+- The second equation 2a + b = 24 is **not a tadpole constraint**. In Tripathy–Trivedi the actual D3 tadpole is
+  N_flux/2 + N_D3 = 24, which does not involve a or b, and "24 total induced" is a consequence of the 4 O7 + 16 D7
+  configuration. Read U2 as a duality-consistency sum rule against χ(K3×K3)/24 = 24; the 2 units of D3 charge per
+  O7 are a Tier L input.
+- This does not derive the number of O7 planes (geometry fixes a = 4).
+- An independent justification (in F-theory an O7⁻ counts as two 7-branes, and T²/Z₂ ≅ P¹ needs 24) is not pinned
+  in the repo; pin a source before using that reading.
+- The constants were kernel-checked against the imported file and the pinned references (TT lines 160–171,
+  DRS line 640). U2 is a 2×2 linear system with determinant −6 and is unique over ℤ as well.

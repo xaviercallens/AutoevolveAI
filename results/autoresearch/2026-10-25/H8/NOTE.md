@@ -51,3 +51,11 @@ consistency direction: Bogoliubov itself always passes the test, and the test is
 - Physics novelty: none. It is textbook algebra (AM-GM). What this adds is an explicit kernel-checked
   statement in the owner's project vocabulary.
 - Producer ≠ verifier: an independent recompile is still pending.
+
+## Independent verification: ACCEPT_WITH_CORRECTIONS (verification.md)
+- The KEEP is from a third run, an infrastructure retry outside the preregistered 2-attempt rule; both preregistered
+  attempts were discarded for disk-2 I/O starvation before elaboration. It is logged that way in results.tsv.
+- `feynman_sBog_exact` holds by construction, because S_B is defined as ε₀/ε_B. The verifier kernel-checked
+  S_B = k/√(ks² + k²), which is the textbook Bogoliubov structure factor, and non-vacuity (equality at k = ks).
+- The remark that measured ⁴He S(k) lies "far above" 0.565 has no source in this repo, and the owner's proposal notes
+  that the repo holds no S(k) data. Read it as conditional until a dataset is pinned.

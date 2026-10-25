@@ -48,3 +48,17 @@ Kill criterion (preregistered): numeric counterexample, or the attempt fails.
 - Negative control 1 (Lean + numeric): dropping the (2E)^{3/2} term is false: explicit 2-shell state with H₃ < 2DΩ.
 - Negative control 2 (numeric): σ = 2 does not reach enstrophy: 2DΩ / (H₂ + S^{3/2}) grows like 2^N on a top-shell state.
 - Negative control 3 (symbolic): perturbed weight on one shell breaks dH₃/dt = 0.
+
+## Outcome (attempt 1, 17 min): KEEP (producer-checked)
+
+- Numeric gate (`numeric_gate.py`, `numeric_gate.json`, gate_pass True): σ = 3 conservation of H₃ and mass exact-symbolic
+  (N = 3, 5, both seams, general k_n), perturbed-weight control fails as required; 0 violations / 200000 random states;
+  sup (2DΩ − H₃)/S^{3/2} = 0.451 (adversarial) < 1; drop-S^{3/2} control violated (5 > 4); σ = 2 ratio 4095 at N = 11;
+  split-step dynamics N = 4, T = 10: Ω stays ≤ the t = 0 bound (156.6 ≤ 175.0), |ΔH₃| ≤ 9e-4 (single dt, not refined; (a) is the conservation evidence), |ΔS| ≤ 4e-12.
+- Lean: `Autoresearch_Enstrophy.lean` rc 0 on first compile, no warnings (`compile_main.log`); theorems `enstrophy_bound`,
+  `enstrophy_le`, `drop_cubic_term_fails` (+ helpers), all `[propext, Classical.choice, Quot.sound]`.
+- Controls: `ctl_sorry` shows sorryAx, `ctl_axiom` shows `ctl_cheat`. Grep for sorry/admit/native_decide/axiom in the
+  main file: no matches.
+- Scope: a corollary of the owner's `dispersive_norm_le`. Conservation of H₃ along the σ = 3 flow is not in Lean, so
+  "uniform in the cutoff along the dynamics" is conditional on it. The O5 trap argument (§7 step 2, second half) was not attempted.
+- Infra: page cache warmed (8765 qf-lake oleans) during the gate; no IO starvation this time.

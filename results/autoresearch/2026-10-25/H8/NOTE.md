@@ -1,5 +1,7 @@
 # H8: the Bogoliubov structure factor stays under the dual-scale bound
 
+**Kernel status:** `Autoresearch_SkBound.lean` compiles with rc 0 in the QuantumFluids environment (Lean v4.34.0-rc2, Mathlib 85e3a25e), importing `DualLength`. All 11 theorems use only the axioms {propext, Classical.choice, Quot.sound}, and both planted controls are caught. This came only on an infra retry, after two attempts starved on disk I/O; see result.json. It is producer-checked only.
+
 ## What the project already had
 `lean_src/DualLength.lean` (QuantumFluids) already proves:
 - `feynman_ge_iff`: for any `S > 0`, `ℓ_F(k) ≥ 2/ks ⇔ S² ≤ k/(2ks)` (the dual-scale bound restated as a bound on S);

@@ -56,7 +56,6 @@ theorem sBog_sq {hc ks k : ℝ} (hhc : 0 < hc) (hk : 0 < k) (hks : 0 < ks) :
   have h3 : ks ≠ 0 := ne_of_gt hks
   have h4 : ks ^ 2 + k ^ 2 ≠ 0 := by positivity
   field_simp
-  ring_nf
 
 /-- **H8, squared form.** `S_B(k)² ≤ k/(2ks)` for every `k > 0`. -/
 theorem sBog_sq_le {hc ks k : ℝ} (hhc : 0 < hc) (hk : 0 < k) (hks : 0 < ks) :
@@ -90,12 +89,13 @@ theorem feynman_sBog_exact {hc ks k : ℝ} (hhc : 0 < hc) (hk : 0 < k) (hks : 0 
   have hS := sBog_pos hhc hk hks
   have hsq := sBog_sq hhc hk hks
   have h3 : ks ≠ 0 := ne_of_gt hks
-  rw [div_pow, mul_pow, hsq]
+  have hden : (ks * sBog hc ks k) ^ 2 = ks ^ 2 * (k ^ 2 / (ks ^ 2 + k ^ 2)) := by
+    rw [mul_pow, hsq]
+  rw [div_pow, hden]
   unfold bogoliubovSq
   have h4 : ks ^ 2 + k ^ 2 ≠ 0 := by positivity
   have h2 : k ≠ 0 := ne_of_gt hk
   field_simp
-  ring_nf
 
 /-- Consistency with the project: `sBog_sq_le` is also obtained through `feynman_ge_iff`
 and `ell_ge`, i.e. the bound on `S_B` is the dual-scale bound `ℓ ≥ 2/ks` read through Feynman. -/
@@ -109,7 +109,7 @@ theorem sBog_sq_le_via_project {hc ks k : ℝ} (hhc : 0 < hc) (hk : 0 < k) (hks 
 
 /-- **Negative control (free particle / ideal gas, `S ≡ 1`).** For every `0 < k < 2ks` the value
 `S = 1` violates the bound, so the inequality is specific to the interacting (Bogoliubov) gas. -/
-theorem free_S_one_violates {ks k : ℝ} (hk : 0 < k) (hks : 0 < ks) (hlt : k < 2 * ks) :
+theorem free_S_one_violates {ks k : ℝ} (_hk : 0 < k) (hks : 0 < ks) (hlt : k < 2 * ks) :
     Real.sqrt (k / (2 * ks)) < 1 := by
   rw [Real.sqrt_lt' one_pos, one_pow, div_lt_one (by positivity)]
   exact hlt

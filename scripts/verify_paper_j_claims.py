@@ -85,6 +85,23 @@ def generated_sections(tex: str) -> List[str]:
         climb = json.loads(climb_path.read_text())
         for r in climb["rungs"]:
             must.append(f"{r['ga_rate']:.3f} & {r['descent_rate']:.3f} & {r['restarts_rate']:.3f}")
+    # Hub benchmark: every method's rate per law, and the gate totals.
+    sel_path = RESULTS / "kge_hf_selection.json"
+    if sel_path.exists():
+        sel = json.loads(sel_path.read_text())
+        must.append(f"{sel['fitting_grammar']} of {sel['total_problems']}")
+        for prob in sel["selected_top"]:
+            name = prob["problem"].replace("-", "_").replace(".", "_")
+            p = RESULTS / f"kge_hf_{name}.json"
+            if p.exists():
+                res = json.loads(p.read_text())
+                m = {x["method"]: x for x in res["methods"]}
+                must.append(f"{m['kge_mutation_selection']['rate']:.2f}")
+                must.append(f"{m['hillclimb_with_restarts']['rate']:.2f} & {m['random_search']['rate']:.2f}")
+    gate_path = RESULTS / "kge_hf_gate.json"
+    if gate_path.exists():
+        t = json.loads(gate_path.read_text())["totals"]
+        must.append(f"{t['accepted_by_kernel']} of {t['distinct_candidates_gated']} distinct solutions proved")
     return must
 
 

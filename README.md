@@ -8,7 +8,8 @@
 
 [![Tests](https://img.shields.io/badge/tests-1495_passing-brightgreen?style=flat-square&logo=pytest)](#measured-status)
 [![Lean 4](https://img.shields.io/badge/Lean_4-254_theorems-blue?style=flat-square&logo=lean)](formal/ANSE)
-[![Release](https://img.shields.io/badge/release-v14.6.0-blueviolet?style=flat-square&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v14.6.0)
+[![Release](https://img.shields.io/badge/release-v14.10.0-blueviolet?style=flat-square&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v14.10.0)
+[![KGE paper](https://img.shields.io/badge/Zenodo-Kernel--Gated_Evolution_10.5281%2Fzenodo.23635678-1f6feb?style=flat-square)](https://doi.org/10.5281/zenodo.23635678)
 [![Python](https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python)](pyproject.toml)
 [![Rust](https://img.shields.io/badge/rust-1.96-000000?style=flat-square&logo=rust)](crates/)
 [![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)](LICENSE)
@@ -98,6 +99,40 @@ uv sync --all-extras
 
 `validate_environment.py` is the entry point worth running first. It reports what is
 true, exits nonzero on any failure, and shows the command output behind each verdict.
+
+### Kernel-Gated Evolution (KGE) — the biomimetic search whose acceptance is a proof
+
+```bash
+cd crates/kernel_gated_evolution && cargo build --offline --release && cargo test --offline --release
+# any polynomial target in prefix notation over h w q p; outside {+,-,*} is refused, not approximated
+./target/release/kge solve --name my_law --target '(* (* 1/2 h) (* w w))' --seeds 100 --budget 4000 \
+    --points-file ../../results/python_sample_points.json --lean-out ../../results/my_candidates \
+    --out ../../results/my_law.json
+# the arbiter: every survivor must prove equality to the spec in the Lean kernel (one invocation per batch)
+cd ../.. && .venv/bin/python scripts/kge_gate_rust_solutions.py --candidates results/my_candidates \
+    --names my_law --per-rung 8 --out results/my_law_gate.json
+```
+
+KGE combines the three life-inspired mechanisms that survived measurement — Darwinian
+mutation-selection, an **apoptotic checkpoint** (a one-sided exact screen that can refute but
+never accept, at zero kernel cost) and **exact dosage** (`out = A + B·v` per locus, so dead
+code is identified exactly) — and hands acceptance to the Lean 4 kernel. *Fitness guides; the
+kernel decides.* The identities it rests on are themselves proved in
+[`formal/ANSE/AlixKalSpec.lean`](formal/ANSE/AlixKalSpec.lean) (6 theorems, 0 `sorry`).
+
+| measured | result |
+|---|---|
+| Kernel gate | one invocation per batch at **any** failure rate; 0, 1, 2, 4, 8 false of 8 → 1 invocation each, no false candidate accepted |
+| Calibration ladder (200 seeds) | L1 0.550 · L2 0.970 · L3 0.255 · L4 0.020 · L5 0.015 · L6 (Verlet, 17 nodes) 0.000; **31/31** solutions kernel-proved |
+| SRSD-Feynman (Hugging Face) | 8 of 120 laws inside the grammar; five run vs random search, restart hill-climber, exact regression; **39/39** recovered laws kernel-proved; population wins outright on 1 law, loses to a naive baseline on 3 (all ≤ 4 leaves) |
+| Simplest control | restart hill-climber **beats** the population on easy rungs (L1 p = 4.9e-4); population wins from L3 (49 vs 9, p = 9e-8) |
+
+Read [`docs/KGE_GUIDELINES.md`](docs/KGE_GUIDELINES.md) before using it: when it applies
+(three conditions), **choose the search layer by target size, keep the gate**, and the eight
+disciplines each of which prevented a wrong conclusion in this repository at least once.
+Papers: [Kernel-Gated Evolution](https://doi.org/10.5281/zenodo.23635678) (foundation,
+edition 2) and [Recombination Does Not Help](https://doi.org/10.5281/zenodo.23622868) (the
+six pre-registered refutations that made it mutation-driven). Not peer reviewed.
 
 ```
 [PASS] gpu                Tesla T4, driver 580.178.04, 12523 MiB free of 15360
@@ -341,6 +376,10 @@ unsupported" is as valuable as a patch — that is how the audit started.
 | [`IMPROVEMENT_PLAN_2026-09-26.md`](docs/remediation/IMPROVEMENT_PLAN_2026-09-26.md) | Architecture target, cost model, capability ladder |
 | [`EBM_JEPA_Foundations.md`](docs/EBM_JEPA_Foundations.md) | Energy-based model and JEPA theory |
 | [`EVOLUTION_LAB.md`](docs/EVOLUTION_LAB.md) | Local LLM setup and evolution experiments |
+| [`KGE_GUIDELINES.md`](docs/KGE_GUIDELINES.md) | Kernel-Gated Evolution: when to use it, where it applies, the eight disciplines, limits |
+| [`crates/kernel_gated_evolution/README.md`](crates/kernel_gated_evolution/README.md) | The Rust crate: build, `kge ladder` / `hillclimb` / `solve`, the gate |
+| [`AlixKalSpec.lean`](formal/ANSE/AlixKalSpec.lean) | The dosage and checkpoint identities, proved and axiom-checked |
+| [`LL.md`](LL.md) | Lessons learned, §29 — the binding measurement rules and the failures behind each |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release history, including a superseded entry retained for the record |
 | [`CLAUDE.md`](CLAUDE.md) | Agent guide: environment facts, hooks, MCP |
 

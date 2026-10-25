@@ -2,6 +2,54 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [14.10.0] — Kernel-Gated Evolution: Hub benchmark, Lean-proved identities, guidelines (2026-10-25)
+
+Summary: Paper J edition 2 (DOI [10.5281/zenodo.23636412](https://doi.org/10.5281/zenodo.23636412),
+concept 10.5281/zenodo.23635678). Kernel-Gated Evolution (codename ALIX) is benchmarked outside its
+calibration ladder on five SRSD-Feynman laws from the Hugging Face Hub against random search, a restart
+hill-climber and exact polynomial regression; every one of the 39 distinct recovered laws is proved by the
+Lean kernel with a planted wrong candidate rejected in every batch. The population wins outright on one
+law and loses to a naive baseline on three (all at most four leaves), which becomes the operational
+guideline *choose the search layer by target size, keep the gate*.
+
+### Added
+- `formal/ANSE/AlixKalSpec.lean`: the dosage identities for `+`, `−`, `*`, the backward-pass chain rule,
+  the required-value identity, and the checkpoint's one-sidedness — six theorems, zero `sorry`, one axiom-free.
+- `kge solve` (any prefix target over `{+,-,*}`; outside the grammar is refused), `random_search` baseline,
+  `--points-file` replay; 8 Rust tests.
+- `scripts/kge_select_hf_problems.py` (AST walk, never `eval`, over 120 untrusted equation strings; 8 fit),
+  `scripts/kge_traditional_baseline.py` (exact degree-3 regression: ambiguous on 12 points, exact on 40),
+  `scripts/kge_gate_rust_solutions.py --names`, `scripts/kge_figures.py` (seven figures from artifacts),
+  `scripts/fill_paper_j_results.py`, `scripts/verify_paper_j_claims.py` (provenance gate; blocked two deposits).
+- `docs/KGE_GUIDELINES.md` and `crates/kernel_gated_evolution/README.md` for end users.
+
+### Fixed
+- `kge solve` recorded the budget as the hill-climber's evaluation count; now its real count. Re-run with the
+  same seeds before deposit (rates unchanged by construction).
+
+## [14.9.0] — Kernel-Gated Evolution: Rust crate and foundation paper (2026-10-25)
+
+Summary: Paper J edition 1 (DOI 10.5281/zenodo.23635679). `crates/kernel_gated_evolution` implements
+mutation-selection, a one-sided apoptotic checkpoint and exact per-locus dosage over exact rationals, with
+the Lean kernel as arbiter via `anse/formal/lean_runner.py`. Ladder at 200 seeds L1 0.550 … L6 0.000;
+31/31 solutions kernel-proved in 5 invocations; restart hill-climber beats the population on L1/L2 and
+loses from L3 (49 vs 9, p = 9e-8); cross-implementation gap attributed by replay on the prototype's points.
+
+## [14.8.1] — Paper I edition 2: the second repair fails its bar (2026-10-25)
+
+Summary: Preserving `B·v` exactly (verified at 1,614/1,614) reaches 73/200, not significantly above random
+crossover (p = 0.136); nothing survives Bonferroni over five comparisons. DOI 10.5281/zenodo.23626924.
+Also: two defects fixed in `verify_theorem_axioms` (a compile failure no longer reports `has_sorry=True`;
+unique temp file instead of a shared fixed name).
+
+## [14.8.0] — Recombination does not help, and the verifier limit was our own (2026-10-24)
+
+Summary: Paper I edition 1 (DOI 10.5281/zenodo.23622869). `verify_file` had made a Lean batch look atomic by
+discarding the kernel's per-declaration axiom report on a nonzero exit; `verify_file_per_declaration` and the
+rewired `verify_batch_against_spec` verify a batch of eight in one invocation at any failure rate. Over 200
+paired seeds mutation-only solved 94/200 against crossover's 58/200 (p = 2.98e-4); the homology repair was
+refuted by its own control (p = 0.408).
+
 ## [14.4.0] — AlphaEvolve + Biomimetic Genetic Algorithm, Gemini 4 Argon Strong Hardness & Continual RL (2026-10-14)
 
 Summary: Integrates AlphaEvolve SEARCH/REPLACE diff evolution with structural AST Genetic Programming,

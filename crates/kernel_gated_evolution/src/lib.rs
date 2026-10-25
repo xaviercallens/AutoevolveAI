@@ -532,6 +532,20 @@ pub struct ArmResult {
     pub tree_point_evaluations: usize,
     /// Constant loci set by lifetime learning across the run (0 for `Tuning::None`).
     pub constants_tuned: usize,
+    /// Generations (blocks of `population_size` evaluations) observed, and how
+    /// many of them found the population COLLAPSED: at most two distinct fitness
+    /// values, so its fitness variance -- the quantity that drives selection by
+    /// `ANSE.Alix.kal_increment_is_variance` -- is carried by at most two values.
+    pub generations_observed: usize,
+    pub collapsed_generations: usize,
+    /// Distinct fitness values in the final population.
+    pub final_distinct_fitness: usize,
+    /// Immigration events (only with `immigration`).
+    pub immigration_events: usize,
+    /// The generation at which the population was first seen collapsed, if ever.
+    /// With `generations_observed` and `solved` this allows a per-generation
+    /// hazard comparison that is not confounded by solved runs stopping early.
+    pub first_collapse_generation: Option<usize>,
     pub best_fitness: String,
     pub best_size: usize,
     pub inert_fraction_of_best: f64,
@@ -545,6 +559,9 @@ pub struct SearchConfig {
     pub tournament: usize,
     pub tuning: Tuning,
     pub tuning_rounds: usize,
+    /// On collapse, replace the worst half of the population with fresh random
+    /// trees, each evaluated out of the same budget.
+    pub immigration: bool,
 }
 
 impl Default for SearchConfig {
@@ -556,6 +573,7 @@ impl Default for SearchConfig {
             tournament: 3,
             tuning: Tuning::None,
             tuning_rounds: 4,
+            immigration: false,
         }
     }
 }
@@ -603,8 +621,49 @@ pub fn evolve(seed: u64, target: &Node, points: &[Env], config: &SearchConfig) -
         scored.push((score, genome));
     }
     let mut evaluations = scored.len();
+    let mut generations_observed = 0usize;
+    let mut collapsed_generations = 0usize;
+    let mut immigration_events = 0usize;
+    let mut first_collapse_generation: Option<usize> = None;
+    let distinct = |scored: &[(Rat, Node)]| -> usize {
+        let mut v: Vec<&Rat> = scored.iter().map(|s| &s.0).collect();
+        v.sort();
+        v.dedup();
+        v.len()
+    };
 
     while evaluations < config.budget && !best.as_ref().unwrap().0.is_zero() {
+        // Once per generation: measure diversity, and intervene if asked.
+        if evaluations % config.population_size == 0 {
+            generations_observed += 1;
+            if distinct(&scored) <= 2 {
+                collapsed_generations += 1;
+                if first_collapse_generation.is_none() {
+                    first_collapse_generation = Some(generations_observed);
+                }
+                if config.immigration {
+                    immigration_events += 1;
+                    let mut order: Vec<usize> = (0..scored.len()).collect();
+                    order.sort_by(|&a, &b| scored[b].0.cmp(&scored[a].0));
+                    for &slot in order.iter().take(scored.len() / 2) {
+                        if evaluations >= config.budget {
+                            break;
+                        }
+                        let fresh = random_tree(&mut rng, 3);
+                        let (score, genome, phenotype) =
+                            assess(fresh, &mut tree_points, &mut constants_tuned);
+                        evaluations += 1;
+                        if score < best.as_ref().unwrap().0 {
+                            best = Some((score.clone(), phenotype));
+                        }
+                        scored[slot] = (score, genome);
+                    }
+                    if best.as_ref().unwrap().0.is_zero() || evaluations >= config.budget {
+                        break;
+                    }
+                }
+            }
+        }
         let parent = {
             let mut winner: Option<&(Rat, Node)> = None;
             for _ in 0..config.tournament {
@@ -635,6 +694,11 @@ pub fn evolve(seed: u64, target: &Node, points: &[Env], config: &SearchConfig) -
         evaluations,
         tree_point_evaluations: tree_points,
         constants_tuned,
+        generations_observed,
+        collapsed_generations,
+        final_distinct_fitness: distinct(&scored),
+        immigration_events,
+        first_collapse_generation,
         best_fitness: best_score.to_string(),
         best_size: best_tree.size(),
         inert_fraction_of_best: inert_fraction(&best_tree, points),
@@ -734,6 +798,11 @@ pub fn random_search(seed: u64, target: &Node, points: &[Env], budget: usize) ->
         evaluations,
         tree_point_evaluations: evaluations * points.len(),
         constants_tuned: 0,
+        generations_observed: 0,
+        collapsed_generations: 0,
+        final_distinct_fitness: 0,
+        immigration_events: 0,
+        first_collapse_generation: None,
         best_fitness: score.to_string(),
         best_size: node.size(),
         inert_fraction_of_best: inert_fraction(&node, points),

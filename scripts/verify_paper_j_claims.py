@@ -69,7 +69,7 @@ def static_claims(tex: str) -> List[Tuple[str, Any, Any, str]]:
     pg = REPO / "formal" / "ANSE" / "AlixPopulationGenetics.lean"
     if pg.exists():
         n = sum(1 for line in pg.read_text().splitlines() if line.startswith("#print axioms"))
-        rows.append(("H11/H12 Lean declarations", 11, n, "AlixPopulationGenetics.lean"))
+        rows.append(("H11/H12 Lean declarations", 16, n, "AlixPopulationGenetics.lean"))
         rows.append(("H11/H12 file has no sorry", True, "sorry" not in pg.read_text().split("-/", 1)[1], "AlixPopulationGenetics.lean"))
     return rows
 
@@ -117,6 +117,13 @@ def generated_sections(tex: str) -> List[str]:
         if bg.exists():
             t = json.loads(bg.read_text())["totals"]
             must.append(f"All {t['accepted_by_kernel']} of the {t['distinct_candidates_gated']} distinct")
+    vp = RESULTS / "kge_variance_prediction.json"
+    if vp.exists():
+        for r in json.loads(vp.read_text())["rungs"]:
+            hz = r["hazard"]
+            must.append(f"{hz['solves_uncollapsed']}/{hz['exposure_uncollapsed']:,}")
+            must.append(f"{hz['exact_binomial_p']:.2g}")
+            must.append(f"{r['immigration_only']} / {r['baldwin_only']}")
     gate_path = RESULTS / "kge_hf_gate.json"
     if gate_path.exists():
         t = json.loads(gate_path.read_text())["totals"]

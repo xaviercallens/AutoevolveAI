@@ -41,8 +41,8 @@ REPO = Path(__file__).resolve().parents[1]
 SUBPROJECT = REPO / "sub_projects" / "socrateai_scientific_genetic" / "SocrateAI-Scientific-Genetic"
 CRATE = REPO / "crates" / "kernel_gated_evolution"
 ZENODO = "https://zenodo.org/api"
-RECEIPT = REPO / "results" / "zenodo_paper_j_edition4_receipt.json"
-EDITION = "edition-4"
+RECEIPT = REPO / "results" / "zenodo_paper_j_edition5_receipt.json"
+EDITION = "edition-5"
 STEM = "PaperJ_Kernel_Gated_Evolution_Foundation"
 
 TITLE = (
@@ -112,6 +112,15 @@ density at scale; a properly powered study of contribution-preserving transfer
 (positive signal p = 0.031 against its matched control, not surviving
 correction); a persistent kernel; adaptive checkpoints; and application to the
 project's Python-genome kernel path.</p>
+
+<p><strong>Edition 5</strong> pushes H11 toward fixation and tests the prediction H12 registered.
+Proved without any limit: the probability of Wright&ndash;Fisher fixation by generation t is at most i/N for
+every t (16 Lean declarations, all gated). Tested on 800 paired runs with the confound removed (a
+per-generation solve hazard rather than a comparison of solved and unsolved runs, which stop at different
+times): once a population's fitness variance collapses, the chance of solving per generation falls at L3
+(0.0081 &rarr; 0.0048, p = 0.015) and L5 (0.0013 &rarr; 0.0001, p = 0.0019). The obvious intervention &mdash;
+random immigrants on collapse &mdash; does not help on any rung, which H12 explains: random trees are culled
+before they add variance among the survivors. Registered next: perturb the best, not inject the random.</p>
 
 <p><strong>Edition 4</strong> adds two population-genetic foundations proved in Lean over Q
 (formal/ANSE/AlixPopulationGenetics.lean, 11 declarations, zero sorry, whitelist axioms only),
@@ -249,6 +258,11 @@ def bundle() -> List[Path]:
         CRATE / "README.md",
         # Edition 4: H11 and H12, proved.
         REPO / "formal" / "ANSE" / "AlixPopulationGenetics.lean",
+        # Edition 5: the H12 prediction tested.
+        REPO / "results" / "kge_rust_ladder_baldwin_instrumented.json",
+        REPO / "results" / "kge_rust_ladder_baldwin_immigration.json",
+        REPO / "results" / "kge_variance_prediction.json",
+        REPO / "scripts" / "kge_variance_analysis.py",
     ]
     missing = [str(f) for f in files if not f.exists()]
     if missing:

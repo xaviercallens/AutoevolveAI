@@ -141,7 +141,7 @@ fn run_ladder(args: &[String]) {
     let only = selected(args);
     let lean_out = arg(args, "--lean-out").map(PathBuf::from);
     let (points, points_source) = load_points(args);
-    let config = SearchConfig { budget, tuning: tuning_arg(args), ..SearchConfig::default() };
+    let config = SearchConfig { budget, tuning: tuning_arg(args), immigration: args.iter().any(|a| a == "--immigration"), ..SearchConfig::default() };
 
     if let Some(dir) = &lean_out {
         fs::create_dir_all(dir).expect("cannot create --lean-out");
@@ -264,7 +264,7 @@ fn run_hillclimb(args: &[String]) {
     let out = PathBuf::from(arg(args, "--out").expect("--out is required"));
     let only = selected(args);
     let (points, points_source) = load_points(args);
-    let config = SearchConfig { budget, tuning: tuning_arg(args), ..SearchConfig::default() };
+    let config = SearchConfig { budget, tuning: tuning_arg(args), immigration: args.iter().any(|a| a == "--immigration"), ..SearchConfig::default() };
 
     let mut rungs = Vec::new();
     for (name, target) in target_ladder() {
@@ -380,7 +380,7 @@ fn run_solve(args: &[String]) {
     let (points, points_source) = load_points(args);
     let want: Vec<Rat> = points.iter().map(|e| target.eval(e)).collect();
     assert!(fitness(&target, &points, &want).is_zero(), "target is not a solution of itself");
-    let config = SearchConfig { budget, tuning: tuning_arg(args), ..SearchConfig::default() };
+    let config = SearchConfig { budget, tuning: tuning_arg(args), immigration: args.iter().any(|a| a == "--immigration"), ..SearchConfig::default() };
 
     let kge: Vec<_> = (0..seeds as u64).map(|s| evolve(s, &target, &points, &config)).collect();
     let rnd: Vec<_> = (0..seeds as u64)

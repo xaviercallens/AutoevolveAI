@@ -2,6 +2,19 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [14.13.0] — H11 toward fixation; the H12 prediction tested (2026-10-25)
+
+Summary: Paper J edition 5 (DOI [10.5281/zenodo.23640856](https://doi.org/10.5281/zenodo.23640856)).
+- **Lean**: `AlixPopulationGenetics.lean` now 16 declarations, all gated. New: a harmonic function's expectation is
+  conserved by every step; distributions stay nonnegative; `xav_wf_fixation_by_time_le` — Wright–Fisher fixation by
+  generation t is at most i/N for every t, with no limit taken.
+- **Engine**: `evolve` records diversity per generation (collapse = ≤2 distinct fitness values) and first-collapse
+  generation; `--immigration` replaces the worst half with random trees on collapse, paid from the budget. 11 tests.
+- **Result**: per-generation solve hazard (unconfounded by early stopping) falls after collapse at L3 (0.0081→0.0048,
+  p = 0.015) and L5 (0.0013→0.0001, p = 0.0019); n.s. at L4. Random immigration helps on no rung (L3 94 vs 90,
+  p = 0.45). Instrumented runs reproduce earlier counts exactly. Registered next: perturb the best, not inject random.
+- Zenodo returned 500 then 502 mid-deposit; the existing draft was adopted (never a blind retry), no duplicate record.
+
 ## [14.12.0] — Population-genetic foundations proved: H11 and H12 (2026-10-25)
 
 Summary: Paper J edition 4 (DOI [10.5281/zenodo.23639141](https://doi.org/10.5281/zenodo.23639141)). `formal/ANSE/AlixPopulationGenetics.lean`,

@@ -215,3 +215,26 @@ fn inert_fraction_is_zero_for_a_minimal_target_and_positive_with_dead_code() {
     );
     assert!(inert_fraction(&dead, &points) > 0.0);
 }
+
+#[test]
+fn diversity_is_measured_and_immigration_is_paid_from_the_budget() {
+    let points = sample_points(&mut Pcg64::seed_from_u64(20261024), 12);
+    let l5 = target_ladder().into_iter().find(|(n, _)| *n == "L5_minus_half_hwq").unwrap().1;
+    let mut saw_collapse = false;
+    let mut saw_immigration = false;
+    for seed in 0..12u64 {
+        let plain = evolve(seed, &l5, &points, &SearchConfig { budget: 3000, ..SearchConfig::default() });
+        let imm = evolve(seed, &l5, &points,
+                         &SearchConfig { budget: 3000, immigration: true, ..SearchConfig::default() });
+        // The budget binds both arms: immigrants are not free.
+        assert!(plain.evaluations <= 3000 && imm.evaluations <= 3000);
+        assert!(plain.collapsed_generations <= plain.generations_observed);
+        assert_eq!(plain.immigration_events, 0, "no immigration unless asked");
+        assert!(imm.immigration_events <= imm.collapsed_generations);
+        assert!(plain.final_distinct_fitness >= 1);
+        saw_collapse |= plain.collapsed_generations > 0;
+        saw_immigration |= imm.immigration_events > 0;
+    }
+    assert!(saw_collapse, "collapse never observed on L5; the diagnostic is untested");
+    assert!(saw_immigration, "immigration never triggered; the intervention is untested");
+}

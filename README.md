@@ -8,7 +8,7 @@
 
 [![Tests](https://img.shields.io/badge/tests-1495_passing-brightgreen?style=flat-square&logo=pytest)](#measured-status)
 [![Lean 4](https://img.shields.io/badge/Lean_4-254_theorems-blue?style=flat-square&logo=lean)](formal/ANSE)
-[![Release](https://img.shields.io/badge/release-v14.12.0-blueviolet?style=flat-square&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v14.12.0)
+[![Release](https://img.shields.io/badge/release-v14.13.0-blueviolet?style=flat-square&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v14.13.0)
 [![KGE paper](https://img.shields.io/badge/Zenodo-Kernel--Gated_Evolution_10.5281%2Fzenodo.23635678-1f6feb?style=flat-square)](https://doi.org/10.5281/zenodo.23635678)
 [![Python](https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python)](pyproject.toml)
 [![Rust](https://img.shields.io/badge/rust-1.96-000000?style=flat-square&logo=rust)](crates/)
@@ -126,6 +126,7 @@ kernel decides.* The identities it rests on are themselves proved in
 | Calibration ladder (200 seeds) | L1 0.550 · L2 0.970 · L3 0.255 · L4 0.020 · L5 0.015 · L6 (Verlet, 17 nodes) 0.000; **31/31** solutions kernel-proved |
 | SRSD-Feynman (Hugging Face) | 8 of 120 laws inside the grammar; five run vs random search, restart hill-climber, exact regression; **39/39** recovered laws kernel-proved; population wins outright on 1 law, loses to a naive baseline on 3 (all ≤ 4 leaves) |
 | Simplest control | restart hill-climber **beats** the population on easy rungs (L1 p = 4.9e-4); population wins from L3 (49 vs 9, p = 9e-8) |
+| Fitness-variance collapse (H12, tested) | solve hazard per generation falls after collapse: L3 0.0081→0.0048 (p = 0.015), L5 0.0013→0.0001 (p = 0.0019); random immigrants do **not** help |
 | Lifetime learning (Baldwin) | constants solved exactly via `v* = v + (want−out)/B`; never lost a solve on 1,200 paired seeds; L1 0.550→0.835, L3 0.255→0.450, L5 0.015→0.060; at **matched total work** ahead on L3/L5, level on L4; `--tuning baldwin` |
 
 Read [`docs/KGE_GUIDELINES.md`](docs/KGE_GUIDELINES.md) before using it: when it applies

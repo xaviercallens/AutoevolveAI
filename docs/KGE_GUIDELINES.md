@@ -82,9 +82,10 @@ tree-point work per run from L3 up, so compare at matched work, as above.
 
 Proved (H12, `AlixPopulationGenetics.lean`): in the one-locus haploid model a round of selection raises mean
 fitness by exactly `Var(w)/w̄`, so selection stalls when the population's fitness variance is gone; and (H11)
-neutral drift moves a lineage to fixation only with probability `1/N`. Registered, not yet tested: stalled KGE
-runs should be those whose fitness variance has collapsed. Fresh random immigrants or redrawn sample points are
-the levers to try.
+neutral drift moves a lineage to fixation only with probability `1/N`. Tested (unconfounded per-generation hazard): after collapse the solve rate falls at L3 (0.0081→0.0048,
+p = 0.015) and L5 (0.0013→0.0001, p = 0.0019). But fresh random immigrants do **not** help — they are culled
+before contributing variance among the survivors. The untested next lever is variance near the optimum:
+perturb the best individuals rather than inject random ones.
 
 ## 2. How to use it — the discipline
 

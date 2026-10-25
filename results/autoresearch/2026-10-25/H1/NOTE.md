@@ -17,11 +17,17 @@ other layer, separation d. Pair energy at in-plane distance r: e-e + h-h = 2/r, 
 In `t = r²` this is `g_d`. The theorem says the triangular lattice minimises this classical energy.
 
 **Scope.**
-- Classical (no kinetic or zero-point energy), density one (other densities by scaling d), rigid dipoles
+- Classical (no kinetic or zero-point energy), density one (other densities via D2 `triangular_optimal_any_density`:
+  density ρ at separation d is density one at separation d√ρ, with the energy multiplied by √ρ), rigid dipoles
   aligned perpendicular to the layers (no in-plane e-h offset, no separate electron/hole crystals).
 - Conditional on upstream `OAI.AtomicTriangular.universal_energy_minimum` (openai/math, AI-generated, not peer
   reviewed) and on the fidelity of its definitions (`energy` = liminf of disk averages, `LocallyFinite`, `DensityOne`).
-- KEEP is producer-checked only. Tier A needs an independent recompile and statement audit.
+- Independently verified: `verification.md`, ACCEPT_WITH_CORRECTIONS (recompile clean, statement and physics factor
+  kernel-checked, non-vacuity kernel-checked). Corrections applied here:
+  - `hd : 0 < d` is unused in `dipolar_admissible` (`g 0 ≡ 0` is admissible too);
+  - the complete-monotonicity step is elementary (Bernstein: t^{-1/2} − (t+c)^{-1/2} = ∫ e^{-ut}(1 − e^{-uc}) u^{-1/2}/√π du),
+    and the optimality corollary is immediate given upstream. Neither 2110.08728 nor 1908.09714 covers it; the only new
+    item is the explicit kernel-checked corollary for the bilayer potential.
 
 **Literature (alphaXiv, 2026-10-25).** Experiments and simulations widely assume or observe triangular dipolar
 exciton and dipolar-boson crystals (e.g. arXiv:2602.19438, 2601.19603, 2401.04639). The corollary pattern

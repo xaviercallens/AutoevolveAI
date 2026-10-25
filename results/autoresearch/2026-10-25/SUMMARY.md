@@ -23,11 +23,13 @@ roadmapped claims.
 | H12 | One-locus two-allele mean-fitness monotonicity + Hardy–Weinberg | 0.60 | KEEP | ACCEPT_WITH_CORRECTIONS |
 | H13 | Tadpole uniqueness on LeanMaster constants (integer arithmetic) | 0.35 | KEEP, 2nd attempt (1st infra) | ACCEPT_WITH_CORRECTIONS |
 
-**Calibration.** 10 of the 10 Lean/proof items attempted were kept: H1, H1b, H2, H3, H6, H7, H8, H11, H12, H13. The
-mean prior for those was 0.45. This is overconfident in the wrong direction: the attempted items were easier than
-priced. Each one is a corollary or a specialization of existing machinery, either upstream's universal optimality
-or the owner's own lemmas, which is why it fell in minutes. Genuinely open problems (H4, H5, H10) were not attempted
-at this budget.
+**Calibration.** Of the 10 Lean/proof items attempted, 9 were kept within protocol (H1, H1b, H2, H3, H6, H7, H11,
+H12, H13). H8 was kept only on an out-of-protocol infrastructure retry. 8 of them are independently verified: H1,
+H1b, H2, H6, H8, H11, H12 and H13; H3 and H7 are producer-only. (Commit 6633bb8's message says "7"; 8 is correct.) The
+mean prior was 0.45, so the priors were **underconfident**. The attempted items were corollaries or specializations
+of existing machinery (upstream's universal optimality, or the owner's own lemmas), which made them easier than
+priced. The round says nothing about breakthrough odds, because nothing hard was attempted: H4, H5 and H10 were not
+attempted at this budget.
 
 **What every Tier A item rests on.**
 - The H1/H1b/H2 corollaries are conditional on `OAI.AtomicTriangular.universal_energy_minimum` (openai/math,
@@ -43,9 +45,19 @@ at this budget.
 a cold page cache after a reboot. That cost H8 two attempts and H13 one. The fix is to warm the `.olean` closure with
 sequential reads (`tmp/warm_siblings.py`) and run `lean` directly with LEAN_PATH.
 
+**H9 caveat, which is the highest-stakes line here.** "FAITHFUL_WITH_CAVEATS" is a statement-only comparison:
+- by one auditor, with no second fidelity audit;
+- with Mathlib definitions read in a v4.32.2 copy, not the pinned rc2;
+- on a corpus that was **not** rebuilt here and whose proofs and axioms were not checked by us.
+
+Nothing here checks the corpus's proof, and the Clay Institute's award has its own process. It must not be read as
+"Clay Navier–Stokes settled".
+
 **Open next steps.**
-1. Independent verification of H3 and H7.
-2. H3L: a Lean lemma "positive Gaussian mixture ⇒ admissible" (prior 0.30).
-3. H11: close the first-step gap with P^n(i,N) → i/N.
-4. H7: H₃ conservation along the σ = 3 flow, in Lean.
-5. A literature pass before any public novelty wording (H1, H3).
+1. H9: a second independent fidelity audit, rebuilding the NavierStokesAndEuler corpus (rc2 Mathlib in qf-lake,
+   already warm), and `#print axioms` on `navier_stokes_breakdown_R3` and `_periodic`.
+2. Independent verification of H3 and H7.
+3. H3L: a Lean lemma "positive Gaussian mixture ⇒ admissible" (prior 0.30).
+4. H11: close the first-step gap with P^n(i,N) → i/N.
+5. H7: H₃ conservation along the σ = 3 flow, in Lean.
+6. A literature pass before any public novelty wording (H1, H3).

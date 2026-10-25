@@ -61,3 +61,10 @@ does detect input errors.
 - The conventions were taken from H5/NOTE.md, which checked them against upstream. This attempt did not
   re-read the upstream preprint.
 - No upper bound is proved. C* = 3 is still a conjecture. No novelty claim is made.
+
+## Independent verification: ACCEPT (verification.md)
+- The definitions match eq. (local-form) of the upstream preprint. The verifier recomputed g2, w4, g2⊗g2 and g2⊗³ with
+  its own non-recursive Python, and they agree exactly with Lean.
+- C* ≥ 3 is a lower bound on the absolute-sum constant (eq. main), consistent with upstream's upper bound 40. The
+  full |T| tail is not reached at any finite scale, but because c < 3 is strict the bound transfers to the finite-scale
+  constant. C* = 3 remains a conjecture.

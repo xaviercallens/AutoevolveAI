@@ -40,3 +40,11 @@ Fitnesses `w11, w12, w22 > 0`, `p ∈ [0,1]`, `q = 1 - p`, `wbar = p²w11 + 2pq 
   selection (the partial-change / additive-genetic-variance interpretation), and it does not cover multiple loci
   or multiple alleles.
 - Producer ≠ verifier is still owed: an independent recompile and an audit of the statement's adequacy.
+
+## Independent verification: ACCEPT_WITH_CORRECTIONS (verification.md)
+- Name: one-locus, two-allele **mean-fitness monotonicity**. It is not Fisher's general fundamental theorem (the
+  additive-variance / partial-change reading).
+- Strict positivity of the fitnesses is sufficient, not necessary (w ≥ 0 with wbar > 0 is enough). The control only
+  shows that a negative fitness can break monotonicity.
+- Hygiene fixed: the planted controls moved to `PopGenControls.lean` (compile_fixed.json, rc 0, whitelist only).
+- Novelty unchecked; no literature search was done.

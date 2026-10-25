@@ -40,3 +40,12 @@ not attempted.
 - Negative: `ctl_negative_selection_not_harmonic`: with selection the kernel samples with probability `ψ ≠ i/N`.
   For `N = 2`, `i = 1`, `ψ = 2/3`, the expected next frequency is `2/3 ≠ 1/2`, so `i/N` is not harmonic and the
   result really depends on neutrality.
+
+## Independent verification: ACCEPT_WITH_CORRECTIONS (verification.md)
+- **What is kernel-checked is formulation (a), the harmonic characterisation.** i/N is the unique function harmonic
+  at interior states with values 0 and 1 at the boundary. The file has no probability object: the first-step link
+  "absorption probability is harmonic" is not formalised. So this file does NOT kernel-check "fixation probability = i/N".
+  The gap can be closed by proving P^n(i,N) → i/N, or by a Markov-kernel first-step lemma.
+- Hygiene fixed: the planted controls moved to `PopGenControls.lean`. The claimed module no longer declares an axiom,
+  and it imports together with PopGenFisher (`PopGenImportBoth.lean`, rc 0; compile_fixed.json, compile_import_both.json).
+- Novelty unchecked; no literature search was done ("first formalization" is not claimed).

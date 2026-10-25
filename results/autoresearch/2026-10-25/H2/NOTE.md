@@ -26,3 +26,7 @@ The lattice energy is finite (`latticeEnergy_yukawa_lt_top`), so the corollary i
 depends on upstream's theorem (AI-generated, not peer reviewed) and on definition fidelity. It is the classical
 model only. Statement fidelity: `e^{-κr}/r` is the 3D screened-Coulomb (Yukawa) potential between particles confined to a plane (the standard 2D Yukawa crystal of dusty plasmas and colloids), exactly the preregistered formula. It is not the Green function of the 2D Debye–Hückel equation, which is `K_0(κr)`. Novelty is not claimed: complete monotonicity of the Yukawa potential in `r²` is classical. The new part
 is the kernel-checked corollary inside this framework.
+
+## Independent verification: ACCEPT (verification.md)
+- Title wording: this is the planar **Yukawa** (3D-screened Coulomb e^{-kr}/r) interaction, not the 2D Debye–Hückel Green
+  function K0(kr). Conditional on upstream `universal_energy_minimum`.

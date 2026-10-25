@@ -4,7 +4,7 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Tactic
 
 /-!
-# Fisher's fundamental theorem, one locus, two alleles (H12, autoresearch 2026-10-25)
+# One-locus, two-allele mean-fitness monotonicity (classical; often called Fisher's theorem for this model) (H12, autoresearch 2026-10-25)
 
 First formalization attempt of a KNOWN classical result (Fisher 1930; e.g. Hartl & Clark, Ewens §2):
 discrete generations, viability selection, random mating (Hardy–Weinberg proportions at zygote stage).
@@ -106,7 +106,7 @@ theorem wbar_increment {w11 w12 w22 p : ℝ} (h11 : 0 < w11) (h12 : 0 < w12) (h2
   rw [hW]; unfold wbar
   ring
 
-/-- (iii) Fisher's fundamental theorem (one locus, two alleles): mean fitness does not decrease. -/
+/-- (iii) One-locus, two-allele mean-fitness monotonicity: mean fitness does not decrease. -/
 theorem fisher_mean_fitness_nondecreasing {w11 w12 w22 p : ℝ}
     (h11 : 0 < w11) (h12 : 0 < w12) (h22 : 0 < w22) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
     wbar w11 w12 w22 p ≤ wbar w11 w12 w22 (pnext w11 w12 w22 p) := by
@@ -168,12 +168,6 @@ theorem fisher_fails_without_positivity :
 
 /-! ## Planted controls (must be caught) -/
 
-theorem ctl_sorry : (1:ℕ) = 2 := sorry
-
-axiom ctl_cheat : False
-
-theorem ctl_axiom : (1:ℕ) = 2 := ctl_cheat.elim
-
 end AutoresearchPopGen
 
 #print axioms AutoresearchPopGen.wbar_pos
@@ -189,5 +183,3 @@ end AutoresearchPopGen
 #print axioms AutoresearchPopGen.hwStep_stationary
 #print axioms AutoresearchPopGen.underdominance_moves_away
 #print axioms AutoresearchPopGen.fisher_fails_without_positivity
-#print axioms AutoresearchPopGen.ctl_sorry
-#print axioms AutoresearchPopGen.ctl_axiom

@@ -90,9 +90,13 @@ def solve_rates_section() -> str:
             "is not attributable by inspection; \\texttt{kge ladder --points-file} replays a "
             "run on exactly the prototype's twelve points. Result: "
             + "; ".join(parts)
-            + ". A solve rate that moves with the sample points is a property of the fitness "
-            "landscape instance, not of the implementation, and the paper's figures are "
-            "therefore reported with the point set that produced them."
+            + ". Same code, different points: the move from $0.255$ to $0.375$ at L3 is "
+            "significant (Fisher exact $p = 0.0131$), while the residual against the "
+            "prototype's own $0.470$ is not ($p = 0.068$) -- consistent with "
+            "random-number-stream variance, though a remaining implementation difference is "
+            "not excluded at this sample size. A solve rate that moves with the sample points "
+            "is a property of the fitness-landscape instance, not of the implementation, and "
+            "the paper's figures are therefore reported with the point set that produced them."
         )
 
     return (

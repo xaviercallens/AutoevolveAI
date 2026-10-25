@@ -1203,6 +1203,43 @@ time in this session that a sub-sample estimate did not survive scrutiny -- the
 3/6 became 73/200 and a failed bar. Three small-n estimates, none replicated.
 State the registered result; offer the sub-comparison as a hint, labelled.
 
+### 29.17 Kernel-Gated Evolution: what survived, the climber control, and attributing a cross-implementation gap (2026-10-25)
+
+The positive proposal built from the measurements, not around them. KGE keeps
+only the three life-inspired mechanisms that earned their place -- Darwinian
+mutation-selection, an apoptotic one-sided checkpoint on the native genome (zero
+Lean cost, never accepts), and exact per-locus dosage `out = A + B*v` as
+instrumentation -- and leaves acceptance to the Lean kernel through
+`lean_runner.py`. Rust crate `crates/kernel_gated_evolution`; Paper J.
+
+**Three disciplines this round added.**
+
+1. *The simplest control first.* Before claiming a population does anything, run
+a single-individual hill-climber on the same seeds, points and budget with
+restarts paid from that budget, and report McNemar on the discordant pairs. Here
+the restart-climber BEAT the population on L1 (66 vs 31, p = 4.9e-4) and L2, and
+the population won decisively only from L3 (49 vs 9, p = 9e-8). "The population
+earns its place as targets get harder" is a measured sentence; "the population is
+the source of the search's power" would have been a false one.
+
+2. *Attribute a cross-implementation gap by replay, never by inspection.* Rust L3
+read 0.255 against the Python prototype's 0.470. Different RNG, different sample
+points: not attributable by reading code. `kge ladder --points-file` replayed on
+the prototype's exact points: L1 0.550 -> 0.770 (prototype 0.750), L3 0.255 ->
+0.375. The point-set effect is significant (p = 0.013); the residual against
+0.470 is not (p = 0.068). State both; do not pick the one that flatters.
+
+3. *A planted wrong candidate in every kernel batch.* 31/31 distinct solutions
+proved by the kernel is only evidence because the spec-plus-one candidate riding
+in each batch was rejected by name every time. A gate that accepts everything
+cannot produce that table.
+
+**And one about writing.** When asked to write a foundation paper that focuses on
+what an approach brings, the honest form is not to omit the limits but to put
+them in their own section, once, plainly, and to let the design be the thing the
+measurements supported: mutation-driven because recombination failed six
+pre-registered tests, population-backed because the climber loses from L3 on.
+
 ### 29.14 The atomicity I measured was my own wrapper, and it invalidated three rounds of economics (2026-10-24)
 
 Everything in §29.13 and its follow-up about batching economics rested on a

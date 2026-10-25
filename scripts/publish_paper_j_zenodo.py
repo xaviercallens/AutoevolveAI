@@ -41,8 +41,8 @@ REPO = Path(__file__).resolve().parents[1]
 SUBPROJECT = REPO / "sub_projects" / "socrateai_scientific_genetic" / "SocrateAI-Scientific-Genetic"
 CRATE = REPO / "crates" / "kernel_gated_evolution"
 ZENODO = "https://zenodo.org/api"
-RECEIPT = REPO / "results" / "zenodo_paper_j_edition2_receipt.json"
-EDITION = "edition-2"
+RECEIPT = REPO / "results" / "zenodo_paper_j_edition3_receipt.json"
+EDITION = "edition-3"
 STEM = "PaperJ_Kernel_Gated_Evolution_Foundation"
 
 TITLE = (
@@ -112,6 +112,15 @@ density at scale; a properly powered study of contribution-preserving transfer
 (positive signal p = 0.031 against its matched control, not surviving
 correction); a persistent kernel; adaptive checkpoints; and application to the
 project's Python-genome kernel path.</p>
+
+<p><strong>Edition 3</strong> adds exact <strong>lifetime learning of constants</strong>
+&mdash; the Baldwin effect (and its Lamarckian variant) made exact: each constant locus
+is set to its required value v* = v + (want &minus; out)/B when that value agrees at
+every sample point. Over 1,200 paired seeds it never lost a solve the plain population
+found, raised the ladder from L1 0.550&rarr;0.835, L3 0.255&rarr;0.450 and L5
+0.015&rarr;0.060, every solution kernel-proved, and is compared with the plain
+population at matched total work. Baldwin and Lamarck coincide on every seed, because
+exact tuning is all-or-nothing.</p>
 
 <p><strong>Edition 2</strong> adds: the identities proved in Lean
 (<code>formal/ANSE/AlixKalSpec.lean</code>, six theorems, zero sorry, one of them
@@ -220,6 +229,14 @@ def bundle() -> List[Path]:
         REPO / "scripts" / "kge_traditional_baseline.py",
         REPO / "scripts" / "kge_figures.py",
         REPO / "docs" / "KGE_GUIDELINES.md",
+        # Edition 3: lifetime learning of constants (Baldwin / Lamarck).
+        REPO / "results" / "kge_rust_ladder_baldwin.json",
+        REPO / "results" / "kge_rust_ladder_lamarck.json",
+        REPO / "results" / "kge_rust_ladder_costmatched.json",
+        REPO / "results" / "kge_lifetime_learning.json",
+        REPO / "results" / "kge_baldwin_gate.json",
+        REPO / "scripts" / "kge_lifetime_learning_analysis.py",
+        CRATE / "README.md",
     ]
     missing = [str(f) for f in files if not f.exists()]
     if missing:

@@ -395,6 +395,104 @@ pub fn inert_fraction(tree: &Node, points: &[Env]) -> f64 {
 }
 
 // --------------------------------------------------------------------------
+// Lifetime learning of constants: the Baldwin effect, exactly
+// --------------------------------------------------------------------------
+
+/// Whether, and how, an individual adapts its constant loci during its lifetime.
+///
+/// * `None` -- the plain population: constants are searched like everything else.
+/// * `Baldwin` -- constants are solved exactly against the specification before
+///   fitness is measured, but the GENOME is left unchanged; selection acts on the
+///   adapted phenotype, and the adaptation is not inherited. This is the Baldwin
+///   effect: learning smooths the landscape evolution climbs.
+/// * `Lamarck` -- the solved constants are written back into the genome, so the
+///   adaptation IS inherited. Biologically false for genes, routinely effective
+///   in program search, and here an explicit arm rather than a hidden default.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+pub enum Tuning {
+    None,
+    Baldwin,
+    Lamarck,
+}
+
+/// Solve constant loci exactly where the specification determines them.
+///
+/// For a constant leaf with value `v`, the required value at a sample point is
+/// `v* = v + (want - out) / B` (proved: `ANSE.Alix.xav_required_value`). One leaf
+/// holds one value, so it can only be set when the required value is the SAME
+/// rational at every point where the leaf is not inert (`B != 0`); a leaf whose
+/// required values disagree is left alone, since no constant satisfies them. One
+/// change invalidates the other loci's `out` and `B`, so after each change the
+/// pass restarts, up to `max_rounds`. Every evaluation is charged to `counter`.
+///
+/// This is exact repair of what the structure already gets right: a tree with
+/// the right shape and a wrong coefficient becomes a solution in one round.
+/// A tree with the wrong shape is unchanged by it.
+pub fn tune_constants(
+    tree: &Node,
+    want: &[Rat],
+    points: &[Env],
+    counter: &mut usize,
+    max_rounds: usize,
+) -> (Node, usize) {
+    let mut current = tree.clone();
+    let mut changed_total = 0usize;
+    for _ in 0..max_rounds {
+        let const_addrs: Vec<Address> = current
+            .addresses()
+            .into_iter()
+            .filter(|a| matches!(current.at(a), Node::Const(_)))
+            .collect();
+        if const_addrs.is_empty() {
+            break;
+        }
+        let tables: Vec<HashMap<Address, Rat>> =
+            points.iter().map(|env| context_coefficients(&current, env)).collect();
+        let outs: Vec<Rat> = points.iter().map(|env| current.eval(env)).collect();
+        *counter += 2 * points.len();
+        let mut changed = false;
+        for address in &const_addrs {
+            let v = match current.at(address) {
+                Node::Const(c) => c.clone(),
+                _ => unreachable!("filtered to constants"),
+            };
+            let mut required: Option<Rat> = None;
+            let mut consistent = true;
+            for (i, _) in points.iter().enumerate() {
+                let b = &tables[i][address];
+                if b.is_zero() {
+                    continue;
+                }
+                let r = &v + (&want[i] - &outs[i]) / b;
+                match &required {
+                    None => required = Some(r),
+                    Some(q) => {
+                        if *q != r {
+                            consistent = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            if consistent {
+                if let Some(r) = required {
+                    if r != v {
+                        current = current.replace_at(address, Node::Const(r));
+                        changed = true;
+                        changed_total += 1;
+                        break;
+                    }
+                }
+            }
+        }
+        if !changed {
+            break;
+        }
+    }
+    (current, changed_total)
+}
+
+// --------------------------------------------------------------------------
 // Apoptotic checkpoint: a one-sided exact screen
 // --------------------------------------------------------------------------
 
@@ -426,7 +524,14 @@ pub fn checkpoint(candidate: &Node, spec: &Node, points: &[Env]) -> Checkpoint {
 pub struct ArmResult {
     pub seed: u64,
     pub solved: bool,
+    /// Fitness evaluations: the budgeted currency.
     pub evaluations: usize,
+    /// EVERY evaluation of a tree at a point, including the dosage passes spent
+    /// on lifetime learning. An arm must not win in one currency by hiding its
+    /// cost in the other.
+    pub tree_point_evaluations: usize,
+    /// Constant loci set by lifetime learning across the run (0 for `Tuning::None`).
+    pub constants_tuned: usize,
     pub best_fitness: String,
     pub best_size: usize,
     pub inert_fraction_of_best: f64,
@@ -438,30 +543,68 @@ pub struct SearchConfig {
     pub population_size: usize,
     pub max_size: usize,
     pub tournament: usize,
+    pub tuning: Tuning,
+    pub tuning_rounds: usize,
 }
 
 impl Default for SearchConfig {
     fn default() -> Self {
-        SearchConfig { budget: 4000, population_size: 40, max_size: 25, tournament: 3 }
+        SearchConfig {
+            budget: 4000,
+            population_size: 40,
+            max_size: 25,
+            tournament: 3,
+            tuning: Tuning::None,
+            tuning_rounds: 4,
+        }
     }
 }
 
 /// Darwinian mutation-selection, steady state. Fitness is exact; `want` is the
 /// target's value at each sample point. Stops at the first exact agreement, which
 /// is then a kernel candidate rather than an accepted solution.
+///
+/// With lifetime learning, an individual's constants are solved against the
+/// specification before its fitness is measured. Under `Baldwin` the genome kept
+/// in the population is the UNADAPTED one and only the phenotype's fitness
+/// counts; under `Lamarck` the adapted tree replaces it. In both cases the
+/// candidate handed to the kernel is the adapted phenotype, which is what was
+/// measured to agree.
 pub fn evolve(seed: u64, target: &Node, points: &[Env], config: &SearchConfig) -> ArmResult {
     let mut rng = Pcg64::seed_from_u64(seed);
     let want: Vec<Rat> = points.iter().map(|env| target.eval(env)).collect();
-    let mut scored: Vec<(Rat, Node)> = (0..config.population_size)
-        .map(|_| {
-            let ind = random_tree(&mut rng, 3);
-            (fitness(&ind, points, &want), ind)
-        })
-        .collect();
-    let mut evaluations = scored.len();
-    let mut best = scored.iter().min_by(|a, b| a.0.cmp(&b.0)).unwrap().clone();
+    let mut tree_points = 0usize;
+    let mut constants_tuned = 0usize;
 
-    while evaluations < config.budget && !best.0.is_zero() {
+    // Returns (fitness, genome to keep, phenotype that was measured).
+    let assess = |ind: Node, tree_points: &mut usize, tuned_count: &mut usize| -> (Rat, Node, Node) {
+        let phenotype = match config.tuning {
+            Tuning::None => ind.clone(),
+            Tuning::Baldwin | Tuning::Lamarck => {
+                let (t, n) = tune_constants(&ind, &want, points, tree_points, config.tuning_rounds);
+                *tuned_count += n;
+                t
+            }
+        };
+        *tree_points += points.len();
+        let score = fitness(&phenotype, points, &want);
+        let genome = if config.tuning == Tuning::Lamarck { phenotype.clone() } else { ind };
+        (score, genome, phenotype)
+    };
+
+    let mut scored: Vec<(Rat, Node)> = Vec::with_capacity(config.population_size);
+    let mut best: Option<(Rat, Node)> = None;
+    for _ in 0..config.population_size {
+        let ind = random_tree(&mut rng, 3);
+        let (score, genome, phenotype) = assess(ind, &mut tree_points, &mut constants_tuned);
+        if best.as_ref().map_or(true, |(s, _)| score < *s) {
+            best = Some((score.clone(), phenotype));
+        }
+        scored.push((score, genome));
+    }
+    let mut evaluations = scored.len();
+
+    while evaluations < config.budget && !best.as_ref().unwrap().0.is_zero() {
         let parent = {
             let mut winner: Option<&(Rat, Node)> = None;
             for _ in 0..config.tournament {
@@ -473,26 +616,29 @@ pub fn evolve(seed: u64, target: &Node, points: &[Env], config: &SearchConfig) -
             winner.unwrap().1.clone()
         };
         let child = mutate(&parent, &mut rng, config.max_size);
-        let score = fitness(&child, points, &want);
+        let (score, genome, phenotype) = assess(child, &mut tree_points, &mut constants_tuned);
         evaluations += 1;
         let worst = (0..scored.len()).max_by(|&i, &j| scored[i].0.cmp(&scored[j].0)).unwrap();
         if score < scored[worst].0 {
-            scored[worst] = (score.clone(), child.clone());
+            scored[worst] = (score.clone(), genome);
         }
-        if score < best.0 {
-            best = (score, child);
+        if score < best.as_ref().unwrap().0 {
+            best = Some((score, phenotype));
         }
     }
 
-    let solved = best.0.is_zero();
+    let (best_score, best_tree) = best.unwrap();
+    let solved = best_score.is_zero();
     ArmResult {
         seed,
         solved,
         evaluations,
-        best_fitness: best.0.to_string(),
-        best_size: best.1.size(),
-        inert_fraction_of_best: inert_fraction(&best.1, points),
-        solution_lean: if solved { Some(best.1.render_lean()) } else { None },
+        tree_point_evaluations: tree_points,
+        constants_tuned,
+        best_fitness: best_score.to_string(),
+        best_size: best_tree.size(),
+        inert_fraction_of_best: inert_fraction(&best_tree, points),
+        solution_lean: if solved { Some(best_tree.render_lean()) } else { None },
     }
 }
 
@@ -586,6 +732,8 @@ pub fn random_search(seed: u64, target: &Node, points: &[Env], budget: usize) ->
         seed,
         solved,
         evaluations,
+        tree_point_evaluations: evaluations * points.len(),
+        constants_tuned: 0,
         best_fitness: score.to_string(),
         best_size: node.size(),
         inert_fraction_of_best: inert_fraction(&node, points),

@@ -126,6 +126,7 @@ kernel decides.* The identities it rests on are themselves proved in
 | Calibration ladder (200 seeds) | L1 0.550 · L2 0.970 · L3 0.255 · L4 0.020 · L5 0.015 · L6 (Verlet, 17 nodes) 0.000; **31/31** solutions kernel-proved |
 | SRSD-Feynman (Hugging Face) | 8 of 120 laws inside the grammar; five run vs random search, restart hill-climber, exact regression; **39/39** recovered laws kernel-proved; population wins outright on 1 law, loses to a naive baseline on 3 (all ≤ 4 leaves) |
 | Simplest control | restart hill-climber **beats** the population on easy rungs (L1 p = 4.9e-4); population wins from L3 (49 vs 9, p = 9e-8) |
+| Lifetime learning (Baldwin) | constants solved exactly via `v* = v + (want−out)/B`; never lost a solve on 1,200 paired seeds; L1 0.550→0.835, L3 0.255→0.450, L5 0.015→0.060; at **matched total work** ahead on L3/L5, level on L4; `--tuning baldwin` |
 
 Read [`docs/KGE_GUIDELINES.md`](docs/KGE_GUIDELINES.md) before using it: when it applies
 (three conditions), **choose the search layer by target size, keep the gate**, and the eight

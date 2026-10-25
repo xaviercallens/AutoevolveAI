@@ -117,6 +117,19 @@ fn load_points(args: &[String]) -> (Vec<Env>, String) {
     }
 }
 
+/// `--tuning none|baldwin|lamarck`: lifetime learning of constants (default none).
+fn tuning_arg(args: &[String]) -> kernel_gated_evolution::Tuning {
+    match arg(args, "--tuning").as_deref() {
+        None | Some("none") => kernel_gated_evolution::Tuning::None,
+        Some("baldwin") => kernel_gated_evolution::Tuning::Baldwin,
+        Some("lamarck") => kernel_gated_evolution::Tuning::Lamarck,
+        Some(other) => {
+            eprintln!("unknown --tuning {other:?}; use none, baldwin or lamarck");
+            std::process::exit(2);
+        }
+    }
+}
+
 fn selected(args: &[String]) -> Option<Vec<String>> {
     arg(args, "--rungs").map(|s| s.split(',').map(|x| x.to_string()).collect())
 }
@@ -128,7 +141,7 @@ fn run_ladder(args: &[String]) {
     let only = selected(args);
     let lean_out = arg(args, "--lean-out").map(PathBuf::from);
     let (points, points_source) = load_points(args);
-    let config = SearchConfig { budget, ..SearchConfig::default() };
+    let config = SearchConfig { budget, tuning: tuning_arg(args), ..SearchConfig::default() };
 
     if let Some(dir) = &lean_out {
         fs::create_dir_all(dir).expect("cannot create --lean-out");
@@ -232,6 +245,7 @@ fn run_ladder(args: &[String]) {
     parameters.insert("population_size", config.population_size);
     parameters.insert("max_size", config.max_size);
     parameters.insert("tournament", config.tournament);
+    parameters.insert("tuning_rounds", config.tuning_rounds);
     let report = Report {
         algorithm: "Kernel-Gated Evolution (Rust): mutation-selection + apoptotic checkpoint + exact dosage; Lean kernel decides acceptance via anse/formal/lean_runner.py",
         parameters,
@@ -250,7 +264,7 @@ fn run_hillclimb(args: &[String]) {
     let out = PathBuf::from(arg(args, "--out").expect("--out is required"));
     let only = selected(args);
     let (points, points_source) = load_points(args);
-    let config = SearchConfig { budget, ..SearchConfig::default() };
+    let config = SearchConfig { budget, tuning: tuning_arg(args), ..SearchConfig::default() };
 
     let mut rungs = Vec::new();
     for (name, target) in target_ladder() {
@@ -366,7 +380,7 @@ fn run_solve(args: &[String]) {
     let (points, points_source) = load_points(args);
     let want: Vec<Rat> = points.iter().map(|e| target.eval(e)).collect();
     assert!(fitness(&target, &points, &want).is_zero(), "target is not a solution of itself");
-    let config = SearchConfig { budget, ..SearchConfig::default() };
+    let config = SearchConfig { budget, tuning: tuning_arg(args), ..SearchConfig::default() };
 
     let kge: Vec<_> = (0..seeds as u64).map(|s| evolve(s, &target, &points, &config)).collect();
     let rnd: Vec<_> = (0..seeds as u64)

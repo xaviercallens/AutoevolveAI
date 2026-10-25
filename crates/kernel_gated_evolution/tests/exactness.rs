@@ -156,6 +156,53 @@ fn random_search_is_a_real_floor_and_reports_its_cost() {
 }
 
 #[test]
+fn lifetime_learning_repairs_a_wrong_constant_exactly_and_leaves_shape_errors_alone() {
+    let points = sample_points(&mut Pcg64::seed_from_u64(20261024), 12);
+    let l5 = target_ladder().into_iter().find(|(n, _)| *n == "L5_minus_half_hwq").unwrap().1;
+    let want: Vec<Rat> = points.iter().map(|e| l5.eval(e)).collect();
+    // L5 with its 1/2 replaced by 3: right shape, wrong coefficient.
+    let wrong = parse_prefix("(- (+ q (* h p)) (* (* (* h w) 3) q))").unwrap();
+    assert!(!fitness(&wrong, &points, &want).is_zero());
+    let mut cost = 0usize;
+    let (fixed, changed) = tune_constants(&wrong, &want, &points, &mut cost, 4);
+    assert_eq!(changed, 1, "exactly one locus should be set");
+    assert!(fitness(&fixed, &points, &want).is_zero(), "the repaired tree must agree everywhere");
+    assert_eq!(fixed, l5, "and it must be L5 itself, not merely an agreeing tree");
+    assert!(cost > 0, "the dosage passes must be charged");
+    // A correct tree is left alone.
+    let (same, n) = tune_constants(&l5, &want, &points, &mut cost, 4);
+    assert_eq!(n, 0);
+    assert_eq!(same, l5);
+    // A wrong SHAPE cannot be repaired by any constant: L4's shape against L6's values.
+    let l6 = target_ladder().into_iter().find(|(n, _)| *n == "L6_full").unwrap().1;
+    let want6: Vec<Rat> = points.iter().map(|e| l6.eval(e)).collect();
+    let l4 = parse_prefix("(- (+ q (* h p)) (* (* (* h w) 1) q))").unwrap();
+    let (still, m) = tune_constants(&l4, &want6, &points, &mut cost, 4);
+    assert_eq!(m, 0, "no single constant makes L4's shape equal L6");
+    assert_eq!(still, l4);
+}
+
+#[test]
+fn baldwin_keeps_the_genome_and_lamarck_writes_it_back() {
+    let points = sample_points(&mut Pcg64::seed_from_u64(20261024), 12);
+    let l2 = target_ladder().into_iter().find(|(n, _)| *n == "L2_minus_q").unwrap().1;
+    for tuning in [Tuning::None, Tuning::Baldwin, Tuning::Lamarck] {
+        let config = SearchConfig { budget: 1500, tuning, ..SearchConfig::default() };
+        let r = evolve(5, &l2, &points, &config);
+        assert!(r.tree_point_evaluations >= r.evaluations * points.len(),
+                "tree-point cost must at least cover the fitness evaluations");
+        if tuning == Tuning::None {
+            assert_eq!(r.constants_tuned, 0);
+            assert_eq!(r.tree_point_evaluations, r.evaluations * points.len());
+        }
+        if r.solved {
+            assert_eq!(r.best_fitness, "0");
+            assert!(r.solution_lean.is_some());
+        }
+    }
+}
+
+#[test]
 fn inert_fraction_is_zero_for_a_minimal_target_and_positive_with_dead_code() {
     let points = sample_points(&mut Pcg64::seed_from_u64(9), 6);
     let l1 = target_ladder().into_iter().find(|(n, _)| *n == "L1_base").unwrap().1;

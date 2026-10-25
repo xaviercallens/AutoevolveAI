@@ -98,6 +98,20 @@ def generated_sections(tex: str) -> List[str]:
                 m = {x["method"]: x for x in res["methods"]}
                 must.append(f"{m['kge_mutation_selection']['rate']:.2f}")
                 must.append(f"{m['hillclimb_with_restarts']['rate']:.2f} & {m['random_search']['rate']:.2f}")
+    ll_path = RESULTS / "kge_lifetime_learning.json"
+    if ll_path.exists():
+        ll = json.loads(ll_path.read_text())
+        for r in ll["rungs"]:
+            must.append(f"{r['none_rate']:.3f} & {r['baldwin_rate']:.3f} & {r['lamarck_rate']:.3f}")
+            must.append(f"{r['baldwin_only']} / {r['none_only']}")
+        cm_path = RESULTS / "kge_rust_ladder_costmatched.json"
+        if cm_path.exists():
+            for r in json.loads(cm_path.read_text())["rungs"]:
+                must.append(f"{r['solve_rate']:.3f}")
+        bg = RESULTS / "kge_baldwin_gate.json"
+        if bg.exists():
+            t = json.loads(bg.read_text())["totals"]
+            must.append(f"All {t['accepted_by_kernel']} of the {t['distinct_candidates_gated']} distinct")
     gate_path = RESULTS / "kge_hf_gate.json"
     if gate_path.exists():
         t = json.loads(gate_path.read_text())["totals"]

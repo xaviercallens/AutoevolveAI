@@ -495,3 +495,84 @@ pub fn evolve(seed: u64, target: &Node, points: &[Env], config: &SearchConfig) -
         solution_lean: if solved { Some(best.1.render_lean()) } else { None },
     }
 }
+
+// --------------------------------------------------------------------------
+// The control that the population must beat: a plain hill-climber
+// --------------------------------------------------------------------------
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ClimbResult {
+    pub seed: u64,
+    pub solved: bool,
+    pub evaluations: usize,
+    pub restarts: usize,
+    pub best_fitness: String,
+}
+
+/// Greedy descent with optional restarts, charged the SAME fitness-evaluation
+/// budget as `evolve`. One individual, no population, no selection, no crossover:
+/// the simplest thing that could possibly work. If it matches the genetic
+/// algorithm, the population machinery is decoration for this problem.
+///
+/// A step samples `neighbours` mutations and moves to the best strictly
+/// improving one. At a local optimum it either stops (`allow_restarts` false) or
+/// restarts from a fresh random tree, paying for the restart out of the same
+/// budget -- an unlimited restart budget would turn this into random search with
+/// extra steps.
+pub fn hill_climb(
+    seed: u64,
+    target: &Node,
+    points: &[Env],
+    budget: usize,
+    max_size: usize,
+    neighbours: usize,
+    allow_restarts: bool,
+) -> ClimbResult {
+    let mut rng = Pcg64::seed_from_u64(seed);
+    let want: Vec<Rat> = points.iter().map(|env| target.eval(env)).collect();
+    let mut current = random_tree(&mut rng, 3);
+    let mut score = fitness(&current, points, &want);
+    let mut evaluations = 1usize;
+    let mut restarts = 0usize;
+    let mut best = score.clone();
+    while evaluations < budget && !best.is_zero() {
+        let mut candidates: Vec<(Rat, Node)> = Vec::new();
+        for _ in 0..neighbours {
+            if evaluations >= budget {
+                break;
+            }
+            let child = mutate(&current, &mut rng, max_size);
+            candidates.push((fitness(&child, points, &want), child));
+            evaluations += 1;
+        }
+        if candidates.is_empty() {
+            break;
+        }
+        let (local_score, local_node) =
+            candidates.into_iter().min_by(|a, b| a.0.cmp(&b.0)).unwrap();
+        if local_score < score {
+            current = local_node;
+            score = local_score;
+            if score < best {
+                best = score.clone();
+            }
+        } else if allow_restarts {
+            restarts += 1;
+            current = random_tree(&mut rng, 3);
+            score = fitness(&current, points, &want);
+            evaluations += 1;
+            if score < best {
+                best = score.clone();
+            }
+        } else {
+            break;
+        }
+    }
+    ClimbResult {
+        seed,
+        solved: best.is_zero(),
+        evaluations,
+        restarts,
+        best_fitness: best.to_string(),
+    }
+}

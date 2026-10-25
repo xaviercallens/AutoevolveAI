@@ -2,6 +2,19 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [14.12.0] — Population-genetic foundations proved: H11 and H12 (2026-10-25)
+
+Summary: Paper J edition 4 (DOI [10.5281/zenodo.23639141](https://doi.org/10.5281/zenodo.23639141)). `formal/ANSE/AlixPopulationGenetics.lean`,
+11 declarations over ℚ, 0 `sorry`, whitelist axioms only, gated through `lean_runner`:
+- **H12** — one locus, two alleles, haploid selection with constant positive fitnesses: mean fitness never
+  decreases, with exact increment `p(1-p)(w₁-w₂)²/w̄`, whose numerator is the population fitness variance
+  (`kal_increment_is_variance`). Not Fisher's general theorem.
+- **H11** — a maximum principle for finite chains whose interior states reach 0 in one step; Wright–Fisher
+  satisfies it, its rows sum to 1, `j/N` is harmonic (binomial mean), so `i/N` is the unique harmonic function
+  with boundary 0 and 1. The step to fixation probability is NOT formalised.
+- Registered, untested prediction for KGE: stalled runs should be those whose population fitness variance has
+  collapsed.
+
 ## [14.11.0] — Kernel-Gated Evolution: exact lifetime learning of constants (2026-10-25)
 
 Summary: Paper J edition 3 (DOI [10.5281/zenodo.23638652](https://doi.org/10.5281/zenodo.23638652)).

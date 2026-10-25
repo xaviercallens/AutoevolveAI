@@ -66,6 +66,11 @@ def static_claims(tex: str) -> List[Tuple[str, Any, Any, str]]:
     rows.append(("v* verified pairs", "24303 of 24303",
                  wall["the_identity_that_motivated_it"]["verified"].split(" (")[0], "wall"))
     rows.append(("inert fraction", 0.048, wall["the_identity_that_motivated_it"]["inert_pairs"], "wall"))
+    pg = REPO / "formal" / "ANSE" / "AlixPopulationGenetics.lean"
+    if pg.exists():
+        n = sum(1 for line in pg.read_text().splitlines() if line.startswith("#print axioms"))
+        rows.append(("H11/H12 Lean declarations", 11, n, "AlixPopulationGenetics.lean"))
+        rows.append(("H11/H12 file has no sorry", True, "sorry" not in pg.read_text().split("-/", 1)[1], "AlixPopulationGenetics.lean"))
     return rows
 
 

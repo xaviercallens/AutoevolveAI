@@ -78,6 +78,14 @@ plain population found, and at **matched total work** it stays ahead on L3
 gives identical results — exact tuning is all-or-nothing. It costs 2.3–2.8× the
 tree-point work per run from L3 up, so compare at matched work, as above.
 
+### Keep fitness variance alive
+
+Proved (H12, `AlixPopulationGenetics.lean`): in the one-locus haploid model a round of selection raises mean
+fitness by exactly `Var(w)/w̄`, so selection stalls when the population's fitness variance is gone; and (H11)
+neutral drift moves a lineage to fixation only with probability `1/N`. Registered, not yet tested: stalled KGE
+runs should be those whose fitness variance has collapsed. Fresh random immigrants or redrawn sample points are
+the levers to try.
+
 ## 2. How to use it — the discipline
 
 Each rule below is there because skipping it produced a wrong conclusion in this

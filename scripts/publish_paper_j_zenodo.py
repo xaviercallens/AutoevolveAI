@@ -41,8 +41,8 @@ REPO = Path(__file__).resolve().parents[1]
 SUBPROJECT = REPO / "sub_projects" / "socrateai_scientific_genetic" / "SocrateAI-Scientific-Genetic"
 CRATE = REPO / "crates" / "kernel_gated_evolution"
 ZENODO = "https://zenodo.org/api"
-RECEIPT = REPO / "results" / "zenodo_paper_j_edition3_receipt.json"
-EDITION = "edition-3"
+RECEIPT = REPO / "results" / "zenodo_paper_j_edition4_receipt.json"
+EDITION = "edition-4"
 STEM = "PaperJ_Kernel_Gated_Evolution_Foundation"
 
 TITLE = (
@@ -112,6 +112,16 @@ density at scale; a properly powered study of contribution-preserving transfer
 (positive signal p = 0.031 against its matched control, not surviving
 correction); a persistent kernel; adaptive checkpoints; and application to the
 project's Python-genome kernel path.</p>
+
+<p><strong>Edition 4</strong> adds two population-genetic foundations proved in Lean over Q
+(formal/ANSE/AlixPopulationGenetics.lean, 11 declarations, zero sorry, whitelist axioms only),
+each at the scope an internal review required: <strong>H12</strong> &mdash; one locus, two alleles,
+haploid selection with constant fitnesses: mean fitness never decreases, with the exact increment
+p(1&minus;p)(w&#8321;&minus;w&#8322;)&sup2;/w&#772;, which equals Var(w)/w&#772; (not Fisher's general theorem);
+<strong>H11</strong> &mdash; a maximum principle for chains whose interior states reach 0 in one step,
+and for Wright&ndash;Fisher i/N is the unique harmonic function with boundary values 0 and 1 (the step
+to fixation probability is not formalised). Their bearing on KGE is registered as an untested
+prediction: stalled runs should be those whose population fitness variance has collapsed.</p>
 
 <p><strong>Edition 3</strong> adds exact <strong>lifetime learning of constants</strong>
 &mdash; the Baldwin effect (and its Lamarckian variant) made exact: each constant locus
@@ -237,6 +247,8 @@ def bundle() -> List[Path]:
         REPO / "results" / "kge_baldwin_gate.json",
         REPO / "scripts" / "kge_lifetime_learning_analysis.py",
         CRATE / "README.md",
+        # Edition 4: H11 and H12, proved.
+        REPO / "formal" / "ANSE" / "AlixPopulationGenetics.lean",
     ]
     missing = [str(f) for f in files if not f.exists()]
     if missing:

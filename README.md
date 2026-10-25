@@ -8,7 +8,7 @@
 
 [![Tests](https://img.shields.io/badge/tests-1495_passing-brightgreen?style=flat-square&logo=pytest)](#measured-status)
 [![Lean 4](https://img.shields.io/badge/Lean_4-254_theorems-blue?style=flat-square&logo=lean)](formal/ANSE)
-[![Release](https://img.shields.io/badge/release-v14.11.0-blueviolet?style=flat-square&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v14.11.0)
+[![Release](https://img.shields.io/badge/release-v14.12.0-blueviolet?style=flat-square&logo=github)](https://github.com/xaviercallens/AutoevolveAI/releases/tag/v14.12.0)
 [![KGE paper](https://img.shields.io/badge/Zenodo-Kernel--Gated_Evolution_10.5281%2Fzenodo.23635678-1f6feb?style=flat-square)](https://doi.org/10.5281/zenodo.23635678)
 [![Python](https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python)](pyproject.toml)
 [![Rust](https://img.shields.io/badge/rust-1.96-000000?style=flat-square&logo=rust)](crates/)
@@ -380,6 +380,7 @@ unsupported" is as valuable as a patch — that is how the audit started.
 | [`KGE_GUIDELINES.md`](docs/KGE_GUIDELINES.md) | Kernel-Gated Evolution: when to use it, where it applies, the eight disciplines, limits |
 | [`crates/kernel_gated_evolution/README.md`](crates/kernel_gated_evolution/README.md) | The Rust crate: build, `kge ladder` / `hillclimb` / `solve`, the gate |
 | [`AlixKalSpec.lean`](formal/ANSE/AlixKalSpec.lean) | The dosage and checkpoint identities, proved and axiom-checked |
+| [`AlixPopulationGenetics.lean`](formal/ANSE/AlixPopulationGenetics.lean) | H12 (one-locus haploid selection never lowers mean fitness; increment = Var(w)/w̄) and H11 (maximum principle; i/N is the Wright–Fisher harmonic solution) — 11 theorems, 0 sorry |
 | [`LL.md`](LL.md) | Lessons learned, §29 — the binding measurement rules and the failures behind each |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release history, including a superseded entry retained for the record |
 | [`CLAUDE.md`](CLAUDE.md) | Agent guide: environment facts, hooks, MCP |

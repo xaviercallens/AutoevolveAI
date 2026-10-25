@@ -1,0 +1,11 @@
+\begin{Verbatim}[fontsize=\scriptsize,frame=single,framesep=1.5mm]
+theorem c_neg_at_pi (κ : ℝ) : c κ Real.pi < 0 := by
+  simp only [c, Real.cos_pi]
+  have := Real.exp_pos (-κ * Real.sqrt Real.pi)
+  linarith
+
+theorem c_not_admissible (κ : ℝ) : ¬ AdmissiblePotential (c κ) := by
+  intro H
+  have := H.2.1 Real.pi Real.pi_pos
+  linarith [c_neg_at_pi κ]
+\end{Verbatim}

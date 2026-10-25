@@ -1,0 +1,3 @@
+-- Autoresearch_EnstrophyFlow.lean lines 195-196
+theorem ham_rate_zero (k ω : ℕ → ℝ) (v : ℕ → ℂ) (N : ℕ) (hbc : v (N + 2) = 0) :
+    dHam (fun n => (1 / 2 : ℝ) ^ n * ω n) (fun n => (1 / 2 : ℝ) ^ n * k n) N v (F k ω v) = 0 := ...

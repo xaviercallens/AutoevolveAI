@@ -1,0 +1,34 @@
+{
+ "title": "The Rytova-Keldysh interaction is a positive Gaussian mixture: kernel-checked admissibility for planar universal optimality and Keldysh-jellium Madelung energies of TMD Wigner lattices",
+ "version": "v1",
+ "description": "<p>The Rytova&ndash;Keldysh potential V(r) = (&pi;/2r<sub>0</sub>)[H<sub>0</sub> &minus; Y<sub>0</sub>](r/r<sub>0</sub>) describes the in-plane interaction in a monolayer transition-metal dichalcogenide. We give a human proof (Tier C, not machine-checked) that, as a function of t = r<sup>2</sup>, it is a positive mixture of Gaussians, with weight w(a) = r<sub>0</sub><sup>&minus;1</sup> erfcx(&radic;a/r<sub>0</sub>). It is therefore completely monotone in the squared distance, which is the class covered by the openai/math theorem on universal optimality of the triangular lattice. Every claim is filed in an Elenchus claim ledger with tiers A (kernel-checked Lean), L (cited literature, quoted verbatim), C (human argument, not machine-checked) and X (floating-point exploration, which never supports a claim).</p><p><b>Tier A</b> (Lean 4.34.1, pinned openai/math and Mathlib; axioms within propext, Classical.choice, Quot.sound; planted sorry and planted-axiom controls caught):</p><ul><li>a generic lemma: positive exponential mixtures with finite moments are AdmissiblePotential;</li><li>admissibility and strict positivity of the mixture-<i>defined</i> Keldysh potential, and of its Gaussian regularisation;</li><li>the triangular-lattice energy inequalities obtained from upstream's universal_energy_minimum.</li></ul><p>These corollaries are <b>conditional</b> on the upstream theorem, which is AI-generated and not peer reviewed, and on the fidelity of its definitions. The unregularised inequality is expected to read &top; &le; &top; (Tier C). Finiteness of the regularised energy is not proved.</p><p><b>Tier C</b>: the identification of the Lean mixture with the Struve form, given as a step-by-step human demonstration written for undergraduates. Its main route uses only positive integrands: DLMF 11.5.2, the subordination formula (used without a citation) and an elementary erfcx integral.</p><p><b>Tier X</b>: a new rusty-SUNDIALS module computes Keldysh-jellium Madelung energies of triangular and square Wigner lattices by an Ewald split in the mixture variable. It reproduces the Coulomb values at r<sub>0</sub> = 0 and the Dedekind-eta log-gas gap at large r<sub>0</sub>, and both negative controls are caught. The square lattice lies above the triangular one at all 51 sampled points. Material curves for MoS<sub>2</sub>, MoSe<sub>2</sub>, WS<sub>2</sub> and WSe<sub>2</sub> in vacuum take r<sub>0</sub> = 2&pi;&chi;<sub>2D</sub> from Berkelbach et al. (Tier L). The HuggingFace dataset colabfit/JARVIS_C2DB (CC-BY-4.0) is used only to identify the 2H phases and to cross-check lattice constants; it contains no polarizabilities. All of this is static and classical, and compares two lattices only.</p><p>No breakthrough is claimed: complete monotonicity follows quickly from textbook integrals. The ledger gate reports 0 blocking findings and 9 flags, one for each Tier A row whose statement adequacy no human has audited. The work was produced by AI agents (Claude) under the author's direction; the author is responsible for the content.</p>",
+ "keywords": [
+  "Lean 4",
+  "formal verification",
+  "Rytova-Keldysh potential",
+  "Keldysh interaction",
+  "transition metal dichalcogenides",
+  "Wigner crystal",
+  "jellium",
+  "Madelung energy",
+  "Ewald summation",
+  "complete monotonicity",
+  "universal optimality",
+  "triangular lattice",
+  "rusty-SUNDIALS",
+  "HuggingFace",
+  "C2DB",
+  "epistemic tiers",
+  "AI-assisted research"
+ ],
+ "notes": "Preprint v1 (2026-10-25). Lean: AutoevolveAI formal_cert/Autoresearch/KeldyshCM.lean (sha256 1bac0d410d366614c8d287f7ea95d495aa0ee09c4782cfa0d5b691a3048647f2) under pinned openai/math fd4aeeb2ee4fc729c18d98444fed42fd0529eeeb, Lean 4.34.1, Mathlib d13f23b723b8a846827a245b89c10fc7d3f11612. Numerics: rusty-SUNDIALS commit 2e41505cc9df8c46d2b2d667c89ea53e977218ca on branch physics/ar-keldysh-2026-10-25 (not pushed at the time of writing). HuggingFace dataset colabfit/JARVIS_C2DB at revision 432aeba9e505b59d0b3605c6346ac3816c754c02. Producer and verifier have not yet been separated: the paper-stage reruns were done by another AI agent instance. A Stage-4 independent agent audit (AUDIT.md; another AI agent instance, not a human review) recompiled Yukawa.lean and KeldyshCM.lean from source into a private olean directory (rc 0, axioms within propext, Classical.choice, Quot.sound; its own planted sorry and planted axiom caught), reran the scan (bit-identical) and the crate tests (28 passed, 0 failed, 1 ignored), and returned ACCEPT_WITH_CORRECTIONS; the corrections are listed in REVISION.md. No human has reviewed the work. The openai/math commit id is inherited from the earlier published ledger; the pinned local copy has no .git.",
+ "related_identifiers": [
+  {"identifier": "10.5281/zenodo.23293429", "relation": "references", "scheme": "doi"},
+  {"identifier": "10.5281/zenodo.23295142", "relation": "references", "scheme": "doi"},
+  {"identifier": "arXiv:1305.4972", "relation": "references", "scheme": "arxiv"},
+  {"identifier": "arXiv:1011.4617", "relation": "references", "scheme": "arxiv"},
+  {"identifier": "10.60732/37c26dae", "relation": "references", "scheme": "doi"},
+  {"identifier": "https://huggingface.co/datasets/colabfit/JARVIS_C2DB/tree/432aeba9e505b59d0b3605c6346ac3816c754c02", "relation": "references", "scheme": "url"},
+  {"identifier": "https://github.com/openai/math/tree/fd4aeeb2ee4fc729c18d98444fed42fd0529eeeb", "relation": "references", "scheme": "url"}
+ ]
+}

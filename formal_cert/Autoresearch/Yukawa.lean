@@ -1,10 +1,12 @@
 import Triangular.RieszFinite
 
 /-!
-# Autoresearch 2026-10-25, H2: Yukawa / Debye–Hückel interaction
+# Autoresearch 2026-10-25, H2: planar Yukawa (3D-screened Coulomb) interaction
 
-For `κ > 0` the screened-Coulomb (Yukawa, Debye–Hückel) pair interaction `e^{-κ r} / r`, written in the variable
-`t = r²`, is `g_κ(t) = exp(-κ √t) / √t`. We show it is `AdmissiblePotential`, hence the triangular lattice minimises
+For `κ > 0` the Yukawa pair interaction `e^{-κ r} / r` (the 3D screened-Coulomb potential, here between particles
+confined to a plane, as in 2D Yukawa crystals of dusty plasmas and charged colloids), written in the variable
+`t = r²`, is `g_κ(t) = exp(-κ √t) / √t`. This is NOT the Green function of the 2D Debye–Hückel equation, which is
+`K₀(κ r)`; `K₀` is not treated here. We show it is `AdmissiblePotential`, hence the triangular lattice minimises
 its energy among locally finite density-one planar configurations by upstream's `universal_energy_minimum`, and that
 the triangular lattice energy is finite, so the corollary is not `⊤ ≤ ⊤`.
 
@@ -25,7 +27,7 @@ open OAI.AtomicTriangular TriangularRiesz
 /-- `φ_κ(t) = exp(-κ √t)`. -/
 noncomputable def phi (κ : ℝ) : ℝ → ℝ := fun t => Real.exp (-κ * Real.sqrt t)
 
-/-- Yukawa / Debye–Hückel potential in the variable `t = r²`. -/
+/-- Planar Yukawa (3D-screened Coulomb) potential `e^{-κ r}/r` in the variable `t = r²` (not the 2D `K₀`). -/
 noncomputable def g (κ : ℝ) : ℝ → ℝ := fun t => Real.exp (-κ * Real.sqrt t) / Real.sqrt t
 
 /-- Negative control potential. -/
@@ -127,7 +129,7 @@ lemma g_eqOn (κ : ℝ) : Set.EqOn (riesz 1 * phi κ) (g κ) (Set.Ioi 0) := by
   simp only [phi, g]
   ring
 
-/-- **H2.** The Yukawa / Debye–Hückel potential is admissible for `κ > 0`. -/
+/-- **H2.** The planar Yukawa (3D-screened Coulomb) potential is admissible for `κ > 0`. -/
 theorem yukawa_admissible {κ : ℝ} (hκ : 0 < κ) : AdmissiblePotential (g κ) :=
   admissible_congr (admissible_mul (riesz_admissible (s := 1) one_pos) (phi_admissible hκ)) (g_eqOn κ)
 

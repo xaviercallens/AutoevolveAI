@@ -1,0 +1,10 @@
+theorem laplace_admissible (h : MixtureData (*@$\mu$@*) k m) :
+    AdmissiblePotential (fun t => (*@$\int$@*) x, Real.exp (-(t * k x)) * m x (*@$\partial$@*)(*@$\mu$@*)) := -- proof elided
+
+theorem laplace_iteratedDeriv (h : MixtureData (*@$\mu$@*) k m) (n : (*@$\mathbb{N}$@*)) {t : (*@$\mathbb{R}$@*)} (ht : 0 < t) :
+    iteratedDeriv n (fun t => (*@$\int$@*) x, Real.exp (-(t * k x)) * m x (*@$\partial$@*)(*@$\mu$@*)) t =
+      (*@$\int$@*) x, (-(k x)) ^ n * Real.exp (-(t * k x)) * m x (*@$\partial$@*)(*@$\mu$@*) := -- proof elided
+
+theorem expNeg_admissible {(*@$\varepsilon$@*) : (*@$\mathbb{R}$@*)} (h(*@$\varepsilon$@*) : 0 (*@$\le$@*) (*@$\varepsilon$@*)) : AdmissiblePotential (fun t => Real.exp (-((*@$\varepsilon$@*) * t))) := -- proof elided
+
+theorem signedMix_not_admissible : (*@$\neg$@*) AdmissiblePotential signedMix := -- proof elided

@@ -1,0 +1,3 @@
+-- Autoresearch_EnstrophyFlow.lean lines 200-201
+theorem energy_rate_zero (k ω : ℕ → ℝ) (v : ℕ → ℂ) (N : ℕ) (hbc : v (N + 2) = 0) :
+    ∑ n ∈ Finset.range (N + 2), 2 * ((starRingEnd ℂ) (v n) * F k ω v n).re = 0 := ...

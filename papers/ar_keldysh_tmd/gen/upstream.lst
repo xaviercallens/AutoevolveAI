@@ -1,0 +1,8 @@
+def AdmissiblePotential (g : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) : Prop :=
+  ContDiffOn (*@$\mathbb{R}$@*) ((*@$\top$@*) : (*@$\mathbb{N}$@*)(*@$\infty$@*)) g (Set.Ioi 0) (*@$\wedge$@*)
+  ((*@$\forall$@*) t : (*@$\mathbb{R}$@*), 0 < t (*@$\to$@*) 0 (*@$\le$@*) g t) (*@$\wedge$@*)
+  (*@$\forall$@*) (r : (*@$\mathbb{N}$@*)) (t : (*@$\mathbb{R}$@*)), 0 < t (*@$\to$@*) 0 (*@$\le$@*) (-1 : (*@$\mathbb{R}$@*)) ^ r * iteratedDeriv r g t
+
+theorem universal_energy_minimum (g : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) (C : Set Plane)
+    (hg : AdmissiblePotential g) (_hC : LocallyFinite C) (hd : DensityOne C) :
+    latticeEnergy g (*@$\le$@*) energy g C (*@$\wedge$@*) latticeEnergy g = energy g A := -- proof elided

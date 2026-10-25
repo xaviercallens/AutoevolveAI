@@ -1,0 +1,18 @@
+structure MixtureData ((*@$\mu$@*) : Measure (*@$\alpha$@*)) (k m : (*@$\alpha$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) : Prop where
+  k_meas : Measurable k
+  m_meas : Measurable m
+  k_nonneg : (*@$\forall$@*)(*@$^{\mathrm{m}}$@*) x (*@$\partial$@*)(*@$\mu$@*), 0 (*@$\le$@*) k x
+  m_nonneg : (*@$\forall$@*)(*@$^{\mathrm{m}}$@*) x (*@$\partial$@*)(*@$\mu$@*), 0 (*@$\le$@*) m x
+  integrable : (*@$\forall$@*) (n : (*@$\mathbb{N}$@*)) (c : (*@$\mathbb{R}$@*)), 0 < c (*@$\to$@*) Integrable (fun x => k x ^ n * Real.exp (-(c * k x)) * m x) (*@$\mu$@*)
+
+noncomputable def erfcx (x : (*@$\mathbb{R}$@*)) : (*@$\mathbb{R}$@*) :=
+  2 / Real.sqrt Real.pi * (*@$\int$@*) y in Ioi (0 : (*@$\mathbb{R}$@*)), Real.exp (-(y ^ 2 + 2 * x * y))
+
+noncomputable def w (r0 a : (*@$\mathbb{R}$@*)) : (*@$\mathbb{R}$@*) := 1 / r0 * erfcx (Real.sqrt a / r0)
+
+noncomputable def keldysh (r0 t : (*@$\mathbb{R}$@*)) : (*@$\mathbb{R}$@*) :=
+  (*@$\int$@*) a in Ioi (0 : (*@$\mathbb{R}$@*)), w r0 a / (2 * a) * Real.exp (-t / (4 * a))
+
+noncomputable def keldyshReg (r0 (*@$\varepsilon$@*) t : (*@$\mathbb{R}$@*)) : (*@$\mathbb{R}$@*) := keldysh r0 t * Real.exp (-((*@$\varepsilon$@*) * t))
+
+noncomputable def signedMix (t : (*@$\mathbb{R}$@*)) : (*@$\mathbb{R}$@*) := Real.exp (-t) - 2 * Real.exp (-(2 * t))

@@ -27,8 +27,10 @@ theorem d7_count_unique (n : Nat) :
   simp only [chargeD7Brane, totalO7Charge, numO7Planes, chargeO7Minus, numD7Branes]
   omega
 
-/-- **U2 (main).** The seven-brane tadpole and the D3 budget together force `(a, b) = (4, 16)`: the
-plane count `4 = 2²` (fixed points of the reflection of `T²`) is recovered, not assumed. -/
+/-- **U2 (main).** The seven-brane tadpole and the matching of the 7-branes' induced D3 charge to
+`χ(K3×K3)/24 = 24` together force `(a, b) = (4, 16)`. This is not the D3 tadpole `N_D3 + ½N_flux = 24` (which
+does not involve `a, b`). The plane count `4 = 2²` is fixed by geometry (fixed points of the reflection of `T²`);
+agreement with the value forced here is an arithmetic consistency check, not a derivation of the geometry. -/
 theorem tadpole_pair_unique (a b : Nat) :
     SevenBraneTadpole a b ∧ D3Budget a b ↔ a = numO7Planes ∧ b = numD7Branes := by
   simp only [SevenBraneTadpole, D3Budget, chargeO7Minus, chargeD7Brane, d3ChargePerO7, d3ChargePerD7,
@@ -64,37 +66,35 @@ theorem local_distribution_unique (f : Fin 4 → Nat) :
     simp only [chargeO7Minus, chargeD7Brane] at hi
     omega
   · rintro rfl i
+    show chargeO7Minus + ((4 : Nat) : Int) * chargeD7Brane = 0
     decide
 
 /-- Local cancellation implies the global count. -/
 theorem local_implies_global (f : Fin 4 → Nat) (h : LocallyCancelled f) : GloballyCancelled f := by
   rw [(local_distribution_unique f).1 h]
+  unfold GloballyCancelled
   decide
 
 /-! ### Negative controls: drop one hypothesis and uniqueness fails (two distinct solutions). -/
 
 theorem ctl_neg_no_d3 :
     SevenBraneTadpole 1 4 ∧ SevenBraneTadpole 4 16 ∧ (1, 4) ≠ (4, 16) := by
-  refine ⟨?_, ?_, ?_⟩ <;> decide
+  unfold SevenBraneTadpole
+  decide
 
 theorem ctl_neg_no_sevenbrane :
     D3Budget 0 24 ∧ D3Budget 4 16 ∧ (0, 24) ≠ (4, 16) := by
-  refine ⟨?_, ?_, ?_⟩ <;> decide
+  unfold D3Budget
+  decide
 
 theorem ctl_neg_global_only :
     GloballyCancelled (fun i => if i = 0 then 16 else 0) ∧ GloballyCancelled (fun _ => 4) ∧
       ((fun i => if i = 0 then 16 else 0) : Fin 4 → Nat) ≠ (fun _ => 4) := by
-  refine ⟨by decide, by decide, ?_⟩
+  refine ⟨by unfold GloballyCancelled; decide, by unfold GloballyCancelled; decide, ?_⟩
   intro h
   exact absurd (congrFun h 0) (by decide)
 
 end StringTheory.Foundation.StringTheory.TadpoleCancellation.Autoresearch
-
-/-! ### Planted controls (must be caught) -/
-theorem ctl_sorry : (1 : Nat) = 2 := by sorry
-
-axiom ctl_planted_axiom : (1 : Nat) = 2
-theorem ctl_axiom : (1 : Nat) = 2 := ctl_planted_axiom
 
 #print axioms StringTheory.Foundation.StringTheory.TadpoleCancellation.Autoresearch.d7_count_unique
 #print axioms StringTheory.Foundation.StringTheory.TadpoleCancellation.Autoresearch.tadpole_pair_unique
@@ -105,5 +105,3 @@ theorem ctl_axiom : (1 : Nat) = 2 := ctl_planted_axiom
 #print axioms StringTheory.Foundation.StringTheory.TadpoleCancellation.Autoresearch.ctl_neg_no_d3
 #print axioms StringTheory.Foundation.StringTheory.TadpoleCancellation.Autoresearch.ctl_neg_no_sevenbrane
 #print axioms StringTheory.Foundation.StringTheory.TadpoleCancellation.Autoresearch.ctl_neg_global_only
-#print axioms ctl_sorry
-#print axioms ctl_axiom

@@ -173,16 +173,22 @@ def bundle() -> List[Path]:
         CRATE / "tests" / "exactness.rs",
         # The measurements the paper's numbers come from.
         REPO / "results" / "kge_rust_ladder.json",
-        REPO / "results" / "gp_hillclimb_coverage.json",
+        REPO / "results" / "kge_rust_gate.json",
+        REPO / "results" / "kge_rust_hillclimb.json",
+        REPO / "results" / "kge_rust_ladder_python_points.json",
+        REPO / "results" / "python_sample_points.json",
         REPO / "results" / "gp_landscape_cliff.json",
         REPO / "results" / "lean_atomicity_is_the_wrapper.json",
-        REPO / "results" / "kge_rust_gate.json",
         # The gate, its specification, and the Python prototype of the identities.
         REPO / "anse" / "formal" / "lean_runner.py",
         REPO / "formal" / "ANSE" / "VerletSymplectic.lean",
         REPO / "scripts" / "lean_gated_recombination.py",
         REPO / "scripts" / "gp_landscape_cliff.py",
-        REPO / "scripts" / "gp_hillclimb_coverage.py",
+        # The scripts that gated the solutions, filled the paper from artifacts,
+        # and checked every claim before this deposit.
+        REPO / "scripts" / "kge_gate_rust_solutions.py",
+        REPO / "scripts" / "fill_paper_j_results.py",
+        REPO / "scripts" / "verify_paper_j_claims.py",
     ]
     missing = [str(f) for f in files if not f.exists()]
     if missing:

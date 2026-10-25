@@ -177,7 +177,7 @@ def hf_section() -> str:
         med = kge["median_evaluations_when_solved"]
         rows.append(
             f"{prob['problem'].replace('feynman-', '').upper()} & "
-            f"${prob['sympy_eq_str'].replace('**2', '^2').replace('*', r'\\,')}$ & "
+            f"${prob['sympy_eq_str'].replace('**2', '^2').replace('*', chr(92) + ',')}$ & "
             f"{prob['size']} & {kge['rate']:.2f} & {('%.0f' % med) if med is not None else '--'} & "
             f"{climb['rate']:.2f} & {rand['rate']:.2f} & "
             f"{'ambiguous' if not r12['particular_solution_agrees_on_20_heldout'] else 'exact'} "

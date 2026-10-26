@@ -1,0 +1,37 @@
+{
+ "title": "Certified sign classification of the second variation of the harmonic zero-point energy for Gaussian interactions on a in [0.425, 4]: not a local minimum below a ~ 1.58 and a strict minimum above a ~ 1.584 along the shear, roots enclosed (partial result; the full iff for all a > 0 is not claimed)",
+ "version": "v1",
+ "description": "<p>For the planar Gaussian pair potential V(r) = e<sup>&minus;&pi; a r<sup>2</sup></sup> let E(a, t) be the harmonic zero-point energy per particle (&hbar; = m = 1) of the unit-covolume Bravais lattices L<sub>t</sub> = P<sub>t</sub> L<sub>&rho;</sub>, P<sub>t</sub> = [[1, t], [t, 1 + t<sup>2</sup>]], sheared from the triangular lattice L<sub>&rho;</sub>, and F(a, t) = &part;<sub>t</sub><sup>2</sup>E(a, t) its exact second variation (not the majorant of the earlier B2 preprint, which cannot reach the sign changes). F is enclosed two-sided by ball arithmetic, in a form affine in a that lets intervals be chained, for every a in an interval and every |t| &le; 10<sup>&minus;8</sup>.</p><p><b>Result.</b> F &lt; 0 on all of [0.425, 1.579] (71 chained intervals) and F &gt; 0 on all of [1.584, 4] (103 chained intervals). Hence along the shear the triangular lattice is not a local minimum of the zero-point energy for every a in [0.425, 1.579] (E(a, t) &lt; E(a, 0) for 0 &lt; |t| &le; 10<sup>&minus;8</sup>), and E(a, 0) &lt; E(a, t) for every a in [1.584, 4], a strict minimum along the shear. A strict local minimum over lattice shapes additionally needs C<sup>2</sup>, criticality, isotropy (order-3 stabiliser) and the two-dimensional second-derivative test, which are written arguments and not formalised. The sign changes of a &#8614; F(a, 0) are enclosed in (0.3745, 0.379) and (1.579, 1.583) by the intermediate value theorem; uniqueness is not certified. Left of the first root only isolated points are certified (F &gt; 0 at a = 0.33, 0.35, 0.36, 0.37, 0.372, 0.3745).</p><p><b>Not claimed.</b> The full equivalence between local minimality and a above the larger root, for all a &gt; 0, is not claimed and is probably false: the earlier preprint P2 sees another sign change near a = 0.123 (Tier X). The intervals in (0.383, 0.425) and everything below 0.33 are not certified; at a = 0.25 and a = 0.30 the certifier could not prove det B &gt; 0 (104 and 9 failed cells near &Gamma;). Nothing is claimed for a &gt; 4, other potentials, other lattices, three dimensions, or the total (classical plus zero-point) energy.</p><p><b>Tier split.</b> <b>Tier A</b> (Lean 4.34.1, Mathlib; axioms within propext, Classical.choice, Quot.sound): the logic, the signs of 197 rational records, the interval-chain coverage (<code>decide +kernel</code>), the intermediate-value step and the window lemmas; the assembled theorems take the enclosures as explicit hypotheses. <b>Tier C-ball</b>: the Arb enclosures (python-flint 0.6.0, 96 bits; 1,284,310 certified cells, 0 failed), not kernel-checked. <b>Tier C-human</b>: that F is the second derivative of E (so E is C<sup>2</sup> in t), the mirror symmetry, continuity in a, and the isotropy and second-derivative steps for the strict claim over shapes. The headline is therefore Tier C overall; only its logic and arithmetic are Tier A.</p><p><b>Controls.</b> Just inside the window at a = 0.40 (negative enclosure; the kernel rejects a claimed local minimum), a tampered certificate (rejected), intervals straddling each root (no sign certified), a planted false sign in the unmodified LeanFlow certifier (rejected) with 197 true signs verified, planted sorry and planted axiom (caught by the axiom gate), and a floating-point cross-check at 609 points (0 misses).</p><p><b>Status.</b> Produced by AI agents (Claude) under the author's direction; the author is responsible for the content. No independent audit exists yet (an independent AI audit is pending at the time of writing); no human has audited the work or the Lean statements, and there is no statement lock. Kernel replay (leanchecker, Lean 4.34.1) is recorded with rc 0 for Programmes.ZeroPointClass.Basic only; the generated Cert module (chains, signs, segment theorems) has no replay record. The Elenchus ledger gate exits with code 1 (0 blocking findings, 8 flags LEDGER_UNAUDITED_TIER_A, one per Tier A row). The repository guards antigravity_guard.py and test_rigor_guard.py fail for reasons that predate this work and are reported in the paper.</p>",
+ "keywords": [
+  "zero-point energy",
+  "lattice phonons",
+  "triangular lattice",
+  "Gaussian potential",
+  "certified numerics",
+  "ball arithmetic",
+  "Arb",
+  "sign classification",
+  "Lean 4",
+  "formal verification",
+  "epistemic tiers",
+  "AI-assisted research"
+ ],
+ "notes": "Preprint v1 (2026-10-26). Proposal 3, item N1, continuing the B2 paper (doi:10.5281/zenodo.23655392) and the N2 paper (doi:10.5281/zenodo.23663551); references P2 (doi:10.5281/zenodo.23653833). Lean: AutoevolveAI formal_cert/Programmes/ZeroPointClass/{Basic,Cert,Controls,Honest,RejectInside,RejectTampered}.lean (sha256 dcb36833..., fde4a580..., 63351055..., 9c261c80..., 2bc76e22..., 7ae0e76e...; full hashes in the paper), Lean 4.34.1 with the pinned toolchain; branch worktree-openai-math-discovery, HEAD at writing 9efd4f85456c55c883a4583cd83b7ecba2b7984a; nothing pushed. Ball arithmetic: python-flint 0.6.0, n1_certify2.py sha256 e4f11b18e2b42b0775344272dde009ad95c232bb298ecb6922844447496a2452 and imported helper n1_certify.py sha256 f7ac95ddcf7acf1fb3e905120242511ed8a7b22197fcca07a2f10980994e74b5 (all reported runs). LeanFlow lean.certify (commit 06084ef) used unmodified for the 197 endpoint signs. Ledger gate: exit code 1, 0 blocking, 8 flags (papers/p3_zero_point_classification/ledger/gate_output.txt). Limitations stated in the paper: partial result (classified on [0.425, 4] plus isolated points left of the first root; full iff for all a > 0 not claimed, P2 sees another sign change near 0.123); window |t| <= 1e-8; mostly Tier C; roots enclosed not unique; strict local minimum over shapes needs extra C-human assumptions; no independent audit at time of writing (pending), no human audit, no statement lock; leanchecker replay recorded for ZeroPointClass.Basic only; repository guards fail (pre-existing); python-flint installed outside the venv.",
+ "related_identifiers": [
+  {
+   "identifier": "10.5281/zenodo.23663551",
+   "relation": "continues",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23655392",
+   "relation": "continues",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23653833",
+   "relation": "references",
+   "scheme": "doi"
+  }
+ ]
+}

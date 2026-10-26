@@ -1,0 +1,315 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "PZC-A-0001",
+   "statement": "ProgZeroPointClass.window_upper, window_lower, not_localMin_of_curv_neg, strict_gt_of_curv_pos: if E has derivative E' and E' has derivative F on [-t0, t0], F <= B there, then E t + E(-t) - 2 E 0 <= B t^2 (>= for F >= B, convex twin); with E(-t) = E(t) and B < 0, E is not locally minimal at 0 and E t < E 0 for 0 < t <= t0; with B > 0, E 0 < E t for 0 < |t| <= t0.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:594fdb7c65b54b8f665c2c50373bdf2c8572269d338c392d0e895bbc20ecd9f2",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-A-0002",
+   "statement": "ProgZeroPointClass.covers_of_chain, mul_le_corners, corners_le_mul, Encloses.left/right, allPos_left/right, allNeg_left/right, rec_upper, rec_lower, neg_on_of_chain, pos_on_of_chain, pos_of_mem, neg_of_mem: a chainFrom list of rational a-intervals covers [A, B]; from Encloses (the affine enclosure F - (a - ac) d in [qlo, qhi], d in [dlo, dhi]) and the sign of qhi + cmax (resp. qlo + cmin), F has that sign on every a of the covered interval and on every |t| <= t0. The enclosure is a hypothesis, not proved.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PZC-A-0001"
+   ],
+   "evidence": "sha256:9786917c357521eaebd8209b0ce22d495e6937dfbcdb7e47cd99ce1cd255f4a7",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-A-0003",
+   "statement": "ProgZeroPointClass.sign_pos, sign_neg, brackets_ordered, chain_pos0, chain_neg0 (decide +kernel on the generated Cert.lean): all 113 positive records of Lpos have 0 < qlo + cmin, all 84 negative records of Lneg have qhi + cmax < 0, the bracket points 749/2000 < 379/1000 < 1579/1000 < 1583/1000 are thin records, Lposseg0 chains 198/125 to 4 (103 records) and Lnegseg0 chains 17/40 to 1579/1000 (71 records). Arithmetic about the stated rationals; that they enclose F is PZC-C-0001..0004.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PZC-A-0002"
+   ],
+   "evidence": "sha256:16734e9b74127e1f42e05fb1a232605fd36250d9effb30ffa3c8a5fe5076d777",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-A-0004",
+   "statement": "ProgZeroPointClass.segment_neg0 and segment_pos0: (Encloses F t0 Lneg) implies F a t < 0 for all a in [17/40, 1579/1000], |t| <= t0 = 1e-8; (Encloses F t0 Lpos) implies 0 < F a t for all a in [198/125, 4], |t| <= t0. Conditional on the C-ball enclosures.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PZC-A-0003"
+   ],
+   "evidence": "sha256:8d8e904c80d3d4762696f467d849f02418bfd2d71f2a9d5810301d36c73de574",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-A-0005",
+   "statement": "ProgZeroPointClass.root_in_gap, root_in_gap' (Basic) and classification (Cert): F > 0 on every record of Lpos, F < 0 on every record of Lneg, and, if a -> F a 0 is continuous on [0.3745, 0.379] and on [1.579, 1.583], it has a zero in (0.3745, 0.379) and one in (1.579, 1.583) (intermediate value theorem between certified-sign thin points). Conditional on the enclosures and on continuity. Uniqueness is not claimed.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PZC-A-0003"
+   ],
+   "evidence": "sha256:369733314dc14785068e0aafafe118877e19923e50d929ea2b1e64c079ea1da7",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-A-0006",
+   "statement": "ProgZeroPointClass.along_path, segment_neg0_path, segment_pos0_path: under the hypotheses hE (E a has derivative E' a on [-t0, t0]), hE' (E' a has derivative F a) and hsym (E a (-t) = E a t), for every a of a negative record (in particular all of [17/40, 1579/1000]) E a is not locally minimal at 0 and E a t < E a 0 for 0 < t <= t0, and for every a of a positive record (all of [198/125, 4]) E a 0 < E a t for 0 < |t| <= t0. The hypotheses are the C-human inputs PZC-C-0009, PZC-C-0010.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PZC-A-0001",
+    "PZC-A-0004"
+   ],
+   "evidence": "sha256:fac384886bb98e845b85a0d9eed33eb089f990639ac7848b59eae465457c387b",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-A-0007",
+   "statement": "LeanFlow lean.certify (unmodified, commit 06084ef, decide_kernel): the 197 exact corner-bound sign claims are verified (status ok, code verified, tier A for the arithmetic statement only, all axiom reports standard, claim sha256 497f465a...); a copy with the first sign planted false is rejected (false-statement, failed cert_0). Arithmetic about the stated numbers, not their provenance.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:0c345c6dda4b73713fa160cd7ee8efb40dc1cd67c8aedb2efe849606a2d41292",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-A-0008",
+   "statement": "Controls are caught: ctl_sorry depends on sorryAx and ctl_axiom on the planted axiom ProgZeroPointClass.ctl_cheat although Controls.lean compiles with rc 0 (honest ctl_false standard); the kernel rejects (rc 1) the real a = 2/5 record claimed all-positive (RejectInside.lean) and a real a = 93/250 record with qlo sign flipped (RejectTampered.lean); Honest.lean proves inside_not_pos, inside_is_neg, tampered_not_pos, untampered_pos with standard axioms.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:20be53b6d12b1cbb030944a7f4d42dabe54aabd6806151a78f02f0c57f90d39e",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-C-0001",
+   "statement": "C-ball. Outside chain: 103 records of the affine enclosure F - (a - ac) d in Q + R, d in D, chaining 198/125 = 1.584 to 4, widths 0.003 to 0.0538, window |t| <= 1e-8, all with qlo + cmin > 0; the weakest enclosure is F >= 0.01558 on [1.584, 1.587].",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:50b3924aae8434d0cef832b2f9e8863fbe0a67cc7252e6f84d8e3b340dc62500",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-C-0002",
+   "statement": "C-ball. Inside chain: 71 records chaining 17/40 = 0.425 to 1579/1000, widths 0.001 to 0.02, all with qhi + cmax < 0; the weakest enclosure is F <= -0.01519 on [1.576, 1.579]. Plus the single interval [0.381, 0.383] with F <= -0.0549.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:72d3c74ae2e4f8c457439b580f6b0c5a7fb36bb348b8dbe81dc62696a82a16d2",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-C-0003",
+   "statement": "C-ball. Root brackets (thin points, N = 64): F(0.3745, t) in [0.0177, 0.0949] > 0 and F(0.379, t) in [-0.0978, -0.0235] < 0; F(1.579, t) in [-0.0423, -0.0195] < 0 and F(1.583, t) in [0.0075, 0.0303] > 0, for |t| <= 1e-8.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:6432926a3c956e3bcd619233e99d4c5583dd2f8919b82ac46a0762c36a6dfcb5",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-C-0004",
+   "statement": "C-ball. The other thin-point records: F > 0 at a = 0.33, 0.35, 0.36, 0.37, 0.372 and F < 0 at 0.381, 0.383, 0.39, 0.40, 0.42, 0.45, 0.5, 0.55, 1.57, 1.576; F > 0 at 1.584, 1.587, 1.593 (22 thin records with the bracket points).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:83dd8b4567ed4defadfa0cdfa7bf3c40b6edee770315ddc0f095906a5382aa6b",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-C-0005",
+   "statement": "C-ball. Stability on every cell: det B > 0 and tr B > 0 certified on the whole cell ball x a-interval x t-window, so D_t = s^2 B_t is positive definite for kappa != 0 for every a of the interval and |t| <= 1e-8; 1,284,310 cells (232,178 refined) over the 203 ok records, 0 failed. The lattice tail is an explicit computed bound (ratio < 1) added to every jet component.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:945f51ce2e975f3f5833ed8b83de7394c4675f5cf113a840f9107b1392910d29",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-C-0006",
+   "statement": "C-ball. Straddling intervals certify neither sign: [0.3745, 0.379] F in [-0.1514, 0.1470] and [1.579, 1.583] F in [-0.0482, 0.0362], sign 'none'. 12 of the 210 run records carry no sign (7 with failed cells, 5 straddling).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:462f94bacd1351ccdb8f8808be26b3bc0df52578a01f51c5376b7dd5959dfe3d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-C-0007",
+   "statement": "C-human. Exact second variation: for 2x2 positive semi-definite D, tr sqrt(D) = sqrt(tr D + 2 sqrt(det D)) (Cayley-Hamilton); with Duffy coordinates (D_t = s^2 B_t), F = int g, g = s^2 tau''/4, tau = sqrt(T + 2 delta), T = tr B_t, delta = sqrt(det B_t), delta'' = det''/(2 delta) - det'^2/(4 delta^3), tau'' = (T'' + 2 delta'')/(2 tau) - (T' + 2 delta')^2/(4 tau^3). Exact, no inequality; singular only where det B or tr B vanishes (excluded by PZC-C-0005).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PZC-C-0005"
+   ],
+   "evidence": "sha256:dc253e9bf601ed25a6172dad40a8f41d08efa8196387fca60355c4ea08442ac1",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-C-0008",
+   "statement": "C-human. B2's linear-response majorant cannot reach the roots: U'' - E'' = (1/2) int tr(X^{-1} Y^2) >= 0 (N2), so E'' = 0 forces U'' >= 0 at a root; Tier X values U'' = +2.79 at 0.3767 and +8.77 at 1.5815, U'' < 0 only at a = 0.5, 0.7, 1 of 17 grid values. Hence the exact F is enclosed instead.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:8783284208b4153fec5083979e4b68b0453e2d861fd0d85d94ee386d6499c5c1",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-C-0009",
+   "statement": "C-human. E(a, .) is C^2 on the window with second derivative F (differentiation under the Brillouin-zone integral: the Duffy integrand is jointly smooth and bounded on the compact domain because det B > 0 is certified on every cell); the Lean hypotheses hE, hE' at the window edges need a neighbourhood of the closed window, closed by continuity as the margins are strict (stated, not separately certified).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PZC-C-0005",
+    "PZC-C-0007"
+   ],
+   "evidence": "sha256:fe3725425854e5d2c0cc0ae8bd9e08532ddb28109a4fbfe47d64c97a8d4600fa",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-C-0010",
+   "statement": "C-human. Mirror symmetry E(a, -t) = E(a, t) for every radial V (diag(1, -1) maps L_rho to itself and conjugates P_t to P_{-t}); and tau(t) = rho + sqrt3 t + O(t^2), so E(a, t) < E(a, 0) for small t != 0 means rho is not a local minimum over lattice shapes.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:e5d06c7a9bed7468392eef2f74c3d0031fe0b022e0773de4039bc4e293067164",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-C-0011",
+   "statement": "C-human. Continuity of a -> F(a, 0) on [0.3745, 0.379] and [1.579, 1.583] (analytic in a: a uniformly convergent lattice sum of smooth integrals); not formalised. Needed by the intermediate value theorem.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PZC-C-0005"
+   ],
+   "evidence": "sha256:9c417874e474a7878b7f43102750b6989b2fbbe339faa542d904881bd723baf5",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-C-0012",
+   "statement": "HEADLINE inside (C): for every a in [0.425, 1.579] and |t| <= 1e-8, F(a, t) < 0, E(a, t) < E(a, 0) for 0 < |t| <= 1e-8 along the shear, and the triangular lattice is not a local minimum of the harmonic zero-point energy over lattice shapes (Gaussian exp(-pi a r^2), harmonic approximation, Bravais, 2D, local window). Tier A part: the logic and the rational signs (PZC-A-0001..0006); C-ball: PZC-C-0002, 0005; C-human: the glue.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PZC-A-0004",
+    "PZC-A-0006",
+    "PZC-C-0002",
+    "PZC-C-0005",
+    "PZC-C-0007",
+    "PZC-C-0009",
+    "PZC-C-0010"
+   ],
+   "evidence": "sha256:30aa36e00daa751ae1946ba3437940e2c9045c980a71204f7635def3062f22f3",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-C-0013",
+   "statement": "HEADLINE outside and roots (C): for every a in [1.584, 4] and |t| <= 1e-8, F(a, t) > 0 and E(a, 0) < E(a, t) for 0 < |t| <= 1e-8 (strict minimum along the shear); a -> F(a, 0) has a zero in (0.3745, 0.379) and one in (1.579, 1.583) (uniqueness not certified); every zero of a -> F(a, t) in [0.425, 4] lies in (1.579, 1.584) minus {1.583}. The full iff for all a > 0 is NOT claimed.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PZC-A-0004",
+    "PZC-A-0005",
+    "PZC-A-0006",
+    "PZC-C-0001",
+    "PZC-C-0003",
+    "PZC-C-0004",
+    "PZC-C-0005",
+    "PZC-C-0007",
+    "PZC-C-0009",
+    "PZC-C-0010",
+    "PZC-C-0011"
+   ],
+   "evidence": "sha256:c28afb0d52d146ea14103fa6f8625c78b07d7bbb4cf7ef0f4dab4ce08f4e075f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-C-0014",
+   "statement": "C-human, extra hypotheses (E_zp of class C^2 near rho in shape space, rho critical with isotropic Hessian from the order-3 stabiliser, F(a, 0) = 2 Lap E_zp(rho), 2D second-derivative test; none formalised): for a in [1.584, 4] the triangular lattice is a strict local minimum of E_zp over unit-covolume lattice shapes. Without these assumptions the proven statement is the strict minimum along the shear.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PZC-C-0013"
+   ],
+   "evidence": "sha256:aa7cd67e21c6f20701c9db0f9500cea35a28f5affe07fe7a19885bc8a0dc31f0",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-X-0001",
+   "statement": "Tier X cross-check: every certified enclosure contains the independent floating-point value of F(a, 0) (closed form, Gauss-Legendre N = 32) at a_lo, a_c, a_hi of every run: 609 checks, 0 not contained. Consistency, not independence of the formula.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:3c4d73d1c480b90080f207850d8ad359f0cc188f687060e11cf50efa72af3a19",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-X-0002",
+   "statement": "Tier X scan (N = 64) over 17 values of a in [0.15, 4]: closed-form F agrees with finite differences of E to <= 4.92e-4; c = F/8 reproduces P2's c(a); U''(0) of B2's majorant is < 0 only at a = 0.5, 0.7, 1 and equals +2.79 at 0.3767, +8.77 at 1.5815; F > 0 at a = 0.15, 0.2, 0.25, 0.3, 0.35 (no sign change seen there).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:ef9e4552b6b79afc74434e43c1f76a2e882a614177559f8390b08b01b6d14d8d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-X-0003",
+   "statement": "Not certified (reported, not hidden): thin points a = 0.25 (104 failed cells, depth 2) and a = 0.30 (9 failed cells); intervals of width 0.0025 to 0.005 on [0.3925, 0.41] have failed cells; [0.41, 0.425] enclosures straddle zero; nothing is claimed for a < 0.33 or in (0.383, 0.425) beyond the thin points 0.39, 0.40, 0.42, nor for a > 4.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:3139a5b68e5510efe74bda05631eea7f693ccd2278caf3f36b07c37f4536498e",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-X-0004",
+   "statement": "Repository guards at writing: antigravity_guard.py rc 1 and test_rigor_guard.py rc 1, both on pre-existing files; archived verbatim; neither output mentions an N1 file. pytest tests/ was not run for this paper.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:2c5dc51585d381a8fe3871be4213cadcb18b78706a6b695423625a34f64a1799",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PZC-X-0005",
+   "statement": "P2's sign change of the curvature near a ~ 0.123 (c(0.1) < 0) and the precision-flagged values at a = 6, 8 are cited from P2 (doi:10.5281/zenodo.23653833), not re-run here; they are the reason the full iff for all a > 0 is not claimed. This paper's own Tier X scan stops at a = 0.15.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:d639e1065f4cf19754bd6b03c0e233a688fb24c511a3ba1938086b752115c020",
+   "audit": null
+  }
+ ]
+}

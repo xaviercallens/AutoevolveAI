@@ -73,7 +73,8 @@ def zenodo_metadata(meta: dict[str, Any]) -> dict[str, Any]:
     rel = list(meta.get("related_identifiers", []))
     rel.append({"identifier": "https://github.com/xaviercallens/AutoevolveAI", "relation": "isSupplementTo", "scheme": "url"})
     return {"metadata": {
-        "title": meta["title"], "upload_type": "publication", "publication_type": "preprint",
+        "title": meta["title"], "upload_type": "publication",
+        "publication_type": meta.get("publication_type", "preprint"),
         "description": meta["description"],
         "creators": [{"name": "Callens, Xavier", "affiliation": "SocrateAI Lab"}],
         "keywords": meta["keywords"], "license": "cc-by-4.0", "version": meta.get("version", "v1"),

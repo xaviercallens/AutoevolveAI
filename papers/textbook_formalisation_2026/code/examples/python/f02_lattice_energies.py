@@ -126,9 +126,9 @@ def plot() -> None:
         keep = np.hypot(x, y) < 2.6
         ax[1].plot(x[keep], y[keep], "o" if lab == "triangulaire" else "s", ms=5 if lab == "triangulaire" else 4,
                    mfc="white" if lab == "carré" else col, mec=col, ls="none", label=lab)
-    ax[1].add_patch(plt.Circle((0, 0), 2.5, fill=False, color=st.GREY, lw=0.8, ls="--"))
+    ax[1].add_patch(plt.Circle((0, 0), 2.6, fill=False, color=st.GREY, lw=0.8, ls="--"))
     ax[1].set_aspect("equal")
-    ax[1].set_title("(b) les deux réseaux à densité 1 (disque de rayon 2,5)")
+    ax[1].set_title("(b) les deux réseaux à densité 1 (disque de rayon 2,6)")
     ax[1].legend(loc="upper right", fontsize=7)
     fig.tight_layout()
     print("figure:", st.save(fig, "appF_lattice_energies").name)

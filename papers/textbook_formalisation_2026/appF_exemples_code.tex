@@ -1,0 +1,583 @@
+% Annexe F -- Exemples de code : Python, Rust (rusty-SUNDIALS) et LeanFlow
+% A placer apres \appendix. Chaque listing est lu tel quel (\lstinputlisting) dans code/examples/, et chaque
+% sortie dans code/examples/logs/ : ce sont les fichiers executes le 2026-10-26, rien n'est recopie a la main.
+\chapter{Exemples de code : Python, Rust (rusty-SUNDIALS) et LeanFlow}\chaptermark{Exemples de code}\label{appF:chap}
+
+\lstdefinelanguage{Rust}{morekeywords={fn,let,mut,pub,use,struct,impl,for,in,if,else,match,return,move,loop,
+  const,type,as,mod,where,true,false,Some,None,Ok,Err,Vec,String,f64,usize,u64,Result,Self,self},
+  sensitive=true,morecomment=[l]{//},morestring=[b]"}
+\lstdefinestyle{appFcode}{basicstyle=\ttfamily\scriptsize,numbers=left,numberstyle=\tiny\color{gray},
+  numbersep=4pt,xleftmargin=1.2em}
+\lstdefinestyle{appFlog}{language={},basicstyle=\ttfamily\scriptsize,backgroundcolor=\color{gray!6},
+  frame=single,rulecolor=\color{tierX!40},
+  literate={/}{{/\allowbreak}}1 {ℕ}{{$\mathbb{N}$}}1 {ℝ}{{$\mathbb{R}$}}1 {→}{{$\to$}}1 {≠}{{$\ne$}}1
+  {∀}{{$\forall$}}1 {⁻¹}{{$^{-1}$}}1}
+\newcommand{\appFsortie}[1]{\par\noindent\textbf{Sortie réelle} (\texttt{\detokenize{#1}}) :%
+  \lstinputlisting[style=appFlog]{code/examples/logs/#1}}
+
+Les chapitres~1 à~5 énoncent des théorèmes et racontent comment ils ont été vérifiés. Cette annexe donne au
+lecteur les outils pour \emph{refaire} les calculs qui les accompagnent. Elle contient douze exemples, répartis sur les
+thèmes du livre. Chacun suit le même plan :
+\begin{enumerate}
+\item \textbf{la question}, posée avant tout calcul ;
+\item \textbf{le code}, un extrait court lu directement dans le fichier exécuté (les numéros de ligne sont ceux du
+fichier) ;
+\item \textbf{la sortie réelle} du programme, recopiée par \LaTeX{} depuis le journal de l'exécution ;
+\item \textbf{une figure}, quand elle aide à lire les nombres ;
+\item \textbf{un exercice}.
+\end{enumerate}
+
+\begin{warnbox}[: ce que ces exemples sont, et ce qu'ils ne sont pas]
+\begin{itemize}
+\item Un calcul en virgule flottante est de niveau~X : il illustre, il teste, il peut \emph{réfuter}, mais il ne
+démontre jamais. Seuls les exemples~\ref{appF:ex10} et~\ref{appF:ex11} touchent au noyau de Lean.
+\item Chaque programme exécute au moins un témoin positif (un cas dont on connaît la réponse) et un témoin négatif (un
+cas faux exprès, qui doit être refusé). Il se termine avec le code de sortie~1 si un témoin ne se comporte pas comme
+prévu. Toutes les sorties imprimées ici se terminent par \texttt{temoins conformes: True} ou
+\texttt{controls as expected: true}, sauf celle de l'exemple~\ref{appF:ex11}. Celle-ci est la sortie brute de Lean,
+qui compile avec le code~0 même en présence du témoin planté ; le témoin se lit alors dans \texttt{\#print axioms}.
+\item Le code, les sorties et les figures de cette annexe ont été produits par un agent d'IA (Claude) sous la direction
+de l'auteur, et vérifiés seulement par cet agent. Aucun être humain ne les a audités.
+\end{itemize}
+\end{warnbox}
+
+\paragraph{Où sont les fichiers.} Tout est rangé dans \texttt{code/examples/} :
+\begin{itemize}
+\item \texttt{python/} : les exemples Python, et \texttt{appF\_style.py}, le style commun des figures ;
+\item \texttt{rust/} : une copie octet par octet de la crate \texttt{qf-textbook-examples} de rusty-SUNDIALS :
+\begin{itemize}
+\item branche \texttt{textbook2/code-examples-2026-10-26}, issue de \texttt{main} au commit \texttt{7630f7e} ;
+\item commit \texttt{f01b82b730c86ccf05c1f773b11fe0a9b650cc7b} ;
+\end{itemize}
+\item \texttt{lean/} : le fichier Lean de l'exemple~\ref{appF:ex11} et les deux certificats engendrés par LeanFlow à
+l'exemple~\ref{appF:ex10} ;
+\item \texttt{logs/} : les sorties imprimées ici ; les fichiers CSV écrits par les binaires Rust sont dans
+\texttt{logs/rust\_out/}.
+\end{itemize}
+
+\paragraph{Reproduire.} Les exemples Python utilisent numpy, scipy, mpmath et matplotlib. On les lance avec
+l'interpréteur isolé (option \texttt{-I}) :
+\begin{lstlisting}[language={}]
+python -I code/examples/python/f01_poisson.py > code/examples/logs/f01_poisson.txt
+\end{lstlisting}
+La crate Rust se construit dans la copie de travail de rusty-SUNDIALS :
+\begin{lstlisting}[language={}]
+CARGO_TARGET_DIR=~/rusty-target-ar cargo build --release -j 2 --offline -p qf-textbook-examples
+~/rusty-target-ar/release/tb_moran_forward code/examples/logs/rust_out
+\end{lstlisting}
+Avant la validation, nous avons passé trois des contrôles de l'intégration continue du dépôt, et tous trois ont
+réussi :
+\begin{itemize}
+\item \texttt{cargo fmt --all -- --check} ;
+\item \texttt{cargo clippy --workspace --features experimental -- -D warnings} ;
+\item \texttt{cargo test -p qf-textbook-examples}, avec 5 tests sur 5 réussis.
+\end{itemize}
+La suite de tests complète de l'espace de travail n'a pas été relancée.
+
+\begin{table}[ht]\centering\small
+\caption{Les douze exemples. Niveau : celui de l'énoncé \emph{vérifié par le programme}, pas celui du théorème qu'il
+illustre.}\label{appF:tab}
+\begin{tabular}{llp{6.1cm}l}\toprule
+& langage & question & niveau\\\midrule
+1 & Python & formule de Poisson pour les gaussiennes & X\\
+2 & Python & énergie des réseaux triangulaire et carré (gaussien, Yukawa, dipolaire) & X\\
+3 & Python & signes de $(-1)^ng^{(n)}$ avec mpmath, et deux contre-exemples & X\\
+4 & Python & puissances exactes de Wright--Fisher, $P^n(i,N)\to i/N$ & exact (fractions)\\
+5 & Python & fixation sur un graphe isotherme et sur l'étoile & exact (fractions)\\
+6 & Python & phonons et énergie de point zéro, maximum local & X\\
+7 & Rust & CVODE sur une EDO raide, puis l'équation de Kolmogorov de Moran & X\\
+8 & Rust & relaxation d'un petit cristal de Yukawa & X\\
+9 & Rust & les invariants du modèle en couches $\sigma=3$ & X\\
+10 & LeanFlow & certifier des fractions de fixation, rejeter une affirmation plantée & A (arithmétique)\\
+11 & Lean & lire et vérifier \lean{ILENE} & A\\
+12 & Python & contrôle croisé CVODE contre SciPy & X\\\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================================================
+\section{Exemple 1 -- La formule de Poisson pour les gaussiennes}\label{appF:ex1}
+
+\paragraph{La question.} La formule de sommation de Poisson est le moteur des chapitres~1 et~3. Pour une gaussienne, en
+dimension~1, elle s'écrit
+\[\sum_{n\in\Z}e^{-\pi a(n+x)^2}=a^{-1/2}\sum_{k\in\Z}e^{-\pi k^2/a}\cos(2\pi kx),\qquad a>0 .\]
+Pour le réseau triangulaire $\Lat$ de covolume~1, dont le dual est une rotation de lui-même, elle donne
+$\Theta_\Lat(a)=a^{-1}\Theta_\Lat(1/a)$. Peut-on la voir à $10^{-15}$ près ? Et à quoi sert-elle en pratique ?
+
+\paragraph{Le code.} Les deux côtés de la formule, et la fonction thêta du réseau triangulaire
+($|v|^2=\tfrac{2}{\sqrt3}(m^2+mn+n^2)$) :
+\lstinputlisting[language=Python,style=appFcode,firstline=23,lastline=38,firstnumber=23]{code/examples/python/f01_poisson.py}
+\appFsortie{f01_poisson.txt}
+
+\paragraph{Lecture.} Les deux côtés coïncident à la précision de la machine ($10^{-16}$). Sans le facteur $a^{-1/2}$
+(ou $a^{-1}$ en dimension~2), l'écart est d'ordre~1 : c'est le témoin négatif. La dernière ligne montre l'intérêt
+pratique de la formule. Pour $a=0{,}01$, la gaussienne est très large : la somme directe demande $n_{\max}=28$ pour
+atteindre $10^{-12}$, alors que le côté dual est exact dès son premier terme. Ce principe, sommer du côté où la
+fonction décroît vite, est celui de la sommation d'Ewald.
+
+\begin{figure}[ht]\centering
+\includegraphics[width=\textwidth]{appF_poisson.pdf}
+\caption{Exemple~1 \tierX. (a) $\Theta_\Lat(a)$ et $a^{-1}\Theta_\Lat(1/a)$ coïncident ; sans le facteur $a^{-1}$ (tirets),
+la courbe est fausse. (b) Erreur relative de la somme directe en fonction du nombre de termes, pour $a=0{,}01$, $x=0{,}3$.}
+\label{appF:fig:poisson}
+\end{figure}
+
+\begin{exercise}[Exemple 1]\label{appF:exo1}
+(a) Démontrer la formule de dimension~1 à partir de la transformée de Fourier de $e^{-\pi ax^2}$, qui vaut
+$a^{-1/2}e^{-\pi\xi^2/a}$. (b) Modifier \texttt{theta1} pour une autre fonction paire, $e^{-|x|}$, dont la
+transformée est $2/(1+4\pi^2\xi^2)$, et vérifier numériquement la formule correspondante. Pourquoi faut-il beaucoup
+plus de termes du côté dual ?
+\end{exercise}
+
+% =====================================================================================================
+\section{Exemple 2 -- Réseau triangulaire contre réseau carré}\label{appF:ex2}
+
+\paragraph{La question.} À densité~1, l'énergie par particule $E(L)=\tfrac12\sum_{v\in L\setminus0}V(|v|)$ est-elle plus
+basse pour le réseau triangulaire que pour le réseau carré ? On prend trois potentiels complètement monotones en $r^2$ :
+\begin{itemize}
+\item le gaussien $e^{-\pi r^2}$, pour lequel $E=(\Theta_L(1)-1)/2$ ;
+\item le Yukawa $e^{-\kappa r}/r$, pour $\kappa=1$ et $\kappa=2$ ;
+\item le dipolaire $V=2(1/r-1/\sqrt{r^2+d^2})$, pour $d=3$, dans les unités $U=V/d^2$ de la crate
+\texttt{qf-yukawa-crystal}.
+\end{itemize}
+Pour ces trois potentiels, l'optimalité du réseau triangulaire est \tierA{} (chapitre~2), conditionnelle au théorème
+amont \lean{universal_energy_minimum}.
+
+\paragraph{Le code.} Le potentiel dipolaire décroît comme $1/r^3$. Une coupure brutale à $|v|<R$ laisse une erreur de
+l'ordre de $10^{-5}$, même en ajoutant la queue continue (la sortie le montre). On coupe donc en douceur, avec un
+poids $w=\tfrac12\operatorname{erfc}((r-R)/\sigma)$, et l'on intègre le reste $(1-w)U$ comme un continuum de densité~1 :
+\lstinputlisting[language=Python,style=appFcode,firstline=46,lastline=64,firstnumber=46]{code/examples/python/f02_lattice_energies.py}
+\appFsortie{f02_lattice_energies.txt}
+
+\paragraph{Lecture.} Dans les trois cas, le carré coûte plus cher. La dernière colonne compare aux valeurs
+enregistrées par rusty-SUNDIALS :
+\begin{itemize}
+\item pour Yukawa, aux sommes exactes de \texttt{exact\_refs.jsonl}, avec des écarts de $10^{-16}$ ;
+\item pour le dipolaire, aux énergies d'Ewald de \texttt{lattice\_gaps.jsonl}, avec un écart de $5\times10^{-13}$.
+\end{itemize}
+C'est le témoin positif. Le témoin négatif rappelle une règle des énoncés : à \emph{pas} égal, le réseau triangulaire
+est plus dense, son énergie est plus haute et la comparaison s'inverse. Elle n'a de sens qu'à densité fixée.
+Sur la figure~\ref{appF:fig:energies}a, les trois courbes normalisées sont presque confondues et croissent sans
+interruption de $60^\circ$ à $90^\circ$. Ce n'est qu'un chemin parmi d'autres dans l'espace des réseaux : le théorème
+porte sur toutes les configurations.
+
+\begin{figure}[ht]\centering
+\includegraphics[width=\textwidth]{appF_lattice_energies.pdf}
+\caption{Exemple~2 \tierX. (a) Énergie le long des réseaux de forme $\tau=e^{i\theta}$, normalisée entre le triangulaire
+($\theta=60^\circ$) et le carré ($\theta=90^\circ$), pour les trois potentiels. (b) Les deux réseaux de covolume~1.}
+\label{appF:fig:energies}
+\end{figure}
+
+\begin{exercise}[Exemple 2]\label{appF:exo2}
+(a) Remplacer \texttt{"gauss"} par une gaussienne $e^{-\pi ar^2}$ de paramètre $a$ quelconque, et vérifier sur une
+grille de $a$ que $\Theta_\Lat(a)\le\Theta_{\Z^2}(a)$ (théorème de Montgomery, \tierL). (b) Pour un potentiel
+\emph{non} complètement monotone, par exemple $V=e^{-r^2}-\tfrac12e^{-r^2/4}$, tracer l'énergie le long du même arc.
+Le minimum est-il toujours à $60^\circ$ ? Que peut-on en conclure, et que ne peut-on pas en conclure ?
+\end{exercise}
+
+% =====================================================================================================
+\section[Exemple 3 -- Complète monotonie]{Exemple 3 -- Complète monotonie : ce qu'un ordinateur peut dire}\label{appF:ex3}
+
+\paragraph{La question.} Une fonction $g$ est complètement monotone (CM) si $(-1)^ng^{(n)}(t)\ge0$ pour tout $n$ et tout
+$t>0$. Un programme ne teste qu'un nombre fini de couples $(n,t)$. Il peut donc \emph{réfuter} la complète monotonie,
+puisqu'un seul signe faux suffit, mais jamais la démontrer : la preuve appartient à la bibliothèque CM/Bernstein et
+au théorème \lean{ALEXIS} du chapitre~5. Que voit-on sur trois potentiels CM et sur deux fonctions qui ne le sont
+pas ?
+
+\paragraph{Le code.} \texttt{mpmath.diff} dérive numériquement à 40 chiffres significatifs, assez pour l'ordre~8 :
+\lstinputlisting[language=Python,style=appFcode,firstline=22,lastline=40,firstnumber=22]{code/examples/python/f03_cm_signs.py}
+\appFsortie{f03_cm_signs.txt}
+
+\paragraph{Lecture.} Les trois potentiels physiques passent les $9\times7$ tests. Les deux contre-exemples échouent, et
+la sortie dit où :
+\begin{itemize}
+\item $e^{-t}-\tfrac12e^{-2t}$ est un mélange d'exponentielles dont la mesure de Bernstein $\delta_1-\tfrac12\delta_2$
+change de signe. Il échoue dès $n=2$, car $(-1)^ng^{(n)}=e^{-t}-2^{n-1}e^{-2t}<0$ pour $t$ petit.
+\item Lennard-Jones échoue dès $n=0$ : il devient négatif.
+\end{itemize}
+Le premier échec est un certificat de non-complète monotonie, que l'on peut vérifier à la main. Les succès, eux, ne
+certifient rien.
+
+\begin{figure}[ht]\centering
+\includegraphics[width=\textwidth]{appF_cm_signs.pdf}
+\caption{Exemple~3 \tierX. Signe de $(-1)^ng^{(n)}(t)$ (bleu : $+$, orange : $-$, blanc : zéro exact) pour $n\le8$ et sept
+valeurs de $t$. Les trois premiers potentiels sont CM (théorèmes \tierA{} du chapitre~2) ; les deux derniers ne le
+sont pas.}\label{appF:fig:cm}
+\end{figure}
+
+\begin{exercise}[Exemple 3]\label{appF:exo3}
+(a) Démontrer à la main que $e^{-t}-\tfrac12e^{-2t}$ n'est pas CM, en partant de la valeur de $g''(0^+)$. (b) Le
+programme dit que $g(t)=e^{-\sqrt t}$ passe tous les tests. Démontrer qu'elle est CM en l'écrivant comme
+$f\circ\phi$, avec $f=e^{-s}$ CM et $\phi=\sqrt{\cdot}$ de Bernstein (chapitre~1). (c) Ajouter à \texttt{FUNCS}
+la fonction $1/(1+t^2)$ et prédire, avant de lancer le programme, l'ordre $n$ du premier échec.
+\end{exercise}
+
+% =====================================================================================================
+\section{Exemple 4 -- Wright--Fisher en fractions exactes}\label{appF:ex4}
+
+\paragraph{La question.} Dans le modèle de Wright--Fisher neutre à $N$ copies d'un gène, la génération suivante est un
+tirage binomial : $P(i,j)=\binom Nj(i/N)^j(1-i/N)^{N-j}$. Le théorème \lean{KAL} (absorption de Kolmogorov,
+\tierA) dit que $P^n(i,N)\to h(i)$ pour toute fonction $h$ harmonique avec $h(0)=0$ et $h(N)=1$ (et une condition de
+variance). Ici $h(i)=i/N$. Peut-on le voir \emph{exactement}, sans arrondi ? À quelle vitesse la convergence a-t-elle
+lieu ?
+
+\paragraph{Le code.} Le module \texttt{fractions} de Python calcule en rationnels exacts :
+\lstinputlisting[language=Python,style=appFcode,firstline=22,lastline=32,firstnumber=22]{code/examples/python/f04_wright_fisher.py}
+\appFsortie{f04_wright_fisher.txt}
+
+\paragraph{Lecture.} Deux égalités sont \emph{exactes}, et non à $10^{-16}$ près : la matrice est stochastique et
+$Ph=h$. Avec sélection ($r=2$), $h(i)=i/N$ n'est plus harmonique : c'est le témoin négatif. Les dénominateurs
+croissent vite, avec 152 chiffres à $n=60$. Le rapport de deux écarts successifs vaut $0{,}833333333333=1-1/N$,
+c'est-à-dire la deuxième valeur propre de la matrice de Wright--Fisher, $\lambda_2=1-1/N$.
+
+\begin{figure}[ht]\centering
+\includegraphics[width=\textwidth]{appF_wright_fisher.pdf}
+\caption{Exemple~4. (a) $P^n(i,N)$ pour $n=1$, $3$ et $20$, et la limite $i/N$, pour $N=6$. (b) L'écart maximal, calculé
+exactement puis converti en flottant, décroît comme $(1-1/N)^n$.}\label{appF:fig:wf}
+\end{figure}
+
+\begin{exercise}[Exemple 4]\label{appF:exo4}
+(a) Démontrer que $\lambda_2=1-1/N$ est valeur propre de $P$. On pourra appliquer $P$ au polynôme $i(N-i)$, après avoir
+calculé $\mathbb E[X(N-X)]$ pour $X$ binomiale. (b) En déduire que $|P^n(i,N)-i/N|\le C(1-1/N)^n$. (c) Modifier le
+script pour Moran au lieu de Wright--Fisher, et comparer les vitesses à $N$ égal.
+\end{exercise}
+
+% =====================================================================================================
+\section{Exemple 5 -- Graphe isotherme contre étoile}\label{appF:ex5}
+
+\paragraph{La question.} On place un mutant de valeur sélective $r$ sur un sommet d'un graphe, et la population évolue
+par naissance--mort (le modèle de N4, chapitre~4). Le théorème isotherme \lean{ILENE} (\tierA) affirme ceci : si la
+matrice de remplacement est doublement stochastique, la probabilité de fixation est celle de Moran,
+$(1-r^{-1})/(1-r^{-n})$, \emph{quel que soit} le sommet de départ. Que se passe-t-il sur l'étoile, qui n'est pas
+isotherme ?
+
+\paragraph{Le code.} L'état est l'ensemble $S$ des mutants, codé par un masque de bits, ce qui donne $2^n$ états. Les
+probabilités de fixation résolvent un système linéaire, que l'on résout en fractions par la méthode de Gauss :
+\lstinputlisting[language=Python,style=appFcode,firstline=37,lastline=48,firstnumber=37]{code/examples/python/f05_graph_fixation.py}
+\lstinputlisting[language=Python,style=appFcode,firstline=51,lastline=76,firstnumber=51]{code/examples/python/f05_graph_fixation.py}
+\appFsortie{f05_graph_fixation.txt}
+
+\paragraph{Lecture.} Sur le cycle à 4 sommets, qui est isotherme, la valeur est $8/15$ partout : c'est celle de Moran.
+Sur l'étoile à 3 sommets, on retrouve les valeurs de N4, toutes trois \tierA{} :
+\begin{itemize}
+\item $5/12$ pour un mutant au centre ;
+\item $2/3$ pour un mutant sur une feuille ;
+\item $7/12$ pour un départ uniforme, contre $4/7$ pour Moran.
+\end{itemize}
+Les valeurs de l'étoile à 4 sommets, $392/1265$, $168/253$ et $728/1265$, ne sont que \tierX{} dans N4 : elles
+sortent d'un script non vérifié, ici retrouvées par un second script. Les deux dernières lignes montrent pourquoi le
+nombre de mutants n'est pas une chaîne de Markov sur le cycle. Avec deux mutants, la probabilité de monter d'un cran
+vaut $1/3$ s'ils sont voisins et $2/3$ s'ils sont opposés. Mais le rapport $P^+/P^-$ vaut $r=2$ dans les deux cas :
+c'est le biais par configuration que démontre N4.
+
+\begin{figure}[ht]\centering
+\includegraphics[width=\textwidth]{appF_graph_fixation.pdf}
+\caption{Exemple~5, calcul exact. (a) Le cycle et l'étoile à 4 sommets. (b) Probabilité de fixation d'un mutant en
+fonction de $r$. Le cycle suit Moran quel que soit le sommet. Sur l'étoile, un mutant au centre est désavantagé et un
+mutant sur une feuille avantagé ; en moyenne, l'étoile amplifie la sélection pour $r>1$ dans cet échantillon de valeurs.}
+\label{appF:fig:graph}
+\end{figure}
+
+\begin{exercise}[Exemple 5]\label{appF:exo5}
+(a) Vérifier à la main que, sur l'étoile à 3 sommets avec $r=2$, l'état \texttt{001} (mutant au centre) passe à
+\texttt{011} et à \texttt{101} avec la probabilité $1/4$ chacun, et à l'état vide avec la probabilité $1/2$. (b) Écrire
+le graphe complet $K_4$ (avec $W(i,j)=1/3$ pour $i\ne j$) et prédire le résultat avant de lancer le programme. (c) Pour
+l'étoile à $n$ sommets, conjecturer la limite de la probabilité moyenne quand $n\to\infty$, puis comparer à la littérature
+(Lieberman, Hauert et Nowak, 2005). Une conjecture tirée de quelques valeurs exactes est de niveau~X.
+\end{exercise}
+
+% =====================================================================================================
+\section{Exemple 6 -- Phonons et énergie de point zéro}\label{appF:ex6}
+
+\paragraph{La question.} Au chapitre~3, la conjecture QU-1 demandait si le réseau triangulaire minimise aussi
+l'énergie de point zéro harmonique $E_{zp}=\tfrac12\langle\omega_1+\omega_2\rangle_{\mathrm{ZB}}$. Pour la gaussienne
+$e^{-\pi ar^2}$, le programme P2 a trouvé le contraire (\tierX). Sur $a\in(0{,}37668;1{,}58148)$, le réseau
+triangulaire est un \emph{maximum} local de $E_{zp}$. Peut-on le retrouver avec trente lignes de numpy ?
+
+\paragraph{Le code.} La matrice dynamique $D(\mathbf k)=\sum_{R\ne0}(1-\cos\mathbf k\cdot R)\,\mathrm{Hess}\,V(R)$ est
+$2\times2$, donc ses valeurs propres ont une forme close. La moyenne sur la zone de Brillouin est prise sur une grille
+$n\times n$ de la maille réciproque. La grille fractionnaire est la même pour toutes les formes $\tau$, ce qui fait
+disparaître l'erreur de grille dans les différences :
+\lstinputlisting[language=Python,style=appFcode,firstline=41,lastline=67,firstnumber=41]{code/examples/python/f06_phonons_zero_point.py}
+\appFsortie{f06_phonons_zero_point.txt}
+
+\paragraph{Lecture.} Les témoins positifs sont les valeurs de P2. Pour $a=1$, le script retrouve
+$E_{zp}(\rho)=1{,}5033523522$ à $3\times10^{-8}$ près sur la grille $n=192$. Il retrouve aussi le contre-exemple de P2,
+le losange $\tau=0{,}5+0{,}966025\,i$, plus bas de $1{,}3074\times10^{-2}$. La courbure $c(a)$ change de signe comme
+annoncé :
+\begin{itemize}
+\item elle est négative pour $a=0{,}5$ et $a=1$, où $\rho$ est un maximum local ;
+\item elle est positive pour $a=0{,}25$ et $a=2$, où $\rho$ est un minimum local.
+\end{itemize}
+Les quatre valeurs de P2 sont retrouvées au millième près, et la courbure ne bouge pas entre les grilles $48$ et $96$.
+Tout cela reste \tierX : c'est un second calcul flottant, pas une preuve. Le certificat B2 du chapitre~3 traite le cas
+$a=1$ avec une arithmétique de boules.
+
+\begin{figure}[ht]\centering
+\includegraphics[width=\textwidth]{appF_phonons.pdf}
+\caption{Exemple~6 \tierX. (a) Les deux branches de phonons du réseau triangulaire pour $V=e^{-\pi r^2}$, le long de
+$\Gamma$--M--K--$\Gamma$ ; elles s'annulent en $\Gamma$, comme pour tout cristal (modes acoustiques). (b) Variation relative de
+$E_{zp}$ quand on déforme $\rho$ en $\rho+x$ : une parabole vers le bas pour $a=1$ (maximum local), vers le haut pour
+$a=0{,}25$ et $a=2$.}\label{appF:fig:phonons}
+\end{figure}
+
+\begin{exercise}[Exemple 6]\label{appF:exo6}
+(a) Démontrer que $D(\mathbf k)$ est symétrique et que $D(\mathbf 0)=0$. Pourquoi $\omega(\mathbf k)$ est-il linéaire en
+$|\mathbf k|$ près de $\Gamma$ ? (b) Modifier \texttt{curvature} pour tracer $c(a)$ sur $a\in[0{,}3;1{,}7]$ et localiser
+numériquement les deux changements de signe (P2 : $0{,}37668$ et $1{,}58148$). (c) Pourquoi l'énoncé \og le réseau
+triangulaire est un maximum local de $E_{zp}$ pour $a=1$\fg{} ne peut-il pas devenir de niveau~A avec ce seul code ?
+\end{exercise}
+
+% =====================================================================================================
+\section[Exemple 7 -- CVODE en Rust]{Exemple 7 -- CVODE en Rust : une EDO raide, puis l'équation de Kolmogorov}\label{appF:ex7}
+
+\paragraph{La question.} rusty-SUNDIALS est une réécriture en Rust de SUNDIALS. Son solveur CVODE intègre les équations
+différentielles raides par les formules BDF. Comment l'appeler depuis une crate indépendante ? Et pourquoi un schéma
+explicite échoue-t-il là où BDF réussit ?
+
+\paragraph{Une EDO raide.} Le problème de Prothero--Robinson, $y'=\lambda(y-\cos t)-\sin t$ avec $y(0)=2$ et
+$\lambda=-10^4$, a pour solution exacte $y=\cos t+e^{\lambda t}$. Voici l'appel à CVODE (fonction de la bibliothèque de
+la crate) :
+\lstinputlisting[language=Rust,style=appFcode,firstline=36,lastline=68,firstnumber=36]{code/examples/rust/src/lib.rs}
+\appFsortie{f07a_tb_stiff.txt}
+
+\paragraph{Lecture.} CVODE suit la solution exacte à $6\times10^{-9}$ près pendant la phase transitoire, où $e^{\lambda t}$
+s'éteint en $10^{-4}$, puis à $3\times10^{-11}$ près jusqu'à $t=10$. Il y parvient en 506 pas. Le schéma d'Euler explicite
+n'est stable que si $|1+h\lambda|\le1$, c'est-à-dire $h\le2/|\lambda|=2\times10^{-4}$ :
+\begin{itemize}
+\item avec $h=10^{-4}$, il réussit, mais en $10\,000$ pas ;
+\item avec $h=2{,}5\times10^{-4}$, l'erreur est multipliée par $|1+h\lambda|=1{,}5$ à chaque pas, atteint $4\times10^{17}$
+en 100 pas et finit en \texttt{NaN}.
+\end{itemize}
+C'est le témoin négatif, et la définition même de la raideur.
+
+\paragraph{L'équation de Kolmogorov de Moran.} La chaîne de Moran (chapitre~4) uniformisée en temps continu obéit à
+$\dot\pi=\pi(P-I)$. La masse absorbée en $N$ tend vers la probabilité de fixation
+$\varphi_i=(1-r^{-i})/(1-r^{-N})$. Le jacobien est la matrice constante $(P-I)^{\mathsf T}$. On double le temps de
+sortie jusqu'à ce que la masse intérieure tombe sous $10^{-12}$ :
+\lstinputlisting[language=Rust,style=appFcode,firstline=125,lastline=172,firstnumber=125]{code/examples/rust/src/lib.rs}
+\appFsortie{f07b_tb_moran_forward.txt}
+
+\paragraph{Lecture.} Pour $N=3$, $r=2$ et $i=1$, CVODE donne $4/7$ à $9{,}5\times10^{-14}$ près. Pour $N=10$, les 27
+valeurs ($r=0{,}8$, $1$ et $1{,}5$, $i=1,\dots,9$) suivent la formule à $10^{-12}$ près. Les deux témoins négatifs sont
+refusés :
+\begin{itemize}
+\item le noyau identité, qui n'absorbe jamais ;
+\item la formule à exposant inversé, qui donne $1/7$.
+\end{itemize}
+La crate \texttt{qf-popgen} du chapitre~5 fait le même calcul avec un certificat d'absorption plus complet. Elle n'est
+pas encore fusionnée dans \texttt{main}, c'est pourquoi cette crate réécrit l'équation directement.
+
+\begin{figure}[ht]\centering
+\includegraphics[width=\textwidth]{appF_rust_moran.pdf}
+\caption{Exemple~7 \tierX, tracé depuis les fichiers CSV écrits par \texttt{tb\_moran\_forward}. (a) Probabilité de fixation pour
+$N=10$ : CVODE (marqueurs) et formule exacte (traits). (b) $N=3$, $r=2$, $i=1$ : la masse en $N$ monte vers $4/7$ et la
+masse intérieure s'éteint, aux temps de sortie $0{,}25\cdot2^k$.}\label{appF:fig:moran}
+\end{figure}
+
+\begin{exercise}[Exemple 7]\label{appF:exo7}
+(a) Pour $y'=\lambda y$, montrer que le schéma d'Euler implicite (BDF d'ordre~1) donne $y_{n+1}=y_n/(1-h\lambda)$, stable
+pour tout $h>0$ si $\lambda<0$. (b) Pourquoi la masse intérieure décroît-elle exponentiellement, et quel taux
+attendre pour $N=3$, $r=2$ ? On calculera les valeurs propres de la restriction de $P-I$ aux états intérieurs.
+(c) Ajouter un témoin : un noyau dont une ligne somme à $1{,}001$. Quelle quantité calculée par \texttt{absorb} le
+détecte ?
+\end{exercise}
+
+% =====================================================================================================
+\section{Exemple 8 -- Relaxer un petit cristal de Yukawa}\label{appF:ex8}
+
+\paragraph{La question.} 64 particules interagissent par $e^{-2r}/r$ dans une boîte périodique. Si on les lâche d'une
+position quelconque et qu'elles descendent le gradient d'énergie ($\dot x=F(x)$), retrouvent-elles le réseau
+triangulaire ? Le théorème dit seulement que le réseau triangulaire est le \emph{minimum global} (\tierA,
+conditionnel). Il ne dit pas que la descente l'atteint.
+
+\paragraph{Le code.} La crate appelle l'API de \texttt{qf-yukawa-crystal} :
+\begin{itemize}
+\item \texttt{ExactBox} pour l'énergie, les forces et la hessienne sommées sur les images jusqu'à $R=12$ ;
+\item \texttt{lattice\_energy\_exact} pour l'énergie exacte du réseau.
+\end{itemize}
+La relaxation elle-même est une intégration CVODE dont le jacobien est l'opposé de la hessienne (fonction
+\texttt{relax\_traced} de la bibliothèque). Voici le programme principal :
+\lstinputlisting[language=Rust,style=appFcode,firstline=60,lastline=105,firstnumber=60]{code/examples/rust/src/bin/tb_yukawa_relax.rs}
+\appFsortie{f08_tb_yukawa_relax.txt}
+
+\paragraph{Lecture.} Les trois départs se comportent comme prévu.
+\begin{itemize}
+\item \emph{Réseau triangulaire perturbé} (témoin positif) : il revient à l'énergie exacte du réseau, à $10^{-16}$ près.
+Cette énergie, $0{,}393542848871227$ à $R=12$, diffère de $6\times10^{-11}$ de la valeur à $R=20$ enregistrée par
+\texttt{exact\_refs.jsonl}, qui vaut $0{,}39354284893239$ ; c'est la queue omise.
+\item \emph{Départ aléatoire} : il s'arrête $2{,}1\times10^{-3}$ \emph{au-dessus}, en un point stationnaire
+(forces inférieures à $10^{-9}$) qui présente des défauts (figure~\ref{appF:fig:yukawa}b). Nous n'avons pas vérifié la
+hessienne : rien ne dit ici qu'il s'agit d'un minimum local. Une descente de gradient ne trouve pas toujours le
+minimum global.
+\item \emph{Réseau carré dans une boîte carrée} (témoin négatif) : il descend sous l'énergie du carré, ce qui indique que
+le réseau carré n'est pas un minimum, mais il reste au-dessus du triangulaire, que la boîte $8\times8$ ne peut pas
+contenir.
+\end{itemize}
+
+\begin{figure}[ht]\centering
+\includegraphics[width=\textwidth]{appF_rust_yukawa.pdf}
+\caption{Exemple~8 \tierX. (a) Énergie par particule au-dessus du réseau triangulaire pendant la relaxation CVODE, aux
+temps de sortie $0{,}01\cdot2^k$. (b) État final du départ aléatoire : des domaines triangulaires et des défauts. (c) État
+final dans la boîte carrée.}\label{appF:fig:yukawa}
+\end{figure}
+
+\begin{exercise}[Exemple 8]\label{appF:exo8}
+(a) Pourquoi la boîte $8a\times4\sqrt3\,a$ peut-elle contenir exactement le réseau triangulaire $8\times8$ de pas $a$,
+alors que la boîte $8\times8$ ne le peut pas ? (b) Changer la graine du départ aléatoire (11) pour cinq autres valeurs.
+Combien de départs atteignent le réseau triangulaire à $10^{-10}$ près ? (c) Ce résultat contredit-il le théorème ?
+\end{exercise}
+
+% =====================================================================================================
+\section{Exemple 9 -- Les invariants du modèle en couches \texorpdfstring{$\sigma=3$}{sigma=3}}\label{appF:ex9}
+
+\paragraph{La question.} Le modèle en couches de la section~\ref{ch5:U4} conserve deux quantités :
+\begin{itemize}
+\item $S=\sum|v_n|^2$ ;
+\item $H_3$, dont la partie quadratique vaut $2D\Omega$, où $\Omega$ est l'enstrophie.
+\end{itemize}
+Lean en déduit la borne $2D\,\Omega(t)\le H_3(0)+S(0)^{3/2}$ le long des solutions (\tierAs, chapitre~5). Un
+intégrateur numérique conserve-t-il ces invariants ? Et la borne tient-elle sur une trajectoire ?
+
+\paragraph{Le code.} Six couches, $D=0{,}05$, intégration jusqu'à $T=2$ avec \texttt{integrate\_cvode} de
+\texttt{qf-shell-cascade}, qui évalue les invariants à chaque pas interne de CVODE. Le témoin négatif multiplie un
+couplage par $1+10^{-2}$ :
+\lstinputlisting[language=Rust,style=appFcode,firstline=18,lastline=63,firstnumber=18]{code/examples/rust/src/bin/tb_shell_sigma3.rs}
+\appFsortie{f09_tb_shell_sigma3.txt}
+
+\paragraph{Lecture.} Pour le modèle exact, les invariants dérivent de $5\times10^{-10}$ pour $S$ et de $9\times10^{-8}$ pour
+$H_3$, rapporté à l'échelle de ses termes. Ces dérives relèvent de la tolérance du solveur, pas du modèle. La borne de
+Lean est loin d'être atteinte, avec un rapport maximal de $0{,}29$. Avec le couplage faussé, les dérives montent à
+$3\times10^{-3}$ : la conservation tient à l'annulation exacte des termes non linéaires, que le témoin négatif brise.
+Nous nous limitons à six couches : la rotation la plus rapide, $\omega_n=Dk_n^3$ avec $k_n=2^n$, est multipliée par~8 à
+chaque couche ajoutée, et CVODE doit la résoudre pas à pas.
+
+\begin{figure}[ht]\centering
+\includegraphics[width=\textwidth]{appF_rust_shell.pdf}
+\caption{Exemple~9 \tierX, tracé depuis le CSV écrit par \texttt{tb\_shell\_sigma3} (un pas interne sur vingt). (a) Dérive
+relative des deux invariants. (b) Le rapport $2D\Omega(t)/(H_3(0)+S(0)^{3/2})$ reste sous~1, comme l'impose le théorème
+de Lean.}\label{appF:fig:shell}
+\end{figure}
+
+\begin{exercise}[Exemple 9]\label{appF:exo9}
+(a) Démontrer que $\frac{d}{dt}\sum|v_n|^2=0$ pour le modèle sans dissipation. On regroupera les termes de couplage
+deux à deux. (b) Remplacer \texttt{sigma: 3.0} par \texttt{2.0}. Les invariants $S$ et $H_2$ sont-ils encore conservés ?
+Pourquoi la borne d'enstrophie ne se déduit-elle plus de la même manière ?
+\end{exercise}
+
+% =====================================================================================================
+\section[Exemple 10 -- LeanFlow]{Exemple 10 -- LeanFlow : certifier des fractions, rejeter un mensonge}\label{appF:ex10}
+
+\paragraph{La question.} L'exemple~\ref{appF:ex5} a calculé en Python la table exacte des probabilités de fixation de
+l'étoile à 3 sommets. Python peut se tromper, ou être mal programmé. Comment faire vérifier ces fractions par le noyau
+de Lean, sans écrire une ligne de Lean ?
+
+\paragraph{Le code.} \texttt{lean.certify} de LeanFlow reçoit des affirmations sur des rationnels. Il les traduit en
+énoncés sur les entiers, les fait décider par \lean{decide +kernel} (tactique \texttt{decide\_kernel}), puis audite
+\texttt{\#print axioms}. Un oracle exact en Python doit rendre le même verdict que le noyau, sinon le résultat est une
+erreur, jamais un succès. Voici la construction de l'affirmation « le tableau $x_S$ est harmonique » :
+\lstinputlisting[language=Python,style=appFcode,firstline=34,lastline=49,firstnumber=34]{code/examples/python/f10_leanflow_certify.py}
+\appFsortie{f10_leanflow_certify.txt}
+Voici le plus court des deux certificats engendrés, tel que le noyau l'a décidé :
+\lstinputlisting[language=Lean,style=appFcode]{code/examples/lean/f10_generated_PosMeanAboveMoran.lean}
+
+\paragraph{Lecture.} Les deux affirmations vraies sont acceptées :
+\begin{itemize}
+\item les six équations du premier pas, satisfaites exactement par le tableau $(0,\tfrac5{12},\tfrac23,\tfrac56,
+\tfrac23,\tfrac56,\tfrac{14}{15},1)$ ;
+\item l'inégalité $7/12>4/7$.
+\end{itemize}
+Les deux affirmations plantées sont rejetées, avec \lean{sorryAx} dans la liste des axiomes :
+\begin{itemize}
+\item le vecteur de Moran $(0,\tfrac47,\tfrac67,1)$ selon $|S|$ viole les six équations intérieures, mais il satisfait
+les deux conditions au bord (\texttt{cert\_0} et \texttt{cert\_1} ne sont pas refusés) ;
+\item l'inégalité renversée $7/12<4/7$ est refusée.
+\end{itemize}
+LeanFlow ne contrôle que \texttt{\#print axioms}, qui peut être trompé (chapitre~2). Le script complète donc la porte du
+niveau~A. Chaque source acceptée est recompilée en \texttt{.olean} avec Lean~4.34.1 puis rejouée par
+\texttt{leanchecker}, avec le code de retour~0 pour les deux. Aucun des mots \texttt{skipKernelTC}, \texttt{addDecl},
+\texttt{native\_decide} ou \texttt{implemented\_by} n'y figure. Le témoin du rejeu, un module inexistant, sort avec le
+code~1. Les deux certificats sont donc \tierA, mais pour l'\emph{énoncé arithmétique seulement}. Que ce tableau soit la
+probabilité de fixation de l'étoile demande en plus l'unicité de la solution harmonique (chapitre~4) et l'identification
+des transitions de Python à celles de \lean{bdK}. Ce raccord est un argument humain \tierC.
+
+\begin{exercise}[Exemple 10, LeanFlow]\label{appF:exo10}
+(a) Certifier de la même manière le tableau du cycle à 4 sommets ($2^4$ états, valeur $8/15$ pour tout mutant
+seul). (b) Planter une erreur d'un seul ulp : remplacer $5/12$ par la fraction du flottant \texttt{float(5/12)}.
+LeanFlow l'accepte-t-il ? Pourquoi un certificat sur des rationnels est-il plus exigeant qu'une comparaison
+flottante à $10^{-15}$ près ?
+\end{exercise}
+
+% =====================================================================================================
+\section{Exemple 11 -- Lire et vérifier le théorème ILENE}\label{appF:ex11}
+
+\paragraph{La question.} Le chapitre~5 cite \lean{ILENE}, la version à un mutant du théorème isotherme. Comment le
+lecteur peut-il voir, sur sa propre machine, l'énoncé exact que Lean a vérifié et les axiomes dont dépend sa preuve ?
+Et comment distinguer une vraie preuve d'une fausse ?
+
+\paragraph{Le code.} Un fichier de 21 lignes importe le module compilé et pose quatre questions à Lean :
+\lstinputlisting[language=Lean,style=appFcode]{code/examples/lean/f11_ilene.lean}
+On le compile avec Lean~4.34.1 et Mathlib \texttt{d13f23b7}, par le script \texttt{lean\_pinned.py} du
+dossier \texttt{scripts/certified\_numerics/}. Il donne :
+\appFsortie{f11_ilene.txt}
+
+\paragraph{Lecture.} La sortie se lit en quatre temps.
+\begin{itemize}
+\item \texttt{\#check} affiche l'énoncé complet. Les hypothèses sont : $0<n$, $0<r$, $r\ne1$, $W$ isotherme et fortement
+connexe. La conclusion est une limite, celle de $P^t(\{v\},V)$ vers $(1-r^{-1})/(1-r^{-n})$, pour tout sommet $v$.
+\item Les axiomes sont exactement ceux de la liste blanche. Le module des acronymes et ses sources ont été rejoués
+par \texttt{leanchecker}, avec le code de retour~0 (enregistrement \texttt{acronymes\_leanchecker.json}) :
+\lean{ILENE} est donc \tierA.
+\item L'\texttt{example} vérifie, par \lean{norm_num}, que la valeur limite vaut $8/15$ pour $n=4$ et $r=2$. C'est
+celle du cycle de l'exemple~\ref{appF:ex5}.
+\item Le témoin planté affirme une valeur fausse, $4/7$, « prouvée » par \lean{sorry}. Le fichier compile quand même,
+avec le code de retour~0 et un simple avertissement. Seule la ligne \texttt{\#print axioms} trahit la fraude : elle
+affiche \lean{sorryAx}.
+\end{itemize}
+C'est la leçon du chapitre~2 : un code de retour nul ne prouve rien, il faut lire les axiomes et rejouer le noyau.
+
+\begin{exercise}[Exemple 11, Lean]\label{appF:exo11}
+(a) Ajouter \texttt{\#check @KAL} et \texttt{\#print axioms AURELIA}, et relire les énoncés à l'aide du tableau des
+acronymes (section~\ref{ch5:acronymes}). (b) Remplacer \lean{by sorry} par \lean{by norm_num} dans le témoin
+planté. Que répond Lean, et avec quel code de retour ? (c) Pourquoi l'égalité $1/2=2^{-1}$, utilisée implicitement en
+comparant l'\texttt{example} à l'énoncé de \lean{ILENE}, est-elle un raccord à vérifier, et comment le faire en Lean ?
+\end{exercise}
+
+% =====================================================================================================
+\section{Exemple 12 -- Contrôle croisé : CVODE contre SciPy}\label{appF:ex12}
+
+\paragraph{La question.} Deux codes écrits par la même équipe peuvent partager la même erreur. Les nombres de
+l'exemple~\ref{appF:ex7} sont-ils confirmés par des méthodes \emph{indépendantes} ?
+
+\paragraph{Le code.} Le script relit les sorties du binaire Rust et recalcule les mêmes quantités de deux façons :
+\begin{itemize}
+\item pour le problème raide, avec la méthode Radau de SciPy, une méthode de Runge--Kutta implicite et non BDF ;
+\item pour Moran, avec l'exponentielle de matrice $\pi(t)=e_i\,e^{t(P-I)}$, sans aucun pas de temps.
+\end{itemize}
+\lstinputlisting[language=Python,style=appFcode,firstline=56,lastline=78,firstnumber=56]{code/examples/python/f12_scipy_crosscheck.py}
+\appFsortie{f12_scipy_crosscheck.txt}
+
+\paragraph{Lecture.} Après la phase transitoire, CVODE et Radau s'accordent à $3\times10^{-11}$ près. Aux deux premiers
+instants, l'écart de $5\times10^{-9}$ est celui de CVODE à la solution exacte : la valeur de Radau coïncide avec
+$\cos t+e^{\lambda t}$, et la tolérance de CVODE était $10^{-8}$. Pour Moran, CVODE et l'exponentielle de matrice
+s'accordent à $1{,}3\times10^{-11}$ près aux dix temps de sortie. Le témoin négatif décale un temps de $10^{-3}$, et
+l'écart, de $8\times10^{-4}$, devient immédiatement visible : la comparaison a donc le pouvoir de détecter une erreur.
+
+\begin{exercise}[Exemple 12]\label{appF:exo12}
+(a) Remplacer \texttt{method="Radau"} par \texttt{"RK45"}, une méthode explicite. Combien d'évaluations faut-il, et
+pourquoi ? (b) Pour Moran, l'exponentielle de matrice est exacte à l'arrondi près. Pourquoi ne remplace-t-elle pas
+CVODE pour $N=1000$ ?
+\end{exercise}
+
+% =====================================================================================================
+\section{Bilan}\label{appF:bilan}
+
+Les douze exemples ont été exécutés le 2026-10-26, et tous leurs témoins se sont comportés comme prévu. Ils illustrent
+les trois manières de traiter un nombre dans ce livre.
+\begin{itemize}
+\item \emph{Le calcul flottant} (exemples~1, 2, 3, 6 à 9 et 12) explore, contrôle et réfute. Il retrouve les valeurs
+publiées à la précision attendue, mais il reste de niveau~X.
+\item \emph{Le calcul exact en rationnels} (exemples~4 et~5) supprime l'arrondi, mais pas le risque d'une erreur de
+programmation.
+\item \emph{Le noyau de Lean} (exemples~10 et~11) supprime ce risque pour l'énoncé vérifié, et pour lui seul. Le lien
+entre cet énoncé et la question posée reste un raccord, à vérifier à part.
+\end{itemize}

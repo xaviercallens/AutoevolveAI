@@ -102,8 +102,8 @@ def plot() -> None:
     kp = np.concatenate(path)
     dist = np.concatenate([ticks[i] + np.linspace(0, 1, 80) * (ticks[i + 1] - ticks[i]) for i in range(3)])
     w = np.sqrt(np.clip(dyn_eigs(kp, r, 1.0), 0, None))
-    ax[0].plot(dist, w[:, 0], color=st.BLUE, label="branche transverse (basse)")
-    ax[0].plot(dist, w[:, 1], "--", color=st.ORANGE, label="branche longitudinale (haute)")
+    ax[0].plot(dist, w[:, 0], color=st.BLUE, label="branche basse")
+    ax[0].plot(dist, w[:, 1], "--", color=st.ORANGE, label="branche haute")
     ax[0].set_xticks(ticks, [r"$\Gamma$", "M", "K", r"$\Gamma$"])
     for t in ticks:
         ax[0].axvline(t, color=st.GREY, lw=0.5)

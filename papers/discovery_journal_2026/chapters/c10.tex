@@ -14,7 +14,7 @@ montrer que la force étudiée est une telle pile, avec des quantités de sable 
 droit d'\og enlever\fg{} du sable.
 
 \emph{Où l'image cesse d'être juste~:} il faut ici une infinité continue de cloches, et l'égalité \og la force
-physique est cette pile\fg{} n'a été démontrée qu'à la main~; le logiciel n'a vérifié que la pile elle-même.
+physique est cette pile\fg{} n'a été démontrée que sur le papier, par des agents d'IA~; le logiciel n'a vérifié que la pile elle-même.
 \end{analogie}
 
 \section*{Ce qui a été fait}
@@ -24,7 +24,7 @@ s'attirent ou ne se repoussent pas selon la loi de Coulomb habituelle. La couche
 à courte distance~; de loin, on retrouve la loi en $1/r$. Cette loi modifiée, dite de Rytova--Keldysh, s'écrit avec
 des fonctions spéciales et dépend d'une longueur $r_0$, propre au matériau.
 
-L'article donne une preuve humaine, pas à pas, que cette force est un empilement positif de cloches (des
+L'article donne une preuve écrite, pas à pas (rédigée par des agents d'IA), que cette force est un empilement positif de cloches (des
 gaussiennes) de toutes les largeurs, avec un poids explicite. Dans Lean, il démontre trois choses~: tout empilement
 positif de ce genre (avec des moyennes finies) a la propriété exigée par le théorème amont~; le potentiel
 \emph{défini} par l'empilement l'a donc, ainsi qu'une version légèrement adoucie à grande distance~; et le réseau
@@ -57,7 +57,7 @@ molybdène dans le vide, à $10^{11}$ électrons par cm$^2$, l'écart vaut $0{,}
 
 \section*{Comment on s'est assuré que ce n'est pas faux}
 
-En résumé~: \niveau{C} pour l'identité \og c'est un mélange positif de gaussiennes\fg{} (preuve humaine),
+En résumé~: \niveau{C} pour l'identité \og c'est un mélange positif de gaussiennes\fg{} (preuve écrite, non vérifiée par la machine),
 \niveau{A} pour l'admissibilité du potentiel défini par ce mélange et pour les corollaires (conditionnels au
 théorème amont), \niveau{X} pour les énergies calculées.
 
@@ -68,15 +68,15 @@ inventé), toutes deux dénoncées. Il a relancé le calcul Rust~: résultat ide
 
 Deux épisodes de cet audit valent d'être racontés. D'abord, une phrase de l'article, par une coquille de mise en
 page, se lisait \og l'étape~7 n'est pas de niveau~C\fg, ce qui inversait son propre classement~; elle a été corrigée.
-Ensuite, l'auditeur a proposé une preuve humaine plus simple, où n'interviennent que des quantités positives~;
-elle est devenue la preuve principale, et reste au niveau \og un humain a raisonné\fg, faute d'outils dans la bibliothèque Lean pour
+Ensuite, l'auditeur a proposé une preuve écrite plus simple, où n'interviennent que des quantités positives~;
+elle est devenue la preuve principale, et reste au niveau~C, un raisonnement mené par des agents d'IA, faute d'outils dans la bibliothèque Lean pour
 ces fonctions spéciales. Le registre reste marqué \og non audité\fg~: aucun humain n'a relu les énoncés.
 
 \section*{Ce que ça ne dit pas}
 
 \begin{limite}
 \begin{itemize}
-\item L'identité avec la formule physique est une preuve à la main (\niveau{C}), non vérifiée par la machine.
+\item L'identité avec la formule physique est une preuve écrite sur le papier (\niveau{C}), non vérifiée par la machine.
 \item Comme la force décroît en $1/r$, la somme sur un réseau infini diverge~: l'inégalité brute doit se lire
   \og infini $\leq$ infini\fg{} et ne dit rien d'utile. Pour la version adoucie, la finitude de l'énergie n'est
   pas démontrée.

@@ -7,7 +7,8 @@ ch:cNN always points at the file cNN.tex whatever its final rank.
 
 Writes, under papers/discovery_journal_2026/gen/:
   titres.tex   -- \\definircontribution{file stem}{rank}{French title}{domain}{id};
-  table20.tex  -- the table of the 20 contributions (rank, title, domain, level, DOI or repository), two halves;
+  table20.tex  -- the table of the 20 contributions (rank, title with its DOI or repository underneath, domain,
+                  rigour score), two halves, set at the text width;
   dois.tex     -- the DOI index of the 20 (every DOI listed in TOP20_final.json, with its rank).
 The 'rigueur' column prints the rubric's C1 score as is (0-3); the Elenchus badges stay in the chapters.
 Usage: python -I code/make_backmatter.py   (from any directory)
@@ -77,11 +78,12 @@ def main() -> None:
     (out / "titres.tex").write_text("\n".join(titres) + "\n")
 
     head = [
-        "\\begin{tabularx}{\\largeurpleine}{@{}r>{\\raggedright\\arraybackslash}X"
-        ">{\\raggedright\\arraybackslash}p{2.3cm}c>{\\raggedright\\arraybackslash}p{4.3cm}@{}}",
+        # Text width only (no margin overhang): an overhang decided on the wrong page side clipped the table (audit B1).
+        "\\begin{tabularx}{\\linewidth}{@{}r>{\\raggedright\\arraybackslash}X"
+        ">{\\raggedright\\arraybackslash}p{2.3cm}c@{}}",
         "\\toprule",
-        "\\textsf{n°} & \\textsf{contribution (titre du chapitre)} & \\textsf{domaine} & "
-        "\\textsf{rigueur} & \\textsf{DOI ou dépôt}\\\\",
+        "\\textsf{n°} & \\textsf{contribution (titre du chapitre), DOI ou dépôt} & \\textsf{domaine} & "
+        "\\textsf{rigueur}\\\\",
         "\\midrule",
     ]
     rows = [stamp] + head
@@ -92,8 +94,9 @@ def main() -> None:
         lecon = " \\emph{(leçon)}" if p["lesson"] else ""
         rows.append(
             f"{p['pick']} & {tex_escape(order[p['pick']]['chapter_title'])}{lecon} \\newline "
-            f"{{\\scriptsize\\color{{encre!60}}{p['date']}, p.~\\pageref{{ch:{stem}}}}} & "
-            f"{DOMAINES_FR[p['domain']]} & {{\\sffamily\\small {rigueur}\\,/\\,3}} & {{\\footnotesize {doi_or_repo(p)}}}\\\\"
+            f"{{\\scriptsize\\color{{encre!60}}{p['date']}, p.~\\pageref{{ch:{stem}}}}} "
+            f"\\newline{{\\footnotesize {doi_or_repo(p)}}} & "
+            f"{DOMAINES_FR[p['domain']]} & {{\\sffamily\\small {rigueur}\\,/\\,3}}\\\\"
         )
     rows += ["\\bottomrule", "\\end{tabularx}"]
     (out / "table20.tex").write_text("\n".join(rows) + "\n")
@@ -101,9 +104,9 @@ def main() -> None:
     dois = [stamp, "\\begin{description}"]
     for p in picks:
         entry = ", ".join("\\doi{" + d + "}" for d in p["all_dois"]) or doi_or_repo(p)
-        dois.append(
-            f"\\item[n°\\,{p['pick']}] {tex_escape(order[p['pick']]['chapter_title'])}. {{\\footnotesize {entry}}}"
-        )
+        titre = tex_escape(order[p["pick"]]["chapter_title"])
+        fin = "" if titre.rstrip().endswith(("?", "!", ".")) else "."  # no double punctuation (audit item 13)
+        dois.append(f"\\item[n°\\,{p['pick']}] {titre}{fin} {{\\footnotesize {entry}}}")
     dois.append("\\end{description}")
     (out / "dois.tex").write_text("\n".join(dois) + "\n")
     print(f"wrote {len(picks)} picks to {out}")

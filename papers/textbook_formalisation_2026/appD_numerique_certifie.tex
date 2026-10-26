@@ -73,7 +73,7 @@ plus petit et le plus grand des quatre produits.
 propriété d'inclusion, on arrondit la borne inférieure \emph{vers le bas} et la borne supérieure \emph{vers le haut} :
 c'est l'\emph{arrondi vers l'extérieur}. Faute d'accès aux modes d'arrondi, on peut élargir chaque borne d'un ulp
 (l'écart entre deux flottants consécutifs) avec \texttt{math.nextafter} : c'est plus large que nécessaire, mais sûr,
-puisque l'arrondi au plus proche se trompe de moins d'un demi-ulp.
+puisque l'arrondi au plus proche se trompe d'au plus un demi-ulp.
 
 \paragraph{Le problème de dépendance.} L'arithmétique d'intervalles ne sait pas que deux occurrences d'une même
 variable sont égales : pour $x\in[0,1]$, $x-x$ donne $[0,1]-[0,1]=[-1,1]$, et non $\{0\}$. Les encadrements grossissent
@@ -270,7 +270,7 @@ coupée ici parce que la coche n'est pas imprimable.)
 \noindent Lecture : en $633$ pas, CVODE traverse onze ordres de grandeur de temps ; le pas grandit d'autant. Une méthode
 explicite serait limitée en stabilité, sur tout l'intervalle, par les valeurs propres rapides du jacobien. Le
 programme compare ses statistiques à la version C de SUNDIALS (\texttt{cvRoberts\_dns}, valeurs de référence écrites
-dans le code de l'exemple, non relancées ici). La conservation à $4{,}4\times10^{-16}$ près est un contrôle
+dans le code de l'exemple, non relancées ici, avec une tolérance absolue différente de celle de l'exemple Rust : la comparaison des nombres de pas n'est qu'indicative). La conservation à $4{,}4\times10^{-16}$ près est un contrôle
 \emph{nécessaire} ; elle ne prouve rien sur $y_2$, qui pourrait être faux sans violer la conservation. C'est un calcul
 \tierX.
 

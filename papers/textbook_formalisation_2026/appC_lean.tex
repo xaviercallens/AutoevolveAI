@@ -114,7 +114,7 @@ tactique & effet\\\midrule
 \lean{obtain}, \lean{rcases} & déstructure une hypothèse ($\wedge$, $\exists$, $\vee$)\\
 \lean{rfl} & ferme un but $a=a$ « par définition »\\
 \lean{simp} & réécrit avec les lemmes marqués \lean{@[simp]} (et ceux qu'on lui donne) jusqu'à une forme normale\\
-\lean{ring} & prouve une égalité dans un anneau commutatif (identité de polynômes)\\
+\lean{ring} & prouve une égalité dans un (semi-)anneau commutatif (identité de polynômes)\\
 \lean{linarith} & prouve une inégalité linéaire combinaison des hypothèses (ordre total, corps ordonné)\\
 \lean{nlinarith} & comme \lean{linarith}, en multipliant des hypothèses ; on l'aide en lui fournissant des carrés\\
 \lean{norm_num} & calcule exactement sur des littéraux numériques (entiers, rationnels)\\
@@ -135,7 +135,7 @@ tactique & effet\\\midrule
 'quatre_septiemes' depends on axioms: [propext, Classical.choice, Quot.sound]
 'positif' depends on axioms: [propext, Classical.choice, Quot.sound]
 \end{lstlisting}
-Les nombres réels de Mathlib sont construits à partir des suites de Cauchy, avec l'axiome du choix : tout théorème sur
+Les nombres réels de Mathlib sont construits à partir des suites de Cauchy, avec l'axiome du choix : en pratique, tout théorème sur
 $\R$ dépend des trois axiomes de la liste blanche. C'est normal.
 
 \begin{remark}[Une bibliothèque qui bouge]
@@ -281,8 +281,8 @@ Le script se termine par la ligne \texttt{\{"all\_controls\_pass": true\}} : cha
 constate que le terme \lean{True.intro} a le type \lean{True} et non \lean{False}.
 \item \emph{Témoin négatif trivial.} Un module inexistant est refusé (code~$1$) : le code~$0$ des autres n'est pas
 celui d'un outil qui ne fait rien.
-\item Une minute environ par module : \lean{leanchecker} charge toutes les dépendances (Mathlib ou \lean{Lean}) avant de
-rejouer le module. Le rejeu ne porte que sur les déclarations du module : Mathlib et le cœur de Lean sont chargés,
+\item Une minute environ par module, même pour les exemples~1 et~5 qui n'importent rien : le temps est celui du démarrage de
+\lean{leanchecker}, pas celui du module (nous n'en avons pas mesuré la cause). Le rejeu ne porte que sur les déclarations du module : Mathlib et le cœur de Lean sont chargés,
 pas rejoués (il faudrait l'option \texttt{--fresh}, beaucoup plus coûteuse).
 \end{itemize}
 

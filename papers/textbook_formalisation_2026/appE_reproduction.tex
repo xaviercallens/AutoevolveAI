@@ -50,7 +50,7 @@ AutoevolveAI. \emph{Il ne contient ni \texttt{h5py} ni \texttt{python-flint}.}
 compilé pour CPython~3.11 (fichier \chemin{pyflint.cpython-311-x86_64-linux-gnu.so}). Les scripts B2 et
 \chemin{code/appD_certifie.py} l'ajoutent eux-mêmes à \texttt{sys.path} ; ils doivent donc tourner avec le Python~3.11
 du \texttt{.venv}.
-\item \textbf{Python du système :} \texttt{python3}~3.10.12, avec python-flint~0.9.0 dans \texttt{\~{}/.local}. Il sert au
+\item \textbf{Python du système :} \texttt{python3}~3.10.12, avec python-flint~0.9.0 dans \texttt{\~{}/.local} (invisible sous \texttt{-I} ; le certificat P1 n'en a pas besoin). Il sert au
 certificat de Sandier--Serfaty (P1, §\ref{appE:sec:ch2}). \emph{Ne l'utilisez pas pour pytest} : il y a un conflit
 numpy/zarr dans cet environnement.
 \item \textbf{Toujours \texttt{-I}.} L'option isole l'interpréteur (pas de \texttt{PYTHONPATH}, pas de répertoire
@@ -130,7 +130,8 @@ Dépôt \chemin{https://github.com/xaviercallens/SocrateAI-Scientific-Agora-Lean
 \sha{84e0c2899830fba671022eefcd408af9ecd565c8}, qui ne connaît pas \texttt{decide\_kernel}. Interface en ligne de
 commande :
 \begin{lstlisting}[style=appC,language={}]
-PY -m leanflow_mcp.lean AFFIRMATION.json --lean ~/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean
+# depuis ~/LeanFlow-wt-p1/src, sans -I (qui retirerait le répertoire courant de sys.path) :
+~/AutoevolveAI/.venv/bin/python -m leanflow_mcp.lean AFFIRMATION.json --lean ~/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean
 # code de sortie 0 = vérifié (niveau A), 1 = rejeté, 2 = erreur
 \end{lstlisting}
 Sous \texttt{-I}, il faut que \chemin{~/LeanFlow-wt-p1/src} soit dans \texttt{sys.path} : les scripts du livre
@@ -169,7 +170,7 @@ aucune licence sur la carte~\cite{ch5:gb} ; \chemin{~/hf-data/textbook2/...}\\
 \end{table}
 
 Les scripts U1 et U5 téléchargent eux-mêmes le fichier s'il manque, à l'adresse
-\chemin{https://huggingface.co/datasets/<id>/resolve/<révision>/<fichier>}, puis \emph{s'arrêtent} si l'empreinte
+\chemin{https://huggingface.co/datasets/<id>/resolve/<rev>/<fichier>} (\texttt{<rev>} : la révision épinglée du tableau~\ref{appE:tab:hf}), puis \emph{s'arrêtent} si l'empreinte
 diffère. Les scripts U2 et U4 vérifient l'empreinte si le fichier est présent, et sinon se contentent des données
 dérivées rangées dans la crate (\chemin{data/initial/*.csv} pour U2, \chemin{results/sigma3/well_amps.txt} pour U4).
 L'extraction des spectres de The Well demande \texttt{h5py}, absent du \texttt{.venv} : elle a été faite à part par les
@@ -232,7 +233,7 @@ plantées) est \texttt{PY} \chemin{W/results/autoresearch/2026-10-25/H3/contribu
 
 \paragraph{Sandier--Serfaty, P1 : le certificat d'intervalles (478~s).} Dans le dossier \texttt{verification} de la
 prépublication, sous le clone d'openai/math
-(\chemin{.../lean4basesource/openai-math/preprints/Triangular-minimality-for-planar-Coulomb-renormalized-energy-September-23-2026/verification}) :
+(\chemin{.../SocrateAI-Scientific-Agora-LeanMaster/lean4basesource/openai-math/preprints/Triangular-minimality-for-planar-Coulomb-renormalized-energy-September-23-2026/verification}) :
 \begin{lstlisting}[style=appC,language={}]
 python3 -I -B run-certificate.py --output-dir NOUVEAU_DOSSIER
 \end{lstlisting}
@@ -437,7 +438,7 @@ enregistrements.
 \item[Cache disque froid.] Le premier chargement de Mathlib, ou d'\lean{import Lean}, lit des gigaoctets de
 \texttt{.olean} sur le disque. Dans l'annexe~C, le même fichier a compilé en 51,6~s la première fois et en 4,4~s la
 seconde. Ne concluez pas d'une première mesure lente ; ne comparez des durées qu'à cache chaud. Le rejeu
-\lean{leanchecker} prend environ une minute par module, même pour un module minuscule, à cause de ce chargement.
+\lean{leanchecker} prend environ une minute par module, même pour un module minuscule ; nous n'en avons pas mesuré la cause (voir l'annexe~C).
 \item[CPU.] Limitez le parallélisme : \texttt{cargo -j 2}, \texttt{taskset -c 6,7} pour Python et Lean. Un processus déjà
 lancé se borne avec \texttt{taskset -a -cp 0,1 PID}. Le certificat P1 fixe lui-même \chemin{OMP_NUM_THREADS=32} ; sur
 une petite machine, il prendra bien plus que 478~s.

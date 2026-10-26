@@ -82,8 +82,8 @@ illustre.}\label{appF:tab}
 1 & Python & formule de Poisson pour les gaussiennes & X\\
 2 & Python & énergie des réseaux triangulaire et carré (gaussien, Yukawa, dipolaire) & X\\
 3 & Python & signes de $(-1)^ng^{(n)}$ avec mpmath, et deux contre-exemples & X\\
-4 & Python & puissances exactes de Wright--Fisher, $P^n(i,N)\to i/N$ & exact (fractions)\\
-5 & Python & fixation sur un graphe isotherme et sur l'étoile & exact (fractions)\\
+4 & Python & puissances exactes de Wright--Fisher, $P^n(i,N)\to i/N$ & X (calcul exact)\\
+5 & Python & fixation sur un graphe isotherme et sur l'étoile & X (calcul exact)\\
 6 & Python & phonons et énergie de point zéro, maximum local & X\\
 7 & Rust & CVODE sur une EDO raide, puis l'équation de Kolmogorov de Moran & X\\
 8 & Rust & relaxation d'un petit cristal de Yukawa & X\\
@@ -169,7 +169,7 @@ porte sur toutes les configurations.
 
 \begin{exercise}[Exemple 2]\label{appF:exo2}
 (a) Remplacer \texttt{"gauss"} par une gaussienne $e^{-\pi ar^2}$ de paramètre $a$ quelconque, et vérifier sur une
-grille de $a$ que $\Theta_\Lat(a)\le\Theta_{\Z^2}(a)$ (théorème de Montgomery, \tierL). (b) Pour un potentiel
+grille de $a$ que $\Theta_\Lat(a)\le\Theta_{\Z^2}(a)$ (théorème de Montgomery~\cite{app:montgomery}, \tierL). (b) Pour un potentiel
 \emph{non} complètement monotone, par exemple $V=e^{-r^2}-\tfrac12e^{-r^2/4}$, tracer l'énergie le long du même arc.
 Le minimum est-il toujours à $60^\circ$ ? Que peut-on en conclure, et que ne peut-on pas en conclure ?
 \end{exercise}
@@ -231,7 +231,7 @@ c'est-à-dire la deuxième valeur propre de la matrice de Wright--Fisher, $\lamb
 
 \begin{figure}[ht]\centering
 \includegraphics[width=\textwidth]{appF_wright_fisher.pdf}
-\caption{Exemple~4. (a) $P^n(i,N)$ pour $n=1$, $3$ et $20$, et la limite $i/N$, pour $N=6$. (b) L'écart maximal, calculé
+\caption{Exemple~4 \tierX. (a) $P^n(i,N)$ pour $n=1$, $3$ et $20$, et la limite $i/N$, pour $N=6$. (b) L'écart maximal, calculé
 exactement puis converti en flottant, décroît comme $(1-1/N)^n$.}\label{appF:fig:wf}
 \end{figure}
 
@@ -271,7 +271,7 @@ c'est le biais par configuration que démontre N4.
 
 \begin{figure}[ht]\centering
 \includegraphics[width=\textwidth]{appF_graph_fixation.pdf}
-\caption{Exemple~5, calcul exact. (a) Le cycle et l'étoile à 4 sommets. (b) Probabilité de fixation d'un mutant en
+\caption{Exemple~5 \tierX, calcul exact. (a) Le cycle et l'étoile à 4 sommets. (b) Probabilité de fixation d'un mutant en
 fonction de $r$. Le cycle suit Moran quel que soit le sommet. Sur l'étoile, un mutant au centre est désavantagé et un
 mutant sur une feuille avantagé ; en moyenne, l'étoile amplifie la sélection pour $r>1$ dans cet échantillon de valeurs.}
 \label{appF:fig:graph}
@@ -282,7 +282,7 @@ mutant sur une feuille avantagé ; en moyenne, l'étoile amplifie la sélection 
 \texttt{011} et à \texttt{101} avec la probabilité $1/4$ chacun, et à l'état vide avec la probabilité $1/2$. (b) Écrire
 le graphe complet $K_4$ (avec $W(i,j)=1/3$ pour $i\ne j$) et prédire le résultat avant de lancer le programme. (c) Pour
 l'étoile à $n$ sommets, conjecturer la limite de la probabilité moyenne quand $n\to\infty$, puis comparer à la littérature
-(Lieberman, Hauert et Nowak, 2005). Une conjecture tirée de quelques valeurs exactes est de niveau~X.
+(Lieberman, Hauert et Nowak, 2005~\cite{app:lhn}). Une conjecture tirée de quelques valeurs exactes est de niveau~X.
 \end{exercise}
 
 % =====================================================================================================
@@ -447,7 +447,7 @@ couplage par $1+10^{-2}$ :
 \paragraph{Lecture.} Pour le modèle exact, les invariants dérivent de $5\times10^{-10}$ pour $S$ et de $9\times10^{-8}$ pour
 $H_3$, rapporté à l'échelle de ses termes. Ces dérives relèvent de la tolérance du solveur, pas du modèle. La borne de
 Lean est loin d'être atteinte, avec un rapport maximal de $0{,}29$. Avec le couplage faussé, les dérives montent à
-$3\times10^{-3}$ : la conservation tient à l'annulation exacte des termes non linéaires, que le témoin négatif brise.
+$3$ et $4\times10^{-3}$ : la conservation tient à l'annulation exacte des termes non linéaires, que le témoin négatif brise.
 Nous nous limitons à six couches : la rotation la plus rapide, $\omega_n=Dk_n^3$ avec $k_n=2^n$, est multipliée par~8 à
 chaque couche ajoutée, et CVODE doit la résoudre pas à pas.
 
@@ -514,8 +514,9 @@ flottante à $10^{-15}$ près ?
 lecteur peut-il voir, sur sa propre machine, l'énoncé exact que Lean a vérifié et les axiomes dont dépend sa preuve ?
 Et comment distinguer une vraie preuve d'une fausse ?
 
-\paragraph{Le code.} Un fichier de 21 lignes importe le module compilé et pose quatre questions à Lean :
-\lstinputlisting[language=Lean,style=appFcode]{code/examples/lean/f11_ilene.lean}
+\paragraph{Le code.} Un fichier de 21 lignes, dont nous reproduisons les lignes 2 à 21, importe le module compilé et pose quatre questions à Lean :
+\lstinputlisting[language=Lean,style=appFcode,firstline=2,firstnumber=2]{code/examples/lean/f11_ilene.lean}
+(La première ligne du fichier, \texttt{import} du module des acronymes, est omise ici.)
 On le compile avec Lean~4.34.1 et Mathlib \texttt{d13f23b7}, par le script \texttt{lean\_pinned.py} du
 dossier \texttt{scripts/certified\_numerics/}. Il donne :
 \appFsortie{f11_ilene.txt}

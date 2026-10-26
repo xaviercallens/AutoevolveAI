@@ -1,0 +1,387 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.9in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{url}
+\usepackage{microtype}
+\usepackage{caption}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{seqsplit}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\setlist{itemsep=1pt,topsep=2pt,parsep=0pt}
+\lstset{basicstyle=\ttfamily\scriptsize,columns=fullflexible,keepspaces=true,breaklines=true,
+  frame=single,framesep=2pt,xleftmargin=3pt,xrightmargin=3pt,upquote=true,commentstyle=\itshape}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\tg}[2]{\texorpdfstring{\textsf{[#1\,#2]}}{}}  % claim tag: tier letter and ledger number (prefix P2NS)
+\newcommand{\lean}[1]{\texttt{#1}}
+\newcommand{\hash}[1]{\texttt{\expandafter\seqsplit\expandafter{#1}}}
+\newcommand{\dd}{\,\mathrm{d}}
+\renewcommand{\div}{\operatorname{div}}
+\renewcommand{\_}{\textunderscore\allowbreak}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\title{An independent rebuild, kernel replay and statement audit of the\\
+\texttt{openai/NavierStokesAndEuler} breakdown theorems\\[2pt]
+{\large (independently rebuilt and audited; this is \emph{not} a claim that a Clay problem is solved)}}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-26 \quad (not peer reviewed; no person has audited any statement)}
+\hypersetup{pdftitle={An independent rebuild, kernel replay and statement audit of the openai/NavierStokesAndEuler breakdown theorems},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{AI-assistance disclosure.} This preprint, the scripts, scans and Lean probe files it reports on, and the claim ledger were
+produced by AI agents (Claude, Anthropic) under the author's direction. The author is responsible for the content. No human has audited the
+Lean statements for adequacy, no human referee has checked any argument, and every ``independent'' check below is made by an agent of the same AI
+pipeline as the one that wrote the paper, never by a person. The rebuild and audit were run by one agent instance; the statement-fidelity
+reading was written by that instance blind to an earlier fidelity audit (H9~\cite{h9}), itself by another instance; the paper stage (a further
+instance) re-ran no check and takes every number from the saved logs, whose hashes the ledger records. The mathematics under study was produced
+by an AI system (OpenAI~\cite{corpus}) and has, to our knowledge, not been refereed.
+
+\begin{abstract}
+OpenAI published a Lean~4 corpus, \texttt{openai/NavierStokesAndEuler}~\cite{corpus}, whose authors present it as formalizing finite-time blowup
+results: for every positive viscosity, alternatives (C) and (D) of the Clay Institute's problem description~\cite{fef}, and a finite-time
+singularity for the unforced Euler equations. \textbf{We independently (of the corpus authors) rebuilt and audited this corpus.
+We do not claim that any Clay problem is solved, and credit for the proofs belongs to the corpus authors.}
+At corpus commit \texttt{f9e8bc5b}, with the corpus's own toolchain (Lean 4.34.0-rc2) and a reused, exact-revision Mathlib, we rebuilt all 2,440
+corpus modules from source (609 + 1,829 solution-closure modules and 2 challenge modules; rc~0; zero warnings in the solution closures) \tg{X}{0001}.
+The four theorems \lean{navier\_stokes\_breakdown\_R3}, \lean{navier\_stokes\_breakdown\_periodic}, \lean{euler\_breakdown\_R3} and
+\lean{exists\_compact\_smooth\_euler\_singularity} depend on exactly \lean{[propext, Classical.choice, Quot.sound]} in our own audit files
+\tg{A}{0001}\tg{A}{0002}\tg{A}{0003}\tg{A}{0004}. Source and environment scans for soundness escapes found none, and each scan caught its planted
+negative controls \tg{X}{0002}\tg{X}{0003}\tg{X}{0008}. \textbf{One limitation is demonstrated, not discovered:} a planted \emph{forged} declaration
+(\lean{False} ``proved'' by \lean{True.intro}, added without kernel checking) passes \lean{\#print axioms} with ``does not depend on any axioms'',
+so axiom printing alone is insufficient; a kernel replay rejects it \tg{X}{0004}\tg{C}{0006}. We therefore re-ran the Lean kernel over all 88,400
+corpus declarations (51 compiler-generated unsafe auxiliaries are skipped by design) (53,752 Navier--Stokes, 34,648 Euler): \texttt{REPLAY OK} in both \tg{X}{0005}, and the toolchain's \texttt{leanchecker}
+accepts the 8 root and statement modules \tg{X}{0006} (a per-module check that is not transitive; closure coverage rests on the replay). An independent AI audit (Section~\ref{sec:audit}) reproduced these results with its own scripts and found no soundness escape, statement mismatch or wrong number. The elaborated statement closures of the proved theorems (5,599 and 5,521 constants) are identical to
+those of the reference challenge statements up to alpha-renaming of hygienic binder names; a mutated reference is detected \tg{X}{0007}. A second
+statement-fidelity reading, written blind to H9, finds the Lean (C) faithful to Fefferman's (C), and the Lean (D) faithful to (D) as corrected by the
+Clay errata, which adds a periodic-pressure condition that makes the Lean nonexistence claim weaker than a main-text-only reading \tg{C}{0002}\tg{C}{0003};
+it agrees with H9 on every row \tg{X}{0010}. \textbf{Not established:} Comparator, \texttt{lean4export} and \texttt{nanoda} were not run; Mathlib is trusted,
+not re-checked; the diff of the challenge file against \texttt{formal-conjectures@8bf45ed} is open; the proof's mathematics was not refereed by people; the Lean kernel
+and toolchain are trusted; statement fidelity is a human judgement, made here by AI agents \tg{C}{0007}. Conditionally on fidelity and on the soundness of Lean and
+Mathlib, the formal object proves Fefferman's alternative~(C); that is not a Clay determination \tg{C}{0005}.
+\end{abstract}
+
+\paragraph{Tiers.} Claims carry the Elenchus tiers: \tg{A}{}\,a Lean statement that is kernel-checked with axioms in
+$\{\lean{propext},\lean{Classical.choice},\lean{Quot.sound}\}$ and that \emph{we re-checked} (a tag attaches to the Lean statement, never to its gloss);
+\tg{L}{}\,a cited source read in the cited text; \tg{C}{}\,an argument or human-style judgement, not machine-checked; \tg{X}{}\,an observation of a script or tool,
+never supporting a mathematical claim by itself. A tag such as \tg{A}{0001} refers to \texttt{ledger/ledger.json} (prefix \texttt{P2NS}). A Tier~A row says what the kernel accepted and
+nothing about whether the statement means what a reader might think; that is Tier~C (Section~\ref{sec:fid}).
+
+\section{What the corpus claims, and what Clay asks}\label{sec:claims}
+\paragraph{The corpus.} The README of~\cite{corpus} says that for every positive viscosity it proves two results: on $\R^3$, smooth data and forcing for which no global smooth
+solution with uniformly bounded kinetic energy exists; on the torus $\R^3/\Z^3$, smooth periodic data and forcing for which no global smooth solution exists
+\tg{L}{0004}. It names these as alternatives (C) and (D) of the Clay description, and adds a smooth, compactly supported, divergence-free Euler initial velocity
+whose unforced solution develops a singularity in finite time. The authors' associated papers are linked from that README; \emph{we did not read or check them}.
+
+\paragraph{Fefferman's statement.} In the official problem description~\cite{fef}, Fefferman asks for ``a proof of one of the following four statements''
+(A), (B), (C), (D) \tg{L}{0001}. (A) and (B) assert global existence and smoothness (on $\R^3$ and $\R^3/\Z^3$, with $f\equiv 0$). The two
+\emph{breakdown} alternatives are:
+\begin{quote}\small
+(C) ``Breakdown of Navier--Stokes solutions on $\R^3$. Take $\nu>0$ and $n=3$. Then there exist a smooth, divergence-free vector field $u^\circ(x)$ on $\R^3$ and a smooth $f(x,t)$ on
+$\R^3\times[0,\infty)$, satisfying (4), (5), for which there exist no solutions $(p,u)$ of (1), (2), (3), (6), (7) on $\R^3\times[0,\infty)$.''\\
+(D) ``Breakdown of Navier--Stokes Solutions on $\R^3/\Z^3$. Take $\nu>0$ and $n=3$. Then there exist a smooth, divergence-free vector field $u^\circ(x)$ on $\R^3$ and a smooth
+$f(x,t)$ on $\R^3\times[0,\infty)$, satisfying (8), (9), for which there exist no solutions $(p,u)$ of (1), (2), (3), (10), (11) on $\R^3\times[0,\infty)$.''
+\end{quote}
+Here (1) is the momentum equation $\partial_t u+(u\cdot\nabla)u=\nu\Delta u-\nabla p+f$, (2) is $\div u=0$, (3) is $u(\cdot,0)=u^\circ$, (4)--(5) are Schwartz-type decay
+conditions on $u^\circ$ and $f$, (6) and (11) are $C^\infty$ regularity of $(p,u)$, (7) is bounded energy $\int|u(x,t)|^2\dd x<C$, (8)--(10) are the periodicity and time-decay conditions of the torus
+case. The PDF's \emph{Errata} adds: ``The further condition $p(x+e_j,t)=p(x,t)$ should be made explicit in Eqn (8)'' \tg{L}{0002}. The PDF's Errata contains a second item, ``Eqn (10) should read:'' followed by a weak formulation; by its content it corrects the weak form (12), not the periodicity condition (10), and does not affect (C) or (D); we use (10) as velocity periodicity. Fefferman also notes that these questions
+are open for the Euler equations, which are not on the Clay list \tg{L}{0003}. The PDF is that fetched on 2026-10-26 (sha256 \hash{c1b5f27b1a64705cfaf1afceea513db5deedca8a18ca56ab32e7f86445a06d0c}).
+
+\paragraph{The four Lean theorems audited.} In the Lean namespaces of the corpus:
+\begin{itemize}
+\item \lean{NavierStokes.Comparator.navier\_stokes\_breakdown\_R3} $(\nu>0)$: there are $u_0,f$ satisfying the decay classes \lean{Initial\-Velocity\-Condition\-Decay} and \lean{Force\-Condition\-Decay}, such that no pair $(v,p)$ lies in the solution class
+\lean{Navier\-Stokes\-Existence\-And\-Smoothness\-Rn} for $(\nu,u_0,f)$ \tg{A}{0001};
+\item \lean{NavierStokes.Comparator.navier\_stokes\_breakdown\_periodic}: the same shape with the periodic data, force and solution classes \tg{A}{0002};
+\item \lean{Euler.euler\_breakdown\_R3}: $\exists\,u_0$ with \lean{InitialVelocityConditionDecay} such that no $(v,p)$ lies in \lean{EulerExistenceAndSmoothnessR3} \tg{A}{0003};
+\item \lean{Euler.exists\_compact\_smooth\_euler\_singularity}: a supplementary statement in a Sobolev class on $[0,T^*)$ with a Beale--Kato--Majda-type divergence of $\int\|\omega\|_\infty$ \tg{A}{0004}.
+\end{itemize}
+The corpus states the Navier--Stokes pair over its own copies of the definitions (\hash{NavierStokes/ComparatorDefinitions.lean}), adapted from \texttt{formal-conjectures} commit \texttt{8bf45ed}~\cite{fc}, and
+ships a reference file \texttt{ComparatorChallenges/NavierStokes.lean} (and \texttt{Euler.lean}) with the same statements ending in \lean{sorry}, which is what the Lean
+Comparator tool~\cite{comparator} is meant to match against the solution. We name the theorems exactly as in the corpus: the unqualified name \lean{NavierStokes.navier\_stokes\_breakdown\_R3} does not exist; the namespace is \lean{NavierStokes.Comparator}.
+
+\section{Method}\label{sec:method}
+Each layer below addresses a different way a Lean development can fail to establish what it displays. The question for each layer is the same: what would this layer catch, and
+did it catch a deliberately planted defect of that kind? (Every experiment here runs a positive and a negative control.)
+
+\begin{table}[ht]\centering\small
+\begin{tabularx}{\textwidth}{@{}lYY@{}}
+\toprule
+Layer & Catches & Does not catch \\ \midrule
+Rebuild from source (\ref{sec:rebuild}) & stale or missing artifacts; code that does not compile; hidden dependence on the author's machine & a wrong statement; a flaw in Lean or Mathlib \\
+\lean{\#print axioms} (\ref{sec:axioms}) & \lean{sorry}, smuggled \lean{axiom}, \lean{native\_decide} (as a surfaced auxiliary axiom) & a declaration added without kernel checking (\ref{sec:forge}) \\
+Source scan (\ref{sec:scan}) & any escape \emph{construct} in the text: \lean{set\_option debug.*}, \lean{addDecl}, \lean{unsafe}, \lean{implemented\_by}, \dots & escapes made by means outside the pattern list \\
+Environment scan (\ref{sec:scan}) & flagged constants (unsafe, partial, opaque, extern, \lean{implemented\_by}, axioms) in the proof closure of the theorem & what the kernel would reject at replay \\
+Kernel replay (\ref{sec:replay}) & any stored declaration whose value does not have its stored type & a flaw of the kernel itself; the reused Mathlib (not replayed) \\
+Statement identity (\ref{sec:ident}) & a proved statement that differs from the reference statement & a reference statement that does not mean what Clay asks (that is Section~\ref{sec:fid}) \\
+Fidelity reading (\ref{sec:fid}) & a mismatch with Fefferman's text, by human-style judgement & errors of that judgement; here made by AI agents \\ \bottomrule
+\end{tabularx}
+\caption{The layers of the audit, and the failure each one is designed to catch.}
+\end{table}
+
+\subsection{Rebuild with provenance \tg{X}{0001}}\label{sec:rebuild}
+\paragraph{Source and toolchain.} Corpus: a local clone of \url{https://github.com/openai/NavierStokesAndEuler.git}, \texttt{HEAD} = \hash{f9e8bc5b38b6e212696e8a30e3e91517af887bbd}, \texttt{git status --short}
+empty. Toolchain: \texttt{leanprover/lean4:v4.34.0-rc2}, \texttt{lean --version} reports commit \texttt{6a10ac8c22beadecabdbb0919c2b50214762f91d}; the \texttt{lean} binary has sha256
+\hash{e8baaa71855a616dc351028f3ad2200051b0671f423a1696a100e809302d5550}. The build used a copy of the source (without \texttt{.git} and \texttt{.lake}) on a different disk, so nothing of the original
+tree is read except through the copy.
+
+\paragraph{Dependencies: exact-revision reuse, trusted.} All nine library packages of \texttt{lake-manifest.json} (Mathlib \texttt{85e3a25e006c35636f0e53b0e9296caca2685bc0}, plausible, LeanSearchClient, importGraph, proofwidgets,
+aesop, Qq, batteries, Cli) were found on the machine in a prebuilt package set whose git revisions equal the manifest exactly (script \texttt{check\_revs.py}); the 7.9~GB directory was copied. \lean{lake build --no-build Mathlib}
+reported ``All targets up-to-date (8762 jobs)'' before the build, and the build logs contain \emph{no} ``Built Mathlib'' line (they show ``Replayed''). \textbf{Mathlib's oleans are therefore reused, not rebuilt.} Their provenance is inferred from
+timestamps (\texttt{Mathlib.olean} dated three minutes after its package directory) to be Mathlib's cache artifacts; this was not otherwise verified. They are a stated trust assumption (Section~\ref{sec:not}).
+
+\paragraph{The one build-only deviation.} In the copy only, the \lean{[[require]]} for \texttt{Comparator} was removed from \texttt{lakefile.toml}, and its manifest entries \texttt{Comparator} and \texttt{lean4export} from
+\texttt{lake-manifest.json} (script \texttt{strip\_comparator\_dep.py}; originals kept as \texttt{*.orig}). Reason: neither package is in the prebuilt set, and fetching them would mean downloading third-party code. Why this changes no compiled module: no
+corpus file imports \texttt{Comparator} or \texttt{lean4export} (a grep of all \lean{import} lines finds only \texttt{Mathlib}, \texttt{NavierStokes.*}, \texttt{Euler.*} and the corpus's own \texttt{ComparatorChallenges}); the require only supplies the
+\texttt{lake exe comparator} tool. The compiler options of the corpus's lakefile were kept: Euler is built with \lean{autoImplicit=false, warningAsError=true}, as confirmed in its \texttt{Solution.setup.json}.
+
+\begin{table}[ht]\centering\small
+\begin{tabular}{@{}lrlr@{}}
+\toprule
+Target & Modules built & Result & Wall time \\ \midrule
+\lean{NavierStokes.ComparatorSolution} & 609 & ``Build completed successfully (9371 jobs)'', rc 0 & 3,300 s \\
+\lean{Euler.Solution} & 1,829 & ``Build completed successfully (10591 jobs)'', rc 0 & 5,109 s \\
+\lean{ComparatorChallenges.NavierStokes} & 1 & rc 0, 2 \lean{sorry} warnings (placeholders) & 33 s \\
+\lean{ComparatorChallenges.Euler} & 1 & rc 0, 2 \lean{sorry} warnings (placeholders) & 12 s \\ \bottomrule
+\end{tabular}
+\caption{The rebuild (\texttt{lake build -v}, 4 cores, \texttt{LEAN\_NUM\_THREADS=4}). Wall times are not benchmarks: an unrelated Lean job ran on the same machine. The two solution builds contain 0 warning and 0 error lines;
+under Euler's \lean{warningAsError}, any \lean{sorry} would have failed that build. Total: 2,440 \texttt{.olean} files.}
+\end{table}
+The corpus's own \lean{\#print axioms} lines, emitted during the build, report \lean{[propext, Classical.choice, Quot.sound]} for all four theorems. Artifacts: \texttt{NavierStokes/ComparatorSolution.olean} sha256
+\hash{5025fa4e63160cea4fff8dd8f8350acabd3478cdc08563f383484fd01620de76}; \texttt{Euler/Solution.olean} sha256 \hash{4c1131d1d7451f13977111c4116f230ac1067aa0b24e946c398cc2e71dd0102e}.
+
+\subsection{\lean{\#print axioms} on a file we wrote \tg{A}{0001}--\tg{A}{0004}}\label{sec:axioms}
+The corpus's in-file \lean{\#print axioms} lines are the authors' output. We therefore generated our own audit files (\texttt{make\_dump\_file.py}): each imports the built module and runs \lean{\#print axioms}, via \lean{lake env lean}.
+Output, verbatim (both files rc 0):
+\begin{lstlisting}
+'NavierStokes.Comparator.navier_stokes_breakdown_R3' depends on axioms: [propext, Classical.choice, Quot.sound]
+'NavierStokes.Comparator.navier_stokes_breakdown_periodic' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Euler.euler_breakdown_R3' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Euler.exists_compact_smooth_euler_singularity' depends on axioms: [propext, Classical.choice, Quot.sound]
+\end{lstlisting}
+The set is exactly the whitelist. \textbf{Controls} (\lean{EnvControl.lean}, same metaprogram) \tg{X}{0008}: a \lean{sorry} reports \lean{sorryAx}; a smuggled \lean{axiom} is reported by name; \lean{native\_decide} proving a \emph{false} equation
+through \lean{implemented\_by} is reported as an auxiliary axiom \lean{...\_native.native\_decide.ax\_1\_1} (on this toolchain it is not \lean{Lean.ofReduceBool}). All three are outside the whitelist and are caught.
+
+\subsection{Soundness-escape scans, with planted controls \tg{X}{0002}\tg{X}{0003}}\label{sec:scan}
+\paragraph{Source scan.} We computed the transitive import closure inside the corpus: 609 modules for \lean{NavierStokes.ComparatorSolution}, 1,829 for \lean{Euler.Solution}, and 2,585 for both together with \lean{NavierStokes}, \lean{Euler} and the
+two challenges (615,319 lines; 309 external Mathlib/core imports). (The 2,585 scanned modules are a different number from the 2,440 built: the six roots, namely the two solutions, the umbrella modules \lean{NavierStokes} and \lean{Euler} and the two challenge files, have a union closure that contains corpus modules lying in neither solution closure.) A script (\texttt{source\_scan.py}) strips comments and docstrings, blanks string literals, and counts code hits for 24 pattern groups: \lean{sorry}, \lean{admit}, \lean{native\_decide}, \lean{ofReduceBool}/\lean{trustCompiler}, \lean{axiom},
+\lean{implemented\_by}, \lean{extern}, \lean{unsafe}, \lean{csimp}, \lean{opaque}, \lean{partial}, \lean{\#exit}, \lean{set\_option} of any kind (and \lean{debug.*}, \lean{pp.*}, \lean{skipKernelTC} specifically), \lean{addDecl}/\lean{modifyEnv}/\lean{setEnv}/\lean{Kernel.},
+\lean{\#eval}/\lean{run\_cmd}/\lean{initialize}, \lean{import Lean}, \lean{command\_elab}-style attributes, notation-like definitions and local instances.
+\begin{table}[ht]\centering\small
+\begin{tabular}{@{}p{8.2cm}rr@{}}
+\toprule
+Pattern group & closure (2,585 modules) & all corpus files (2,659) \\ \midrule
+every escape group above except the rows below & 0 & 0 \\
+\lean{sorry} & 4 & 4 \\
+\lean{\#print axioms} (the corpus's own final lines) & 4 & 4 \\
+elab/macro/syntax group (all are \lean{local notation} or \lean{@[inherit\_doc]}) & 150 (148 + 2) & 156 (154 + 2) \\
+\lean{attribute [local instance]} & 10 & 11 \\ \bottomrule
+\end{tabular}
+\caption{Code hits of the source scan (counts from \texttt{scan\_closure.json} and \texttt{scan\_allfiles.json}). Only the escape groups agree between the two columns.}
+\end{table}
+The 4 \lean{sorry} hits are the intentional placeholders at \texttt{ComparatorChallenges/NavierStokes.lean:277,284} and \texttt{Euler.lean:88,184}; neither solution imports these files. The 150 (156) hits in the
+elab/macro/syntax group are 148 (154) \lean{local notation} lines (such as \lean{R3}) and 2 \lean{@[inherit\_doc]}; a line-initial grep for \lean{elab}, \lean{macro}, \lean{syntax} and \lean{macro\_rules} over the corpus finds no file. The notation of the statement files is also
+checked semantically by the identity test of Section~\ref{sec:ident}. Of the 11 local instances, 4 are \lean{Classical.propDecidable}, 6 are corpus-defined \lean{compactInterval} instances and 1 is \lean{CompletePartialOrder.toSupSet} in \texttt{Euler/Solution.lean}, whose elaborated type is identical to the reference (type hash 642579273). In particular there is
+no \lean{maxHeartbeats}, no \lean{debug.*} option, no \lean{addDecl}.
+\textbf{Control:} one plant per category was appended to a scratch copy of \texttt{ComparatorSolution.lean} (plus an \lean{import Lean}), and every category was caught; the unmodified copy gave no escape hit. A regex bug found during the audit (an anchored pattern whose \verb|^\s*| spanned newlines, mis-attributing 69 notation lines)
+was fixed and both scans re-run.
+
+\paragraph{Environment scan.} A metaprogram run inside \lean{import NavierStokes.ComparatorSolution} (resp.\ \lean{Euler.Solution}) walks the full \emph{proof} closure of the root theorems, theorem values included: 93,597 constants for Navier--Stokes (31,516 from 597 corpus modules) and 94,411 for Euler (26,213 from 1,756 corpus modules). For each reached
+constant it reports membership of \lean{Lean.ofReduceBool}, \lean{ofReduceNat}, \lean{trustCompiler} and \lean{sorryAx}, and whether it is \lean{unsafe}, \lean{partial}, an axiom, an opaque, \lean{implemented\_by} or \lean{extern}. Result: the only axioms in either closure are \lean{propext}, \lean{Quot.sound}, \lean{Classical.choice};
+none of the four forbidden constants is reached; \textbf{no flagged constant comes from a corpus module}. All flags are in Lean core (58 \lean{extern} primitives on \lean{Nat}/\lean{Array}/\lean{String}, 6 \lean{implemented\_by}, 2 opaques) or Mathlib (48 resp.\ 51 \lean{irreducible\_def} wrappers). The corpus adds no axiom to the 15 that core Lean always declares. In the whole environment (not the proof closure)
+12 (Navier--Stokes) and 39 (Euler) corpus \lean{\_unsafe\_rec} constants with \lean{partial=true} exist: compiler auxiliaries that Lean generates for the executable code of well-founded recursions; none lies in any proof closure. \textbf{Control:} a planted axiom, a \lean{native\_decide} auxiliary axiom, \lean{implemented\_by},
+\lean{sorryAx}, \lean{unsafe def}, \lean{partial def} and \lean{@[extern] opaque} were all flagged.
+
+\subsection{The forgery demonstration: \lean{\#print axioms} alone is insufficient \tg{X}{0004}\tg{C}{0006}}\label{sec:forge}
+This is a demonstration of a known limitation of axiom printing, which is part of why independent checkers such as Comparator exist; we do not present it as a new vulnerability. We include it because it sets how the rest of the audit must be read: the axiom verdict of Section~\ref{sec:axioms}
+means little unless something re-runs the kernel. We explain the mechanism step by step, for a reader who does not use Lean.
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Lean normally type checks every declaration with its kernel before adding it to the environment.} A theorem is a pair (statement, proof term), and the kernel checks that the term has the stated type. \lean{\#print axioms} is a separate, cheap query afterwards.
+\item \textbf{That check can be switched off.} Metaprogramming code can call \lean{addDecl} under \lean{set\_option debug.skipKernelTC true}, which stores a declaration the kernel never looked at. Our control (\texttt{A2Forged.lean}) adds a ``theorem'' \lean{A2Forged.forged\_false : False} whose proof term is \lean{True.intro}, whose type is \lean{True}, not \lean{False}:
+\begin{lstlisting}
+set_option debug.skipKernelTC true in
+run_cmd liftCoreM <| addDecl (.thmDecl
+  { name := `A2Forged.forged_false, levelParams := [], type := mkConst ``False,
+    value := mkConst ``True.intro })
+theorem A2Forged.uses_forged : False := A2Forged.forged_false
+#print axioms A2Forged.uses_forged
+\end{lstlisting}
+\item \textbf{The compiled file stores it.} The \texttt{.olean} serializes the stored declaration like any other; a fresh file that imports the module sees \lean{A2Forged.uses\_forged : False} (\lean{\#check} succeeds, rc 0).
+\item \textbf{\lean{\#print axioms} does not look.} It walks the constants referenced by a declaration and collects the axioms among them. The forged proof references only \lean{True.intro}, an ordinary constructor, so the output is
+\lean{'A2Forged.uses\_forged' does not depend on any axioms}, the same line as for a fully honest proof.
+\item \textbf{Only a replay catches it.} A checker that re-runs the kernel on every stored declaration compares the stored type with the stored value. Both the toolchain's \texttt{leanchecker A2Forged} and our replay script exit 1 with:
+\lean{(kernel) declaration type mismatch, 'A2Forged.forged\_false' has type True but it is expected to have type False}.
+\end{enumerate}
+Consequently an axiom report of ``only the three standard axioms'' is evidence only together with (i) a kernel replay of the stored declarations (Section~\ref{sec:replay}) and (ii) a source scan, which finds in the corpus no \lean{skipKernelTC}, no \lean{addDecl}, no \lean{set\_option} at all (Section~\ref{sec:scan}). The corpus passes both.
+
+\subsection{Full kernel replay and \texttt{leanchecker} \tg{X}{0005}\tg{X}{0006}}\label{sec:replay}
+\paragraph{Replay.} Our script \texttt{A2Replay.lean} uses the same mechanism as \texttt{leanchecker} (\lean{Lean.Replay}, \lean{Kernel.Environment.replay}) with one shared base environment. It reads every declaration stored in the \texttt{.olean}, \texttt{.olean.server} and \texttt{.olean.private} files of each corpus module
+in a closure, imports \emph{only} the non-corpus dependencies (Mathlib and below), and replays all corpus declarations through the kernel (pinned to a single core, \texttt{/usr/bin/time -v}).
+\begin{table}[ht]\centering\small
+\begin{tabular}{@{}lrrlrr@{}}
+\toprule
+Closure & Modules & Declarations & Result & Wall & Max RSS \\ \midrule
+Navier--Stokes & 609 & 53,752 & \texttt{REPLAY OK} in 621,964 ms, rc 0 & 11:33 & 8.1 GB \\
+Euler & 1,829 & 34,648 & \texttt{REPLAY OK} in 933,056 ms, rc 0 & 15:42 & 9.8 GB \\ \bottomrule
+\end{tabular}
+\caption{Kernel replay of the corpus (base environment: 774,999 constants).}
+\end{table}
+Together 88,400 declarations. \textbf{Scope of the replay:} all of these stored declarations were sent to the kernel by \lean{Lean.Replay}, which checks every safe declaration and skips, by design, the 51 compiler-generated \lean{\_unsafe\_rec} auxiliaries (12 Navier--Stokes, 39 Euler; none in any proof closure) and the 4 identical \lean{congr\_simp} duplicates. The independent audit's own replay driver attributes 53,750 and 34,646 constants to corpus modules; the difference of 2 per closure is the \lean{congr\_simp} lemmas, which Lean attributes to the Mathlib module that first declares them (this agrees with the environment scan's 53,750 / 34,646). Two corpus declarations per closure already exist in the base environment: \lean{HasDerivWithinAt.congr\_simp}, \lean{HasDerivAt.congr\_simp} (Navier--Stokes) and \lean{ContinuousLinearMap.compLpL.congr\_simp}, \lean{AddMonoidHom.compLeftContinuous.congr\_simp} (Euler), automatically realised
+\lean{congr\_simp} lemmas for Mathlib constants; for these four the base and corpus type hashes are equal, so they are accepted on that equality plus the Mathlib trust assumption, not re-checked. \textbf{Controls:} the forged module is rejected (rc 1, message above); the positive control (\lean{NavierStokes.ComparatorDefinitions}, 95 declarations) replays OK.
+
+\paragraph{leanchecker.} The checker shipped with the toolchain replays each named module's declarations into that module's own imported environment. We ran it under \lean{lake env} on the 8 modules \lean{NavierStokes.ComparatorSolution}, \lean{ComparatorR3Theorem}, \lean{ComparatorTheorem}, \lean{ComparatorDefinitions}, \lean{Euler.Solution},
+\lean{Euler.SolutionDefinitions} and the two \lean{ComparatorChallenges} modules: all rc 0 (15--17 s each). The challenge modules pass because \lean{sorryAx} is a legitimate kernel axiom; it is the axiom check, not the kernel, that rejects \lean{sorry}. We did not run it on all 2,438 solution modules (about 15--25 s of environment import each, 10+ CPU-hours); the replay script covers the same per-declaration kernel check in
+27 minutes. \textbf{Precisely what this is:} \texttt{leanchecker} and our replay drive \emph{the same Lean kernel} through the same replay mechanism. They are two drivers of one kernel, not two independent kernels. \textbf{Scope:} \lean{leanchecker} without \lean{--fresh} checks only the named module's own declarations against its imports; a forged lemma in an imported module would pass it (auditor control: Section~\ref{sec:audit}), so the 8-root run cited here says nothing about the other 2,430 or so modules and closure coverage rests on the full replay. A second kernel implementation (\texttt{nanoda}) is not installed here and was not run.
+
+\subsection{Elaborated-statement identity, with a mutation control \tg{X}{0007}}\label{sec:ident}
+The proved theorems are stated over the solution-side copies of the definitions, not over the reference challenge file, so a textual comparison would not be enough: notations, instances and auto-bound names could make two identical-looking texts elaborate differently. We compared the \emph{elaborated kernel terms}.
+For each pair of root theorems we took the transitive \emph{statement closure}: the types of all constants, the values of definitions and opaques, and inductive/constructor links, but not theorem proofs. For every constant we dumped its kind, universe parameters and the \lean{Expr.hash} of its type and value; for corpus constants we also dumped the full raw expression text.
+This was done in two separate environments: (1) the \emph{reference}, i.e.\ the verbatim \texttt{ComparatorChallenges/*.lean} source with the dump appended (importing Mathlib only), and (2) the \emph{solution}, \lean{import NavierStokes.ComparatorSolution} resp.\ \lean{Euler.Solution}. The comparison (\texttt{compare\_dumps.py}) normalises only the module component of hygienic binder names
+(\lean{x.\_@.\_stdin.N.\_hygCtx.\_hyg.M} against \lean{x.\_@.NavierStokes.ComparatorDefinitions.N.\_hygCtx.\_hyg.M}), which is alpha-renaming.
+\begin{table}[ht]\centering\small
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Pair & Constants (ref./sol.) & Only ref. & Only sol. & Differing & Text-compared \\ \midrule
+Navier--Stokes (C)+(D) & 5,599 / 5,599 & 0 & 0 & \textbf{0} & 23 \\
+Euler (both) & 5,521 / 5,521 & 0 & 0 & \textbf{0} & 25 \\ \bottomrule
+\end{tabular}
+\caption{Statement identity after alpha-normalisation. Before normalisation, 4 Navier--Stokes constructor types and 3 Euler constants (\lean{toL2}, \lean{toL2.\_proof\_3}, \lean{exists\_compact\_smooth\_euler\_singularity}) differ in text only in those hygienic names; their \lean{Expr.hash} is equal.}
+\end{table}
+\textbf{Negative control:} in a copy of the reference, the energy bound $(\int\|v\|^2)<E$ was changed to $\le E$; the comparison then reports exactly one differing constant, \lean{NavierStokesExistenceAndSmoothnessRn.mk} (type hash $4044432975\to666613966$). \textbf{Scope:} \lean{Expr.hash} stands in for the full term on non-corpus (Mathlib/core) constants, so a hash collision there is possible in principle;
+the corpus constants are additionally compared as text. This is not Comparator (no \texttt{lean4export}, no \texttt{nanoda}, no sandbox): it checks the same property, that the proved statement \emph{is} the reference statement, by a different implementation.
+
+\section{Second statement-fidelity audit}\label{sec:fid}
+Identity with the reference statement (Section~\ref{sec:ident}) says nothing about whether the reference statement means what Clay asks. That is a judgement. H9~\cite{h9} (2026-10-25) was a first reading; the present reading was written \emph{before} we opened H9 (the comparison is the last section of \texttt{FIDELITY2.md}).
+It compares Fefferman's text~\cite{fef} (saved extraction; the PDF's text includes the errata) with the challenge file, the solution definitions, and semantic probes compiled against the pinned Mathlib: under \lean{open ContDiff}, the notation $\infty$ elaborates to \lean{WithTop.some top}, i.e.\ $C^\infty$ and not the analytic $\omega$ (an \lean{example} using \lean{decide} proves $\infty\neq\omega$);
+$\Delta$ on $\R^3\to\R^3$ is the componentwise vector Laplacian $\sum_i D^2w(x)[e_i,e_i]$ (via Mathlib's \lean{laplacian\_eq\_iteratedFDeriv\_orthonormalBasis}); \lean{gradient} is the Riesz representative of \lean{fderiv}; the norm on $\R^3\times\R$ is the max norm (\lean{rfl}) \tg{X}{0009}.
+(One \lean{\#check} line of the probe file names a nonexistent lemma and reports an unknown-identifier error; the assertions are the \lean{example} lines, which compile.)
+
+\begin{table}[ht]\centering\footnotesize
+\begin{tabularx}{\textwidth}{@{}p{3.4cm}Yc@{}}
+\toprule
+Clay ingredient & Lean (A2 reading) & Verdict \\ \midrule
+\multicolumn{3}{@{}l}{\textit{(C) on $\R^3$} \tg{C}{0002}} \\
+$\nu>0$, $n=3$ & $\forall\,\nu>0$, $\R^3=$ \lean{EuclideanSpace Real (Fin 3)} (data may depend on $\nu$) & match \\
+$u^\circ$ smooth, div-free & \lean{ContDiff Real infty u0}; $\nabla\!\cdot u_0=0$ (trace of \lean{fderiv}; no junk value since $u_0$ is smooth) & match \\
+(4) decay of $\partial^\alpha u^\circ$ & $\forall m,K\ \exists C\ \forall x$: $\|D^m u_0(x)\|\le C/(1+\|x\|)^K$; the $m$-th derivative tensor bounds every $|\alpha|=m$ partial and conversely; $K$ real is harmless ($K\le0$ follows from $K=0$) & match \\
+$f$ smooth, (5) decay & \lean{ContDiffOn} on $\R^3\times[0,\infty)$; joint space--time jets bounded by $C/(1+\|x\|+t)^K$ (equivalent norms) & match \\
+(1) momentum eq., $t\ge0$ & $\partial_t$ one-sided at $t=0$; $D_xv\,(v)=(v\cdot\nabla)v$; $\nu\,\Delta v-\nabla p+f$ with the Riesz gradient & match \\
+(2), (3) & $\nabla\!\cdot v(\cdot,t)=0$ for $t\ge0$; $v(x,0)=u_0(x)$ & match \\
+(6) $p,u\in C^\infty(\R^3\times[0,\infty))$ & \lean{ContDiffOn Real infty} on \lean{univ x Ici 0} for $v$ and $p$ & match \\
+(7) bounded energy & \lean{MemLp (norm (v . t)) 2} \emph{and} $\exists E\,\forall t\ge0:\int\|v\|^2<E$; the \lean{MemLp} conjunct only removes Mathlib's junk value $0$ for non-integrable Bochner integrals & match \\
+``no solutions'' & $\neg\exists\,v\,p$ over the class with exactly the fields above; nothing extra demanded of a solution & match \\ \midrule
+\multicolumn{3}{@{}l}{\textit{(D) on $\R^3/\Z^3$} \tg{C}{0003}} \\
+data (8): periodic $u^\circ$, $f$ & \lean{isOnePeriodic}: $u_0(x+e_j)=u_0(x)$; $f(\cdot,t)$ 1-periodic for $t\ge0$ & match \\
+(9) time decay of $f$ & $\|D^m f\|\le C/(1+t)^K$ on $\R^3\times[0,\infty)$ & match \\
+(10), (11) & $v(\cdot,t)$ 1-periodic for $t\ge0$; $v,p$ smooth & match \\
+errata: $p(x+e_j,t)=p(x,t)$ & \lean{isOnePeriodic\_pressure}, a field of the \emph{solution} class & match with errata (caveat) \\
+\multicolumn{3}{@{}l}{\textit{Euler (not a Clay prize problem)} \tg{C}{0004}} \\
+$\nu=0$, $f\equiv0$ analogue of (C) & \lean{euler\_breakdown\_R3}: (1) with $\nu=0,f=0$, (2), (3), (4), (6), (7); \texttt{SolutionDefinitions.lean} is code-identical to the challenge file & match \\
+supplementary statement & \lean{exists\_compact\_smooth\_euler\_singularity}: no Clay counterpart; solution class read, not audited against the literature & Lean statement only \\ \bottomrule
+\end{tabularx}
+\caption{The second fidelity table (written before reading H9). Judgement by an AI agent, tagged Tier~C. Mismatches found: none.}
+\end{table}
+
+\paragraph{Caveat on (D): periodic pressure \tg{C}{0003}.} Requiring the pressure to be 1-periodic restricts the admissible solutions, which makes the nonexistence claim \emph{weaker} than nonexistence read against the main text of Clay's (D), where $p$ is unrestricted. The weakening is substantive: without periodic pressure a pressure
+$p=-g(t)\cdot x$ with a spatially constant flow is a classical non-uniqueness device. The Clay errata itself asks for exactly the condition (``should be made explicit in Eqn (8)''), so the Lean statement follows the official corrected statement. The errata attaches it to (8), the data hypotheses, though $p$ is an unknown; reading it as a condition on accepted solutions is the only coherent reading we found, and it is the Lean's.
+
+\paragraph{The (C) witness: zero data, nonzero force \tg{C}{0002}.} The proof's witness takes zero initial data and a nonzero (rescaled) force. Fefferman's (C) explicitly allows a smooth $f$ satisfying (5), so this is admissible. It also means that (C) is not the negation of (A): (A) takes $f\equiv0$. Criticism that the result is ``forced, not unforced'' is therefore not a fidelity defect against (C) as Clay states it (it would bear on (A)/(B)); that is our reading of the PDF, not a claim about the corpus's mathematics.
+
+\paragraph{Agreement with H9 \tg{X}{0010}.} After the table was written we read H9~\cite{h9}. On every row of (C) both audits mark MATCH. For (D) both find a match with the errata-corrected text and both note that periodic pressure in the solution class makes the Lean (D) weaker than a reading of the main text alone (H9: ``DIFFERENT from the main text, MATCH with the errata''; H9's overall verdict
+\textsc{FAITHFUL\_WITH\_CAVEATS}). \emph{No disagreement on any row.} Differences are of coverage, not of verdict:
+(a) H9's caveat on the Mathlib version (it read $\infty$ and $\Delta$ in a Mathlib v4.32.2 copy and compiled nothing) is resolved here by the probes against the pinned Mathlib; (b) H9's caveat that it did not check whether the solution proves \emph{this exact} statement is resolved without Comparator by the identity test of Section~\ref{sec:ident}; (c) H9 adds an informal $\nu$-scaling remark that $\forall\nu$ and $\exists\nu$ are equivalent,
+which we did not use, since the Lean is the strong ($\forall\nu>0$) reading; (d) H9 argues informally that the solution class is not empty (for instance $v=p=0$ for zero data and force); we agree; the independent audit later mechanised it (Section~\ref{sec:audit}); (e) H9 did not cover Euler; (f) neither audit diffed the challenge file against \texttt{formal-conjectures@8bf45ed}.
+Both audits are by AI agents of one pipeline, so agreement raises our confidence in the table only modestly.
+
+\section{What is not established}\label{sec:not}
+\begin{itemize}
+\item \textbf{Comparator, \texttt{lean4export} and \texttt{nanoda} were not run} \tg{C}{0007}. The corpus ships a Comparator configuration; we removed its \lean{require} from our build copy because neither package was in the prebuilt set (REBUILD) and because the Comparator build available on this machine targets Lean 4.34.1 while the corpus pins 4.34.0-rc2 (kernel-replay notes). Both reasons are documented, in different notes; we do not rank them.
+Our statement-identity test and kernel replay are different implementations of two of Comparator's checks, not Comparator.
+\item \textbf{The kernel replay and \texttt{leanchecker} are one kernel.} They would not detect a bug in the Lean 4.34.0-rc2 kernel or toolchain, which are trusted.
+\item \textbf{Mathlib 85e3a25e and its dependencies are trusted, not re-checked.} Their oleans were reused (provenance inferred from timestamps, Section~\ref{sec:rebuild}); neither rebuilt nor replayed. Replaying Mathlib (hours, single-threaded) was not attempted.
+\item \textbf{The diff against \texttt{formal-conjectures@8bf45ed} is open.} The challenge file declares itself copied from that commit; we did not diff it. H9 reports that upstream has since renamed the directory (\texttt{Millenium} to \texttt{Millennium}) and links to \texttt{openai/NavierStokesAndEuler@8937a8f}; whether that revision equals the audited \texttt{f9e8bc5b} was not checked.
+\item \textbf{The mathematics of the proof has not been refereed by people}, by us or, to our knowledge, by anyone we could cite. We read neither of the corpus authors' papers, so nothing here compares the natural-language argument with the Lean development. H9 reports a 2026-10-06 preprint (Bastounis, Circelli, Hansen, arXiv:2610.08144) that, according to its alphaXiv text, finds intermediate Lean lemmas that differ from the natural-language paper
+(for example a derivative-count of $m+5$ against $m+4$) and does not claim the top-level statements misstate the Clay problem; we did not read it ourselves and cite it only as relayed.
+\item \textbf{Statement fidelity is a human judgement.} Both audits are by AI agents; no person has certified that the Lean statements mean what Clay's text means. The gate flags each Tier~A row for this (Section~\ref{sec:ledger}).
+\item \textbf{\lean{leanchecker --fresh} was not run.} Re-checking the reused Mathlib subset (about 775k constants) from an empty environment was estimated at hours and attempted neither by the producer nor by the auditor.
+\item \textbf{The planted controls do not exhaust the escape space.} Each layer caught the defects planted for it; this does not show that no other kind of escape exists.
+\end{itemize}
+
+\section{Implications, stated carefully}\label{sec:impl}
+We separate three questions. (1) \emph{Does the corpus build, and does the kernel accept it?} Yes, on the evidence of Sections~\ref{sec:rebuild}--\ref{sec:replay}: it rebuilds from source, depends on the three standard axioms, and all of its 88,400 stored declarations were sent to the kernel by \lean{Lean.Replay}, which checks every safe declaration and skips, by design, the 51 compiler-generated \lean{\_unsafe\_rec} auxiliaries (12 NS, 39 Euler; none in any proof closure) and the 4 identical \lean{congr\_simp} duplicates, with no soundness escape found by our scans.
+(2) \emph{Is the proved statement the stated challenge statement?} The elaborated terms are identical up to alpha-renaming (Section~\ref{sec:ident}). (3) \emph{Is the challenge statement Fefferman's (C)?} Our reading, like H9's, says yes, with the (D) caveat; this is a human-style judgement \tg{C}{0002}.
+
+\textbf{If} the Lean statement of (C) is a faithful formalization of Fefferman's (C), \textbf{and} the Lean kernel, the toolchain and the reused Mathlib are sound, \textbf{then} the kernel-checked theorem \lean{navier\_stokes\_breakdown\_R3} is a formal proof of Fefferman's alternative~(C) \tg{C}{0005}.
+We make this conditional statement and no stronger one. It is not a Clay determination: the Clay Institute's own process, with its rules on publication and waiting, decides whether anything is a solution and whether a prize is due. We have not said, and do not say, that the Navier--Stokes regularity problem is solved. The credit for the proofs belongs to the corpus authors; our contribution is an independent rebuild and audit, and the explicit list of what it did not cover.
+For (D), the conditional carries the periodic-pressure caveat of Section~\ref{sec:fid}. Euler is outside the Clay list.
+
+\section{Independent AI audit}\label{sec:audit}
+After the first draft of this paper, a separate AI agent instance (producer $\neq$ verifier, 2026-10-26) audited it adversarially with its own scripts, running none of ours; its report is \texttt{papers/p2\_navier\_stokes\_audit/AUDIT.md} (verdict ACCEPT\_WITH\_CORRECTIONS). It belongs to the same AI pipeline, so ``independent'' means a different instance with its own code, not a different organisation; \textbf{no human has reviewed the audit or the paper}. It found no soundness escape, no statement mismatch and no wrong number; its two blocking wording items and six non-blocking items are applied in this version (\texttt{REVISION.md}). Its re-checks, from AUDIT.md:
+\begin{itemize}
+\item \textbf{Own replay.} A replay driver written independently of \texttt{A2Replay.lean} (all corpus constants, base environment of the non-corpus modules) returned rc~0 on both closures: 53,750 corpus constants for Navier--Stokes (12 unsafe/partial skipped by \lean{Lean.Replay}) and 34,646 for Euler (39 skipped), base environment 774,999 constants. The forged control (\lean{AuditForge.two\_eq\_three : 2 = 3} stored with value \lean{Eq.refl 2} under \lean{debug.skipKernelTC}) is rejected with ``(kernel) declaration type mismatch'' (rc~1); the honest positive control and the 95-declaration \lean{NavierStokes.ComparatorDefinitions} control pass.
+\item \textbf{leanchecker is per module.} \lean{leanchecker AuditForgeUser} (an honest module importing the forged one) returns rc~0, \lean{leanchecker AuditForge} rc~1, \lean{leanchecker --fresh AuditForgeUser} rc~1.
+\item \textbf{Own \lean{\#print axioms}}, verbatim, rc~0:
+\begin{lstlisting}[basicstyle=\ttfamily\tiny]
+'NavierStokes.Comparator.navier_stokes_breakdown_R3' depends on axioms: [propext, Classical.choice, Quot.sound]
+'NavierStokes.Comparator.navier_stokes_breakdown_periodic' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Euler.euler_breakdown_R3' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Euler.exists_compact_smooth_euler_singularity' depends on axioms: [propext, Classical.choice, Quot.sound]
+\end{lstlisting}
+\item \textbf{Statement identity in the kernel.} The verbatim challenge files (sha256 \hash{0cd193b8d5cbd0266e6e2f72e68dd5abcdcf2430ebd435dd9289737e9aa7da61} for Navier--Stokes), with only the namespace renamed, were kept next to the solution in one environment and their \lean{sorry} bodies replaced by proofs using only the solution theorems with field-by-field conversion: rc~0, so every field type is definitionally equal. Four mutants (energy \lean{< E} to \lean{$\le$ E}; dropping the periodic-pressure field; decay \lean{(1+$\|x\|$)\^{}K} to \lean{(2+$\|x\|$)\^{}K}; Euler \lean{Tstar $\le$ 1} to \lean{Tstar < 1/2}) all fail with the expected error. Dumps of the reference constants with and without the corpus import differ only in hygienic binder names (0 differences after normalisation).
+\item \textbf{Environment scan} (own metaprogram, theorem proofs included): closure totals 93,597 and 94,411 constants, closure axioms exactly the three standard ones, none of \lean{sorryAx}, \lean{ofReduceBool}, \lean{ofReduceNat}, \lean{trustCompiler} reached, 0 flagged corpus constants in the closure; the planted controls under a corpus-looking module name are all flagged.
+\item \textbf{Non-vacuity, mechanised} against the verbatim reference definitions (rc~0; the reference solution classes are non-empty, with $v=p=0$ for zero data and force):
+\begin{lstlisting}[basicstyle=\ttfamily\tiny]
+'audit_nonvac_Rn' depends on axioms: [propext, Classical.choice, Quot.sound]
+'audit_nonvac_periodic' depends on axioms: [propext, Classical.choice, Quot.sound]
+'audit_zero_data_ok' depends on axioms: [propext, Classical.choice, Quot.sound]
+\end{lstlisting}
+\item \textbf{Rebuild sample.} Seven modules (\lean{NavierStokes.ComparatorDefinitions}, \lean{ComparatorTheorem}, \lean{ComparatorSolution}, \lean{FiveProfileMoments}; \lean{Euler.SolutionDefinitions}, \lean{Euler.Solution}, \lean{LpCylinderRectangular}) were rebuilt from source with the same dependencies and invocation, rc~0, and their oleans are bit-identical to ours. This is per-module determinism against the same imported oleans, not an independent Mathlib or dependency build.
+\item \textbf{Fidelity spot checks} against the elaborated reference (not the source text): smoothness is $C^\infty$, not analytic; the energy bound is strict, under Lebesgue measure on \lean{EuclideanSpace $\R$ (Fin 3)}; \lean{IsOnePeriodic} is $f(x+e_i)=f(x)$; periodic pressure is a field of the solution class. No disagreement with the table of Section~\ref{sec:fid}.
+\item \textbf{Clay PDF.} The auditor fetched it independently: sha256 \hash{c1b5f27b1a64705cfaf1afceea513db5deedca8a18ca56ab32e7f86445a06d0c}, equal to ours; the quotations of (C), (D), the first erratum and the Euler sentence are verbatim.
+\end{itemize}
+Not done by the auditor: Comparator, \texttt{lean4export}, \texttt{nanoda}, \lean{leanchecker --fresh}, a Mathlib replay, the \texttt{formal-conjectures} diff, reading the authors' papers. Both AI audits and the replay drivers use one Lean kernel.
+
+\section{Reproducibility}\label{sec:repro}
+All inputs of this paper are saved files of \texttt{results/proposal2/2026-10-26/A2/} (committed in AutoevolveAI at \hash{d677df8b1a243118ab2df7318a737400421cc8f2}, branch \texttt{worktree-openai-math-discovery}); only \texttt{papers/p2\_navier\_stokes\_audit/} is uncommitted. The paper stage re-ran none of the checks; the ledger evidence blobs hash the logs and audit files they rest on.
+\paragraph{Versions and hashes.} Corpus \texttt{HEAD} \hash{f9e8bc5b38b6e212696e8a30e3e91517af887bbd}; Lean 4.34.0-rc2, commit \texttt{6a10ac8c22beadecabdbb0919c2b50214762f91d}, binary sha256 \hash{e8baaa71855a616dc351028f3ad2200051b0671f423a1696a100e809302d5550}; Mathlib \hash{85e3a25e006c35636f0e53b0e9296caca2685bc0};
+Clay PDF sha256 \hash{c1b5f27b1a64705cfaf1afceea513db5deedca8a18ca56ab32e7f86445a06d0c}; \texttt{leanchecker} sha256 prefix \texttt{ccef1bfe}; oleans as in Section~\ref{sec:rebuild}. Wall span of the run 01:55--07:35 UTC on 2026-10-26 (part of it idle waiting in the session).
+\paragraph{Commands} (scripts in \texttt{results/proposal2/2026-10-26/A2/evidence/scripts/}; paths inside them point to the original working directory):
+\begin{lstlisting}[basicstyle=\ttfamily\tiny]
+python3 check_revs.py                     # package revisions vs lake-manifest.json (all nine match)
+python3 strip_comparator_dep.py           # build copy only: drop the Comparator require and manifest entries
+taskset -c 0-3 bash run_build.sh          # lake build -v for the four targets, LEAN_NUM_THREADS=4
+python3 closure.py ; python3 source_scan.py   # import closure and source scan (+ make_scan_control.py for plants)
+python3 make_dump_file.py ; lake env lean SolutionAudit_NS.lean   # #print axioms and soundnessScan
+python3 make_challenge_dump.py ; python3 compare_dumps.py        # statement identity (+ mutated reference)
+bash run_replay.sh ns ; bash run_replay.sh euler                 # lean --run A2Replay.lean, /usr/bin/time -v
+bash run_leanchecker_roots.sh ; bash forged_control.sh           # leanchecker on 8 roots; forged-declaration control
+\end{lstlisting}
+\paragraph{Resources.} Navier--Stokes build 3,300 s, Euler build 5,109 s (4 cores each, under contention), replays 11:33 and 15:42 (one core, 8.1 and 9.8 GB), leanchecker about 15 s per module.
+
+\section{Claim ledger}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files 26 claims: 4 at Tier~A, 4 at L, 8 at C and 10 at X, each with a content-addressed evidence blob in \texttt{ledger/evidence/}: the verbatim \lean{\#print axioms} lines of our own audit files together with the hashes of the replay and \texttt{leanchecker} logs (A), verbatim excerpts of the cited text (L),
+the argument and its file hashes (C), and result files with \texttt{claim\_licence: false} (X). The A rows rest on nothing; the C rows rest only on A and L rows (never on an X row, so the script observations are cited in the text rather than used as premises); the forged-declaration observation is filed at X, since it concerns a planted \emph{invalid} declaration. The Elenchus gate
+(\texttt{tools/ledger.py ledger.json -{}-evidence-dir evidence}, verbatim output in \texttt{ledger/gate\_output.txt}) exits with code \textbf{1}: 0 blocking findings and 4 flags, all \texttt{LEDGER\_UNAUDITED\_TIER\_A} (one per Tier~A row: no person has certified that the statements mean what their glosses say). The flags are open and the audit fields are left \texttt{null}.
+The L rows are verbatim lines of the saved extraction of the PDF; \texttt{citation\_check.py} was not run.
+
+\begin{thebibliography}{99}\small
+\bibitem{corpus} OpenAI, \emph{Finite time blowup for Navier--Stokes and Euler equations}, Lean~4 formalizations, \url{https://github.com/openai/NavierStokesAndEuler} (audited commit \texttt{f9e8bc5b38b6e212696e8a30e3e91517af887bbd}); README links the authors' papers. AI-generated; to our knowledge not refereed \tg{L}{0004}.
+\bibitem{fef} C.~L.~Fefferman, \emph{Existence and smoothness of the Navier--Stokes equation}, Clay Mathematics Institute problem description (with errata), \url{https://www.claymath.org/wp-content/uploads/2022/06/navierstokes.pdf}, sha256 \texttt{c1b5f27b\ldots} \tg{L}{0001}\tg{L}{0002}\tg{L}{0003}.
+\bibitem{h9} X.~Callens (AI-assisted), \emph{H9: does the Lean statement match the Clay problem? Fefferman (C)/(D) against \texttt{navier\_stokes\_breakdown\_R3} and \texttt{\_periodic}}, AutoevolveAI \texttt{results/autoresearch/2026-10-25/H9/AUDIT.md} (2026-10-25), verdict FAITHFUL\_WITH\_CAVEATS; first statement audit, a text-only reading.
+\bibitem{fc} Google DeepMind, \texttt{formal-conjectures}, \url{https://github.com/google-deepmind/formal-conjectures}, commit \texttt{8bf45ed70d48b2b2a501de9c00b26bfa38c573ee}, file \texttt{FormalConjectures/Millenium/NavierStokes.lean} (as named in the corpus header; not diffed here).
+\bibitem{comparator} Lean FRO / leanprover, \emph{Comparator}, \url{https://github.com/leanprover/comparator} (the tool the corpus's \texttt{ComparatorChallenges} are written for; not run here).
+\bibitem{lean} L.~de Moura and S.~Ullrich, \emph{The Lean 4 theorem prover and programming language}, CADE-28, 2021; toolchain v4.34.0-rc2 used here.
+\bibitem{mathlib} The mathlib Community, \emph{The Lean mathematical library}, CPP 2020; arXiv:1910.09336; revision \texttt{85e3a25e} used here.
+\end{thebibliography}
+\end{document}

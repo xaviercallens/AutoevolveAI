@@ -1,0 +1,46 @@
+{
+ "title": "An independent rebuild, kernel replay and statement audit of the openai/NavierStokesAndEuler breakdown theorems (independently rebuilt and audited; not a claim that a Clay problem is solved)",
+ "version": "v1.1",
+ "description": "<p>OpenAI published a Lean 4 corpus, openai/NavierStokesAndEuler, whose authors present it as formalizing finite-time blowup results: for every positive viscosity, alternatives (C) and (D) of the Clay Institute's Navier&ndash;Stokes problem description (C. L. Fefferman), and a finite-time singularity for the unforced Euler equations. <b>This record independently (of the corpus authors) rebuilds and audits that corpus, and was itself audited by a separate AI agent instance (verdict ACCEPT_WITH_CORRECTIONS; corrections applied). It does not claim that any Clay problem is solved; credit for the proofs belongs to the corpus authors, and the Clay Institute's own process decides any prize.</b></p><p><b>What was done and found.</b> At corpus commit f9e8bc5b, with the corpus's own toolchain (Lean 4.34.0-rc2) and a reused exact-revision Mathlib (85e3a25e), all 2,440 corpus modules were rebuilt from source (609 + 1,829 solution-closure modules and 2 challenge modules; rc 0; zero warnings in the two solution builds). The four theorems navier_stokes_breakdown_R3, navier_stokes_breakdown_periodic, euler_breakdown_R3 and exists_compact_smooth_euler_singularity depend on exactly [propext, Classical.choice, Quot.sound] in the author's own audit files. Source scans of 2,585 closure modules and all 2,659 corpus files and an environment scan of the proof closures found no soundness escape, and every scan caught its planted negative controls. The elaborated statement closures of the proved theorems (5,599 and 5,521 constants) are identical to those of the reference challenge statements up to alpha-renaming of hygienic binder names; a mutated reference is detected. A second statement-fidelity reading, written blind to an earlier audit (H9), finds the Lean (C) faithful to Fefferman's (C) and the Lean (D) faithful to (D) as corrected by the Clay errata, with a caveat: the errata's periodic-pressure condition makes the Lean nonexistence claim weaker than a main-text-only reading. It agrees with H9 on every row.</p><p><b>A demonstrated limitation.</b> A planted forged declaration (False 'proved' by True.intro, added without kernel checking via debug.skipKernelTC) passes #print axioms with 'does not depend on any axioms'; axiom printing alone is therefore insufficient. A kernel replay rejects it, and the whole corpus passes that replay: 88,400 stored declarations (53,752 Navier&ndash;Stokes, 34,648 Euler) were sent to the Lean kernel, REPLAY OK for both; Lean.Replay skips by design the 51 compiler-generated _unsafe_rec auxiliaries (12 NS, 39 Euler; none in any proof closure) and 4 identical congr_simp duplicates. The toolchain's leanchecker on 8 root and statement modules is per-module and not transitive; closure coverage rests on the replay. The paper explains the mechanism step by step.</p><p><b>Independent AI audit.</b> A separate AI agent reproduced the replay with its own driver (rc 0 on both closures, forged control rejected), its own #print axioms, kernel-checked identity of the verbatim challenge statements with the solution (four mutants fail), an environment scan, fidelity spot checks, a bit-identical rebuild of 7 modules, mechanised non-vacuity of the reference solution classes, and the Clay PDF sha256. No human has reviewed the audit.</p><p><b>What is not established.</b> leanchecker --fresh (Mathlib re-check) was not run; Comparator, lean4export and nanoda were not run (our replay and leanchecker are two drivers of the same Lean kernel, not independent kernels); Mathlib was reused and is trusted, not re-checked; the diff of the challenge file against formal-conjectures@8bf45ed is open; the mathematics of the proof was not refereed by people, and the authors' natural-language papers were not read; the Lean kernel and toolchain are trusted; statement fidelity is a human judgement, made here by AI agents, and no person has audited any statement. If the Lean statement is a faithful formalization of Fefferman's alternative (C) and Lean and Mathlib are sound, the formal object proves alternative (C); that conditional statement is not a Clay determination.</p><p><b>Disclosure.</b> The rebuild, the audit scripts and this paper were produced by AI agents (Claude) of one pipeline under the author's direction; the paper stage re-ran no check and uses saved logs. Every claim is tagged A/L/C/X with a claim ledger; the Elenchus ledger gate exits 1 with 0 blocking findings and 4 flags (LEDGER_UNAUDITED_TIER_A, one per Tier A row; open).</p>",
+ "keywords": [
+  "Navier-Stokes",
+  "Euler equations",
+  "Clay Millennium Problem",
+  "Lean 4",
+  "formal verification",
+  "independent rebuild",
+  "kernel replay",
+  "statement fidelity",
+  "Mathlib",
+  "epistemic tiers",
+  "AI-assisted research"
+ ],
+ "notes": "Preprint v1 (2026-10-26). Proposal 2, item A2 (preregistration results/proposal2/2026-10-26/preregistration.json). Binding wording: 'independently rebuilt and audited'; this is not a claim that a Clay problem is solved and not a verification of the proof's correctness beyond the checks reported. Inputs: results/proposal2/2026-10-26/A2/ (REBUILD.md, AXIOMS.md, SOUNDNESS_SCAN.md, FIDELITY2.md, result.json, logs/, evidence/), committed in AutoevolveAI at d677df8b1a243118ab2df7318a737400421cc8f2 (branch worktree-openai-math-discovery); only papers/p2_navier_stokes_audit/ is uncommitted. Corpus: github.com/openai/NavierStokesAndEuler at f9e8bc5b38b6e212696e8a30e3e91517af887bbd (clean tree), Lean 4.34.0-rc2 (commit 6a10ac8c22beadecabdbb0919c2b50214762f91d; lean binary sha256 e8baaa71855a616dc351028f3ad2200051b0671f423a1696a100e809302d5550), Mathlib 85e3a25e006c35636f0e53b0e9296caca2685bc0 reused prebuilt (not rebuilt, not replayed). One build-only deviation: the Comparator require and the manifest entries Comparator and lean4export were removed in the build copy (no corpus module imports them). Clay PDF (fetched 2026-10-26) sha256 c1b5f27b1a64705cfaf1afceea513db5deedca8a18ca56ab32e7f86445a06d0c. Earlier statement audit H9: results/autoresearch/2026-10-25/H9/AUDIT.md (FAITHFUL_WITH_CAVEATS). Numbers are copied from saved logs; the paper stage re-ran no check. Known note discrepancies resolved in the paper: the source-scan counts differ between the closure (150 notation-group hits, 10 local instances) and all files (156, 11); one probe line in Semantics.lean names a nonexistent lemma and errors (the assertions compile). The Bastounis-Circelli-Hansen preprint (arXiv:2610.08144) is mentioned only as relayed by H9, not read. Revision (2026-10-26): independent AI audit AUDIT.md (ACCEPT_WITH_CORRECTIONS) applied, see REVISION.md. Not done: leanchecker --fresh; Comparator/lean4export/nanoda, full Mathlib replay, diff against formal-conjectures@8bf45ed, check whether openai/NavierStokesAndEuler@8937a8f equals f9e8bc5b, human audit of any statement. Producer, rebuild agent, fidelity-table agent and paper-stage agent are AI agent instances of the same pipeline; no human has reviewed the work. The ledger (papers/p2_navier_stokes_audit/ledger/, prefix P2NS, 26 claims: 4 A, 4 L, 8 C, 10 X) is gated by SocrateAI-Scientific-Elenchus tools/ledger.py; exit code 1 (0 blocking, 4 LEDGER_UNAUDITED_TIER_A flags). Gate re-run after revision: exit 1, 0 blocking, 4 LEDGER_UNAUDITED_TIER_A flags.",
+ "related_identifiers": [
+  {
+   "identifier": "https://github.com/openai/NavierStokesAndEuler",
+   "relation": "references",
+   "scheme": "url"
+  },
+  {
+   "identifier": "https://www.claymath.org/wp-content/uploads/2022/06/navierstokes.pdf",
+   "relation": "references",
+   "scheme": "url"
+  },
+  {
+   "identifier": "https://github.com/google-deepmind/formal-conjectures",
+   "relation": "references",
+   "scheme": "url"
+  },
+  {
+   "identifier": "https://github.com/leanprover/comparator",
+   "relation": "references",
+   "scheme": "url"
+  },
+  {
+   "identifier": "arXiv:1910.09336",
+   "relation": "references",
+   "scheme": "arxiv"
+  }
+ ]
+}

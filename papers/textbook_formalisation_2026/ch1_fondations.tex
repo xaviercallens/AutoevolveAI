@@ -1,0 +1,741 @@
+\chapter{Fondations : réseaux, fonctions complètement monotones et vérification formelle}
+\label{ch1:chap}
+
+\begin{quote}\small\itshape
+Ce chapitre pose le décor. Il ne suppose que le programme d'analyse et d'algèbre linéaire de première année de classe préparatoire,
+plus les séries de Fourier de seconde année. Les démonstrations sont écrites à la main, comme on les rédigerait à un concours ;
+la machine (Lean~4) n'intervient que dans la dernière partie, pour dire ce que signifie \og vérifié par ordinateur \fg{} et, surtout,
+ce que cela ne signifie pas.
+\end{quote}
+
+\section*{Comment lire ce livre}
+
+Chaque affirmation porte une étiquette de \emph{niveau} qui dit \emph{qui a vérifié quoi}.
+Ces niveaux, empruntés à la méthode Elenchus~\cite{elenchus} et détaillés au §\ref{ch1:sec:tiers}, sont les suivants.
+\begin{itemize}
+\item \tierA{} : énoncé vérifié par le noyau de Lean~4, avec un contrôle des axiomes utilisés.
+\item \tierL{} : résultat de la littérature, lu et référencé précisément.
+\item \tierC{} : argument humain, écrit en détail dans ce livre, mais non vérifié par machine.
+\item \tierX{} : exploration numérique en virgule flottante ; elle illustre, elle ne prouve jamais.
+\end{itemize}
+
+\begin{warnbox}[: honnêteté sur l'origine des résultats]
+Tous les résultats de ce livre ont été produits par des agents d'IA (Claude) sous la direction de l'auteur, puis audités
+par un \emph{autre} agent d'IA. \textbf{Aucun humain n'a audité ces résultats.} De plus, tout ce qui s'appuie sur le dépôt
+\texttt{openai/math} est \emph{conditionnel} aux théorèmes de ce dépôt, qui sont eux-mêmes générés par IA et n'ont pas été
+relus par des pairs~\cite{oai}. Un résultat de niveau \tierA{} garantit que l'énoncé \emph{Lean} découle des axiomes
+autorisés ; il ne garantit pas que cet énoncé traduit fidèlement l'énoncé mathématique ou physique que l'on a en tête.
+\end{warnbox}
+
+\section{Réseaux du plan}
+\label{ch1:sec:reseaux}
+
+\subsection{Réseau, covolume, densité}
+
+\begin{definition}[Réseau du plan]\label{ch1:def:reseau}
+Soit $(u,v)$ une base de $\R^2$. Le \emph{réseau} engendré est $\Lambda=\Z u\oplus\Z v=\{mu+nv : (m,n)\in\Z^2\}$.
+Son \emph{covolume} est $\operatorname{covol}(\Lambda)=|\det(u,v)|$, l'aire du parallélogramme
+$P=\{su+tv : s,t\in[0,1[\}$, appelé \emph{cellule fondamentale}. Le covolume ne dépend pas de la base choisie
+(deux bases diffèrent par une matrice de $\mathrm{GL}_2(\Z)$, de déterminant $\pm1$).
+\end{definition}
+
+On note $N_\Lambda(R)=\#\{x\in\Lambda : |x|\le R\}$ le nombre de points de $\Lambda$ dans le disque fermé de rayon $R$.
+Un réseau est un exemple de \emph{configuration localement finie} : chaque disque contient un nombre fini de points.
+
+\begin{proposition}[Densité d'un réseau]\label{ch1:prop:comptage}
+Si $V=\operatorname{covol}(\Lambda)$, alors $N_\Lambda(R)/(\pi R^2)\to 1/V$ quand $R\to\infty$. Plus précisément, avec
+$\delta=|u|+|v|$ et pour $R>\delta$,
+\[
+  \pi (R-\delta)^2\ \le\ V\,N_\Lambda(R)\ \le\ \pi (R+\delta)^2 .
+\]
+\tierC{}
+\end{proposition}
+
+\begin{humanproof}
+Les translatés $x+P$, $x\in\Lambda$, \emph{pavent} le plan : tout point $y=su'+tv'$ s'écrit de façon unique
+$y=x+p$ avec $x\in\Lambda$ (partie entière des coordonnées dans la base $(u,v)$) et $p\in P$. Chaque cellule
+$x+P$ a pour aire $V$ et pour diamètre au plus $\delta$.
+\begin{itemize}
+\item Si $|x|\le R$, alors $x+P\subset \overline{D}(0,R+\delta)$. Les cellules sont disjointes, donc
+$V\,N_\Lambda(R)\le \pi(R+\delta)^2$.
+\item Si $|y|\le R-\delta$, le point $y$ appartient à une cellule $x+P$ avec $|y-x|\le\delta$, donc $|x|\le R$.
+Ainsi $\overline{D}(0,R-\delta)\subset\bigcup_{|x|\le R}(x+P)$ et $\pi(R-\delta)^2\le V\,N_\Lambda(R)$.
+\end{itemize}
+On divise par $\pi R^2$ et on fait tendre $R$ vers l'infini.
+\end{humanproof}
+
+On dit que $\Lambda$ est de \emph{densité} $1/V$. Un réseau de covolume $1$ est de densité $1$ : c'est la normalisation
+de tout le livre, qui permet de comparer des réseaux différents à nombre de points égal par unité d'aire.
+
+\subsection{Le réseau triangulaire}
+
+\begin{definition}[Réseau triangulaire $A$]\label{ch1:def:A}
+Soit $a>0$ tel que $a^2=2/\sqrt3$. Le \emph{réseau triangulaire} (ou hexagonal) de covolume $1$ est
+\[
+  A=\Z\,u\oplus\Z\,v,\qquad u=a(1,0),\quad v=a\bigl(\tfrac12,\tfrac{\sqrt3}{2}\bigr).
+\]
+\end{definition}
+
+Le choix de $a$ vient du covolume : $\det(u,v)=a^2\sqrt3/2=1$. Numériquement $a\approx 1{,}0746$.
+
+\begin{proposition}[Normes dans $A$]\label{ch1:prop:normesA}
+Pour $(m,n)\in\Z^2$ on a $|mu+nv|^2=a^2\,(m^2+mn+n^2)$. En particulier la distance minimale entre deux points de $A$ est $a$, atteinte
+exactement pour $6$ vecteurs (le point central a donc $6$ plus proches voisins, aux sommets d'un hexagone régulier). \tierC{}
+\end{proposition}
+
+\begin{humanproof}
+Comme $|u|^2=|v|^2=a^2$ et $u\cdot v=a^2/2$, on a $|mu+nv|^2=a^2(m^2+n^2+mn)$. Or
+$m^2+mn+n^2=(m+\tfrac n2)^2+\tfrac34n^2\ge0$, avec égalité seulement pour $m=n=0$. Les solutions entières de
+$m^2+mn+n^2=1$ vérifient $\tfrac34 n^2\le 1$, donc $n\in\{-1,0,1\}$ ; on résout chaque cas : $(\pm1,0)$, $(0,\pm1)$,
+$\pm(1,-1)$. Il y en a six, et la valeur $1$ est la plus petite non nulle car $m^2+mn+n^2$ est un entier positif.
+\end{humanproof}
+
+Les premières valeurs de $k=m^2+mn+n^2$ et leurs multiplicités, comparées à celles du réseau carré $\Z^2$ (de covolume $1$ lui aussi),
+sont données par le tableau~\ref{ch1:tab:couches}. Ces nombres ont été dénombrés par calcul sur machine \tierX{} ; ils sont classiques.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+Réseau & $k$ (valeur de la forme) & multiplicité & $|x|^2$ \\
+\midrule
+$A$ & $1,\ 3,\ 4,\ 7,\ 9$ & $6,\ 6,\ 6,\ 12,\ 6$ & $a^2k\approx 1{,}155,\ 3{,}464,\ 4{,}619,\ 8{,}083,\ 10{,}392$ \\
+$\Z^2$ & $1,\ 2,\ 4,\ 5,\ 8$ & $4,\ 4,\ 4,\ 8,\ 4$ & $1,\ 2,\ 4,\ 5,\ 8$ \\
+\bottomrule
+\end{tabular}
+\caption{Premières couches des réseaux $A$ et $\Z^2$ (covolume $1$).}
+\label{ch1:tab:couches}
+\end{table}
+
+Le réseau triangulaire a des voisins plus éloignés ($|x|^2\approx1{,}155$ contre $1$) et plus nombreux ($6$ contre $4$) :
+il \og équilibre \fg{} mieux la répulsion, et c'est ce que le théorème d'optimalité universelle va quantifier.
+
+\subsection{Réseau dual}
+
+\begin{definition}[Réseau dual]\label{ch1:def:dual}
+Si $\Lambda=M\Z^2$ avec $M$ la matrice de colonnes $u,v$, le \emph{réseau dual} est
+$\Lambda^*=\{y\in\R^2 : x\cdot y\in\Z\ \ \forall x\in\Lambda\}=M^{-T}\Z^2$. Il a pour covolume $1/\operatorname{covol}(\Lambda)$.
+\end{definition}
+
+\begin{lemma}[$A$ est semblable à son dual]\label{ch1:lem:autodual}
+Le réseau $A^*$ est l'image de $A$ par une rotation ; en particulier $A$ et $A^*$ ont les mêmes normes, avec les mêmes multiplicités. \tierC{}
+\end{lemma}
+
+\begin{humanproof}
+Notons $M=a\begin{pmatrix}1&1/2\\0&\sqrt3/2\end{pmatrix}$. Un calcul direct donne
+$M^{-T}=\frac1a\begin{pmatrix}1&0\\-1/\sqrt3&2/\sqrt3\end{pmatrix}$. Ses deux colonnes $b_1,b_2$ vérifient
+$|b_1|^2=|b_2|^2=\frac{1}{a^2}\cdot\frac43=\frac{\sqrt3}{2}\cdot\frac43=a^2$ et $b_1\cdot b_2=-\frac{1}{a^2}\cdot\frac23=-\frac{a^2}{2}$ :
+deux vecteurs de norme $a$ faisant un angle de $120^\circ$. Alors $(b_1,b_1+b_2)$ est une base de $A^*$ formée de deux vecteurs
+de norme $a$ faisant un angle de $60^\circ$, c'est-à-dire la base de $A$ tournée. $A^*$ est donc l'image de $A$ par une rotation.
+\end{humanproof}
+
+\subsection{Énergie d'un réseau}
+
+On étudie des particules identiques qui se repoussent par un \emph{potentiel de paire} $g$, fonction du \emph{carré} $t=|x-y|^2$ de
+la distance (convention de~\cite{ckmrv} et de~\cite{oai} : les gaussiennes $e^{-\alpha t}$ en sont alors les briques de base).
+Le potentiel de Riesz $|x-y|^{-s}$ s'écrit $g(t)=t^{-s/2}$.
+
+\begin{definition}[Énergie d'un réseau]\label{ch1:def:enerreseau}
+Pour $g:\,]0,\infty[\to[0,\infty[$, l'énergie par particule d'un réseau $\Lambda$ est
+$E_g(\Lambda)=\sum_{x\in\Lambda\setminus\{0\}} g(|x|^2)\in[0,+\infty]$.
+\end{definition}
+
+Pour une configuration localement finie $C$ de densité $1$, on définit l'\emph{énergie inférieure} par la moyenne sur les points
+du disque de rayon $R$ des interactions avec les autres points du disque, puis une limite inférieure :
+\[
+  E_g(C;R)=\frac{1}{\#C_R}\sum_{x\in C_R}\ \sum_{y\in C_R\setminus\{x\}} g(|x-y|^2),\qquad E_g(C)=\liminf_{R\to\infty}E_g(C;R)\in[0,\infty],
+\]
+avec $C_R=C\cap\overline D(0,R)$. Chaque paire est comptée deux fois, ce qui donne bien $\sum_{a\neq0}g(|a|^2)$ pour un réseau.
+\tierC{} La définition exacte utilisée par le dépôt \texttt{openai/math}, en arithmétique $[0,\infty]$, sera citée au §\ref{ch1:sec:univ}.
+
+\begin{proposition}[Énergie de Riesz d'un réseau]\label{ch1:prop:riesz}
+Pour $g(t)=t^{-s/2}$ avec $s>0$, l'énergie $E_g(\Lambda)=\sum_{x\ne0}|x|^{-s}$ est finie si et seulement si $s>2$. \tierC{}
+\end{proposition}
+
+\begin{humanproof}
+Soit $d>0$ la plus petite norme non nulle de $\Lambda$ et $V$ son covolume. Les points non nuls de norme $\le d$ sont en nombre fini ;
+pour $k\ge0$ notons $S_k=\{x\in\Lambda : 2^kd<|x|\le 2^{k+1}d\}$. Par la proposition~\ref{ch1:prop:comptage},
+$\#S_k=N_\Lambda(2^{k+1}d)-N_\Lambda(2^kd)=\frac{3\pi d^2}{V}4^k+O(2^k)$, donc il existe $0<c<C$ avec $c\,4^k\le\#S_k\le C\,4^k$ pour $k\ge k_0$.
+Sur $S_k$ on a $(2^{k+1}d)^{-s}\le |x|^{-s}<(2^kd)^{-s}$. La somme sur $S_k$ est donc comprise entre des multiples positifs de $4^k2^{-ks}=2^{k(2-s)}$.
+La série $\sum_k 2^{k(2-s)}$ converge si et seulement si $s>2$.
+\end{humanproof}
+
+\begin{remark}
+Pour $0<s\le2$ l'énergie d'un réseau est infinie : l'inégalité d'optimalité $\infty\le\infty$ est alors vraie mais sans contenu, et une comparaison
+significative exigerait une \emph{régularisation}. \tierC{}
+\end{remark}
+
+\subsection{Séries thêta et formule de Poisson}
+\label{ch1:sec:poisson}
+
+Pour $\alpha>0$, la \emph{série thêta gaussienne} du réseau $\Lambda$ est
+\[
+  \Theta_\Lambda(\alpha)=\sum_{x\in\Lambda}e^{-\pi\alpha|x|^2}\ \ (>1).
+\]
+(Ne pas confondre avec les sommes de Gauss arithmétiques $\sum e^{2\pi i n^2/p}$ : il s'agit ici de sommes d'exponentielles
+\emph{réelles} de formes quadratiques.) La série converge, par comparaison avec une série géométrique via la minoration
+$|mu+nv|^2\ge c(m^2+n^2)$. L'énergie d'une interaction gaussienne $g(t)=e^{-\pi\alpha t}$ est donc
+$E_g(\Lambda)=\Theta_\Lambda(\alpha)-1$.
+
+Le résultat clé est que $\Theta_\Lambda$ se transforme simplement quand on passe de $\alpha$ à $1/\alpha$ et de $\Lambda$ à $\Lambda^*$.
+
+\begin{theorem}[Formule de Poisson pour les gaussiennes]\label{ch1:thm:poisson}
+Pour tout réseau $\Lambda$ du plan de covolume $V$ et tout $\alpha>0$,
+\[
+  \Theta_\Lambda(\alpha)=\frac{1}{V\,\alpha}\ \Theta_{\Lambda^*}\!\Bigl(\frac1\alpha\Bigr).
+\]
+Pour le réseau triangulaire ($V=1$, $A^*\simeq A$) : $\Theta_A(\alpha)=\alpha^{-1}\Theta_A(1/\alpha)$. \tierC{}\
+(La convergence ponctuelle de la série de Fourier utilisée à l'étape~3 est le théorème de Fourier sur le tore : \tierL{}.)
+\end{theorem}
+
+\begin{humanproof}[Démonstration humaine en trois étapes]
+Convention : $\hat f(\xi)=\int f(x)e^{-2\pi i\,\xi\cdot x}\,dx$.
+
+\emph{Étape 1 : transformée de Fourier d'une gaussienne en dimension 1.} Soit $\varphi(x)=e^{-\pi\alpha x^2}$ et $h=\hat\varphi$.
+Par dérivation sous l'intégrale (domination par $|x|e^{-\pi\alpha x^2}$, intégrable),
+$h'(\xi)=\int(-2\pi i x)\varphi(x)e^{-2\pi i\xi x}dx$. Or $\varphi'(x)=-2\pi\alpha x\varphi(x)$, donc $-2\pi ix\varphi(x)=\frac{i}{\alpha}\varphi'(x)$ et
+\[
+  h'(\xi)=\frac i\alpha\int\varphi'(x)e^{-2\pi i\xi x}dx=\frac i\alpha\Bigl([\varphi e^{-2\pi i\xi x}]_{-\infty}^{+\infty}+2\pi i\xi\int\varphi(x)e^{-2\pi i\xi x}dx\Bigr)=-\frac{2\pi\xi}{\alpha}\,h(\xi),
+\]
+(le crochet est nul car $\varphi\to0$ aux bornes). Cette équation différentielle linéaire donne $h(\xi)=h(0)\,e^{-\pi\xi^2/\alpha}$, et
+$h(0)=\int e^{-\pi\alpha x^2}dx=\alpha^{-1/2}$ (intégrale de Gauss $\int e^{-\pi x^2}dx=1$, calculée en coordonnées polaires). Ainsi
+$\widehat{e^{-\pi\alpha x^2}}(\xi)=\alpha^{-1/2}e^{-\pi\xi^2/\alpha}$. En dimension $2$, par Fubini,
+$\widehat{e^{-\pi\alpha|x|^2}}(\xi)=\alpha^{-1}e^{-\pi|\xi|^2/\alpha}$.
+
+\emph{Étape 2 : périodisation.} Écrivons $\Lambda=M\Z^2$ et posons $f(x)=e^{-\pi\alpha|Mx|^2}$ pour $x\in\R^2$. La fonction
+$F(x)=\sum_{n\in\Z^2}f(x+n)$ est bien définie (convergence normale locale, ainsi que celle de ses dérivées), $\mathcal C^\infty$, et $\Z^2$-périodique.
+Ses coefficients de Fourier sont, pour $k\in\Z^2$,
+\[
+  c_k=\int_{[0,1]^2}F(x)e^{-2\pi ik\cdot x}dx=\int_{\R^2}f(x)e^{-2\pi ik\cdot x}dx=\hat f(k),
+\]
+(on réunit les translatés de $[0,1]^2$ pour obtenir $\R^2$). Le changement de variable $u=Mx$ ($dx=du/V$) donne
+$\hat f(k)=\frac1V\int e^{-\pi\alpha|u|^2}e^{-2\pi i(M^{-T}k)\cdot u}du=\frac{1}{V\alpha}e^{-\pi|M^{-T}k|^2/\alpha}$ d'après l'étape~1.
+
+\emph{Étape 3 : évaluation en $0$.} Les $c_k$ sont sommables sur $\Z^2$ et $F$ est continue ; la série de Fourier de $F$ converge donc normalement
+vers une fonction continue de mêmes coefficients, qui est $F$ (unicité des coefficients, théorème de Fejér). En $x=0$ :
+\[
+  \sum_{n\in\Z^2}e^{-\pi\alpha|Mn|^2}=F(0)=\sum_{k\in\Z^2}c_k=\frac{1}{V\alpha}\sum_{k\in\Z^2}e^{-\pi|M^{-T}k|^2/\alpha}.
+\]
+Le membre de gauche est $\Theta_\Lambda(\alpha)$, et $M^{-T}\Z^2=\Lambda^*$ : le membre de droite est $\frac{1}{V\alpha}\Theta_{\Lambda^*}(1/\alpha)$.
+Pour $A$, le lemme~\ref{ch1:lem:autodual} donne $\Theta_{A^*}=\Theta_A$.
+\end{humanproof}
+
+\begin{example}[Fonction thêta de Jacobi]\label{ch1:ex:jacobi}
+En dimension~1, la même démonstration donne, pour $\vartheta(\alpha)=\sum_{n\in\Z}e^{-\pi\alpha n^2}$, la relation
+$\vartheta(1/\alpha)=\sqrt\alpha\,\vartheta(\alpha)$. Elle montre que $\vartheta(\alpha)\sim\alpha^{-1/2}$ quand $\alpha\to0$ : pour un petit $\alpha$ la somme
+\og voit \fg{} l'intégrale de Gauss. \tierC{}
+\end{example}
+
+\begin{numbox}[: la formule de Poisson avec ses contrôles (code \texttt{code/ch1\_theta.py})]
+Pour $A$, on compare $\Theta_A(\alpha)$ à $\alpha^{-1}\Theta_A(1/\alpha)$ (contrôle positif), puis à $\Theta_A(1/\alpha)$ \emph{sans} le facteur
+$\alpha^{-1}$ (contrôle négatif). Sortie réelle du script (en double précision) :
+\begin{center}\small
+\begin{tabular}{@{}rlll@{}}
+\toprule
+$\alpha$ & $\Theta_A(\alpha)$ & écart avec $\alpha^{-1}\Theta_A(1/\alpha)$ & écart sans le facteur \\
+\midrule
+$0{,}5$ & $2{,}008477918598$ & $4{,}4\cdot10^{-16}$ & $1{,}0$ \\
+$2$ & $1{,}004238959299$ & $2{,}2\cdot10^{-16}$ & $1{,}0$ \\
+$3$ & $1{,}000112671200$ & $8{,}9\cdot10^{-16}$ & $2{,}0$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Le contrôle négatif est discriminant ($\alpha\neq1$) ; en $\alpha=1$ les deux écarts sont nuls, donc ce point ne teste rien.
+Le script compare aussi $\Theta_A(\alpha)\le\Theta_{\Z^2}(\alpha)$ sur huit valeurs de $\alpha\in[0{,}1;5]$ (toujours vrai), par exemple
+$\Theta_A(1)=1{,}159595267$ contre $\Theta_{\Z^2}(1)=1{,}180340599$. \tierX{} : cela illustre le théorème de Montgomery ci-dessous, sans le prouver.
+\end{numbox}
+
+\begin{theorem}[Montgomery, 1988]\label{ch1:thm:montgomery}
+Pour tout réseau $\Lambda$ du plan de covolume $1$ et tout $\alpha>0$, $\Theta_A(\alpha)\le\Theta_\Lambda(\alpha)$, avec égalité si et seulement si $\Lambda$ est
+l'image de $A$ par une rotation. \tierL{}~\cite{montgomery}
+\end{theorem}
+
+Montgomery résout ainsi le problème d'optimalité \emph{parmi les réseaux}, pour toute interaction gaussienne. Nous y reviendrons au §\ref{ch1:sec:univ}
+pour passer des gaussiennes aux potentiels complètement monotones. La difficulté est ailleurs : comparer $A$ non pas à d'autres réseaux, mais à
+\emph{toutes} les configurations de points de densité $1$.
+
+\section{Fonctions complètement monotones}
+\label{ch1:sec:cm}
+
+\subsection{Définition et premiers exemples}
+
+\begin{definition}[Fonction complètement monotone]\label{ch1:def:cm}
+Une fonction $g:\,]0,\infty[\to\R$ est \emph{complètement monotone} (CM) si elle est de classe $\mathcal C^\infty$ et si
+$(-1)^n g^{(n)}(t)\ge0$ pour tout $n\in\N$ et tout $t>0$.
+\end{definition}
+
+Le cas $n=0$ dit $g\ge0$ ; le cas $n=1$ dit que $g$ est décroissante ; le cas $n=2$ dit que $g$ est convexe ; et ainsi de suite.
+Les inégalités sont \emph{larges} : les constantes sont CM. Dans le dépôt \texttt{openai/math}, une fonction qui est $\mathcal C^\infty$ sur $]0,\infty[$,
+positive et CM est appelée \emph{admissible}~\cite{oai} ; comme $n=0$ donne la positivité, les deux notions coïncident. Cette coïncidence est
+elle-même un théorème Lean : \lean{ProgCM.isCompletelyMonotoneOn_iff_admissible} \tierA{} (bibliothèque du programme P3~\cite{p3}).
+
+\begin{example}[Exponentielle, puissances]\label{ch1:ex:exemples}
+\begin{enumerate}
+\item $g(t)=e^{-at}$, $a\ge0$ : $(-1)^ng^{(n)}(t)=a^ne^{-at}\ge0$. \tierC{}
+\item $g(t)=t^{-s}$, $s\ge0$ : $(-1)^ng^{(n)}(t)=s(s+1)\cdots(s+n-1)\,t^{-s-n}\ge0$ (récurrence immédiate). \tierC{}
+Pour $s=\frac12$ c'est la répulsion de Coulomb $1/r$ en la variable $t=r^2$. La CM de $t\mapsto t^{-s/2}$ (Riesz) est aussi
+vérifiée par le noyau :\lean{TriangularRiesz.riesz_admissible} \tierA{}.
+\end{enumerate}
+\end{example}
+
+\begin{example}[Contre-exemples]\label{ch1:ex:contre}
+$g(t)=t$ n'est pas CM ($-g'=-1<0$), ni $\cos t$ (elle prend des valeurs négatives), ni $e^{t}$ ($-g'<0$).
+Un contre-exemple plus subtil, d'origine physique (combinaison charge--quadrupôle) est
+$q(t)=t^{-1/2}-2(t+1)^{-1/2}+(t+4)^{-1/2}$ : on a $q(3)=3^{-1/2}-2\cdot4^{-1/2}+7^{-1/2}\approx0{,}5774-1+0{,}3780<0$,
+donc $q$ n'est pas positive, a fortiori pas CM. La vérification rigoureuse de $q(3)<0$ et la non-CM de $q$ sont vérifiées par le noyau
+(\lean{ProgCM.quadrupole_not_cm}) \tierA{}.
+\end{example}
+
+\subsection{Propriétés de clôture : preuves humaines}
+
+\begin{proposition}[Somme, produit]\label{ch1:prop:cloture}
+Soient $f,g$ CM et $c\ge0$. Alors $f+g$, $cf$ et $fg$ sont CM. \tierC{} (version Lean : le programme P3~\cite{p3}, \tierA{})
+\end{proposition}
+
+\begin{humanproof}
+La somme et la multiplication par une constante positive sont immédiates par linéarité de la dérivation.
+Pour le produit, la formule de Leibniz donne
+\[
+  (-1)^n(fg)^{(n)}=\sum_{k=0}^{n}\binom nk\ \bigl[(-1)^kf^{(k)}\bigr]\ \bigl[(-1)^{n-k}g^{(n-k)}\bigr],
+\]
+car $(-1)^n=(-1)^k(-1)^{n-k}$. Chaque crochet est positif, donc la somme aussi.
+\end{humanproof}
+
+Une \emph{fonction de Bernstein} est la bonne notion pour composer avec une fonction CM.
+
+\begin{definition}[Fonction de Bernstein]\label{ch1:def:bernstein}
+Une fonction $h:\,]0,\infty[\to\,]0,\infty[$ de classe $\mathcal C^\infty$ est \emph{de Bernstein} si sa dérivée $h'$ est complètement monotone.
+(En particulier $h$ est croissante.)
+\end{definition}
+
+\begin{example}\label{ch1:ex:bernstein}
+Sont de Bernstein : $h(t)=at+b$ ($a\ge0$, $b>0$ ou $a>0$, $b\ge 0$) ; $h(t)=t^\alpha$ pour $0<\alpha\le1$, car
+$h'(t)=\alpha\,t^{-(1-\alpha)}$ est CM par l'exemple~\ref{ch1:ex:exemples} ; $h(t)=1-e^{-at}$ ($a>0$), car $h'=ae^{-at}$ ; $h(t)=\ln(1+t)$,
+car $h'(t)=1/(1+t)$. En particulier $h(t)=\sqrt t$ (cas $\alpha=\frac12$) l'est. \tierC{}
+\end{example}
+
+\begin{theorem}[Subordination : CM $\circ$ Bernstein]\label{ch1:thm:comp}
+Si $f$ est CM et $h$ est de Bernstein, alors $f\circ h$ est CM. \tierC{} Version Lean :
+\lean{ProgCM.IsCompletelyMonotoneOn.comp_bernstein} \tierA{}, dont la démonstration suit exactement la récurrence ci-dessous~\cite{p3}.
+\end{theorem}
+
+\begin{humanproof}
+La composée $f\circ h$ est bien définie (car $h>0$) et de classe $\mathcal C^\infty$. On montre par récurrence forte sur $n$ la propriété
+\[
+  \mathcal P(n) :\quad \text{pour toute } f \text{ CM et toute } h \text{ de Bernstein},\ \ (-1)^n(f\circ h)^{(n)}\ge0\ \text{sur }]0,\infty[.
+\]
+Il est essentiel de quantifier sur \emph{toutes} les fonctions $f$ et $h$ : l'hypothèse de récurrence sera appliquée à une autre fonction que $f$.
+
+\emph{Initialisation.} $\mathcal P(0)$ : $f\circ h\ge0$ car $f\ge0$.
+
+\emph{Hérédité.} Supposons $\mathcal P(k)$ pour tout $k\le n$. Soit $f$ CM et $h$ de Bernstein. On a $(f\circ h)'=(f'\circ h)\,h'$, donc
+\[
+  -(f\circ h)'=G\cdot h',\qquad G=(-f')\circ h .
+\]
+Or $-f'$ est CM (c'est $f$ dérivée une fois, avec le signe : $(-1)^m(-f')^{(m)}=(-1)^{m+1}f^{(m+1)}\ge0$). Par $\mathcal P(k)$ appliquée à la fonction CM $-f'$,
+$(-1)^kG^{(k)}\ge0$ pour tout $k\le n$. D'autre part $h'$ est CM par définition. En dérivant $n$ fois et par la formule de Leibniz,
+\[
+  (-1)^{n+1}(f\circ h)^{(n+1)}=(-1)^{n}\bigl(G\,h'\bigr)^{(n)}=\sum_{k=0}^{n}\binom nk\ \bigl[(-1)^kG^{(k)}\bigr]\ \bigl[(-1)^{n-k}(h')^{(n-k)}\bigr]\ \ge0 .
+\]
+D'où $\mathcal P(n+1)$.
+\end{humanproof}
+
+\begin{corollary}[Le cas de la racine carrée]\label{ch1:cor:sqrt}
+Si $f$ est CM, alors $t\mapsto f(\sqrt t)$ est CM. En particulier, pour $\kappa\ge0$, $t\mapsto e^{-\kappa\sqrt t}$ est CM, et il en est de même du
+potentiel de Yukawa planaire $e^{-\kappa r}/r$ écrit en la variable $t=r^2$ : $g_\kappa(t)=e^{-\kappa\sqrt t}\,t^{-1/2}$. \tierC{}
+(Lean : \lean{ProgCM.IsCompletelyMonotoneOn.comp_sqrt}, \lean{ProgCM.phi_cm} \tierA{}.)
+\end{corollary}
+
+\begin{humanproof}
+Le théorème~\ref{ch1:thm:comp} avec $h=\sqrt{\ \cdot\ }$ (exemple~\ref{ch1:ex:bernstein}) donne la première phrase. Avec $f(u)=e^{-\kappa u}$ on obtient que
+$e^{-\kappa\sqrt t}$ est CM. Le potentiel de Yukawa est le \emph{produit} de cette fonction par $t^{-1/2}$, CM d'après l'exemple~\ref{ch1:ex:exemples} ;
+la proposition~\ref{ch1:prop:cloture} conclut.
+\end{humanproof}
+
+\begin{remark}[Vérification directe sur un cas]
+Pour $\psi(t)=e^{-\sqrt t}$ on a $\psi'(t)=-\frac{1}{2\sqrt t}e^{-\sqrt t}$ et $\psi''(t)=\bigl(\frac1{4t}+\frac1{4t^{3/2}}\bigr)e^{-\sqrt t}$. Les signes
+$-\psi'\ge0$ et $\psi''\ge0$ sont ceux annoncés. Une machine vérifie les signes jusqu'à l'ordre $8$ en sept points
+(script \texttt{code/ch1\_theta.py}) : $e^{-\sqrt t}$ passe, $\cos t$ (contrôle négatif) échoue à chaque ordre \tierX{}. Ce n'est pas une preuve :
+la preuve est celle de la récurrence ci-dessus.
+\end{remark}
+
+\begin{physbox}[: pourquoi les physiciens rencontrent des fonctions CM]
+Un potentiel qui décroît avec la distance en s'amortissant \og de plus en plus lentement \fg{} (Coulomb, Yukawa écranté, dipôle) est typiquement CM.
+Les cinq potentiels physiques du tableau~\ref{ch1:tab:flux} comprennent les excitons dipolaires $2\bigl(1/r-1/\sqrt{r^2+d^2}\bigr)$ (doi:\,10.5281/zenodo.23646103) et le potentiel de Yukawa
+(doi:\,10.5281/zenodo.23646105). Dans les deux cas, l'admissibilité est un théorème de niveau \tierA{} ; la conséquence physique (le réseau triangulaire est
+d'énergie minimale) reste conditionnelle à \texttt{openai/math}.
+\end{physbox}
+
+\subsection{Le théorème de Bernstein et les mélanges de gaussiennes}
+
+\begin{theorem}[Bernstein--Widder]\label{ch1:thm:bernstein}
+Une fonction $g:\,]0,\infty[\to\R$ est complètement monotone si et seulement s'il existe une mesure positive $\mu$ sur $[0,\infty[$ telle que
+\[
+  g(t)=\int_{[0,\infty[}e^{-\alpha t}\,d\mu(\alpha)\qquad(t>0).
+\]
+La mesure $\mu$ est alors unique. \tierL{}~\cite{bernstein,widder}
+\end{theorem}
+
+La lecture géométrique est essentielle : avec $t=|x|^2$, on a $g(|x|^2)=\int e^{-\alpha|x|^2}d\mu(\alpha)$, c'est-à-dire que \emph{tout potentiel complètement monotone
+est un mélange positif de gaussiennes}. Le sens \og réciproque \fg{} est facile et nous le démontrons ; le sens direct (CM $\Rightarrow$ mélange) est un résultat
+profond, que nous citons, et qui n'est \emph{pas} formalisé dans le travail décrit ici.
+
+\begin{proposition}[Les mélanges sont CM (sens facile)]\label{ch1:prop:facile}
+Soit $\mu$ une mesure positive sur $[0,\infty[$ telle que $\int e^{-\alpha t}d\mu(\alpha)<\infty$ pour tout $t>0$. Alors $g(t)=\int e^{-\alpha t}d\mu(\alpha)$ est CM.
+\tierC{} (Lean : \lean{ProgCM.laplace_measure} \tierA{}, énoncé de ce même sens.)
+\end{proposition}
+
+\begin{humanproof}
+Fixons $t_0>0$. Pour $t\ge t_0$ et $n\in\N$, on a $0\le\alpha^ne^{-\alpha t}\le C_n\,e^{-\alpha t_0/2}$ avec
+$C_n=\sup_{\alpha\ge0}\alpha^ne^{-\alpha t_0/2}<\infty$, et $\alpha\mapsto e^{-\alpha t_0/2}$ est $\mu$-intégrable par hypothèse. Le théorème de dérivation sous le signe
+somme (domination uniforme sur $[t_0,\infty[$) montre, par récurrence sur $n$, que $g$ est de classe $\mathcal C^\infty$ et
+$(-1)^ng^{(n)}(t)=\int\alpha^ne^{-\alpha t}d\mu(\alpha)\ge0$.
+\end{humanproof}
+
+\begin{example}[Un potentiel CM que les règles de clôture ne voient pas]\label{ch1:ex:dipole}
+Pour $c>0$, $\varphi(t)=t^{-1/2}-(t+c)^{-1/2}$ est une \emph{différence} de deux fonctions CM, et rien dans la proposition~\ref{ch1:prop:cloture} ne
+permet de conclure. Mais la formule d'Euler $u^{-1/2}=\frac{1}{\sqrt\pi}\int_0^\infty \alpha^{-1/2}e^{-\alpha u}d\alpha$ ($u>0$) donne
+\[
+  \varphi(t)=\frac{1}{\sqrt\pi}\int_0^\infty\alpha^{-1/2}\bigl(1-e^{-c\alpha}\bigr)\,e^{-\alpha t}\,d\alpha ,
+\]
+un mélange à poids \emph{positif} ($1-e^{-c\alpha}>0$) : $\varphi$ est CM par la proposition~\ref{ch1:prop:facile}. C'est le potentiel de l'exciton
+dipolaire, au facteur $2$ près. \tierC{}
+\end{example}
+
+\paragraph{Passage de l'énergie des gaussiennes à celle des mélanges.} Soit $g(t)=\int e^{-\pi\alpha t}d\nu(\alpha)$ un mélange, $\nu$ positive.
+Pour une configuration finie $C_R$, par positivité (théorème de Tonelli) la double somme se met sous l'intégrale :
+\[
+  E_g(C;R)=\int E_{e^{-\pi\alpha\,\cdot}}(C;R)\,d\nu(\alpha).
+\]
+Le lemme de Fatou (valable dans $[0,\infty]$) donne alors $E_g(C)\ge\int\liminf_RE_{e^{-\pi\alpha\cdot}}(C;R)\,d\nu(\alpha)=\int E_{e^{-\pi\alpha\cdot}}(C)\,d\nu(\alpha)$.
+Si on sait que, pour chaque $\alpha$, aucune configuration n'a une énergie gaussienne inférieure à celle de $A$, on en déduit
+$E_g(C)\ge\int(\Theta_A(\alpha)-1)\,d\nu(\alpha)=E_g(A)$, par Tonelli sur la somme du réseau. \tierC{}
+\emph{Le cas gaussien est donc le c\oe ur du problème} ; c'est lui, pour toute valeur de $\alpha$, que le théorème de la partie suivante affirme.
+La même idée, appliquée aux \emph{réseaux} avec le théorème de Montgomery~\ref{ch1:thm:montgomery}, donne : $E_g(A)\le E_g(\Lambda)$ pour tout réseau $\Lambda$ de
+covolume $1$ et tout $g$ CM (mélange $\nu$ de gaussiennes), car $E_g(\Lambda)=\int(\Theta_\Lambda(\alpha)-1)\,d\nu(\alpha)$. \tierC{}\ (conditionnelle à~\ref{ch1:thm:montgomery} et à~\ref{ch1:thm:bernstein}, \tierL{})
+
+\section{L'optimalité universelle}
+\label{ch1:sec:univ}
+
+\subsection{Énoncé}
+
+Cohn et Kumar~\cite{ck} ont défini une notion d'\emph{optimalité universelle} : une configuration est universellement optimale si elle minimise l'énergie pour
+\emph{tout} potentiel complètement monotone de la distance au carré, simultanément. Ils ont conjecturé que cela se produit pour de nombreuses configurations
+remarquables, dont le réseau triangulaire dans le plan. Cohn, Kumar, Miller, Radchenko et Viazovska~\cite{ckmrv} ont démontré la conjecture pour le réseau $E_8$ en dimension $8$ et le réseau de Leech
+en dimension $24$ \tierL{}, en s'appuyant sur le travail de Viazovska~\cite{viazovska}. La dimension $2$ restait ouverte dans la littérature que nous avons lue.
+
+Le dépôt \texttt{openai/math} contient un énoncé et une démonstration en Lean~4 du cas planaire~\cite{oai}. Voici l'énoncé tel qu'il figure dans le fichier de
+défi, en français puis en Lean.
+
+\begin{theorem}[Optimalité universelle du réseau triangulaire (\texttt{openai/math})]\label{ch1:thm:univ}
+Soit $g$ admissible (définition~\ref{ch1:def:cm}) et $C\subset\R^2$ une configuration localement finie de densité centrée $1$. Alors
+\[
+  \mathcal E_g(A)\ \le\ E_g(C)\qquad\text{et}\qquad \mathcal E_g(A)=E_g(A),\qquad\text{où}\quad \mathcal E_g(A)=\sum_{x\in A\setminus 0}g(|x|^2),
+\]
+avec des valeurs dans $[0,\infty]$, et $E_g(\cdot)$ l'énergie inférieure sur les disques fermés centrés (Lean : \lean{latticeEnergy g} pour $\mathcal E_g(A)$ et \lean{energy g} pour $E_g$). \tierA{} \emph{pour l'énoncé Lean}
+\lean{OAI.AtomicTriangular.universal_energy_minimum}, \textbf{conditionnel} : la démonstration est générée par IA et n'a pas été relue par des pairs.
+\end{theorem}
+
+\begin{leanbox}[: l'énoncé principal (extrait du fichier de défi, la preuve y est \lean{sorry} par construction)]
+\begin{lstlisting}[language=Lean]
+theorem universal_energy_minimum (g : ℝ → ℝ) (C : Set Plane)
+    (hg : AdmissiblePotential g) (hC : LocallyFinite C) (hd : DensityOne C) :
+    latticeEnergy g ≤ energy g C ∧ latticeEnergy g = energy g A
+\end{lstlisting}
+\end{leanbox}
+
+Trois remarques de lecture, essentielles pour la suite.
+\begin{enumerate}
+\item L'énergie est une \emph{limite inférieure} sur des disques \emph{fermés centrés en $0$}. La définition de CKMRV~\cite{ckmrv} exige en plus que la limite existe pour la
+configuration optimale. La notion utilisée ici est donc plus faible \tierC{}.
+\item Le théorème ne dit pas que $A$ est le seul minimiseur, et l'unicité est fausse en général : le corollaire D3 du livre v1~\cite{v1} établit la
+non-unicité en retirant un point de $A$ (une \og lacune \fg{}), ce qui ne change ni la densité ni l'énergie inférieure. \tierA{} (conditionnel)
+\item Pour $s\le2$ (Riesz), l'énergie de $A$ est infinie (proposition~\ref{ch1:prop:riesz}) : l'inégalité est alors vraie sans contenu. Le contenu apparaît pour $s>2$.
+\end{enumerate}
+
+\subsection{Le fil conducteur des formalisations}
+
+La suite du livre suit un enchaînement naturel : chaque étape prend le résultat précédent comme une boîte noire.
+Le tableau~\ref{ch1:tab:flux} le résume. Les numéros de DOI et les niveaux sont ceux des documents d'enregistrement.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{@{}p{0.04\textwidth}p{0.50\textwidth}p{0.17\textwidth}p{0.20\textwidth}@{}}
+\toprule
+\# & Étape & Niveau & Référence \\
+\midrule
+1 & Théorème amont (\texttt{openai/math}), cas planaire & \tierL{} et \tierA{} conditionnel & \cite{oai} \\
+2 & Corollaires D1 à D4 : Riesz, toute densité, sens CKMRV et non-unicité, disques ouverts ou fermés & \tierA{}, conditionnel à 1 & \cite{v1} (livre v1) \\
+3 & Cinq potentiels physiques (excitons dipolaires, Yukawa, Rytova--Keldysh, enstrophie $\sigma=3$, structure de Bogoliubov) & \tierA{} ; Keldysh$\leftrightarrow$Struve : \tierC{} & 5 dépôts Zenodo \\
+4 & Bibliothèque CM/Bernstein (P3) : subordination, équivalence avec \lean{AdmissiblePotential} & \tierA{} & \cite{p3} \\
+5 & Surprise quantique : l'énergie de point zéro, QU-1 faux pour 8 potentiels CM sur 12 ; certificat à $a=1$ ; pas de transition triangulaire$\to$oblique & \tierX{}, puis \tierA{} (logique) et \tierC{} (intégrales en boules) ; résultat négatif & Zenodo \\
+6 & Sandier--Serfaty (réseaux d'Abrikosov) : audit, portage partiel en Lean, échec de l'extension au cas~3D & \tierC{}, \tierA{} partiel ; résultats négatifs & Zenodo \\
+7 & Navier--Stokes (corpus \texttt{openai/NavierStokesAndEuler}) : reconstruction et rejeu noyau & \tierA{} ; pas de \og problème Clay résolu \fg{} & article en préparation \\
+8 & Génétique des populations : fixation de Moran, équation de Price, théorème isotherme & \tierA{} & Zenodo \\
+\bottomrule
+\end{tabular}
+\caption{L'enchaînement des formalisations, des fondations (ce chapitre) aux applications.}
+\label{ch1:tab:flux}
+\end{table}
+
+\begin{warnbox}[: ce que le tableau n'affirme pas]
+Aucune ligne ne signifie \og conjecture démontrée \fg{} au-delà de son niveau. Les lignes 5 et 6 contiennent des résultats \emph{négatifs} : elles
+disent que certaines extensions plausibles échouent (ou ne sont pas établies), et c'est une information de même valeur que les résultats positifs.
+L'étape~7 est un audit d'un corpus de tiers : le mérite revient à ses auteurs. Nous ne prétendons pas qu'un problème du Clay est résolu.
+\end{warnbox}
+
+\section{Lean 4 pour l'étudiant}
+\label{ch1:sec:lean}
+
+\subsection{Propositions et preuves}
+
+Lean~4~\cite{lean4} est à la fois un langage de programmation et un \emph{assistant de preuve}. Pour un étudiant de classe préparatoire,
+le dictionnaire suivant suffit pour lire les énoncés de ce livre (c'est l'idée de Curry et Howard).
+\begin{itemize}
+\item Une \emph{proposition} est un énoncé mathématique ; en Lean, c'est un objet de type \lean{Prop}.
+\item Une \emph{preuve} de la proposition $P$ est un objet \lean{h : P}. Le noyau de Lean vérifie qu'un terme a bien le type annoncé.
+\item $P\wedge Q$ s'écrit \lean{P ∧ Q} : une preuve est une \emph{paire} $\langle$\lean{hP}, \lean{hQ}$\rangle$.
+\item $P\Rightarrow Q$ s'écrit \lean{P → Q} : une preuve est une \emph{fonction} qui transforme toute preuve de $P$ en une preuve de $Q$.
+\item $\forall n,\ P(n)$ s'écrit \lean{∀ n, P n} : une preuve est une fonction qui, à chaque $n$, associe une preuve de $P(n)$.
+\end{itemize}
+La bibliothèque Mathlib~\cite{mathlib} fournit de nombreux théorèmes déjà démontrés (analyse, algèbre).
+
+\subsection{Un exemple minimal, avec sa sortie réelle}
+
+Le fichier suivant a été compilé tel quel avec Lean 4.34.0-rc2, sans aucune bibliothèque. Il contient trois théorèmes vrais et deux \og théorèmes \fg{}
+faux $1=2$ que l'on ne démontre qu'en trichant : l'un avec \lean{sorry}, l'autre avec un axiome ajouté par l'utilisateur.
+
+\begin{leanbox}[: \texttt{T.lean} (compilé le 2026-10-26)]
+\begin{lstlisting}[language=Lean]
+theorem and_swap' (p q : Prop) (h : p ∧ q) : q ∧ p := ⟨h.2, h.1⟩
+
+theorem add_comm' (a b : Nat) : a + b = b + a := Nat.add_comm a b
+
+theorem two_mul' (n : Nat) : 2 * n = n + n := by
+  omega
+
+theorem bad : 1 = 2 := by sorry
+
+axiom cheat : False
+theorem bad2 : 1 = 2 := cheat.elim
+
+#print axioms and_swap'
+#print axioms two_mul'
+#print axioms bad
+#print axioms bad2
+\end{lstlisting}
+\end{leanbox}
+
+Les deux premiers théorèmes sont des \emph{termes de preuve} : on écrit directement l'objet. Le troisième utilise une \emph{tactique} (\lean{by omega}) :
+un petit programme qui \emph{construit} le terme de preuve ; le noyau vérifie ensuite le terme produit. Voici la sortie réelle :
+
+\begin{lstlisting}[language={}]
+T.lean:8:8: warning: declaration uses `sorry`
+'and_swap'' does not depend on any axioms
+'two_mul'' depends on axioms: [propext, Quot.sound]
+'bad' depends on axioms: [sorryAx]
+'bad2' depends on axioms: [cheat]
+\end{lstlisting}
+
+Le code de retour du compilateur était $0$ : \textbf{Lean accepte un fichier qui contient \lean{sorry}}, en émettant seulement un avertissement.
+\emph{Un code de retour nul ne signifie pas \og tout est démontré \fg{}.}
+
+\subsection{Les axiomes, et la porte d'entrée}
+
+Toute preuve en mathématiques repose sur des axiomes. Les mathématiques classiques de Mathlib en utilisent trois : \lean{propext} (deux propositions
+équivalentes sont égales), \lean{Classical.choice} (axiome du choix) et \lean{Quot.sound} (compatibilité des quotients). Nous les appelons la \emph{liste blanche} :
+\[
+  \{\texttt{propext},\ \texttt{Classical.choice},\ \texttt{Quot.sound}\}.
+\]
+Tout autre axiome dans l'empreinte d'un théorème le disqualifie. Dans la sortie ci-dessus, l'empreinte de \lean{bad} contient \lean{sorryAx} (l'axiome interne qui
+se cache derrière \lean{sorry}) et celle de \lean{bad2} contient l'axiome utilisateur \lean{cheat} : les deux faux théorèmes sont donc \emph{détectés}.
+C'est le \emph{contrôle négatif} de la porte d'axiomes ; le \emph{contrôle positif} est que \lean{and_swap'} et \lean{two_mul'} passent. Une mesure sans ces deux contrôles ne prouve rien.
+
+\begin{warnbox}[: \texttt{\#print axioms} ne suffit pas]
+L'audit A2~\cite{a2} du corpus \texttt{openai/NavierStokesAndEuler} (2\,440 modules reconstruits, rejeu noyau de $53\,752+34\,648$ déclarations) a mis en évidence qu'une déclaration
+\emph{ajoutée directement au noyau en désactivant sa vérification de types} (option \lean{debug.skipKernelTC}) est affichée par \lean{#print axioms} comme
+\og ne dépend d'aucun axiome \fg{}, alors qu'elle peut établir \lean{False}. Le contrôle positif de l'audit (une telle fausse déclaration, fabriquée exprès) a été
+\emph{invisible} à \lean{#print axioms} et \emph{attrapé} par le rejeu complet du noyau (\lean{leanchecker}) \tierA{}. La leçon : l'audit d'axiomes est nécessaire,
+non suffisant.
+\end{warnbox}
+
+La porte de niveau \tierA{} de ce livre comprend donc \emph{quatre} contrôles :
+\begin{enumerate}
+\item compilation du projet sans erreur ;
+\item liste d'axiomes de chaque théorème retenu incluse dans la liste blanche ;
+\item \emph{rejeu noyau} complet des déclarations par l'outil \lean{leanchecker}, qui revérifie chaque terme sans faire confiance au compilateur ;
+\item recherche textuelle des mots \lean{skipKernelTC}, \lean{addDecl}, \lean{native_decide} et \lean{implemented_by} dans les sources, qui sont les portes dérobées connues.
+\end{enumerate}
+S'y ajoute une règle d'organisation : celui qui \emph{produit} une preuve n'est pas celui qui la \emph{vérifie} (ici, deux agents d'IA distincts, et jamais un humain).
+
+\subsection{Lire l'énoncé amont ; un corollaire court}
+
+Une fois le théorème principal disponible, un corollaire se réduit souvent à vérifier une hypothèse. Voici le cas de Riesz,
+cité depuis le fichier \lean{formal_cert/Triangular/Riesz.lean} du dépôt (les points de suspension marquent une partie omise) :
+
+\begin{leanbox}[: corollaire de Riesz (extrait)]
+\begin{lstlisting}[language=Lean]
+noncomputable def riesz (s : ℝ) : ℝ → ℝ := fun t => t ^ (-(s / 2))
+
+theorem riesz_admissible {s : ℝ} (hs : 0 < s) : AdmissiblePotential (riesz s) := by
+  ...
+
+theorem triangular_riesz_optimal {s : ℝ} (hs : 0 < s) (C : Set Plane)
+    (hC : LocallyFinite C) (hd : DensityOne C) :
+    latticeEnergy (riesz s) ≤ energy (riesz s) C :=
+  (universal_energy_minimum (riesz s) C (riesz_admissible hs) hC hd).1
+\end{lstlisting}
+\end{leanbox}
+
+La dernière ligne \og applique \fg{} le théorème principal à $g=\text{riesz}\ s$ en fournissant les trois preuves d'hypothèses, puis prend la première composante
+\lean{.1} de la conjonction. C'est exactement une \emph{composition de fonctions} au sens du dictionnaire de Curry--Howard.
+L'hypothèse \lean{riesz_admissible} est, elle, la propriété de complète monotonie de l'exemple~\ref{ch1:ex:exemples} (2).
+
+\subsection{La récurrence du §\ref{ch1:sec:cm}, côté Lean}
+
+Le théorème de subordination~\ref{ch1:thm:comp} a été formalisé~\cite{p3}. L'énoncé général et son cas particulier de la racine carrée sont les suivants
+(extraits du fichier \lean{formal_cert/Programmes/CompletelyMonotone/Bernstein.lean}, preuves omises) :
+
+\begin{leanbox}[: subordination (énoncés)]
+\begin{lstlisting}[language=Lean]
+theorem IsCompletelyMonotoneOn.comp_bernstein {f g : ℝ → ℝ} (hf : IsCompletelyMonotoneOn f)
+    (hg : IsBernsteinOn g) (hpos : ∀ t, 0 < t → 0 < g t) :
+    IsCompletelyMonotoneOn (fun t => f (g t))
+
+theorem IsCompletelyMonotoneOn.comp_sqrt {f : ℝ → ℝ} (hf : IsCompletelyMonotoneOn f) :
+    IsCompletelyMonotoneOn (fun t => f (Real.sqrt t))
+\end{lstlisting}
+\end{leanbox}
+
+On y reconnaît la structure du théorème humain. Les hypothèses \lean{hf}, \lean{hg} et \lean{hpos} sont les trois
+hypothèses du théorème ($f$ CM, $h$ de Bernstein, $h>0$), \lean{fun t => f (g t)} est la fonction $f\circ h$, et \lean{comp_sqrt} s'obtient du cas général en
+fournissant la preuve que $\sqrt{\ \cdot\ }$ est de Bernstein et strictement positive sur $]0,\infty[$. Le dépôt indique que la preuve procède par récurrence
+forte sur l'ordre, quantifiée sur toutes les fonctions CM $f$, avec la formule $(f\circ h)'=-((-f')\circ h)\cdot h'$ et le lemme de Leibniz : c'est
+le même raisonnement que la démonstration humaine. \tierA{} pour les énoncés ci-dessus, \tierC{} pour notre rédaction humaine, dont la correspondance avec la
+preuve Lean est un commentaire de l'auteur, non un théorème.
+
+\begin{remark}[Pourquoi \lean{hpos} apparaît en Lean]
+En mathématiques de papier, on sous-entend que $f\circ h$ a un sens. Lean ne le sous-entend pas : $f$ est une fonction définie partout sur $\R$, mais
+n'est contrainte que sur $]0,\infty[$. Si $h\equiv0$ (qui est de Bernstein), $f\circ h$ serait la constante parasite $f(0)$, sur laquelle l'hypothèse ne dit rien. L'hypothèse
+$h>0$ n'est pas du pinaillage : elle est ce qui rend l'énoncé \emph{vrai}.
+\end{remark}
+
+\begin{warnbox}[: récapitulatif des niveaux de ce chapitre]
+\begin{itemize}
+\item \tierL{} : formule de Poisson sur le tore (théorème de Fourier), théorème de Montgomery, théorème de Bernstein--Widder (sens direct), résultat de CKMRV en dimensions $8$ et $24$.
+\item \tierC{} : toutes les démonstrations humaines de ce chapitre (comptage, énergie de Riesz, formule de Poisson, clôture des fonctions CM, subordination, mélanges, réduction de Fatou).
+\item \tierA{} : les énoncés Lean cités (équivalence avec \lean{AdmissiblePotential}, subordination, \lean{laplace_measure}, \lean{quadrupole_not_cm}, l'énoncé amont), le dernier étant \emph{conditionnel}.
+\item \tierX{} : le script \texttt{code/ch1\_theta.py}, qui illustre sans prouver.
+\end{itemize}
+\end{warnbox}
+
+\subsection{Les niveaux Elenchus}
+\label{ch1:sec:tiers}
+
+La méthode Elenchus~\cite{elenchus} attache à chaque énoncé du livre l'un des quatre niveaux, selon la \emph{nature de la preuve disponible}.
+
+\begin{center}\small
+\begin{tabular}{@{}p{0.09\textwidth}p{0.40\textwidth}p{0.38\textwidth}@{}}
+\toprule
+Niveau & Ce qui est garanti & Ce qui ne l'est pas \\
+\midrule
+\tierA{} & L'énoncé Lean est accepté par le noyau, avec les quatre contrôles de la porte ci-dessus & Que l'énoncé Lean traduise fidèlement l'énoncé mathématique ou physique visé \\
+\tierL{} & Le résultat figure dans une source lue, référencée précisément (par exemple un théorème d'article publié) & Qu'il ait été reverifié par nos soins \\
+\tierC{} & Un argument humain complet, écrit dans ce livre, relu par un agent d'IA indépendant & Toute vérification par machine, et toute relecture humaine \\
+\tierX{} & Un calcul en virgule flottante, avec contrôles positif et négatif & Rien : une exploration numérique ne soutient jamais une affirmation \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Deux règles de composition, utilisées partout dans la suite.
+\begin{enumerate}
+\item \emph{Le niveau d'une conséquence est le plus faible des niveaux de ses hypothèses.} Un corollaire de \texttt{openai/math} est \tierA{} \emph{conditionnel} : le noyau a
+vérifié l'implication, pas l'hypothèse amont, dont la preuve n'a pas été relue par des pairs.
+\item \emph{Un résultat négatif est un résultat.} Quand une extension plausible échoue, on l'écrit avec son niveau.
+\end{enumerate}
+
+\begin{warnbox}[: l'adéquation de l'énoncé]
+Le noyau certifie que l'énoncé \lean{universal_energy_minimum}, \emph{avec les définitions du dépôt}, découle des axiomes de la liste blanche. Il ne certifie
+pas que \lean{DensityOne} soit la densité que le physicien a en tête, ni que \lean{energy} (une limite inférieure sur des disques fermés centrés) soit l'énergie de CKMRV. Aucun humain
+n'a audité cette adéquation. C'est pourquoi chaque chapitre répète le niveau, et c'est la raison de la mention \og conditionnel \fg{}.
+\end{warnbox}
+
+\section*{Exercices}
+\addcontentsline{toc}{section}{Exercices}
+\label{ch1:sec:exos}
+
+Les indications suivent la liste des énoncés. Les exercices sont de difficulté croissante (de * à ***).
+
+\begin{exercise}[*]\label{ch1:ex:covol}
+Montrer que la matrice de passage entre deux bases d'un même réseau est dans $\mathrm{GL}_2(\Z)$ et en déduire que le covolume ne dépend pas de la base.
+Calculer le covolume et la distance minimale du réseau $\Z u\oplus\Z v$ avec $u=(1,0)$, $v=(1/2,\sqrt3/2)$, puis la normaliser à la densité $1$. Retrouver $a^2=2/\sqrt3$.
+\end{exercise}
+
+\begin{exercise}[*]\label{ch1:ex:voisins}
+Dans $A$, déterminer tous les vecteurs de norme $a\sqrt3$ et leur nombre (indication : $m^2+mn+n^2=3$). Comparer au cas de $\Z^2$ (couche $|x|^2=2$). Justifier que $a>1$ : à covolume égal, la distance minimale de $A$ dépasse celle de $\Z^2$.
+\end{exercise}
+
+\begin{exercise}[**]\label{ch1:ex:comptage}
+Écrire la démonstration de la proposition~\ref{ch1:prop:comptage} pour $\Lambda=\Z^2$ et en déduire que $\#\{(m,n)\in\Z^2 : m^2+n^2\le R^2\}=\pi R^2+O(R)$.
+Cette erreur $O(R)$ est-elle optimale ? (Chercher la littérature sur le \emph{problème du cercle de Gauss}.)
+\end{exercise}
+
+\begin{exercise}[**]\label{ch1:ex:epstein}
+Démontrer que $\sum_{x\in A\setminus0}|x|^{-s}$ diverge pour $s\le2$ et converge pour $s>2$. En utilisant $t^{-s/2}=\frac{\pi^{s/2}}{\Gamma(s/2)}\int_0^\infty\alpha^{s/2-1}e^{-\pi\alpha t}d\alpha$,
+exprimer cette somme comme une intégrale de $\Theta_A(\alpha)-1$ contre $\alpha^{s/2-1}d\alpha$ et retrouver la condition $s>2$ à partir du comportement de $\Theta_A$ en $0$ et en $+\infty$.
+\end{exercise}
+
+\begin{exercise}[**]\label{ch1:ex:poisson}
+(a) Démontrer la relation $\vartheta(1/\alpha)=\sqrt\alpha\,\vartheta(\alpha)$ de l'exemple~\ref{ch1:ex:jacobi} en refaisant la démonstration unidimensionnelle.
+(b) En déduire un algorithme pour calculer $\vartheta(\alpha)$ à $10^{-12}$ près en ne sommant que $|n|\le 6$ quel que soit $\alpha>0$. (c) Calculer
+$\Theta_{\Z^2}(1)=\vartheta(1)^2$ et comparer à la valeur $1{,}1803\ldots$ du texte.
+\end{exercise}
+
+\begin{exercise}[*]\label{ch1:ex:clotures}
+Montrer que si $f$ est CM et $a>0$, $b\ge0$, alors $t\mapsto f(at+b)$ est CM. En déduire que $t\mapsto(t+1)^{-s}e^{-a t}$ est CM pour $s,a\ge0$.
+Montrer par un calcul que $t\mapsto t^{-1}e^{-t}$ l'est aussi sans utiliser le théorème de composition.
+\end{exercise}
+
+\begin{exercise}[**]\label{ch1:ex:comp}
+(a) Vérifier que $h(t)=\ln(1+t)$ est de Bernstein. (b) En déduire que $t\mapsto(\ln(1+t))^{-s}$ est CM pour $s\ge0$ (attention à la positivité de $h$ sur $]0,\infty[$).
+(c) Montrer que $t\mapsto1/(1+\sqrt t)$ est CM en appliquant le corollaire~\ref{ch1:cor:sqrt}.
+(d) Pourquoi l'hypothèse $h>0$ ne peut-elle pas être omise dans le théorème~\ref{ch1:thm:comp} ? (Considérer $h\equiv0$.)
+\end{exercise}
+
+\begin{exercise}[***]\label{ch1:ex:melange}
+Soit $g(t)=t^{-1/2}-2(t+1)^{-1/2}+(t+4)^{-1/2}$. En remarquant que $g$ est un mélange de gaussiennes à \emph{poids signé}, expliquer pourquoi la positivité du poids échoue,
+et retrouver par ce biais que $g$ n'est pas CM (comparer à $g(3)<0$).
+\end{exercise}
+
+\begin{exercise}[*]\label{ch1:ex:lean}
+Parmi les quatre sorties suivantes de \lean{#print axioms}, lesquelles satisfont la porte d'axiomes ? Lesquelles satisfont la porte \emph{complète} à quatre contrôles ?
+(i) \texttt{[propext, Classical.choice, Quot.sound]} ; (ii) \texttt{[propext, sorryAx]} ; (iii) \texttt{does not depend on any axioms} ; (iv) \texttt{[cheat, propext]}.
+Expliquer pourquoi (iii), seule, ne suffit pas à conclure.
+\end{exercise}
+
+\begin{exercise}[**]\label{ch1:ex:fatou}
+Soit $\Lambda$ un réseau et $g\ge0$ un potentiel quelconque. Montrer que l'énergie de disque $E_g(\Lambda;R)$ définie plus haut converge, quand $R\to\infty$,
+vers $\sum_{a\in\Lambda\setminus0}g(|a|^2)$ (finie ou non). Ainsi, pour un réseau, énergie inférieure et énergie du réseau coïncident.
+\end{exercise}
+
+\subsection*{Indications}
+
+\begin{itemize}
+\item[\ref{ch1:ex:covol}.] Si $M,M'$ sont deux matrices de bases, $M'=MP$ avec $P$ entière et $M=M'P'$ avec $P'$ entière : $PP'=I$, donc $\det P\det P'=1$ avec deux
+entiers, donc $\det P=\pm1$. Pour la fin : $\det(u,v)=\sqrt3/2$ ; on met à l'échelle de rapport $a$ avec $a^2\sqrt3/2=1$.
+\item[\ref{ch1:ex:voisins}.] $m^2+mn+n^2=3$ : $(1,1)$, $(-1,-1)$, $(2,-1)$, $(-2,1)$, $(1,-2)$, $(-1,2)$, soit six vecteurs. Comme $a^2=2/\sqrt3>1$ ($4>3$), $a>1$ ; la
+distance minimale de $\Z^2$ est $1$.\item[\ref{ch1:ex:comptage}.] Prendre $\delta=\sqrt2$ pour $\Z^2$ : $\pi(R-\sqrt2)^2\le N(R)\le\pi(R+\sqrt2)^2$, d'où $N(R)=\pi R^2+O(R)$ ; l'optimalité de l'exposant $1$ n'est pas demandée (le meilleur exposant connu est inférieur à $1$, voir la littérature).
+\item[\ref{ch1:ex:epstein}.] Pour la divergence, reprendre la minoration de $\#S_k$. Pour l'intégrale : $\Theta_A(\alpha)-1\sim6e^{-\pi a^2\alpha}$ quand $\alpha\to\infty$ (convergence)
+et $\Theta_A(\alpha)\sim\alpha^{-1}$ quand $\alpha\to0$ (par Poisson) ; l'intégrale $\int_0\alpha^{s/2-1}\alpha^{-1}d\alpha$ converge ssi $s/2-2>-1$, i.e. $s>2$.
+\item[\ref{ch1:ex:poisson}.] (b) Pour $\alpha\ge1$ on somme directement ; pour $\alpha<1$ on applique $\vartheta(\alpha)=\alpha^{-1/2}\vartheta(1/\alpha)$.
+(c) $\vartheta(1)=1{,}0864348\ldots$, donc $\Theta_{\Z^2}(1)=1{,}18034\ldots$
+\item[\ref{ch1:ex:clotures}.] $f(at+b)$ : dériver $n$ fois et factoriser $a^n$. Pour la dernière : produit de deux fonctions CM (proposition~\ref{ch1:prop:cloture}) ; ou calcul direct par Leibniz.
+\item[\ref{ch1:ex:comp}.] (b) Poser $f(u)=u^{-s}$, CM. (d) Pour $h\equiv 0$, $f\circ h$ n'est pas défini sur $]0,\infty[$ (ou vaut une valeur parasite $f(0)$ si on prolonge).
+\item[\ref{ch1:ex:melange}.] $t^{-1/2}=\pi^{-1/2}\int\alpha^{-1/2}e^{-\alpha t}d\alpha$ ; le poids de $g$ est $\pi^{-1/2}\alpha^{-1/2}(1-2e^{-\alpha}+e^{-4\alpha})$, qui est négatif pour
+certains $\alpha$ (étudier $1-2x+x^4$ avec $x=e^{-\alpha}$). L'unicité de $\mu$ dans Bernstein--Widder et la positivité de $g$ en $t=3$ concluent.
+\item[\ref{ch1:ex:lean}.] (i) passe. (ii) échoue (\lean{sorryAx}). (iii) passe la porte d'axiomes seule, mais la déclaration pourrait avoir été insérée en contournant le
+vérificateur de types du noyau. (iv) échoue.
+\item[\ref{ch1:ex:fatou}.] Le terme de $x\in\Lambda_R$ est $\sum_{a\in(\Lambda_R-x)\setminus0}g(|a|^2)$ : il est majoré par $\sum_{a\ne0}g(|a|^2)$, d'où la majoration de $E_g(\Lambda;R)$.
+Pour la minoration, fixer $r>0$ : si $|x|\le R-r$, le terme de $x$ contient tous les $a\ne0$ avec $|a|\le r$. Donc
+$E_g(\Lambda;R)\ge\frac{N_\Lambda(R-r)}{N_\Lambda(R)}\sum_{0<|a|\le r}g(|a|^2)$ ; le rapport tend vers $1$ (proposition~\ref{ch1:prop:comptage}). Faire tendre $R$ puis $r$ vers l'infini.
+\end{itemize}

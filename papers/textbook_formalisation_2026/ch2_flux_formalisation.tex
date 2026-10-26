@@ -1,0 +1,1142 @@
+% =====================================================================
+% Chapitre 2 -- Le flux des formalisations
+% Sources : FACTS.md ; papers/ar_dipolar_exciton, ar_yukawa_crystal, ar_keldysh_tmd,
+% prog_cm_bernstein_library, prog_sandier_serfaty_audit, p2_sandier_serfaty_lean, p2_3d_feasibility ;
+% Lean : formal_cert/Autoresearch/{DipolarExciton*,Yukawa*,KeldyshCM*}.lean,
+% formal_cert/Programmes/CompletelyMonotone/, formal_cert/Programmes/SandierSerfaty/SignedEndpoints.lean.
+% Les extraits Lean sont VERBATIM ; le numéro de ligne renvoie au fichier source.
+% =====================================================================
+
+% Style de listings local au chapitre : la liste « literate » de main.tex, recopiée telle quelle,
+% complétée par quelques symboles présents dans les extraits de ce chapitre (β, ∫, ⁻, ᵐ, ι, ᵢ).
+\lstdefinestyle{chdeux}{language=Lean,
+  literate={⁻}{{$^{-}$}}1 {⁻¹}{{$^{-1}$}}1 {ℝ}{{$\mathbb{R}$}}1 {ℤ}{{$\mathbb{Z}$}}1 {ℕ}{{$\mathbb{N}$}}1 {≤}{{$\le$}}1 {≥}{{$\ge$}}1 {≠}{{$\ne$}}1
+  {→}{{$\to$}}1 {↔}{{$\leftrightarrow$}}1 {∀}{{$\forall$}}1 {∃}{{$\exists$}}1 {∧}{{$\wedge$}}1 {∨}{{$\vee$}}1
+  {¬}{{$\neg$}}1 {⊤}{{$\top$}}1 {∈}{{$\in$}}1 {∉}{{$\notin$}}1 {∩}{{$\cap$}}1 {√}{{$\surd$}}1
+  {π}{{$\pi$}}1 {ρ}{{$\rho$}}1 {κ}{{$\kappa$}}1 {α}{{$\alpha$}}1 {δ}{{$\delta$}}1 {ε}{{$\varepsilon$}}1 {σ}{{$\sigma$}}1
+  {•}{{$\bullet$}}1 {∑}{{$\sum$}}1 {²}{{$^2$}}1 {₀}{{$_0$}}1 {₁}{{$_1$}}1 {₂}{{$_2$}}1 {‖}{{$\|$}}1 {⟨}{{$\langle$}}1 {⟩}{{$\rangle$}}1
+  {𝓝}{{$\mathcal{N}$}}1 {∞}{{$\infty$}}1 {×}{{$\times$}}1 {·}{{$\cdot$}}1 {∘}{{$\circ$}}1 {∖}{{$\setminus$}}1
+  {ψ}{{$\psi$}}1 {φ}{{$\varphi$}}1 {λ}{{$\lambda$}}1 {μ}{{$\mu$}}1 {θ}{{$\theta$}}1 {Λ}{{$\Lambda$}}1 {∂}{{$\partial$}}1
+  {—}{{---}}1 {–}{{--}}1 {é}{{\'e}}1 {ö}{{\"o}}1 {’}{{'}}1
+  {β}{{$\beta$}}1 {∫}{{$\int$}}1 {ᵐ}{{$^{\mathrm{m}}$}}1 {ι}{{$\iota$}}1 {ᵢ}{{$_i$}}1 {△}{{$\triangle$}}1
+  {⊥}{{$\bot$}}1 {χ}{{$\chi$}}1}
+
+\chapter{Le flux des formalisations : de l'optimalité universelle aux potentiels physiques}\label{ch2:chapitre}
+\chaptermark{Le flux des formalisations}
+
+\begin{center}
+\begin{minipage}{0.9\linewidth}\small\itshape
+Au chapitre~1, un théorème venu d'ailleurs --- le réseau triangulaire minimise l'énergie de tout potentiel complètement
+monotone du carré de la distance --- a été posé, lu et vérifié par le noyau de Lean. Ce chapitre raconte ce qui s'est
+passé ensuite : comment, en suivant une méthode fixée à l'avance, on a appliqué ce théorème à trois interactions de la
+physique des matériaux, comment une petite bibliothèque a transformé ces applications en quelques lignes, et comment la
+même méthode, tournée vers un problème voisin beaucoup plus difficile (la conjecture de Sandier--Serfaty), a surtout
+servi à dire précisément ce qui \emph{n'est pas} démontré.
+\end{minipage}
+\end{center}
+
+\begin{warnbox}[: à lire avant tout le chapitre]
+\begin{itemize}[leftmargin=1.2em,itemsep=2pt]
+\item Tout ce qui repose sur openai/math est \emph{conditionnel} aux théorèmes amont, qui sont produits par une IA et
+\emph{non relus par des pairs}.
+\item Chaque résultat de ce chapitre a été produit par des agents d'IA (Claude) sous la direction de l'auteur, puis
+audité par un \emph{autre} agent d'IA. \textbf{Aucun humain n'a audité ces résultats}, ni l'adéquation des énoncés Lean,
+ni les démonstrations « humaines » écrites ici.
+\item Un \tierA{} porte sur l'énoncé Lean, jamais sur sa lecture physique.
+\item La conjecture de Sandier--Serfaty \textbf{n'est pas démontrée} dans ce livre (section~\ref{ch2:sec:ss}).
+\end{itemize}
+\end{warnbox}
+
+% ---------------------------------------------------------------------
+\section{Vue d'ensemble : un flux, pas un catalogue}\label{ch2:sec:flux}
+
+Le point de départ (chapitre~1) est le théorème amont \lean{universal_energy_minimum} d'openai/math : pour tout potentiel
+$g$ \emph{admissible}, le réseau triangulaire $\Lat$ de covolume un a une énergie inférieure ou égale à celle de toute
+configuration localement finie de densité un \tierA{}, conditionnellement à l'amont~\cite{ch2oai}. Dans la
+littérature humaine, l'optimalité universelle est démontrée en dimensions 8 et 24~\cite{ch2ckmrv} \tierL, et
+Petrache et Serfaty écrivaient en 2019 que le cas plan restait ouvert~\cite{ch2ps} \tierL : le théorème amont est donc
+une revendication d'IA sur un problème ouvert, acceptée ici uniquement comme énoncé Lean vérifié par le noyau à partir
+des définitions amont. Rappelons les deux énoncés, cités mot pour mot.
+
+\begin{leanbox}[--- openai/math, \lean{OAI/Analysis/Triangular/Energy/Basic.lean:26-29}]
+\begin{lstlisting}[style=chdeux]
+def AdmissiblePotential (g : ℝ → ℝ) : Prop :=
+  ContDiffOn ℝ (⊤ : ℕ∞) g (Set.Ioi 0) ∧
+  (∀ t : ℝ, 0 < t → 0 ≤ g t) ∧
+  ∀ (r : ℕ) (t : ℝ), 0 < t → 0 ≤ (-1 : ℝ) ^ r * iteratedDeriv r g t
+\end{lstlisting}
+\end{leanbox}
+\begin{leanbox}[--- openai/math, \lean{OAI/Analysis/Triangular/Energy/Universal.lean:9-11} (preuve omise)]
+\begin{lstlisting}[style=chdeux]
+theorem universal_energy_minimum (g : ℝ → ℝ) (C : Set Plane)
+    (hg : AdmissiblePotential g) (_hC : LocallyFinite C) (hd : DensityOne C) :
+    latticeEnergy g ≤ energy g C ∧ latticeEnergy g = energy g A := by
+\end{lstlisting}
+\end{leanbox}
+\noindent (Ces deux extraits sont cités d'après la copie épinglée d'openai/math ; la copie de travail
+\lean{results/openai_math/hypotheses/night_2026-10-08/TRI_D3/src/} du dépôt lui est identique pour ces deux fichiers.) La variable de $g$ est le \emph{carré} $t=r^2$ de la
+distance ; « admissible » veut dire : $C^\infty$ sur $]0,+\infty[$, positif, et $(-1)^r g^{(r)}(t)\ge0$ pour tout $r$,
+c'est-à-dire \emph{complètement monotone} (CM) sur $]0,+\infty[$. Les énergies vivent dans $[0,+\infty]$.
+
+Le flux de ce chapitre est le suivant (figure~\ref{ch2:fig:flux}).
+\begin{enumerate}[itemsep=1pt]
+\item \textbf{Amont} (chapitre~1) : l'optimalité universelle en dimension deux \tierA{} conditionnel, et nos corollaires
+D1--D4 (Riesz, toute densité, sens CKMRV, disques ouverts ou fermés), publiés dans le manuel~v1
+(doi\string:10.5281/zenodo.23295142)~\cite{ch2txt}.
+\item \textbf{Trois potentiels physiques} (section~\ref{ch2:sec:pot}) : excitons dipolaires, Yukawa plan, Rytova--Keldysh.
+Pour chacun : une démonstration de complète monotonie en $r^2$, l'énoncé Lean, la conséquence.
+\item \textbf{La généralisation} (section~\ref{ch2:sec:lib}) : une bibliothèque CM/Bernstein dont le théorème de
+subordination fait de ces trois résultats des corollaires de deux ou trois lignes.
+\item \textbf{Un problème voisin} (section~\ref{ch2:sec:ss}) : la conjecture de Sandier--Serfaty, où la même méthode
+produit une reproduction, un audit, un énoncé Lean, une formalisation \emph{partielle} et un résultat négatif en
+dimension trois --- mais aucune preuve.
+\end{enumerate}
+
+\begin{figure}[ht]\centering
+\begin{tikzpicture}[x=1cm,y=1cm,font=\small,
+  bx/.style={draw,rounded corners=2pt,align=center,inner sep=4pt,fill=#1!6},
+  ar/.style={->,>=stealth,thick,gray!70!black}]
+\node[bx=tierL] (up) at (0,0) {openai/math\\ \lean{universal_energy_minimum}\\ (IA, non relu)};
+\node[bx=tierA] (d) at (4.6,0) {D1--D4\\ (chap.~1)};
+\node[bx=tierA] (h1) at (0,-2.2) {H1 dipolaire\\ $2(t^{-1/2}-(t+d^2)^{-1/2})$};
+\node[bx=tierA] (h2) at (4.6,-2.2) {H2 Yukawa\\ $e^{-\kappa\sqrt t}/\sqrt t$};
+\node[bx=tierA] (h3) at (9.2,-2.2) {H3 Keldysh\\ mélange de Laplace};
+\node[bx=tierA] (p3) at (4.6,-4.4) {P3 : bibliothèque CM/Bernstein\\ subordination $f\circ\psi$};
+\node[bx=tierC] (ss) at (9.2,0) {Sandier--Serfaty\\ P1, A1, B3\\ (non démontrée)};
+\draw[ar] (up) -- (d);
+\draw[ar] (up) -- (h1);
+\draw[ar] (up) -- (h2);
+\draw[ar] (up.south east) -- (h3.north west);
+\draw[ar] (h1) -- (p3);
+\draw[ar] (h2) -- (p3);
+\draw[ar] (h3) -- (p3);
+\draw[ar,dashed] (d) -- node[above,font=\scriptsize]{même méthode} (ss);
+\end{tikzpicture}
+\caption{Le flux des formalisations de ce chapitre. Vert : énoncés Lean \tierA{} (conditionnels à l'amont) ;
+bleu : amont cité ; orange : travail dont le statut mathématique reste \tierC{} ou inférieur.}\label{ch2:fig:flux}
+\end{figure}
+
+% ---------------------------------------------------------------------
+\section{La méthode : préenregistrer, falsifier, laisser juger le noyau}\label{ch2:sec:methode}
+
+Avant le moindre calcul, il faut dire comment on saura qu'on s'est trompé. La méthode suivie dans tous les travaux de ce
+chapitre tient en quatre règles. Elle est outillée par Elenchus~\cite{ch2elenchus}, un registre de revendications
+(« ledger ») muni d'une porte automatique.
+
+\subsection{Règle 1 : préenregistrer}\label{ch2:ssec:prereg}
+On écrit, \emph{avant} de voir les résultats, ce qu'on cherche, ce qu'on rapportera et ce qui ferait échouer le
+projet. Deux exemples réels.
+\begin{itemize}
+\item Pour les excitons dipolaires, le préenregistrement \texttt{DIP-TRI-1} a été validé (commit
+\texttt{4feb027}) \emph{avant} le code du solveur (commit \texttt{17ea6be}) dans rusty-SUNDIALS~\cite{ch2dip}. Il fixait
+la quantité à rapporter (une somme d'images tronquée plus la queue uniforme). L'article rapporte à la place des énergies
+d'Ewald exactes, et le dit explicitement comme \emph{déviation} : la somme tronquée laissait un résidu non monotone.
+\item Pour la formalisation du certificat de Sandier--Serfaty (A1), les probabilités a priori étaient écrites dans
+\texttt{preregistration.json} : $0{,}6$ que quelques étapes pilotes aboutissent, $0{,}2$ que toutes aboutissent, $0{,}35$
+pour un lemme complet de la réduction, $0{,}02$ pour l'ensemble ; et un \emph{critère d'arrêt} : aucune annonce de preuve
+formelle tant que toutes les étapes et toute la réduction ne sont pas vérifiées par le noyau~\cite{ch2ssl}. Le critère
+s'applique (section~\ref{ch2:ssec:a1}).
+\end{itemize}
+
+\subsection{Règle 2 : une porte de falsification, avec témoins positifs et négatifs}\label{ch2:ssec:falsif}
+Toute expérience, tout théorème, tout programme est accompagné d'un \emph{témoin positif} (un cas où la réponse doit
+être « oui ») et d'un \emph{témoin négatif} (un cas où elle doit être « non »), exécutés avant de rapporter le moindre
+nombre. Une porte qui accepte tout ne vérifie rien. Dans ce chapitre, chaque énoncé d'admissibilité a son contre-exemple
+vérifié par le noyau : $t^{-1/2}-2(t+d^2)^{-1/2}$ pour les dipôles, $e^{-\kappa\sqrt t}\cos t$ et $g_1-2g_2$ pour
+Yukawa, $e^{-t}-2e^{-2t}$ pour les mélanges de Laplace, $\cos$ et une composition « poubelle » pour la bibliothèque.
+Pour le certificat de Sandier--Serfaty, trois versions volontairement affaiblies du programme ont été exécutées ; la
+section~\ref{ch2:ssec:p1} dit honnêtement que l'une d'elles \emph{passe}.
+
+\subsection{Règle 3 : le noyau est le juge --- mais pas son code de retour}\label{ch2:ssec:noyau}
+Un fichier Lean qui contient \lean{sorry}, ou un axiome planté, \emph{compile avec le code de retour 0}. Le code de
+retour n'est donc pas la porte. Voici le fichier de témoins plantés de la bibliothèque CM, cité mot pour mot.
+\begin{leanbox}[--- \lean{formal_cert/Programmes/CompletelyMonotone/Controls.lean:11-18}]
+\begin{lstlisting}[style=chdeux]
+theorem ProgCM.ctl_sorry : ProgCM.IsCompletelyMonotoneOn Real.cos := sorry
+
+axiom ProgCM.ctl_cheat : False
+
+theorem ProgCM.ctl_axiom : ProgCM.IsCompletelyMonotoneOn Real.cos := ProgCM.ctl_cheat.elim
+
+#print axioms ProgCM.ctl_sorry
+#print axioms ProgCM.ctl_axiom
+\end{lstlisting}
+\end{leanbox}
+\noindent Les deux « preuves » de l'énoncé faux « $\cos$ est CM » compilent avec le code~0 ; seule la commande
+\texttt{\#print axioms} les démasque (\lean{sorryAx}, resp.\ \lean{ProgCM.ctl_cheat})~\cite{ch2cm}. D'où la définition du
+\tierA{} (fiche \texttt{FACTS.md}) : la liste des axiomes est contenue dans $\{$\lean{propext}, \lean{Classical.choice},
+\lean{Quot.sound}$\}$, plus un rejeu par le noyau (\texttt{leanchecker}), plus une recherche textuelle de
+\lean{skipKernelTC}, \lean{addDecl}, \lean{native_decide}, \lean{implemented_by}.
+
+\begin{remark}[Pourquoi \texttt{\#print axioms} ne suffit pas]\label{ch2:rem:skip}
+L'audit A2 du corpus Navier--Stokes d'openai a montré qu'une déclaration forgée avec l'option
+\lean{debug.skipKernelTC} peut afficher une liste d'axiomes irréprochable. Le rejeu complet par le noyau ferme cette
+porte dérobée. Par honnêteté : les articles sources des sections~\ref{ch2:sec:pot} et~\ref{ch2:sec:lib} rapportent la
+liste d'axiomes, les témoins plantés, des recherches textuelles de jetons interdits et des recompilations par un agent
+séparé ; ils ne rapportent pas de rejeu \texttt{leanchecker}, rapporté en revanche pour l'audit A2. Le \tierA{} de ces
+sections est donc celui de leurs articles : liste d'axiomes, témoins plantés détectés, recompilation indépendante par un
+agent d'IA.
+\end{remark}
+
+\subsection{Règle 4 : le producteur n'est pas le vérificateur}\label{ch2:ssec:prodverif}
+L'agent qui écrit un théorème n'est jamais celui qui le déclare vérifié. Un second agent d'IA recompile les fichiers
+\emph{depuis les sources}, dans son propre répertoire, plante ses propres témoins, relit les énoncés de manière
+adversariale, et rend un verdict (par exemple \texttt{ACCEPT\_WITH\_CORRECTIONS}). Le registre Elenchus attribue à chaque
+revendication un niveau --- A (noyau), L (littérature lue et épinglée), C (argument humain non vérifié par machine),
+X (exploration en virgule flottante, qui ne soutient jamais une revendication) --- et la porte vérifie qu'aucune ligne
+n'est classée au-dessus de ce sur quoi elle repose, transitivement. Elle lève un drapeau
+\texttt{LEDGER\_UNAUDITED\_TIER\_A} pour chaque ligne de niveau A dont aucun humain n'a certifié que l'énoncé veut dire ce
+que dit sa glose. Ces drapeaux restent ouverts dans tous les travaux de ce chapitre : un audit par IA ne les ferme pas.
+
+\begin{warnbox}[: ce que certifie un niveau A]
+Le noyau certifie qu'\emph{un énoncé Lean} est démontré à partir des définitions Lean. Il ne certifie ni que ces
+définitions traduisent fidèlement la physique, ni que l'amont (openai/math) est correct au sens humain : il certifie
+que, \emph{si} l'on accepte les définitions et les théorèmes amont, la conclusion suit.
+\end{warnbox}
+
+% ---------------------------------------------------------------------
+\section{Trois potentiels physiques, trois démonstrations}\label{ch2:sec:pot}
+
+Les trois sous-sections suivent le même plan : (i) le modèle physique \tierC{} ; (ii) une démonstration pas à pas que
+le potentiel, vu comme fonction de $t=r^2$, est complètement monotone \tierC{}, avec en regard l'énoncé Lean vérifié
+\tierA{} ; (iii) la conséquence : optimalité du réseau triangulaire (conditionnelle), finitude de l'énergie quand elle
+est démontrée ; (iv) un témoin négatif.
+
+\begin{definition}[complète monotonie]\label{ch2:def:cm}
+Une fonction $f:\,]0,+\infty[\,\to\R$ est \emph{complètement monotone} (CM) si elle est de classe $C^\infty$ et si, pour
+tout $n\in\N$ et tout $t>0$, $(-1)^nf^{(n)}(t)\ge0$. Autrement dit : $f\ge0$, $f'\le0$, $f''\ge0$, $f'''\le0$, etc.
+\end{definition}
+
+\begin{example}
+$t\mapsto e^{-at}$ ($a\ge0$) est CM car $(-1)^n\frac{d^n}{dt^n}e^{-at}=a^ne^{-at}\ge0$. La fonction $\cos$ ne l'est pas :
+$\cos\pi=-1<0$. La fonction $\sqrt t$ non plus : elle est croissante.
+\end{example}
+
+\begin{remark}[pourquoi la variable $t=r^2$ ?]
+Le théorème amont parle de $g(\|x-y\|^2)$. Être CM en $r^2$ est plus exigeant qu'être CM en $r$ : $e^{-r}$ est CM en $r$,
+et l'on verra que $e^{-\sqrt t}$ est aussi CM en $t$, mais cela demande un argument (section~\ref{ch2:ssec:yuk}).
+\end{remark}
+
+% .....................................................................
+\subsection{Excitons dipolaires dans une bicouche}\label{ch2:ssec:dip}
+
+\begin{physbox}[: le modèle \tierC]
+Dans une hétérobicouche de dichalcogénures de métaux de transition (par exemple MoSe$_2$/WSe$_2$), un exciton
+« indirect » est un électron dans une couche, à la hauteur $d$, lié à un trou dans l'autre couche, à la hauteur $0$,
+à la même position dans le plan. Deux excitons à distance $r$ dans le plan forment quatre paires de Coulomb : électron--électron
+et trou--trou à distance $r$ (répulsion $+1/r$ chacune), et deux paires croisées à distance $\sqrt{r^2+d^2}$ (attraction
+$-1/\sqrt{r^2+d^2}$ chacune). On néglige l'énergie de liaison interne, constante. En unités $e^2/(4\pi\varepsilon)$ :
+\[V(r)=\frac2r-\frac2{\sqrt{r^2+d^2}},\qquad g_d(t)=2\bigl(t^{-1/2}-(t+d^2)^{-1/2}\bigr),\quad V(r)=g_d(r^2).\]
+À grande distance $V(r)=d^2/r^3+O(r^{-5})$ : la loi dipôle--dipôle. Ce comptage de paires est \tierC{} ; l'identité
+algébrique $g_d(r^2)=2(1/r-1/\sqrt{r^2+d^2})$ est vérifiée par le noyau (\lean{g_inplane}, \tierA, module vérifié par le producteur seulement)~\cite{ch2dip}.
+\end{physbox}
+
+\begin{leanbox}[--- \lean{formal_cert/Autoresearch/DipolarExciton.lean:22}]
+\begin{lstlisting}[style=chdeux]
+noncomputable def g (d : ℝ) : ℝ → ℝ := fun t => 2 * (t ^ (-(1 / 2 : ℝ)) - (t + d ^ 2) ^ (-(1 / 2 : ℝ)))
+\end{lstlisting}
+\end{leanbox}
+
+\begin{theorem}[H1, admissibilité du potentiel dipolaire]\label{ch2:thm:dip}
+Pour tout réel $d$, $g_d$ est complètement monotone sur $]0,+\infty[$. Plus généralement, pour $s>0$ et $c\ge0$,
+$\mathrm{shiftDiff}_{s,c}(t)=t^{-s/2}-(t+c)^{-s/2}$ est CM. \tierA{} (énoncé Lean) ; démonstration ci-dessous \tierC.
+\end{theorem}
+
+La démonstration repose sur les \emph{symboles de Pochhammer}. Pour $a\in\R$ et $r\in\N$, on note
+\[\mathrm{desc}_r(a)=a(a-1)\cdots(a-r+1),\qquad \mathrm{asc}_r(a)=a(a+1)\cdots(a+r-1),\]
+avec $\mathrm{desc}_0=\mathrm{asc}_0=1$ (factorielles descendante et montante ; Mathlib : \lean{descPochhammer},
+\lean{ascPochhammer}).
+
+\begin{lemma}[dérivées d'une puissance décalée]\label{ch2:lem:pochder}
+Pour $a\in\R$, $c\ge0$, $t>0$ et $r\in\N$ :
+$\displaystyle\frac{d^r}{dt^r}(t+c)^a=\mathrm{desc}_r(a)\,(t+c)^{a-r}$.
+\end{lemma}
+\begin{humanproof}
+Récurrence sur $r$. Pour $r=0$ c'est l'identité. Si la formule vaut au rang $r$, on dérive $(t+c)^{a-r}$, ce qui est
+licite car $t+c>0$ : on obtient $(a-r)(t+c)^{a-r-1}$, et $\mathrm{desc}_r(a)(a-r)=\mathrm{desc}_{r+1}(a)$.
+\end{humanproof}
+\begin{leanbox}[--- \lean{DipolarExciton.lean:32-33} et \lean{:36-37} (preuves omises)]
+\begin{lstlisting}[style=chdeux]
+lemma iteratedDeriv_rpow (a : ℝ) (r : ℕ) (t : ℝ) :
+    iteratedDeriv r (fun x : ℝ => x ^ a) t = (descPochhammer ℝ r).eval a * t ^ (a - r) := by
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+lemma iteratedDeriv_shift (a c : ℝ) (r : ℕ) (t : ℝ) :
+    iteratedDeriv r (fun x : ℝ => (x + c) ^ a) t = (descPochhammer ℝ r).eval a * (t + c) ^ (a - r) := by
+\end{lstlisting}
+\end{leanbox}
+
+Par linéarité de la dérivation, pour $t>0$ :
+\begin{equation}\label{ch2:eq:gder}
+g_d^{(r)}(t)=2\,\mathrm{desc}_r\!\left(-\tfrac12\right)\Bigl(t^{-1/2-r}-(t+d^2)^{-1/2-r}\Bigr).
+\end{equation}
+\begin{leanbox}[--- \lean{DipolarExciton.lean:41-44} (preuve omise)]
+\begin{lstlisting}[style=chdeux]
+lemma iteratedDeriv_g (d : ℝ) (r : ℕ) {t : ℝ} (ht : 0 < t) :
+    iteratedDeriv r (g d) t =
+      2 * ((descPochhammer ℝ r).eval (-(1 / 2 : ℝ)) *
+        (t ^ (-(1 / 2 : ℝ) - r) - (t + d ^ 2) ^ (-(1 / 2 : ℝ) - r))) := by
+\end{lstlisting}
+\end{leanbox}
+
+\begin{lemma}[le signe]\label{ch2:lem:sign}
+$(-1)^r\,\mathrm{desc}_r(-\tfrac12)=\mathrm{asc}_r(\tfrac12)=\tfrac12\cdot\tfrac32\cdots\left(r-\tfrac12\right)>0$.
+\end{lemma}
+\begin{humanproof}
+$(-1)^r\mathrm{desc}_r(-\tfrac12)=\prod_{k=0}^{r-1}(-1)\left(-\tfrac12-k\right)=\prod_{k=0}^{r-1}\left(\tfrac12+k\right)$,
+produit de nombres strictement positifs.
+\end{humanproof}
+\begin{leanbox}[--- \lean{DipolarExciton.lean:56-57} (preuve omise)]
+\begin{lstlisting}[style=chdeux]
+lemma sign_desc (r : ℕ) :
+    (-1 : ℝ) ^ r * (descPochhammer ℝ r).eval (-(1 / 2 : ℝ)) = (ascPochhammer ℝ r).eval (1 / 2 : ℝ) := by
+\end{lstlisting}
+\end{leanbox}
+
+\begin{lemma}[le crochet]\label{ch2:lem:crochet}
+Pour $c\ge0$, $e\le0$ et $t>0$ : $t^e-(t+c)^e\ge0$.
+\end{lemma}
+\begin{humanproof}
+Pour $e\le0$, $x\mapsto x^e$ est décroissante sur $]0,+\infty[$ ; or $t\le t+c$.
+\end{humanproof}
+\begin{leanbox}[--- \lean{DipolarExciton.lean:62-63} (preuve omise)]
+\begin{lstlisting}[style=chdeux]
+lemma diff_nonneg (c e : ℝ) (hc : 0 ≤ c) (he : e ≤ 0) {t : ℝ} (ht : 0 < t) :
+    0 ≤ t ^ e - (t + c) ^ e := by
+\end{lstlisting}
+\end{leanbox}
+
+\begin{humanproof}[Démonstration du théorème~\ref{ch2:thm:dip}]
+\emph{Régularité.} $t\mapsto t^{-1/2}$ et $t\mapsto(t+d^2)^{-1/2}$ sont $C^\infty$ là où leur base est strictement
+positive, donc sur $]0,+\infty[$.
+\emph{Signes.} D'après~\eqref{ch2:eq:gder} et le lemme~\ref{ch2:lem:sign},
+\[(-1)^rg_d^{(r)}(t)=2\,\mathrm{asc}_r\!\left(\tfrac12\right)\Bigl(t^{-1/2-r}-(t+d^2)^{-1/2-r}\Bigr),\]
+produit d'un nombre positif par un crochet positif (lemme~\ref{ch2:lem:crochet} avec $e=-\tfrac12-r\le0$ et
+$c=d^2\ge0$). Le cas $r=0$ donne $g_d\ge0$. En remplaçant $\tfrac12$ par $\tfrac s2$ ($s>0$) et $d^2$ par $c\ge0$, rien
+ne change : c'est l'énoncé pour $\mathrm{shiftDiff}_{s,c}$. Enfin $g_d=2\,\mathrm{shiftDiff}_{1,d^2}$ et un multiple
+positif d'une fonction CM est CM, ce qui donne le résultat pour \emph{tout} réel $d$.
+\end{humanproof}
+
+\begin{leanbox}[--- \lean{DipolarExciton.lean:68} et \lean{DipolarExcitonMultipolar.lean:37, 59, 102} (preuves omises)]
+\begin{lstlisting}[style=chdeux]
+theorem dipolar_admissible {d : ℝ} (_hd : 0 < d) : AdmissiblePotential (g d) := by
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+noncomputable def shiftDiff (s c : ℝ) : ℝ → ℝ := fun t => t ^ (-(s / 2)) - (t + c) ^ (-(s / 2))
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+theorem shiftDiff_admissible {s c : ℝ} (hs : 0 < s) (hc : 0 ≤ c) : AdmissiblePotential (shiftDiff s c) := by
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+theorem dipolar_admissible_all (d : ℝ) : AdmissiblePotential (AutoresearchDipolar.g d) := by
+\end{lstlisting}
+\end{leanbox}
+
+\begin{remark}[lecture de Bernstein \tierC]
+De façon équivalente, $t^{-1/2}-(t+c)^{-1/2}=\pi^{-1/2}\int_0^\infty e^{-ut}\,(1-e^{-uc})\,u^{-1/2}\,du$ est un mélange
+positif d'exponentielles, ce qui rend la complète monotonie évidente~\cite{ch2dip}. Cette identité n'est pas vérifiée
+en Lean ; la preuve par Pochhammer ci-dessus l'évite.
+\end{remark}
+
+\paragraph{Conséquence 1 : optimalité à densité un \tierA, conditionnelle.} On applique le théorème amont à $g_d$.
+La preuve Lean est d'une ligne : la première composante de \lean{universal_energy_minimum}.
+\begin{leanbox}[--- \lean{DipolarExciton.lean:94-96} (énoncé et preuve complète)]
+\begin{lstlisting}[style=chdeux]
+theorem triangular_dipolar_optimal {d : ℝ} (hd : 0 < d) (C : Set Plane) (hC : LocallyFinite C)
+    (hdens : DensityOne C) : latticeEnergy (g d) ≤ energy (g d) C :=
+  (universal_energy_minimum (g d) C (dipolar_admissible hd) hC hdens).1
+\end{lstlisting}
+\end{leanbox}
+
+\paragraph{Conséquence 2 : l'inégalité n'est pas $\top\le\top$ \tierA.} Une inégalité dans $[0,+\infty]$ dont le membre
+de gauche vaut $+\infty$ ne dit rien. Il faut donc montrer que $\mathrm{latticeEnergy}(g_d)<+\infty$.
+\begin{lemma}\label{ch2:lem:diffle}
+Pour $c\ge0$ et $t>0$ : $t^{-1/2}-(t+c)^{-1/2}\le\frac c2\,t^{-3/2}$. En particulier $g_d(t)\le d^2t^{-3/2}$.
+\end{lemma}
+\begin{humanproof}
+Posons $a=t^{-1/2}$ et $b=(t+c)^{-1/2}$, de sorte que $0<b\le a$, $a^2t=1$ et $b^2(t+c)=1$. Alors
+$a^2-b^2=a^2b^2\bigl((t+c)-t\bigr)=c\,a^2b^2$, soit $(a-b)(a+b)=c\,a^2b^2$. Comme $b\le a$, $2b^2\le a^2+ab=a(a+b)$, donc
+$2(a-b)(a+b)\le c\,a^3(a+b)$ ; en divisant par $a+b>0$ : $a-b\le\frac c2a^3=\frac c2t^{-3/2}$.
+\end{humanproof}
+\noindent La somme $\sum_{a\in\Lat\setminus\{0\}}\|a\|^{-3}$ converge (exposant de Riesz $3>2$, chapitre~1), donc
+$\mathrm{latticeEnergy}(g_d)\le d^2\,\mathrm{latticeEnergy}(t^{-3/2})<+\infty$.
+\begin{leanbox}[--- \lean{DipolarExciton.lean:119-120, 159, 167} (preuves omises)]
+\begin{lstlisting}[style=chdeux]
+lemma diff_le (c : ℝ) (hc : 0 ≤ c) {t : ℝ} (ht : 0 < t) :
+    t ^ (-(1 / 2 : ℝ)) - (t + c) ^ (-(1 / 2 : ℝ)) ≤ c / 2 * t ^ (-(3 / 2 : ℝ)) := by
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+lemma g_le (d : ℝ) {t : ℝ} (ht : 0 < t) : g d t ≤ d ^ 2 * riesz 3 t := by
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+theorem latticeEnergy_dipolar_lt_top (d : ℝ) : latticeEnergy (g d) < ⊤ := by
+\end{lstlisting}
+\end{leanbox}
+
+\paragraph{Conséquence 3 : toute densité $\rho>0$ \tierA, conditionnelle.} Si $C$ a la densité $\rho$, alors
+$\sqrt\rho\,C$ a la densité un et $\|\sqrt\rho x-\sqrt\rho y\|^2=\rho\|x-y\|^2$ : l'énergie de $C$ pour $g$ est celle de
+$\sqrt\rho\,C$ pour $t\mapsto g(t/\rho)$, qui reste CM (chaque dérivée gagne le facteur $\rho^{-r}>0$). Le corollaire D2
+du chapitre~1 donne alors l'optimalité de $\rho^{-1/2}\Lat$, et $g_d(t/\rho)\le d^2\rho^{3/2}t^{-3/2}$ donne la finitude.
+\begin{leanbox}[--- \lean{DipolarExcitonMultipolar.lean:125-129} (énoncé et preuve complète) et \lean{:175-176}]
+\begin{lstlisting}[style=chdeux]
+theorem triangular_dipolar_optimal_any_density {d : ℝ} (hd : 0 < d) {ρ : ℝ} (hρ : 0 < ρ) :
+    LocallyFinite ((Real.sqrt ρ)⁻¹ • A) ∧ TriangularDensity.DensityRho ρ ((Real.sqrt ρ)⁻¹ • A) ∧
+      ∀ C : Set Plane, LocallyFinite C → TriangularDensity.DensityRho ρ C →
+        energy (AutoresearchDipolar.g d) ((Real.sqrt ρ)⁻¹ • A) ≤ energy (AutoresearchDipolar.g d) C :=
+  TriangularDensity.triangular_optimal_any_density _ (AutoresearchDipolar.dipolar_admissible hd) hρ
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+theorem energy_dipolar_any_density_lt_top {d : ℝ} (hd : 0 < d) {ρ : ℝ} (hρ : 0 < ρ) :
+    energy (AutoresearchDipolar.g d) ((Real.sqrt ρ)⁻¹ • A) < ⊤ := by
+\end{lstlisting}
+\end{leanbox}
+
+\paragraph{Témoins négatifs \tierA.} (i) Si l'on double le poids de l'attraction croisée,
+$h_d(t)=t^{-1/2}-2(t+d^2)^{-1/2}$, alors en $t=d^2$ :
+$h_d(d^2)=\frac1d-\frac{2}{\sqrt2\,d}<\frac1d-\frac{2}{2d}=0$, donc $h_d$ n'est pas admissible (\lean{h_not_admissible}).
+(ii) Pour $c<0$ et $t=-2c>0$, on a $t+c=-c\in\,]0,t[$, d'où $(t+c)^{-s/2}>t^{-s/2}$ et
+$\mathrm{shiftDiff}_{s,c}(t)<0$ (\lean{shiftDiff_not_admissible_of_neg}). Le signe du décalage est porteur.
+
+\begin{warnbox}[: portée]
+La finitude est démontrée pour $g_d$ seulement ; pour la famille $\mathrm{shiftDiff}_{s,c}$ aucune finitude n'est
+démontrée, et pour $c=0$ on a $\mathrm{shiftDiff}_{s,0}\equiv0$ : la conclusion est alors le trivial
+$0\le\mathrm{energy}$. Le modèle est classique : dipôles rigides, pas d'énergie cinétique, pas d'écrantage diélectrique,
+pas de potentiel de moiré. Dans la fenêtre de densité expérimentale, les excitons réels forment un gaz quantique, pas un
+cristal classique \tierC~\cite{ch2dip}. Article : doi\string:10.5281/zenodo.23646103.
+\end{warnbox}
+
+% .....................................................................
+\subsection{Le potentiel de Yukawa plan}\label{ch2:ssec:yuk}
+
+\begin{physbox}[: le modèle \tierC]
+Des particules chargées confinées dans un plan mais plongées dans un milieu écrantant à trois dimensions (plasmas
+poussiéreux, colloïdes chargés) interagissent par le potentiel de Coulomb écranté $V(r)=e^{-\kappa r}/r$, $\kappa>0$.
+En variable $t=r^2$ : $g_\kappa(t)=e^{-\kappa\sqrt t}/\sqrt t$. \textbf{Ce n'est pas} la fonction de Green
+$K_0(\kappa r)$ de l'équation de Debye--Hückel bidimensionnelle, qui n'est pas traitée ici~\cite{ch2yuk}.
+\end{physbox}
+\begin{leanbox}[--- \lean{formal_cert/Autoresearch/Yukawa.lean:28, 31}]
+\begin{lstlisting}[style=chdeux]
+noncomputable def phi (κ : ℝ) : ℝ → ℝ := fun t => Real.exp (-κ * Real.sqrt t)
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+noncomputable def g (κ : ℝ) : ℝ → ℝ := fun t => Real.exp (-κ * Real.sqrt t) / Real.sqrt t
+\end{lstlisting}
+\end{leanbox}
+
+Le plan est : $g_\kappa=t^{-1/2}\cdot\varphi_\kappa$ avec $\varphi_\kappa(t)=e^{-\kappa\sqrt t}$ ; on montre que le
+produit de deux fonctions CM est CM, puis que $\varphi_\kappa$ est CM par une récurrence forte. On dit que $f$ a le
+\emph{motif de signes jusqu'à l'ordre $n$} en $t$ si $(-1)^if^{(i)}(t)\ge0$ pour $i=0,\dots,n$.
+
+\begin{lemma}[signes de Leibniz]\label{ch2:lem:leibniz}
+Si $f$ et $h$ sont $n$ fois dérivables en $t$ et ont toutes deux le motif de signes jusqu'à l'ordre $n$ en $t$, alors
+$(-1)^n(fh)^{(n)}(t)\ge0$. En conséquence, le produit de deux fonctions CM est CM.
+\end{lemma}
+\begin{humanproof}
+Formule de Leibniz : $(fh)^{(n)}=\sum_{i=0}^n\binom ni f^{(i)}h^{(n-i)}$. On écrit $(-1)^n=(-1)^i(-1)^{n-i}$ :
+\[(-1)^n(fh)^{(n)}=\sum_{i=0}^n\binom ni\,\bigl[(-1)^if^{(i)}\bigr]\,\bigl[(-1)^{n-i}h^{(n-i)}\bigr],\]
+somme de produits de nombres positifs. La régularité et la positivité d'un produit sont immédiates.
+\end{humanproof}
+\begin{leanbox}[--- \lean{Yukawa.lean:38-41} (preuve omise ; elle tient en une douzaine de lignes)]
+\begin{lstlisting}[style=chdeux]
+lemma mul_sign {f h : ℝ → ℝ} {t : ℝ} (r : ℕ) (hf : ContDiffAt ℝ r f t) (hh : ContDiffAt ℝ r h t)
+    (Hf : ∀ i ≤ r, 0 ≤ (-1 : ℝ) ^ i * iteratedDeriv i f t)
+    (Hh : ∀ i ≤ r, 0 ≤ (-1 : ℝ) ^ i * iteratedDeriv i h t) :
+    0 ≤ (-1 : ℝ) ^ r * iteratedDeriv r (f * h) t := by
+\end{lstlisting}
+\end{leanbox}
+
+\begin{lemma}[$t^{-s/2}$ est CM]\label{ch2:lem:riesz}
+Pour $s>0$, $p(t)=t^{-s/2}$ vérifie $(-1)^np^{(n)}(t)=\mathrm{asc}_n(\tfrac s2)\,t^{-s/2-n}>0$.
+\end{lemma}
+\begin{humanproof}
+C'est le lemme~\ref{ch2:lem:pochder} avec $c=0$ et $a=-\tfrac s2$, suivi du calcul de signe du lemme~\ref{ch2:lem:sign}
+avec $\tfrac s2$ au lieu de $\tfrac12$. (Lean : \lean{TriangularRiesz.riesz_admissible}, chapitre~1.)
+\end{humanproof}
+
+\begin{proposition}[$e^{-\kappa\sqrt t}$ est CM]\label{ch2:prop:phi}
+Pour $\kappa>0$, $\varphi_\kappa(t)=e^{-\kappa\sqrt t}$ est complètement monotone sur $]0,+\infty[$.
+\end{proposition}
+\begin{humanproof}
+Par dérivation composée, sur $]0,+\infty[$ :
+\[\varphi_\kappa'(t)=-\frac{\kappa}{2\sqrt t}\,e^{-\kappa\sqrt t}=-\frac\kappa2\,t^{-1/2}\,\varphi_\kappa(t).\tag{$\ast$}\]
+On démontre par \emph{récurrence forte} sur $n$ la propriété $\mathcal P(n)$ : « pour tout $m\le n$ et tout $t>0$,
+$(-1)^m\varphi_\kappa^{(m)}(t)\ge0$ ».
+
+$\mathcal P(0)$ : $\varphi_\kappa>0$.
+
+$\mathcal P(n)\Rightarrow\mathcal P(n+1)$ : seul l'ordre $m=n+1$ est nouveau. Les deux membres de $(\ast)$ sont égaux sur
+l'ouvert $]0,+\infty[$, donc leurs dérivées de tous ordres aussi : $\varphi_\kappa^{(n+1)}=(\varphi_\kappa')^{(n)}
+=-\frac\kappa2\,(t^{-1/2}\varphi_\kappa)^{(n)}$. Par le lemme~\ref{ch2:lem:riesz}, $t^{-1/2}$ a le motif de signes à tout
+ordre ; par $\mathcal P(n)$, $\varphi_\kappa$ l'a jusqu'à l'ordre $n$. Le lemme~\ref{ch2:lem:leibniz} donne
+$(-1)^n(t^{-1/2}\varphi_\kappa)^{(n)}\ge0$, d'où
+\[(-1)^{n+1}\varphi_\kappa^{(n+1)}=\frac\kappa2\,(-1)^n(t^{-1/2}\varphi_\kappa)^{(n)}\ge0,\]
+car $\kappa>0$. Le passage de $n$ à $n+1$ n'utilise les signes de $\varphi_\kappa$ que jusqu'à l'ordre $n$ : c'est
+pourquoi la récurrence forte suffit et qu'on n'a besoin d'aucune formule de Faà di Bruno. La régularité vient de ce que
+$\exp$ et $\sqrt{\,\cdot\,}$ sont $C^\infty$ sur $]0,+\infty[$.
+\end{humanproof}
+\begin{leanbox}[--- \lean{Yukawa.lean:82-83, 94-95, 121} (preuves omises)]
+\begin{lstlisting}[style=chdeux]
+lemma phi_hasDerivAt (κ : ℝ) {t : ℝ} (ht : 0 < t) :
+    HasDerivAt (phi κ) (-(κ / 2) * (riesz 1 t * phi κ t)) t := by
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+lemma phi_sign {κ : ℝ} (hκ : 0 < κ) :
+    ∀ n : ℕ, ∀ m ≤ n, ∀ t : ℝ, 0 < t → 0 ≤ (-1 : ℝ) ^ m * iteratedDeriv m (phi κ) t := by
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+theorem phi_admissible {κ : ℝ} (hκ : 0 < κ) : AdmissiblePotential (phi κ) :=
+\end{lstlisting}
+\end{leanbox}
+\noindent Remarquez la forme de \lean{phi_sign} : la quantification « $\forall\,m\le n$ » est exactement la récurrence
+forte de la démonstration humaine.
+
+\begin{theorem}[H2, admissibilité de Yukawa]\label{ch2:thm:yuk}
+Pour $\kappa>0$, $g_\kappa$ est admissible. \tierA
+\end{theorem}
+\begin{humanproof}
+Pour $t>0$, $g_\kappa(t)=t^{-1/2}\varphi_\kappa(t)$ : produit de deux fonctions CM (lemmes~\ref{ch2:lem:riesz},
+\ref{ch2:lem:leibniz} et proposition~\ref{ch2:prop:phi}). En Lean, $g_\kappa(0)=0$ par la convention $x/0=0$ ; mais
+l'admissibilité ne regarde que $]0,+\infty[$, et deux fonctions égales sur un ouvert y ont les mêmes dérivées
+(\lean{admissible_congr}).
+\end{humanproof}
+\begin{leanbox}[--- \lean{Yukawa.lean:133-134} (énoncé et preuve complète)]
+\begin{lstlisting}[style=chdeux]
+theorem yukawa_admissible {κ : ℝ} (hκ : 0 < κ) : AdmissiblePotential (g κ) :=
+  admissible_congr (admissible_mul (riesz_admissible (s := 1) one_pos) (phi_admissible hκ)) (g_eqOn κ)
+\end{lstlisting}
+\end{leanbox}
+
+\paragraph{Conséquence : optimalité et énergie finie \tierA, conditionnelle.} L'optimalité à densité un
+(\lean{triangular_yukawa_optimal}) s'obtient comme pour les dipôles. Pour la finitude : pour $x\ge0$,
+$e^x\ge x^2/2$ ; avec $x=\kappa\sqrt t$,
+\[g_\kappa(t)=\frac1{e^{\kappa\sqrt t}\sqrt t}\le\frac{2}{\kappa^2\,t\sqrt t}=\frac2{\kappa^2}\,t^{-3/2},\]
+et la somme de Riesz d'exposant $3$ converge. L'hypothèse $\kappa>0$ sert ici : pour $\kappa=0$, $g_0=t^{-1/2}$ est le
+Riesz d'exposant $1$, dont la somme sur le réseau diverge.
+\begin{leanbox}[--- \lean{Yukawa.lean:160, 175} (preuves omises)]
+\begin{lstlisting}[style=chdeux]
+lemma g_le {κ : ℝ} (hκ : 0 < κ) {t : ℝ} (ht : 0 < t) : g κ t ≤ 2 / κ ^ 2 * riesz 3 t := by
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+theorem latticeEnergy_yukawa_lt_top {κ : ℝ} (hκ : 0 < κ) : latticeEnergy (g κ) < ⊤ := by
+\end{lstlisting}
+\end{leanbox}
+
+\paragraph{Mélanges finis \tierA.} Les fonctions admissibles forment un cône convexe (les dérivées sont linéaires),
+donc tout mélange $\sum_iw_ig_{\kappa_i}$ avec $w_i\ge0$, $\kappa_i>0$ est admissible, d'énergie finie car majoré par
+$\bigl(\sum_iw_i\,2/\kappa_i^2\bigr)t^{-3/2}$ ; le résultat vaut aussi à toute densité (\lean{YukawaMix.lean}).
+\begin{leanbox}[--- \lean{formal_cert/Autoresearch/YukawaMix.lean:129-130, 138-139} (preuve omise)]
+\begin{lstlisting}[style=chdeux]
+noncomputable def yukawaMix {ι : Type*} (s : Finset ι) (w κ : ι → ℝ) : ℝ → ℝ :=
+  fun t => ∑ i ∈ s, w i * g (κ i) t
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+theorem yukawaMix_admissible {ι : Type*} (s : Finset ι) {w κ : ι → ℝ} (hw : ∀ i ∈ s, 0 ≤ w i)
+    (hκ : ∀ i ∈ s, 0 < κ i) : AdmissiblePotential (yukawaMix s w κ) := by
+\end{lstlisting}
+\end{leanbox}
+
+\paragraph{Témoins négatifs \tierA.} (a) $c_\kappa(t)=e^{-\kappa\sqrt t}\cos t$ prend la valeur
+$-e^{-\kappa\sqrt\pi}<0$ en $t=\pi$ (\lean{c_not_admissible}). (b) Le mélange signé $g_1-2g_2$ : en $t=\frac14$,
+$\sqrt t=\frac12$ et $g_1(\tfrac14)-2g_2(\tfrac14)=2e^{-1/2}-4e^{-1}=2e^{-1}(e^{1/2}-2)<0$ car $e<4$
+(\lean{signedMix_not_admissible}). Ces témoins montrent que les hypothèses des lemmes ne sont pas vides ; ils ne
+montrent \emph{pas} que le réseau triangulaire cesse d'être optimal pour ces fonctions : rien ici ne le décide.
+
+\begin{warnbox}[: portée]
+Modèle classique de particules ponctuelles ; aucune énergie cinétique ; pas le noyau $K_0$. L'article compagnon
+(doi\string:10.5281/zenodo.23646105) contient en outre une étude numérique \tierX{} par CVODE qui corrige un erratum de
+troncature publié ; elle ne soutient aucun énoncé de ce chapitre~\cite{ch2yuk}.
+\end{warnbox}
+
+% .....................................................................
+\subsection{Le potentiel de Rytova--Keldysh}\label{ch2:ssec:kel}
+
+\begin{physbox}[: le modèle \tierL{} / \tierC]
+Dans une monocouche de semi-conducteur bidimensionnel (MoS$_2$, WSe$_2$, \dots) suspendue dans le vide, deux charges
+interagissent par le potentiel de Rytova--Keldysh, dans la forme de Berkelbach, Hybertsen et Reichman~\cite{ch2bhr} :
+\[V(r)=\frac{\pi}{2r_0}\,\bigl[\mathbf H_0-Y_0\bigr](r/r_0),\qquad \widehat V(k)=\frac{2\pi}{k(1+r_0k)},\]
+où $\mathbf H_0$ est la fonction de Struve, $Y_0$ celle de Neumann, et $r_0>0$ une longueur d'écrantage
+(en unités $e^2/(4\pi\varepsilon_0)=1$). Pour $r_0\to0$ on retrouve Coulomb, $2\pi/k$. La forme est citée \tierL{}
+(\cite{ch2bhr}, d'après \cite{ch2dlmf} pour $\mathbf K_0=\mathbf H_0-Y_0$) ; la transformée de Fourier est \tierC.
+\end{physbox}
+
+Mathlib, à la version épinglée, ne connaît ni Struve ni Neumann. L'idée est donc de \emph{définir} en Lean le potentiel
+par une représentation intégrale manifestement complètement monotone --- un mélange de gaussiennes en $r$, c'est-à-dire
+un mélange d'exponentielles en $t=r^2$ --- puis de démontrer \emph{à la main}, au niveau C, que cette intégrale est bien
+la forme de Struve. L'écart entre les deux est précisément le « trou de fidélité » de cette formalisation.
+
+\paragraph{Étape 0 : le poids.} Pour $x\ge0$ on pose
+\[\mathrm{erfcx}(x)=\frac{2}{\sqrt\pi}\int_0^\infty e^{-(y^2+2xy)}\,dy .\]
+Le changement de variable $s=y+x$ donne $\mathrm{erfcx}(x)=e^{x^2}\frac2{\sqrt\pi}\int_x^\infty e^{-s^2}ds=e^{x^2}\operatorname{erfc}(x)$,
+la fonction d'erreur complémentaire « mise à l'échelle ». Pour $r_0>0$, le poids est $w(a)=r_0^{-1}\,\mathrm{erfcx}(\sqrt a/r_0)$.
+\begin{leanbox}[--- \lean{formal_cert/Autoresearch/KeldyshCM.lean:190-191, 244, 248-249}]
+\begin{lstlisting}[style=chdeux]
+noncomputable def erfcx (x : ℝ) : ℝ :=
+  2 / Real.sqrt Real.pi * ∫ y in Ioi (0 : ℝ), Real.exp (-(y ^ 2 + 2 * x * y))
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+noncomputable def w (r0 a : ℝ) : ℝ := 1 / r0 * erfcx (Real.sqrt a / r0)
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+noncomputable def keldysh (r0 t : ℝ) : ℝ :=
+  ∫ a in Ioi (0 : ℝ), w r0 a / (2 * a) * Real.exp (-t / (4 * a))
+\end{lstlisting}
+\end{leanbox}
+\noindent Autrement dit, l'objet Lean est
+\begin{equation}\label{ch2:eq:kmix}
+\mathcal K_{r_0}(t)=\int_0^\infty\frac{w(a)}{2a}\,e^{-t/(4a)}\,da .
+\end{equation}
+
+\begin{lemma}[bornes sur le poids]\label{ch2:lem:w}
+Pour $x\ge0$, $0<\mathrm{erfcx}(x)\le1$ ; pour $x>0$, $\mathrm{erfcx}(x)\le\frac1{\sqrt\pi\,x}$. Donc, pour $a>0$,
+$0<w(a)\le\frac1{r_0}$ et $w(a)\le\frac1{\sqrt\pi\sqrt a}$.
+\end{lemma}
+\begin{humanproof}
+L'intégrande est continu et strictement positif, donc $\mathrm{erfcx}(x)>0$. Pour $y>0$ et $x\ge0$,
+$y^2+2xy\ge y^2$, donc l'intégrale est au plus $\int_0^\infty e^{-y^2}dy=\frac{\sqrt\pi}2$, d'où $\mathrm{erfcx}\le1$. Si
+$x>0$, on minore plutôt par $2xy$ : $\int_0^\infty e^{-2xy}dy=\frac1{2x}$, d'où
+$\mathrm{erfcx}(x)\le\frac2{\sqrt\pi}\cdot\frac1{2x}$. Pour $w$, on substitue $x=\sqrt a/r_0$.
+\end{humanproof}
+
+\paragraph{Étape 1 : un lemme générique de mélange de Laplace.} Soit $(\alpha,\mu)$ un espace mesuré, $k,m$ mesurables,
+$k\ge0$ et $m\ge0$ presque partout, et supposons $\int k^ne^{-ck}m\,d\mu<\infty$ pour tout $n$ et tout $c>0$. On pose
+$G_n(t)=\int(-k)^ne^{-tk}m\,d\mu$.
+\begin{theorem}[mélange de Laplace]\label{ch2:thm:laplace}
+$g=G_0$ est admissible, et $g^{(n)}(t)=G_n(t)$ pour $t>0$. \tierA
+\end{theorem}
+\begin{humanproof}
+Fixons $t>0$ et faisons varier $s$ dans $]t/2,+\infty[$, voisinage de $t$. La dérivée en $s$ de $(-k)^ne^{-sk}m$ est
+$(-k)^{n+1}e^{-sk}m$, dont la valeur absolue vérifie $k^{n+1}e^{-sk}m\le k^{n+1}e^{-(t/2)k}m$ car $s\ge t/2$ et
+$k\ge0$. Le majorant ne dépend pas de $s$ et il est intégrable (hypothèse avec $c=t/2$). Le théorème de dérivation sous
+le signe intégrale (convergence dominée) donne $G_n'(t)=G_{n+1}(t)$. Par récurrence, $G_0$ est de classe $C^N$ pour tout
+$N$ et $g^{(n)}=G_n$. Enfin $(-1)^nG_n(t)=\int k^ne^{-tk}m\,d\mu\ge0$, car l'intégrande est positif presque partout.
+\end{humanproof}
+\begin{leanbox}[--- \lean{KeldyshCM.lean:31-36, 134-135} (preuve omise)]
+\begin{lstlisting}[style=chdeux]
+structure MixtureData (μ : Measure α) (k m : α → ℝ) : Prop where
+  k_meas : Measurable k
+  m_meas : Measurable m
+  k_nonneg : ∀ᵐ x ∂μ, 0 ≤ k x
+  m_nonneg : ∀ᵐ x ∂μ, 0 ≤ m x
+  integrable : ∀ (n : ℕ) (c : ℝ), 0 < c → Integrable (fun x => k x ^ n * Real.exp (-(c * k x)) * m x) μ
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+theorem laplace_admissible (h : MixtureData μ k m) :
+    AdmissiblePotential (fun t => ∫ x, Real.exp (-(t * k x)) * m x ∂μ) := by
+\end{lstlisting}
+\end{leanbox}
+
+\paragraph{Étape 2 : l'instance de Keldysh.} On prend la mesure de Lebesgue sur $]0,+\infty[$, $k(a)=\frac1{4a}$ et
+$m(a)=\frac{w(a)}{2a}$. Il faut vérifier les moments : $F_n(a)=(4a)^{-n}e^{-c/(4a)}\frac{w(a)}{2a}$ est intégrable.
+On coupe en $a=1$. Sur $]0,1]$, avec $u=\frac1{4a}$ : $F_n=2w(a)\,u^{n+1}e^{-cu}$, et $e^{cu}\ge(cu)^N/N!$ donne
+$u^Ne^{-cu}\le N!/c^N$ ; $F_n$ est bornée par $2r_0^{-1}(n+1)!/c^{n+1}$ sur un intervalle de longueur finie. Sur
+$]1,+\infty[$, $u\le\frac14$, donc $F_n\le\frac{w(a)}{2a}\le\frac1{2\sqrt\pi}a^{-3/2}$ (lemme~\ref{ch2:lem:w}), et
+$\int_1^\infty a^{-3/2}da=2$. Le théorème~\ref{ch2:thm:laplace} s'applique.
+\begin{leanbox}[--- \lean{KeldyshCM.lean:354} (preuve omise)]
+\begin{lstlisting}[style=chdeux]
+theorem keldysh_admissible {r0 : ℝ} (hr0 : 0 < r0) : AdmissiblePotential (keldysh r0) := by
+\end{lstlisting}
+\end{leanbox}
+
+\paragraph{Étape 3 : l'énoncé n'est pas celui de la fonction nulle \tierA.} En Lean, l'intégrale de Bochner d'une
+fonction non intégrable vaut $0$, et $0$ est admissible : l'admissibilité seule pourrait être vide. Mais pour $t>0$
+l'intégrande de~\eqref{ch2:eq:kmix} est strictement positif et intégrable, donc $\mathcal K_{r_0}(t)>0$.
+\begin{leanbox}[--- \lean{KeldyshCM.lean:379} (preuve omise)]
+\begin{lstlisting}[style=chdeux]
+theorem keldysh_pos {r0 t : ℝ} (hr0 : 0 < r0) (ht : 0 < t) : 0 < keldysh r0 t := by
+\end{lstlisting}
+\end{leanbox}
+
+\paragraph{Étape 4 : corollaires, et une mise en garde \tierA{} / \tierC.} Le produit par $e^{-\varepsilon t}$
+($\varepsilon\ge0$) reste admissible (lemme~\ref{ch2:lem:leibniz}), et le théorème amont donne les deux inégalités
+\lean{triangular_keldysh_optimal} et \lean{triangular_keldyshReg_optimal}.
+\begin{leanbox}[--- \lean{KeldyshCM.lean:390-392} (énoncé et preuve complète)]
+\begin{lstlisting}[style=chdeux]
+theorem triangular_keldysh_optimal {r0 : ℝ} (hr0 : 0 < r0) (C : Set Plane) (hC : LocallyFinite C)
+    (hdens : DensityOne C) : latticeEnergy (keldysh r0) ≤ energy (keldysh r0) C :=
+  (universal_energy_minimum (keldysh r0) C (keldysh_admissible hr0) hC hdens).1
+\end{lstlisting}
+\end{leanbox}
+\begin{warnbox}[: $\top\le\top$]
+$V(r)\sim1/r$ à grande distance, et $\sum_{0<|x|\le R}1/|x|$ croît comme $R$ sur un réseau plan. On \emph{s'attend}
+donc à $\mathrm{latticeEnergy}(\mathcal K_{r_0})=+\infty$ : la première inégalité se lirait alors $\top\le\top$
+\tierC. Ce n'est ni démontré ni réfuté en Lean. Pour $\varepsilon>0$, la somme régularisée devrait être finie \tierC,
+mais \textbf{cette finitude n'est pas démontrée}. L'énergie physiquement pertinente d'un cristal de Wigner, neutralisée
+par un fond uniforme (« jellium »), n'est couverte par aucun des deux énoncés~\cite{ch2kel}.
+\end{warnbox}
+
+\paragraph{Étape 5 : le lien avec la forme de Struve \tierC.}
+\begin{theorem}[non vérifié par machine]\label{ch2:thm:struve}
+Pour $r_0>0$ et $r>0$ : $V(r)=\mathcal K_{r_0}(r^2)$.
+\end{theorem}
+\begin{humanproof}
+Tous les intégrandes sont positifs : chaque échange d'intégrales est justifié par le théorème de Tonelli.
+
+\emph{(a) Une forme de Laplace en $r$.} La formule DLMF 11.5.2 avec $\nu=0$ donne
+$\mathbf K_0(z)=\frac2\pi\int_0^\infty e^{-zu}(1+u^2)^{-1/2}du$ pour $\operatorname{Re}z>0$ \tierL~\cite{ch2dlmf}. Avec
+$z=r/r_0$ : $V(r)=\frac1{r_0}\int_0^\infty e^{-ru/r_0}(1+u^2)^{-1/2}du$. Cela suffit déjà à voir que $V$ est CM \emph{en $r$}.
+
+\emph{(b) Subordination.} Pour $\rho>0$ et $t>0$,
+$e^{-\rho\sqrt t}=\int_0^\infty e^{-ta}\,\frac{\rho}{2\sqrt\pi}\,a^{-3/2}e^{-\rho^2/(4a)}\,da$ (transformée de Laplace de
+la densité de Lévy, formule classique utilisée sans citation dans l'article source). On prend $\rho=u/r_0$, $t=r^2$, on
+insère dans (a) et l'on échange les intégrales :
+\[V(r)=\int_0^\infty e^{-ta}\,\frac{a^{-3/2}}{2\sqrt\pi\,r_0^2}\left[\int_0^\infty\frac{u}{\sqrt{1+u^2}}e^{-\lambda u^2}du\right]da,
+\qquad\lambda=\frac1{4r_0^2a}.\]
+
+\emph{(c) L'intégrale intérieure est élémentaire.} Avec $v=\sqrt{1+u^2}$, $dv=u(1+u^2)^{-1/2}du$ :
+\[\int_0^\infty\frac{u}{\sqrt{1+u^2}}e^{-\lambda u^2}du=e^{\lambda}\int_1^\infty e^{-\lambda v^2}dv
+=\frac12\sqrt{\frac\pi\lambda}\,\mathrm{erfcx}(\sqrt\lambda).\]
+Avec $\sqrt{\pi/\lambda}=2r_0\sqrt{\pi a}$, on obtient $V(r)=\int_0^\infty e^{-ta}\rho(a)\,da$ où
+$\rho(a)=\dfrac{\mathrm{erfcx}\bigl(1/(2r_0\sqrt a)\bigr)}{2r_0\,a}$.
+
+\emph{(d) Changement de variable.} On pose $a=\frac1{4b}$, d'où $|da|=\frac{db}{4b^2}$ et $e^{-ta}=e^{-t/(4b)}$. Alors
+$\rho(a)\,da=\frac{4b\,\mathrm{erfcx}(\sqrt b/r_0)}{2r_0}\cdot\frac{db}{4b^2}=\frac{w(b)}{2b}\,db$, donc
+$V(r)=\int_0^\infty\frac{w(b)}{2b}e^{-r^2/(4b)}db=\mathcal K_{r_0}(r^2)$.
+\end{humanproof}
+\noindent Des vérifications numériques à 30 chiffres (mpmath) confirment chaque étape, avec deux erreurs plantées
+détectées \tierX~\cite{ch2kel} ; elles ne remplacent pas la démonstration. Le lecteur doit accepter le
+théorème~\ref{ch2:thm:struve} pour transférer l'énoncé Lean, qui porte sur~\eqref{ch2:eq:kmix}, à la forme de Struve.
+Article : doi\string:10.5281/zenodo.23646107.
+
+% ---------------------------------------------------------------------
+\section{La généralisation : une bibliothèque CM/Bernstein}\label{ch2:sec:lib}
+
+Les trois démonstrations précédentes ont un air de famille : une différence de translatées (dipôles), un produit et une
+composition avec $\sqrt t$ (Yukawa), un mélange de Laplace (Keldysh). La bibliothèque P3~\cite{ch2cm} (doi\string:10.5281/zenodo.23653842)
+isole ces mécanismes une fois pour toutes. Bilan de la porte : \textbf{130 théorèmes} déclarés, chacun avec sa ligne
+\texttt{\#print axioms}, tous dans la liste autorisée, aucun avertissement ; un audit par un agent d'IA séparé a
+reconstruit les 11 fichiers et 5 modules prérequis depuis les sources et trouvé 0 constante hors liste parmi 167
+\tierA. Aucun audit humain ; les 20 drapeaux \texttt{LEDGER\_UNAUDITED\_TIER\_A} restent ouverts.
+
+\subsection{Deux définitions et un pont}
+\begin{definition}[fonction de Bernstein]
+$\psi:\,]0,+\infty[\,\to\R$ est \emph{de Bernstein} si elle est $C^\infty$, positive, et si $\psi'$ est CM.
+Exemples : $at+b$ ($a,b\ge0$), $t^\alpha$ pour $0\le\alpha\le1$, en particulier $\sqrt t$ ; $1-e^{-at}$ ; $\ln(1+t)$.
+\end{definition}
+\begin{leanbox}[--- \lean{formal_cert/Programmes/CompletelyMonotone/Basic.lean:28-30, 33-34} et \lean{Bernstein.lean:24-25}]
+\begin{lstlisting}[style=chdeux]
+def IsCompletelyMonotoneOn (f : ℝ → ℝ) : Prop :=
+  ContDiffOn ℝ (⊤ : ℕ∞) f (Set.Ioi 0) ∧
+  ∀ (n : ℕ) (t : ℝ), 0 < t → 0 ≤ (-1 : ℝ) ^ n * iteratedDeriv n f t
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+theorem isCompletelyMonotoneOn_iff_admissible {f : ℝ → ℝ} :
+    IsCompletelyMonotoneOn f ↔ OAI.AtomicTriangular.AdmissiblePotential f := by
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+def IsBernsteinOn (g : ℝ → ℝ) : Prop :=
+  ContDiffOn ℝ (⊤ : ℕ∞) g (Set.Ioi 0) ∧ (∀ t : ℝ, 0 < t → 0 ≤ g t) ∧ IsCompletelyMonotoneOn (deriv g)
+\end{lstlisting}
+\end{leanbox}
+\noindent Le pont \lean{isCompletelyMonotoneOn_iff_admissible} est une \emph{équivalence} \tierA : la clause $g\ge0$ de
+l'amont est le cas $n=0$ de la troisième. Toute fonction CM de la bibliothèque est donc directement utilisable dans
+\lean{universal_energy_minimum}.
+
+\subsection{Les lemmes de clôture}
+On note $h_n(t)=(-1)^nf^{(n)}(t)$ pour $f$ CM.
+\begin{enumerate}[label=(\roman*),itemsep=2pt]
+\item \emph{Cône.} Les dérivées sont linéaires : $cf$ ($c\ge0$), $f+g$, et toute combinaison finie positive de
+fonctions CM est CM. Les constantes positives sont CM.
+\item \emph{Produit.} Par le lemme de Leibniz~\ref{ch2:lem:leibniz}, $fg$ est CM.
+\item \emph{Dérivée.} $h_n'=(-1)^nf^{(n+1)}=-h_{n+1}\le0$, donc chaque $h_n$ décroît (accroissements finis). En
+particulier $-f'$ est CM, car $(-1)^n(-f')^{(n)}=h_{n+1}\ge0$.
+\item \emph{Translatée.} Pour $c\ge0$, $t\mapsto f(t+c)$ est CM : ses dérivées sont $f^{(n)}(t+c)$ et $t+c>0$.
+\item \emph{Différence de translatées.} Pour $c\ge0$, $f(t)-f(t+c)$ est CM, car
+$(-1)^n\bigl[f(t)-f(t+c)\bigr]^{(n)}=h_n(t)-h_n(t+c)\ge0$ puisque $h_n$ décroît. Aucune représentation intégrale n'est utilisée.
+\end{enumerate}
+\begin{leanbox}[--- \lean{Basic.lean:160-161} (preuve omise ; elle tient en dix lignes)]
+\begin{lstlisting}[style=chdeux]
+theorem sub_comp_add_const (hf : IsCompletelyMonotoneOn f) {c : ℝ} (hc : 0 ≤ c) :
+    IsCompletelyMonotoneOn (fun t => f t - f (t + c)) := by
+\end{lstlisting}
+\end{leanbox}
+\noindent Le point (v) est la version abstraite de la démonstration dipolaire : le calcul de Pochhammer y est remplacé par
+la seule décroissance de $h_n$.
+
+\subsection{Le théorème de subordination}
+\begin{theorem}[subordination]\label{ch2:thm:subord}
+Si $f$ est CM et si $\psi$ est une fonction de Bernstein strictement positive sur $]0,+\infty[$, alors $f\circ\psi$ est
+CM. \tierA{} ; démonstration ci-dessous \tierC.
+\end{theorem}
+\begin{humanproof}
+La régularité vient de la stabilité de $C^\infty$ par composition ($\psi$ envoie $]0,+\infty[$ dans $]0,+\infty[$).
+Pour les signes, on démontre par récurrence sur $n$ la propriété
+\[\mathcal Q(n)\ :\ \text{« pour \emph{toute} fonction CM } f\text{ et tout } m\le n,\ (-1)^m(f\circ\psi)^{(m)}\ge0\text{ sur }]0,+\infty[\text{ ».}\]
+$\mathcal Q(0)$ : $f(\psi(t))\ge0$ car $\psi(t)>0$ et $f\ge0$.
+
+$\mathcal Q(n)\Rightarrow\mathcal Q(n+1)$ : soit $f$ CM ; les ordres $m\le n$ sont couverts par $\mathcal Q(n)$. Pour
+$m=n+1$, posons $F=-f'$, qui est CM d'après (iii). La dérivation composée donne
+$(f\circ\psi)'=(f'\circ\psi)\,\psi'=-(F\circ\psi)\,\psi'$, donc
+\[(-1)^{n+1}(f\circ\psi)^{(n+1)}=(-1)^n\bigl[(F\circ\psi)\,\psi'\bigr]^{(n)}\ge0\]
+par le lemme de Leibniz, appliqué à $u=F\circ\psi$ (dont les signes jusqu'à l'ordre $n$ sont donnés par $\mathcal Q(n)$
+\emph{appliquée à $F$}) et à $v=\psi'$ (CM par définition d'une fonction de Bernstein). C'est parce que $\mathcal Q(n)$
+quantifie sur \emph{toutes} les fonctions CM que la récurrence se referme sans la formule de Faà di Bruno.
+\end{humanproof}
+\begin{leanbox}[--- \lean{Bernstein.lean:49-51} (preuve omise) et \lean{:85-87} (énoncé et preuve complète)]
+\begin{lstlisting}[style=chdeux]
+theorem comp_sign (hg : IsBernsteinOn g) (hpos : ∀ t, 0 < t → 0 < g t) :
+    ∀ n : ℕ, ∀ f : ℝ → ℝ, IsCompletelyMonotoneOn f → ∀ m ≤ n, ∀ t : ℝ, 0 < t →
+      0 ≤ (-1 : ℝ) ^ m * iteratedDeriv m (fun t => f (g t)) t := by
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+theorem IsCompletelyMonotoneOn.comp_bernstein {f g : ℝ → ℝ} (hf : IsCompletelyMonotoneOn f)
+    (hg : IsBernsteinOn g) (hpos : ∀ t, 0 < t → 0 < g t) : IsCompletelyMonotoneOn (fun t => f (g t)) :=
+  ⟨hf.1.comp hg.1 (fun s hs => hpos s hs), fun n t ht => hg.comp_sign hpos n f hf n le_rfl t ht⟩
+\end{lstlisting}
+\end{leanbox}
+\noindent L'énoncé Lean \lean{comp_sign} porte « $\forall f$ » \emph{à l'intérieur} de la récurrence sur $n$ : c'est
+littéralement la propriété $\mathcal Q(n)$.
+
+\begin{remark}[l'hypothèse $\psi>0$ est nécessaire \tierA]
+$f$ n'est contrainte que sur $]0,+\infty[$, et $\psi\equiv0$ est de Bernstein ; alors $f\circ\psi$ est la constante
+« poubelle » $f(0)$, qui peut être négative. Le témoin \lean{junk_comp_zero_not_cm} réalise ce cas. Le théorème est
+classique dans l'esprit (« subordination de Bochner ») ; l'article source n'a pas localisé son numéro dans la
+monographie de référence~\cite{ch2ssv}. La contribution est la preuve vérifiée par machine sur $]0,+\infty[$.
+\end{remark}
+
+\paragraph{Instances.} $\psi(t)=t^\alpha$ ($0\le\alpha\le1$) est de Bernstein : $\psi'=\alpha t^{-(1-\alpha)}$ est CM
+par le lemme~\ref{ch2:lem:riesz}. D'où, avec $f(u)=e^{-au}$ : $e^{-at^\alpha}$ est CM (exponentielle étirée), et avec
+$\alpha=\frac12$ : $e^{-\kappa\sqrt t}$ est CM pour tout $\kappa\ge0$, en une ligne.
+\begin{leanbox}[--- \lean{Bernstein.lean:160-161} (énoncé et preuve complète)]
+\begin{lstlisting}[style=chdeux]
+theorem phi_cm {κ : ℝ} (hκ : 0 ≤ κ) : IsCompletelyMonotoneOn (AutoresearchYukawa.phi κ) :=
+  ((exp_neg_mul hκ).comp_sqrt).congr' fun t _ => by simp only [AutoresearchYukawa.phi, neg_mul]
+\end{lstlisting}
+\end{leanbox}
+\noindent Comparez avec la récurrence forte de la proposition~\ref{ch2:prop:phi} : celle-ci exigeait $\kappa>0$ et une
+induction ad hoc ; la bibliothèque couvre $\kappa\ge0$.
+
+\paragraph{Mélanges de Laplace, hypothèse affaiblie.} Le théorème \lean{laplace} de \lean{Laplace.lean:49} ne suppose
+plus que tous les moments sont finis, mais seulement que $e^{-ck}m$ est intégrable pour tout $c>0$ : l'inégalité
+$u^n\le n!\,(c/2)^{-n}e^{(c/2)u}$ ($u\ge0$) donne $k^ne^{-ck}m\le\frac{n!}{(c/2)^n}e^{-(c/2)k}m$, d'où tous les
+moments. C'est la direction \emph{facile} du théorème de Bernstein--Widder (une transformée de Laplace d'une mesure
+positive est CM) ; la direction difficile (toute fonction CM est une telle transformée~\cite{ch2widder}) n'est
+\emph{pas} démontrée.
+
+\subsection{Les trois potentiels deviennent des corollaires}
+\begin{leanbox}[--- \lean{Corollaries.lean:24-25, 28-30, 38}]
+\begin{lstlisting}[style=chdeux]
+theorem yukawa_cm {κ : ℝ} (hκ : 0 ≤ κ) : IsCompletelyMonotoneOn (AutoresearchYukawa.g κ) :=
+  ((riesz_cm zero_le_one).mul (phi_cm hκ)).congr (AutoresearchYukawa.g_eqOn κ)
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+theorem dipolar_cm (d : ℝ) : IsCompletelyMonotoneOn (AutoresearchDipolar.g d) :=
+  (((rpow_neg (by norm_num : (0 : ℝ) ≤ 1 / 2)).sub_comp_add_const (sq_nonneg d)).const_mul
+    zero_le_two).congr' fun _ _ => rfl
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+theorem keldysh_cm {r0 : ℝ} (hr0 : 0 < r0) : IsCompletelyMonotoneOn (AutoresearchKeldysh.keldysh r0) := by
+\end{lstlisting}
+\end{leanbox}
+\noindent Lecture : Yukawa $=$ Riesz $\times$ ($\exp\circ\sqrt{\ }$) ; dipôle $=2\times$ (différence de translatées de
+$t^{-1/2}$) ; Keldysh $=$ mélange de Laplace (preuve de huit lignes, omise).
+
+\begin{warnbox}[: ce que la bibliothèque ne raccourcit pas]
+L'expression « corollaires en une ligne » n'est vraie qu'à moitié. L'article P3 a \emph{mesuré} la fermeture de
+dépendances des trois résultats H1, H2, H3 réunis : elle \emph{augmente} quand on passe par la bibliothèque. Seul le
+coût \emph{marginal} d'un nouveau potentiel devient petit. Pour Keldysh, la preuve courte s'appuie toujours sur les
+bornes lourdes de \lean{keldysh_data} (erfcx, intégrabilité) du module d'origine : l'hypothèse affaiblie est
+\emph{disponible} mais n'est pas \emph{exercée}. Mathlib contient déjà une notion voisine, \lean{AbsolutelyMonotoneOn}
+(sans signes alternés) ; la bibliothèque n'est pas prête pour Mathlib~\cite{ch2cm}.
+\end{warnbox}
+
+\paragraph{Nouvelles conséquences \tierA, conditionnelles pour l'optimalité.} Yukawa à c\oe{}ur mou
+$g_\kappa(t+b^2)$ (translatée), exponentielle étirée $e^{-at^\alpha}$, exciton dipolaire écranté
+$2(g_\kappa(t)-g_\kappa(t+d^2))$, mélanges continus de Yukawa. Un exemple instructif, les quadrupôles $+1,-2,+1$ dans
+les couches $0,d,2d$ ($c=d^2$) :
+\begin{itemize}
+\item le \emph{champ} d'un quadrupôle sur une charge test, $f(t)-2f(t+c)+f(t+4c)$ avec $f=t^{-1/2}$, n'est \emph{pas}
+CM : en $t=3$, $c=1$, il vaut $\frac1{\sqrt3}-1+\frac1{\sqrt7}<0$ (\lean{quadrupole_not_cm}) ;
+\item l'\emph{interaction} de deux quadrupôles alignés compte les paires ($1+4+1=6$ à $\Delta z=0$, $4\times(-2)=-8$ à
+$|\Delta z|=d$, $2\times1=2$ à $|\Delta z|=2d$) et vaut $2\bigl(3f(t)-4f(t+c)+f(t+4c)\bigr)$ \tierC{} pour le comptage ;
+elle \emph{est} CM pour toute $f$ CM (exercice~\ref{ch2:ex:quad}).
+\end{itemize}
+\begin{leanbox}[--- \lean{Applications.lean:172, 175-176} (preuve omise)]
+\begin{lstlisting}[style=chdeux]
+noncomputable def quadrupolarPair (f : ℝ → ℝ) (c t : ℝ) : ℝ := 2 * (3 * f t - 4 * f (t + c) + f (t + 4 * c))
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+theorem quadrupolarPair_cm {f : ℝ → ℝ} (hf : IsCompletelyMonotoneOn f) {c : ℝ} (hc : 0 ≤ c) :
+    IsCompletelyMonotoneOn (quadrupolarPair f c) := by
+\end{lstlisting}
+\end{leanbox}
+\noindent Pour ces nouveaux potentiels, aucune finitude de l'énergie optimale n'est démontrée : pour des queues lentes,
+l'inégalité d'optimalité peut se lire $\top\le\top$.
+
+% ---------------------------------------------------------------------
+\section{Un problème voisin : la conjecture de Sandier--Serfaty}\label{ch2:sec:ss}
+
+\begin{warnbox}[: statut]
+\textbf{La conjecture de Sandier--Serfaty n'est pas démontrée dans ce livre.} Un manuscrit de la publication openai/math
+en revendique une preuve ; ce manuscrit est produit par une IA et n'est pas relu par des pairs. Ce que nous avons
+fait --- reproduire un certificat, auditer une réduction, écrire un énoncé Lean, formaliser une petite partie --- ne
+constitue ni une preuve, ni une vérification, ni une relecture par des pairs.
+\end{warnbox}
+
+\subsection{Ce que dit la conjecture}\label{ch2:ssec:ssconj}
+\begin{physbox}[: des vortex aux réseaux \tierC]
+Dans un supraconducteur de type II soumis à un champ magnétique, le champ pénètre sous forme de tubes de flux
+quantifiés, les \emph{vortex}, qui s'organisent en réseau (réseau d'Abrikosov, observé triangulaire). Sandier et Serfaty
+ont déduit du modèle de Ginzburg--Landau une \emph{énergie renormalisée} $W$ qui gouverne la position des vortex à
+l'ordre suivant~\cite{ch2ss} \tierL. Le lien avec la physique des vortex est ici une glose \tierC.
+\end{physbox}
+Voici la formulation du manuscrit, qui suit Sandier--Serfaty \tierL. Soit $\Lambda\subset\R^2$ localement fini, de
+densité bornée, et $\nu_\Lambda=\sum_{p\in\Lambda}\delta_p$. Un champ $E:\R^2\to\R^2$ localement intégrable est
+\emph{admissible} ($E\in\mathcal A_1$) si, au sens des distributions,
+\[\operatorname{div}E=2\pi(\nu_\Lambda-1),\qquad\operatorname{rot}E=0 .\]
+Chaque point de $\Lambda$ est une charge unité, le « $-1$ » est un fond neutralisant uniforme. Près d'une charge,
+$|E|^2\sim1/|x-p|^2$ n'est pas intégrable : on retire des disques de rayon $\eta$ et l'on compense,
+\[W(E,\chi_R)=\lim_{\eta\to0}\Bigl[\tfrac12\int_{\R^2\setminus\bigcup_pB(p,\eta)}\chi_R|E|^2+\pi\ln\eta\sum_{p\in\Lambda}\chi_R(p)\Bigr],
+\qquad W(E)=\limsup_{R\to\infty}\frac{W(E,\chi_R)}{4R^2},\]
+où $\chi_R$ est une troncature lisse à support dans le carré $[-R,R]^2$. Le signe $+\pi\ln\eta$ est le bon :
+$\frac12\int_{\eta<|x-p|<\rho}|x-p|^{-2}dx=\pi\ln\rho-\pi\ln\eta$.
+\begin{itemize}
+\item \textbf{Conjecture} (Sandier--Serfaty 2012, Conjecture~1) : $W(E)\ge W(E_\triangle)$ pour tout $E\in\mathcal A_1$,
+où $E_\triangle$ est le champ périodique du réseau triangulaire $\Lambda_\triangle$ de covolume un \tierL.
+\item Sandier--Serfaty la démontrent \emph{parmi les réseaux} (leur Théorème~2) et écrivent que la minimisation en
+général reste ouverte \tierL~\cite{ch2ss}.
+\item Bétermin--Sandier montrent qu'elle équivaut à une valeur conjecturée par Brauchart--Hardin--Saff pour le terme
+d'ordre suivant de l'énergie logarithmique optimale de $N$ points sur la sphère~\cite{ch2bs,ch2bhs} \tierL, et donnent
+$W(E_\triangle)=\pi\ln\frac{2\sqrt2\,\pi}{\sqrt3\,\Gamma(1/3)^3}\approx-4{,}1504128$ \tierL.
+\end{itemize}
+
+\paragraph{Ce que revendique le manuscrit openai/math.} Une preuve~\cite{ch2oaiss}, par (1) une réduction du plan aux
+tores carrés $\R^2/(\sqrt n\,\Z^2)$, (2) un potentiel d'essai recollé sur les secteurs de Voronoï, \emph{exactement
+calibré} au réseau triangulaire, et (3) un certificat fini en arithmétique d'intervalles exacte (entiers de 144~bits),
+organisé en douze étapes. Ce manuscrit est produit par une IA et n'est pas relu par des pairs.
+
+\subsection{P1 : reproduire et auditer, sans démontrer}\label{ch2:ssec:p1}
+\begin{itemize}
+\item \textbf{Reproduction du certificat \tierX.} Le programme C++ inchangé a été recompilé et exécuté sur une autre
+chaîne d'outils et une autre machine (g++~11.4) ; l'exécution du certificat a pris environ 478~s ; la ligne finale est
+\texttt{OK} et les 22 paires d'entiers imprimées sont identiques, 22 sur 22, à l'enregistrement d'origine.
+\emph{Témoins négatifs} : trois versions affaiblies d'une ligne ; deux sont rejetées par les assertions du programme,
+\textbf{la troisième passe} (les issues des deux dernières avaient été prédites par écrit avant la fin des calculs). La
+reproduction montre que le programme se comporte comme enregistré ; elle ne teste aucune des bornes analytiques qu'il
+est censé certifier.
+\item \textbf{Audit de la réduction \tierC.} Un agent d'IA a vérifié pas à pas les sections 2 à 5 du manuscrit
+(31 étapes numérotées et 14 lignes de l'étape certificat) : \emph{aucune étape n'a été classée comme lacune}, avec des
+limites déclarées (les morceaux de spline hors de $[p,R_0]$, les valeurs de l'étape de grille et la confiance dans
+l'exécution ne sont pas vérifiés indépendamment). Ce n'est ni une preuve ni une relecture par des pairs.
+\item \textbf{Énoncé Lean verrouillé.} La conjecture est écrite comme une proposition Lean (\lean{Prop}),
+\textbf{non démontrée}, dont la région d'énoncé est verrouillée par empreinte (\texttt{statement\_lock.py}).
+\end{itemize}
+\begin{leanbox}[--- \lean{formal_cert/Programmes/SandierSerfatyStatement.lean:153-160} (une définition, pas un théorème)]
+\begin{lstlisting}[style=chdeux]
+def SandierSerfatyStatement : Prop :=
+  (∃ χ, IsSquareCutoffFamily χ) ∧
+    ∃ E₀ : Plane → Plane, Admissible triLattice E₀ ∧ IsPeriodic triLattice E₀ ∧
+      ∀ χ : ℝ → Plane → ℝ, IsSquareCutoffFamily χ →
+        ∃ w₀ : ℝ → ℝ, (∀ R : ℝ, 1 < R → HasLocalEnergy triLattice E₀ (χ R) (w₀ R)) ∧
+          WSq w₀ ≠ ⊤ ∧ WSq w₀ ≠ ⊥ ∧
+          ∀ (Λ : Set Plane) (E : Plane → Plane) (w : ℝ → ℝ), Admissible Λ E →
+            (∀ R : ℝ, 1 < R → HasLocalEnergy Λ E (χ R) (w R)) → WSq w₀ ≤ WSq w
+\end{lstlisting}
+\end{leanbox}
+\noindent Seuls dix lemmes de non-dégénérescence sont \tierA{} : la classe admissible est non vide (le champ $E=-\pi x$,
+sans charge), la constante de fond $2\pi$ est porteuse (avec $0$ ou $-2\pi$ à la place, ce champ n'est plus
+admissible), les classes de troncatures sont non vides. Attention : le témoin de \lean{competitor_nonvacuous} est ce
+champ $-\pi x$, dont l'énergie est $+\infty$ \tierC{} ; il montre que les hypothèses sur un concurrent sont
+\emph{satisfiables}, pas que l'inégalité contraint un concurrent. L'existence de la limite en $\eta$ est \emph{supposée}
+(\lean{HasLocalEnergy}) et le minimiseur triangulaire est un témoin existentiel : ce sont des écarts déclarés à la
+formulation du manuscrit~\cite{ch2ssa}. Article P1 : doi\string:10.5281/zenodo.23653827.
+
+\subsection{A1 : formaliser une partie, et mesurer le reste}\label{ch2:ssec:a1}
+\paragraph{Arithmétique d'intervalles en Lean.} Un intervalle est un couple d'entiers $(u,v)$ lu comme $[u/Q,v/Q]$ avec
+$Q=2^{144}$. Les produits sont arrondis \emph{vers l'extérieur} : borne inférieure par $\lfloor\cdot/Q\rfloor$, borne
+supérieure par $\lceil\cdot/Q\rceil$, de sorte que le vrai résultat réel n'est jamais perdu. Exemple jouet avec $Q=100$ :
+$[1{,}20;1{,}30]\times[0{,}50;0{,}60]$, soit $(120,130)\times(50,60)$, a pour produits d'extrémités
+$6000,7200,6500,7800$, d'où $(\lfloor6000/100\rfloor,\lceil7800/100\rceil)=(60,78)=[0{,}60;0{,}78]$~\cite{ch2ssl}.
+
+\paragraph{Deux niveaux de vérification} (axe distinct des niveaux A/L/C/X) :
+\textbf{L1} (réexécution par le noyau) : la transcription Lean d'une étape, évaluée par le noyau avec
+\lean{decide +kernel} (et non \lean{native_decide}, qui ajoute un axiome et fait confiance au code compilé), redonne
+bit pour bit les entiers imprimés par le C++. \textbf{L2} (énoncé réel) : un théorème Lean affirme qu'un \emph{nombre
+réel} appartient à l'intervalle.
+
+\begin{center}\small
+\begin{tabular}{@{}p{0.31\linewidth}p{0.5\linewidth}l@{}}\toprule
+Résultat (journaux sauvegardés) & Valeur & Niveau\\\midrule
+Étapes complètes en L1 & 4 sur 12 (\lean{init_constants}, \lean{bcons/eps}, \lean{calcLam}, \lean{calcK}) & \tierA\\
+\quad dont conditionnelles & \lean{calcLam}, \lean{calcK} (tables en prémisses), \lean{bcons} (coefficients $c_m$) & \\
+Étapes complètes en L2 & 1 sur 12 (\lean{init_constants} : $\ln2,\pi,p,R_0,a$ réels) & \tierA\\
+Part des opérations d'intervalles réexécutées & $1\,685\,129$ sur $1\,238\,829\,689$, soit $0{,}136\,\%$ & \tierX\\
+Énoncés faux plantés rejetés & 11 & \tierX\\
+Coût projeté du reste en L1 & 854 à 2\,240 heures-c\oe{}ur & \tierX\\\bottomrule
+\end{tabular}
+\end{center}
+Les 22 paires imprimées et les assertions finales du C++ sont en outre vérifiées comme arithmétique sur les extrémités
+exactes (niveau « E », plus faible), sauf le test de borne de l'étape \lean{core_test} ; le test de séparation des
+tables n'est vérifié que fenêtre par fenêtre. Vérification indépendante : l'audit par un second agent d'IA a reconstruit
+13 modules Lean depuis les sources, mais \emph{pas} \lean{CalcK.lean}, \lean{CalcLam.lean} ni 28 fichiers de morceaux ;
+les résultats L1 de \lean{calcLam} et \lean{calcK} n'ont donc pas eu de passe producteur${}\ne{}$vérificateur
+\tierC~\cite{ch2ssl}. Le travail restant le plus lourd
+est le niveau L2 du contenu analytique (fonctions radiales, coefficients de réseau, restes de quadrature), puis
+30 autres étapes de la réduction : un projet de plusieurs mois \tierC~\cite{ch2ssl}. Article A1 :
+doi\string:10.5281/zenodo.23656804.
+
+\paragraph{Le lemme \lean{signed_endpoints} \tierA.} C'est le seul lemme de la réduction démontré complètement. Il
+permet de traiter un secteur de Voronoï dont le pied de la perpendiculaire tombe hors de son arête. Cadre : un noyau
+$G(d,s)$, pair en $s$ et localement intégrable pour $d\ge d_0$, et sa primitive $g_d(x)=\int_0^xG(d,s)\,ds$.
+
+\begin{center}\small
+\begin{tabular}{@{}p{0.34\linewidth}p{0.6\linewidth}@{}}\toprule
+Manuscrit & Lean (\lean{SignedEndpoints.lean:79-85}, verbatim)\\\midrule
+$K<0$, $d_0>0$ ; $G(d,\cdot)$ pair & \lstinline[style=chdeux]!(hK : K < 0) (hd₀ : 0 < d₀)!, \lstinline[style=chdeux]!heven : ∀ d, d₀ ≤ d → ∀ s, G d (-s) = G d s!\\
+localement intégrable & \lstinline[style=chdeux]!hint : ∀ d, d₀ ≤ d → ∀ a b : ℝ, IntervalIntegrable (G d) volume a b!\\
+$2g_d(x)\ge K$ pour $x\ge0$ & \lstinline[style=chdeux]!hpos : ∀ d, d₀ ≤ d → ∀ x, 0 ≤ x → K ≤ 2 * gPrim G d x!\\
+$\int_0^\infty\max\{0,-G(d,s)\}\,ds\le-K$ & \lstinline[style=chdeux]!hneg : ∀ d, d₀ ≤ d → ∫⁻ s in Ioi 0, ENNReal.ofReal (-G d s) ≤ ENNReal.ofReal (-K)!\\
+conclusion pour $|\alpha|,|\beta|<\frac\pi2$, $\alpha+\beta>0$ & \lstinline[style=chdeux]!K ≤ gPrim G d (d * Real.tan α) + gPrim G d (d * Real.tan β)!\\\bottomrule
+\end{tabular}
+\end{center}
+\begin{leanbox}[--- \lean{formal_cert/Programmes/SandierSerfaty/SignedEndpoints.lean:33, 79-85} (preuve omise)]
+\begin{lstlisting}[style=chdeux]
+noncomputable def gPrim (G : ℝ → ℝ → ℝ) (d x : ℝ) : ℝ := ∫ s in (0 : ℝ)..x, G d s
+\end{lstlisting}
+\begin{lstlisting}[style=chdeux]
+theorem signed_endpoints (G : ℝ → ℝ → ℝ) (K d₀ : ℝ) (hK : K < 0) (hd₀ : 0 < d₀)
+    (heven : ∀ d, d₀ ≤ d → ∀ s, G d (-s) = G d s)
+    (hint : ∀ d, d₀ ≤ d → ∀ a b : ℝ, IntervalIntegrable (G d) volume a b)
+    (hpos : ∀ d, d₀ ≤ d → ∀ x, 0 ≤ x → K ≤ 2 * gPrim G d x)
+    (hneg : ∀ d, d₀ ≤ d → ∫⁻ s in Ioi 0, ENNReal.ofReal (-G d s) ≤ ENNReal.ofReal (-K)) :
+    ∀ d, d₀ ≤ d → ∀ α β : ℝ, |α| < π / 2 → |β| < π / 2 → 0 < α + β →
+      K ≤ gPrim G d (d * Real.tan α) + gPrim G d (d * Real.tan β) := by
+\end{lstlisting}
+\end{leanbox}
+\noindent L'intégrale de la partie négative est une \lean{lintegral} ($\int^-$, à valeurs dans $[0,+\infty]$) : une
+intégrale infinie \emph{viole} l'hypothèse, au lieu de produire la valeur poubelle $0$ de l'intégrale de Bochner.
+
+\begin{theorem}[points d'extrémité signés]\label{ch2:thm:signed}
+Sous les hypothèses du tableau, pour $d\ge d_0$ et $|\alpha|,|\beta|<\frac\pi2$ avec $\alpha+\beta>0$ :
+$g_d(d\tan\alpha)+g_d(d\tan\beta)\ge K$. \tierA
+\end{theorem}
+\begin{humanproof}
+\emph{(1) Imparité.} Par parité de $G(d,\cdot)$ et le changement de variable $s\mapsto-s$, $g_d(-x)=-g_d(x)$.
+
+\emph{(2) Deux angles positifs.} Alors $x=d\tan\alpha\ge0$ et $y=d\tan\beta\ge0$ ; l'hypothèse $2g_d\ge K$ donne
+$g_d(x)\ge K/2$ et $g_d(y)\ge K/2$ ; on additionne.
+
+\emph{(3) Signes opposés, $\alpha<0$.} Alors $\alpha+\beta>0$ force $\beta>-\alpha>0$. Posons $u=-d\tan\alpha>0$ et
+$v=d\tan\beta$ ; $\tan$ étant strictement croissante sur $]-\frac\pi2,\frac\pi2[$, on a $u<v$. Par imparité,
+$g_d(d\tan\alpha)+g_d(d\tan\beta)=g_d(v)-g_d(u)=\int_u^vG(d,s)\,ds$.
+
+\emph{(4) Estimation centrale.} $\int_u^vG\ge-\int_u^vG^-\ge-\int_0^\infty G^-\ge K$, où $G^-=\max(0,-G)$, par
+l'hypothèse sur la partie négative et $0<u$.
+
+\emph{(5)} Le cas $\beta<0$ est symétrique ; les deux négatifs sont exclus par $\alpha+\beta>0$.
+\end{humanproof}
+\noindent Sans $\alpha+\beta>0$, l'énoncé est faux (exercice~\ref{ch2:ex:signed}) ; la réfutation est vérifiée par le
+noyau (\lean{ctl_signed_without_sum_false}), et le même noyau $G\equiv1$ satisfait toutes les autres hypothèses
+(\lean{ctl_signed_hyps}), si bien que le théorème n'est pas vide.
+
+\begin{warnbox}[: ce que \lean{signed_endpoints} ne fait pas]
+Le lemme est énoncé pour un $G$ \emph{abstrait}. Le $G$ concret demande les données radiales $f_0,e$ de la section~4 du
+manuscrit, qui ne sont pas définies en Lean, et rien ne déduit ses deux hypothèses du certificat : le lemme \textbf{n'est
+pas relié au certificat}. Le critère d'arrêt préenregistré s'applique : \textbf{aucune preuve formelle de la conjecture
+n'est revendiquée}. La fidélité de l'énoncé au manuscrit a été comparée par un agent, pas par un humain.
+\end{warnbox}
+
+\subsection{B3 : pourquoi la méthode ne passe pas telle quelle en dimension trois}\label{ch2:ssec:b3}
+En dimension trois, l'analogue est la conjecture de Wigner : le réseau cubique centré (bcc) minimiserait l'énergie du
+jellium parmi \emph{toutes} les configurations ; il n'est connu optimal que parmi les réseaux de Bravais~\cite{ch2mn}
+\tierL. L'étude B3 (doi\string:10.5281/zenodo.23655002)~\cite{ch2b3} découpe la preuve plane en 13 étapes et classe chacune :
+indépendante de la dimension, transférable, ou spécifiquement plane. Le décompte d'incidences (identité d'Euler par
+cellule) \emph{n'est pas} l'obstacle.
+
+\paragraph{L'obstacle : la calibration exacte.} Toute la preuve plane est une minoration par un potentiel d'essai $H$ :
+$W(h)=F(H)+\frac1{8\pi}\int|\nabla(h-H)|^2\ge F(H)$ (identité duale, \tierC), et la minoration n'est optimale que si
+$H$ \emph{égale} la vraie fonction de Green $h$ au réseau optimal. En dimension deux c'est possible : dans chaque secteur,
+$\cos6m\varphi=T_{6m}(d/t)$ (polynôme de Tchebychev, $t=d/\cos\varphi$), donc $h_\triangle$ ne dépend que de deux
+variables et appartient à la classe d'essai. En dimension trois, la restriction de la fonction de Green bcc à un cercle
+de rayon fixé sur une face porte un mode $\cos6\psi$ (faces hexagonales) ou $\cos4\psi$ (faces carrées) \tierX, alors
+qu'un $H$ axial y est constant \tierC.
+
+\paragraph{Résultat, avec sa portée exacte.} Pour les classes d'essai radiale, axiale et « hiérarchique intrinsèque »,
+un argument de projection \tierC, évalué en virgule flottante, force un déficit : la constante certifiable est au plus
+$W_{\rm bcc}-\delta$ avec $\delta\ge8{,}751\times10^{-5}$ (hiérarchique) ou $\delta\ge1{,}058\times10^{-4}$ (axiale,
+$1{,}18$ fois l'écart fcc--bcc $8{,}969\times10^{-5}$) ; ces valeurs sont \tierX. Pour des classes plus riches (qui lisent
+les données des faces voisines), le négatif ne repose que sur une heuristique de comptage (environ 12 conditions pour 3
+multiplicateurs, contre 3 pour 3 en dimension deux) \tierC{} et \textbf{n'est pas un théorème}. Rien n'est démontré sur
+bcc.
+
+% ---------------------------------------------------------------------
+\section{Exercices}\label{ch2:sec:ex}
+
+Les exercices marqués \textbf{(Lean)} renvoient à une solution de référence vérifiée par le noyau dans le dépôt
+\tierA{} ; les solutions esquissées ici sont \tierC.
+
+\begin{exercise}[témoin dipolaire]\label{ch2:ex:hd}
+Soit $d>0$ et $h_d(t)=t^{-1/2}-2(t+d^2)^{-1/2}$. Calculer $h_d(d^2)$ et montrer qu'il est strictement négatif. En
+déduire que $h_d$ n'est pas complètement monotone. Interpréter physiquement : quelle erreur de comptage de paires
+produirait $h_d$ ?
+\end{exercise}
+
+\begin{exercise}[un mélange signé]\label{ch2:ex:signedmix}
+Soit $\sigma(t)=e^{-t}-2e^{-2t}$. Montrer que $\sigma(\ln\frac32)=-\frac29$. Pourquoi le théorème~\ref{ch2:thm:laplace}
+exige-t-il $m\ge0$ ? Exhiber une mesure signée dont la transformée de Laplace est $\sigma$.
+\end{exercise}
+
+\begin{exercise}[la borne de queue]\label{ch2:ex:diffle}
+Redémontrer le lemme~\ref{ch2:lem:diffle} par les accroissements finis appliqués à $x\mapsto x^{-1/2}$ sur $[t,t+c]$.
+Quelle constante obtient-on ? Comparer avec $\frac c2$.
+\end{exercise}
+
+\begin{exercise}[le noyau de la queue de Yukawa]
+(a) Montrer que $e^x\ge x^2/2$ pour $x\ge0$. (b) En déduire $g_\kappa(t)\le\frac2{\kappa^2}t^{-3/2}$. (c) Montrer que,
+dans le réseau $\Lat$, le nombre de points de la couronne $k\le|a|<k+1$ est $O(k)$ (indication : cellules de Voronoï
+d'aire $1$, disjointes, contenues dans une couronne élargie), et conclure que $\sum_{a\ne0}|a|^{-3}<\infty$.
+(d) Pourquoi l'argument échoue-t-il pour $\kappa=0$ ?
+\end{exercise}
+
+\begin{exercise}[moments du mélange de Keldysh]
+Montrer que pour $u\ge0$, $c>0$ et $N\in\N$, $u^Ne^{-cu}\le N!/c^N$. En déduire que
+$a\mapsto(4a)^{-n}e^{-c/(4a)}\,\frac{w(a)}{2a}$ est bornée sur $]0,1]$. (Lean : \lean{pow_mul_exp_neg_le}.)
+\end{exercise}
+
+\begin{exercise}[le piège $\top\le\top$]
+Montrer que pour un réseau plan, $\sum_{0<|a|\le R}|a|^{-1}$ croît comme $R$. En déduire pourquoi l'on
+\emph{s'attend} à ce que $\mathrm{latticeEnergy}(\mathcal K_{r_0})=+\infty$. Pourquoi cela ne rend-il pas le théorème
+\lean{triangular_keldysh_optimal} faux, mais seulement vide ?
+\end{exercise}
+
+\begin{exercise}[quadrupôles]\label{ch2:ex:quad}
+Soit $f$ CM et $c\ge0$, $g(t)=f(t)-f(t+c)$ et $\Delta_ah(t)=h(t)-h(t+a)$. (a) Vérifier que
+$3f(t)-4f(t+c)+f(t+4c)=\Delta_cg(t)+\Delta_{2c}g(t)+\Delta_{3c}g(t)$. (b) En déduire, avec le point (v) de la
+section~\ref{ch2:sec:lib}, que l'interaction de deux quadrupôles est CM. (c) Montrer que le champ d'un seul quadrupôle,
+$t^{-1/2}-2(t+1)^{-1/2}+(t+4)^{-1/2}$, est négatif en $t=3$, en utilisant $\sqrt3>1{,}7$ et $\sqrt7>2{,}6$.
+\end{exercise}
+
+\begin{exercise}[CM ou Bernstein ?]
+Montrer que : (a) $1/t$ est CM et positive mais n'est pas de Bernstein ; (b) $e^{-1/t}$ n'est pas CM (indication :
+le signe de sa dérivée) ; (c) $t^\alpha$ est de Bernstein pour $0\le\alpha\le1$ mais pas pour $\alpha=2$. Expliquer
+pourquoi (b) montre que, dans le théorème~\ref{ch2:thm:subord}, la fonction intérieure ne peut pas être n'importe
+quelle fonction positive.
+\end{exercise}
+
+\begin{exercise}[l'hypothèse $\alpha+\beta>0$]\label{ch2:ex:signed}
+Avec $G\equiv1$, $K=-1$, $d_0=d=1$ : vérifier les quatre hypothèses de \lean{signed_endpoints}, puis montrer que pour
+$\alpha=\beta=-\frac\pi4$ on a $g_1(\tan\alpha)+g_1(\tan\beta)=-2<K$. Quelle étape de la démonstration du
+théorème~\ref{ch2:thm:signed} utilise $\alpha+\beta>0$ ?
+\end{exercise}
+
+\begin{exercise}[arithmétique d'intervalles]
+Avec $Q=100$, on code $a=[-1{,}25;0{,}33]$ par $(-125,33)$ et $b=[0{,}50;0{,}67]$ par $(50,67)$. (a) Calculer les quatre
+produits d'extrémités et l'intervalle produit arrondi vers l'extérieur. (b) Avec la division entière euclidienne
+$\lfloor\cdot\rfloor$, montrer que $x\mapsto-\lfloor -x/Q\rfloor$ calcule $\lceil x/Q\rceil$. (c) Pourquoi un arrondi
+au plus proche serait-il incorrect pour un certificat ?
+\end{exercise}
+
+\begin{exercise}[\textbf{(Lean)} un témoin négatif]
+En partant de \lean{h_neg_at : h d (d ^ 2) < 0} (pour $d>0$), démontrer en Lean \lstinline[style=chdeux]!¬ AdmissiblePotential (h d)!.
+Indication : \lean{intro H}, puis utiliser la deuxième composante \lean{H.2.1} de la définition. Solution de référence :
+\lean{formal_cert/Autoresearch/DipolarExciton.lean:113-116} \tierA.
+\end{exercise}
+
+\begin{exercise}[\textbf{(Lean)} corollaires de la bibliothèque]
+(a) Énoncer en Lean que $t\mapsto\mathrm{riesz}\,s\,t-\mathrm{riesz}\,s\,(t+c)$ est CM pour $s,c\ge0$ et le démontrer en
+une ligne à l'aide de \lean{riesz_cm} et \lean{sub_comp_add_const}. Solution de référence :
+\lean{Corollaries.lean:33-35} \tierA. (b) Même question pour $e^{-at^\alpha}$, $a\ge0$, $0\le\alpha\le1$, à l'aide de
+\lean{exp_neg_comp} et \lean{IsBernsteinOn.rpow}. Solution de référence : \lean{Corollaries.lean:59-61} \tierA.
+(c) Pourquoi la condition \lstinline[style=chdeux]!(fun _ ht => Real.rpow_pos_of_pos ht α)! est-elle demandée ?
+\end{exercise}
+
+\label{ch2:fin}

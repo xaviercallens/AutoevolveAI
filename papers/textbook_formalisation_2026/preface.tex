@@ -1,0 +1,57 @@
+\chapter*{Préface}
+\addcontentsline{toc}{chapter}{Préface}
+Ce livre raconte une histoire mathématique récente, telle qu'elle s'est réellement déroulée : une suite de conjectures,
+de démonstrations, de vérifications par ordinateur et parfois de réfutations. Il s'adresse aux élèves des classes
+préparatoires (MPSI, MP2I, MP, MPI) et des écoles d'ingénieurs. Le point de départ est un théorème démontré et vérifié
+en Lean~4 : le réseau triangulaire minimise l'énergie de toute configuration de points du plan pour une large classe
+d'interactions répulsives. Le point d'arrivée est une série de questions ouvertes, en physique quantique et en
+génétique des populations.
+
+Chaque résultat est présenté trois fois.
+\begin{itemize}
+\item D'abord comme une \emph{démonstration humaine}, pas à pas, au niveau des classes préparatoires.
+\item Ensuite comme un énoncé \emph{Lean~4} vérifié par le noyau.
+\item Enfin comme un calcul numérique avec \emph{rusty-SUNDIALS} (solveurs CVODE en Rust) et \emph{LeanFlow}
+(certificats de données vérifiés par Lean), illustré par des jeux de données publics.
+\end{itemize}
+
+Une seule règle guide la lecture : chaque affirmation porte un \emph{niveau de confiance}, selon la méthode Elenchus.
+\begin{itemize}
+\item \tierA{} : vérifié par le noyau Lean. Cela suppose trois vérifications : la liste des axiomes se limite à
+\lean{propext}, \lean{Classical.choice} et \lean{Quot.sound}, le noyau rejoue la preuve (\lean{leanchecker}), et la
+recherche des constructions qui contournent le noyau ne trouve rien. La liste des axiomes seule peut être trompée ;
+le chapitre~1 explique comment.
+\item \tierL{} : résultat publié, lu et cité précisément.
+\item \tierC{} : argument humain, non vérifié par machine.
+\item \tierX{} : calcul en virgule flottante. Il oriente la recherche mais ne démontre rien.
+\end{itemize}
+Lisez le niveau avant la phrase.
+
+\paragraph{Honnêteté.}
+\begin{itemize}
+\item Les résultats de ce livre ont été produits par des agents d'IA (Claude) sous la direction de l'auteur.
+\item Chaque article a été audité par un agent d'IA distinct ; aucun mathématicien humain ne les a encore relus.
+\item Plusieurs résultats dépendent de théorèmes de la publication openai/math, eux aussi produits par une IA et non
+encore évalués par des pairs.
+\item Plusieurs chapitres rapportent des \emph{résultats négatifs} : une conjecture réfutée, une méthode qui ne s'étend
+pas, une transition qui n'a pas lieu. Ils sont aussi instructifs que les autres.
+\item Aucune conjecture n'est déclarée démontrée au-delà de son niveau. En particulier, la conjecture de
+Sandier--Serfaty n'est \emph{pas} démontrée ici : le chapitre~2 explique exactement ce qui a été vérifié et ce qui
+reste à faire.
+\end{itemize}
+
+\paragraph{Plan.}
+\begin{itemize}
+\item Le chapitre~1 pose les fondations : réseaux, fonctions complètement monotones et vérification formelle.
+\item Le chapitre~2 suit le fil des formalisations, de l'optimalité universelle aux potentiels de la physique et à la
+conjecture de Sandier--Serfaty.
+\item Le chapitre~3 présente une surprise quantique : pour certaines interactions, le réseau triangulaire n'est plus
+optimal dès qu'on tient compte de l'énergie de point zéro.
+\item Le chapitre~4 vérifie en Lean des théorèmes classiques de génétique des populations, jusqu'au théorème
+isotherme des graphes évolutifs.
+\item Le chapitre~5 réunit cinq cas d'usage avec données, codes et certificats.
+\end{itemize}
+Chaque chapitre se termine par des exercices.
+
+\paragraph{Pour aller plus loin.} Tous les articles cités ont un DOI Zenodo. Le code est public : AutoevolveAI,
+rusty-SUNDIALS, LeanFlow, SocrateAI-Scientific-Genetic et SocrateAI-Scientific-Agora-LeanMaster.

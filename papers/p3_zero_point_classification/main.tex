@@ -29,7 +29,7 @@
 \newcommand{\Ulin}{U_{\mathrm{lin}}}
 
 \title{Certified sign classification of the second variation of the harmonic zero-point energy for Gaussian interactions on $a\in[0.425,4]$:\\
-not a local minimum below $a\approx1.58$ and a strict minimum above $a\approx1.584$ along the shear, roots enclosed\\[2pt]
+not a local minimum for $a\in[0.425,1.579]$ and a strict minimum along the shear for $a\in[1.584,4]$\\[2pt]
 \normalsize (a partial result: the full ``iff'' for all $a>0$ is not claimed)}
 \author{Xavier Callens (SocrateAI Lab)}
 \date{Preprint v1, 2026-10-26}
@@ -42,8 +42,9 @@ not a local minimum below $a\approx1.58$ and a strict minimum above $a\approx1.5
 
 \noindent\textbf{AI-assistance disclosure.} This preprint, its Lean code, its Python code and its claim ledger were
 produced by AI agents (Claude, Anthropic) under the author's direction. The author is responsible for the content. No human
-has audited the Lean statements for adequacy, and no human referee has checked the hand arguments. \textbf{No independent
-audit of this paper exists yet: an independent AI audit is pending at the time of writing.} No statement lock exists.
+has audited the Lean statements for adequacy, and no human referee has checked the hand arguments. \textbf{An independent AI audit agent
+(producer $\ne$ verifier, 2026-10-26; \texttt{AUDIT.md}) returned ACCEPT\_WITH\_CORRECTIONS with no blocking item; this revision applies its corrections
+(\texttt{REVISION.md}). It is not a human audit.} No statement lock exists.
 
 \begin{abstract}
 Let $E(a,t)$ be the harmonic zero-point energy per particle ($\hbar=m=1$) of the planar Bravais lattices $L_t=P_tL_\rho$,
@@ -54,18 +55,18 @@ We enclose $F$ two-sided by ball arithmetic, for \emph{every} $a$ in an interval
 \textbf{Result.} $F<0$ on all of $[0.425,\,1.579]$ and $F>0$ on all of $[1.584,\,4]$. Hence along the shear the triangular lattice is
 \emph{not a local minimum} of the zero-point energy for every $a\in[0.425,1.579]$ ($E(a,t)<E(a,0)$ for $0<|t|\le10^{-8}$), and
 $E(a,0)<E(a,t)$ for every $a\in[1.584,4]$ (a \emph{strict minimum along the shear}; a strict local minimum over lattice shapes needs further
-assumptions, stated). The sign changes of $a\mapsto F(a,0)$ are enclosed in $a_-\in(0.3745,0.379)$ and $a_+\in(1.579,1.583)$; uniqueness
-is not certified.
+assumptions, stated). Each of $(0.3745,0.379)$ and $(1.579,1.583)$ contains a zero of $a\mapsto F(a,0)$ (intermediate value theorem); write $a_-$ and $a_+$ for such zeros.
+Uniqueness, and the absence of other zeros in the uncertified gaps, are not certified.
 \textbf{Not claimed.} The full equivalence ``local minimum $\iff a>a_+$'' for all $a>0$ is \emph{not} claimed and is probably false: the earlier
 preprint P2 sees another sign change near $a\approx0.123$ (Tier \tX). On the left of $a_-$ only isolated points are certified
 ($F>0$ at $a=0.33,0.35,0.36,0.37,0.372,0.3745$); the intervals in $(0.383,0.425)$ and everything below $0.33$ are not certified (at $a=0.25$ and
 $0.30$ the certifier could not prove $\det B>0$).
 \textbf{Tier split.} \tA\ (Lean 4.34.1 + Mathlib, axioms within $\{$propext, Classical.choice, Quot.sound$\}$): the logic, the signs of 197
 rational records, the interval-chain coverage, the intermediate-value step and the window lemmas; the theorems take the enclosures as hypotheses.
-\tCb: the Arb enclosures (1{,}284{,}310 certified cells, 0 failed), not kernel-checked. \tCh: that $F$ is the second derivative of $E$ (so $E$ is $C^2$ in $t$),
+\tCb: the Arb enclosures (1{,}276{,}022 certified cells over 202 distinct run records, 0 failed), not kernel-checked. \tCh: that $F$ is the second derivative of $E$ (so $E$ is $C^2$ in $t$),
 the mirror symmetry, continuity in $a$, and, for the strict-minimum claim over shapes, criticality, isotropy and the second-derivative test.
 The headline is therefore Tier C overall. Controls: just inside ($a=0.40$), a tampered certificate, straddling intervals and a planted false LeanFlow sign are all rejected;
-a 609-point floating-point cross-check has 0 misses.
+a 609-check floating-point cross-check (3 per run record, duplicate included) has 0 misses. The kernel replay (leanchecker) of \lean{Cert}, \lean{Controls}, \lean{Honest} and \lean{Basic} passes with rc~0.
 \end{abstract}
 
 %=====================================================================
@@ -100,7 +101,7 @@ T3. $a\mapsto F(a,0)$ has a zero in $(0.3745,0.379)$ and in $(1.579,1.583)$ & \t
 T4. Inside: $\rho$ not a local minimum along the shear, $E(a,t)<E(a,0)$ for $0<|t|\le t_0$ & as T1; \tCh{} ($C^2$, mirror symmetry) & \lean{segment\_neg0\_path}\\
 T5. Outside: $E(a,0)<E(a,t)$ for $0<|t|\le t_0$ (strict minimum along the shear) & as T2; \tCh{} & \lean{segment\_pos0\_path}\\
 T6. Outside: strict local min over unit-covolume lattice shapes & T5 plus \tCh{} (criticality, isotropy, 2D test), not formalised & Section~\ref{sec:shape}\\
-T7. Every zero of $a\mapsto F(a,t)$ in $[0.425,4]$ lies in $(1.579,1.584)\setminus\{1.583\}$ & \tA{} consequence of T1, T2 and the 1.583 record & no separate theorem\\\bottomrule
+T7. Every zero of $a\mapsto F(a,t)$ in $[0.425,4]$ lies in $(1.579,1.584)\setminus\{1.583\}$ & \tA{} logic (not formalised as one theorem); \tCb{} (T1, T2 and the 1.583 record) & no separate theorem\\\bottomrule
 \end{tabular}
 \caption{The theorems of this paper and their tiers. T1--T7 are about the Gaussian family on the stated ranges only.}
 \end{table}
@@ -117,10 +118,10 @@ No majorant of this type can classify the signs near $a_\pm$, and none gives a p
 The matrix $D_t$ is $2\times2$, symmetric, and positive definite for $\kappa\ne0$ when the lattice is dynamically stable. \emph{Identity.} For $S=D^{1/2}$, Cayley--Hamilton gives $(\tr S)^2=\tr S^2+2\det S=\tr D+2\sqrt{\det D}$, hence
 \[\tr\sqrt D=\sqrt{\tr D+2\sqrt{\det D}}.\]
 With the Duffy coordinates of B2 ($\kappa=s\,v(t')$, Jacobian $s/2$, $D_t=s^2B_t$, $B_t=\sum_n\theta_n^2f(s\theta_n)H_n(t)$, $f(x)=(1-\cos x)/x^2$) we get $\tr\sqrt{D_t}=s\,\tau$ with
-$\tau=\sqrt{T+2\delta}$, $T=\tr B_t$, $\delta=\sqrt{\det B_t}$, and $F=\int g$ with the regular integrand $g=s^2\tau''/4$ (the prefactors and triangle bookkeeping are those of B2 and N2). Differentiating twice in $t$ gives closed forms:
+$\tau=\sqrt{T+2\delta}$, $T=\tr B_t$, $\delta=\sqrt{\det B_t}$, and $F=\int g$ with the regular integrand $g=s^2\tau''/4$ (the prefactors and triangle bookkeeping are those of B2 and N2, and so is the Brillouin-zone coverage; both are inherited, filed \tCh, and checked here only at Tier~\tX{} by agreement with P2's independent $c(a)$ and roots. A positive overall prefactor cannot change any sign claimed here, whereas a missing Brillouin-zone region could). Differentiating twice in $t$ gives closed forms:
 \[\delta''=\frac{(\det B)''}{2\delta}-\frac{((\det B)')^2}{4\delta^3},\qquad
 \tau''=\frac{T''+2\delta''}{2\tau}-\frac{(T'+2\delta')^2}{4\tau^3},\]
-with $B',B''$ from the closed forms of $H_n',H_n''$ (B2's Lean \lean{hasDerivAt\_*} cover the scalar pieces). There is no inequality in this step: $F$ is the exact second derivative, and the only singularities are where $\det B=0$ or $\tr B=0$, which Step~3 excludes.
+with $B',B''$ from the closed forms of $H_n',H_n''$ (context only: B2's Lean \lean{hasDerivAt\_*} cover the scalar pieces, but no N1 theorem uses them). There is no inequality in this step: $F$ is the exact second derivative, and the only singularities are where $\det B=0$ or $\tr B=0$, which Step~3 excludes.
 \tX{} check of the closed form against finite differences of $E$ (17 values of $a$): agreement to $\le4.92\times10^{-4}$ (at $a=2$), e.g.\ $E''(0)=-7.695875$ (closed form) against $-7.695997$ (FD) at $a=1$, and $c=E''/8$ reproduces P2's $c(a)$ ($0.18806$ against $0.188$ at $a=0.25$).
 Lean: the identity and the closed forms are \emph{not} formalised; Lean sees $F$ only through its enclosure and the hypothesis \lean{hE'} of Step~6.
 
@@ -174,7 +175,7 @@ theorem classification (F) (hp : Encloses F t0 Lpos) (hn : Encloses F t0 Lneg)
     (exists a in Ioo 0.3745 0.379, F a 0 = 0) /\ (exists a in Ioo 1.579 1.583, F a 0 = 0)
 \end{lstlisting}
 (\lean{brackets\_ordered}, a \lean{decide +kernel} fact, checks that the bracket points are the thin records with $lo=hi$ and are ordered.) P2's \tX{} roots $0.37668$ and $1.58148$ lie inside the two intervals. Uniqueness is \emph{not} certified: no sign of $\partial_aF$ was certified on the enclosures.
-T7 follows from T1, T2 and the thin record at $1.583$: a zero of $F(\cdot,t)$ in $[0.425,4]$ cannot lie in $[0.425,1.579]$ or $[1.584,4]$, and not at $1.583$.
+T7 follows from T1, T2 and the thin record at $1.583$ (so it rests on the \tCb{} enclosures; no Lean theorem states it): a zero of $F(\cdot,t)$ in $[0.425,4]$ cannot lie in $[0.425,1.579]$ or $[1.584,4]$, and not at $1.583$.
 
 \paragraph{Step 6: from the sign of $F$ to the energy along the path \tA{} logic, \tCh{} inputs (\texttt{PZC-A-0001, -0006}).} \emph{Window lemma.} If $E$ is differentiable on $[-t_0,t_0]$ with derivative $E'$, $E'$ is differentiable with derivative $F$, and $F\le B$ there, then $E(t)-\tfrac B2t^2$ has second derivative $\le0$, hence is concave, and
 \[E(t)+E(-t)-2E(0)\le B\,t^2\qquad(|t|\le t_0);\]
@@ -227,7 +228,7 @@ inside, near $a_-$ & $F<0$ & $0.379$: $[-0.0978,-0.0235]$; $0.381$: $[-0.1635,-0
 inside, near $a_+$ & $F<0$ & $1.57$: $[-0.1967,-0.0903]$; $1.576$: $[-0.1215,-0.0151]$; $1.579$: $[-0.0423,-0.0195]$\\
 outside, near $a_+$ & $F>0$ & $1.583$: $[0.0075,0.0303]$; $1.584$: $[0.0199,0.0427]$; $1.587$: $[0.0152,0.1216]$; $1.593$: $[0.0890,0.1956]$\\\bottomrule
 \end{tabular}
-\caption{The 22 thin-point records (\tCb; signs \tA). They are pointwise statements; the whole-interval statements are in the first table.}
+\caption{The 22 thin-point records (\tCb; signs \tA): 10 with $F>0$ (6 left of $a_-$, 4 outside) and 12 with $F<0$ (9 near $a_-$, 3 near $a_+$). With the chains this gives the 197 Lean records: 84 negative $=71$ (chain) $+\,1$ (interval $[0.381,0.383]$) $+\,12$ thin, and 113 positive $=103$ (chain) $+\,10$ thin. They are pointwise statements; the whole-interval statements are in the first table.}
 \end{table}
 
 \subsection{Not certified (reported, not hidden)}\label{sec:not}
@@ -240,7 +241,7 @@ $a<0.33$ & thin points $a=0.25$ and $a=0.30$ \emph{failed}: $\det B>0$ could not
 $a>4$ & not attempted (P2's values at $a=6,8$ are precision-flagged)\\
 $[a_-,a_+]$ roots & existence only; no uniqueness; the statement ``$F>0$ on $(1.583,1.584)$'' is not whole-interval certified\\\bottomrule
 \end{tabular}
-\caption{What failed or was not attempted. The 7 uncertified runs of the sweeps are in \texttt{data/runs/} and \texttt{data/cert\_summary.json} (\texttt{uncertified}); they never entered Lean.}
+\caption{What failed or was not attempted. The 12 unsigned runs (7 with failed cells, 5 inconclusive) are in \texttt{data/runs/} and \texttt{data/cert\_summary.json} (\texttt{uncertified}); they never entered Lean. Of the 5 inconclusive runs only 2 straddle a root ($[0.3745,0.379]$ and $[1.579,1.583]$); the other 3 ($[0.41,0.415]$, $[0.415,0.42]$, $[0.42,0.425]$) lie where $F<0$ is expected and their enclosures are merely too wide.}
 \end{table}
 The preregistered target was a full ``iff'' on a compact range. It is reached on the right of the window only ($[0.425,4]$); on the left of $a_-$ the kill rule applied (best certified sub-intervals reported). Superseded runs: wide $a$-intervals at large $a$ (half-widths $0.013$--$0.036$) let $R$ grow from $4.9$ to $73.8$ (11 of 12 uncertified) and were re-run at width $0.025$ (72 of 72 certified); only the re-runs are inputs. B2-style $a$-balls of relative half-width $\sim2.5\%$ could not certify $\det B>0$ ($B$ moves $\sim30\%$ across the ball); this is why the affine form with lockstep tightening was built.
 
@@ -248,12 +249,12 @@ The preregistered target was a full ``iff'' on a compact range. It is reached on
 \section{Controls}\label{sec:controls}
 Every number above passed a positive and a negative control (LL.md rule).
 \begin{itemize}\itemsep=1pt
-\item \textbf{(-) Just inside, $a=0.40$: must not certify ``local minimum''.} The enclosure is $F(0.40)\in[-0.692,-0.587]$, negative. \texttt{RejectInside.lean} claims \lean{allPos [rIn] = true} for the real record: rc~1 (\lean{decide} fails). \texttt{Honest.lean} proves \lean{allPos [r] = false} and \lean{allNeg [r] = true} for it (rc~0, standard axioms) \tA. Also $0.379,0.381,0.383,0.39$ are certified negative.
-\item \textbf{(-) Tampered certificate.} A real record ($a=0.372$) with the sign of $q_{lo}$ flipped: \texttt{RejectTampered.lean} rc~1; \texttt{Honest.lean} proves \lean{tampered\_not\_pos} and \lean{untampered\_pos} (rc~0) \tA.
+\item \textbf{(-) Just inside, $a=0.40$: must not certify ``local minimum''.} The enclosure is $F(0.40)\in[-0.692,-0.587]$, negative. \texttt{RejectInside.lean} claims \lean{allPos [rIn] = true} for the real record: rc~1, but the failure is at elaboration (\lean{decide} ``did not reduce''/``Reduction got stuck''), so rc~1 alone does not distinguish ``false'' from ``stuck''. The negative proof is \texttt{Honest.lean}: it proves \lean{allPos [r] = false} and \lean{allNeg [r] = true} for the record by \lean{decide +kernel} (rc~0, standard axioms, kernel replay rc~0) \tA; \texttt{RejectInside}/\texttt{RejectTampered} only show that the false claim cannot be proved. Also $0.379,0.381,0.383,0.39$ are certified negative.
+\item \textbf{(-) Tampered certificate.} A real record ($a=0.372$) with the sign of $q_{lo}$ flipped: \texttt{RejectTampered.lean} rc~1 (again an elaboration failure); \texttt{Honest.lean} proves \lean{tampered\_not\_pos} and \lean{untampered\_pos} (rc~0) \tA.
 \item \textbf{(-) Straddling intervals certify neither sign.} $[0.3745,0.379]$: $F\in[-0.1514,0.1470]$, sign ``none''; $[1.579,1.583]$ ($N=64$): $F\in[-0.0482,0.0362]$, ``none'' (\texttt{data/runs/ctl\_straddle*.json}) \tCb. The certifier does not fabricate a sign across a root, and the records bracket it exactly as T3 says.
 \item \textbf{(-) Planted \lean{sorry} and planted axiom (\texttt{Controls.lean}).} It compiles with rc~0; the axiom gate shows \lean{sorryAx} for \lean{ctl\_sorry} and \lean{ProgZeroPointClass.ctl\_cheat} for \lean{ctl\_axiom}; the honest \lean{ctl\_false} prints the standard list \tA.
 \item \textbf{(-) LeanFlow, 197 signs and a planted false one.} The unmodified LeanFlow \lean{lean.certify} (commit 06084ef, \lean{decide\_kernel}) on the 197 exact corner bounds: status ok, code verified, tier A (for the arithmetic statement only), all axiom reports standard. A copy with the first sign planted false: rejected, \texttt{false-statement}, failed \lean{cert\_0} \tA{} (\texttt{data/leanflow/}).
-\item \textbf{(+) Tier X cross-check, 609 points.} Every certified enclosure contains the independent floating-point value of $F(a,0)$ (closed form, Gauss--Legendre $N=32$, \texttt{n1\_crosscheck.py}) at $a_{lo},a_c,a_{hi}$ of every run: 609 checks, 0 not contained (\texttt{data/crosscheck\_tierX.json}) \tX. Of the 210 run records, 198 carry a sign and 12 do not (7 with failed cells, 5 straddling); the 12 are listed in Section~\ref{sec:not}.
+\item \textbf{(+) Tier X cross-check, 609 checks.} Every certified enclosure contains the independent floating-point value of $F(a,0)$ (closed form, Gauss--Legendre $N=32$, \texttt{n1\_crosscheck.py}) at $a_{lo},a_c,a_{hi}$ of every run: 609 checks ($=3\times203$, duplicate record included), 0 not contained (\texttt{data/crosscheck\_tierX.json}) \tX. Of the 210 run records, 198 carry a sign and 12 do not (7 with failed cells, 2 straddling a root, 3 inconclusive because too wide); the 12 are listed in Section~\ref{sec:not}.
 \item \textbf{(+) Structure of the engine.} The $f$-helper $f(x)=(1-\cos x)/x^2$ and its derivatives: integral representation $f=\int_0^1(1-u)\cos(ux)\,du$ (sympy residual 0) and $|f^{(k)}|\le1/((k+1)(k+2))$; 0 of 33{,}000 random ball-times-sample points outside (\texttt{runs/fcheck.txt}) \tX. At $a=1$ the first-order engine encloses $E''$ in $[-7.768,-7.623]$ against \tX{} $-7.6959$ and B2's independent enclosure of $U''(0)$ overlaps \tCb.
 \end{itemize}
 \textbf{Not done:} a diagonal-path cross-check of the full engine (it supports the shear path only); B2's majorant code was not re-run. The cross-check is floating point and independent of the Arb code only in the sense of using a different evaluation of the same formula; it checks consistency, not the formula.
@@ -275,12 +276,12 @@ Nothing in this section is used by T1--T5, T7.
 Everything here is \tCb{} and lives in \texttt{data/code/n1\_certify2.py} (sha256 below); it is not kernel-checked.
 \textbf{Jets.} Every quantity is a second-order forward-mode jet in $(s,t',a)$ over the cell ball, the $a$-interval and the $t$-window, computed in lockstep with a first-order jet at the thin centre; after each operation the ball value and gradient are replaced by mean-value forms around the centre and intersected with the naive enclosure. This tightening is essential: without it $\det B>0$ cannot be certified at small $a$. Per-$n$ Gaussian Hessians over the $a$-interval use Taylor forms in $a$ around $a_c$.
 \textbf{Lattice tail.} One bound is added to every jet component of every entry: shells of width $1/4$, polynomial factors at the outer radius and Gaussian factors at the inner radius (no monotonicity assumed), point count $\pi(r+1)^2$, weight bounds for all partials of $\theta^2f(s\theta)$ up to order $2$, an $a$-factor $1+L+L^2$, and a geometric remainder whose ratio is \emph{computed} and must be $<1$. (B2's audit had flagged two shortcuts there: evaluation at the inner shell radius and an asserted ratio; both are fixed.)
-\textbf{Cost.} Small $a$ needs many lattice terms (99 half-terms at $a=0.37$, 147 at $0.25$) and a nearly singular $B$ near $\Gamma$; $R$ grows fast with the $a$-width. Total sweep CPU of the 210 records: $13{,}685$~s (cores 4,5; other users' jobs shared core 5 for part of the time). Settings: $N=32$ or $64$, depth $1$ or $2$, 96 bits, $t_0=10^{-8}$. Cells certified: $1{,}284{,}310$ (232{,}178 refined), $0$ failed, over the 203 records with ok status (198 with a sign, 5 straddling).
+\textbf{Cost.} Small $a$ needs many lattice terms (99 half-terms at $a=0.37$, 147 at $0.25$) and a nearly singular $B$ near $\Gamma$; $R$ grows fast with the $a$-width. Total sweep CPU: $13{,}685$~s over the 210 run records, $13{,}599$~s over the distinct records, the duplicate excluded (cores 4,5; other users' jobs shared core 5 for part of the time). Settings: $N=32$ or $64$, depth $1$ or $2$, 96 bits, $t_0=10^{-8}$. Cells certified: $1{,}284{,}310$ (232{,}178 refined) over the 203 run records with ok status, one of which ($a=1.584$) is a duplicate; over the 202 distinct records $1{,}276{,}022$ (232{,}146 refined); $0$ failed. Of the 203 ok records, 198 carry a sign and 5 are inconclusive (2 straddling a root, 3 too wide).
 
 %=====================================================================
 \section{Lean formalisation and LeanFlow}\label{sec:lean}
 \paragraph{Modules.} \path{formal_cert/Programmes/ZeroPointClass/}: \texttt{Basic.lean} (imports B2's \lean{Programmes.ZeroPointCert.Basic}, Mathlib submodules only), \texttt{Cert.lean} (generated by \texttt{n1\_make\_cert.py} from the run JSONs, endpoints verbatim; imports Basic), \texttt{Controls.lean}, \texttt{Honest.lean}, \texttt{RejectInside.lean}, \texttt{RejectTampered.lean}; never \lean{import Mathlib}; no \lean{sorry} outside \texttt{Controls.lean}.
-Pinned Lean~4.34.1 via \texttt{scripts/certified\_numerics/lean\_pinned.py}: \texttt{Basic.lean} rc~0, 0 errors, 20 theorems (374.9~s); \texttt{Cert.lean} rc~0, 0 errors, 11 theorems (21.6~s); \texttt{Controls.lean} rc~0 (with the planted \lean{sorry}/axiom); \texttt{Honest.lean} rc~0; \texttt{RejectInside.lean} and \texttt{RejectTampered.lean} rc~1 as required.
+Pinned Lean~4.34.1 via \texttt{scripts/certified\_numerics/lean\_pinned.py}: \texttt{Basic.lean} rc~0, 0 errors, 21 theorems (374.9~s); \texttt{Cert.lean} rc~0, 0 errors, 11 theorems (21.6~s); \texttt{Controls.lean} rc~0 (with the planted \lean{sorry}/axiom); \texttt{Honest.lean} rc~0; \texttt{RejectInside.lean} and \texttt{RejectTampered.lean} rc~1 as required.
 Every printed declaration of \texttt{Basic.lean} and \texttt{Cert.lean} depends on exactly $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$; verbatim lines for \texttt{Cert.lean}:
 \begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
 'ProgZeroPointClass.sign_pos' depends on axioms: [propext, Classical.choice, Quot.sound]
@@ -289,7 +290,7 @@ Every printed declaration of \texttt{Basic.lean} and \texttt{Cert.lean} depends 
 \end{lstlisting}
 (Full list in \texttt{data/lean\_cert.json}.)
 \paragraph{What Tier~A certifies.} The window lemmas, the logic of signs and the IVT, the chain coverage, and the signs of the rational records. \emph{It does not certify} that the records enclose $F$ (\lean{Encloses}), that $F$ is the second derivative of $E_{\mathrm{zp}}$, differentiation under the integral, the mirror symmetry, the continuity in $a$, or any step of Section~\ref{sec:shape}.
-\paragraph{Kernel replay (leanchecker).} The recorded kernel replay of 2026-10-26 (\texttt{data/kernel\_replay\_2026-10-26\_replay.jsonl}, from \texttt{results/kernel\_replay\_2026-10-26/}) contains, for this work, the line \path{Programmes.ZeroPointClass.Basic}: rc~0 (58.9~s), and for its import \path{Programmes.ZeroPointCert.Basic}: rc~0 (65.4~s). It contains \emph{no} line for \path{Programmes.ZeroPointClass.Cert} (which holds the chain, sign and segment theorems), nor for \texttt{Controls}, \texttt{Honest}, \texttt{RejectInside}, \texttt{RejectTampered}: those were not replayed (the replay plan lists \texttt{Basic} only). Replay does not check axioms; the \lean{\#print axioms} audit above does. So the kernel-replay evidence covers the \texttt{Basic} layer; the \texttt{Cert} layer rests on the compile and the axiom audit only.
+\paragraph{Kernel replay (leanchecker).} The recorded kernel replay of 2026-10-26 (\texttt{data/kernel\_replay\_2026-10-26\_replay.jsonl}, from \texttt{results/kernel\_replay\_2026-10-26/}) contains, for this work, the line \path{Programmes.ZeroPointClass.Basic}: rc~0 (58.9~s), and for its import \path{Programmes.ZeroPointCert.Basic}: rc~0 (65.4~s). That recorded replay has no line for \path{Programmes.ZeroPointClass.Cert}. The independent AI audit (\texttt{AUDIT.md}) closed this gap: it rebuilt the oleans from the current sources in a private directory and ran leanchecker 4.34.1 on each module (\texttt{data/leanchecker\_replay\_audit.json}): \path{Programmes.ZeroPointClass.Cert} \textbf{rc~0} (55.5~s), \texttt{Controls} rc~0 (52.6~s), \texttt{Honest} rc~0 (49.9~s), \texttt{Basic} rc~0 (53.1~s); in a second full rebuild of the import chain also \path{Programmes.ZeroPoint.Basic} and \path{Programmes.ZeroPointCert.Basic} rc~0. \texttt{RejectInside} and \texttt{RejectTampered} fail to compile by design and are not replayed. Replay does not check axioms (\texttt{Controls} replays with rc~0 although it holds \lean{sorryAx} and a planted axiom); the \lean{\#print axioms} audit above does. The \lean{decide +kernel} proofs of the chains, signs and brackets are re-evaluated by the kernel in the \texttt{Cert} replay.
 \paragraph{Hashes (sha256).}
 \begin{itemize}\scriptsize\itemsep=0pt
 \item \texttt{Basic.lean}: \texttt{dcb36833d0825c37a7a41fcca00cf66d8c3e8c841b506a76f4ae12b77754a346}
@@ -304,7 +305,7 @@ Every printed declaration of \texttt{Basic.lean} and \texttt{Cert.lean} depends 
 %=====================================================================
 \section{Claim ledger}\label{sec:ledger}
 \texttt{ledger/build\_ledger.py} files 27 claims: 8 at Tier~A (\texttt{PZC-A-0001}--\texttt{0008}), 14 at C (6 \tCb: \texttt{C-0001}--\texttt{0006}; 8 \tCh: \texttt{C-0007}--\texttt{0014}, including the headlines \texttt{C-0012}, \texttt{C-0013} and the conditional \texttt{C-0014}) and 5 at X (\texttt{X-0001}--\texttt{0005}); each has a content-addressed evidence blob in \texttt{ledger/evidence/}. The gate's tier discipline forces every headline to Tier~C because it rests on \tCb{} and \tCh{} rows; the Lean rows stay at A.
-The gate (\texttt{tools/ledger.py ledger.json -{}-evidence-dir evidence}; verbatim in \texttt{ledger/gate\_output.txt}) exits with code~\textbf{1}: \textbf{0 blocking findings and 8 flags} (\texttt{LEDGER\_UNAUDITED\_TIER\_A}, one per Tier~A row, because no \emph{person} has certified that the Lean statements mean what their glosses say). There is no AI audit recorded in the ledger (the audit is pending at the time of writing), no human audit and no statement lock. Exit code~1 is the honest state, not a failure to be cleared by editing.
+The gate (\texttt{tools/ledger.py ledger.json -{}-evidence-dir evidence}; verbatim in \texttt{ledger/gate\_output.txt}) exits with code~\textbf{1}: \textbf{0 blocking findings and 8 flags} (\texttt{LEDGER\_UNAUDITED\_TIER\_A}, one per Tier~A row, because no \emph{person} has certified that the Lean statements mean what their glosses say). The independent AI audit (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS, no blocking item) is recorded in the \texttt{ai\_audit} field of every Tier~A row; the audit auditor re-ran the gate and obtained the same output. There is no human audit and no statement lock, so the gate's person-audit field stays null. Exit code~1 is the honest state, not a failure to be cleared by editing.
 
 %=====================================================================
 \section{Limitations}\label{sec:lim}
@@ -312,11 +313,12 @@ The gate (\texttt{tools/ledger.py ledger.json -{}-evidence-dir evidence}; verbat
 \item \textbf{Partial result.} Only $a\in[0.425,4]$ is classified, plus isolated points left of $a_-$. The full iff for all $a>0$ is not claimed, and P2's sign change near $a\approx0.123$ (and the precision-flagged values at $a=6,8$) show that no simple iff can be expected. Roots are enclosed, not shown unique.
 \item \textbf{Mostly Tier~C.} The enclosures (\tCb) are executed code, not proofs; the identity of $F$ with $\partial_t^2E$, differentiation under the integral, mirror symmetry, continuity in $a$ and Section~\ref{sec:shape} are written arguments checked by no machine and no human referee.
 \item \textbf{Tiny window and one path.} $|t|\le10^{-8}$, shear path only, harmonic approximation, Bravais lattices, two dimensions, Gaussian family only, $\hbar=m=1$. The result concerns $\Ezp$ alone; the classical energy contributes separately and nothing follows for the total energy.
-\item \textbf{Audit pending.} No independent audit of this paper exists; an independent AI audit is pending at the time of writing. No human has audited anything; no statement lock.
-\item \textbf{Kernel replay incomplete.} Only \lean{Programmes.ZeroPointClass.Basic} (and its import \lean{Programmes.ZeroPointCert.Basic}) is recorded as replayed with rc~0; \lean{Cert} is not (Section~\ref{sec:lean}).
+\item \textbf{AI audit only.} One independent AI audit (ACCEPT\_WITH\_CORRECTIONS, no blocking item) exists; its corrections are applied here. No human has audited anything; no statement lock.
+\item \textbf{Kernel replay.} \lean{Cert}, \lean{Controls}, \lean{Honest} and \lean{Basic} replay with rc~0 under leanchecker (auditor-built oleans, Section~\ref{sec:lean}); the replay is not an axiom audit.
+\item \textbf{Over-strong Lean hypotheses (known, sound).} In \texttt{Cert.lean} the hypotheses \lean{hE}, \lean{hE'} and \lean{hsym} are quantified over every real $a$ (including $a\le0$, where $\Ezp$ is undefined) rather than over $a$ in the record's range. This is not unsound ($E$ and $F$ are free variables and can be extended arbitrarily outside the range) and the proofs use only $a$ in range, but it makes instantiation awkward and the hypotheses stronger than their gloss. The Lean files and generated certificates are unchanged in this revision; the fix would be to quantify over $\mathrm{lo}\le a\le \mathrm{hi}$ in \texttt{n1\_make\_cert.py}.
 \item \textbf{Repository guards fail for pre-existing reasons.} \texttt{python antigravity\_guard.py} rc~1 and \texttt{python test\_rigor\_guard.py} rc~1 (hallucinated-import reports for packages absent from the venv, such as \texttt{datasets}, \texttt{peft}, \texttt{trl}, \texttt{flint}, and hollow tests in \texttt{tests/test\_k3\_anse\_improvements.py}, \texttt{tests/test\_scientific\_rigor\_v14.py}); neither output mentions any N1 file (\texttt{data/guard\_*.txt}). \texttt{pytest tests/} was not run for this paper. ``Guards pass'' is not claimed.
-\item \textbf{Cross-check is consistency, not independence.} The 609-point check is floating point with the same formula (Section~\ref{sec:controls}). The N1 engine was developed iteratively (earlier versions in \texttt{data/code/}); the 19 Lean input files were all produced with one version, recorded in each run JSON by sha256 of \texttt{n1\_certify2.py} and of the imported helper \texttt{n1\_certify.py}.
-\item \textbf{python-flint} 0.6.0 is not in the project venv; re-running needs that version. One record is a duplicate (114 positive records in the runs, 113 in Lean; the Lean list is de-duplicated: 197 records).
+\item \textbf{Cross-check is consistency, not independence.} The 609-check comparison is floating point with the same formula (Section~\ref{sec:controls}). The N1 engine was developed iteratively (earlier versions in \texttt{data/code/}); the 19 Lean input files were all produced with one version, recorded in each run JSON by sha256 of \texttt{n1\_certify2.py} and of the imported helper \texttt{n1\_certify.py}.
+\item \textbf{python-flint} 0.6.0 is not in the project venv; re-running needs that version. One record ($a=1.584$, \texttt{runs/sweep\_ap\_tight.json}) is a duplicate (114 positive records in the runs, 113 in Lean; the Lean list is de-duplicated: 197 records); counts of cells and CPU time are given with and without it.
 \item \textbf{Not novelty-checked.} No literature search was made for prior certified results on zero-point lattice energies; no novelty is claimed.
 \end{itemize}
 

@@ -2,7 +2,8 @@
 
 Modelled on papers/p3_zero_point_physical/ledger/build_ledger.py. Tier discipline (tools/ledger.py): a claim may not be filed above
 anything in its depends_on. C-ball and C-human are both Tier C in the ledger; the evidence blob carries a "subtier" field.
-No independent audit exists yet (pending at writing): the ledger's audit field is null and no ai_audit field is recorded.
+Independent AI audit (papers/p3_zero_point_classification/AUDIT.md, ACCEPT_WITH_CORRECTIONS) is recorded in the "ai_audit" field of every Tier A row;
+the gate field "audit" stays null because no person has audited the statements (LEDGER_UNAUDITED_TIER_A stays open).
 Run:  /home/callensxavier_gmail_com/AutoevolveAI/.venv/bin/python -I build_ledger.py
 """
 from __future__ import annotations
@@ -20,9 +21,13 @@ LEAN = DATA / "lean"
 TOOLCHAIN = ("Lean 4.34.1 + Mathlib through scripts/certified_numerics/lean_pinned.py (modules import Programmes.ZeroPointCert.Basic "
              "and Mathlib submodules; no import Mathlib)")
 ALLOW = ["propext", "Classical.choice", "Quot.sound"]
-STATUS = ("producer-checked by the N1 lane; no independent audit yet (an independent AI audit is pending at the time of writing); "
-          "leanchecker replay rc 0 for Programmes.ZeroPointClass.Basic only (data/kernel_replay_2026-10-26_replay.jsonl), "
-          "none recorded for Cert; no human audit of statement adequacy; no statement lock")
+STATUS = ("producer-checked by the N1 lane; independent AI-agent audit (papers/p3_zero_point_classification/AUDIT.md, ACCEPT_WITH_CORRECTIONS) recorded; "
+          "leanchecker replay rc 0 for Cert, Controls, Honest and Basic (data/leanchecker_replay_audit.json) and for ZeroPointClass.Basic in "
+          "data/kernel_replay_2026-10-26_replay.jsonl; no human audit of statement adequacy; no statement lock")
+AI_AUDIT = {"auditor": "independent AI audit agent (producer != verifier), 2026-10-26", "human": False,
+            "report": "papers/p3_zero_point_classification/AUDIT.md", "verdict": "ACCEPT_WITH_CORRECTIONS",
+            "kernel_replay": "papers/p3_zero_point_classification/data/leanchecker_replay_audit.json (Cert, Controls, Honest, Basic, ZeroPoint.Basic, ZeroPointCert.Basic: rc 0)",
+            "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"}
 PFX = "ProgZeroPointClass."
 
 
@@ -44,8 +49,11 @@ def fref(rel: str) -> dict:
 
 
 def rec(cid: str, tier: str, kind: str, statement: str, depends: list[str], ev: dict) -> dict:
-    return {"schema_version": 1, "id": cid, "statement": statement, "tier": tier, "kind": kind,
-            "depends_on": depends, "evidence": blob(ev), "audit": None}
+    r = {"schema_version": 1, "id": cid, "statement": statement, "tier": tier, "kind": kind,
+         "depends_on": depends, "evidence": blob(ev), "audit": None}
+    if tier == "A":
+        r["ai_audit"] = AI_AUDIT
+    return r
 
 
 def axiom_lines(jfile: str, names: list[str]) -> list[str]:
@@ -140,10 +148,10 @@ def main() -> int:
             "C-ball. The other thin-point records: F > 0 at a = 0.33, 0.35, 0.36, 0.37, 0.372 and F < 0 at 0.381, 0.383, 0.39, 0.40, 0.42, 0.45, 0.5, 0.55, 1.57, 1.576; F > 0 at 1.584, 1.587, 1.593 (22 thin records with the bracket points).",
             [], ball(THIN + ["cert_summary.json"], "thin-point run files")),
         rec("PZC-C-0005", "C", "argument",
-            "C-ball. Stability on every cell: det B > 0 and tr B > 0 certified on the whole cell ball x a-interval x t-window, so D_t = s^2 B_t is positive definite for kappa != 0 for every a of the interval and |t| <= 1e-8; 1,284,310 cells (232,178 refined) over the 203 ok records, 0 failed. The lattice tail is an explicit computed bound (ratio < 1) added to every jet component.",
+            "C-ball. Stability on every cell: det B > 0 and tr B > 0 certified on the whole cell ball x a-interval x t-window, so D_t = s^2 B_t is positive definite for kappa != 0 for every a of the interval and |t| <= 1e-8; 1,276,022 cells (232,146 refined) over the 202 distinct ok records (1,284,310 over 203 run records, one of which, a = 1.584, is a duplicate), 0 failed. The lattice tail is an explicit computed bound (ratio < 1) added to every jet component.",
             [], ball(SEG_NEG + SEG_POS + THIN, "stats fields of the run records")),
         rec("PZC-C-0006", "C", "argument",
-            "C-ball. Straddling intervals certify neither sign: [0.3745, 0.379] F in [-0.1514, 0.1470] and [1.579, 1.583] F in [-0.0482, 0.0362], sign 'none'. 12 of the 210 run records carry no sign (7 with failed cells, 5 straddling).",
+            "C-ball. Straddling intervals certify neither sign: [0.3745, 0.379] F in [-0.1514, 0.1470] and [1.579, 1.583] F in [-0.0482, 0.0362], sign 'none'. 12 of the 210 run records carry no sign (7 with failed cells, 2 straddling a root, 3 inconclusive because too wide).",
             [], ball(CTL + ["cert_summary.json"], "straddle control runs; cert_summary.json 'uncertified'")),
         # ---------------------------------------------------------------- C-human
         rec("PZC-C-0007", "C", "argument",

@@ -1,0 +1,9 @@
+theorem moranFix_card_harmonic {(*@$\mu$@*) : Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)} {W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)} {r : (*@$\mathbb{R}$@*)} (hn : 0 < n)
+    (hr : 0 < r) (h(*@$\mu$@*) : (*@$\forall$@*) i, 0 < (*@$\mu$@*) i) (hW : RowStochastic W) (hstat : (*@$\forall$@*) j, (*@$\sum$@*) i, (*@$\mu$@*) i * W i j = (*@$\mu$@*) j)
+    {S : Finset (Fin n)} (hS : 0 < S.card) :
+    (*@$\sum$@*) T, bdK (*@$\mu$@*) W r S T * moranFix n r T.card = moranFix n r S.card := -- proof elided
+
+theorem moranFix_card_var_pos {(*@$\mu$@*) : Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)} {W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)} {r : (*@$\mathbb{R}$@*)} (hn : 0 < n)
+    (hr : 0 < r) (h(*@$\mu$@*) : (*@$\forall$@*) i, 0 < (*@$\mu$@*) i) (hW : RowStochastic W) {S : Finset (Fin n)}
+    {i0 j0 : Fin n} (hi0 : i0 (*@$\in$@*) S) (hj0 : j0 (*@$\notin$@*) S) (hw : 0 < (*@$\mu$@*) i0 * W i0 j0) :
+    0 < (*@$\sum$@*) T, bdK (*@$\mu$@*) W r S T * (moranFix n r T.card - moranFix n r S.card) ^ 2 := -- proof elided

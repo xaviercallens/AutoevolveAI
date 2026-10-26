@@ -1,0 +1,39 @@
+noncomputable def fit (r : (*@$\mathbb{R}$@*)) (S : Finset (Fin n)) (i : Fin n) : (*@$\mathbb{R}$@*) := if i (*@$\in$@*) S then r else 1
+
+noncomputable def ind (S : Finset (Fin n)) (i : Fin n) : (*@$\mathbb{R}$@*) := if i (*@$\in$@*) S then 1 else 0
+
+def upd (S : Finset (Fin n)) (i j : Fin n) : Finset (Fin n) := if i (*@$\in$@*) S then insert j S else S.erase j
+
+noncomputable def totFit ((*@$\mu$@*) : Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (r : (*@$\mathbb{R}$@*)) (S : Finset (Fin n)) : (*@$\mathbb{R}$@*) := (*@$\sum$@*) k, (*@$\mu$@*) k * fit r S k
+
+noncomputable def coef ((*@$\mu$@*) : Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (r : (*@$\mathbb{R}$@*)) (S : Finset (Fin n))
+    (i j : Fin n) : (*@$\mathbb{R}$@*) :=
+  (*@$\mu$@*) i * fit r S i / totFit (*@$\mu$@*) r S * W i j
+
+noncomputable def bdK ((*@$\mu$@*) : Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (r : (*@$\mathbb{R}$@*)) (S T : Finset (Fin n)) : (*@$\mathbb{R}$@*) :=
+  (*@$\sum$@*) i, (*@$\sum$@*) j, coef (*@$\mu$@*) W r S i j * (if upd S i j = T then 1 else 0)
+
+noncomputable def cutOut ((*@$\mu$@*) : Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (S : Finset (Fin n)) : (*@$\mathbb{R}$@*) :=
+  (*@$\sum$@*) i, (*@$\sum$@*) j, (*@$\mu$@*) i * W i j * (ind S i * (1 - ind S j))
+
+noncomputable def cutIn ((*@$\mu$@*) : Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (S : Finset (Fin n)) : (*@$\mathbb{R}$@*) :=
+  (*@$\sum$@*) i, (*@$\sum$@*) j, (*@$\mu$@*) i * W i j * ((1 - ind S i) * ind S j)
+
+noncomputable def upP ((*@$\mu$@*) : Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (r : (*@$\mathbb{R}$@*)) (S : Finset (Fin n)) : (*@$\mathbb{R}$@*) :=
+  (*@$\sum$@*) T, bdK (*@$\mu$@*) W r S T * (if T.card = S.card + 1 then 1 else 0)
+
+noncomputable def downP ((*@$\mu$@*) : Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (r : (*@$\mathbb{R}$@*)) (S : Finset (Fin n)) : (*@$\mathbb{R}$@*) :=
+  (*@$\sum$@*) T, bdK (*@$\mu$@*) W r S T * (if T.card + 1 = S.card then 1 else 0)
+
+structure RowStochastic (W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) : Prop where
+  nonneg : (*@$\forall$@*) i j, 0 (*@$\le$@*) W i j
+  rowSum : (*@$\forall$@*) i, (*@$\sum$@*) j, W i j = 1
+
+structure Isothermal (W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) : Prop extends RowStochastic W where
+  colSum : (*@$\forall$@*) j, (*@$\sum$@*) i, W i j = 1
+
+def StronglyConnected (W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) : Prop :=
+  (*@$\forall$@*) a b, Relation.TransGen (fun x y => 0 < W x y) a b
+
+def CutPositive ((*@$\mu$@*) : Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) : Prop :=
+  (*@$\forall$@*) S : Finset (Fin n), S (*@$\ne$@*) (*@$\emptyset$@*) (*@$\to$@*) S (*@$\ne$@*) univ (*@$\to$@*) (*@$\exists$@*) i (*@$\in$@*) S, (*@$\exists$@*) j (*@$\notin$@*) S, 0 < (*@$\mu$@*) i * W i j

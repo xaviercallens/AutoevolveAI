@@ -1,0 +1,218 @@
+import Programmes.SandierSerfaty.CalcKCore
+import Programmes.SandierSerfaty.Bcons
+
+/-!
+# Grid stages `bdsup`, `global_grid`, `inside_hess` of the triangular-minimality certificate, level L1
+
+Copied by `results/proposal2/2026-10-26/A1-continuation/scripts/gen_grid.py` (do not edit). Transcribes from
+`verification/grids.hpp` (SHA-256 `4640e0a3...`) and `core.hpp`: `lookup` **including the exterior `tail` branch**
+(core.hpp:278-286; taken iff `T.v ≥ l.u`, hulled with the table cells that meet `T`), `G(d,s)` and `G(d,s,true)`
+(the formulas of A1's `CalcKCore.lean`, here over the tail-aware lookup), `grid_seq` / `append_grid_seq`, and one
+inner step of each of `bdsup` (grids.hpp:256-267), `global_grid` (308-327) and `inside_hess` (199-226).
+
+A lookup runs over a *window* of consecutive table entries, a slice `[off, off+len)` of the single shared table
+(`Grid/Table.lean`, the C++ `ts/pts/cels` from dump2). `winOK2` checks that the window strictly contains the C++ cell
+range for the `T` computed here: its first node has `.v < T.u`, and either its last node has `.u > T.v` or the window
+ends at the last table node (`atEnd`, which the chunk theorems derive from `off + len = tblLen`); likewise the first
+node's check is waived when the window starts at table index 0 (`atStart`), where the C++ range is clamped at 0.
+Premises (C++ outputs of earlier stages): `λ, μ, eps, l` (`CalcKCore`), `π, bcons` (Constants, Bcons), `K`, the
+table, and for `global_grid` the `bdsup` bounds.
+-/
+
+namespace ProgSandierSerfaty.L1.Grid
+
+open ProgSandierSerfaty.Cert ProgSandierSerfaty.Cert.IV ProgSandierSerfaty.Cert.CalcK
+
+def z0 : IV := ofInt 0
+def o1 : IV := ofInt 1
+
+deriving instance DecidableEq for G5
+
+/-- `tail(T)` (core.hpp:278), with `fl = pts.back()[0]`. -/
+def tailJ (fl T : IV) : J6 :=
+  ⟨sub (add fl keps) (mul (mul piC bconsC) (sub (mul T T) (mul kl kl))),
+   mul (mul (mul (ofInt (-2)) piC) bconsC) T, mul (mul (ofInt (-2)) piC) bconsC, z0, z0, z0⟩
+
+def winOK2 (T : IV) (ns : List NodeD) (atStart atEnd : Bool) : Bool :=
+  match ns.head?, lastNode ns with
+  | some a, some b => (atStart || decide (a.t.v < T.u)) && (atEnd || decide (T.v < b.t.u))
+  | _, _ => false
+
+def lastF (ns : List NodeD) : IV := match lastNode ns with | some b => b.f | none => z0
+
+/-- value lookup `{f, e}` (tail hulled in when `T.v ≥ l.u`). -/
+def lookupV2 (T : IV) (ns : List NodeD) (cs : List CellD) : Option (IV × IV) :=
+  let tl : Option (IV × IV) := if kl.u ≤ T.v then some ((tailJ (lastF ns) T).f, z0) else none
+  hullO2 tl (lookupV T (triples ns cs))
+
+/-- full lookup (six components). -/
+def lookupF2 (T : IV) (ns : List NodeD) (cs : List CellD) : Option J6 :=
+  let c := lookupF T (triples ns cs)
+  if kl.u ≤ T.v then
+    (match c with | none => some (tailJ (lastF ns) T) | some y => some (hullJ (tailJ (lastF ns) T) y))
+  else c
+
+/-- `G(d, s)` (grids.hpp:37). -/
+def Gs2 (d s : IV) (ns : List NodeD) (cs : List CellD) (atStart atEnd : Bool) : Option IV :=
+  let t2 := add (mul d d) (mul s s)
+  let t := IV.sqrt t2
+  if winOK2 t ns atStart atEnd then
+    match lookupV2 t ns cs with
+    | none => none
+    | some (f, e) =>
+      let f := sub (sub f (div (mul klam t2) (ofInt 2))) kmu
+      let A := div d t2
+      let B := div (mul (neg s) s) (mul d t2)
+      some (add (mul A f) (mul B e))
+  else none
+
+/-- `G(d, s, true)` (grids.hpp:49). -/
+def Gf2 (d s : IV) (ns : List NodeD) (cs : List CellD) (atStart atEnd : Bool) : Option G5 :=
+  let t2 := add (mul d d) (mul s s)
+  let t := IV.sqrt t2
+  if winOK2 t ns atStart atEnd then
+    match lookupF2 t ns cs with
+    | none => none
+    | some v =>
+      let one := ofInt 1
+      let A := div d t2
+      let B := div (mul (neg s) s) (mul d t2)
+      let f := sub (sub v.f (div (mul klam t2) (ofInt 2))) kmu
+      let fr := sub v.fr (mul klam t)
+      let frr := sub v.frr klam
+      let e := v.e
+      let er := v.er
+      let err := v.err
+      let rdt := div d t
+      let rst := div s t
+      let rtdd := div (sub one (mul rdt rdt)) t
+      let rtss := div (sub one (mul rst rst)) t
+      let Ad := div (sub one (div (mul (mul (ofInt 2) d) d) t2)) t2
+      let Bd := add Ad (div one (mul d d))
+      let As := div (mul (mul (ofInt (-2)) A) s) t2
+      let Bs := As
+      let t2c := pow3 t2
+      let Add := div (mul (mul (ofInt 2) d) (sub (mul d d) (mul (mul (ofInt 3) s) s))) t2c
+      let Bdd := sub Add (div (ofInt 2) (pow3 d))
+      let Ass := add (div (mul (ofInt (-2)) d) (pow2 t2)) (div (mul (mul (mul (ofInt 8) d) s) s) t2c)
+      let Bss := Ass
+      some ⟨add (mul A f) (mul B e),
+        add (add (add (mul Ad f) (mul (mul A fr) rdt)) (mul Bd e)) (mul (mul B er) rdt),
+        add (add (add (mul As f) (mul (mul A fr) rst)) (mul Bs e)) (mul (mul B er) rst),
+        add (add (add (add (add (mul Add f) (mul (mul (mul (ofInt 2) Ad) fr) rdt))
+          (mul A (add (mul (mul frr rdt) rdt) (mul fr rtdd)))) (mul Bdd e))
+          (mul (mul (mul (ofInt 2) Bd) er) rdt)) (mul B (add (mul (mul err rdt) rdt) (mul er rtdd))),
+        add (add (add (add (add (mul Ass f) (mul (mul (mul (ofInt 2) As) fr) rst))
+          (mul A (add (mul (mul frr rst) rst) (mul fr rtss)))) (mul Bss e))
+          (mul (mul (mul (ofInt 2) Bs) er) rst)) (mul B (add (mul (mul err rst) rst) (mul er rtss)))⟩
+  else none
+
+/-- `nsamp`. -/
+def nsampI (aa bb h : IV) : Int := max 1 (-((-(div (sub bb aa) h).v) / Q))
+
+/-- element `i < m` of `grid_seq(a0, b0, h)` with `m = nsamp(a0, b0, h)`: `a0 + (b0-a0)*i/m`; element `m` is `b0`. -/
+def gseq (a0 b0 : IV) (m i : Nat) : IV :=
+  if i < m then add a0 (mul (mul (sub b0 a0) (ofInt i)) (IV.inv (ofInt m))) else b0
+
+/-- element `i` of the concatenation `append(a,b,h,false) ++ append(b,c,h,false) ++ append(c,e,h,true)`
+(part sizes `m1, m2, m3 + 1`); with `m2 = 0` and `b = c` it is the two-part sequence. -/
+def seq3 (a b c e : IV) (m1 m2 m3 i : Nat) : IV :=
+  if i < m1 then gseq a b m1 i else if i < m1 + m2 then gseq b c m2 (i - m1) else gseq c e m3 (i - m1 - m2)
+
+def hull5 (x y : G5) : G5 := ⟨hull x.g y.g, hull x.gd y.gd, hull x.gs y.gs, hull x.gdd y.gdd, hull x.gss y.gss⟩
+
+/-! ## bdsup (grids.hpp:248-272) -/
+
+def bdDlo : IV := rat 28209 100000
+def bdDup : IV := rat 697 1000
+def bdShi : IV := rat 65 100
+def bdH : IV := rat 8 10000
+def bdHd (nd : Nat) : IV := div (sub bdDup bdDlo) (ofInt nd)
+def bdHs (ns : Nat) : IV := div bdShi (ofInt ns)
+def bdD (nd j : Nat) : IV := let lo := add bdDlo (mul (bdHd nd) (ofInt j)); ⟨lo.u, (add lo (bdHd nd)).v⟩
+def bdS (nsd i : Nat) : IV := let slo := mul (bdHs nsd) (ofInt i); ⟨slo.u, (add slo (bdHs nsd)).v⟩
+def g5zero : G5 := ⟨z0, z0, z0, z0, z0⟩
+
+/-- `c` inner steps `i, i+1, ...` of bdsup row `d` from the row state `acc`. -/
+def bdSeg (ns : List NodeD) (cs : List CellD) (atStart atEnd : Bool) (nsd : Nat) (d : IV) : Nat → Nat → G5 → Option G5
+  | 0, _, acc => some acc
+  | c + 1, i, acc =>
+    match Gf2 d (bdS nsd i) ns cs atStart atEnd with
+    | none => none
+    | some r => bdSeg ns cs atStart atEnd nsd d c (i + 1) (hull5 acc r)
+
+/-! ## global_grid (grids.hpp:274-337) -/
+
+def ggDl : IV := rat 52528 100000
+def ggDu : IV := rat 54930 100000
+def ggSl : IV := rat 29420 100000
+def ggSu : IV := rat 32621 100000
+
+structure GGS where
+  g : IV
+  drop : IV
+  gmin : IV
+deriving DecidableEq, Repr
+
+def ggInit (K : IV) : GGS :=
+  let gm := mul (ofInt 10) o1
+  ⟨z0, z0, if (neg K).u < gm.u then neg K else gm⟩
+
+/-- `c` inner steps of global_grid row `d` (s-sequence `sAt`), from state `st`. -/
+def ggSeg (ns : List NodeD) (cs : List CellD) (atStart atEnd : Bool) (K : IV) (sAt : Nat → IV) (d : IV) :
+    Nat → Nat → GGS → Option GGS
+  | 0, _, st => some st
+  | c + 1, i, st =>
+    let lo := sAt i
+    let hi := sAt (i + 1)
+    let h := sub hi lo
+    match Gs2 d (div (add lo hi) (ofInt 2)) ns cs atStart atEnd with
+    | none => none
+    | some gval =>
+      let gv := mul h gval
+      let g := add st.g gv
+      let m := div (neg gv) h
+      let drop := add st.drop (mul h ⟨max 0 m.u, max 0 m.v⟩)
+      let needall := decide (d.u ≤ ggDl.v) || decide (ggDu.u ≤ d.v)
+      let gmin := if needall || decide (hi.v ≤ ggSl.v) || decide (ggSu.u ≤ hi.u) then
+          (let value := sub (mul (ofInt 2) g) K; if value.u < st.gmin.u then value else st.gmin)
+        else st.gmin
+      ggSeg ns cs atStart atEnd K sAt d c (i + 1) ⟨g, drop, gmin⟩
+
+/-! ## inside_hess (grids.hpp:184-246) -/
+
+structure IHS where
+  init : Bool
+  failures : Nat
+  dd : IV
+  dgl : IV
+  glx : IV
+  glxx : IV
+  det : IV
+deriving DecidableEq, Repr
+
+def ihInit : IHS := ⟨false, 0, z0, z0, z0, z0, z0⟩
+
+def ihSeg (ns : List NodeD) (cs : List CellD) (atStart atEnd : Bool) (xAt : Nat → IV) (d : IV) :
+    Nat → Nat → IHS → Option IHS
+  | 0, _, st => some st
+  | c + 1, i, st =>
+    let lsx := xAt i
+    let usx := xAt (i + 1)
+    let sx : IV := ⟨lsx.u, usx.v⟩
+    let h := sub usx lsx
+    match Gf2 d sx ns cs atStart atEnd with
+    | none => none
+    | some v =>
+      let ddcc := add st.dd (mul ⟨0, h.v⟩ v.gdd)
+      let dd := add st.dd (mul h v.gdd)
+      if ggSl.u ≤ usx.u then
+        let det := sub (mul ddcc v.gs) (mul v.gd v.gd)
+        let fl := if decide (ddcc.u ≤ 0) || decide (v.gs.u ≤ 0) || decide (det.u ≤ 0) then 1 else 0
+        let st' : IHS := if st.init then
+            ⟨true, st.failures + fl, dd, hull st.dgl ddcc, hull st.glx v.gd, hull st.glxx v.gs, hull st.det det⟩
+          else ⟨true, st.failures + fl, dd, ddcc, v.gd, v.gs, det⟩
+        ihSeg ns cs atStart atEnd xAt d c (i + 1) st'
+      else ihSeg ns cs atStart atEnd xAt d c (i + 1) { st with dd := dd }
+
+end ProgSandierSerfaty.L1.Grid

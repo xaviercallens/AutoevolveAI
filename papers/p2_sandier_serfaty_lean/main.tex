@@ -1,0 +1,326 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.9in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{microtype}
+\usepackage{caption}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{seqsplit}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\setlist{itemsep=1pt,topsep=2pt,parsep=0pt}
+\input{gen_numbers.tex}
+\lstdefinelanguage{Lean}{morekeywords={theorem,lemma,def,structure,where,by,fun,namespace,open,deriving,if,then,else,match,with,set_option,in},
+  sensitive=true,morecomment=[l]{--}}
+\lstset{language=Lean,basicstyle=\ttfamily\scriptsize,columns=fullflexible,keepspaces=true,breaklines=true,
+  frame=single,framesep=2pt,xleftmargin=3pt,xrightmargin=3pt,upquote=true,keywordstyle=\bfseries,commentstyle=\itshape,
+  literate={ℝ}{{$\mathbb{R}$}}1 {→}{{$\to$}}1 {∀}{{$\forall$}}1 {≤}{{$\le$}}1 {≥}{{$\ge$}}1 {₀}{{$_0$}}1 {⁻}{{$^{-}$}}1 {∫}{{$\int$}}1
+    {π}{{$\pi$}}1 {α}{{$\alpha$}}1 {β}{{$\beta$}}1 {⟨}{{$\langle$}}1 {⟩}{{$\rangle$}}1 {≠}{{$\neq$}}1 {∧}{{$\wedge$}}1 {¬}{{$\neg$}}1
+    {·}{{$\cdot$}}1 {∈}{{$\in$}}1 {⌊}{{$\lfloor$}}1 {⌋}{{$\rfloor$}}1 {⌈}{{$\lceil$}}1 {⌉}{{$\rceil$}}1 {↑}{{$\uparrow$}}1 {≥}{{$\ge$}}1}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\tg}[2]{\texorpdfstring{\textsf{[#1\,#2]}}{}}  % claim tag: tier letter and ledger number
+\newcommand{\lean}[1]{\texttt{#1}}
+\newcommand{\hash}[1]{\texttt{\expandafter\seqsplit\expandafter{#1}}}
+\newcommand{\dd}{\,\mathrm{d}}
+\newtheorem{remark}{Remark}
+\renewcommand{\div}{\operatorname{div}}
+\newcommand{\curl}{\operatorname{curl}}
+\renewcommand{\_}{\textunderscore\allowbreak}
+
+\title{Toward a machine-checked proof of the claimed Sandier--Serfaty certificate:\\
+4 of 12 stages re-executed in the Lean kernel, one reduction lemma proved,\\
+and the measured cost of the rest\\[2pt]
+{\large (a partial formalization; the conjecture is \emph{not} formally proved)}}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-26 \quad (not peer reviewed; audited by an independent AI agent, not by a person; revised after that audit)}
+\hypersetup{pdftitle={Toward a machine-checked proof of the claimed Sandier-Serfaty certificate: partial formalization in Lean},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{AI-assistance disclosure.} This preprint, its Lean code, its Python and C++ harness code, the LeanFlow tactic change and
+the claim ledger were produced by AI agents (Claude, Anthropic) under the author's direction. The author is responsible for the content.
+No human has audited the Lean statements, no human referee has checked the hand arguments, and every ``independent'' check below is made
+by an agent of the same AI pipeline as the producer, never by a person. In particular the same agent wrote the generators and the Lean
+files that this paper reports on (Section~\ref{sec:lim}). The mathematics under study was itself produced by an AI system (the openai/math
+release) and is not peer reviewed. After the first version, a separate AI agent instance audited the paper and the Lean files (\texttt{AUDIT.md}, \texttt{STATEMENT\_LOCK.json}; Section~\ref{sec:lim}); that audit is also not a person's.
+
+\begin{abstract}
+The Sandier--Serfaty conjecture asks whether the triangular lattice minimizes the renormalized Coulomb energy of a planar point set against a
+uniform background~\cite{ss}. A preprint of the openai/math release~\cite{oai} (AI-generated, not peer reviewed) claims a proof from an
+analytic reduction plus a finite certificate in exact interval arithmetic with twelve stages. Our earlier paper~\cite{p1} reproduced that
+certificate by running its C++ code. Here we start to \emph{formalize} it in Lean 4 and we say exactly how far we got.
+\textbf{We do not prove the conjecture, and nothing in this paper says that it is proved.}
+Two checking levels are distinguished. \textbf{L1 (kernel re-execution):} a Lean transcription of a stage's interval computation, evaluated by
+the Lean kernel (\lean{decide +kernel}, no \lean{native\_decide}), gives bit for bit the integer endpoints printed by the C++ binary.
+\textbf{L2 (real-number statement):} a Lean theorem that a real number lies in the interval. Counts, from the saved logs:
+\textbf{4 of 12 stages are complete at L1} (\lean{init\_constants}, \lean{bcons/eps}, \lean{calcLam}, \lean{calcK}) \tg{A}{0002}\tg{A}{0005}\tg{C}{0002}; \lean{calcLam} and \lean{calcK} are conditional on the table enclosures and \lean{bcons} on the lattice coefficients, all taken as premises.
+\textbf{1 of 12 is complete at L2} (\lean{init\_constants}: $\log 2$, $\pi$, $p$, $R_0$, $a$ as real numbers) \tg{A}{0001}. The four L1 stages together re-execute \PTDoneOps{} of the \PTTotalOps{} interval multiplications and inversions of the C++ run, \textbf{\PTFrac\,\%} \tg{X}{0001}. All 22 printed integer pairs and every assertion that the C++ makes after \lean{calcK} (the $\lambda$ range, $K<0$, $f(\ell)>0$, the slope, the two \lean{global\_grid} assertions, the \lean{inside\_hess} minima) plus the $|c_1|<1$ check are kernel-checked as arithmetic on the exact endpoints (a third, weaker level, E) \tg{A}{0007}; the \lean{core\_test} bound check of stage 4 (\texttt{core.hpp}:274) is \emph{not} covered, and the table separation check (\texttt{core.hpp}:251) is checked only window by window. One lemma of the analytic reduction, \lean{signed\_endpoints}, is proved completely, with one algebraic step and one numerical fact; it is not connected to the certificate \tg{A}{0010}\tg{A}{0011}.
+Eleven planted false claims are rejected (must-fail files, rc 1) \tg{X}{0003}. The remaining L1 work is projected at \PTProjTotLo--\PTProjTotHi{} core-hours \tg{X}{0006}; the larger gap (L2 for the analytic content, and 30 further steps of the reduction) is a multi-month project \tg{C}{0007}. The conjecture is not formally proved \tg{C}{0001}. The producer was one AI agent. A separate AI agent instance (not a person) then audited the paper, with verdict ACCEPT\_WITH\_CORRECTIONS (\texttt{AUDIT.md}, \texttt{STATEMENT\_LOCK.json}). It rebuilt 13 Lean modules from source in its own olean directory (oleans byte-identical to the producer's), re-ran the three must-fail files, re-ran the axiom aggregates and type-checked \texttt{Chain.lean}; the 28 other chunk files, \texttt{CalcK.lean} and \texttt{CalcLam.lean} were \emph{not} rebuilt independently \tg{C}{0008}. No human has audited any statement.
+\end{abstract}
+
+\paragraph{Tiers and levels.} Claims carry the Elenchus tiers of~\cite{p1}: \tg{A}{}\,kernel-checked Lean, axioms within
+$\{\lean{propext},\lean{Classical.choice},\lean{Quot.sound}\}$ (a Tier~A tag attaches to the Lean statement, never to its gloss);
+\tg{L}{}\,a cited source read on the cited page; \tg{C}{}\,an argument not machine-checked; \tg{X}{}\,a computation or observation, never supporting a
+mathematical claim by itself. A tag such as \tg{A}{0002} refers to \texttt{ledger/ledger.json} (prefix \texttt{P2SS}). The \emph{checking levels}
+are a different axis: L1, L2 and E (endpoint arithmetic, called ``A'' in the project notes, renamed here to avoid a clash with the tier). A Tier~A
+theorem can sit at level L1, L2 or E; the level says what the theorem is about. Everything resting on the openai/math manuscript is conditional on it.
+
+\section{Goal, preregistration and outcome}\label{sec:goal}
+The conjecture and the manuscript's strategy are described in~\cite{p1}: a reduction (the manuscript's Sections 2--5, 31 numbered steps audited
+there) to a family of scalar inequalities, which a finite certificate in exact interval arithmetic then verifies on grids. The certificate has twelve stages, from the
+constants $\log 2,\pi$ to the Hessian assertions on the inner domain. Proposal~2 (item A1) asked for the following, with priors fixed before
+any attempt (\texttt{preregistration.json}): \textbf{A1a} port the finite certificate's stages into Lean as kernel-checked inequalities with planted
+false stages rejected, and report the number of stages and the cost of the rest (prior 0.6 that some pilot stages succeed, 0.2 that all do);
+\textbf{A1b} formalize at least one complete lemma of the reduction (prior 0.35); the combination ``A1 complete'' had prior 0.02, and the
+kill criterion was that no claim of a formal proof may be made unless every stage and the whole reduction are kernel-checked.
+
+Outcome: ``some pilot stages'' (prior 0.6; the preregistration does not fix a number) reached to the extent of 4 of 12 stages at L1; all stages (prior 0.2) \emph{not} reached; one reduction lemma (prior 0.35) reached; A1 complete (prior 0.02) not reached and
+the kill criterion applies. Two deviations from the preregistered wording: (i) A1b was to be built ``on top of \lean{SandierSerfatyStatement.lean} and the
+P3 library''; \lean{signed\_endpoints} is stated for an abstract kernel $G$ as in the manuscript and uses neither; (ii) A1a was to go ``via
+LeanFlow''; the stages were compiled with the project script \texttt{lean\_pinned.py} (pinned Lean 4.34.1, Mathlib \texttt{d13f23b7}) and LeanFlow
+(Section~\ref{sec:lf}) was used for the twelve assertions only.
+
+\section{How interval arithmetic works in Lean here}\label{sec:iv}
+The certificate's arithmetic is exact integer arithmetic: an interval is a pair of integers $(u,v)$ read as $[u/Q,\,v/Q]$ with
+$Q=2^{144}$ (file \texttt{IV.lean}). Sums add endpoints; products and quotients are rounded \emph{outward}, the lower endpoint with $\lfloor\cdot/Q\rfloor$ and
+the upper with $\lceil\cdot/Q\rceil$, so that the true real result is never lost. Toy example with $Q=100$: $a=[1.20,1.30]=(120,130)$ and $b=[0.50,0.60]=(50,60)$ give
+the four endpoint products $6000,7200,6500,7800$ and hence $a\cdot b=(\lfloor 6000/100\rfloor,\lceil 7800/100\rceil)=(60,78)=[0.60,0.78]$.
+In Lean:
+\begin{lstlisting}
+structure IV where  u : Int   v : Int
+def fq (a : Int) : Int := a / Q                 -- floor (Q > 0, Euclidean division)
+def cq (a : Int) : Int := -((-a) / Q)           -- ceiling
+def IV.mul (a b : IV) : IV :=
+  ⟨fq (min (min (a.u*b.u) (a.u*b.v)) (min (a.v*b.u) (a.v*b.v))),
+   cq (max (max (a.u*b.u) (a.u*b.v)) (max (a.v*b.u) (a.v*b.v)))⟩
+\end{lstlisting}
+The C++ chooses the same two products by a nine-way sign case split; the Lean version uses min/max, and the claim that the two give the same endpoints is
+checked by the stage equalities below on every exercised input, not proved in general \tg{C}{0003}.
+Two layers are kept apart. The \emph{computation layer} (\lean{IV.add}, \lean{mul}, \lean{inv}, \lean{rat}, \lean{sqrt}, \lean{hull}, \dots) is executable. The
+\emph{soundness layer} gives, for each operation, a theorem over $\R$: if reals $x,y$ lie in the input intervals then $x\cdot y$ lies in the output
+interval (\lean{mul\_sound}, \lean{add\_sound}, \lean{inv\_sound}, \lean{div\_sound}, \lean{rat\_sound}, \lean{hull\_sound\_left}, \dots) \tg{A}{0009}. The L2 statements use the soundness layer; the L1 statements use only the computation layer.
+
+\paragraph{Why \lean{decide +kernel} and not \lean{native\_decide}.} A stage theorem has the shape ``\lean{stageComputation = literal}'' where the literal is an integer pair printed by the C++ (or a Boolean
+\lean{chunk\ldots = true}). \lean{decide +kernel} asks Lean's kernel to evaluate both sides by reduction. \lean{native\_decide} would instead compile the
+expression and run the compiled code, trusting the evaluator and adding an axiom (on Lean 4.34.1 P1 saw it reported as \lean{t.\_native.native\_decide.ax\_1\_1}~\cite{p1}).
+With \lean{decide +kernel} the \lean{\#print axioms} line of the L1 theorems reads ``does not depend on any axioms'' or only \lean{[propext]} (verbatim lines in \tg{A}{0002}--\tg{A}{0005}). The
+kernel's native big-integer arithmetic on numerals stays in the trusted base \tg{C}{0006}. What the choice removes from the trust base of a ported stage is the C++ compiler, Boost, OpenMP and the hardware that ran the binary; it does
+not remove the fidelity of the transcription (Section~\ref{sec:notchecked}).
+
+\paragraph{How a long stage is encoded.} Kernel memory grows with the number of operations in one theorem (we measured about 4.9\,GB extra at 48\,000 operations, against 0.3\,GB at 3\,000; \tg{X}{0006}),
+so a stage is cut into \emph{chunks}: one theorem per block of loop indices, each with its own premises (the table nodes and cells it needs, written as integer literals), stated as a Boolean equality with the
+block's sum or hull. A \emph{window check} in Lean ensures that the table cells used by a lookup are exactly the cells the C++ would use for the interval $T$ computed in Lean (sorted, with the first node below
+$T$ and the last above it). A \emph{chain} theorem then states the conjunction of all chunk theorems of a stage.
+
+\section{The twelve stages and their status}\label{sec:map}
+Table~\ref{tab:stages} lists the C++ stages with the level reached. IV operation counts come from an instrumented single-thread copy of the C++ (counters and endpoint prints only) \tg{X}{0001}.
+\begin{table}[ht]\centering\small
+\caption{The twelve stages of the certificate. E: the executable assertion is evaluated on the exact C++ endpoints (arithmetic only). ``Conditional L2'': the real meaning of the assertion if the quantity lies in its interval.}\label{tab:stages}
+\begin{tabular}{@{}r p{2.4cm} p{4.4cm} r p{4.2cm}@{}}\toprule
+\# & C++ stage & What it certifies & IV mul+inv & Status\\\midrule
+1 & \lean{init\_constants} & $\log 2,\ \pi$; $p=\tfrac12\sqrt{2/\sqrt3}$, $R_0=2p/\sqrt3$, $a=2p$ & 2{,}317 & \textbf{L1 and L2 complete} \tg{A}{0001}\tg{A}{0002}\\
+2 & \lean{cs}, \lean{init\_after\_co} & lattice coefficients $c_m$, $m\le38$; $|c_1|<1$ & 44{,}268 (+ big-integer sums) & only $|c_1|<1$ at E; not ported\\
+3 & \lean{table(24000)} & jets $\tilde f_0,\tilde e$ at 6826 nodes, cell enclosures & 679{,}762{,}698 & not ported (premise of 6, 7, 9--12)\\
+4 & \lean{core\_test} & finite-core premise & 16{,}826{,}719 & not ported\\
+5 & \lean{bcons}, \lean{eps} & $B(\ell)$ enclosure, $\varepsilon=10^{-11}$ & 609 & \textbf{L1 complete} (premises $c_m$) \tg{A}{0003}\\
+6 & \lean{calcLam} & $\lambda,\mu$ & 1{,}440{,}090 & \textbf{L1 complete}, conditional on table \tg{A}{0004}\\
+7 & \lean{calcK} & $K=2\int_0^{x_0}G(p,s)\dd s$ & 242{,}113 & \textbf{L1 complete}, conditional on table \tg{A}{0005}\\
+8 & asserts after \lean{calcK} & $\lambda\in(-6.731,-6.729)$, $K<0$, $f(\ell)>0$, $-\pi B(\ell)-\lambda/2>0$ & -- & E; conditional L2 \tg{A}{0007}\tg{A}{0008}\\
+9 & \lean{bdsup} & derivative bounds $L_1..L_4$ on $[b,.697]\times[0,.65]$ & 46{,}277{,}452 & printed hulls at E; not ported\\
+10 & \lean{global\_grid}, outer & $m_*-E_0-E_I>0$ & 228{,}976{,}441 (10 and 11) & final assertion at E; conditional L2; not ported\\
+11 & \lean{global\_grid}, negative part & $N_*+K+.65(\cdots)<0$ & (in 10) & final assertion at E; conditional L2; not ported\\
+12 & \lean{inside\_hess} & Hessian minima $>0$ on $\mathcal D_0$ & 265{,}256{,}982 & hull minima at E; not ported\\\bottomrule
+\end{tabular}
+\end{table}
+Here the manuscript's quantities are the ones described in P1~\cite{p1}; we repeat only what is needed to read each theorem. Totals: the ported stages 1, 5, 6, 7 account for \PTDoneOps{} of the \PTTotalOps{}
+IV multiplications and inversions of one C++ run (\textbf{\PTFrac\,\%}); the denominator counts a single call of \lean{init\_constants}, and the numerator does not credit the edge-value evaluations of \lean{init\_after\_co}
+that stage 5 also re-executes, so the share is conservative \tg{X}{0001}. Interval work is not the same as proof content: the unported stages are the ones that carry the analytic burden.
+
+\section{Step-by-step: what each ported stage certifies}\label{sec:stages}
+\subsection{Stage 1: \lean{init\_constants} (levels L1 and L2) \tg{A}{0001}\tg{A}{0002}}
+\emph{What it certifies.} Enclosures for five constants used by everything else: $\log 2$, $\pi$, $p=\tfrac12\sqrt{2/\sqrt3}$ (so $p^4=\tfrac1{12}$), $R_0=2p/\sqrt3$ ($R_0^4=\tfrac4{27}$) and $a=2p$ ($a^4=\tfrac43$).
+\emph{How the C++ does it.} $\log 2=2\,\mathrm{atanh}(1/3)=2\sum_{i\ge0}\frac{(1/3)^{2i+1}}{2i+1}$, summed for 200 terms in interval arithmetic and widened by $[-1,1]/Q$ for the tail; $\pi=16\arctan\frac15-4\arctan\frac1{239}$ (Machin), 150 terms of each alternating series, widened by $[-2,2]/Q$ for each tail; the roots by an integer square root of the scaled endpoints.
+\emph{L1.} The theorems \lean{ln2\_comp\_eq}, \lean{pi\_comp\_eq}, \lean{p\_comp\_eq}, \lean{R\_comp\_eq}, \lean{a\_comp\_eq} say that the Lean transcription of these loops, evaluated by the kernel, equals the endpoints printed by the C++ dump driver (a program compiled against the unmodified corpus headers, \tg{X}{0001}).
+\emph{L2.} The theorems \lean{log\_two\_mem}, \lean{pi\_mem}, \lean{p\_mem}, \lean{R\_mem}, \lean{a\_mem} state that the \emph{real numbers} $\log 2,\pi,p,R_0,a$ lie in the intervals. They are proved from Mathlib (the bound on the remainder of the logarithm series, Machin's formula together with the arctangent series and a geometric tail bound, and the fourth-power identities above) plus kernel-decided rational comparisons, \emph{independently of the C++ algorithm}: the L2 proof checks the C++ output, not its program. This is the only stage whose output is connected to the real numbers it names. A bridge file shows that the certificate's constants contain the scale $\mathrm{triScale}$ of the P1 statement file \tg{A}{0012}.
+
+\subsection{Stage 5: \lean{bcons} and \lean{eps} (level L1) \tg{A}{0003}}
+\emph{What it certifies.} The enclosure \lean{bcons} of the edge value $B(\ell)$ used in the sign assertion $-\pi B(\ell)-\lambda/2>0$, and the truncation allowance $\varepsilon=10^{-11}$. The C++ forms $-\log R+\tfrac\pi2R^2+\sum_{m\le38}VR_m+\varepsilon$ (with $R$ the C++ variable of that stage; see \texttt{Bcons.lean}), where $VR_m$ are the 38 edge values computed in \lean{init\_after\_co} from the lattice coefficients $c_m$.
+\emph{In Lean.} \lean{bcons\_comp\_eq} re-executes the interval $\log$ (range reduction plus the 200-term series), \lean{pow}, the binomial factors, the Horner evaluations, the 38 values $VR_m$ and the final sum, and finds the C++ endpoints. The $c_m$ (stage 2) are premises: they enter as integer literals.
+
+\subsection{Stage 6: \lean{calcLam} (level L1, conditional on the table) \tg{A}{0004}}
+\emph{What it certifies.} The constants $\lambda$ and $\mu$ of the calibration, from the table functions $\tilde f_0$ and $\tilde e$ (stage 3) by two midpoint sums with $s_0=.01$:
+$B=\frac{p}{R/2}\bigl(f(R)-f(p)\bigr)-\frac{R/2}{p}\,e(R)$ (up to the origin correction and the midpoint-rule allowances), $\lambda=B/(pR/2)$, $\mu=f(R)-e(R)/3-\lambda R^2/2$.
+\emph{In Lean.} Each of the $2\times45\,000$ midpoint steps is a table lookup: the cells meeting a query interval, linear interpolation between the two nodes plus the remainder allowance $H^2/8\cdot|\tilde f_0''|$ and $+\varepsilon$, hulled over the cells. They are grouped in 300 chunks of 150 steps for each of the two sums (\lean{chunkFacc}, \lean{chunkEacc}). \lean{calcLam\_chunk\_sums} forms the exact sums of the chunk values; \lean{calcLam\_eq} states that the scalar remainder of the stage (the hull of $\tilde f_0''$ over the cells meeting $[p,\sqrt{p^2+s_0^2}]$, the derivative bounds over the 1997 cells meeting $[p,R]$, both allowances, then $\lambda,\mu$) gives exactly the C++ endpoints. \lean{calcLam\_stage} is the conjunction of the 600 chunk theorems and \lean{calcLam\_eq}.
+
+\subsection{Stage 7: \lean{calcK} (level L1, conditional on the table) \tg{A}{0005}}
+\emph{What it certifies.} $K=2\int_0^{x_0}G(p,s)\dd s$ with $x_0=R/2$ and
+$G(d,s)=\frac{d}{t^2}\bigl(f_0(t)-\tfrac\lambda2t^2-\mu\bigr)-\frac{s^2}{d\,t^2}\,e(t)$, $t=\sqrt{d^2+s^2}$.
+The C++ uses the midpoint rule on $3103$ cells of width $h=(R/2)/3103$ and bounds its error by the classical $h^2(R/2)\sup|G_{ss}|/24$, with the supremum enclosed by the hull of $G_{ss}$ over $1552$ intervals of width $(R/2)/1552$ (a second function, $G(\cdot,\cdot,\mathrm{true})$, returning $G,G_d,G_s,G_{dd},G_{ss}$).
+\emph{In Lean.} \lean{calcK\_mesh} states the two sample counts; 97 chunk theorems \lean{chunkS} (32 midpoint terms each, the last 31) give the exact chunk sums of $h\,G(p,(i+\tfrac12)h)$; 194 theorems \lean{chunkF} (8 hull terms each) give the hull of $G_{ss}$; \lean{calcK\_K\_eq} states that $K=2(k_c+[-e_r,e_r])$ with $e_r=h^2(R/2)|{\rm ss}|/24$ equals the C++ $K$. Each lookup re-checks in Lean that its window of cells is the C++ range.
+\begin{lstlisting}
+theorem calcK_K_eq : Kfinal = KCpp := by decide +kernel
+set_option maxRecDepth 100000 in
+/-- kc chunk: indices 0..31, table cells 3003..3003. -/
+theorem chunk_S0 : chunkS S0_nodes S0_cells 0 32 S0_val = true := by
+  decide +kernel
+\end{lstlisting}
+
+\subsection{Stages 8, 10, 11, 12 and the 22 printed pairs (level E and conditional L2) \tg{A}{0007}\tg{A}{0008}\tg{A}{0016}}
+\emph{What is checked.} The exact 144-bit endpoints produced by the C++ for $\lambda,\mu,K,B(\ell),f_0(\ell)$, the slope, $f(\ell)$, the five hulls of \lean{bdsup}, \lean{gmin}, \lean{drneg}, \lean{factor}, \lean{er\_drop}, the left-hand sides of the two grid assertions and the Hessian minima are written into \texttt{Asserts.lean} as integer literals. \lean{printed\_pairs} proves that each of the 22 pairs saved in the record is $(\lfloor10^7u/Q\rfloor,\lceil10^7v/Q\rceil)$ of the exact interval, and \lean{cpp\_asserts} evaluates, on those endpoints, the assertions that the C++ makes after \lean{calcK} (\texttt{grids.hpp}:347--348), the final \lean{global\_grid} assertion (336), the \lean{inside\_hess} hull minima (equivalent to its per-cell \texttt{failures==0} assertions, because the hull lower endpoint is the minimum over the cells) and the $|c_1|<1$ check (\texttt{core.hpp}:293):$\lambda\in(-6.731,-6.729)$, $K<0$, $f(\ell)>0$, slope $>0$, $(\text{gmin}-\text{factor}).u>0$, $(\text{drneg}+\text{er\_drop}+K).v<0$, $g_{dd}.u,\,g_{xx}.u,\,\det.u>0$ and $|c_1|<1$. \lean{grid\_margins} adds the quantitative margins ($\ge1.20\times10^{-5}$ and $\le-4.585\times10^{-4}$). \textbf{Not covered:} the \lean{core\_test} bound check of stage 4 (\texttt{core.hpp}:274, \texttt{bc.v<6000Q \&\& dsum.v<2e6Q}, the finite-core premise), whose operands were never exported; and the table separation check (\texttt{core.hpp}:251), which is checked only window by window through \lean{sortedOK}.
+\emph{What this is not.} Arithmetic about integers. It does not show that the C++ \emph{computed} these integers from the manuscript's formulas (stages 3, 4, 9--12 are not ported). \lean{lambda\_real}, \lean{K\_real}, \lean{fl\_real}, \lean{slope\_real}, \lean{gmf\_real}, \lean{neglhs\_real} state the real meaning of each assertion \emph{if} the quantity lies in its interval; whether it does is the job of the stage that produced the interval.
+The twelve assertions were also given to the LeanFlow tool as a data certificate (Section~\ref{sec:lf}).
+
+\section{The chain lemma, and what it does not check}\label{sec:notchecked}
+\lean{premises\_chain} \tg{A}{0006} is a kernel-checked equality of the premises that the stage files carry as literals: the $p,R$ written into \lean{calcK} equal the Constants outputs; the $\lambda,\mu$ written into \lean{calcK} equal the \lean{calcLam} outputs; the $K$ of \texttt{Asserts.lean} equals the \lean{calcK} output; \lean{bconsC} equals the \lean{bcons} output; and $\varepsilon=[-\mathrm{rat}(10^{-11}).v,\,\mathrm{rat}(10^{-11}).v]$ in both stages. \lean{calcK\_stage} and \lean{calcLam\_stage} each bundle all chunk theorems of a stage. Together, stages 1, 5, 6, 7 compose. After the audit, a new file \texttt{ChainLink.lean} (the 52 locked files are unchanged) adds two theorems that tie the stage-8 literals to the L1 outputs: \lean{slope\_eq} (the slope literal equals $-\pi B(\ell)-\lambda/2$ recomputed from the \lean{Constants}, \lean{bcons} and \lean{calcLam} outputs) and \lean{fl\_eq} ($f(\ell)=f_0(\ell)-\lambda\ell^2/2-\mu$, still conditional on $f_0(\ell)$, a table value); both depend on no axioms \tg{A}{0017}. The audit found that the statements could be linked this way; the producer then added them.
+
+What is \emph{not} checked \tg{C}{0004}:
+\begin{itemize}
+\item \textbf{Chunk coverage.} That the chunk index ranges tile the full index sets (97 chunks of 32 for $3103$ midpoint indices, 194 of 8 for $1552$, $300+300$ of 150 for $45\,000$) is guaranteed by the generator scripts, not by Lean. The ranges are visible in the statements, and a script found them contiguous with no gap or overlap \tg{X}{0007}; a reader can redo this from the statement of \lean{calcK\_stage} and \lean{calcLam\_stage}.
+\item \textbf{Inputs taken as given.} The table enclosures (stage 3: nodes and cells, as literals), the lattice coefficients $c_m$ (stage 2) that enter stage 5, the edge position $\ell$, and all outputs of the unported stages. So stages 6 and 7 are \emph{conditional on the table} and stage 5 on $c_m$. The table enters as 891 separate literal windows (18{,}455 node and cell literals) plus scalar copies; Lean does not check that these are consistent copies of one table. The auditor's script compared every node and cell literal with the C++ dump (each window a contiguous index run, its cells exactly those between its nodes) and found no mismatch (an X observation, \tg{X}{0010}). Stage-output bit equality alone would not detect every error: a 1-ulp shift of all node $f$ lower endpoints is absorbed by the outward rounding of $hG$ and is accepted by the chunk theorem, while the direct literal comparison detects it. The $\texttt{core\_test}$ bound check (\texttt{core.hpp}:274, stage 4) is a runtime check of the C++ whose operands were never exported, so no Lean theorem evaluates it.
+\item \textbf{Real meaning} of any interval except those of stage 1.
+\item \textbf{Transcription fidelity} (C++ to Lean) beyond bit equality on the exercised inputs \tg{C}{0003}.
+\end{itemize}
+
+\section{One lemma of the analytic reduction: \lean{signed\_endpoints} \tg{A}{0010}}\label{sec:signed}
+The manuscript's Lemma \texttt{dual:signed-endpoints} (Section 3, lines 567--611 of \texttt{03-geometry.tex}) turns two scalar inputs on a kernel $G(d,s)$ into a bound for signed pairs of angles. It is the step that lets the certificate's \lean{global\_grid} assertions (the \emph{outer} bound $2g_d\ge K$ and the \emph{negative-part} bound) control the sector energies. Setting: $G(d,\cdot)$ is even and locally integrable for $d\ge d_0$, and $g_d(x)=\int_0^xG(d,s)\dd s$.
+\begin{table}[ht]\centering\small
+\caption{Hypotheses and conclusion: the manuscript's wording beside the Lean statement (verbatim from \texttt{SignedEndpoints.lean}).}
+\begin{tabular}{@{}p{4.6cm} p{11.7cm}@{}}\toprule
+Manuscript & Lean\\\midrule
+\vspace{-1.2ex}$K<0$, $d_0>0$ & \vspace{-1.2ex}\begin{lstlisting}[frame=none]
+theorem signed_endpoints (G : ℝ → ℝ → ℝ) (K d₀ : ℝ) (hK : K < 0) (hd₀ : 0 < d₀)
+\end{lstlisting}\\
+$G(d,\cdot)$ even for $d\ge d_0$ & \vspace{-1.2ex}\begin{lstlisting}[frame=none]
+    (heven : ∀ d, d₀ ≤ d → ∀ s, G d (-s) = G d s)
+\end{lstlisting}\\
+locally integrable & \vspace{-1.2ex}\begin{lstlisting}[frame=none]
+    (hint : ∀ d, d₀ ≤ d → ∀ a b : ℝ, IntervalIntegrable (G d) volume a b)
+\end{lstlisting}\\
+$2g_d(x)\ge K$ for $x\ge0$ (outer input) & \vspace{-1.2ex}\begin{lstlisting}[frame=none]
+    (hpos : ∀ d, d₀ ≤ d → ∀ x, 0 ≤ x → K ≤ 2 * gPrim G d x)
+\end{lstlisting}\\
+$\int_0^\infty\max\{0,-G(d,s)\}\dd s\le-K$ (negative-part input) & \vspace{-1.2ex}\begin{lstlisting}[frame=none]
+    (hneg : ∀ d, d₀ ≤ d → ∫⁻ s in Ioi 0, ENNReal.ofReal (-G d s)
+                              ≤ ENNReal.ofReal (-K)) :
+\end{lstlisting}\\
+conclusion for $|\alpha|,|\beta|<\pi/2$, $\alpha+\beta>0$ & \vspace{-1.2ex}\begin{lstlisting}[frame=none]
+    ∀ d, d₀ ≤ d → ∀ α β : ℝ, |α| < π / 2 → |β| < π / 2 → 0 < α + β →
+      K ≤ gPrim G d (d * Real.tan α) + gPrim G d (d * Real.tan β)
+\end{lstlisting}\\\bottomrule
+\end{tabular}
+\end{table}
+\lean{gPrim G d x} is $\int_0^x G(d,s)\dd s$ (the manuscript's $g_d$). Two choices deserve a remark. The negative-part hypothesis is a \lean{lintegral} of \lean{ofReal(-G)} (which equals $\max\{0,-G\}$ pointwise), valued in $[0,\infty]$: no integrability side condition is needed, and an infinite integral \emph{violates} the hypothesis instead of producing the Bochner integral's junk value $0$. ``Locally integrable on $\R$'' is stated as interval integrability on every bounded interval, which is equivalent.
+
+\paragraph{The proof, step by step (as in the manuscript, and as in the Lean file).}
+(1) \emph{Oddness}: from evenness of $G(d,\cdot)$ and the change of variable $s\mapsto-s$, $g_d(-x)=-g_d(x)$ (\lean{gPrim\_neg}).
+(2) \emph{Both angles nonnegative.} Then $x=d\tan\alpha\ge0$ and $y=d\tan\beta\ge0$, and the outer input gives $g_d(x)\ge K/2$ and $g_d(y)\ge K/2$; add.
+(3) \emph{Mixed signs.} If $\alpha<0$ then $\alpha+\beta>0$ forces $\beta>-\alpha>0$; put $u=-d\tan\alpha>0$ and $v=d\tan\beta$. Since $\tan$ is strictly increasing, $\beta>-\alpha$ gives $u<v$. By oddness
+$g_d(d\tan\alpha)+g_d(d\tan\beta)=g_d(v)-g_d(u)=\int_u^vG(d,s)\dd s$.
+(4) \emph{Core estimate} (\lean{integral\_ge\_of\_negPart}): $\int_u^vG\ge-\int_u^vG^-\ge-\int_0^\infty G^-\ge K$, using the negative-part input.
+(5) The case $\beta<0$ is symmetric (exchange the roles of $\alpha,\beta$); both negative is excluded by $\alpha+\beta>0$.
+Without the hypothesis $\alpha+\beta>0$ the claim is false: for $G\equiv1$, $K=-1$, $d=1$, $\alpha=\beta=-\pi/4$ the left side is $-2<-1$ (\lean{ctl\_signed\_without\_sum\_false}, a kernel-checked refutation), while the same $G\equiv1$ satisfies all other hypotheses, so the theorem is not vacuous (\lean{ctl\_signed\_hyps}) \tg{A}{0014}.
+Fidelity to the manuscript was compared item by item by an agent, and no human has compared the Lean statement with the TeX \tg{C}{0005}. Two smaller results in the same file \tg{A}{0011}: \lean{assembly\_algebra} (the final algebraic step of the manuscript's Proposition \texttt{dual:assembly}: sector bounds $J(S)\ge K+\lambda A(S)+\mu\theta(S)$ over a finite family with $\sum A=N$, $\sum\theta=2\pi N$, at most $6N$ members and $K\le0$ give $\sum J\ge N(6K+\lambda+2\pi\mu)$, the geometric inputs being hypotheses) and \lean{b\_lt\_dstar} ($0.28209<1/(2\sqrt\pi)$). \textbf{What is missing:} the lemma is stated for an abstract $G$; the concrete $G$ requires the radial data $f_0,e$ of the manuscript's Section 4, which are not defined in Lean, and nothing here derives the two hypotheses from the certificate.
+
+\section{Controls: planted false stages must fail}\label{sec:controls}
+Every claim of Sections~\ref{sec:stages}--\ref{sec:signed} was paired with a planted false variant. Two kinds of evidence are kept apart. A \emph{refutation} is a kernel-checked proof that the planted claim is false (\tg{A}{0013}); a \emph{rejection} is the observation that a file asserting the planted claim fails to compile, with rc~1 (\tg{X}{0003}). The three must-fail files fail only with the errors listed, each mapped to one planted theorem (no other error type appears): ControlsReject.lean 7 errors, CalcKReject.lean 2, CalcControlsReject.lean 2.
+\begin{table}[ht]\centering\small
+\caption{Planted false stages. ``refuted'' = honest \lean{ctl\_*} theorem proved; ``rejected'' = the \lean{rej\_*} file fails (rc 1).}\label{tab:controls}
+\begin{tabular}{@{}p{6.0cm} p{2.5cm} p{2.9cm} p{3.9cm}@{}}\toprule
+Planted claim & Level & Refuted by & Rejected as\\\midrule
+$\log2$ with 199 terms instead of 200 & L1 & \lean{ctl\_ln2\_199\_ne} & \lean{rej\_ln2\_199}\\
+$\pi$ without the $[-2,2]/Q$ slack & L1 & \lean{ctl\_pi\_noslack\_ne} & (refutation only)\\
+$\pi$ lower endpoint $+2^{100}$ ulps lies below Machin's value & L2 & \lean{ctl\_pi\_shift\_false} & \lean{rej\_pi\_shift} (decide failed to reduce; falsity by the control)\\
+printed pair $(121,162)$ for gmin$-$factor & E & \lean{ctl\_pair\_false} & \lean{rej\_pair}\\
+gmin$-$factor $\ge1.21\times10^{-5}$ & E & \lean{ctl\_gmf\_121\_false} & \lean{rej\_gmf\_121}\\
+$(\text{drneg}+2\,\text{er\_drop}+K).v<0$ & E & \lean{ctl\_erdrop\_x2\_false} & \lean{rej\_erdrop\_x2}\\
+$\det\ge0.0087$ & E & \lean{ctl\_det\_false} & \lean{rej\_det}\\
+lookup remainder $H^2/8\to H^2/4$ (calcK pilot) & L1 & \lean{ctl\_G\_eight\_to\_four} & \lean{rej\_G\_eight\_to\_four}\\
+calcK chunk value $\pm1$ ulp (S0, F0) & L1 & \lean{ctl\_S0\_ulp\_ne}, \lean{ctl\_F0\_ulp\_ne}* & \lean{rej\_S0\_ulp}, \lean{rej\_F0\_ulp}\\
+\textbf{calcK stage}, $/24\to/12$ in $e_r$ & L1 stage & \lean{ctl\_calcK\_er12\_ne} & \lean{rej\_calcK\_er12}\\
+\textbf{calcLam stage}, $/24\to/12$ in the $\tilde f_0''$ allowance & L1 stage & \lean{ctl\_calcLam\_evipp12\_ne} & \lean{rej\_calcLam\_evipp12}\\
+\lean{signed\_endpoints} without $\alpha+\beta>0$ & A1b & \lean{ctl\_signed\_without\_sum\_false} & (refutation only)\\
+shifted-$\pi$ claim by \lean{sorry} / by a planted axiom & axiom gate & -- & \lean{\#print axioms} shows \lean{sorryAx}, respectively \lean{ctl\_cheat}: outside the whitelist (observation of the axiom gate, by design) \tg{X}{0009}\\\bottomrule
+\end{tabular}
+\end{table}
+\noindent *The two ulp refutations compile in \texttt{CalcKReject.lean} (the file has exactly the two \lean{rej\_*} errors), but that file prints no axiom report. Ten of the eleven rejections are ``\lean{decide} proved that the proposition is false''; \lean{rej\_pi\_shift} is the exception noted above. The two \emph{stage-level} controls (bold) perturb one constant inside a whole 97-chunk or 600-chunk stage and show that the stage statements are not insensitive to the allowance they certify. The Hessian and \lean{core\_test} stages have no L1 control because they are not ported.
+
+\section{What the remaining work costs}\label{sec:cost}
+Measured on the pinned toolchain, on two cores, at a machine load average of 12--16 from other sessions, so every figure is a range \tg{X}{0006}. Per-unit costs from the compile logs: a simple $G(d,s)$ with lookup \PTGLo--\PTGHi\,s (the four S files hold 3103 evaluations; per-file range after subtracting the \PTBaseSec\,s import-only baseline of \texttt{BenchIV0.lean}; average \PTGavg\,s), a value lookup in \lean{calcLam} \PTLookupAvg\,s ($90\,000$ steps in the twenty files), $G(d,s,\mathrm{true})$ \PTGFLo--\PTGFHi\,s (the eight F files hold 1552 evaluations; same baseline subtraction; average \PTGFavg\,s). These ranges come from the compile logs only; the earlier trial-chunk figures of the source notes are not used because they cannot be recomputed from a saved log. Throughput of IV multiplications and inversions: lower bound \PTRateLow\,ops/s (the $1{,}682{,}203$ operations of \lean{calcK} and \lean{calcLam} over the process time of all their files: \PTCalcKAllSec\,s and \PTCalcLamAllSec\,s, including the core and final files; the chunk files alone are \PTCalcKChunksSec\,s and \PTCalcLamChunksSec\,s), upper bound \PTRateHigh\,ops/s (kernel benchmark files \texttt{BenchIV*.lean} with 3k--48k operations; the three files give \PTBenchRates{} ops/s after subtracting the import baseline). One theorem needs about 0.3\,GB extra at 3k operations and 4.9\,GB at 48k (3.3\,GB import baseline), so we keep theorems at or below about $10^4$ operations.
+\begin{table}[ht]\centering\small
+\caption{Projected cost of L1 for the unported stages (counts of the instrumented run $\times$ measured rates).}\label{tab:cost}
+\begin{tabular}{@{}p{2.4cm} p{4.6cm} p{6.3cm} r@{}}\toprule
+Stage & Work & Basis & Core-hours\\\midrule
+\lean{global\_grid} & 7{,}895{,}832 $G$ & per-$G$ cost & \PTProjGlobalgridLo--\PTProjGlobalgridHi\\
+\lean{inside\_hess} & 2{,}451{,}479 $G(\cdot,\cdot,\mathrm{true})$ & per-$G_{\rm full}$ cost & \PTProjInsidehessLo--\PTProjInsidehessHi\\
+\lean{bdsup} & 421{,}947 $G(\cdot,\cdot,\mathrm{true})$ & per-$G_{\rm full}$ cost & \PTProjBdsupLo--\PTProjBdsupHi\\
+\lean{table} & $6.80\times10^8$ mul+inv (and $5.2\times10^8$ additions, 42{,}014 logs) & rate, serial; needs per-node state witnesses & \PTProjTableLo--\PTProjTableHi\\
+\lean{core\_test} & $1.68\times10^7$ mul+inv & rate & \PTProjCoretestLo--\PTProjCoretestHi\\
+\lean{cs} & 136{,}594 lattice points & estimate: mode-0 arithmetic measured at 6.8\,ms/point & \PTProjCsLo--\PTProjCsHi\\\midrule
+\textbf{Total} & & & \textbf{\PTProjTotLo--\PTProjTotHi}\\\bottomrule
+\end{tabular}
+\end{table}
+That is about \PTDaysTwoLo--\PTDaysTwoHi{} days on two cores, or \PTDaysSixtyfourLo--\PTDaysSixtyfourHi{} days on 64 cores, for L1 of the unported computations (stage rows 2--4 and 9--12 of Table~\ref{tab:stages}; row 8 is assertion-only and rows 10 and 11 share one computation, so the table has six lines, not eight). \textbf{The lower end of the range is not conservative, and \PTProjTotLo{} core-hours is not a lower bound.} The independent audit rebuilt files on a quiet machine (load average about 1.3) and measured compile times 2.2--2.7 times shorter than the producer's logs (CalcKS0 55.0 s against 148.2 s, CalcKF0 21.7 s against 48.5 s, CalcLamE3 242.5 s against 630.5 s, Bcons 130.5 s against 287.1 s). The simple-$G$ cost in CalcKS0 comes to about $(55.0-9.3)/800\approx0.057$ s, below the $0.17$--$0.24$ s used for \lean{global\_grid}; at that rate the \lean{global\_grid} line alone falls to about 125 core-hours. The ``lower bound'' of \PTRateLow\,ops/s holds only for the load under which it was measured. The load caveat applies in both directions: the lower rates are pessimistic on a quiet machine, and the benchmark rates are optimistic for lookup-heavy code. Read the projection as an order-of-magnitude estimate (hundreds to a few thousand core-hours), not as a bracket. The \lean{table} line also hides a design problem: the stage is a serial propagation of an ODE-like recurrence over 6826 nodes, and a kernel check needs the intermediate state of every node supplied as a witness (about 41 intervals per node).
+
+\paragraph{What L1 would still not give.} Even with all stages at L1, the result is a statement about integers that a C++ program printed. The larger gap is \textbf{L2}: Lean definitions of $f_0$ and $e$ (the manuscript's Section 4 radial data) and of the lattice coefficients $c_m$ as lattice sums with the Section 5 tail bounds, and soundness proofs for the jet arithmetic, the ODE propagation of \lean{table}, the midpoint and interpolation remainders (the pinned Mathlib has a trapezoidal-rule file; a string search finds no midpoint-rule remainder, \tg{X}{0008}), the lookup, and the grid arguments of the manuscript's Theorem \texttt{comp:scalar}. After that, the bridge from \lean{global\_grid}'s assertions to the two hypotheses of \lean{signed\_endpoints}, and the reduction itself.
+
+\section{What remains of the reduction}\label{sec:reduction}
+Of the 31 numbered steps audited in P1 (R1--R10, G1--G7, K1--K8, T1--T6), only G6 is complete in Lean, and the algebraic part of G7; the other 29 steps and the geometric part of G7 are untouched, i.e.\ 30 items remain, plus the numerical fact $b<d_*$ which belongs to the manuscript's Section 7 and is outside the 31 \tg{C}{0007}. Our estimate of what Mathlib lacks, from reading the pinned version and a string search \tg{X}{0008}:
+\begin{itemize}
+\item \textbf{R1--R10 (square tori to the plane).} Weak $\div/\curl$ equations with point charges and their regularity; the cited results of~\cite{ss} (Theorem 1, Lemma 4.7, Proposition 4.9) are paper-level theorems with no Mathlib counterpart. Multi-month by itself.
+\item \textbf{G1--G5, G7 (torus minimizers, Voronoi sectors, dual identity).} A torus Green function (absent), a strong minimum principle for $W^{2,2}$ supersolutions, Voronoi tessellations of periodic point sets and Euler's formula on the torus (the scan finds one docstring mention of Voronoi diagrams and no development), Green's identities on punctured domains.
+\item \textbf{K1--K8 (calibration).} Mathlib has a Weierstrass $\wp$-function file, a starting point for the Green function expansion; the explicit radial data and the primitive/stationarity identities are elementary but long. Weeks to months.
+\item \textbf{T1--T6 (tails).} Elementary real analysis (geometric and ratio tails, Leibniz bounds); P1 checked every constant in exact rationals; formalizing is long but routine (weeks).
+\end{itemize}
+These are estimates \tg{C}{0007}. Honest summary: months, not days, and the certificate-side L2 work is comparable to the reduction itself.
+
+\section{LeanFlow: the \lean{decide\_kernel} tactic}\label{sec:lf}
+LeanFlow is our Lean tooling project. In P1 we added a fail-closed data-certificate generator that turns printed interval data into Lean-checked integer arithmetic; \cite{p1} also reports a fail-open hole in the checker for arbitrary sources and its fix. The generator's \lean{decide} is evaluated by the elaborator; the numbers of this paper are $2^{144}$-scale integer literals, for which kernel evaluation is much faster (the project documentation's statement). We therefore added to the generator the tactic name \texttt{decide\_kernel}, rendered as \lean{decide +kernel}, with the same fail-closed discipline: any other tactic string (\lean{native\_decide}, \lean{decide +native}, text containing \texttt{;}) is an \texttt{invalid-claim} and never reaches Lean, the axiom audit still applies to every theorem, and a false statement gives the same ``\lean{decide} proved the proposition false'' error and is classified \texttt{false-statement} as before. The change is LeanFlow commit \hash{\PTLeanCommit} (documentation, source and tests: 4 files). The test suite, rerun read-only at the paper stage, passed \PTLFTests{} tests in \PTLFTestSec\,s, including a positive case and a planted false case at the $2^{144}$ scale \tg{X}{0005}.
+
+Applied to the twelve assertions on the exact endpoints, the run returns status \texttt{ok}, code \texttt{verified}, tier A, every theorem ``does not depend on any axioms'' (\PTLFSecExact\,s) \tg{A}{0016}. The planted copy ($\text{gmin}-\text{factor}\ge1.21\times10^{-5}$) returns \texttt{rejected}, \texttt{false-statement}, failing exactly \lean{cert\_5} (\PTLFSecPlanted\,s) \tg{X}{0004}. As in P1, the tier of such a certificate covers the arithmetic about the stated integers only; it does not cover where they came from, and the checker for arbitrary sources is not a sandbox.
+
+\section{Limitations}\label{sec:lim}
+\begin{itemize}
+\item \textbf{Independent AI audit; no human audit.} One AI agent wrote the generators, the Lean files and the paper and ran the original checks. A separate AI agent instance (not a person) then audited the work (\texttt{AUDIT.md}, verdict ACCEPT\_WITH\_CORRECTIONS; hashes of all 52 Lean files and verbatim text of four headline statements in \texttt{STATEMENT\_LOCK.json}). It rebuilt 13 modules from source in a separate olean directory (among them IV, Constants, Asserts, Bcons, SignedEndpoints, Controls, CalcKCore, CalcKS0, CalcKF0, CalcLamCore and CalcLamE3) with oleans byte-identical to the producer's; re-ran the three must-fail files (7, 2 and 2 errors, rc 1); re-ran the axiom aggregates (615, 294 and 44 reports, none outside the whitelist); and type-checked \texttt{Chain.lean} against the prebuilt oleans. \textbf{Not rebuilt independently:} the other 28 chunk files, \texttt{CalcK.lean} and \texttt{CalcLam.lean} (about 3 h); for those the evidence is the producer's logs plus the determinism shown by the byte-identical oleans that were rebuilt. The audit did not re-run LeanFlow. No human has audited any statement, and the 16 \texttt{LEDGER\_UNAUDITED\_TIER\_A} flags stay open, because an agent audit is not the person's certification that flag asks for \tg{C}{0008}.
+\item \textbf{Instrumented C++ copy.} The endpoints of gmin, drneg, factor, er\_drop and the Hessian hulls (the data of stages 10--12 at level E) and all operation counts come from a copy of the C++ with counters and endpoint prints added (its log reproduces all 22 record pairs); the remaining endpoints come from a dump driver over the unmodified headers. The Lean theorems are only as good as these printed integers.
+\item \textbf{Stale object file.} \texttt{CalcKCore.lean} was rewritten byte-identically by its generator after its \texttt{.olean} was built (sha256 equal to a fresh regeneration), so the file that was compiled is the file on disk.
+\item \textbf{Conditional stages.} \lean{calcLam} and \lean{calcK} are conditional on the table enclosures, \lean{bcons} on the lattice coefficients; the chunk tiling is not checked in Lean.
+\item \textbf{Load.} Timings were taken at load average 12--16; the cost table is a range, not a benchmark.
+\item \textbf{Statement adequacy.} No human has certified that any Tier~A statement means what its gloss says; the gate reports this as one flag per Tier~A row (Section~\ref{sec:ledger}). The fidelity of \lean{signed\_endpoints} to the TeX is an agent's comparison.
+\item \textbf{Scope of the manuscript.} All of the above treats the manuscript as given. We have not found, and have not looked for, an error in it; absence of a finding is not a finding.
+\item \textbf{Literature.} We did not search for work on the conjecture after the cited papers. The excerpt of~\cite{ss} is a transcription from P1, not re-read here.
+\end{itemize}
+
+\section{Reproducibility}\label{sec:repro}
+The Lean sources and the A1 results are committed in AutoevolveAI at \hash{\PTBase} (branch \texttt{worktree-openai-math-discovery}; \texttt{git status} shows both paths clean and all 52 Lean files tracked); only \texttt{papers/p2\_sandier\_serfaty\_lean/} and the new file \texttt{ChainLink.lean} (sha256 \hash{ecb144e19dfde7001fa608e8e2f62e6e43a6a6a169ab5bfa946346add4a1d136}; added after the audit, compiled rc 0 with no axioms, \texttt{data/compile\_ChainLink.json}) are uncommitted. Lean sources: \texttt{formal\_cert/Programmes/SandierSerfaty/} (52 files; sha256 of every file in \texttt{data/result.json}; \texttt{IV.lean} \hash{\PTShaIV}; \texttt{SignedEndpoints.lean} \hash{\PTShaSigned}; \texttt{Chain.lean} \hash{\PTShaChain}). Generators, bench files, C++ dump driver and instrumented-copy patch: \texttt{results/proposal2/2026-10-26/A1/}. LeanFlow commit \hash{\PTLeanCommit}. Pinned toolchain: Lean 4.34.1 and Mathlib~\cite{mathlib} \texttt{d13f23b7} (the openai/math stack).
+\begin{lstlisting}[basicstyle=\ttfamily\tiny,literate={}]
+python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/SandierSerfaty/Constants.lean --olean Programmes.SandierSerfaty.Constants
+python3 results/proposal2/2026-10-26/A1/scripts/compile_seq.py [--keep-going] FILE[:Module.Name] ...   # file list in dependency order, one JSON log each
+python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/SandierSerfaty/AxiomsAll.lean   # 615 axiom reports; non-whitelisted: none
+python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/SandierSerfaty/ControlsReject.lean   # must exit 1 with the 7 mapped errors
+.venv/bin/python -I -B -m pytest <LeanFlow worktree>/tests -q -p no:cacheprovider --rootdir <LeanFlow worktree>   # 94 passed
+.venv/bin/python -I papers/p2_sandier_serfaty_lean/gen_inputs.py   # then ledger/build_ledger.py, ledger/run_gate.py, gen_inputs.py again, build_pdf.py
+\end{lstlisting}
+The logs, results and a copy of the two notes (\texttt{CERTIFICATE\_PORT.md}, \texttt{REDUCTION\_LEMMA.md}) are in \texttt{papers/p2\_sandier\_serfaty\_lean/data/}; the ledger evidence blobs hash them. All numbers in this paper that are derived (shares, rates, projections, axiom counts, test counts) are generated by \texttt{gen\_inputs.py} from those files into \texttt{gen\_numbers.tex}. Compile times (process time, cores 4,5, load average 12--16): Constants 76\,s, Bcons 287\,s, the calcK files \PTCalcKAllSec\,s in total, the calcLam files \PTCalcLamAllSec\,s; all genuine compile transcripts together (excluding the three must-fail files and the three axiom-audit files) sum to \PTCompileTotalSec\,s, i.e.\ \PTCompileTotalH\,h.
+
+\section{Claim ledger}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files \PTLedgerN{} claims: \PTLedgerA{} at Tier~A, \PTLedgerL{} at L, \PTLedgerC{} at C and \PTLedgerX{} at X, each with a content-addressed evidence blob in \texttt{ledger/evidence/}: verbatim \lean{\#print axioms} lines and source hashes (A), a transcribed excerpt (L), the argument text and its file hashes (C), result files with \texttt{claim\_licence: false} (X). The A rows rest on nothing; the C rows rest only on A and L rows and never on an X row; the X rows rest on A rows. The Elenchus gate (\texttt{tools/ledger.py ledger.json -{}-evidence-dir evidence}, verbatim output in \texttt{ledger/gate\_output.txt}) exits with code \textbf{\PTGateExit}: \PTGateBlock{} blocking findings and \PTGateFlag{} flags, all \texttt{LEDGER\_UNAUDITED\_TIER\_A} (one per Tier~A row: no person has certified that the statements mean what their glosses say). The flags are open and the audit fields are left \texttt{null}. The L row is a transcription of the P1 excerpt; \texttt{citation\_check.py} was not run in this paper.
+
+\begin{thebibliography}{99}\small
+\bibitem{ss} E.~Sandier, S.~Serfaty, \emph{From the Ginzburg--Landau model to vortex lattice problems}, Comm.\ Math.\ Phys.\ \textbf{313} (2012) 635--743; arXiv:1011.4617v2 \tg{L}{0001}.
+\bibitem{oai} OpenAI, \emph{Triangular minimality for planar Coulomb renormalized energy} (preprint dated 2026-09-23), in the OpenAI Math release, github.com/openai/math, folder \texttt{preprints/Triangular-minimality-for-planar-Coulomb-renormalized-energy-September-23-2026} (verification sources \texttt{certificate.cpp}, \texttt{core.hpp}, \texttt{grids.hpp}, sha256 prefixes \texttt{53d46bba}, \texttt{c7f76596}, \texttt{4640e0a3}). AI-generated; not peer reviewed.
+\bibitem{p1} X.~Callens, \emph{The Sandier--Serfaty triangular-lattice conjecture: an independent reproduction of a claimed finite certificate, an adversarial audit of the claimed reduction, and a Lean statement (no proof of the conjecture is claimed)}, doi:10.5281/zenodo.23653827 (2026).
+\bibitem{p3d} X.~Callens, \emph{Can the planar Sandier--Serfaty proof architecture reach three-dimensional bcc jellium? A feasibility study with a negative outcome}, doi:10.5281/zenodo.23655002 (2026).
+\bibitem{mathlib} The mathlib Community, \emph{The Lean mathematical library}, CPP 2020; arXiv:1910.09336. \emph{(Title, venue and arXiv number checked on the arXiv text.)}
+\end{thebibliography}
+\noindent The sibling feasibility study~\cite{p3d} assesses whether this proof architecture extends to three dimensions; it is cited for context only and nothing here depends on it.
+\end{document}

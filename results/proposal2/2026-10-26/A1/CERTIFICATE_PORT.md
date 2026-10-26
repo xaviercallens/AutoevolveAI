@@ -1,5 +1,13 @@
 # A1a: porting the triangular-minimality finite certificate into Lean
 
+> **Superseded figures (revision after the independent AI audit, 2026-10-26).** This note is the producer's original; several figures
+> below are stale. The recomputed ones are in the paper (`papers/p2_sandier_serfaty_lean/main.tex`, `data/cost_numbers.json`):
+> 854-2,240 core-hours (not 760-2,130), and that range is **not conservative** (the auditor measured 2.2-2.7x faster compiles on a
+> quiet machine); calcK chunk files 1251.3 s over 12 files (not 13); throughput lower bound 148 ops/s (not 155), valid only at the
+> measured load. "Producer = verifier" below is out of date: a separate AI agent audited the work (`papers/p2_sandier_serfaty_lean/AUDIT.md`,
+> `results/proposal2/2026-10-26/A1/STATEMENT_LOCK.json`); no human audit. The scope of the E-level assertions is as stated in row 8/10/11/12
+> below (not "every executable assertion"): `core_test` at `core.hpp:274` is not covered.
+
 Date 2026-10-26. Proposal 2, item A1a (preregistration `results/proposal2/2026-10-26/preregistration.json`, priors: pilot stages 0.6,
 all stages 0.2, A1 complete 0.02). Subject: the finite certificate of the openai/math manuscript "Triangular minimality for planar
 Coulomb renormalized energy" (2026-09-23; AI-generated, not peer reviewed), `verification/{certificate.cpp, core.hpp, grids.hpp}`,
@@ -59,7 +67,7 @@ sha256 of every source in `result.json`.
   (stage 3, not ported) and on `l`; bcons on the `co[m]` premises (stage 2, not ported).
 * **L2 complete: 1/12** — init_constants (`log 2`, `π`, `p`, `R₀`, `a` as real numbers; `a`, `p` also stated over the
   statement file's `ProgSandierSerfaty.triScale` in `Bridge.lean`).
-* **A on exact endpoints**: rows 8, 10, 11, 12 (every executable C++ assertion), `|c₁| < 1`, and the 22 printed pairs (row P), plus
+* **A on exact endpoints**: rows 8, 10, 11, 12 (every assertion that the C++ makes after `calcK`: λ range, `K<0`, `f(ℓ)>0`, slope, the two `global_grid` assertions, the `inside_hess` minima; the `core_test` bound check at `core.hpp:274` is NOT covered, and the table separation check at `core.hpp:251` is checked only window by window), `|c₁| < 1`, and the 22 printed pairs (row P), plus
   conditional L2 meaning of the row-8/10/11 assertions.
 * **Not ported: table, core_test, cs, bdsup, and the computations of global_grid / inside_hess.**
 * Share of the C++ work re-executed in the kernel: 1,685,129 of 1,238,829,689 IV mul+inv (**0.136 %**).

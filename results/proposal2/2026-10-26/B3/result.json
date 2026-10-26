@@ -1,0 +1,86 @@
+{
+ "id": "B3",
+ "date": "2026-10-26",
+ "verdict": "NEGATIVE_FOR_OPTIMALITY_WITH_RESIDUAL_PLAN_FOR_WEAKER_BOUND",
+ "tier_summary": "study; numerics Tier X with controls; lower-bound inequalities and Euler identity Tier A (sketch, not kernel-checked); architecture arguments Tier C; literature Tier L (alphaXiv, read 2026-10-26)",
+ "decisive_step": "G8 exact calibration: in 2D h_tri is a function of (r,t) in every sector (cos 6m phi = T_6m(d/t)) so the square term vanishes; in 3D h_bcc's face traces vary at fixed t (hex face cos6psi amplitude 3.3e-3, square face cos4psi 5.9e-3), so axial/piece-intrinsic trial potentials have a strictly positive forced square term",
+ "independent_second_failure": "G9 calibration count (Tier C): per-piece affine bound tight at bcc needs ~8 conditions with piece-intrinsic data (2 types) or ~12 with neighbour data (3 types) vs 3 multipliers (volume, solid angle, Euler weight); 2D has 3 vs 3",
+ "not_failing": "G4 incidence count: per-cell Euler identity sum_F (6 - n_F) = 12 for simple cells gives a usable 3D count weight with K <= 0 (verified = 12 on all simple test cells; fcc/hcp non-simple give 24)",
+ "numbers": {
+  "e_bcc": -1.4442307515,
+  "gap_fcc_minus_bcc": 8.969e-05,
+  "gap_hcp_minus_bcc": 0.00014692,
+  "gap_A15_minus_bcc": 0.003368,
+  "lieb_narnhofer_bound": -1.4508,
+  "forced_slack_radial_ansatz": 0.00309,
+  "forced_slack_axial_ansatz": 0.0001058,
+  "forced_slack_axial_over_fcc_gap": 1.18,
+  "forced_slack_hierarchical_no_neighbour_data": 8.75e-05,
+  "two_d_radial_slack_over_gap": 0.056,
+  "two_d_sector_ansatz_slack": 0.0,
+  "c4_bcc_cubic_harmonic": -2.77,
+  "mean_faces": {
+   "bcc": 14,
+   "fcc": 12,
+   "A15": 13.5,
+   "C15": 13.333,
+   "fcc_perturbed_small": 14.0,
+   "poisson": 15.5
+  },
+  "G_second_moment": {
+   "bcc": 0.0785433,
+   "A15": 0.0787354,
+   "fcc": 0.0787451,
+   "C15": 0.0793381,
+   "sc": 0.0833333
+  },
+  "certificate_2d": {
+   "outer_nodes": 7900000.0,
+   "hessian_cells": 2400000.0,
+   "core_seconds": 2300.0
+  },
+  "certificate_3d_estimate": {
+   "axial_best_case_uniform_nodes": 30000000000000.0,
+   "core_years": 200,
+   "exact_ansatz_5param_uniform_nodes": 3e+22,
+   "adaptive_plausible_boxes": "1e5-1e8 if a sharp piece inequality existed"
+  },
+  "forced_slack_axial_azimuthal_only": 5.574e-05,
+  "forced_slack_axial_parts": {
+   "hex_D6": 8.75e-05,
+   "hex_azimuthal": 3.74e-05,
+   "square_azimuthal": 1.83e-05
+  }
+ },
+ "residual_plan": {
+  "target": "computer-assisted 3D jellium lower bound W >= e_bcc - delta*, ceiling delta* >= 1.06e-4 (axial), vs Lieb-Narnhofer gap 6.6e-3 (up to ~60x sharper); NOT optimality",
+  "first_lemma": "3D torus pipeline: separation R=(3/4pi)^(1/3) via screened potential + axial dual identity on flat tori with volume N + in-face signed-sector reduction to a primitive Gamma_{d,s}(x)",
+  "falsification_test": "optimize axial radial data to maximize 12K+lambda+4pi mu, then sample random in-face sectors (d>=0.31) for violations; kill if constant does not beat radial-only ceiling ~ -1.4473 (W_bcc - 3.09e-3)"
+ },
+ "citations": [
+  "Muratov-Novaga arXiv:2610.29732v1 Thm 1 (bcc among Bravais lattices; 46414 boxes)",
+  "Luo-Wei arXiv:2610.31456v1 Thm 1.1 (Yukawa bcc/fcc, kappa*=1.7179218684699, lattices only)",
+  "Blanc-Lewin arXiv:1504.01153v2 sec 2.6 (3D Wigner bcc open; Lieb-Narnhofer -1.4508)",
+  "Lewin arXiv:2202.09240v2 Remark 19; refs Rougerie-Serfaty CPAM 69 (2016), Graf-Schenker CMP 174 (1995) 215 (bibliographic only)",
+  "Aydin-Iacobelli arXiv:2610.28547v1 (Gersho open in 3D; bcc locally optimal quantizer; Kelvin/Weaire-Phelan)",
+  "Hales-McLaughlin arXiv:math/9811079 (dodecahedral conjecture; abstract only)",
+  "Rougerie-Serfaty arXiv:1307.2805v5 Thm 1 p.12, Prop 5.9 p.50 (3D min achieved, periodic minimizing sequence, smeared energy); Remark B.2 p.67 (cutoff W may depend on cutoff for d>=3)"
+ ],
+ "priors": {
+  "credible_plan": 0.15,
+  "proof": 0.02
+ },
+ "outcome_vs_prior": "no credible plan for bcc optimality via this architecture; credible plan only for a weaker non-sharp bound",
+ "files": [
+  "FEASIBILITY.md",
+  "numerics/ewald3d.py",
+  "numerics/n1_energies.json",
+  "numerics/n2_voronoi.json",
+  "numerics/n3_green_obstruction.json",
+  "numerics/n3b_cubic.json",
+  "numerics/n3_run1_pre_signfix.json",
+  "numerics/n2_voronoi.log"
+ ],
+ "rigorous_for": "every piece-intrinsic trial ansatz with <=4 parameters (axial or in-face hierarchical): forced square term at bcc >= 8.75e-5 (A-level projection inequalities + X numerics)",
+ "tier_C_for": "ansatze carrying neighbour data (>=5 parameters): negative rests only on the G9 counting argument"
+}

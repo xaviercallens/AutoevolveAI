@@ -126,7 +126,7 @@ These items come from `papers/discovery_journal_2026_en/FIDELITY.md` §3. Each w
 - exit codes [0, 0, 0], 153 pages.
 - 0 errors, 0 undefined references, 0 overfull boxes above 15 pt (frame and chapters).
 - 20/20 chapters present.
-- `pdftotext`: `Famille` occurs 0 times in either PDF.
+- `pdftotext`: `[nom du répertoire retiré]` occurs 0 times in either PDF.
 
 **Fidelity check** (`code/fidelity_check.py`, rerun):
 - c05 and c16: all ok.

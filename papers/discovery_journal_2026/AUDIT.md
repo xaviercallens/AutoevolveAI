@@ -262,8 +262,8 @@ Checked against sources:
 I scanned the book source, `code/`, `data/`, `gen/` and `figures/*.json` for:
 
 - `/home/`, `/mnt/`, gmail or email patterns;
-- `ghp_`, `github_pat_`, `hf_`, `sk-`;
-- ZENODO_TOKEN, HUGGINGFACE_TOKEN, "Bearer", password, secret.
+- the usual credential prefixes;
+- credential variable names, "Bearer", password, secret.
 
 The results:
 

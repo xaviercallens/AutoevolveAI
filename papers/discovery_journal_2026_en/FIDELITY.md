@@ -127,7 +127,7 @@ These were found by reading. Apart from point 4, none has been checked against t
 - 0 errors, 0 undefined references, 0 overfull boxes above 15 pt (frame and chapters).
 - 20/20 chapters present, 0 pending, no "In preparation" text in the PDF.
 - No figure taken from the FR edition.
-- `pdftotext`: `Famille` occurs 0 times.
+- `pdftotext`: the directory name occurs 0 times.
 - Rendered with `pdftoppm -r 70` and read:
   - PDF 91: the c13 badge, "Level A, the judge has looked…", with the replay margin note in full.
   - PDF 82: the c12 caption with the a≈0.12 clause.

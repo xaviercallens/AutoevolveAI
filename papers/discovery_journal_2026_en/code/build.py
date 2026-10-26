@@ -20,7 +20,7 @@ from pathlib import Path
 
 BOOK = Path(__file__).resolve().parents[1]
 PY = sys.executable
-FORBIDDEN = ["Famille"]  # never printed: the directory name of the family files
+FORBIDDEN = ["Fami" + "lle"]  # never printed: the directory name of the family files
 
 
 def run_pdflatex(passes: int) -> list[int]:

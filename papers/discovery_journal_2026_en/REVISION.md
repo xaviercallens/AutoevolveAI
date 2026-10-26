@@ -95,7 +95,7 @@ See `FIDELITY.md` for the method. The English files were changed as follows:
 | `chapters/c03.tex` | « \niveau{A} \emph{Le juge a regardé.} » | "The judge looked." | "The judge has looked." | Uses the book's fixed badge gloss. |
 | `chapters/c20.tex` | « …sous l'étiquette « relu par les pairs en cinq tours ». » | (label only) | "…, a label with no basis: no human had reviewed them, and the review file came from a program that called no reviewer (see below)." | **EN-only clarification, not a translation error; pending FR adoption.** No reviewer of any kind (human or model) was called. In c20 the reader learns only four paragraphs later that the label was empty. The added facts are those of the FR prologue (« Aucun humain ne les avait relus : le fichier de relecture avait été produit par un programme qui n'appelait aucun relecteur ») and of c20 itself (« une relecture en plusieurs tours qui n'appelait aucun relecteur »). Suggested for FR c20 too; FR is not edited. |
 
-After these edits: build 0 errors, 0 undefined references, 0 overfull > 15 pt, 153 pages, `Famille` 0.
+After these edits: build 0 errors, 0 undefined references, 0 overfull > 15 pt, 153 pages, the directory name 0.
 
 ## Post-fidelity corrections (2026-10-26)
 
@@ -149,7 +149,7 @@ These items come from `papers/discovery_journal_2026_en/FIDELITY.md` §3. Each w
 - exit codes [0, 0, 0], 153 pages.
 - 0 errors, 0 undefined references, 0 overfull boxes above 15 pt (frame and chapters).
 - 20/20 chapters present.
-- `pdftotext`: `Famille` occurs 0 times in either PDF.
+- `pdftotext`: the directory name occurs 0 times in either PDF.
 
 **Fidelity check** (`code/fidelity_check.py`, rerun):
 - c05 and c16: all ok.

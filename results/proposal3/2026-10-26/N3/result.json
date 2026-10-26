@@ -1,0 +1,47 @@
+{
+  "item": "N3",
+  "date": "2026-10-26",
+  "verdict": "GO_CONDITIONAL_NARROW",
+  "verdict_scope": "GO for B3 falsification test and, if passed, a certified 3D jellium lower bound beating Lieb-Narnhofer; NOT a GO for any Lieb-Oxford-constant claim",
+  "kill_rule_fired": false,
+  "kill_rule_reason": "best known rigorous bound -1.4507928 is below B3 ceilings (axial ~-1.44434, radial ~-1.4473); ceilings are method upper limits, not achieved bounds",
+  "convention": "classical jellium, 1/|x|, energy per particle at unit density (= per unit volume)",
+  "jellium_3d": {
+    "best_rigorous_lower": {"value": -1.4507927586148, "formula": "-(3/5)(9pi/2)^(1/3) = -(9/10)(4pi/3)^(1/3)", "ref": "Lieb-Narnhofer J. Stat. Phys. 12 (1975) 291-310 (also printed as p.465 in arXiv:1408.3358 ref [9]); stated in Csirik arXiv:2610.20910 Thm 2.2(i) p.6; Lewin arXiv:2202.09240 Remark 19 p.22", "tier": "L-sec (original not read)"},
+    "method_optimality": "Lewin 2202.09240 Remark 19 p.22: optimum of radial smearing is the ball -> 1.4508 is saturated for the Onsager/Newton method",
+    "rigorous_upper": {"value": -1.4442307515, "ref": "e_UEG <= zeta_BCC(1) [CP19, LLS19a] (LLS arXiv:2203.12473 eq.(6) p.3); e_Jel = e_UEG classical [LLS19a, CP19], quantum Csirik 2610.20910 Thm 3.1 p.8"},
+    "gap": 0.0065620071,
+    "improvements_found": "none in sources read (two alphaXiv discovery searches + LLS22, Lewin22, Lewin-Lieb15, Csirik26, Blanc-Lewin15)"
+  },
+  "lieb_oxford_3d": {
+    "upper": {"value": 1.5765, "ref": "Lewin-Lieb-Seiringer arXiv:2203.12473 eq.(79) p.28 (Lett. Math. Phys. 112 (2022) 92)"},
+    "lower": {"value": 1.4442, "ref": "LLS 2203.12473 p.4: c_LO >= -e_UEG >= -zeta_BCC(1) via LDA limit (5) [LLS18] and (6) [CP19, LLS19a]"},
+    "conjecture": "c_LO = -e_UEG (LLS p.4; Rosenzweig 2608.17155 p.2)",
+    "gradient_corrected_leading_constant": {"value": 1.4508, "ref": "Lewin-Lieb arXiv:1408.3358 Thm 1 eq.(6)"},
+    "how_jellium_enters": "jellium UPPER bound (trial state) -> LO LOWER bound; jellium LOWER bound -> NEITHER (c_LO is a sup over all densities); only ceilings for constant-density/gradient-corrected leading constants"
+  },
+  "lieb_oxford_2d_coulomb_1_over_r": {
+    "without_gradient": {"value": 481.27, "ref": "Lieb-Solovej-Yngvason 1995, as cited by Benguria-Gallegos-Tusek arXiv:1106.5772 p.2"},
+    "with_gradient": {"value": 5.9045, "ref": "Benguria-Gallegos-Tusek arXiv:1106.5772 Thm 1.1 p.2"},
+    "status": "best as of sources read; LLS23 section 5.3 unread"
+  },
+  "two_d_log_gas_under_sandier_serfaty": {
+    "LN_type_bound": {"value": -0.6611824715, "ref": "Lewin Remark 19 p.22: c1 = 3/8 + log(pi)/4"},
+    "triangular_value": {"value": -0.6605587142, "ref": "Lewin p.22 (-zeta'_trg(0) ~ 0.6606); our Kronecker-limit X computation; = W(E_tri)/(2pi) with W(E_tri) = -4.1504128077 (P1 audit, BS2018)"},
+    "consequence": "if SS holds, 2D log-jellium energy = -0.6605587 exactly; 2D LN gap 6.24e-4 closed; NO consequence for 2D 1/|x| Lieb-Oxford constant (different interaction; Petrache-Serfaty implication runs from Cohn-Kumar)"
+  },
+  "target_inequality": "for all N and flat tori T with |T| = N: min W_T(x)/N >= -c* with c* < 1.4507927586 (certified margin), hence e_Jel >= -c* via 3D periodic thermodynamic limit (citation to verify: Lewin 2202.09240 sec IV.C / Rougerie-Serfaty CPAM 2016 Thm 1 + Prop B.3)",
+  "number_to_beat": -1.4507927586148,
+  "clear_success_threshold": -1.44489,
+  "is_improvement_meaningful": "modest: first improvement of a 1975 constant, shrinks bracket on e_Jel=e_UEG; does not change LO constant bounds; does not prove bcc optimality",
+  "unread_blocking_sources": [
+    "Sari-Merlini-Calinon, J. Phys. A 9 (1976) 1539 (on topic; may contain a sharper bound)",
+    "Calinon-Merlini-Sari, Comput. Phys. Commun. (1977)",
+    "Totsuji, Phys. Rev. A (1979), lower bounds for d-dim OCP",
+    "Lieb-Narnhofer 1975 original; Sari-Merlini J. Stat. Phys. 14 (1976) 91",
+    "LLS23 Universal functionals sec 5.3",
+    "Lewin 2202.09240 sec IV.C theorem for d=3 Coulomb"
+  ],
+  "priors": {"room_for_improvement": {"prereg": 0.4, "posterior": 0.4, "note": "novelty supported at method level; realizability untested"}},
+  "compute": "one mpmath evaluation of closed-form constants (30 digits); no heavy compute"
+}

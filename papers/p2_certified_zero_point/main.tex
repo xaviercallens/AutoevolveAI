@@ -1,0 +1,245 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,
+  frame=single,framesep=3pt,xleftmargin=4pt,xrightmargin=4pt,upquote=true,aboveskip=4pt,belowskip=2pt}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tA}{\tier{A}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\tCh}{\tier{C-human}}
+\newcommand{\tCb}{\textcolor{blue!60!black}{\textsf{[C-ball]}}}
+\newcommand{\lean}[1]{\texttt{#1}}
+\newcommand{\Ezp}{E_{\mathrm{zp}}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\hess}{\operatorname{Hess}}
+
+\title{The triangular lattice is not a local minimum of the harmonic zero-point energy for $e^{-\pi r^2}$:\\
+a certified linear-response majorant along a symmetric shear}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-26}
+\hypersetup{pdftitle={The triangular lattice is not a local minimum of the harmonic zero-point energy for exp(-pi r^2)},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure.} This preprint, its Lean code, its Python code and its claim ledger were
+produced by AI agents (Claude, Anthropic) under the author's direction. The author is responsible for the content. No human
+has audited the Lean statements for adequacy, and no human referee has checked the hand arguments. An independent adversarial audit by a separate AI agent instance (\texttt{AUDIT.md}, verdict ACCEPT\_WITH\_CORRECTIONS)
+recompiled the Lean files, re-ran the ball arithmetic with coarser cells and re-implemented the quantities in
+floating point. The main theorem statement is locked in \texttt{results/proposal2/2026-10-26/B2/STATEMENT\_LOCK.json}. No human
+has audited the work.
+
+\begin{abstract}
+For the Gaussian pair potential $V(r)=e^{-\pi r^2}$ and unit-covolume planar Bravais lattices, let $E(t)$ be the harmonic
+zero-point energy per particle ($\hbar=m=1$) along the symmetric shear $L_t=P_tL_\rho$, $P_t=\bigl(\begin{smallmatrix}1&t\\t&1+t^2\end{smallmatrix}\bigr)$,
+starting at the triangular lattice $L_\rho$. We show that $E(t)<E(0)$ for every $0<|t|\le10^{-5}$, so \textbf{the triangular lattice is not
+a local minimum of the zero-point energy}. The proof bounds $E$ above by a majorant $U$ that is affine in the dynamical matrix
+(a tangent form of the concavity of $\tr\sqrt{\cdot}$) and certifies that the second difference of $U$ is at most
+$-1.84156\,t^2$. This is an \emph{upper bound} on a curvature, not a two-sided enclosure of the Laplacian of $\Ezp$ at $\rho$.
+
+\textbf{Tier split.} \tA{}: the Lean~4.34.1 kernel checks the 2$\times$2 concavity inequality, the logic (a majorant window bound with $B<0$ excludes
+a local minimum), the rational certificate ($\mathrm{Upp0}_{hi}+\mathrm{trW}_{hi}\,\mathrm{esum}_{hi}<0$, stability margin $>0$) and the assembled
+theorem, whose analytic inputs are explicit hypotheses; axioms stay within $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$,
+and planted-\lean{sorry}, planted-axiom, tampered-certificate and $a=2$ controls are caught or rejected.
+\tCb{}: the Brillouin-zone integrals, lattice sums and tails are rigorous Arb ball-arithmetic enclosures (206,468 cells, 0 failed) executed by
+python-flint, \emph{not kernel-checked}. \tCh{}: the glue ($E\le U$ after integration, the window identity, mirror symmetry, identification with the earlier
+$E_{\rm zp}$). Hence the headline is Tier~C overall; only its logic and arithmetic are Tier~A. A corollary $\mathrm{Lap}\,\Ezp(\rho)\le-0.92078$ needs extra hypotheses
+($E\in C^2$ and $\Ezp$ of class $C^2$ near $\rho$; $\rho$ critical and the Hessian isotropic, both by the order-3 stabilizer, P2 3.1) and is \tCh{}. The same certificate also works at $a=1/2$ (not preregistered), and fails, as it must, at $a=2$.
+\end{abstract}
+
+\paragraph{Tiers and markers.} \tA: kernel-checked Lean, axioms within the allowlist, controls caught. \tL: a cited, quoted source (none carries a claim here; the literature
+in the bibliography is context). \tCb: rigorous ball arithmetic, outward rounded, executed but not kernel-checked. \tCh: a written mathematical argument, not machine-checked.
+\tX: floating point, supporting nothing by itself. Identifiers \texttt{CZP-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json} (Section~\ref{sec:ledger}); in the ledger both C flavours are Tier~C and the
+flavour is the \texttt{subtier} field of the evidence blob. A Tier~A tag attaches to the Lean statement, never to its physical gloss.
+
+%=====================================================================
+\section{Setting, and what was preregistered}\label{sec:setting}
+This is a follow-up to the programme paper on the zero-point energy~\cite{p2} (``P2''), which found numerically (Tier~X) that the triangular lattice is \emph{not} the minimiser of
+$\Ezp$ for several completely monotone potentials, and that the curvature of $\Ezp$ at $\rho=e^{i\pi/3}$ is negative for Gaussians $e^{-\pi a r^2}$ with $a$ in an interval containing $a=1$
+(P2 value $\mathrm{Lap}\,\Ezp(\rho)=-3.848$ at $a=1$, Tier~X). The present work asks for a \emph{certified} statement at $a=1$.
+
+\paragraph{The functional.} Let $L_\rho=c\mathbb Z(1,0)+c\mathbb Z(\tfrac12,\tfrac{\sqrt3}2)$, $c^2=2/\sqrt3$, and $R_n(t)=P_tR_n(0)$ for integer labels $n=(m,l)$. Put
+$H_n(t)=\hess V(R_n(t))=e^{-\pi|R|^2}(4\pi^2RR^{\mathsf T}-2\pi I)|_{R=R_n(t)}$ and, at reduced zone coordinate $\kappa\in[-\tfrac12,\tfrac12]^2$,
+\[D_t(\kappa)=\sum_{n\ne0}\bigl(1-\cos2\pi\kappa\!\cdot\! n\bigr)H_n(t),\qquad E(t)=\tfrac12\int\tr D_t(\kappa)^{1/2}\,d\kappa .\]
+The labels $n$ and $\kappa$ are held fixed as $t$ varies (strain frame, no rotation). $\det P_t=1$, so the covolume stays one, and the lattice shape is $\tau(t)=\rho+\sqrt3\,t+O(t^2)$. \tCh{} (\texttt{CZP-C-0006})
+
+\paragraph{Preregistration and deviation.} Item B2 of \texttt{results/proposal2/2026-10-26/preregistration.json} (prior $0.4$) reads: ``the isotropic curvature $\mathrm{Lap}\,\Ezp$ at the triangular point is negative for
+$a=1$, certified by interval arithmetic with rigorous tail bounds and checked in Lean; negative control: $a=2$ is not certified negative''; kill rule: ``if the rigorous enclosure cannot exclude 0, report the best certified interval''.
+\textbf{What was delivered differs.} A direct enclosure of $\mathrm{Lap}\,\Ezp$ was not attempted; the producer chose the linear-response majorant because it is affine in $D_t$ and needs no matrix square root of the perturbed lattice. (The second variation of $\tr D^{1/2}$ is smooth away from $\Gamma$; a direct certified enclosure of $E''(0)$ with the same Duffy machinery appears feasible and is left open.)
+Instead the method certifies a majorant, which yields ``not a local minimum'' (the title) without isotropy or criticality, and a one-sided Laplacian bound only as a \tCh{} corollary with extra hypotheses.
+The preregistered literal statement (a two-sided certified $\mathrm{Lap}\,\Ezp<0$, checked in Lean) is therefore \textbf{not} established; what is established is weaker in one respect (one-sided, local, one path) and different in another (no isotropy needed). The negative control ($a=2$ not certified) was run as preregistered.
+
+%=====================================================================
+\section{Step-by-step human demonstration, with the matching Lean statements}\label{sec:human}
+Each step states the mathematics, then the Lean counterpart (full text in \texttt{data/lean/Basic.lean}, hash in Section~\ref{sec:lean}). Listings are transliterated to ASCII.
+
+\paragraph{Step 1: a tangent form of the concavity of $\tr\sqrt{\cdot}$ \tA{} (\texttt{CZP-A-0001}).}
+Let $X$ be symmetric positive definite, $S$ symmetric, $P=X^{-1}$. Then
+\[2\tr S\le\tr X+\tr(PS^2),\qquad\text{with equality at }S=X.\]
+\emph{Proof.} Put $M=S-X$. Expanding, $\tr(P(S-X)^2)=\tr(PS^2)-\tr(PSX)-\tr(PXS)+\tr(PX^2)=\tr(PS^2)-2\tr S+\tr X$, using $PX=I$ and $\tr(PSX)=\tr(XPS)=\tr S$. Since $M$ is symmetric, $\tr(PM^2)=\sum_j m_j^{\mathsf T}Pm_j\ge0$ over the columns $m_j$ of $M$, and $P\succ0$. $\square$
+In Lean the $2\times2$ case is a \lean{linear\_combination} identity (the displayed trace identity, using the four entries of $XP=I$) plus two uses of \lean{quad\_nonneg} (one per column).
+\begin{lstlisting}
+theorem quad_nonneg (p11 p12 p22 a b : R) (hp : 0 < p11) (hdet : 0 <= p11*p22 - p12^2) :
+    0 <= p11*a^2 + 2*p12*a*b + p22*b^2
+theorem two_trace_le_of_inverse (x11 x12 x22 p11 p12 p22 s11 s12 s22 : R) (hp : 0 < p11)
+    (hdet : 0 <= p11*p22 - p12^2) (h11 : x11*p11 + x12*p12 = 1) (h12 : x11*p12 + x12*p22 = 0)
+    (h21 : x12*p11 + x22*p12 = 0) (h22 : x12*p12 + x22*p22 = 1) :
+    2*(s11+s22) <= (x11+x22) + (p11*(s11^2+s12^2) + 2*p12*(s12*(s11+s22)) + p22*(s12^2+s22^2))
+\end{lstlisting}
+The right side is $\tr X+\tr(PS^2)$ written out for symmetric $S$. The statement is for $2\times2$ matrices only, which is all that is needed (two phonon branches). \lean{two\_trace\_eq\_of\_eq} is the equality case.
+
+\paragraph{Step 2: the majorant $U$ \tCh{} (\texttt{CZP-C-0007}).} At each $\kappa\ne0$ take $S=D_t(\kappa)^{1/2}$ (so $S^2=D_t$) and $X=D_0(\kappa)^{1/2}$, positive definite because $L_\rho$ is dynamically stable. Step~1 gives
+\[\tr D_t^{1/2}\le\tfrac12\bigl(\tr X+\tr(X^{-1}D_t)\bigr).\]
+Integrate: $E\le U$ where $U(t)=\tfrac14\int[\tr X+\tr X^{-1}D_t]\,d\kappa$, and $U(0)=E(0)$ by the equality case. The integrand is integrable because $\tr(X^{-1}D_t)\le\|D_t\|\tr X^{-1}$ and $\int\tr X^{-1}\le1.8336$ (\tCb{}, Step~5).
+\emph{Why a majorant:} $U$ is \emph{affine} in $D_t$, so its dependence on $t$ is a single absolutely convergent lattice sum against the fixed matrix $X^{-1}$, with no square root and no branch degeneracy. The price is that $U$ only bounds $E$ from above; the neglected term $\tr(X^{-1}(S-X)^2)\ge0$ can only help the conclusion ``$E$ is smaller''. Lean sees only the pointwise inequality; the integration, integrability and the identification $S=D_t^{1/2}$ are glue. (Because the majorant is built in the strain frame, it is lower-curvature than P2's tau-frame linear response; this frame dependence is expected and is why the number below differs from P2's decomposition.)
+
+\paragraph{Step 3: the window identity \tCh{} (\texttt{CZP-C-0008}) with path derivatives \tA{} (\texttt{CZP-A-0006}).}
+Since $U$ is affine in $D_t$,
+\[U(t)+U(-t)-2U(0)=\tfrac14\int\tr\Bigl(X^{-1}\sum_n(1-\cos2\pi\kappa\!\cdot\! n)\bigl[H_n(t)+H_n(-t)-2H_n(0)\bigr]\Bigr)d\kappa .\]
+Entrywise, the second-order mean value theorem gives $H_n(t)+H_n(-t)-2H_n(0)=t^2H_n''(\xi)$ with $|\xi|<t$. Write $H_n''(\xi)=H_n''(0)+(H_n''(\xi)-H_n''(0))$. With $G=\sum_n(1-\cos)H_n''(0)$, $\mathrm{Upp0}=\tfrac14\int\tr(X^{-1}G)\,d\kappa$ $(=U''(0))$, and using $\|W\|_{op}\le\sum|W_{ij}|$ and $1-\cos\le2$ (which, with the prefactors, leaves a slack in the code's constant),
+\[\frac{U(t)+U(-t)-2U(0)}{t^2}\le\mathrm{Upp0}+\Bigl(\int\tr X^{-1}\Bigr)\cdot\mathrm{esum},\quad 0<t\le t_0=10^{-5},\]
+where $\mathrm{esum}=\sum_{n}\sum_{\rm entries}\sup_{|\xi|\le t_0}|H_n''(\xi)-H_n''(0)|$ is a sum over \emph{all} lattice points (tail included).
+The Lean counterpart that \emph{is} kernel-checked is the path calculus: $q(t)=|P_tR_0|^2$, $q'$, $q''$ (\lean{hasDerivAt\_qS}, \lean{hasDerivAt\_q1S}), the Gaussian weight $e=e^{-\pi aq}$ with $e'=-\pi aq'e$ and $e''=e(\pi^2a^2q'^2-\pi aq'')$ (\lean{hasDerivAt\_gaussS}, \lean{hasDerivAt\_gaussS'}, reusing P2's \lean{gauss\_f'}), and the double product rule for one Hessian entry $H=e\,M$:
+\begin{lstlisting}
+theorem hasDerivAt_entry' {e e1 M M1 : R -> R} {e2 M2 t : R} (he1 : HasDerivAt e1 e2 t)
+    (hM : HasDerivAt M (M1 t) t) (he : HasDerivAt e (e1 t) t) (hM1 : HasDerivAt M1 M2 t) :
+    HasDerivAt (fun u => e1 u * M u + e u * M1 u) (e2 * M t + 2 * e1 t * M1 t + e t * M2) t
+\end{lstlisting}
+Assembling these into the entry formula that the code evaluates ($M=4\pi^2a^2R_iR_j-2\pi a\delta_{ij}$ along $P_t$) is \tCh{} (\texttt{CZP-C-0009}); a finite-difference check agrees to $7\times10^{-7}$ \tX{}.
+
+\paragraph{Step 4: mirror symmetry \tCh{} (\texttt{CZP-C-0010}).} With $\sigma=\mathrm{diag}(1,-1)$: $\sigma L_\rho=L_\rho$ because $\sigma\,c(\tfrac12,\tfrac{\sqrt3}2)=c(1,0)-c(\tfrac12,\tfrac{\sqrt3}2)$, and $\sigma P_t\sigma=P_{-t}$, so $L_{-t}=\sigma L_t$; $E$ depends on the lattice only up to isometry, so $E(-t)=E(t)$. Tier~X check: $E(h)-E(-h)=0.0$ to all printed digits.
+
+\paragraph{Step 5: the numbers \tCb{} (\texttt{CZP-C-0001, -0002}) and their arithmetic \tA{} (\texttt{CZP-A-0003}).} Ball arithmetic encloses $\mathrm{Upp0}=U''(0)$, $\int\tr X^{-1}$, $\mathrm{esum}$ and a stability margin (Section~\ref{sec:numbers}). Their rational upper endpoints are copied into Lean:
+\begin{lstlisting}
+def Upp0_hi : R := -475041875131 / 250000000000     def trW_hi : R := 366706720019 / 200000000000
+def esum_hi : R := 31964165579 / 1000000000000      def t0 : R := 1 / 100000
+theorem cert_B_neg : Upp0_hi + trW_hi * esum_hi < 0
+theorem cert_stability : 0 < lmin_lo - dB_hi
+theorem cert_window (Upp0 trW esum : R) (hU : Upp0 <= Upp0_hi) (hW0 : 0 <= trW) (hW : trW <= trW_hi)
+    (he0 : 0 <= esum) (he : esum <= esum_hi) : Upp0 + trW*esum <= Upp0_hi + trW_hi*esum_hi
+\end{lstlisting}
+The kernel proves the sign and the monotonicity; whether those endpoints really bound the integrals is the \tCb{} content, and that the literals equal the run file is checked by a script (\texttt{lean\_literal\_provenance}, all match). LeanFlow \lean{lean.certify} independently renders $\mathrm{Upp0}_{hi}+\mathrm{pert}_{hi}<0$ and $\mathrm{lmin}_{lo}-\mathrm{dB}_{hi}>0$ into integer statements and verifies both (\tA{}, \texttt{CZP-A-0004}).
+
+\paragraph{Step 6: the logic \tA{} (\texttt{CZP-A-0002}).} Suppose $E\le U$ on $|t|\le t_0$, $U(0)=E(0)$ and $U(t)+U(-t)-2U(0)\le t^2B$ with $B<0$. Then for $0<t\le t_0$: $E(t)+E(-t)\le U(t)+U(-t)\le2U(0)+t^2B<2E(0)$. So at least one of $E(t),E(-t)$ is $<E(0)$ for every small $t$, hence $0$ is not a local minimum; with $E(-t)=E(t)$ (Step~4), both are.
+\begin{lstlisting}
+theorem not_isLocalMin_of_majorant {E U : R -> R} {t0 B : R} (ht0 : 0 < t0) (hB : B < 0)
+    (hEU : forall t, |t| <= t0 -> E t <= U t) (h0 : U 0 = E 0)
+    (hU : forall t, 0 < t -> t <= t0 -> U t + U (-t) - 2*U 0 <= t^2 * B) : Not (IsLocalMin E 0)
+theorem lt_of_majorant_window_symm ... (hsym : forall t, E (-t) = E t) (ht : 0 < t) (htt : t <= t0) : E t < E 0
+\end{lstlisting}
+
+\paragraph{Step 7: assembly \tA{} (conditional, \texttt{CZP-A-0005}) and headline \tier{C} (\texttt{CZP-C-0012}).} \lean{triangular\_not\_localMin\_of\_certificate} takes $E\le U$, $U(0)=E(0)$, the window bound with $\mathrm{Upp0},\mathrm{trW},\mathrm{esum}$, their upper bounds, and $E(-t)=E(t)$ as hypotheses and concludes $\neg\,\mathrm{IsLocalMin}\,E\,0\ \wedge\ \forall t\in(0,t_0],\,E(t)<E(0)$. Every hypothesis is a \tCb{} or \tCh{} fact, so the Lean theorem is a precise statement of what the analytic work must supply, not a proof of the physics. \lean{cert\_stability} is proved but is not a hypothesis of \lean{triangular\_not\_localMin\_of\_certificate}; it supports the \tCh{} discharge of the hypothesis $E\le U$ ($D_t$ must be positive semidefinite for $S=D_t^{1/2}$). The hypothesis $E(-t)=E(t)$ is stated for all $t$ although $|t|\le t_0$ suffices; it is true globally, so nothing depends on this.
+
+\paragraph{Step 8: why this excludes a local minimum of the lattice-shape problem \tCh{} (\texttt{CZP-C-0011}).} Because $\tau(t)=\rho+\sqrt3\,t+O(t^2)$, small $t\ne0$ give unit-covolume lattices of shape $\ne\rho$ (mod $SL_2(\mathbb Z)$) arbitrarily close to $\rho$, and each has strictly smaller $\Ezp$ than $L_\rho$. A local minimum of $\Ezp$ over shapes at $\rho$ would require $\Ezp\ge\Ezp(\rho)$ on a shape neighbourhood, contradicted along this path. No criticality or isotropy at $\rho$ is used. (Strict $E(t)<E(0)$ already implies a different shape; the $\tau$-speed computation is needed only for the corollary of Step~9.)
+
+\paragraph{Step 9 (corollary, extra hypotheses) \tCh{} (\texttt{CZP-C-0013}).} If moreover $E$ is $C^2$ at $0$, the window bound gives $E''(0)\le B_{hi}=-1.84156$. If $\Ezp$ is of class $C^2$ near $\rho$ (needed for the chain rule), $\rho$ is critical ($\nabla\Ezp(\rho)=0$, otherwise a $\nabla\Ezp\cdot\tau''(0)$ term appears; this follows from the order-3 stabilizer of $\rho$ in $SL_2(\mathbb Z)$), and the curvature of $\Ezp$ at $\rho$ is isotropic (P2 section~3.1, itself Tier~C; also from the order-3 stabilizer) and $|\tau'(0)|^2/y^2=4$ (so $E''(0)=2\,\mathrm{Lap}\,\Ezp(\rho)$), then $\mathrm{Lap}\,\Ezp(\rho)\le-0.92078<0$. This is consistent with, and far weaker than, P2's Tier~X value $-3.848$; Tier~X here gives $E''(0)=-7.696$.
+
+%=====================================================================
+\section{Certified numbers and what they mean}\label{sec:numbers}
+All values are outward-rounded ball endpoints (Arb, python-flint~0.6.0, 96 bits) for $a=1$, shear path, $t_0=1/100000$ (file \texttt{data/run\_a1\_shear\_main.json}); \tCb{}.
+\begin{center}\small\begin{tabular}{p{4.3cm}p{3.6cm}p{7.0cm}}\toprule
+quantity & enclosure / bound & meaning\\\midrule
+$U''(0)=\mathrm{Upp0}$ & $[-1.947713,\,-1.900168]$ & second derivative of the majorant (tier X quadrature $-1.923973$ inside)\\
+$\int\tr X^{-1}\,d\kappa$ & $[1.825520,\,1.833534]$ & weight multiplying the perturbation\\
+$\mathrm{esum}$ & $\le0.0319642$ & all-lattice bound on $\sup|H''(\xi)-H''(0)|$, tails included\\
+$B_{hi}=\mathrm{Upp0}_{hi}+\mathrm{trW}_{hi}\,\mathrm{esum}_{hi}$ & $-1.841560$ & \textbf{upper bound} on $(U(t)+U(-t)-2U(0))/t^2$\\
+$\lambda_{\min}(B_0)$ & $\ge0.918889$ & stability of $L_\rho$ on every cell\\
+$\|B_t-B_0\|$ & $\le0.007528$ & stability margin $0.911361>0$ for $|t|\le10^{-5}$\\
+\bottomrule\end{tabular}\end{center}
+As rationals, $\mathrm{Upp0}_{hi}=-475041875131/250000000000$, $\mathrm{trW}_{hi}=366706720019/200000000000$, $\mathrm{esum}_{hi}=31964165579/10^{12}$ (these appear verbatim in the Lean file).
+\emph{Meaning.} $B_{hi}$ is an upper bound on a curvature of the majorant $U$, which in turn bounds a second difference of $E$ from above. It is \textbf{not} a two-sided enclosure of $\mathrm{Lap}\,\Ezp(\rho)$ and cannot certify a local minimum; the method bounds $E''\le U''$ from one side only.
+Engine details (\tCb{}): the reduced square is split into four triangles with apex $\Gamma$ and Duffy coordinates $\kappa=s\,v(t')$, Jacobian $s/2$; with $D_0=s^2B$ the integrands times the Jacobian are $C^1$ in $(s,t')$ wherever $B>0$, including $s=0$.
+Each cell uses the mean-value form $\int_{\rm cell}g\in|{\rm cell}|\,g(\text{centre})+|{\rm cell}|\tfrac h4(\sup|g_s|+\sup|g_{t'}|)[-1,1]$; $64\times64$ cells per triangle, bisected up to depth~3 to $206{,}468$ cells, $0$ failed, $448$~s on one core. The lattice sum is exact over $m^2+ml+l^2\le21$ (42 pairs $\pm n$) and the tails ($|R|\ge5.04$) use the lattice-point count $\#\{|R|\le r\}\le\pi(r+1)^2$ and Gaussian-times-polynomial bounds, below $10^{-21}$ per entry. The remainder beyond the 200 summed shells is bounded in the code by twice the last shell; the decay ratio below $1/2$ behind this is \emph{asserted, not computed}: at $r\approx55$ with shell width $1/4$ and $a\ge1/2$ it is below $e^{-40}$ by the audit's estimate. On coarse grids the certifier fails loudly rather than returning a wrong ball: with $N=16$ cells per triangle side it raises \texttt{fprime\_enc: ball too wide} (the independent audit hit this at $N=16$, depth~2), so it cannot run below roughly $N=32$ without splitting straddling balls. The esum tail contained a factor-2 undercount (\texttt{3*bh2} instead of \texttt{6*bh2}); it is corrected in the code files here, and its effect is nil (tail $2.2\times10^{-25}$ against $9.2\times10^{-13}$ of outward rounding already added to \texttt{esum\_hi}); the certification was \emph{not} re-run, and the reported runs used the earlier file (sha256 below). These bounds are mathematics checked only by being coded; they are not kernel-checked, and a bug in them would not be caught by the Lean theorems.
+
+%=====================================================================
+\section{Controls}\label{sec:controls}
+\begin{center}\small\begin{tabular}{p{4.0cm}p{6.4cm}p{3.8cm}}\toprule
+control & what was tested / result & tier\\\midrule
+(+)1 $E(0)$ enclosure & $[1.498719,1.507934]$ contains P2's spectral $1.50335235220736$ & \tCb\ (\texttt{C-0003})\\
+(+)2 $\langle\tr D\rangle$ & cell value $[5.26378,5.29693]$ contains the exact lattice sum $5.2804187$ & \tCb\\
+(+)3 sum rule & $5.2804187$ vs $4\pi-2\pi\theta_L(1)$, $\theta_L(1)=1.1595952670$ (ball): overlap & \tCb\\
+(+)4 second path $\mathrm{diag}(1{+}t,\tfrac1{1+t})$ & $U''(0)\in[-1.945739,-1.902147]$, overlaps the shear path; $B_{hi}=-1.83885$ & \tCb\\
+(+)5 Hessian formula & closed form vs finite differences, max difference $7\times10^{-7}$ & \tX\\
+(+)6 trace identity & sympy identity behind Step~1 is $0$; a perturbed version is not & \tX\\
+($-$)1 $a=2$ (triangular is a local min, P2) & $U''(0)\in[+12.69365,+12.75701]$, $B\in[12.772,12.836]$: \textbf{not certified}. LeanFlow: rejected (\texttt{false-statement}); \lean{RejectA2.lean}: kernel rc~1, goal \lean{False}; \lean{a2\_not\_certifiable} proves no $\mathrm{trW},\mathrm{esum}\ge0$ can rescue it. Stability margin $0.1452>0$ & \tCb\ + \tA\ (\texttt{C-0005}, \texttt{A-0007}, \texttt{A-0008})\\
+($-$)2 tampered certificate (sign of $\mathrm{Upp0}_{hi}$ flipped) & \lean{RejectTampered.lean} rc~1 (goal \lean{False}); \lean{tampered\_false} proves the negation & \tA\\
+($-$)3 planted \lean{sorry} / planted axiom proving the tampered claim & \lean{Controls.lean} compiles with rc~0, but \lean{\#print axioms} shows \lean{sorryAx} and \lean{ProgZeroPointCert.ctl\_cheat} (the exit code is not the gate) & \tA\ (\texttt{A-0008})\\
+\bottomrule\end{tabular}\end{center}
+The $a=2$ run is the method's falsification test: at $a=2$ P2 finds the triangular lattice \emph{is} a local minimum, and the majorant correctly yields a positive bound, so the certificate is not produced. The test shows that the method does not always say ``not a minimum''; it does not show the method is complete.
+
+\paragraph{Extra result at $a=1/2$ (NOT preregistered, reported as a by-product) \tCb{} (\texttt{CZP-C-0004}).} Same code, same path: $U''(0)\in[-1.043919,-0.982646]$, $B_{hi}=-0.918357<0$, stability margin $0.3648$; LeanFlow tier~A verified the endpoint arithmetic. So the same certificate covers $a=1/2$ (P2 Tier~X: triangular is a local \emph{maximum} there). It is \emph{not} part of the Lean \lean{Basic.lean} theorem, which carries the $a=1$ literals only; its $E(0)$ enclosure $[1.503411,1.509136]$ contains P2's $1.50628947$. A Tier~C interpretation, not tested by a separate run: P2's linear-response term is $+0.028>0$ at $a=1/2$ in the rotation-inclusive $\tau$ frame, while the strain-frame majorant here omits the rotation direction (along which $U$ has a minimum, since $E$ is rotation invariant and $U\ge E$); the frame dependence of $U$ is expected.
+
+%=====================================================================
+\section{Lean formalization and LeanFlow}\label{sec:lean}
+\paragraph{Module.} \path{formal_cert/Programmes/ZeroPointCert/Basic.lean} (module \path{Programmes.ZeroPointCert.Basic}, namespace \lean{ProgZeroPointCert}); it imports \lean{Programmes.ZeroPoint.Basic} and Mathlib submodules, never \lean{import Mathlib}, and contains no \lean{sorry}. Compiled with the pinned Lean~4.34.1 stack through \texttt{scripts/certified\_numerics/lean\_pinned.py}: rc~0, 0 errors, 33.4~s. All 18 printed declarations depend on exactly $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$ (\texttt{data/lean\_basic.json}): \lean{quad\_nonneg}, \lean{two\_trace\_le\_of\_inverse}, \lean{two\_trace\_eq\_of\_eq}, \lean{sum\_lt\_of\_majorant\_window}, \lean{not\_isLocalMin\_of\_majorant}, \lean{lt\_of\_majorant\_window\_symm}, \lean{t0\_pos}, \lean{cert\_B\_neg}, \lean{cert\_stability}, \lean{cert\_window}, \lean{triangular\_not\_localMin\_of\_certificate}, \lean{hasDerivAt\_lin}, \lean{hasDerivAt\_quad}, \lean{hasDerivAt\_qS}, \lean{hasDerivAt\_q1S}, \lean{hasDerivAt\_gaussS}, \lean{hasDerivAt\_gaussS'}, \lean{hasDerivAt\_entry'}.
+\paragraph{Hashes (sha256).}
+\begin{itemize}\scriptsize\itemsep=0pt
+\item \texttt{Basic.lean}: \texttt{0241b6afa500e46a2fb79cdedc7770eb20cdb0dc336283d683d55096f4d54c00}
+\item \texttt{Controls.lean}: \texttt{2e95e21b70af3b4a1719b761636c992cfec8d52a61a7c63962f02ff5562d4ff3}
+\item \texttt{RejectTampered.lean}: \texttt{02f6930b22e47d7cdc26c89a13102bb1c7af33351e80ec09b7aa4b7ef22e4288}
+\item \texttt{RejectA2.lean}: \texttt{ab0f5f297b0a24bafa84175d66e225fbe626a941bbcff31c28dd7010c28dada9}
+\end{itemize}
+\paragraph{Controls in Lean.} \lean{Controls.lean} (rc~0) contains the planted \lean{ctl\_sorry} and \lean{ctl\_axiom}; \lean{\#print axioms} reports \lean{sorryAx} and \lean{ProgZeroPointCert.ctl\_cheat} respectively, so a gate that read only the exit code would accept them. The two reject files (rc~1 each) are false inequalities that \lean{norm\_num} cannot close.
+\paragraph{LeanFlow.} The unmodified \lean{lean.certify} tool of LeanFlow (checkout \path{/home/callensxavier_gmail_com/LeanFlow-wt-p1}) renders the claim files \texttt{leanflow\_claim\_a1.json} etc.\ into integer statements discharged by \lean{decide}. Results: $a=1$ \emph{verified} (status ok, tier~A for the arithmetic statement only, empty axiom lists); $a=1/2$ verified; $a=2$ \emph{rejected} (\texttt{false-statement}, \lean{cert\_0}). LeanFlow's own scope note applies: it certifies the arithmetic statement about the stated numbers, not their provenance. Here $\mathrm{pert}_{hi}=\mathrm{trW}_{hi}\mathrm{esum}_{hi}$ is formed exactly in Python fractions for LeanFlow, while the kernel redoes the product in \lean{cert\_B\_neg}.
+\paragraph{What Tier~A certifies.} The $2\times2$ concavity inequality, the window logic, the rational sign and monotonicity, the path derivatives and the conditional assembly. \emph{It does not certify} that $E$ and $U$ are the stated integrals, any enclosure, the identification with $\Ezp$ of P2, or any statement about Laplacians.
+
+%=====================================================================
+\section{Claim ledger}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files 23 claims: 8 at Tier~A (\texttt{CZP-A-0001}--\texttt{0008}), 13 at C (5 \tCb{}: \texttt{C-0001}--\texttt{0005}; 8 \tCh{}/headline: \texttt{C-0006}--\texttt{0013}) and 2 at X. Each has a content-addressed evidence blob in \texttt{ledger/evidence/}. The tier discipline of the gate forces the headline \texttt{CZP-C-0012} to Tier~C because it rests on C-ball and C-human rows; the Lean rows stay at A.
+The gate (\texttt{tools/ledger.py ledger.json -{}-evidence-dir evidence}; verbatim output in \texttt{ledger/gate\_output.txt}) exits with code~\textbf{1}: \textbf{0 blocking findings and 8 flags} (\texttt{LEDGER\_UNAUDITED\_TIER\_A}, one for each Tier~A row; the gate's wording is that no \emph{person} has certified that the Lean statements mean what their glosses say). The independent AI audit (\texttt{papers/p2\_certified\_zero\_point/AUDIT.md}, verdict ACCEPT\_WITH\_CORRECTIONS) and the statement lock (\texttt{results/proposal2/2026-10-26/B2/STATEMENT\_LOCK.json}, source hash \texttt{d6947d20...}) are recorded for \texttt{CZP-A-0001}--\texttt{0008} in a separate ledger field \texttt{ai\_audit}. The gate's \texttt{audit} field is left null on purpose: the gate requires a human audit to clear \texttt{LEDGER\_UNAUDITED\_TIER\_A}, and an AI audit is not one. The 8 flags therefore remain open, and the gate output quoted in \texttt{ledger/gate\_output.txt} is unchanged in substance.
+
+%=====================================================================
+\section{Limitations}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item \textbf{Mostly Tier~C.} Only the logic and the rational arithmetic are kernel-checked. The ball-arithmetic enclosures (the cell bounds, Duffy map, tails, lattice count) are executed code, not proofs; the glue steps (Steps~2--4, 8) are written arguments checked by no machine and no human referee.
+\item \textbf{Window and scope.} $|t|\le10^{-5}$, one path, $a=1$, Bravais lattices, harmonic approximation, two dimensions. The theorem is local; it says nothing about the finite competitor $0.5+0.966i$ of P2, which remains Tier~X.
+\item \textbf{One-sided.} The method cannot certify a local minimum, and it gives an upper bound on curvature only. The preregistered two-sided certified Laplacian was not obtained (Section~\ref{sec:setting}).
+\item \textbf{Statement locked and independently audited by an AI agent (not a human); the audit's corrections are applied; the Tier~A adequacy flags are closed by that audit only to the extent recorded in the ledger's audit fields.} In the ledger the AI audit is recorded in \texttt{ai\_audit}; the gate's \texttt{audit} field stays null, so the eight Tier~A flags remain open. No human has audited the work.
+\item \textbf{Repository guards.} \texttt{python antigravity\_guard.py} and \texttt{python test\_rigor\_guard.py} were run at the time of the B2 result and \emph{both fail} for reasons that predate this work: hollow tests in \texttt{tests/test\_k3\_anse\_improvements.py} and \texttt{tests/test\_scientific\_rigor\_v14.py}, and hallucinated-import reports for packages (e.g.\ \texttt{peft}, \texttt{trl}, \texttt{fastmcp}, \texttt{hypothesis}) not installed in the venv. Verbatim outputs: \texttt{data/guard\_antigravity.txt}, \texttt{data/guard\_test\_rigor.txt}. They were not repaired here, and ``guards pass'' is not claimed.
+\item \textbf{python-flint location.} python-flint 0.6.0 is not in the project venv; it was installed with \texttt{pip -{}-target} into \texttt{.scratchpad/b2\_pylib} (git-ignored scratch) and put on \texttt{sys.path} by \texttt{b2\_certify.py}. Re-running requires reinstalling that version.
+\item \textbf{Missing main-run log.} \texttt{run\_a1\_shear\_main.json} exists, but the plain-text log of the main $a=1$ run was not archived (logs exist for the diagonal, $a=2$ and $a=1/2$ runs). The $b2\_explore2.py$ exploratory output behind the Tier~X cross-checks is likewise not archived; those numbers are quoted from the result note.
+\item \textbf{Not novelty-checked.} No literature search was made for prior certified results on zero-point lattice energies; no novelty is claimed.
+\end{itemize}
+
+%=====================================================================
+\section{Reproducibility}\label{sec:repro}
+Repository AutoevolveAI, branch \texttt{worktree-openai-math-discovery}; B2 files committed in \texttt{b687db2} (Lean, results); HEAD when this paper was written: \texttt{74b908125942398600f49e72d7da5b177acdbed9}. Nothing was pushed or published. Copies of the inputs are in \texttt{data/} (\texttt{data/code/} holds the scripts). Commands (cores 6,7; from the repository root; $a$ is the Gaussian parameter):
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+python -I code/b2_explore2.py 1 64                                  # Tier X cross-checks
+B2_REFINE_TOL=0.01 B2_MAX_DEPTH=3 python -I code/b2_certify.py 1 shear 64 1/100000 21 run_a1_shear_main.json   # 448 s
+B2_REFINE_TOL=0.01 B2_MAX_DEPTH=3 python -I code/b2_certify.py 1 diag 64 1/100000 21 run_a1_diag_ctl.json          # diagonal-path control
+B2_REFINE_TOL=0.01 B2_MAX_DEPTH=3 python -I code/b2_certify.py 2 shear 64 1/100000 21 run_a2_shear_negctl.json # negative control
+B2_REFINE_TOL=0.01 B2_MAX_DEPTH=3 python -I code/b2_certify.py 1/2 shear 64 1/100000 21 run_a05_shear_limit.json
+python -I code/b2_lincomb.py ; python -I code/b2_tau_speed.py
+python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/ZeroPointCert/Basic.lean --olean Programmes.ZeroPointCert.Basic
+python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/ZeroPointCert/Controls.lean        # rc 0; #print axioms shows sorryAx / ctl_cheat
+python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/ZeroPointCert/RejectTampered.lean   # must fail
+python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/ZeroPointCert/RejectA2.lean        # must fail
+python -I ledger/build_ledger.py ; python -I ledger/run_gate.py     # gate: exit 1 = 0 blocking, 8 flags
+\end{lstlisting}
+Script hash of the certifier used for all reported runs: \texttt{b2\_certify.py} sha256 \\\path{168115eb63b6c97728fc3dd3b586200c05bb5ebfba25a6a2da640f1973d3338c}. After the audit (NB-1, NB-6) the file was edited (esum tail factor and comments only); the current file has sha256 \\\path{d8a97f8826a8b41b76b6a0f56716222c9ee3aa71b2efb816f75d09ba45939df8}, and the run files still record the earlier hash. Not re-run, since the effect is nil. The Lean files are unchanged (hashes above). The long runs take 7 to 22 minutes each.
+
+%=====================================================================
+\begin{thebibliography}{9}\small
+\bibitem{p2} X.~Callens, \emph{Does the triangular lattice minimise the harmonic zero-point energy? A numerical counterexample for completely monotone potentials, with kernel-checked curvature identities}, Zenodo, doi:10.5281/zenodo.23653833 (2026). Own preprint (the tier-X values $-3.848$, $1.50335235220736$, and the isotropy argument are taken from it); not peer reviewed.
+\bibitem{arb} F.~Johansson, \emph{Arb: efficient arbitrary-precision midpoint-radius interval arithmetic}, arXiv:1611.02831 (2016); the page was fetched on 2026-10-26 to check title, author and year; its journal version (IEEE Trans.\ Comput.\ 66(8), 2017) was not opened and is not cited by page.
+\bibitem{mathlib} The mathlib Community, \emph{The Lean mathematical library}, arXiv:1910.09336 (2019), doi:10.1145/3372885.3373824 (CPP 2020); the arXiv page was fetched on 2026-10-26 to check title and authors.
+\bibitem{mont} H.~L. Montgomery, \emph{Minimal theta functions}, Glasgow Math.\ J.\ 30 (1988) 75--85. Cited only through~\cite{p2} (second-hand); the original was not opened. Context: the static optimality of the triangular lattice for Gaussians; nothing here depends on it.
+\end{thebibliography}
+\end{document}

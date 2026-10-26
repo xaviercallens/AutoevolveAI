@@ -18,7 +18,7 @@ Setting (all conventions fixed here; see CERTIFIED_CURVATURE.md):
   U(t) = (1/4) int [tr X + tr X^{-1} D_t] dkappa,  X = D_0^{1/2}.   2 tr D^{1/2} <= tr X + tr X^{-1} D  =>  E <= U, U(0) = E(0).
   U(t) + U(-t) - 2 U(0) = (1/4) int tr(X^{-1} sum_n (1 - cos) [H_n(t) + H_n(-t) - 2 H_n(0)])
                         = t^2 [ Upp0 + pert(t) ],  Upp0 = (1/4) int tr(X^{-1} G),  G = sum_n (1 - cos) H_n''(0),
-  |pert(t)| <= (int tr X^{-1}) * sum_n e_n,  e_n = max_entries sup_{|xi| <= T0} |H_n''(xi) - H_n''(0)|.
+  |pert(t)| <= (int tr X^{-1}) * sum_n e_n,  e_n = sum_entries sup_{|xi| <= T0} |H_n''(xi) - H_n''(0)| (sum over the three entries, not the max).
   So for 0 < t <= T0:  (U(t) + U(-t) - 2U(0)) / t^2 <= B := Upp0.hi + trW.hi * sum e_n.hi.
 
 Duffy coordinates on the four triangles of the reduced square (apex Gamma): kappa = s v(t'), v = (1/2, t'-1/2) (right)
@@ -167,10 +167,11 @@ def tail_bounds(a: arb, qmax: int, path: str, t0: arb) -> dict:
         acc["Dt"] += cnt * wt * bh
         acc["Gs"] += cnt * ws * bh2
         acc["Gt"] += cnt * wt * bh2
-        acc["E"] += cnt * 3 * bh2
+        acc["E"] += cnt * 6 * bh2  # |H''(xi) - H''(0)| <= 2 bh2 per entry, 3 entries (audit NB-1: was 3 * bh2)
         acc["Tr"] += cnt * (2 * k * smax * smax * r * r + 4 * pa) * (-pa * smin * smin * r * r).exp()
         last = cnt * (ws + wt + 3) * (bh + bh2) * (1 + th * th)
-    # remainder beyond r_K = r_tail + 50: terms decay faster than geometrically (ratio < 1/2), bounded by 2 * last
+    # remainder beyond r_K = r_tail + 50: ASSERTED, not computed here. The term ratio is below exp(-pi a smin^2 2 r delta) < e^-40
+    # at r ~ 55 (delta = 1/4, a >= 1/2; independent audit NB-6), hence < 1/2, so the tail is bounded by 2 * last.
     rem = 2 * last
     return {"r_tail": r_tail, "F1_sup_fprime": F1, "D_entry": acc["D"] + rem, "G_entry": acc["G"] + rem,
             "Ds_entry": acc["Ds"] + rem, "Dt_entry": acc["Dt"] + rem, "Gs_entry": acc["Gs"] + rem,

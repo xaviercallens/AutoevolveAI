@@ -21,7 +21,7 @@ on the curvature, not a two-sided enclosure of Lap E_zp: the method bounds `E'' 
 
 Corollary for the preregistered wording (Tier C-human, conditional on E being C^2 at rho): `E''(0) <= B_hi`, and
 `E''(0) = 2 Lap E_zp(rho)` (isotropy at rho, P2 section 3.1, and |tau'(0)|^2/y^2 = 4, `code/b2_tau_speed.py`), so
-**Lap E_zp(rho) <= -0.92078 < 0** (P2's Tier X value is -3.848; the bound is consistent and one-sided).
+**Lap E_zp(rho) <= -0.92078 < 0** (needs E_zp of class C^2 near rho; rho critical and the Hessian isotropic, both by the order-3 stabilizer, P2 3.1) (P2's Tier X value is -3.848; the bound is consistent and one-sided).
 
 | piece | tier | where |
 |---|---|---|
@@ -33,7 +33,7 @@ Corollary for the preregistered wording (Tier C-human, conditional on E being C^
 | assembling these into the entry formula of `hess_and_dd` (M, M', M'' of 4 pi^2 a^2 R_i R_j - 2 pi a delta_ij along P_t) | C-human, X cross-check (finite differences, 7e-7) | `code/b2_explore2.py` |
 | enclosures of U''(0), int tr X^-1, the perturbation sum, lattice tails, the stability margin | C-ball | `code/b2_certify.py`, `run_a1_shear_main.json` |
 | E <= U by integrating the 2x2 inequality; the window identity; interchange of sum and integral; mirror symmetry E(-t) = E(t); E is the same functional as P2's E_zp | C-human | section 2 |
-| Lap E_zp(rho) <= B_hi/2 (needs E in C^2 and isotropy at rho) | C-human | section 2.6 |
+| Lap E_zp(rho) <= B_hi/2 (needs E in C^2, E_zp of class C^2 near rho, rho critical and Hessian isotropic by the order-3 stabilizer) | C-human | section 2.6 |
 
 ## 1. Method
 
@@ -57,10 +57,10 @@ Notation and conventions (also in `result.json`, `conventions`):
 - `esum = sum_{all n} sum_entries sup_{|xi| <= t0} |H_n''(xi) - H_n''(0)|`. The bound uses `(1 - cos) <= 2` and
   `||E||_op <= sum |entries|`, and has a factor-2 slack.
 
-Why not certify Lap E_zp directly: the second variation of `tr D^{1/2}` has a concave part (P2 PROOF 3.5,
-Daleckii-Krein) that is singular at branch degeneracies and at Gamma. The majorant replaces it by the linear-response
-term, which is a single absolutely convergent lattice sum against fixed matrices. The concave part is `<= 0`, so it
-can only help, and the majorant makes this one-sided by construction. No SL2(Z) invariance, criticality of rho or
+A direct enclosure of Lap E_zp was not attempted; the producer chose the linear-response majorant because it is affine
+in D_t and needs no matrix square root of the perturbed lattice. (The second variation of `tr D^{1/2}` is smooth away
+from Gamma; a direct certified enclosure of E''(0) with the same Duffy machinery appears feasible and is left open.)
+The majorant is a single absolutely convergent lattice sum against fixed matrices, and it is one-sided by construction. No SL2(Z) invariance, criticality of rho or
 isotropy is used for the headline theorem.
 
 **Enclosure (b2_certify.py, Arb).**
@@ -122,7 +122,7 @@ shapes `!= rho` (mod SL2(Z)) arbitrarily close to `rho`.
 2.6 **Curvature corollary.** If `E` is C^2 at 0:
 
 - `E(t) + E(-t) - 2E(0) <= t^2 B_hi` gives `E''(0) <= B_hi`.
-- With isotropy at rho (P2 3.1, Tier C) and `|tau'(0)|^2/y^2 = 4`, `E''(0) = 2 Lap E_zp(rho)`.
+- With E_zp of class C^2 near rho, rho critical (grad E_zp(rho) = 0, from the order-3 stabilizer; otherwise a grad E_zp . tau''(0) term appears), isotropy at rho (P2 3.1, Tier C) and `|tau'(0)|^2/y^2 = 4`, `E''(0) = 2 Lap E_zp(rho)`.
 
 Tier X: `E''(0) = -7.6961`, against P2's `2 x (-3.848)`.
 
@@ -217,4 +217,7 @@ python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes
 python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/ZeroPointCert/RejectA2.lean         # must fail
 python -I code/b2_make_result.py .
 ```
+Note (independent audit NB-7): on coarse grids (N = 16, depth 2) the certifier raises `fprime_enc: ball too wide`; it fails loudly and
+returns no ball. Note (NB-1, NB-6): the esum tail factor in `b2_certify.py` was corrected from 3*bh2 to 6*bh2 after the runs
+(effect nil: tail 2.2e-25 vs 9.2e-13 outward rounding; not re-run), and the shell-remainder decay ratio (< e^-40 at r ~ 55) is asserted, not computed.
 python-flint 0.6.0 is installed in `.scratchpad/b2_pylib` (pip --target) and put on `sys.path` by `b2_certify.py`.

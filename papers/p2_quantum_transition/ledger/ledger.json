@@ -1,0 +1,441 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "B1-C-0001",
+   "statement": "Model and units: planar Bravais lattice of shape tau, one particle per cell, V = eps exp(-pi a r^2/l^2); hbar_eff = hbar/sqrt(m eps l^2); harmonic energy per particle E = E_st + hbar_eff E_zp, E_st = (1/2) sum_{R != 0} exp(-pi a |R|^2), E_zp = (1/2) <sqrt(lam_1(D)) + sqrt(lam_2(D))>_BZ with D(k) = sum_{R != 0} (1 - cos k.R) Hess V(R); GCM units rho sigma^2 = 1/(pi a), hbar/sqrt(m eps sigma^2) = hbar_eff sqrt(pi a).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:0e9f8405fca765f14d3e138dd7e24a15eb22bda3abfa593db031fbff4d26b642",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0002",
+   "statement": "Curvature balance: E depends on the lattice only up to rotation, so E(gamma tau) = E(tau) on SL2(Z); gamma(tau) = (tau - 1)/tau fixes rho with derivative the -120 degree rotation (machine-checked in the prior paper P2, not re-proved here); hence grad E(rho) = 0, the Hessian is scalar and E(tau) - E(rho) = c |tau - rho|^2/y_rho^2 + O(r^3), c = Lap E(rho)/4. With c(h) = c_st + h c_zp, c_st > 0 and c_zp < 0: c > 0 iff h < h* = -c_st/c_zp. Invariance, smoothness and the chain rule are not formalised.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "B1-C-0001"
+   ],
+   "evidence": "sha256:525ec391b9ebd76dbd76c35a5e102e804b1a699140cff3055016f67023db0cfc",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0003",
+   "statement": "First order: in the disk coordinate w = (tau - rho)/(tau - conj rho) the stabiliser of rho is D3 (w -> omega w, omega^3 = 1, plus a reflection), whose only cubic invariant is Re w^3. With Delta E_st = s2 r^2 + s3 r^3 cos 3 theta and Delta E_zp = z2 r^2 + z3 r^3 cos 3 theta, the tie coupling T = Delta E_st/(-Delta E_zp) = h* + kappa r cos 3 theta + O(r^2), kappa = (s3 + h* z3)/|z2|. If kappa != 0 a lower shape exists for some h < h*, so the transition is first order (a Landau cubic term); the two mirror rays Re tau = 1/2 and |tau| = 1 differ by 60 degrees, so cos 3 theta = +-1 on them and the slopes of T in |w| are equal and opposite. Lambda_1 = min over dynamically stable shapes of T.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "B1-C-0002"
+   ],
+   "evidence": "sha256:410d9e0705d10e4024f43bcdcc78b8fbcaf2d7041ac0cac4a90e1d3ab569823d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0004",
+   "statement": "Lindemann scaling: harmonic <|u|^2>/l^2 = h U(a), U = (1/2)<tr D^{-1/2}>_BZ; gamma = sqrt(<|u|^2>)/a_nn with a_nn^2 = 2/sqrt3; Lambda_L(gamma_c) = gamma_c^2 a_nn^2/U(a), so Lambda_L is proportional to gamma_c^2 (0.9 gamma_c -> 0.81, 1.1 gamma_c -> 1.21) and Lambda_1/Lambda_L = (gamma(Lambda_1)/gamma_c)^2. For the Coulomb crystal gamma^2 ~ r_s^{-1/2} so r_s* ~ gamma_c^{-4}. Lindemann is a heuristic.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "B1-C-0001"
+   ],
+   "evidence": "sha256:7926156181774cc52d16d17e965ca8ce11a4dbb14c335d410b6d4dc609aa0623",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0005",
+   "statement": "SCHA for Gaussians in closed form: with w_R Gaussian of covariance C_R = h <(1 - cos k.R) D_eff^{-1/2}>, <exp(-b|R + w|^2)> = det(I + 2bC)^{-1/2} exp(-b R^T (I + 2bC)^{-1} R) (b = pi a); E_SCHA = (h/4)<tr D_eff^{1/2}> + (1/2) sum_{R != 0} <V(R + w_R)>, stationary at D_eff = sum_R (1 - cos k.R)<Hess V(R + w_R)> (standard condition, verified numerically not re-derived); for h -> 0, E_SCHA = E_st + h E_zp + O(h^2).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "B1-C-0001"
+   ],
+   "evidence": "sha256:7d9579fe91f90d20df4e2bc48fede17664f1673b589d148e789bf21ebf07dfa5",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0006",
+   "statement": "Scope of SCHA: for each shape the T = 0 SCHA energy is a variational (Rayleigh-Ritz) upper bound on the true ground-state energy, and differences of upper bounds do not order the true energies; its O(h^2) energy contains the quartic anharmonicity at first order but not the second-order cubic term; it has no exchange. 'SCHA removes the transition' is a statement about the approximate landscape.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "B1-C-0005"
+   ],
+   "evidence": "sha256:509df18a2b64f73c7dbf3961262ac6d35e6b4de0d60ab5c6f65bd072a36f0476",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0007",
+   "statement": "The 2D Fourier transform of exp(-pi a r^2) is a^{-1} exp(-pi k^2/a) > 0 for all k (closed form): the Gaussian has no negative Fourier component.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:e5885d98d3e81fb0797720ddca8d71ebfc218d9860cde7d14a5ece9cdd70a1c1",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0011",
+   "statement": "Reading of the QMC Lindemann anchor: in Astrakharchik et al. gamma = sqrt<(r - r_c)^2>/a_L with a_L 'the lattice length'; we read a_L as the nearest-neighbour distance and the displacement as the total 2D one. The definition of a_L was not found in the text; this reading is an assumption.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "B1-C-0101"
+   ],
+   "evidence": "sha256:cdf0ec287bdf887c565e84d047f44fabf83f0ef272c8a4e7fb8f8d9d79ed37c3",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0101",
+   "statement": "Astrakharchik et al. (cond-mat/0608246v2 p.3): Lindemann ratio at the 2D dipole quantum melting gamma = 0.230(6); hard disks 0.279; Yukawa bosons 0.235(15); Coulomb bosons 0.24(1). [quotation verified verbatim against the fetched text; the real citation gate verdict is REFUSED because the kind is not theorem-like, so Tier L is not claimed]",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:53a25dcd8a4bfbf84b6af677c25a8c2bc36e4783bf554140e831e22ac138b9ce",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0102",
+   "statement": "Prestipino et al. (1809.07515v1 p.11): the Gaussian repulsion (n = 2) is a marginal case, no evidence of a cluster crystal in 2D or 3D. [quotation verified verbatim against the fetched text; the real citation gate verdict is REFUSED because the kind is not theorem-like, so Tier L is not claimed]",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:0c7a87216df73c0837f3091179b036265d21db065849251990f0c633e6386739",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0103",
+   "statement": "Prestipino et al. (p.15): for n = 2 (u~(k) everywhere positive) crystallization is swept away at zero temperature (mean field). [quotation verified verbatim against the fetched text; the real citation gate verdict is REFUSED because the kind is not theorem-like, so Tier L is not claimed]",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:a568a5c185a3eb54849b5d9f6aa97ae16c7d60a98b7b2eb666ded69befe88487",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0104",
+   "statement": "Prestipino et al. (p.25): freezing is completely washed out in the Gaussian n = 2 case (mean field). [quotation verified verbatim against the fetched text; the real citation gate verdict is REFUSED because the kind is not theorem-like, so Tier L is not claimed]",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:7a890dd7a09ff3430853835b0830f8287b159b1a1dda8c8d965cfcd9d2c10cc5",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0105",
+   "statement": "Prestipino et al. (p.25): the mean-field state is realistic for weak interparticle forces. [quotation verified verbatim against the fetched text; the real citation gate verdict is REFUSED because the kind is not theorem-like, so Tier L is not claimed]",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:4b75f8d24ab4d699c36d5331680b83e239807816dc8c145e9ffa706851616636",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0106",
+   "statement": "Henkel et al. (1001.3250v2 p.2): dressed potential U(r) = C6~/(r^6 + Rc^6). [quotation verified verbatim against the fetched text; the real citation gate verdict is REFUSED because the kind is not theorem-like, so Tier L is not claimed]",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:a394f99bffa0f24e5a86b95b9d64c6ea2428990691134f7e5b0bb8b5a59c12ef",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0107",
+   "statement": "Henkel et al. (p.2): the momentum space potential U~ has negative attractive contributions around k_rot ~ 2 pi/Rc. [quotation verified verbatim against the fetched text; the real citation gate verdict is REFUSED because the kind is not theorem-like, so Tier L is not claimed]",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:5b9402f8469aea7c05dc3449185d975dc100d9c97973c22f7e42a07df4654fd6",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0108",
+   "statement": "Henkel et al. (p.4, note 26): C6~ M/(hbar^2 Rc^4) < 1e-2 for the parameters of Fig. 3c. [quotation verified verbatim against the fetched text; the real citation gate verdict is REFUSED because the kind is not theorem-like, so Tier L is not claimed]",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:321016269915f90f29c92c5498d4c097ac62330bfa3e956ebe41322bbb342e0b",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0109",
+   "statement": "Zeiher et al. (1602.06313v3 p.2): U_ij = U0/(1 + (R/Rc)^6). [quotation verified verbatim against the fetched text; the real citation gate verdict is REFUSED because the kind is not theorem-like, so Tier L is not claimed]",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:e47140c8266de6e5c00d757571550a96e3c6ba186c05b1992ef59853e5475629",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0110",
+   "statement": "Zeiher et al. (p.3): U0/2pi ~ 1.8 kHz. [quotation verified verbatim against the fetched text; the real citation gate verdict is REFUSED because the kind is not theorem-like, so Tier L is not claimed]",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:dcde4572d84682152c9276795f08230f846160b25ff995bcf1e526752f379f1c",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0111",
+   "statement": "Zeiher et al. (p.7): cut-off radius Rc/a_lat = 2.02 for the 31P1/2 state. [quotation verified verbatim against the fetched text; the real citation gate verdict is REFUSED because the kind is not theorem-like, so Tier L is not claimed]",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:151a3aea435d210328d6ac8647465bf4f2f63d01db8d35b079cd7310b0f05d86",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0112",
+   "statement": "Zeiher et al. (p.3): optical lattice spacing a_lat = 532 nm. [quotation verified verbatim against the fetched text; the real citation gate verdict is REFUSED because the kind is not theorem-like, so Tier L is not claimed]",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:967270176cdfe9ae699cb98e3e15b3a35e53b4c37e6e162a4541dc31211196ec",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0113",
+   "statement": "Zeiher et al. (p.3): the atoms are rubidium-87. [quotation verified verbatim against the fetched text; the real citation gate verdict is REFUSED because the kind is not theorem-like, so Tier L is not claimed]",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:111a9b39b4d4c36fbcbb8a2f2831132299d26b3772db8281e42dd4059b6df1d8",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0114",
+   "statement": "Zeiher et al. (p.5): extracted loss time 130(20) microseconds against the anticipated tau_r/beta^2 = 2.2 ms. [quotation verified verbatim against the fetched text; the real citation gate verdict is REFUSED because the kind is not theorem-like, so Tier L is not claimed]",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:dfc69475fa2751ef803e6d101692184e5a61ecf4b00ed7b00c200a96c6c43d58",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0115",
+   "statement": "Zeiher et al. (p.3): the 31PJ state has a lifetime of approximately 27 microseconds. [quotation verified verbatim against the fetched text; the real citation gate verdict is REFUSED because the kind is not theorem-like, so Tier L is not claimed]",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:559b06c6b5fbd72c440af8d221e57526fe5202302b8908b0c0e4f9af7a43279a",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0008",
+   "statement": "No cluster or supersolid preemption for a pure Gaussian: its Fourier transform has no negative component (B1-C-0007) and the mean-field literature calls it the marginal case with no cluster crystal in 2D or 3D (B1-C-0102). The sub-agent-read sources that state the negative-Fourier-component criterion are not in this ledger.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "B1-C-0007",
+    "B1-C-0102"
+   ],
+   "evidence": "sha256:190617374b248fa69c29ff090fb2f3c8abee9b871388a8646dd9358fb2004bfb",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-C-0009",
+   "statement": "Rydberg dressing realises a soft-shoulder potential (U0/(1 + (R/Rc)^6) or C6/(r^6 + Rc^6)) whose momentum-space form has negative components; it is not a Gaussian, so it belongs to the cluster/supersolid class, and its quantum parameter hbar/sqrt(m U0 Rc^2) (in units of Rc) cannot be mapped onto the Gaussian hbar_eff window. A true Gaussian interaction was not found in cold-atom platforms (sub-agent search, not in the ledger).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "B1-C-0106",
+    "B1-C-0107",
+    "B1-C-0109"
+   ],
+   "evidence": "sha256:368a9ef77a93c014aa8ec11c92d6f7147f84932c7c7460a4152668ce8b45ae83",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-X-0001",
+   "statement": "B1a: for a in (0.37668, 1.58148) the harmonic spinodal hbar*(a) = -c_st/c_zp exists (a = 0.4 ... 1.5 tested): minimum 0.0877 at a = 0.5, 0.1238 at a = 1, diverging at both ends; negative controls a = 0.3 (c_zp = +0.178) and a = 2.0 have c_zp > 0, no hbar* and no stable shape with Delta E_zp < 0.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "B1-C-0001",
+    "B1-C-0002"
+   ],
+   "evidence": "sha256:53dd173b9a7ed79df93fc4f6c967405ccdb324fb5958b541320f8d62bac0d2f3",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-X-0002",
+   "statement": "First order: a stable oblique lattice reaches the triangular energy at Lambda_1 < hbar* (a = 1: 0.0942 against 0.1238); Lambda_1/hbar* = 0.75-0.78 for a in [0.45, 1.2]; the argmin over the stable sample jumps from the triangular neighbour to 0.30 + 0.96 i between hbar = 0.09 and 0.10 at a = 1; winners are oblique (a <= 1.2) or near-centred-rectangular (a >= 1.3) and lie on the harmonic stability edge (margin 2.3e-5 to 2.4e-3 against 0.034 for the triangular lattice at a = 1); margin >= 0.01 moves Lambda_1 by 3-11 %.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "B1-C-0003"
+   ],
+   "evidence": "sha256:887011888af96fa9cf73f7f480bb581069529f4060bdd9d65c94874940399615",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-X-0003",
+   "statement": "Symmetry test: the slopes of the tie coupling against |w| on the rays Re tau = 1/2 and |tau| = 1 are equal and opposite: slope ratio -1.02 (a = 1), -1.01 (a = 0.5), -1.01 (a = 0.7), -1.01 (a = 0.8), -0.95 (a = 1.2) (prediction -1; both signs are reversed at a = 1.2, so kappa changes sign between a = 1 and 1.2 and the local cubic argument is silent there; the first-order claim rests on Lambda_1 < hbar* in B1-X-0002, not on the cubic term alone).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "B1-C-0003"
+   ],
+   "evidence": "sha256:49e620b8a1743c7b0168fbedf4485cdf2408ccd3700b6cb2c81a30b27975840c",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-X-0004",
+   "statement": "B1b: harmonic Lindemann ratio at hbar*: >= 0.2798 for all a tested (minimum at a = 0.7), rising towards both ends; at Lambda_1: 0.245-0.273 (a = 0.5-1) inside [0.23, 0.28] for a = 0.5, 0.6, 0.7, 0.8, 0.9, 1 and inside [0.23, 0.30] for a = 0.45, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1; Lambda_1 > Lambda_L(0.23) for every a. Inconclusive-to-adverse for 'before melting'.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "B1-C-0004",
+    "B1-C-0101",
+    "B1-C-0011"
+   ],
+   "evidence": "sha256:d15cc7ca823e039909528c825e97aee43b5abf34b10e96f856ed0974a5870c35",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-X-0005",
+   "statement": "B1c: in the T = 0 SCHA the triangular lattice is a local minimum far beyond the harmonic hbar*: at a = 1, Lap E_SCHA = +0.117 at hbar = 0.15 (harmonic -0.101) and +0.008 at 0.30; SCHA spinodals 0.2745 (a = 0.5), 0.3076 (0.7), 0.2943 (1.3), in (0.30, 0.3347) at a = 1; gamma_SCHA there 0.60-0.87.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "B1-C-0005",
+    "B1-C-0006"
+   ],
+   "evidence": "sha256:aba188ace5bfdf88046ea647ae74a404f1b064f4c61394262087ba7eb0f10cc7",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-X-0006",
+   "statement": "SCHA competitors: at the harmonic Lambda_1 every sampled stable competitor lies above the triangular lattice (min Delta E +1.2e-05 to +2.6e-05); continuation-seeded SCHA over 150 shapes per case (a = 1 and 0.5; hbar = Lambda_1, hbar*, 0.2): 144-150 SCHA-stable, 103-114 of them harmonically unstable, 0 below the triangular energy.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "B1-C-0005",
+    "B1-C-0006"
+   ],
+   "evidence": "sha256:53ac98386886280396fdcac81af7f0670e8183e4116ca55aced2850f022a0b1d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-X-0007",
+   "statement": "SCHA controls: hbar -> 0 gives the harmonic energy with remainder 0.177 hbar^2 (ratio 3.84 on doubling); converged D_eff is a variational minimum (E rises 1.3e-5 to 1.2e-4 under perturbation); N = 24/32/48 agree to 3e-11; small-hbar slope extrapolates to -3.843 against the harmonic 4 c_zp = -3.848 (Lap E_SCHA, a = 1); Python and Rust agree to 8.9e-16 on 5 shapes; square lattice flagged unstable. The 0.177, 3.84, 1.3e-5, 1.2e-4 and 3e-11 values are quoted from the producer's TRANSITION.md (t_scha.py output not re-run); the slope and the cross-check were recomputed at paper stage.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "B1-C-0005"
+   ],
+   "evidence": "sha256:4c91cf6860cd10aa913adf1f87e76048f050de55d4cc09e9a627c3f9cc7f9b9a",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-X-0008",
+   "statement": "Harmonic controls: frozen-phonon second difference vs (1/2) e^T D e in 12 cases, max relative difference 6.3e-6, planted bug (dropped Gamma-subtraction term) 0.52; P2 reference values reproduced (E_zp(a = 1, rho) = 1.5033523522, c_zp(1) = -0.96198); Lindemann quadrature Duffy N = 16-128 converged to 1e-13, uniform grids order 1.000.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "B1-C-0001"
+   ],
+   "evidence": "sha256:aca0cd2cd5c7e478c287771d058abb2cee5f8717a355d3d4f90c10d89759fe43",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-X-0009",
+   "statement": "PIMC BLOCKED (not run): fixed commensurate box imposes the shape (no cell-shape moves); at a = 1, hbar = 0.10, competitor 0.30 + 0.96 i the thermodynamic-limit Delta E = -2.86e-4 per particle, finite-size shift -2.0e-4 (M = 8) and -2.0e-5 (M = 12); N |Delta E| = 0.018 (N = 64) to 0.041 (N = 144); hbar omega_min = 0.027 at M = 12 (beta >~ 250).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "B1-C-0004"
+   ],
+   "evidence": "sha256:e86b1a361d65aa9375ff35d2a58a7f637f71649e5b65d79d13830971b91a0d92",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-X-0010",
+   "statement": "The 2D Hankel transform of 1/(1 + (r/Rc)^6) has minimum -0.0448 u~(0) at k Rc = 4.82, first negative at k Rc = 3.75; two cutoffs agree to 4.9e-11; positive control: the same code reproduces pi exp(-k^2/4) for exp(-r^2) to 8.9e-16; k = 0 value matches the closed form.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:07b1e68e405cb9b1ab540b0685171cfde991cf2fcb993d11e83373907324710b",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-X-0011",
+   "statement": "Rydberg arithmetic (Rb-87 mass, quoted U0/2pi = 1.8 kHz, Rc = 2.02 x 532 nm): hbar^2/(m Rc^2)/h = 100.7 Hz, U0/(hbar^2/m Rc^2) = 17.9, hbar/sqrt(m U0 Rc^2) = 0.237.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "B1-C-0110",
+    "B1-C-0111",
+    "B1-C-0112",
+    "B1-C-0113"
+   ],
+   "evidence": "sha256:07b1e68e405cb9b1ab540b0685171cfde991cf2fcb993d11e83373907324710b",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-X-0012",
+   "statement": "Rust SCHA module scha.rs (307 lines, sha256 35c65007c97c9f43e2a66e8092940909b29beeefe4e7aa166091a77dc578e98a) at rusty-SUNDIALS commit 9e85e15b23be0c74a665b6a5b74ec02b0bbffc5f (branch physics/p2-zero-point-optimality-2026-10-25, not pushed; the blob hash was read from the git object database): paper-stage rerun cargo test --offline --locked --release -p qf-yukawa-crystal: 63 passed, 0 failed, 1 ignored; Python and Rust SCHA agree to 8.9e-16 on 5 shapes. Clippy and fmt not rerun.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "B1-C-0005"
+   ],
+   "evidence": "sha256:42194334a0e95762994b91d832e434cd268e7d783e874a035873e35748ddcbfb",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "B1-X-0013",
+   "statement": "Preregistered kill criterion ('if the transition lies beyond melting or disappears beyond harmonic, report that (negative result)') is met: the transition disappears in the T = 0 SCHA (B1-X-0005, B1-X-0006) and the harmonic spinodal lies at or beyond the Lindemann band (B1-X-0004); the first-order point precedes melting only for gamma_c >= gamma(Lambda_1) and a ~ 0.5-1. Priors: B1a 0.85 confirmed, B1b 0.4 not supported, B1c 0.25 refuted within SCHA. Holds within SCHA (no second-order cubic term, no exchange), PIMC not run, Bravais lattices only; unaudited.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "B1-X-0001",
+    "B1-X-0002",
+    "B1-X-0004",
+    "B1-X-0005",
+    "B1-X-0006",
+    "B1-C-0006"
+   ],
+   "evidence": "sha256:4266da3c3c59526f6f49901e639287af09b46e5a399730de53c8f36b84d6124a",
+   "audit": null
+  }
+ ]
+}

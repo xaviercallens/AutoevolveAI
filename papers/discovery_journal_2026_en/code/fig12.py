@@ -1,4 +1,4 @@
-"""Figure du chapitre 12 : courbure de l'énergie de point zéro au réseau triangulaire,
+"""Figure for chapter 12 (English edition): courbure de l'énergie de point zéro au réseau triangulaire,
 en fonction du paramètre a de la cloche exp(-pi a r^2) (a grand = cloche étroite).
 
 Toutes les valeurs sont lues dans le dossier du papier doi:10.5281/zenodo.23653833
@@ -39,7 +39,7 @@ def macros(text: str) -> dict[str, str]:
 
 def fr(x: float, _pos: int | None = None) -> str:
     s = f"{x:g}"
-    return s.replace("-", "−").replace(".", ",")
+    return s.replace("-", "−")
 
 
 def main() -> None:
@@ -84,13 +84,13 @@ def main() -> None:
     for r in inside:
         ax.annotate(fr(round(r, 3)), (r, 0.0), xytext=(-4, 6), textcoords="offset points", ha="right",
                     fontsize=7.5, color=OKABE["vermillion"])
-    ax.text(0.77, -1.28, r"$c<0$ : le triangle est un sommet local," "\npas un fond", ha="center", va="bottom",
+    ax.text(0.77, -1.28, r"$c<0$: the triangle is a local peak," "\nnot a bottom", ha="center", va="bottom",
             fontsize=7.5, color=OKABE["vermillion"])
-    ax.text(0.09, 0.86, "← cloche plus large", fontsize=7.5, color=OKABE["black"])
-    ax.text(9.3, 0.86, "cloche plus étroite →", fontsize=7.5, color=OKABE["black"], ha="right")
-    ax.plot([], [], marker="o", ls="none", color=OKABE["vermillion"], label="testée, contre-exemple trouvé")
-    ax.plot([], [], marker="s", ls="none", color=OKABE["green"], label="testée, pas de contre-exemple")
-    ax.plot([], [], marker="o", ls="none", mfc="none", mec=GREY, label="hors fenêtre (non affirmé)")
+    ax.text(0.09, 0.86, "← wider bell", fontsize=7.5, color=OKABE["black"])
+    ax.text(9.3, 0.86, "narrower bell →", fontsize=7.5, color=OKABE["black"], ha="right")
+    ax.plot([], [], marker="o", ls="none", color=OKABE["vermillion"], label="tested, counterexample found")
+    ax.plot([], [], marker="s", ls="none", color=OKABE["green"], label="tested, no counterexample")
+    ax.plot([], [], marker="o", ls="none", mfc="none", mec=GREY, label="outside the window (not claimed)")
     ax.legend(loc="lower right", fontsize=7, frameon=False)
     ax.set_xlim(0.085, 9.5)
     ax.set_ylim(-1.35, 0.95)
@@ -98,8 +98,8 @@ def main() -> None:
     ax.xaxis.set_minor_locator(NullLocator())
     ax.xaxis.set_major_formatter(FuncFormatter(fr))
     ax.yaxis.set_major_formatter(FuncFormatter(fr))
-    ax.set_xlabel(r"paramètre $a$ de la répulsion en cloche $e^{-\pi a r^2}$")
-    ax.set_ylabel(r"courbure $c$ au réseau triangulaire")
+    ax.set_xlabel(r"parameter $a$ of the bell-shaped repulsion $e^{-\pi a r^2}$")
+    ax.set_ylabel(r"curvature $c$ at the triangular lattice")
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
     fig.tight_layout()

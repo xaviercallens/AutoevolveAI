@@ -48,22 +48,27 @@ deux mutants. Le poids total est $2+2+1+1=6$.
 \end{itemize}
 Avec le même nombre de mutants, les chances diffèrent ($1/3$ ou $2/3$)~: le simple décompte ne suffit pas, d'où
 l'erreur de la pré-annonce. Mais le rapport gain/perte vaut $2=r$ dans les deux cas, et c'est ce rapport qui donne
-la formule~: $(1-1/2)/(1-1/16)=8/15$ pour un mutant seul. Contre-épreuve~: l'étoile à trois sites n'est pas
-isotherme (le centre est remplacé deux fois plus souvent), et un mutant posé au centre n'envahit qu'avec la chance
-$5/12$, au lieu de $4/7$ (figure~\ref{fig:c07}).
+la formule~: $(1-1/2)/(1-1/16)=8/15$ pour un mutant seul. Contre-épreuve~: l'étoile à trois sites (un centre
+relié à deux feuilles) n'est pas isotherme. Sa colonne du centre fait $2$ et celle de chaque feuille $1/2$~: le
+centre est remplacé deux fois plus souvent que la moyenne, et quatre fois plus souvent qu'une feuille. Un mutant
+posé au centre n'envahit qu'avec la chance $5/12$, au lieu de $4/7$~; sur une feuille, $2/3$~; placé au hasard,
+$7/12$. Ces trois valeurs sont démontrées dans Lean. La figure~\ref{fig:c07} montre aussi l'étoile à quatre sites
+(un centre, trois feuilles), où la population bien mélangée donnerait $8/15$~: le centre n'envahit qu'avec
+$392/1265$, une feuille avec $168/253$, un mutant placé au hasard avec $728/1265$. Ces valeurs-là sont seulement
+calculées.
 \end{encadre}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{figures/c07_graphes}
-\caption{Chance d'invasion d'un mutant seul, en fractions exactes~: réseaux isothermes en bleu, étoile en orange~; en vert, l'étoile avec des poids à l'équilibre, qui retrouve $4/7$.}
+\caption{Chance d'invasion d'un mutant seul, en fractions exactes, à $r=2$~: à gauche trois sites (valeurs démontrées dans Lean), à droite quatre sites (valeurs seulement calculées, niveau~X). Réseaux isothermes en bleu, étoile en orange~; en vert, l'étoile à trois sites avec des poids à l'équilibre, qui retrouve $4/7$.}
 \label{fig:c07}
 \end{figure}
 
 \section*{Comment on s'est assuré que ce n'est pas faux}
 
-En résumé~: \niveau{A} pour le théorème démontré, \niveau{C} pour la lecture biologique, \niveau{X} pour les valeurs
-numériques de l'étoile à quatre sites.
+En résumé~: \niveau{A} pour le théorème démontré et pour les valeurs de l'étoile à trois sites, \niveau{C} pour la
+lecture biologique, \niveau{X} pour les valeurs numériques de l'étoile à quatre sites de la figure.
 
 Pour le théorème, \og le juge a regardé\fg. Le noyau de Lean, le petit programme qui contrôle chaque pas
 logique, a accepté toutes les démonstrations, avec seulement les trois axiomes standard de la liste blanche. Un
@@ -88,8 +93,8 @@ registre reste marqué \og non audité\fg~: aucun humain n'a encore vérifié qu
   forment pas des lignes de somme $1$.
 \item \og Chance d'envahir\fg{} veut dire ici la limite d'une puissance de matrice~; le lien avec une loi sur les
   trajectoires est la définition usuelle, non formalisée (\niveau{C}).
-\item Les valeurs de l'étoile à quatre sites viennent d'un calcul Python en fractions, non vérifié par le noyau
-  (\niveau{X}).
+\item Les valeurs de l'étoile à quatre sites (figure, à droite) viennent d'un calcul Python en fractions, non
+  vérifié par le noyau (\niveau{X})~; celles de l'étoile à trois sites, elles, sont démontrées dans Lean.
 \item Aucune nouveauté mathématique n'est revendiquée~: les résultats datent de 2005, 2015 et 2024. Les auteurs ne
   connaissent pas de formalisation antérieure, mais n'ont pas fait de recherche systématique. La portée biologique
   (tissus, amplificateurs de sélection) est une interprétation, sans aucune donnée.

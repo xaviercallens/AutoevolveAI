@@ -1,4 +1,4 @@
-"""Figure du chapitre 13 : reproduction du certificat Sandier--Serfaty (aucune preuve revendiquée).
+"""Figure for chapter 13 (English edition): reproduction du certificat Sandier--Serfaty (aucune preuve revendiquée).
 
 Valeurs lues dans papers/prog_sandier_serfaty_audit/gen_numbers.tex (macros générées par gen_inputs.py
 à partir des journaux d'exécution ; doi:10.5281/zenodo.23653827). Panneau (a) : durée des six étapes du
@@ -46,13 +46,13 @@ def sci(s: str) -> float:
 
 
 def fr(x: float, _pos: int | None = None) -> str:
-    return f"{x:g}".replace("-", "\u2212").replace(".", ",")
+    return f"{x:g}".replace("-", "\u2212")
 
 
 def main() -> None:
     mc = macros(REC / "gen_numbers.tex")
-    stages = [("préparation", "SSATInitCore"), ("λ et μ", "SSATCalcLam"), ("K", "SSATCalcK"),
-              ("bornes des dérivées", "SSATBdsup"), ("grille globale", "SSATGlobalGrid"), ("hessienne", "SSATInsideHess")]
+    stages = [("setup", "SSATInitCore"), ("λ and μ", "SSATCalcLam"), ("K", "SSATCalcK"),
+              ("derivative bounds", "SSATBdsup"), ("global grid", "SSATGlobalGrid"), ("Hessian", "SSATInsideHess")]
     secs = [num(mc[k]) for _, k in stages]
     child = num(mc["SSAPosChild"])
     assert abs(sum(secs) - child) < 0.5, (sum(secs), child)
@@ -63,8 +63,8 @@ def main() -> None:
     lo, hi = num(mc["SSACalLo"]), num(mc["SSACalHi"])
     ident = 6 * kk + lam + 2 * math.pi * mu
     assert lo <= w_tri <= hi and abs(ident - w_tri) < 1e-9, (ident, w_tri)
-    negs = [("réseau carré", num(mc["SSANegSquare"])), ("décalage oublié", num(mc["SSANegShift"])),
-            ("facteur 2π oublié", num(mc["SSANegNoTwoPi"]))]
+    negs = [("square lattice", num(mc["SSANegSquare"])), ("shift forgotten", num(mc["SSANegShift"])),
+            ("factor 2π forgotten", num(mc["SSANegNoTwoPi"]))]
     assert all(not (lo <= v <= hi) for _, v in negs)
 
     plt.rcParams.update({"font.family": "DejaVu Serif", "font.size": 8.5})
@@ -84,16 +84,16 @@ def main() -> None:
     ax1.set_yticklabels(names, fontsize=7.5)
     ax1.set_xlim(0, 290)
     ax1.xaxis.set_major_formatter(FuncFormatter(fr))
-    ax1.set_xlabel("secondes (reproduction du 25 octobre)")
-    ax1.set_title(f"(a) six étapes, {fr(round(child))} s au total", fontsize=8.5)
+    ax1.set_xlabel("seconds (reproduction of 25 October)")
+    ax1.set_title(f"(a) six steps, {fr(round(child))} s in total", fontsize=8.5)
 
     half = (hi - lo) / 2
     resid = abs(sci(mc["SSAReId"]))
-    dist = [("recalcul depuis\nles formules", resid, OKABE["green"])] + [
+    dist = [("recomputed from\nthe formulas", resid, OKABE["green"])] + [
         (n.replace(" ", "\n", 1), abs(v - w_tri), OKABE["vermillion"]) for n, v in negs]
     xs = list(range(len(dist)))
     ax2.axhline(half, color=OKABE["blue"], lw=1.2, ls="--")
-    ax2.text(len(dist) - 0.6, half * 3, "demi-largeur de la bande certifiée", fontsize=6.5, color=OKABE["blue"], ha="right")
+    ax2.text(len(dist) - 0.6, half * 3, "half-width of the certified band", fontsize=6.5, color=OKABE["blue"], ha="right")
     for x, (n, v, col) in zip(xs, dist):
         ax2.plot([x], [v], marker="o", ms=5, color=col)
     ax2.set_yscale("log")
@@ -101,8 +101,8 @@ def main() -> None:
     ax2.set_xticks(xs)
     ax2.set_xticklabels([d[0] for d in dist], fontsize=7)
     ax2.set_xlim(-0.5, len(dist) - 0.5)
-    ax2.set_ylabel("écart à la valeur exacte")
-    ax2.set_title("(b) contrôle 6K + λ + 2πμ = W", fontsize=8.5)
+    ax2.set_ylabel("distance from the exact value")
+    ax2.set_title("(b) check 6K + λ + 2πμ = W", fontsize=8.5)
     fig.tight_layout()
     OUT.mkdir(parents=True, exist_ok=True)
     for ext in ("pdf", "png"):

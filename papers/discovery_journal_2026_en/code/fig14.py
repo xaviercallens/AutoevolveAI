@@ -1,4 +1,4 @@
-"""Figure du chapitre 14 : les douze étapes du certificat revendiqué, et la part refaite dans le noyau Lean.
+"""Figure for chapter 14 (English edition): les douze étapes du certificat revendiqué, et la part refaite dans le noyau Lean.
 
 Lit le tableau des étapes de papers/p2_sandier_serfaty_lean/main.tex (doi:10.5281/zenodo.23656804) et
 vérifie les totaux contre les macros de gen_numbers.tex (1 685 129 sur 1 238 829 689 opérations).
@@ -21,10 +21,10 @@ OKABE = {"black": "#000000", "orange": "#E69F00", "sky": "#56B4E9", "green": "#0
          "blue": "#0072B2", "vermillion": "#D55E00", "grey": "#999999"}
 IVORY = "#FFFFF0"
 
-FR_NAMES: dict[str, str] = {"1": "constantes", "2": "coefficients", "3": "grande table", "4": "test du cœur",
-                            "5": "valeur au bord", "6": "λ et μ", "7": "K", "8": "assertions",
-                            "9": "bornes des dérivées", "10": "grille globale", "11": "partie négative",
-                            "12": "hessienne"}
+EN_NAMES: dict[str, str] = {"1": "constants", "2": "coefficients", "3": "big table", "4": "core test",
+                            "5": "boundary value", "6": "λ and μ", "7": "K", "8": "assertions",
+                            "9": "derivative bounds", "10": "global grid", "11": "negative part",
+                            "12": "Hessian"}
 
 
 def macro_int(text: str, name: str) -> int:
@@ -67,21 +67,21 @@ def main() -> None:
     ax.set_facecolor(IVORY)
     ys = list(range(len(rows)))[::-1]
     for y, (num, ops, ported) in zip(ys, rows):
-        label = f"{num}. {FR_NAMES[num]}"
+        label = f"{num}. {EN_NAMES[num]}"
         if ops == 0:
-            note = "(comptée avec 10)" if num == "11" else "(assertions seules, vérifiées sur les nombres exacts)"
+            note = "(counted with 10)" if num == "11" else "(assertions only, checked on the exact numbers)"
             ax.text(1.3, y, note, va="center", fontsize=6.8, color=OKABE["grey"])
         else:
             ax.barh([y], [ops], left=1, color=OKABE["green"] if ported else OKABE["grey"], height=0.62)
-            ax.text(ops * 1.3, y, f"{ops:,}".replace(",", "\u202f"), va="center", fontsize=6.8)
+            ax.text(ops * 1.3, y, f"{ops:,}", va="center", fontsize=6.8)
         ax.text(0.8, y, label, va="center", ha="right", fontsize=7.5)
     ax.set_xscale("log")
     ax.set_xlim(1, 8e10)
     ax.set_yticks([])
-    ax.set_xlabel("opérations d'intervalles (multiplications et inversions), échelle logarithmique")
-    ax.set_title(f"4 étapes sur 12 refaites dans le noyau : {share:.3f} % du calcul".replace(".", ","), fontsize=8.5)
-    ax.legend(handles=[Patch(color=OKABE["green"], label="refaite dans le noyau Lean"),
-                       Patch(color=OKABE["grey"], label="pas encore portée")],
+    ax.set_xlabel("interval operations (multiplications and inversions), logarithmic scale")
+    ax.set_title(f"4 steps out of 12 redone in the kernel: {share:.3f} % of the computation", fontsize=8.5)
+    ax.legend(handles=[Patch(color=OKABE["green"], label="redone in the Lean kernel"),
+                       Patch(color=OKABE["grey"], label="not yet ported")],
               loc="upper right", fontsize=7, frameon=False)
     for side in ("top", "right", "left"):
         ax.spines[side].set_visible(False)

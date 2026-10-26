@@ -1,4 +1,4 @@
-"""Figure du chapitre 15 : rejeu par le noyau du corpus openai/NavierStokesAndEuler (doi:10.5281/zenodo.23661381).
+"""Figure for chapter 15 (English edition): rejeu par le noyau du corpus openai/NavierStokesAndEuler (doi:10.5281/zenodo.23661381).
 
 (a) déclarations envoyées au noyau par fermeture, lues dans le tableau de rejeu de
 papers/p2_navier_stokes_audit/main.tex, et auxiliaires sautés par conception, lus dans AUDIT.md.
@@ -71,19 +71,19 @@ def main() -> None:
     mins = [ns[2] / 60000.0, eu[2] / 60000.0]
     ax1.bar(names, decl, color=[OKABE["sky"], "#F0E442"], width=0.75)
     for i, (d, s, m, mod) in enumerate(zip(decl, sks, mins, [ns[0], eu[0]])):
-        ax1.text(i, d + 1200, f"{d:,}".replace(",", "\u202f"), ha="center", fontsize=7.5)
-        ax1.text(i, d / 2, f"{mod:,}".replace(",", "\u202f") + " modules\n" + f"{m:.1f} min".replace(".", ",")
-                 + "\n" + f"{s} auxiliaires\nsautés", ha="center", va="center", fontsize=6.2, color="black")
+        ax1.text(i, d + 1200, f"{d:,}", ha="center", fontsize=7.5)
+        ax1.text(i, d / 2, f"{mod:,}" + " modules\n" + f"{m:.1f} min"
+                 + "\n" + f"{s} auxiliary\ndeclarations skipped", ha="center", va="center", fontsize=6.2, color="black")
     ax1.set_ylim(0, 62000)
     ax1.set_yticks([0, 20000, 40000, 60000])
-    ax1.set_yticklabels(["0", "20\u202f000", "40\u202f000", "60\u202f000"])
-    ax1.set_title("(a) déclarations envoyées au noyau", fontsize=8.5)
+    ax1.set_yticklabels(["0", "20,000", "40,000", "60,000"])
+    ax1.set_title("(a) declarations sent to the kernel", fontsize=8.5)
     ax1.set_xlim(-0.5, 1.5)
     for side in ("top", "right"):
         ax1.spines[side].set_visible(False)
 
-    checks = ["liste des axiomes", "vérificateur\nmodule par module", "rejeu complet\npar le noyau"]
-    cols = ["module truqué", "module honnête\nqui l'importe"]
+    checks = ["axiom list", "module-by-module\nchecker", "full replay\nby the kernel"]
+    cols = ["rigged module", "honest module\nthat imports it"]
     # True = la fausse déclaration est détectée.
     caught = [[not seen_axioms, not seen_axioms], [lc_forge_rc1, not lc_user_rc0], [replay_rej, replay_rej]]
     for i in range(len(checks)):
@@ -91,7 +91,7 @@ def main() -> None:
             ok = caught[i][j]
             y = len(checks) - 1 - i
             ax2.add_patch(plt.Rectangle((j, y), 0.95, 0.9, color=OKABE["green"] if ok else OKABE["vermillion"], alpha=0.85))
-            ax2.text(j + 0.475, y + 0.45, "détectée" if ok else "passe\ninaperçue", ha="center", va="center",
+            ax2.text(j + 0.475, y + 0.45, "caught" if ok else "goes\nunnoticed", ha="center", va="center",
                      fontsize=7.5, color="white")
     ax2.set_xlim(-0.05, len(cols))
     ax2.set_ylim(-0.05, len(checks))
@@ -102,7 +102,7 @@ def main() -> None:
     ax2.tick_params(length=0)
     for side in ("top", "right", "left", "bottom"):
         ax2.spines[side].set_visible(False)
-    ax2.set_title("(b) une fausse preuve « 2 = 3 » plantée", fontsize=8.5)
+    ax2.set_title("(b) a planted false proof of \"2 = 3\"", fontsize=8.5)
     fig.tight_layout()
     OUT.mkdir(parents=True, exist_ok=True)
     for ext in ("pdf", "png"):

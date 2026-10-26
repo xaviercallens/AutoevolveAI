@@ -50,7 +50,8 @@ in Lean.
 
 \section*{How we made sure it is not wrong}
 
-The four proof files compile, and the command that lists the starting assumptions (the \emph{axioms}) finds only
+The four proof files compile: one per statement (D1, D1b, D2, the last one also containing the counterexample),
+plus one file of verifier controls, which holds the check described further on. The command that lists the starting assumptions (the \emph{axioms}) finds only
 the three standard principles accepted by everyone. The same audit applied to the upstream theorem gives the same
 list. Two traps planted on purpose, a gap (\texttt{sorry}) and an invented axiom, were flagged as they should be.
 Another check confirms that the repulsion $t\mapsto t$, which grows with distance instead of decreasing, is indeed
@@ -60,7 +61,8 @@ Each result was then re-checked by another instance of the same AI model, which 
 not by a human). It recompiled everything and redid its own audit, its own controls and its own calculations.
 Verdict: ``confirmed with corrections'', corrections of wording and scope. A reviewer, also an AI, asked for further
 corrections, which were applied. On 26 October, a complete replay in the Lean kernel, the small program that
-checks every step, passed without error on the three modules.
+checks every step, passed without error on the three modules of the statements; by rule, that replay left out the
+control files, the fourth one among them.
 
 For this book, the energies in figure~\ref{fig:c16} were recomputed in two ways, an exact formula and a direct sum
 over the points, and recover the published values. These floating-point calculations illustrate; they prove

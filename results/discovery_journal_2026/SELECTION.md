@@ -45,7 +45,7 @@ justification in `scores.json` citing the inventory field, audit file, replay re
   rounds) *and* a record that its corrections were applied (REVISION.md, response files, or a memory note). 2 = such a
   verdict without a record of corrections. A review mentioned only in run notes, with no verdict file (ED-01, ED-02), is
   scored at the lower value. 1 = the author's own checks (preregistered gates, internal audits). The '5-Round
-  Peer-Reviewed' label of the 19 October batch scores 1: AI-agent review with no audit artifact, and the same batch's
+  Peer-Reviewed' label of the 19 October batch scores 1: a label with no review behind it (no audit artifact; the bundled review file came from a script that calls no reviewer), and the same batch's
   review files were withdrawn as script-generated (23525655, 23468458). 0 = nothing.
 - **C3 reproducibility:** 3 = re-run by an agent other than the producer with matching output, documented (audit
   recompile/rerun, verifier recompile, replay). 2 = the record ships code + data + commands (a reproduction bundle,

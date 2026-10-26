@@ -49,26 +49,30 @@ mutants. The total weight is $2+2+1+1=6$.
 \end{itemize}
 With the same number of mutants, the chances differ ($1/3$ or $2/3$): simple counting is not enough, hence the
 error in the pre-announcement. But the gain/loss ratio is $2=r$ in both cases, and it is this ratio that gives
-the formula: $(1-1/2)/(1-1/16)=8/15$ for a single mutant. Counter-test: the three-site star is not isothermal
-(the centre is replaced twice as often), and a mutant placed at the centre takes over with chance only
-$5/12$, instead of $4/7$ (figure~\ref{fig:c07}).
+the formula: $(1-1/2)/(1-1/16)=8/15$ for a single mutant. Counter-test: the three-site star (a centre joined to
+two leaves) is not isothermal. Its centre column adds up to $2$ and each leaf column to $1/2$: the centre is
+replaced twice as often as the average, and four times as often as a leaf. A mutant placed at the centre takes
+over with chance only $5/12$, instead of $4/7$; on a leaf, $2/3$; placed at random, $7/12$. These three values
+are proved in Lean. Figure~\ref{fig:c07} also shows the four-site star (a centre, three leaves), where a
+well-mixed population would give $8/15$: the centre takes over with only $392/1265$, a leaf with $168/253$, a
+mutant placed at random with $728/1265$. Those values are only computed.
 \end{encadre}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{figures/c07_graphes}
-\caption{Chance of invasion by a single mutant, in exact fractions: isothermal networks in blue, star in orange; in green, the star with weights at equilibrium, which gives back $4/7$.}
+\caption{Chance of invasion by a single mutant, in exact fractions, at $r=2$: on the left three sites (values proved in Lean), on the right four sites (values only computed, level~X). Isothermal networks in blue, star in orange; in green, the three-site star with weights at equilibrium, which gives back $4/7$.}
 \label{fig:c07}
 \end{figure}
 
 \section*{How we made sure it is not wrong}
 
-In short: \niveau{A} for the proved theorem, \niveau{C} for the biological reading, \niveau{X} for the numerical
-values of the four-site star.
+In short: \niveau{A} for the proved theorem and for the values of the three-site star, \niveau{C} for the
+biological reading, \niveau{X} for the numerical values of the four-site star in the figure.
 
 For the theorem, ``the judge has looked.'' The Lean kernel, the small program that checks every logical step,
 accepted all the proofs, with only the three standard axioms of the whitelist. An independent auditor, an AI agent
-distinct from the author but from the same family of models, recompiled everything in its own directory, then
+distinct from the one that produced the work but from the same family of models, recompiled everything in its own directory, then
 replayed every declaration in the kernel with a second tool: no error. It recomputed the star and the circle with
 its own program in exact fractions, and found the same values.
 
@@ -88,8 +92,8 @@ axioms \emph{and} the replay \emph{and} the search for these forbidden options. 
   to $1$.
 \item ``Chance of taking over'' here means the limit of a matrix power; the link with a law on trajectories is the
   usual definition, not formalized (\niveau{C}).
-\item The values for the four-site star come from a Python computation in fractions, not verified by the kernel
-  (\niveau{X}).
+\item The values for the four-site star (figure, right) come from a Python computation in fractions, not
+  verified by the kernel (\niveau{X}); those for the three-site star, by contrast, are proved in Lean.
 \item No mathematical novelty is claimed: the results date from 2005, 2015 and 2024. The authors know of no earlier
   formalization, but did not do a systematic search. The biological significance (tissues, selection amplifiers)
   is an interpretation, with no data at all.

@@ -46,17 +46,22 @@ def file_ref(p: Path) -> dict:
 
 
 def rec(cid: str, tier: str, kind: str, statement: str, depends: list[str], ev: dict, short: str) -> dict:
-    r = {"schema_version": 1, "id": cid, "statement": statement, "tier": tier, "kind": kind, "depends_on": depends, "evidence": blob(ev), "audit": None}
+    r = {"schema_version": 1, "id": cid, "statement": statement, "tier": tier, "kind": kind, "depends_on": depends, "evidence": blob(ev), "audit": dict(AUDIT)}
     SHORT[cid] = short
     return r
 
 
 SHORT: dict[str, str] = {}
+AUDIT: dict[str, object] = {
+    "auditor": "a separate Claude agent (not the producer or the paper writer)", "date": "2026-10-26",
+    "verdict": "ACCEPT_WITH_CORRECTIONS", "report": "papers/p2_quantum_transition/AUDIT.md",
+    "human_audit": False, "note": "independent AI audit; corrections B1-B4 and N1-N11 applied in the revision (REVISION.md); no human audit",
+}
 
 
 def arg(text: str, **kw: object) -> dict:
     return {"kind": "argument", "text": text, "derivation": f"{PAPER_TEX}, Section 3 (step-by-step derivation)", "source_note": file_ref(DATA / "TRANSITION.md"),
-            "status": "producer-stage human-style argument written by an AI agent; no audit", **kw}
+            "status": "human-style argument written by an AI agent; independent AI audit AUDIT.md (ACCEPT_WITH_CORRECTIONS); no human audit", **kw}
 
 
 def lit(key: str, statement_short: str) -> tuple[str, dict]:
@@ -73,12 +78,12 @@ def num(files: list[Path], **kw: object) -> dict:
     return {"kind": "numeric", "tier": "X", "claim_licence": False, "ran": True,
             "instrument": "Python/numpy producer code results/proposal2/2026-10-26/B1/code (b1_lib.py etc.), rusty-SUNDIALS crates/qf-yukawa-crystal "
                           f"at {RUSTY_SHA} (not pushed), and the paper-stage scripts in papers/p2_quantum_transition",
-            "files": [file_ref(p) for p in files], "status": "producer-stage floating-point result; no audit", **kw}
+            "files": [file_ref(p) for p in files], "status": "floating-point result; independent AI audit AUDIT.md reproduced the headline numbers; no human audit", **kw}
 
 
 LIT_SHORT = {
     "B1-C-0101": "quote, Astrakharchik et al. p.3: Lindemann ratio 0.230(6) at 2D dipole melting; others 0.235(15), 0.24(1), 0.279",
-    "B1-C-0102": "quote, Prestipino et al. p.11: Gaussian (n = 2) is a marginal case, no cluster crystal in 2D or 3D",
+    "B1-C-0102": "quote, Prestipino et al. p.11: Gaussian (n = 2) is a marginal case, no evidence of a cluster crystal in 2D or 3D",
     "B1-C-0103": "quote, Prestipino et al. p.15: for n = 2 crystallization is swept away at T = 0 (mean field)",
     "B1-C-0104": "quote, Prestipino et al. p.25: freezing completely washed out for n = 2 (mean field)",
     "B1-C-0105": "quote, Prestipino et al. p.25: mean field realistic for weak interparticle forces",
@@ -92,6 +97,7 @@ LIT_SHORT = {
     "B1-C-0113": "quote, Zeiher et al. p.3: rubidium-87",
     "B1-C-0114": "quote, Zeiher et al. p.5: dressed-atom loss time 130(20) us vs 2.2 ms expected",
     "B1-C-0115": "quote, Zeiher et al. p.3: bare Rydberg state lifetime about 27 us",
+    "B1-C-0116": "quote, Astrakharchik et al. p.3: a_L^-1 = (sqrt(3) n/2)^(1/2), i.e. a_L = nearest-neighbour distance",
 }
 
 
@@ -145,12 +151,13 @@ def main() -> int:
                       "The 2D Fourier transform of exp(-pi a r^2) is a^{-1} exp(-pi k^2/a) > 0 for all k (closed form): the Gaussian has no negative Fourier component.",
                       [], arg("Closed-form Fourier transform."), "Gaussian Fourier transform is positive"))
     claims.append(rec("B1-C-0011", "C", "argument",
-                      "Reading of the QMC Lindemann anchor: in Astrakharchik et al. gamma = sqrt<(r - r_c)^2>/a_L with a_L 'the lattice length'; we read a_L as the nearest-neighbour distance and the displacement as the total 2D one. "
-                      "The definition of a_L was not found in the text; this reading is an assumption.",
-                      ["B1-C-0101"], arg("Assumption flagged."), "assumption: a_L = a_nn (not found in the source text)"))
+                      "Reading of the QMC Lindemann anchor: in Astrakharchik et al. gamma = sqrt<(r - r_c)^2>/a_L with a_L 'the lattice length'; the same page defines the inverse lattice site length "
+                      "a_L^-1 = (sqrt(3) n/2)^(1/2), i.e. a_L = a_nn (quotation B1-C-0116); we read <(r - r_c)^2> as the total 2D displacement (r is a 2D position). This displacement reading is ours, not a quoted definition.",
+                      ["B1-C-0101", "B1-C-0116"], arg("Assumption flagged."), "reading: <(r - r_c)^2> is the total 2D displacement (a_L = a_nn is quoted, B1-C-0116)"))
     # literature quotations (Tier C with verbatim check)
     LIT = [("B1-C-0101", "astra_lindemann", "Astrakharchik et al. (cond-mat/0608246v2 p.3): Lindemann ratio at the 2D dipole quantum melting gamma = 0.230(6); hard disks 0.279; Yukawa bosons 0.235(15); Coulomb bosons 0.24(1)."),
-           ("B1-C-0102", "prest_marginal", "Prestipino et al. (1809.07515v1 p.11): the Gaussian repulsion (n = 2) is a marginal case, no evidence of a cluster crystal in 2D or 3D."),
+           ("B1-C-0116", "astra_aL", "Astrakharchik et al. (cond-mat/0608246v2 p.3): in the solid phase the static structure factor has a delta-function peak at the inverse lattice site length a_L^-1 = (sqrt(3) n/2)^(1/2) = 0.93... n^(1/2), i.e. a_L is the nearest-neighbour distance of the triangular lattice at density n."),
+           ("B1-C-0102", "prest_marginal", "Prestipino et al. (1809.07515v1 p.11): the Gaussian repulsion (n = 2) is a marginal case, no evidence of a cluster crystal in 2D or 3D (the authors' summary of the classical Gaussian-core-model literature, refs [37,38], not their mean-field result)."),
            ("B1-C-0103", "prest_swept", "Prestipino et al. (p.15): for n = 2 (u~(k) everywhere positive) crystallization is swept away at zero temperature (mean field)."),
            ("B1-C-0104", "prest_washed", "Prestipino et al. (p.25): freezing is completely washed out in the Gaussian n = 2 case (mean field)."),
            ("B1-C-0105", "prest_mf", "Prestipino et al. (p.25): the mean-field state is realistic for weak interparticle forces."),
@@ -168,12 +175,12 @@ def main() -> int:
         s, ev = lit(key, st)
         claims.append(rec(cid, "C", "argument", s + " [quotation verified verbatim against the fetched text; the real citation gate verdict is REFUSED because the kind is not theorem-like, so Tier L is not claimed]", [], ev, LIT_SHORT[cid]))
     claims.append(rec("B1-C-0008", "C", "argument",
-                      "No cluster or supersolid preemption for a pure Gaussian: its Fourier transform has no negative component (B1-C-0007) and the mean-field literature calls it the marginal case with no cluster crystal in 2D or 3D (B1-C-0102). "
+                      "No cluster or supersolid preemption for a pure Gaussian: its Fourier transform has no negative component (B1-C-0007) and Prestipino et al. call it the marginal case with no evidence of a cluster crystal in 2D or 3D (B1-C-0102; their summary of the classical Gaussian-core-model literature). "
                       "The sub-agent-read sources that state the negative-Fourier-component criterion are not in this ledger.",
                       ["B1-C-0007", "B1-C-0102"], arg("Combination of a closed form and one verbatim quotation."), "no cluster preemption for a pure Gaussian"))
     claims.append(rec("B1-C-0009", "C", "argument",
-                      "Rydberg dressing realises a soft-shoulder potential (U0/(1 + (R/Rc)^6) or C6/(r^6 + Rc^6)) whose momentum-space form has negative components; it is not a Gaussian, so it belongs to the cluster/supersolid class, "
-                      "and its quantum parameter hbar/sqrt(m U0 Rc^2) (in units of Rc) cannot be mapped onto the Gaussian hbar_eff window. A true Gaussian interaction was not found in cold-atom platforms (sub-agent search, not in the ledger).",
+                      "Rydberg dressing realises a soft-shoulder potential (U0/(1 + (R/Rc)^6) or C6/(r^6 + Rc^6)) whose momentum-space form has negative components (Henkel et al., B1-C-0107); it is not a Gaussian. It therefore has the negative Fourier component that the cluster criterion requires "
+                      "(that criterion is attributed to sub-agent-read sources only, not in this ledger), and Henkel et al. (re-read) find roton softening and supersolid formation for it. Its quantum parameter hbar/sqrt(m U0 Rc^2) (in units of Rc) cannot be mapped onto the Gaussian hbar_eff window. A true Gaussian interaction was not found in cold-atom platforms (sub-agent search, not in the ledger).",
                       ["B1-C-0106", "B1-C-0107", "B1-C-0109"], arg("Combination of quotations."), "Rydberg dressing: soft shoulder, not Gaussian"))
     # ---------------------------------------------------------------- Tier X
     claims.append(rec("B1-X-0001", "X", "numeric",
@@ -183,7 +190,8 @@ def main() -> int:
     claims.append(rec("B1-X-0002", "X", "numeric",
                       f"First order: a stable oblique lattice reaches the triangular energy at Lambda_1 < hbar* (a = 1: {a1['Lam_1_edge']['Lam1']:.4f} against {a1['hbar_star']:.4f}); Lambda_1/hbar* = 0.75-0.78 for a in [0.45, 1.2]; "
                       "the argmin over the stable sample jumps from the triangular neighbour to 0.30 + 0.96 i between hbar = 0.09 and 0.10 at a = 1; winners are oblique (a <= 1.2) or near-centred-rectangular (a >= 1.3) and lie on the harmonic stability "
-                      "edge (margin 2.3e-5 to 2.4e-3 against 0.034 for the triangular lattice at a = 1); margin >= 0.01 moves Lambda_1 by 3-11 %.",
+                      "edge (margin 2.3e-5 to 2.4e-3 against 0.034 for the triangular lattice at a = 1); margin >= 0.01 moves Lambda_1 by 3-11 %. "
+                      "Meaning of 'first order': a finite-distortion dynamically stable lattice ties with rho before c(hbar) vanishes; the competitor minimises E over the harmonically stable sample and sits on its boundary, it is not an interior local minimum.",
                       ["B1-C-0003"], num([d / "result_numbers.json", d / "scan_a1.json", d / "scan_a0.5.json", d / "summary.json"]), "first order: Lambda_1 < hbar*; stability-edge winners"))
     claims.append(rec("B1-X-0003", "X", "numeric",
                       "Symmetry test: the slopes of the tie coupling against |w| on the rays Re tau = 1/2 and |tau| = 1 are equal and opposite: slope ratio "
@@ -192,8 +200,10 @@ def main() -> int:
     claims.append(rec("B1-X-0004", "X", "numeric",
                       f"B1b: harmonic Lindemann ratio at hbar*: >= {ex['bands']['min_gamma_hbar_star']:.4f} for all a tested (minimum at a = 0.7), rising towards both ends; at Lambda_1: {ex['bands']['min_gamma_Lam1']:.3f}-{a1['gamma_at_Lam_1_edge']:.3f} (a = 0.5-1) inside [0.23, 0.28] for a = "
                       f"{', '.join(f'{x:g}' for x in ex['bands']['a_inside_023_028'])} and inside [0.23, 0.30] for a = {', '.join(f'{x:g}' for x in ex['bands']['a_inside_023_030'])}; Lambda_1 > Lambda_L(0.23) for every a. "
-                      "Inconclusive-to-adverse for 'before melting'.",
-                      ["B1-C-0004", "B1-C-0101", "B1-C-0011"], num([d / "result_numbers.json", d / "extra_checks.json", d / "summary.json"]), "B1b: gamma at hbar* and Lambda_1 vs band"))
+                      f"The spinodal gamma(hbar*) is >= 0.28 (to rounding; 0.2798 at a = 0.7) only against the band gamma_c <= 0.28; against the harmonic value gamma_c = 0.30 it is "
+                      f"{min(r['gamma_at_hbar_star'] for r in TAB.values() if r['hbar_star'] and r['a'] >= 0.45 and r['gamma_at_hbar_star'] < 0.30):.3f}-{max(r['gamma_at_hbar_star'] for r in TAB.values() if r['hbar_star'] and r['a'] >= 0.45 and r['gamma_at_hbar_star'] < 0.30):.3f} for a = 0.5-0.9, i.e. the spinodal precedes the 0.30 Lindemann point. "
+                      "Inconclusive-to-adverse for 'before melting'. Where Lambda_1 is inside the band the negative verdict on the first-order point rests on SCHA alone. QMC gamma_c anchors are true-<u^2> values, the table gamma is harmonic.",
+                      ["B1-C-0004", "B1-C-0101", "B1-C-0011", "B1-C-0116"], num([d / "result_numbers.json", d / "extra_checks.json", d / "summary.json"]), "B1b: gamma at hbar* and Lambda_1 vs band"))
     s = NUM["scha"]
     claims.append(rec("B1-X-0005", "X", "numeric",
                       f"B1c: in the T = 0 SCHA the triangular lattice is a local minimum far beyond the harmonic hbar*: at a = 1, Lap E_SCHA = +{s['1']['lap_ladder'][5]['lap']:.3f} at hbar = 0.15 (harmonic -0.101) and +{s['1']['lap_ladder'][-1]['lap']:.3f} at 0.30; SCHA spinodals "
@@ -207,7 +217,7 @@ def main() -> int:
                       ["B1-C-0005", "B1-C-0006"], num([d / "scha.json", d / "scha_extend.json"]), "SCHA competitors incl. beyond the harmonic edge: none below"))
     claims.append(rec("B1-X-0007", "X", "numeric",
                       "SCHA controls: hbar -> 0 gives the harmonic energy with remainder 0.177 hbar^2 (ratio 3.84 on doubling); converged D_eff is a variational minimum (E rises 1.3e-5 to 1.2e-4 under perturbation); N = 24/32/48 agree to 3e-11; "
-                      "small-hbar slope extrapolates to -3.843 against the harmonic 4 c_zp = -3.848 (Lap E_SCHA, a = 1); Python and Rust agree to 8.9e-16 on 5 shapes; square lattice flagged unstable. "
+                      "small-hbar slope extrapolates to -3.843 (least-squares line through hbar = 0.0025, 0.005, 0.01; two-point extrapolation -3.846, quadratic -3.848) against the harmonic 4 c_zp = -3.848 (Lap E_SCHA, a = 1); the quadratic fit has hbar^2 coefficient 16.5 and a cubic-in-hbar term comparable to it at hbar = 0.1 (3-point interpolation, not controlled); Python and Rust agree to 8.9e-16 on 5 shapes; square lattice flagged unstable. "
                       "The 0.177, 3.84, 1.3e-5, 1.2e-4 and 3e-11 values are quoted from the producer's TRANSITION.md (t_scha.py output not re-run); the slope and the cross-check were recomputed at paper stage.",
                       ["B1-C-0005"], num([d / "scha_slope_control.json", d / "crosscheck.json", d / "TRANSITION.md"]), "SCHA controls: limit, variational minimum, slope, py = rust"))
     claims.append(rec("B1-X-0008", "X", "numeric",
@@ -227,12 +237,14 @@ def main() -> int:
                       ["B1-C-0110", "B1-C-0111", "B1-C-0112", "B1-C-0113"], num([d / "extra_checks.json", PAPER / "checks.py"]), "Rydberg parameter hbar/sqrt(m U0 Rc^2) = 0.237 (arithmetic)"))
     claims.append(rec("B1-X-0012", "X", "numeric",
                       f"Rust SCHA module scha.rs (307 lines, sha256 {SCHA_RS_SHA}) at rusty-SUNDIALS commit {RUSTY_SHA} (branch physics/p2-zero-point-optimality-2026-10-25, not pushed; the blob hash was read from the git object database): "
-                      "paper-stage rerun cargo test --offline --locked --release -p qf-yukawa-crystal: 63 passed, 0 failed, 1 ignored; Python and Rust SCHA agree to 8.9e-16 on 5 shapes. Clippy and fmt not rerun.",
+                      "paper-stage rerun cargo test --offline --locked --release -p qf-yukawa-crystal: 63 passed, 0 failed, 1 ignored; Python and Rust SCHA agree to 8.9e-16 on 5 shapes. "
+                      "The Rust module is its own implementation of the same Duffy-Gauss zone rule as the Python code (only the real-space dynamical matrix differs), so the 1e-16 agreement tests the code, not the quadrature. Clippy and fmt not rerun.",
                       ["B1-C-0005"], num([HERE / "rust_test.log", d / "crosscheck.json"]), "Rust SCHA module: commit, tests, cross-check"))
     claims.append(rec("B1-X-0013", "X", "numeric",
                       "Preregistered kill criterion ('if the transition lies beyond melting or disappears beyond harmonic, report that (negative result)') is met: the transition disappears in the T = 0 SCHA (B1-X-0005, B1-X-0006) "
-                      "and the harmonic spinodal lies at or beyond the Lindemann band (B1-X-0004); the first-order point precedes melting only for gamma_c >= gamma(Lambda_1) and a ~ 0.5-1. Priors: B1a 0.85 confirmed, "
-                      "B1b 0.4 not supported, B1c 0.25 refuted within SCHA. Holds within SCHA (no second-order cubic term, no exchange), PIMC not run, Bravais lattices only; unaudited.",
+                      "and the harmonic spinodal lies at or beyond the Lindemann band for gamma_c <= 0.28 (B1-X-0004; for gamma_c = 0.30 it precedes the Lindemann point for a = 0.5-0.9); the first-order point precedes melting only for gamma_c >= gamma(Lambda_1) and a ~ 0.5-1. "
+                      "Where Lambda_1 is inside the Lindemann band (a = 0.5-1 for gamma_c <= 0.28, a = 0.45-1.1 for gamma_c = 0.30) the negative verdict rests on SCHA alone. Priors: B1a 0.85 confirmed, "
+                      "B1b 0.4 not supported, B1c 0.25 refuted within SCHA. Holds within SCHA (no second-order cubic O(hbar^2) term, no exchange), PIMC not run, Bravais lattices only; independent AI audit AUDIT.md (ACCEPT_WITH_CORRECTIONS), no human audit.",
                       ["B1-X-0001", "B1-X-0002", "B1-X-0004", "B1-X-0005", "B1-X-0006", "B1-C-0006"], num([d / "result.json", d / "result_numbers.json"]), "net verdict: kill criterion met (negative result)"))
     (HERE / "ledger.json").write_text(json.dumps({"schema_version": 1, "claims": claims}, indent=1, ensure_ascii=False))
     rows = []

@@ -22,6 +22,8 @@ S2 = Path("/home/callensxavier_gmail_com/programmes-2026-10-26/B1/src2")
 
 SRC = {
     "astra": (S1 / "cond-mat_0608246v2", "arXiv:cond-mat/0608246v2 (G. E. Astrakharchik, J. Boronat, I. L. Kurbakov, Yu. E. Lozovik, Quantum phase transition in a two-dimensional system of dipoles)"),
+    # same PDF, text extracted with `pdftotext -raw` (the default extraction scrambles the two-column math of the a_L sentence on p.3)
+    "astraraw": (S1 / "cond-mat_0608246v2.raw", "arXiv:cond-mat/0608246v2 (G. E. Astrakharchik, J. Boronat, I. L. Kurbakov, Yu. E. Lozovik, Quantum phase transition in a two-dimensional system of dipoles; pdftotext -raw)"),
     "prest": (S1 / "1809.07515v1", "arXiv:1809.07515v1 (S. Prestipino, A. Sergi, E. Bruno, Freezing of soft-core bosons at zero temperature: a variational theory)"),
     "henkel": (S2 / "1001.3250", "arXiv:1001.3250v2 (N. Henkel, R. Nath, T. Pohl, Three-dimensional roton excitations and supersolid formation in Rydberg-excited Bose-Einstein condensates)"),
     "zeiher": (S2 / "1602.06313", "arXiv:1602.06313v3 (J. Zeiher et al., Many-body interferometry of a Rydberg-dressed spin lattice)"),
@@ -30,8 +32,11 @@ SRC = {
 # key, source, header prefix of first line, number of lines, line offset, kind, hypotheses, used_for
 CLAIMS = [
     ("astra_lindemann", "astra", "pWe estimate the thermodynamic Lindemann", 5, 0, "numerical result",
-     ["two-dimensional Bose systems at the quantum melting density, QMC", "a_L called 'the lattice length' in the source (our reading: nearest-neighbour distance, Tier C)"],
+     ["two-dimensional Bose systems at the quantum melting density, QMC", "a_L called 'the lattice length' in the source; its definition is the sentence quoted in B1-C-0116 (a_L = nearest-neighbour distance)"],
      "gamma_c band 0.23-0.28 for the harmonic Lindemann comparison"),
+    ("astra_aL", "astraraw", "factor is discontinuous and has a", 7, 0, "statement",
+     ["solid phase of the 2D dipole system at density n", "a_L defined via the delta-function peak of the static structure factor"],
+     "a_L^{-1} = (sqrt(3) n/2)^{1/2}, i.e. a_L is the nearest-neighbour distance of the triangular lattice"),
     ("prest_marginal", "prest", "n > 2 [37]. The Gaussian repulsion", 3, 0, "statement",
      ["mean-field (Gross-Pitaevskii/variational) theory of soft-core bosons at T = 0"], "Gaussian is the marginal GEM case; no cluster crystal in 2D/3D"),
     ("prest_swept", "prest", "potentials and the SVDW interaction. Looking at Table 1", 5, 0, "statement",
@@ -66,10 +71,11 @@ CLAIMS = [
 def page_of(pdf: Path, first_line: str) -> int | None:
     key = re.sub(r"\s+", " ", first_line)[:40]
     n = int(re.search(r"Pages:\s+(\d+)", subprocess.run(["pdfinfo", str(pdf)], capture_output=True, text=True).stdout).group(1))
-    for p in range(1, n + 1):
-        t = subprocess.run(["pdftotext", "-f", str(p), "-l", str(p), str(pdf), "-"], capture_output=True, text=True).stdout
-        if key in re.sub(r"\s+", " ", t):
-            return p
+    for mode in ([], ["-raw"]):
+        for p in range(1, n + 1):
+            t = subprocess.run(["pdftotext", *mode, "-f", str(p), "-l", str(p), str(pdf), "-"], capture_output=True, text=True).stdout
+            if key in re.sub(r"\s+", " ", t):
+                return p
     return None
 
 
@@ -78,7 +84,7 @@ def main() -> int:
     texts: dict[str, tuple[list[str], str, Path]] = {}
     for k, (base, label) in SRC.items():
         raw = Path(str(base) + ".txt").read_bytes()
-        texts[k] = (raw.decode("utf-8").splitlines(), "sha256:" + hashlib.sha256(raw).hexdigest(), Path(str(base) + ".pdf"))
+        texts[k] = (raw.decode("utf-8").splitlines(), "sha256:" + hashlib.sha256(raw).hexdigest(), Path(str(base).replace(".raw", "") + ".pdf"))
     for key, sk, prefix, n, off, kind, hyp, used in CLAIMS:
         lines, dig, pdf = texts[sk]
         i = next(j for j, l in enumerate(lines) if l.startswith(prefix)) + off

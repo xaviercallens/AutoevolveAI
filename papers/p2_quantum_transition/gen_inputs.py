@@ -137,6 +137,14 @@ def macros() -> None:
     mac("RydEnergyHz", f(ry["E_Rc_over_h_Hz"], 1))
     mac("RydRatio", f(ry["U0_over_E_Rc"], 1))
     mac("RydParam", f(ry["hbar_over_sqrt_m_U0_Rc2"], 3))
+    # interaction-set motional scale sqrt(U0 E_Rc)/h (audit N6); E_Rc/h and U0/E_Rc come from checks.py
+    f_int = ry["E_Rc_over_h_Hz"] * ry["U0_over_E_Rc"] ** 0.5
+    mac("RydIntHz", f(f_int, 0))
+    mac("RydInvOmegaMs", f(1e3 / (2 * 3.141592653589793 * f_int), 2))
+    mac("RydPeriodMs", f(1e3 / f_int, 1))
+    mac("RydSlowMs", f(1e3 / ry["E_Rc_over_h_Hz"], 0))
+    mac("RydFactorLo", f(1e3 / (2 * 3.141592653589793 * f_int) / 0.130, 0))
+    mac("RydFactorHi", f(1e3 / f_int / 0.130, 0))
     edge = [r["Lam_1_edge"]["margin_full"] for r in TAB if r["Lam_1_edge"]]
     mac("BAMarginEdgeLo", sci(min(edge), 1))
     mac("BAMarginEdgeHi", sci(max(edge), 1))
@@ -170,6 +178,31 @@ def macros() -> None:
     mac("RustPassed", m.group(1))
     mac("RustFailed", m.group(2))
     mac("RustIgnored", m.group(3))
+    # --- revision (audit B2, N1, N3, N10): macros emitted from data, never typed by hand
+    np = __import__("numpy")
+    below = [r for r in TAB if r["hbar_star"] and r["a"] >= 0.45 and r["gamma_at_hbar_star"] < 0.30]
+    mac("BCBelowLo", f(min(r["gamma_at_hbar_star"] for r in below), 3))
+    mac("BCBelowHi", f(max(r["gamma_at_hbar_star"] for r in below), 3))
+    mac("BCBelowALo", f"{min(r['a'] for r in below):g}")
+    mac("BCBelowAHi", f"{max(r['a'] for r in below):g}")
+    for nm, aa in (("Half", 0.5), ("One", 1.0)):
+        e = next(x for x in EXT if x["a"] == aa and abs(x["lam"] - BY_A[aa]["hbar_star"]) < 1e-3)
+        mac(f"ExtGamStar{nm}", f(e["gamma_rho"], 2))
+    sl = sorted(SLOPE, key=float)
+    xs = [float(k) for k in sl]
+    ys = [SLOPE[k]["slope_from_0"] for k in sl]
+    mac("SlopeTwoPt", f(2 * ys[0] - ys[1], 3))
+    q2 = np.polyfit(xs, ys, 2)
+    mac("SlopeQuad", f(q2[2], 3))
+    mac("SlopeQuadCoef", f(q2[1], 1))
+    mac("SlopeCubCoef", f(q2[0], 0))
+    mac("SlopeCubAtTen", f(q2[0] * 0.1 ** 3, 3))
+    mac("SlopeSqAtTen", f(q2[1] * 0.1 ** 2, 3))
+    for nm, aa, xy in (("One", "1", (0.30, 0.96)), ("Half", "0.5", (0.305, 0.955))):
+        pts = [q for q in SCHA_FULL[aa]["profiles"][0]["points"] if q["kind"] == "edge" and q["dE"] == q["dE"]]
+        w = next(q for q in pts if abs(q["x"] - xy[0]) < 1e-6 and abs(q["y"] - xy[1]) < 1e-6)
+        mac(f"SchaEdgeWin{nm}", sci(w["dE"], 2))
+        mac(f"SchaEdgeMin{nm}", sci(min(q["dE"] for q in pts), 1))
     mac("RootOne", "0.37668")
     mac("RootTwo", "1.58148")
     body = "\n".join(f"\\newcommand{{\\{n}}}{{{v}}}" for n, v in MACROS)

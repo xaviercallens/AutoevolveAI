@@ -1,6 +1,6 @@
 # Literature source texts (not redistributed)
 
-The fifteen quotation rows (B1-C-0101 ... B1-C-0115) quote four arXiv papers that the producer fetched from arxiv.org and read. The full texts are not bundled.
+The sixteen quotation rows (B1-C-0101 ... B1-C-0116) quote four arXiv papers that the producer fetched from arxiv.org and read. The full texts are not bundled.
 To re-check: fetch `https://arxiv.org/pdf/<id>` (version as below), compare the PDF hash, run `pdftotext <file>.pdf <file>.txt` (poppler, default options) and compare the text hash with
 `source_sha256` in `ledger/citations/claim_*.json`. Local copies on the producing machine: `/home/callensxavier_gmail_com/programmes-2026-10-26/B1/src/` and `.../src2/`.
 `ledger/run_citation.py` copies each quotation programmatically from this text output and runs the Elenchus citation gate twice (real kind: REFUSED because the kind is not theorem-like;
@@ -15,8 +15,7 @@ kind relabelled only to test verbatim fidelity: ACCEPTED). Neither result is a T
 
 Page numbers in the ledger are PDF page indices found by searching the first line of each quotation in per-page pdftotext output.
 
-Not found in the source text: the definition of the lattice length `a_L` in the Astrakharchik et al. Lindemann sentence (the producer's note claimed a page-3 definition `a_L^-1 = (sqrt(3) n/2)^(1/2)`;
-pdftotext shows only "(aL is the lattice length)"). The reading `a_L` = nearest-neighbour distance is therefore recorded as an assumption (B1-C-0011).
+Revision 2026-10-26 (audit item B1): the definition of the lattice length IS in the Astrakharchik et al. source, on p.3: "In the solid phase static structure factor is discontinuous and has a delta-function peak at inverse lattice site length a_L^-1 = (sqrt(3) n/2)^(1/2) = 0.93... n^(1/2)", i.e. a_L is the nearest-neighbour distance of the triangular lattice at density n. The default pdftotext extraction scrambles that two-column math (the first version of this paper wrongly reported the definition as absent); `pdftotext -raw` keeps it in order. Row B1-C-0116 quotes it from `/home/callensxavier_gmail_com/programmes-2026-10-26/B1/src/cond-mat_0608246v2.raw.txt` (`pdftotext -raw cond-mat_0608246v2.pdf`, sha256 `4a6439a2be7420ee9fe6b9e81aea39a1e0ffd6c68f1443290e5d56f36d824579`; same PDF hash as above).
 
 Other references (sub-agent read, never re-read by us, in no ledger row): arXiv:1402.0840, 1201.0980, 2010.04631, 1107.0828, 2209.02802. Their titles, authors, dates and journal references were
 checked against arxiv.org abstract pages by `ledger/verify_refs.py` (output `ledger/sources/refs_meta.json`); their content was not.

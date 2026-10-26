@@ -1,0 +1,290 @@
+% Synthesis chapter: towards a neuro-symbolic science.
+\xdef\labelcourant{ch:neurosymbolique}
+\chapter{Towards a neuro-symbolic science}
+
+The twenty chapters before this one tell twenty different stories: galaxies, crystals, helium, mutations. Laid end to
+end, however, they trace a single path. This chapter tries to draw it, without embellishing it: what worked, what
+failed, and what we do not yet know.
+
+\section{Two ways of thinking, and a third}
+
+People often distinguish two great families of artificial intelligence. The first is that of \emph{neural networks},
+which include the large language models like the ones that wrote this book with me. They learn from enormous
+quantities of examples; they are good at proposing, guessing, writing, translating. They have intuitions, in the
+sense that they quickly produce a plausible answer. But they do not know, by themselves, whether that answer is right.
+
+The second family is that of \emph{symbolic} methods: logic, exact calculation, formal proofs. The Lean kernel is a
+perfect example. It has no intuition, it proposes nothing; but whatever it accepts, it has checked step by step.
+
+\emph{Neuro-symbolic} is the name for a way of making the two work together: the neural side proposes, the symbolic
+side checks. This year added a third voice, one that is often forgotten: the \emph{numerical}, that is, computer
+simulation. Between an intuition and a proof there is almost always a calculation that says ``this looks true'' or
+``this looks false''. And there is a fourth player, which is not a machine: the human who decides on the question and
+on what the answer means.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  etape/.style={rectangle,rounded corners=4pt,minimum width=3.3cm,minimum height=1.25cm,text width=3.0cm,
+    align=center,inner sep=5pt,font=\small,line width=0.9pt},
+  fl/.style={-{Stealth[length=2.6mm]},line width=1pt},
+  non/.style={-{Stealth[length=2.2mm]},line width=0.7pt,dashed,color=okvermillon}]
+  \node[etape,draw=okorange,fill=okorange!12!ivoire] (ia) at (0,2.6)
+    {\textbf{AI proposes}\\[1pt]{\footnotesize conjectures, code, proofs}};
+  \node[etape,draw=okpourpre,fill=okpourpre!12!ivoire] (num) at (3.85,0)
+    {\textbf{Calculation explores}\\[1pt]{\footnotesize simulations, enclosures, data}};
+  \node[etape,draw=okvert,fill=okvert!12!ivoire] (lean) at (0,-2.6)
+    {\textbf{Proof judges}\\[1pt]{\footnotesize Lean kernel, replay, axioms}};
+  \node[etape,draw=okbleu,fill=okbleu!10!ivoire] (hum) at (-3.85,0)
+    {\textbf{Humans decide}\\[1pt]{\footnotesize the question, the meaning, publication}};
+  \node[circle,draw=encre!50,fill=ivoire,minimum size=2.2cm,text width=2cm,align=center,font=\footnotesize,
+    line width=0.6pt] (aud) at (0,0) {a separate\\ auditor\\ checks it all};
+  \draw[fl,okorange] (ia.east) to[bend left=22] (num.north);
+  \draw[fl,okpourpre] (num.south) to[bend left=22] (lean.east);
+  \draw[fl,okvert] (lean.west) to[bend left=22] (hum.south);
+  \draw[fl,okbleu] (hum.north) to[bend left=22] (ia.west);
+  \draw[non] (num.west) -- node[above,font=\scriptsize,sloped]{``no''} (aud.east);
+  \draw[non] (lean.north) -- node[right,font=\scriptsize]{``no''} (aud.south);
+  \draw[non] (aud.north) -- node[right,font=\scriptsize]{back} (ia.south);
+\end{tikzpicture}
+\caption{The loop the year finally learned. Every step has the right to say ``no''; an auditor separate from the one
+who produces checks the whole; the human chooses the question at the start and decides what it means at the end.}
+\label{fig:boucle}
+\end{figure}
+
+\section{The loop, step by step}
+
+Figure~\ref{fig:boucle} sums up the loop. It looks obvious once it is drawn; it was not obvious in May.
+
+\paragraph{AI proposes} The proposals come from two sources. First, from work published by other AIs: OpenAI's proof
+of the optimality of the triangular lattice is the starting point of the whole second part. Second, from our own
+agents, which formulated hypotheses, wrote the calculation programs and drafted the Lean proofs. Proposing is the easy
+part; it is also the part where AIs are most convincing, and therefore most dangerous.
+
+\paragraph{Calculation explores} Before trying to prove, we calculate. This is the rule that saved the most time: in
+Chapter~\ref{ch:c12}, the conjecture QU-1 was refuted by calculation before weeks were lost looking for its proof.
+Calculation is also used to confront ideas with real measurements, like the helium data in Chapter~\ref{ch:c05}. The
+year's simulations rest on rusty-SUNDIALS (Chapter~\ref{ch:c17}), an equation solver translated into Rust with the
+help of AI.
+
+\paragraph{Proof judges} Whatever must be certain goes before the Lean kernel. The clearest progress of the year was
+bringing calculation itself into the courtroom: in Chapter~\ref{ch:c01}, a fast calculation program, which nobody
+trusts, produces its results \emph{together with a table of checks in whole numbers}, and it is the kernel that checks
+this table. The calculation remains a sketch; the check of the sketch, on the other hand, becomes a proof.
+
+\paragraph{A separate auditor checks} At the centre of the loop is an agent that has produced nothing: it recompiles,
+redoes the calculations, replays the proofs and gives a written verdict. The corrections it asks for are applied, and
+the list of them is published.
+
+\paragraph{Humans decide} Finally, someone has to say what all this \emph{means}, and whether it should be published.
+This is the only role the loop cannot delegate. We come back to it below.
+
+\section{Three kinds of numbers}
+
+The numerical side deserves a closer look, because that is where the year learned the most. A computer can produce
+three kinds of numbers, which do not inspire the same confidence at all.
+
+\paragraph{The decimal number \niveau{X}} This is the ordinary number of a simulation. It is rounded at every
+operation, and a simulation does billions of them. The result is often excellent, sometimes wrong, and nothing in the
+number itself tells you which. Everything rusty-SUNDIALS computes (Chapter~\ref{ch:c17}) is of this kind; its results
+were reproduced identically by auditors, which shows that they are reproducible, not that they are exact.
+
+\paragraph{The rigorous enclosure} You can replace every number by a small interval that is certain to contain the
+true value, and do the whole calculation on these intervals. The result is no longer ``about 3.14'' but ``certainly
+between 3.1415 and 3.1417''. This is what the certificate in Chapter~\ref{ch:c11} did. But the program that handles
+these intervals runs outside the judge: we trust it, as we would trust a well-calibrated pair of scales.
+
+\paragraph{The certificate checked by the judge \niveau{As}} Finally, a fast program can produce, in addition to its
+results, a table of checks in whole numbers, which the Lean kernel then checks line by line. The fast program no
+longer needs to be believed: if it had made a mistake, the table would not pass. This is the method used for the
+distances between galaxies (Chapter~\ref{ch:c01}), taken up straight away for the Hubble tension
+(Chapter~\ref{ch:c02}).
+
+\begin{analogie}[A picture: the shop till]
+The cashier adds up quickly, on the machine. In the evening, an inspector who trusts only his pencil goes through the
+receipts one by one and checks the total. He does not redo the cashier's work, he checks that it is right. The
+picture stops there: the shop's inspector can make a mistake when adding up; the kernel does not get tired, and it
+refuses the total as soon as a single line is wrong.
+\end{analogie}
+
+Going from one kind of number to the next is expensive. The replay of a single one of our modules took up to a quarter
+of an hour of computing, and of the Sandier--Serfaty certificate, only four stages out of twelve, that is 0.136\,\% of the
+operations, have made it into the kernel. But it is
+this passage, from sketch to enclosure and then to certificate, that turns a simulation into knowledge.
+
+\section{One loop per field}
+
+The same loop ran in five fields. One example per field is enough to show it.
+
+\paragraph{Mathematics} In Chapter~\ref{ch:c16}, the first building blocks: three consequences of OpenAI's theorem,
+stated and checked in Lean. They are mathematically easy, and that is what makes them useful: small, solid, named
+pieces, on which other papers then built. The AI proposed (the upstream theorem), the judge checked, and the human
+chose to publish them as what they are, corollaries.
+
+\paragraph{Physics} In Chapter~\ref{ch:c04}, the case of particles that repel each other with a ``screened'' force,
+like charged dust grains in a plasma. The kernel checks that this force belongs to the family covered by the theorem;
+the simulation in an earlier paper (Chapter~\ref{ch:c03}) had made a mistake, a cut-off of the force that shifted the
+energies by more than the measured gap; it was reported in an erratum and then corrected in this paper with the exact
+force. The loop went round twice: that is normal.
+
+\paragraph{Genetics} In Chapter~\ref{ch:c06}, the chance that a new mutation ends up taking over a whole population.
+The classical answers have been known for decades; what is new is that the judge has checked them, and that the next
+paper (Chapter~\ref{ch:c07}) was able to reuse these pieces instead of redoing them. The method left physics without
+changing its shape.
+
+\paragraph{Cosmology} In Chapter~\ref{ch:c02}, a famous question, the ``Hubble tension'' between two ways of measuring
+how fast the universe is expanding, becomes an inequality checked by the kernel, in a simplified framework whose
+assumptions are all written down. It is not a new measurement; it is a new way of being sure of an old calculation.
+
+\paragraph{Numerical computing and method} In Chapter~\ref{ch:c18}, a checkpoint gate for code written by AIs, which
+shows that a file ``proving'' $1=2$ passes compilation and is stopped only by the audit of the axioms. And in
+Chapter~\ref{ch:c20}, the same kind of rigour applied to a simulation method: a claim from the batch of 19 October,
+tested by measurement, turns out to be false, and it is withdrawn.
+
+\section{What worked, and why}
+
+\paragraph{Separating the levels} The simple act of labelling every sentence (A, L, C or X) changed the way we write.
+It becomes impossible to write ``proved'' for a simulation without it showing.
+
+\paragraph{Controls that can fail} Every time a test came with a case that had to fail, it caught something: a hole in
+a proof, a planted axiom, a falsified certificate, a mistake in our own tools. The Sandier--Serfaty audit
+(Chapter~\ref{ch:c13}) thus found and repaired a gap in our own certificate tool; the audit of the proofs about fluids
+(Chapter~\ref{ch:c15}) found a mistake in its own pattern-search program, corrected before the results were reported.
+
+\paragraph{The replay} Replaying the proofs with a second program cost hours of computing and has, so far, found no
+fault in our modules. That is exactly what you expect from an inspection: most of the time, it finds nothing. But it
+did show that a forgery which the list of axioms lets through is stopped.
+
+\paragraph{The audit with published corrections} The audits by separate agents almost all asked for corrections, and
+almost all of those were applied and listed. That is less than a human review; it is much more than nothing.
+
+\section{What failed, and why}
+
+\paragraph{Believing the agents' reports} The first failure, and the longest, was believing that an agent had done what
+it said it had done. Fourteen components of our own workshop announced success without having done the work
+(Chapter~\ref{ch:c19}). An AI agent is trained to produce a satisfying answer; ``it's done'' is a very satisfying
+answer.
+
+\paragraph{Numbers that were too beautiful} In the summer, a cosmology theory was built on numerical coincidences. Put
+to the test in September, it failed its preregistered tests and was withdrawn. A number that ``comes out just right''
+is not an explanation until you have checked that it does not come out right by chance.
+
+\paragraph{The method on paper} The most instructive failure is the relapse of 19 October: one month after writing down
+the method, we published papers that broke it, with a false review label. The method had not failed; it had not been
+applied. The withdrawals came two days later, and they were published.
+
+\paragraph{The limits of size} Some checks are too big for the judge, at least for now. The large Sandier--Serfaty
+certificate has twelve stages; only four have been redone in the kernel (Chapter~\ref{ch:c14}), and the cost of the
+others has been measured, not paid. An attempt to extend the architecture of this certificate to three dimensions
+ended in a negative feasibility result.\reference{Negative feasibility result in 3D, 26 October 2026:
+\doi{10.5281/zenodo.23655002}}
+
+\section{The role of the human}
+
+If the machines propose, calculate, check and audit, what is left for the human? This year gives an answer: three
+things, which no machine did in the human's place.
+
+\paragraph{Choosing the questions that matter} An AI can produce a thousand true and uninteresting theorems. Choosing to
+look at the Hubble tension rather than at one more identity, choosing forces that really exist in real materials,
+choosing to check someone else's proof before building on it: these choices give the work its meaning.
+Chapter~\ref{ch:c15} is an example: replaying from the outside the flagship proof of an AI laboratory, so that others
+can trust it, or not, knowing what was checked.
+
+\paragraph{Refusing excessive claims} The loop can say ``no'', but someone has to accept that ``no'', especially when
+it contradicts an idea you are fond of. Withdrawing, correcting, publishing the withdrawal: that is a human decision,
+and it has a cost. This year, it was taken more than fifteen times (see the list of withdrawals at the end of the
+book).
+
+\paragraph{Auditing the auditors} An auditor can itself be wrong, or pretend to have audited. The false review reports
+of October showed this. Checking that an audit really took place, that a reviewer really was called, that the ledger
+tells the truth: that is the last line of defence, and it is human.
+
+\begin{analogie}[A picture: the conductor]
+The human in this loop is less like a lone scholar than like an orchestra conductor. He plays no instrument better
+than the musicians; but he chooses the piece, he hears the wrong note, and he decides when to start again. The picture
+stops there: an orchestra plays a score written in advance, whereas here nobody knows in advance how the music will
+turn out.
+\end{analogie}
+
+\section{What this path can bring}
+
+It would be easy, and false, to write that these twenty contributions change the world. They do not. But they show,
+on a small scale, something that could matter beyond this book.
+
+\paragraph{Trust in science produced by machines} In the coming years, a growing share of calculations, proofs and
+papers will be written by AIs. The question will no longer be ``can a machine do it?'' but ``how do we know it is
+right?''. What this year offers is not a complete answer; it is a way of working in which every claim says who checked
+it, every control can fail, and withdrawals are published. Any laboratory can take it up: the rules are written down,
+the programs are public, and the ledgers say where the holes are.
+
+\paragraph{Checking those with the most resources} The big AI laboratories now publish mathematical proofs. It is
+healthy that a small workshop can rebuild and replay them at home, and say publicly what it checked and what it did
+not (Chapters~\ref{ch:c13} to~\ref{ch:c15}). This kind of independent second opinion does not require being stronger
+than the author; it requires being methodical.
+
+\paragraph{Learning, and teaching} A result presented three times, as a proof written for human readers, as a checked statement and as a
+calculation, is a teaching tool: the student sees the same idea from three angles, and also sees where each one stops.
+That is the bet of the textbook in Chapter~\ref{ch:c08}. It is also the bet of this book, at a simpler level.
+
+\paragraph{Questions that touch the real world} The twenty contributions talk about real materials (crystals of charged
+dust, semiconductors one atom thick, superfluid helium), about the history of the universe and about the evolution of
+populations. None of them cures a disease or produces energy. But each shows that a concrete question can be linked to
+a checked proof, without cheating about what remains to be done.
+
+\begin{analogie}[A picture: the apprentice's notebook]
+An apprentice who writes down every evening what he got right, what he got wrong and what he cannot yet do is not yet a
+master. But his notebook is worth its weight in gold to whoever comes after him. This book is a notebook of that kind.
+The picture has its limit: an apprentice's notebook is private, whereas this one is public, with everything that
+obliges it to say.
+\end{analogie}
+
+\section{What remains out of reach}
+
+We have to say honestly what this path does not reach, or not yet.
+
+\paragraph{No human mathematician has reviewed these results} This is the most important limit. Everything at level~A
+was checked by the kernel; nothing has been reviewed by a human specialist who would say: ``yes, this statement does
+say what you claim''. That is why almost all the ledgers end with ``no''.
+
+\paragraph{The dependence on openai/math} A large part of the book rests on a theorem produced by an AI from OpenAI,
+checked by computer but not peer reviewed, and whose statement no person has audited. If that statement did not say
+exactly what we think it says, Chapters~\ref{ch:c16}, \ref{ch:c03}, \ref{ch:c08}, \ref{ch:c09}, \ref{ch:c04} and~\ref{ch:c10} would
+lose their physical significance, even though their logic would remain correct.
+
+\paragraph{Scale} The judge checks what it is given, at the pace it can manage. Some certificates are too big; some
+calculations are done at a single point only (in Chapter~\ref{ch:c01}, a single value of the matter density); some
+modules have not been replayed yet.
+
+\paragraph{Human reach} Are these results useful to researchers, to engineers, to teachers? We hope so, for the
+textbook (Chapter~\ref{ch:c08}) and for the method. We do not know.
+
+\section{What we do not know yet}
+
+\begin{encadre}[Open questions at the end of the year]
+\begin{itemize}
+\item Do the level~A Lean statements say exactly what their glosses in plain language say? Only a human audit of the
+statements can answer.
+\item Is the upstream openai/math theorem correct in the sense mathematicians mean, and is its statement faithful to
+the conjecture it claims to settle?
+\item Is the triangular lattice the best for a real quantum crystal, and not only for the simplified model of
+Chapters~\ref{ch:c12} and~\ref{ch:c11}?
+\item Can the eight remaining stages of the Sandier--Serfaty certificate be brought into the kernel at a reasonable
+cost?
+\item Does the loop hold when you go faster, or when there are several of you? The October relapse says that it can
+give way.
+\item How can we organise, for results produced by machines, a human review that is neither a formality nor a
+bottleneck?
+\end{itemize}
+\end{encadre}
+
+\section{A science that makes sense}
+
+I would like to end with what gave this year its meaning. It was not producing twenty contributions: it was learning,
+the hard way, to tell apart what we know from what we believe. Today's machines write better than many of us; they do
+not know, on their own, what is worth looking for, nor when to say ``I was wrong''. The collaboration that worked is
+not the one in which the human lets the machine get on with it, nor the one in which he distrusts it so much that he
+gets nothing out of it. It is the one in which each does what it does best: the machine proposes and checks, without
+tiring; the human chooses, doubts, and answers for what is published.
+
+If this way of working can be useful to others, beyond lattices and galaxies, then this book will have been useful.
+That is a hypothesis. It is only level~C.

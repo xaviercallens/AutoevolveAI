@@ -1,0 +1,514 @@
+% Appendix A -- Analysis background. Include after \appendix via \input{appA_analyse.tex}.
+% Labels prefixed appA: ; bibliography keys prefixed app: (refs_app.tex).
+\chapter{Analysis background}\label{appA:chap}
+
+This appendix collects the analytical tools that the chapters use without always re-proving them:
+\begin{itemize}
+\item interchanging a limit with an integral or a series (§\ref{appA:sec:param});
+\item the Fourier and Laplace transforms (§\ref{appA:sec:fourier});
+\item the Poisson summation formula, in the general case (§\ref{appA:sec:poisson});
+\item the special functions that occur: $\Gamma$, $\operatorname{erfc}$, $J_0$, $K_0$, $Y_0$ and the Struve
+function $\mathbf H_0$ (§\ref{appA:sec:speciales});
+\item lattices in the plane and the fundamental domain of $SL_2(\Z)$ (§\ref{appA:sec:sl2}).
+\end{itemize}
+The level is that of a second-year undergraduate analysis course. The integral is Lebesgue's, but it suffices to be
+able to apply the dominated convergence theorem and term-by-term integration of series, both recalled below.
+
+\begin{warnbox}[: tiers of the statements in this appendix]
+The proofs written here are human proofs \tierC{}: none of them is checked by Lean in this book.
+The statements taken as given (dominated convergence, Fejér's theorem, properties of the Bessel and Struve functions
+taken from the DLMF~\cite{app:dlmf}) are \tierL. The pinned Mathlib contains formal versions of several of them:
+dominated convergence (\lean{MeasureTheory.tendsto_integral_of_dominated_convergence}, file
+\texttt{MeasureTheory/Integral/DominatedConvergence.lean}) and the Poisson summation formula (files
+\texttt{Analysis/Fourier/PoissonSummation.lean} and \texttt{Analysis/SpecialFunctions/Gaussian/PoissonSummation.lean}).
+We have only checked that these files exist; we have neither compared their statements with those of this appendix,
+nor connected those statements to the proofs below.
+\end{warnbox}
+
+%=====================================================================================================================
+\section{Series and integrals depending on a parameter}\label{appA:sec:param}
+
+\subsection{The dominated convergence theorem}
+
+\begin{theorem}[Dominated convergence \tierL]\label{appA:thm:cvd}
+Let $I$ be an interval of $\R$ and $(f_n)$ a sequence of piecewise continuous functions on $I$. Assume that:
+\begin{enumerate}
+\item $(f_n)$ converges pointwise on $I$ to a piecewise continuous function $f$;
+\item there exists $\varphi:I\to\R_+$, integrable on $I$, such that $|f_n(x)|\le\varphi(x)$ for all $n$ and all $x$
+(domination hypothesis).
+\end{enumerate}
+Then the $f_n$ and $f$ are integrable on $I$, and $\int_If_n\to\int_If$.
+\end{theorem}
+
+The essential point is that the dominating function $\varphi$ does not depend on $n$. Without it, the conclusion can
+fail: $f_n=n\,\mathbf 1_{(0,1/n]}$ tends pointwise to $0$ on $(0,1]$, whereas $\int f_n=1$ for all $n$.
+
+\begin{uniremark}\tierL{} The general form of Lebesgue's theorem holds on any measure space $(\Omega,\mathcal F,\mu)$:
+if the $f_n$ are measurable, $f_n\to f$ $\mu$-almost everywhere, and $|f_n|\le g$ $\mu$-a.e.\ for every $n$ with
+$g\in L^1(\mu)$, then $f\in L^1(\mu)$ and $\int|f_n-f|\,d\mu\to0$, hence $\int f_n\,d\mu\to\int f\,d\mu$. No continuity
+is needed; the piecewise-continuous version above is the special case of Lebesgue measure on an interval. The
+probabilistic form (expectations of a.s.\ convergent, dominated random variables) is the case $\mu(\Omega)=1$
+\cite{app:williams}.
+\end{uniremark}
+
+\begin{theorem}[Interchanging series and integral \tierL]\label{appA:thm:serieint}
+Let $(u_n)$ be a sequence of integrable functions on $I$ such that $\sum_n u_n$ converges pointwise to a piecewise
+continuous function and $\sum_n\int_I|u_n|<\infty$. Then $\sum_nu_n$ is integrable and
+$\int_I\sum_nu_n=\sum_n\int_Iu_n$.
+\end{theorem}
+
+\subsection{Continuity and differentiation under the integral sign}
+
+\begin{theorem}[Continuity under the integral sign]\label{appA:thm:cont}
+Let $A$ be a subset of $\R^p$ and $f:A\times I\to\mathbb{C}$ such that $f(\cdot,x)$ is continuous for every $x$, $f(a,\cdot)$
+is piecewise continuous for every $a$, and $|f(a,x)|\le\varphi(x)$ with $\varphi$ integrable. Then
+$F(a)=\int_If(a,x)\,dx$ is continuous on $A$.
+\end{theorem}
+
+\begin{humanproof}
+Let $a_n\to a$ in $A$. The functions $x\mapsto f(a_n,x)$ converge pointwise to $f(a,\cdot)$ and are dominated by
+$\varphi$. Theorem~\ref{appA:thm:cvd} gives $F(a_n)\to F(a)$, and the sequential characterisation of continuity
+concludes.
+\end{humanproof}
+
+\begin{theorem}[Differentiation under the integral sign]\label{appA:thm:deriv}
+Let $J$ be an interval and $f:J\times I\to\mathbb{C}$. Assume that $f(a,\cdot)$ is integrable for every $a\in J$, that
+$\partial f/\partial a$ exists, is continuous in $a$ and piecewise continuous in $x$, and that there exists an integrable
+$\psi$ with $|\partial_af(a,x)|\le\psi(x)$ for all $a,x$. Then $F(a)=\int_If(a,x)\,dx$ is of class $\mathcal C^1$ on $J$,
+and $F'(a)=\int_I\partial_af(a,x)\,dx$.
+\end{theorem}
+
+\begin{humanproof}
+Fix $a\in J$ and a sequence $h_n\to0$, $h_n\ne0$, with $a+h_n\in J$. Set
+$g_n(x)=\bigl(f(a+h_n,x)-f(a,x)\bigr)/h_n$. By definition of the partial derivative, $g_n(x)\to\partial_af(a,x)$ for
+every $x$. By the mean value inequality applied to $t\mapsto f(t,x)$ between $a$ and $a+h_n$,
+$|g_n(x)|\le\sup_t|\partial_af(t,x)|\le\psi(x)$. Theorem~\ref{appA:thm:cvd} gives
+$\bigl(F(a+h_n)-F(a)\bigr)/h_n=\int g_n\to\int\partial_af(a,x)\,dx$. The continuity of $F'$ follows from
+Theorem~\ref{appA:thm:cont} applied to $\partial_af$.
+\end{humanproof}
+
+\begin{remark}[Local domination]
+In practice it suffices that the domination hold on every compact interval $[\alpha,\beta]\subset J$: differentiability
+is a local property. This is how the Laplace transforms below are handled, where the domination is uniform only
+for $t\ge\alpha>0$.
+\end{remark}
+
+\begin{uniremark}\tierL{} In measure-theoretic form: let $(\Omega,\mathcal F,\mu)$ be a measure space, $J\subset\R$ an
+open interval, and $f:J\times\Omega\to\mathbb C$ with $f(a,\cdot)\in L^1(\mu)$ for every $a\in J$. If, for $\mu$-a.e.\
+$\omega$, the map $a\mapsto f(a,\omega)$ is differentiable on $J$ and $|\partial_af(a,\omega)|\le g(\omega)$ for all
+$a\in J$, with $g\in L^1(\mu)$, then $F(a)=\int f(a,\omega)\,\mu(d\omega)$ is differentiable on
+$J$ and $F'(a)=\int\partial_af(a,\omega)\,\mu(d\omega)$. The proof is the one above, with the general dominated
+convergence theorem in place of Theorem~\ref{appA:thm:cvd} (standard).
+\end{uniremark}
+
+\begin{example}[Gaussian moments]\label{appA:ex:moments}
+For $\alpha>0$, $G(\alpha)=\int_\R e^{-\pi\alpha x^2}dx=\alpha^{-1/2}$ (Gaussian integral). On $[\alpha_0,\infty)$ with
+$\alpha_0>0$, $|\partial_\alpha e^{-\pi\alpha x^2}|=\pi x^2e^{-\pi\alpha x^2}\le\pi x^2e^{-\pi\alpha_0x^2}$, which is
+integrable. Theorem~\ref{appA:thm:deriv} gives $\int\pi x^2e^{-\pi\alpha x^2}dx=-G'(\alpha)=\tfrac12\alpha^{-3/2}$.
+Differentiating $m$ times, $\int(\pi x^2)^me^{-\pi\alpha x^2}dx=\frac{(2m)!}{4^mm!}\,\alpha^{-1/2-m}$
+(Exercise~\ref{appA:exo:moments}). The same technique computes, in Chapter~1, the Fourier transform of a Gaussian
+(Theorem~\ref{ch1:thm:poisson}, step~1).
+\end{example}
+
+\subsection{Series of functions}
+
+\begin{proposition}[Normal convergence \tierL]\label{appA:prop:normale}
+Let $(u_n)$ be continuous functions on a subset $A$ of $\R^d$ with $\sum_n\sup_A|u_n|<\infty$. Then
+$\sum_nu_n$ converges uniformly on $A$ and its sum is continuous. If moreover the $u_n$ are $\mathcal C^1$ on an
+open set and $\sum_n\sup|\nabla u_n|<\infty$, the sum is $\mathcal C^1$ and may be differentiated term by term.
+\end{proposition}
+
+\begin{example}[Theta series]
+For a lattice $\Lambda$ in the plane and $\alpha\ge\alpha_0>0$, one has $|x|^2\ge c\,(m^2+n^2)$ for $x=mu+nv$
+(Chapter~1), hence $e^{-\pi\alpha|x|^2}\le e^{-\pi\alpha_0c(m^2+n^2)}$, the general term of a convergent series. The
+series $\Theta_\Lambda(\alpha)$ therefore converges normally on $[\alpha_0,\infty)$, and it is $\mathcal C^\infty$ in
+$\alpha$ there: one may differentiate term by term as often as one likes. The lattice sums
+$S(\alpha)=\sum|P|^2e^{-\pi\alpha|P|^2}$ of Chapter~3 are precisely $-\Theta_\Lambda'(\alpha)/\pi$.
+\end{example}
+
+%=====================================================================================================================
+\section{Fourier and Laplace transforms}\label{appA:sec:fourier}
+
+\subsection{The Fourier transform}
+
+\begin{definition}
+For integrable $f:\R^d\to\mathbb{C}$, the \emph{Fourier transform} of $f$ is
+\[\hat f(\xi)=\int_{\R^d}f(x)\,e^{-2\pi i\,\xi\cdot x}\,dx,\qquad\xi\in\R^d .\]
+\end{definition}
+This is the convention of Chapter~1: the factor $2\pi$ sits in the exponent, and the inversion formula then has no
+factor in front of the integral. Other books, especially in physics, write $\int f(x)e^{-ik\cdot x}dx$; one passes
+from one to the other via $k=2\pi\xi$.
+
+\begin{proposition}[Elementary properties]\label{appA:prop:fourierprop}
+Let $f$ be integrable, $a\in\R^d$, $\lambda>0$ and $M$ an invertible matrix.
+\begin{enumerate}
+\item $\hat f$ is continuous and bounded by $\|f\|_1$.
+\item Translation: $\widehat{f(\cdot-a)}(\xi)=e^{-2\pi i\,a\cdot\xi}\hat f(\xi)$.
+\item Linear change of variables: $\widehat{f\circ M}(\xi)=|\det M|^{-1}\hat f(M^{-\mathsf T}\xi)$.
+\item If $f$ is $\mathcal C^1$ and $f$ and $\partial_jf$ are integrable, then $\widehat{\partial_jf}(\xi)=2\pi
+i\,\xi_j\hat f(\xi)$.
+\end{enumerate}
+\end{proposition}
+
+\begin{humanproof}
+(1) follows from Theorem~\ref{appA:thm:cont}, with $|f(x)e^{-2\pi i\xi\cdot x}|=|f(x)|$ (the version of Theorem~\ref{appA:thm:cont} for a function that is only integrable in $x$ has the same proof). (2) and (3) are the changes
+of variables $y=x-a$ and $y=Mx$ (Jacobian $|\det M|$, and $\xi\cdot M^{-1}y=(M^{-\mathsf T}\xi)\cdot y$). (4) is an
+integration by parts in $x_j$; the boundary term tends to $0$ along a sequence of bounds, because $f$ is integrable
+and has an integrable derivative.
+\end{humanproof}
+
+\begin{example}[Gaussians]\label{appA:ex:gauss}
+For $\alpha>0$, $\widehat{e^{-\pi\alpha|x|^2}}(\xi)=\alpha^{-d/2}e^{-\pi|\xi|^2/\alpha}$. The proof in dimension~1
+(a differential equation for $\hat f$, obtained by differentiation under the integral sign) is step~1 of the proof
+of Theorem~\ref{ch1:thm:poisson}; one passes to dimension $d$ by Fubini, since the exponential factorises. In
+particular $e^{-\pi|x|^2}$ is its own Fourier transform. For a Gaussian with arbitrary covariance,
+item~(3) of Proposition~\ref{appA:prop:fourierprop} gives the general formula.
+\end{example}
+
+\begin{theorem}[Inversion \tierL]\label{appA:thm:inversion}
+If $f$ and $\hat f$ are integrable, then $f(x)=\int\hat f(\xi)e^{2\pi i\,\xi\cdot x}d\xi$ at every point where $f$ is
+continuous.
+\end{theorem}
+
+\subsection{Radial functions in the plane and the Bessel function \texorpdfstring{$J_0$}{J0}}\label{appA:ssec:hankel}
+
+The potentials of Chapters~2 and~3 depend only on the distance $r=|x|$. Their planar Fourier transform is then
+radial too, and it is expressed with the Bessel function $J_0$, defined by
+\begin{equation}\label{appA:eq:J0int}
+J_0(z)=\frac1{2\pi}\int_0^{2\pi}e^{iz\cos\theta}\,d\theta=\frac1\pi\int_0^\pi\cos(z\cos\theta)\,d\theta .
+\end{equation}
+
+\begin{proposition}[Hankel transform of order $0$]\label{appA:prop:hankel}
+If $f(x)=F(|x|)$ is integrable on $\R^2$, then $\hat f(\xi)=2\pi\int_0^\infty F(r)\,J_0(2\pi|\xi|r)\,r\,dr$.
+\end{proposition}
+
+\begin{humanproof}
+In polar coordinates $x=r(\cos\theta,\sin\theta)$, and choosing the axes so that
+$\xi=(|\xi|,0)$ (the integral is rotation invariant), $\xi\cdot x=|\xi|r\cos\theta$. By Fubini,
+\[\hat f(\xi)=\int_0^\infty F(r)\Bigl(\int_0^{2\pi}e^{-2\pi i|\xi|r\cos\theta}d\theta\Bigr)r\,dr
+=2\pi\int_0^\infty F(r)J_0(2\pi|\xi|r)\,r\,dr ,\]
+since $J_0$ is even (replace $\theta$ by $\theta+\pi$ in~\eqref{appA:eq:J0int}).
+\end{humanproof}
+
+\begin{remark}[Check on the Gaussian]
+With $F(r)=e^{-\pi ar^2}$, the proposition and Example~\ref{appA:ex:gauss} give
+$2\pi\int_0^\infty e^{-\pi ar^2}J_0(2\pi kr)\,r\,dr=a^{-1}e^{-\pi k^2/a}>0$: this is the formula used in
+Chapter~3 to contrast the Gaussian, whose transform is positive everywhere, with the soft-shoulder potential of
+Rydberg-dressed atoms, whose planar transform takes negative values. The numerical computation of the latter is the
+Hankel transform above, evaluated by quadrature \tierX.
+\end{remark}
+
+\subsection{The Laplace transform}
+
+\begin{definition}
+Let $\mu$ be a positive measure on $[0,\infty)$ (for example $\mu(da)=w(a)\,da$ with $w\ge0$). Its \emph{Laplace
+transform} is $\mathcal L\mu(t)=\int_0^\infty e^{-ta}\,\mu(da)$, for those $t$ at which the integral converges.
+\end{definition}
+
+\begin{proposition}[A Laplace transform is completely monotone]\label{appA:prop:laplacecm}
+If $\mathcal L\mu(t)<\infty$ for every $t>0$, then $\mathcal L\mu$ is $\mathcal C^\infty$ on $(0,\infty)$ and
+$(-1)^m(\mathcal L\mu)^{(m)}(t)=\int_0^\infty a^me^{-ta}\mu(da)\ge0$.
+\end{proposition}
+
+\begin{humanproof}
+On $[t_0,\infty)$ with $t_0>0$, one has $a^me^{-ta}\le a^me^{-t_0a}\le C_m\,e^{-t_0a/2}$, where
+$C_m=\sup_{a\ge0}a^me^{-t_0a/2}<\infty$. This function is $\mu$-integrable since $\mathcal L\mu(t_0/2)<\infty$.
+Theorem~\ref{appA:thm:deriv} (measure version, same proof) applies $m$ times.
+\end{humanproof}
+This is the ``easy'' direction of Bernstein's theorem (Theorem~\ref{ch1:thm:bernstein},
+Proposition~\ref{ch1:prop:facile}); the converse, that every completely monotone function is a Laplace transform, is
+\tierL.
+
+\begin{uniremark}\tierL{} Bernstein's theorem in full: a function $g:(0,\infty)\to\R$ is completely monotone, i.e.\
+$\mathcal C^\infty$ with $(-1)^mg^{(m)}\ge0$ for all $m\ge0$, if and only if $g=\mathcal L\mu$ for a positive Borel
+measure $\mu$ on $[0,\infty)$ with $\mathcal L\mu(t)<\infty$ for all $t>0$; the measure $\mu$ is then unique
+\cite{bernstein,widder}.
+\end{uniremark}
+
+\begin{example}[Three Laplace transforms used in the book]\label{appA:ex:laplace}
+\begin{enumerate}
+\item \emph{Powers.} For $s>0$ and $t>0$, $t^{-s}=\frac1{\Gamma(s)}\int_0^\infty a^{s-1}e^{-ta}\,da$. Indeed, the
+change of variable $u=ta$ gives
+\[\int_0^\infty a^{s-1}e^{-ta}\,da=t^{-s}\int_0^\infty u^{s-1}e^{-u}\,du=t^{-s}\Gamma(s).\]
+With $t=r^2$ and $s=1/2$, one obtains $1/r=\pi^{-1/2}\int_0^\infty a^{-1/2}e^{-ar^2}da$: the Coulomb potential is
+a mixture of Gaussians. The substitution $a=u^2$ gives the form $1/r=\frac2{\sqrt\pi}\int_0^\infty e^{-r^2u^2}du$,
+the starting point of the Ewald decomposition of case U1 (Chapter~5).
+\item \emph{Dipolar exciton.} Subtracting the same formula written for $r^2+d^2$,
+$\frac1r-\frac1{\sqrt{r^2+d^2}}=\frac2{\sqrt\pi}\int_0^\infty e^{-r^2u^2}\bigl(1-e^{-d^2u^2}\bigr)du$, with a
+positive weight: this is the formula of Chapter~5 (case U1) up to the factor $2$.
+\item \emph{Subordination.} For $\rho>0$, $e^{-\rho\sqrt t}=\int_0^\infty e^{-ta}\,\frac{\rho}{2\sqrt\pi}\,a^{-3/2}
+e^{-\rho^2/(4a)}\,da$ \tierL{}; this is the formula that Chapter~2 uses for the Yukawa potential and for the
+Laplace form of the Keldysh potential.
+\end{enumerate}
+\end{example}
+
+%=====================================================================================================================
+\section{The Poisson summation formula}\label{appA:sec:poisson}
+
+Chapter~1 proves the Poisson formula for Gaussians. Here is the general statement of which it is a special case,
+first in dimension~$1$, then for an arbitrary lattice.
+
+\begin{theorem}[Poisson formula in dimension 1]\label{appA:thm:poisson1}
+Let $f:\R\to\mathbb{C}$ be continuous. Assume there exist $C>0$ and $\delta>0$ such that
+\[|f(x)|\le C(1+|x|)^{-1-\delta}\quad\text{and}\quad|\hat f(\xi)|\le C(1+|\xi|)^{-1-\delta}\qquad(x,\xi\in\R).\]
+Then, for every $x\in\R$, $\displaystyle\sum_{n\in\Z}f(x+n)=\sum_{k\in\Z}\hat f(k)\,e^{2\pi ikx}$, both series
+converging absolutely. In particular $\sum_nf(n)=\sum_k\hat f(k)$.
+\end{theorem}
+
+\begin{humanproof}
+\emph{Step 1: the periodisation.} Set $F(x)=\sum_{n\in\Z}f(x+n)$. On $[0,1]$, $|f(x+n)|\le C(1+|n|-1)^{-1-\delta}$
+for $|n|\ge2$, the general term of a convergent series; the series therefore converges normally on $[0,1]$, and by
+periodicity on $\R$. The function $F$ is continuous (Proposition~\ref{appA:prop:normale}) and $1$-periodic.
+
+\emph{Step 2: its Fourier coefficients.} For $k\in\Z$, by Theorem~\ref{appA:thm:serieint} (the series of the
+integrals of the moduli converges, since it equals $\int_\R|f|<\infty$),
+\[c_k(F)=\int_0^1F(x)e^{-2\pi ikx}dx=\sum_{n\in\Z}\int_n^{n+1}f(y)e^{-2\pi ik(y-n)}dy=\int_\R f(y)e^{-2\pi iky}dy=\hat
+f(k),\]
+since $e^{2\pi ikn}=1$.
+
+\emph{Step 3: the Fourier series converges to $F$.} The hypothesis on $\hat f$ gives $\sum_k|c_k(F)|<\infty$. The series
+$G(x)=\sum_k\hat f(k)e^{2\pi ikx}$ therefore converges normally to a continuous $1$-periodic function, and
+$c_k(G)=\hat f(k)$ (integrate term by term). The function $H=F-G$ is continuous, periodic, and all its Fourier
+coefficients vanish. By Fejér's theorem \tierL, the Cesàro means of the Fourier series of a continuous periodic
+function converge uniformly to it; here they are all zero, hence $H=0$.
+\end{humanproof}
+
+\begin{remark}[Why two decay hypotheses]
+The decay of $f$ makes $F$ continuous; that of $\hat f$ makes the Fourier series absolutely convergent. Without the
+second, the formula can fail: there exist continuous integrable functions for which the series $\sum f(n)$
+converges but does not equal $\sum\hat f(k)$. Gaussians, and more generally Schwartz functions, satisfy
+both hypotheses with any $\delta$.
+\end{remark}
+
+\begin{theorem}[Poisson formula for a lattice]\label{appA:thm:poissonres}
+Let $\Lambda=M\Z^d$ be a lattice in $\R^d$, of covolume $V=|\det M|$, and $\Lambda^*=M^{-\mathsf T}\Z^d$ its dual lattice.
+If $f$ is continuous with $|f(x)|\le C(1+|x|)^{-d-\delta}$ and $|\hat f(\xi)|\le C(1+|\xi|)^{-d-\delta}$, then
+\[\sum_{x\in\Lambda}f(x+y)=\frac1V\sum_{\xi\in\Lambda^*}\hat f(\xi)\,e^{2\pi i\,\xi\cdot y}\qquad(y\in\R^d).\]
+\end{theorem}
+
+\begin{humanproof}
+Apply the $d$-dimensional version of the preceding proof (the torus $\R^d/\Z^d$ in place of
+$\R/\Z$, and Fejér's theorem on the torus \tierL) to $g=f\circ M$. The decay hypotheses pass from $f$ to $g$,
+since $|Mx|\ge\|M^{-1}\|^{-1}|x|$. One obtains $\sum_{n\in\Z^d}g(n+z)=\sum_{k\in\Z^d}\hat g(k)e^{2\pi ik\cdot z}$. Next,
+$\hat g(k)=V^{-1}\hat f(M^{-\mathsf T}k)$ (Proposition~\ref{appA:prop:fourierprop}, item~3). Finally set $y=Mz$:
+$k\cdot z=(M^{-\mathsf T}k)\cdot y$, and $M^{-\mathsf T}k$ ranges over $\Lambda^*$.
+\end{humanproof}
+
+With $f(x)=e^{-\pi\alpha|x|^2}$ and $y=0$, one recovers exactly Theorem~\ref{ch1:thm:poisson}.
+
+\subsection{Application: the idea of Ewald summation}\label{appA:ssec:ewald}
+
+Planar lattice sums of a long-range potential, such as $\sum_{x\in\Lambda\setminus\{0\}}|x|^{-3}$, converge
+slowly: the truncation error at distance $R$ decays like $1/R$. Ewald's method splits the potential in two
+using a Gaussian-mixture representation $V(r)=\int_0^\infty e^{-r^2u^2}w(u)\,du$, with $w\ge0$
+(Example~\ref{appA:ex:laplace}). Choose a parameter $\eta>0$ and write
+\[V(r)=\underbrace{\int_\eta^\infty e^{-r^2u^2}w(u)\,du}_{\text{short range}}+
+\underbrace{\int_0^\eta e^{-r^2u^2}w(u)\,du}_{\text{smooth, long range}} .\]
+\begin{itemize}
+\item The short-range part decays like $e^{-\eta^2r^2}$: its sum over the lattice converges very fast in
+direct space.
+\item The smooth part is a mixture of wide Gaussians. Theorem~\ref{appA:thm:poissonres} turns its sum
+into a sum over the dual lattice of narrow Gaussians $e^{-\pi^2|\xi|^2/u^2}$, which also converges very fast.
+\end{itemize}
+The result does not depend on $\eta$: this is a natural check of the code. Case U1 of Chapter~5 reports
+precisely that the Ewald energy of rusty-SUNDIALS does not vary with this splitting parameter by more than
+$9.0\times10^{-15}$ \tierX.
+
+%=====================================================================================================================
+\section{Special functions}\label{appA:sec:speciales}
+
+We prove only the elementary properties here. The others are cited from the NIST \emph{Digital Library of
+Mathematical Functions}~\cite{app:dlmf} (Chapters~5 for $\Gamma$, 7 for $\operatorname{erf}$, 10 for the
+Bessel functions, 11 for the Struve functions) \tierL.
+
+\subsection{The function \texorpdfstring{$\Gamma$}{Gamma}}
+For $s>0$, $\Gamma(s)=\int_0^\infty u^{s-1}e^{-u}du$. An integration by parts gives $\Gamma(s+1)=s\Gamma(s)$, hence
+$\Gamma(n+1)=n!$. The substitution $u=\pi x^2$ gives $\Gamma(1/2)=\int_\R e^{-\pi x^2}dx\cdot\sqrt\pi=\sqrt\pi$, by
+the Gaussian integral.
+
+\subsection{The error function and the complementary error function}
+\begin{definition}
+$\operatorname{erf}(x)=\frac2{\sqrt\pi}\int_0^xe^{-s^2}ds$, $\operatorname{erfc}(x)=1-\operatorname{erf}(x)=
+\frac2{\sqrt\pi}\int_x^\infty e^{-s^2}ds$, and $\operatorname{erfcx}(x)=e^{x^2}\operatorname{erfc}(x)$.
+\end{definition}
+
+\begin{proposition}\label{appA:prop:erfc}
+For $x>0$: $\displaystyle\frac{2}{\sqrt\pi}\,\frac{e^{-x^2}}{x+\sqrt{x^2+2}}\le\operatorname{erfc}(x)
+\le\frac{e^{-x^2}}{x\sqrt\pi}$. In particular $\operatorname{erfcx}(x)\le\frac1{x\sqrt\pi}$ and
+$\operatorname{erfc}(x)\sim\frac{e^{-x^2}}{x\sqrt\pi}$ as $x\to\infty$.
+\end{proposition}
+
+\begin{humanproof}
+\emph{Upper bound.} For $s\ge x>0$, one has $1\le s/x$, hence
+\[\int_x^\infty e^{-s^2}ds\le\frac1x\int_x^\infty se^{-s^2}ds=\frac{e^{-x^2}}{2x} .\]
+Multiply by $2/\sqrt\pi$.
+
+\emph{Lower bound.} We take it as given \tierL{} (it is proved by studying the difference of the two sides, which
+tends to $0$ at infinity and whose derivative has a controlled sign); it is used only for the asymptotic equivalent,
+which the upper bound and an integration by parts also suffice to establish (Exercise~\ref{appA:ex:erfc}).
+\end{humanproof}
+Chapter~2 uses the bounds $0<\operatorname{erfcx}(x)\le1$ for $x\ge0$ and $\operatorname{erfcx}(x)\le1/(\sqrt\pi
+x)$ for $x>0$, proved there via the representation $\operatorname{erfcx}(x)=\frac2{\sqrt\pi}\int_0^\infty
+e^{-(y^2+2xy)}dy$. The proposition also serves to bound the tail of a Gaussian series: by series--integral comparison,
+$\sum_{n>R}e^{-\pi n^2}\le\int_{R-1}^\infty e^{-\pi x^2}dx=\frac12\operatorname{erfc}\bigl(\sqrt\pi(R-1)\bigr)$ for $R\ge1$
+(Exercise~\ref{appA:ex:erfc}).
+
+\subsection{The Bessel functions \texorpdfstring{$J_0$}{J0}, \texorpdfstring{$Y_0$}{Y0} and \texorpdfstring{$K_0$}{K0}}
+
+\begin{proposition}[$J_0$]\label{appA:prop:J0}
+The function $J_0$ defined by~\eqref{appA:eq:J0int} satisfies:
+\begin{enumerate}
+\item $J_0(z)=\sum_{m\ge0}\frac{(-1)^m}{(m!)^2}\bigl(\frac z2\bigr)^{2m}$ for every $z\in\R$;
+\item $|J_0(z)|\le1$ and $J_0(0)=1$;
+\item $J_0$ solves Bessel's equation of order $0$: $zy''+y'+zy=0$;
+\item \tierL{} $J_0(z)=\sqrt{2/(\pi z)}\,\bigl(\cos(z-\pi/4)+O(1/z)\bigr)$ as $z\to+\infty$.
+\end{enumerate}
+\end{proposition}
+
+\begin{humanproof}
+(1) Expand $\cos(z\cos\theta)=\sum_m(-1)^m z^{2m}\cos^{2m}\theta/(2m)!$; the series converges normally in
+$\theta$, and one integrates term by term. The Wallis integrals give
+$\frac1\pi\int_0^\pi\cos^{2m}\theta\,d\theta=\binom{2m}m4^{-m}$, whence the coefficient
+$\frac{1}{(2m)!}\binom{2m}{m}4^{-m}=\frac{1}{(m!)^2 4^m}$.
+(2) The modulus of the integrand of~\eqref{appA:eq:J0int} equals $1$.
+(3) By differentiation under the integral sign, $J_0'(z)=-\frac1\pi\int_0^\pi\cos\theta\sin(z\cos\theta)d\theta$ and
+$J_0''(z)=-\frac1\pi\int_0^\pi\cos^2\theta\cos(z\cos\theta)d\theta$. Hence
+$zJ_0''+zJ_0=\frac z\pi\int_0^\pi\sin^2\theta\cos(z\cos\theta)d\theta$. An integration by parts, with
+$\frac{d}{d\theta}\sin(z\cos\theta)=-z\sin\theta\cos(z\cos\theta)$, turns this integral into
+$\frac1\pi\int_0^\pi\cos\theta\sin(z\cos\theta)d\theta=-J_0'(z)$.
+\end{humanproof}
+
+Bessel's equation has a second solution, singular at $0$: the Neumann function (Bessel function of the second kind)
+$Y_0$, with $Y_0(z)\sim\frac2\pi\ln z$ as $z\to0^+$ \tierL. The \emph{modified Bessel function} $K_0$ is defined for
+$x>0$ by
+\[K_0(x)=\int_0^\infty e^{-x\cosh t}\,dt .\]
+It is positive and decreasing, behaves like $-\ln x$ at $0$ and like $\sqrt{\pi/(2x)}\,e^{-x}$ at infinity \tierL.
+It is the Green's function of the operator $-\Delta+\kappa^2$ in the plane: $(-\Delta+\kappa^2)\frac1{2\pi}K_0(\kappa|x|)=\delta_0$
+\tierL. Chapters~2 and~5 note that this two-dimensional Debye--Hückel potential is \emph{not} treated in
+this book, which studies the three-dimensional Yukawa potential restricted to the plane, $e^{-\kappa r}/r$.
+
+\subsection{The Struve function \texorpdfstring{$\mathbf H_0$}{H0} and the Rytova--Keldysh potential}
+
+\begin{definition}
+The Struve function of order $0$ is $\mathbf H_0(z)=\frac2\pi\sum_{m\ge0}\frac{(-1)^mz^{2m+1}}{\bigl(1\cdot3\cdot5\cdots(2m+1)\bigr)^2}$
+for $z\in\R$.
+\end{definition}
+The series converges for every $z$ (ratio test). One also has the integral representation
+$\mathbf H_0(z)=\frac2\pi\int_0^{\pi/2}\sin(z\cos\theta)\,d\theta$ \tierL, and $\mathbf H_0(z)-Y_0(z)\sim\frac2{\pi z}$
+as $z\to+\infty$ \tierL. Mathlib, at the pinned version, knows neither $\mathbf H_0$ nor $Y_0$: this is why
+Chapter~2 formalises the Keldysh potential in a Laplace form, and connects this form to the combination
+$\mathbf H_0-Y_0$ by a \tierC{} argument that relies on the representation
+$\mathbf K_0(z)=\mathbf H_0(z)-Y_0(z)=\frac2\pi\int_0^\infty e^{-zu}(1+u^2)^{-1/2}du$ for $\operatorname{Re}z>0$
+(DLMF~11.5.2, cited in Chapter~2~\cite{ch2dlmf}). The behaviour $\sim 2/(\pi z)$ is the Coulomb law $1/r$
+recovered at large distances.
+
+%=====================================================================================================================
+\section{Lattices in the plane and the fundamental domain of \texorpdfstring{$SL_2(\Z)$}{SL2(Z)}}\label{appA:sec:sl2}
+
+\subsection{Bases of a lattice}
+A lattice in the plane is $\Lambda=\Z u\oplus\Z v$ with $(u,v)$ a basis of $\R^2$ (Definition~\ref{ch1:def:reseau}). Two
+bases $(u,v)$ and $(u',v')$ generate the same lattice if and only if $\binom{u'}{v'}=P\binom uv$ with $P\in GL_2(\Z)$,
+that is, $P$ has integer entries and $\det P=\pm1$.
+
+\begin{humanproof}
+If $\Z u'\oplus\Z v'=\Z u\oplus\Z v$, each basis is expressed in the other with integer coefficients: $P$ and $P'$
+are integer matrices with $PP'=I$, so $\det P\det P'=1$ in $\Z$, whence $\det P=\pm1$. Conversely, if $P\in GL_2(\Z)$,
+then $P^{-1}=\pm\,\mathrm{com}(P)^{\mathsf T}$ (the transposed cofactor matrix) has integer entries, and each of the
+two lattices is contained in the other.
+\end{humanproof}
+The covolume $|\det(u,v)|$ therefore does not depend on the basis.
+
+\subsection{The shape parameter \texorpdfstring{$\tau$}{tau}}
+Identify $\R^2$ with $\mathbb{C}$. After an orientation-preserving similarity (a rotation and a dilation, which do not
+change the ``shape''), we may assume $u=1$. After replacing $v$ by $-v$ if necessary, we may assume $\operatorname{Im}v>0$.
+The lattice is then $\Z+\Z\tau$ with $\tau$ in the Poincaré upper half-plane $\mathbb H=\{\operatorname{Im}\tau>0\}$.
+An orientation-preserving change of basis $\binom{u'}{v'}=\begin{pmatrix}d&c\\b&a\end{pmatrix}\binom uv$ with $ad-bc=1$
+replaces $\tau$ by
+\[\gamma\cdot\tau=\frac{a\tau+b}{c\tau+d},\qquad\gamma=\begin{pmatrix}a&b\\c&d\end{pmatrix}\in SL_2(\Z),\]
+after renormalising $u'$ to $1$. Lattice shapes up to similarity therefore correspond to the orbits of
+$SL_2(\Z)$ in $\mathbb H$. The key computation is
+\begin{equation}\label{appA:eq:im}
+\operatorname{Im}(\gamma\cdot\tau)=\frac{\operatorname{Im}\tau}{|c\tau+d|^2},
+\end{equation}
+obtained by multiplying numerator and denominator by $\overline{c\tau+d}$ and using $ad-bc=1$.
+
+\subsection{The fundamental domain}
+\begin{theorem}\label{appA:thm:domaine}
+Let $\mathcal F=\{\tau\in\mathbb H:|\operatorname{Re}\tau|\le\tfrac12,\ |\tau|\ge1\}$.
+\begin{enumerate}
+\item Every $\tau\in\mathbb H$ has a point of its $SL_2(\Z)$-orbit in $\mathcal F$.
+\item If two distinct points of $\mathcal F$ lie in the same orbit, they lie on the boundary of $\mathcal F$
+(symmetric with respect to the imaginary axis, on the lines $\operatorname{Re}\tau=\pm\frac12$ or on the circle
+$|\tau|=1$).
+\end{enumerate}
+\end{theorem}
+
+\begin{humanproof}[Human proof of item 1]
+Write $T:\tau\mapsto\tau+1$ and $S:\tau\mapsto-1/\tau$; they correspond to $\bigl(\begin{smallmatrix}1&1\\0&1\end{smallmatrix}\bigr)$
+and $\bigl(\begin{smallmatrix}0&-1\\1&0\end{smallmatrix}\bigr)$. For fixed $\tau$, the numbers $c\tau+d$, $(c,d)\in\Z^2\setminus\{0\}$,
+form a lattice in $\mathbb{C}$; only finitely many of them have modulus $\le1$. By~\eqref{appA:eq:im},
+$\operatorname{Im}(\gamma\cdot\tau)$ therefore takes only finitely many values $\ge\operatorname{Im}\tau$, and there exists
+$\gamma_0$ such that $\tau'=\gamma_0\cdot\tau$ has maximal imaginary part in the orbit. A power of $T$
+brings $\operatorname{Re}\tau'$ into $[-\frac12,\frac12]$ without changing its imaginary part. If we had $|\tau'|<1$,
+then $\operatorname{Im}(S\tau')=\operatorname{Im}\tau'/|\tau'|^2>\operatorname{Im}\tau'$, which would contradict
+maximality. Hence $\tau'\in\mathcal F$.
+\end{humanproof}
+
+Item~2, whose proof is a case analysis based on~\eqref{appA:eq:im}, is \tierL~\cite{app:serre}.
+The domain $\mathcal F$ contains two distinguished points:
+\begin{itemize}
+\item $\tau=i$, the square lattice. Its stabiliser in $SL_2(\Z)$ is generated by $S$, of order $4$ in $SL_2(\Z)$
+(and $2$ in the quotient by $\pm I$): near $i$, $S$ acts as a rotation by angle $\pi$.
+\item $\tau=\rho=e^{i\pi/3}=\frac12+i\frac{\sqrt3}2$, the triangular lattice. It is fixed by
+$\gamma(\tau)=(\tau-1)/\tau$, of order $3$ modulo $\pm I$, which acts near $\rho$ as a rotation by angle
+$\pm120^\circ$.
+\end{itemize}
+This is the argument of §\ref{ch3:sec:isotropie}: a function of the lattice shape that is $SL_2(\Z)$-invariant and of
+class $\mathcal C^2$ has zero gradient at $\rho$ and a scalar Hessian, because the only symmetric matrices that
+commute with a rotation by $120^\circ$ are multiples of the identity. At $i$, the rotation by angle $\pi$ forces only
+the gradient to vanish: the Hessian may be anisotropic there.
+
+\subsection{Gauss reduction of a basis}
+Item~1 of the theorem is also an algorithm. Starting from a basis $(u,v)$:
+\begin{enumerate}
+\item if $|v|<|u|$, swap $u$ and $v$;
+\item replace $v$ by $v-ku$, where $k$ is the integer nearest to $\operatorname{Re}(v\bar u)/|u|^2$;
+\item repeat as long as $|v|<|u|$.
+\end{enumerate}
+The algorithm terminates, because $|u|$ decreases strictly at each swap and takes only finitely many values (they are
+norms of lattice vectors bounded by the initial norm). At the end, $|u|\le|v|\le|v\pm u|$: $u$ is a shortest
+nonzero vector and $\tau=v/u$ (up to sign) lies in $\mathcal F$. With a reduced basis, truncating a lattice sum to the
+disk of radius $R$ is convenient: all points $mu+nv$ of the disk satisfy $|m|,|n|\le CR$ for a constant $C$ depending
+only on the shape (exercise). We have not checked which codes in the book reduce their basis; this is a methodological
+remark, not a description of those codes.
+
+%=====================================================================================================================
+\section{Exercises}\label{appA:sec:exos}
+
+\begin{exercise}\label{appA:exo:moments}
+Prove by induction on $m$ the formula of Example~\ref{appA:ex:moments}. Deduce
+$\int_\R x^{2m}e^{-x^2}dx=\Gamma(m+\tfrac12)$.
+\end{exercise}
+
+\begin{exercise}\label{appA:ex:erfc}
+Show, by an integration by parts, that $\operatorname{erfc}(x)=\frac{e^{-x^2}}{x\sqrt\pi}\bigl(1-\frac1{2x^2}
++O(x^{-4})\bigr)$ as $x\to\infty$. How many terms of $\sum_{n\ge1}e^{-\pi n^2}$ are needed for an error below
+$10^{-30}$?
+\end{exercise}
+
+\begin{exercise}
+Apply Theorem~\ref{appA:thm:poisson1} to $f(x)=e^{-2\pi a|x|}$, $a>0$, whose Fourier transform is
+$\hat f(\xi)=\frac{a}{\pi(a^2+\xi^2)}$ (check this). Deduce $\sum_{k\in\Z}\frac1{a^2+k^2}=\frac\pi a\coth(\pi a)$,
+then $\sum_{k\ge1}k^{-2}=\pi^2/6$ by letting $a$ tend to $0$.
+\end{exercise}
+
+\begin{exercise}
+Check Proposition~\ref{appA:prop:hankel} numerically for $F(r)=e^{-\pi r^2}$ by evaluating $J_0$ through its power
+series (with \texttt{mpmath}, for example). Why is the power series of $J_0$ a poor way to compute
+$J_0(50)$ in floating point? (Think of the cancellation of terms of order $e^{50}$.)
+\end{exercise}
+
+\begin{exercise}
+Reduce the basis $u=(1,0)$, $v=(7.5,\,0.2)$ by Gauss's algorithm, and give the resulting parameter $\tau\in\mathcal F$ (in case of a tie, take the lower integer; the result is $\tau=-\tfrac12+1.25\,i$, equivalent under $T$ to $\tfrac12+1.25\,i$, on the boundary of $\mathcal F$).
+Compute the stabiliser of $\rho$ in $SL_2(\Z)$ and check that it has six elements.
+\end{exercise}

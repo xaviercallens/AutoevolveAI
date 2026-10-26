@@ -1,0 +1,110 @@
+\documentclass[11pt,a4paper,openany]{book}
+% English university edition of "De la conjecture au noyau Lean" (French CPGE edition in
+% ../textbook_formalisation_2026/). Figures and code listings are read from the French directory.
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage[margin=2.6cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\usepackage{caption}
+\graphicspath{{../textbook_formalisation_2026/figures/}}
+\emergencystretch=3em
+
+% ---------- shared macros (chapter writers: use only these) ----------
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Lat}{A}                   % the triangular lattice of covolume one
+\newcommand{\lean}[1]{\texttt{\detokenize{#1}}}
+\definecolor{tierA}{HTML}{1b7837}\definecolor{tierL}{HTML}{2166ac}\definecolor{tierC}{HTML}{b35806}\definecolor{tierX}{HTML}{762a83}
+\newcommand{\tierA}{\textcolor{tierA}{\textbf{[Tier A]}}}
+\newcommand{\tierL}{\textcolor{tierL}{\textbf{[Tier L]}}}
+\newcommand{\tierC}{\textcolor{tierC}{\textbf{[Tier C]}}}
+\newcommand{\tierX}{\textcolor{tierX}{\textbf{[Tier X]}}}
+\newcommand{\tierAs}{\textcolor{tierA}{\textbf{[Tier A without replay]}}}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{exercise}{Exercise}[chapter]
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+% University remarks (new in the English edition): unnumbered, so that theorem numbers match the French edition.
+\newtheorem*{uniremark}{University remark}
+
+% Human proof, Lean box, numerics box, physics box, warning box
+\newenvironment{humanproof}[1][Human proof]{\begin{proof}[#1]}{\end{proof}}
+\newtcolorbox{leanbox}[1][]{colback=green!3,colframe=tierA!70,title={Lean 4 #1},fonttitle=\bfseries\small,breakable}
+\newtcolorbox{numbox}[1][]{colback=violet!3,colframe=tierX!70,title={Numerics #1},fonttitle=\bfseries\small,breakable}
+\newtcolorbox{physbox}[1][]{colback=blue!3,colframe=tierL!70,title={Physics and biology #1},fonttitle=\bfseries\small,breakable}
+\newtcolorbox{warnbox}[1][]{colback=orange!5,colframe=tierC!80,title={Warning #1},fonttitle=\bfseries\small,breakable}
+
+\lstdefinelanguage{Lean}{morekeywords={theorem,lemma,def,noncomputable,abbrev,structure,instance,where,by,fun,have,show,
+  calc,exact,refine,intro,rintro,obtain,rw,simp,simp_all,simpa,norm_num,linarith,nlinarith,positivity,ring,field_simp,
+  unfold,namespace,end,open,import,variable,match,with,if,then,else,let,in,Type,Prop,sorry,omega,gcongr,apply,congr,ext},
+  sensitive=true,morecomment=[l]{--},morecomment=[s]{/-}{-/},morestring=[b]"}
+% inputpath: every \lstinputlisting reads the code and logs of the French edition, unchanged.
+\lstset{inputpath=../textbook_formalisation_2026,
+  basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,frame=single,
+  framerule=0.3pt,rulecolor=\color{gray!50},keywordstyle=\color{tierL}\bfseries,commentstyle=\color{gray}\itshape,
+  stringstyle=\color{tierC},showstringspaces=false,upquote=true,
+  literate={ℝ}{{$\mathbb{R}$}}1 {ℤ}{{$\mathbb{Z}$}}1 {ℕ}{{$\mathbb{N}$}}1 {≤}{{$\le$}}1 {≥}{{$\ge$}}1 {≠}{{$\ne$}}1
+  {→}{{$\to$}}1 {↔}{{$\leftrightarrow$}}1 {∀}{{$\forall$}}1 {∃}{{$\exists$}}1 {∧}{{$\wedge$}}1 {∨}{{$\vee$}}1
+  {¬}{{$\neg$}}1 {⊤}{{$\top$}}1 {∈}{{$\in$}}1 {∉}{{$\notin$}}1 {∩}{{$\cap$}}1 {⁻¹}{{$^{-1}$}}1 {√}{{$\surd$}}1
+  {π}{{$\pi$}}1 {ρ}{{$\rho$}}1 {κ}{{$\kappa$}}1 {α}{{$\alpha$}}1 {δ}{{$\delta$}}1 {ε}{{$\varepsilon$}}1 {σ}{{$\sigma$}}1
+  {•}{{$\bullet$}}1 {∑}{{$\sum$}}1 {²}{{$^2$}}1 {₀}{{$_0$}}1 {₁}{{$_1$}}1 {₂}{{$_2$}}1 {‖}{{$\|$}}1 {⟨}{{$\langle$}}1 {⟩}{{$\rangle$}}1
+  {𝓝}{{$\mathcal{N}$}}1 {∞}{{$\infty$}}1 {≥}{{$\ge$}}1 {×}{{$\times$}}1 {·}{{$\cdot$}}1 {∘}{{$\circ$}}1 {∖}{{$\setminus$}}1
+  {ψ}{{$\psi$}}1 {φ}{{$\varphi$}}1 {λ}{{$\lambda$}}1 {μ}{{$\mu$}}1 {θ}{{$\theta$}}1 {Λ}{{$\Lambda$}}1 {∂}{{$\partial$}}1
+  {—}{{---}}1 {–}{{--}}1 {é}{{\'e}}1 {ö}{{\"o}}1 {’}{{'}}1}
+
+
+\title{\textbf{From Conjecture to the Lean Kernel}\\[0.5em]
+\large Optimal lattices, quantum energies and population genetics ---\\ human proofs, Lean~4, rusty-SUNDIALS and LeanFlow\\[0.5em]
+\normalsize A textbook for university mathematics, physics and engineering students}
+\author{Xavier Callens (SocrateAI Lab)\\[0.3em]\small written with AI agents (Claude) under the author's direction}
+\date{Version 1 (English university edition), 2026}
+
+\begin{document}
+\frontmatter
+\maketitle
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+\Large\emph{To Ilene, Alexis and Aurelia.}\\[1em]
+\normalsize The four letters of ALIX and the three of KAL are hidden in a few theorems of this book;\\
+the attentive reader will find them in the Lean code of Chapter~5.
+\end{center}
+\vspace*{\fill}
+\clearpage
+\input{preface.tex}
+\tableofcontents
+\mainmatter
+\input{ch1_fondations.tex}
+\input{ch2_flux_formalisation.tex}
+\input{ch3_quantique.tex}
+\input{ch4_genetique.tex}
+\input{ch5_cas_usage.tex}
+\input{easter_eggs_figures.tex}
+\appendix
+\input{appA_analyse.tex}
+\input{appB_probabilites.tex}
+\input{appC_lean.tex}
+\input{appD_numerique_certifie.tex}
+\input{appE_reproduction.tex}
+\input{appF_exemples_code.tex}
+\backmatter
+\input{references.tex}
+\end{document}

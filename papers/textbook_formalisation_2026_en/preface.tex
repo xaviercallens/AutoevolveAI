@@ -1,0 +1,68 @@
+\chapter*{Preface}
+\addcontentsline{toc}{chapter}{Preface}
+This book tells a recent mathematical story as it actually unfolded: a sequence of conjectures, proofs, computer
+verifications and, at times, refutations. It is written for undergraduate and graduate students in mathematics,
+physics and engineering. The starting point is a theorem of openai/math, whose proof, produced by an AI and not peer
+reviewed, is checked by the Lean~4 kernel: the triangular lattice minimizes the energy of every point configuration in
+the plane, for a wide class of repulsive interactions. The end point is a series of open questions in quantum physics
+and population genetics.
+
+Every result is presented three times.
+\begin{itemize}
+\item First as a \emph{human proof}, step by step, at the level of an undergraduate course in analysis, linear algebra
+and probability.
+\item Then as a \emph{Lean~4} statement checked by the kernel.
+\item Finally as a numerical computation with \emph{rusty-SUNDIALS} (CVODE solvers in Rust) and \emph{LeanFlow}
+(data certificates checked by Lean), illustrated on public datasets.
+\end{itemize}
+
+A single rule guides the reading: every claim carries a \emph{confidence tier}, following the Elenchus method.
+\begin{itemize}
+\item \tierA{}: checked by the Lean kernel. This requires three checks: the axiom list is contained in
+\lean{propext}, \lean{Classical.choice} and \lean{Quot.sound}; the kernel replays the proof (\lean{leanchecker}); and
+a search for constructions that bypass the kernel finds nothing. The axiom list alone can be fooled; Chapter~1
+explains how.
+\item \tierAs{}: a variant of \tierA{} when the kernel replay has not (yet) been run for the module concerned; the
+axiom list, the planted witnesses and the independent recompilation are still required.
+\item \tierL{}: a published result, read and cited precisely.
+\item \tierC{}: a human argument, not machine-checked.
+\item \tierX{}: a floating-point computation. It guides research but proves nothing.
+\end{itemize}
+Read the tier before the sentence.
+
+\paragraph{Honesty.}
+\begin{itemize}
+\item The results in this book were produced by AI agents (Claude) under the author's direction.
+\item Each paper was audited by a separate AI agent; no human mathematician has reviewed them yet.
+\item Several results depend on theorems of the openai/math release, which were also produced by an AI and have not
+yet been peer reviewed.
+\item Several chapters report \emph{negative results}: a refuted conjecture, a method that does not extend, a
+transition that does not take place. They are as instructive as the others.
+\item No conjecture is declared proved beyond its tier. In particular, the Sandier--Serfaty conjecture is \emph{not}
+proved here: Chapter~2 explains exactly what was checked and what remains to be done.
+\end{itemize}
+
+\paragraph{What is new in this edition.} This is the English university edition of the French textbook
+\emph{De la conjecture au noyau Lean}. The proofs, numbers, tiers, DOIs and caveats are identical. For undergraduate
+and graduate readers, short \emph{University remarks}, each marked \tierL{}, state the general textbook form of a tool
+used in the text (dominated convergence on a measure space, Bernstein's and Bochner's theorems, the Poisson summation
+formula in $\R^d$, the theory of absorbing Markov chains) and give a reference; they add no new claim. Each of Chapters~1 to~5
+ends with two additional harder exercises, titled ``(*) University exercise''; they are distinct from the
+difficulty stars that some chapters already attach to their exercises. The figures are those of the French edition,
+reused unchanged, so the labels inside some figures are in French; every caption is in English.
+
+\paragraph{Outline.}
+\begin{itemize}
+\item Chapter~1 lays the foundations: lattices, completely monotone functions and formal verification.
+\item Chapter~2 follows the thread of the formalizations, from universal optimality to the potentials of physics and
+to the Sandier--Serfaty conjecture.
+\item Chapter~3 presents a quantum surprise: for some interactions, the triangular lattice is no longer optimal once
+the zero-point energy is taken into account.
+\item Chapter~4 checks classical theorems of population genetics in Lean, up to the isothermal theorem of
+evolutionary graph theory.
+\item Chapter~5 gathers five use cases with data, code and certificates.
+\end{itemize}
+Each chapter ends with exercises.
+
+\paragraph{Further reading.} Every cited paper has a Zenodo DOI. The code is public: AutoevolveAI,
+rusty-SUNDIALS, LeanFlow, SocrateAI-Scientific-Genetic and SocrateAI-Scientific-Agora-LeanMaster.

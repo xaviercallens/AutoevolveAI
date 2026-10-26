@@ -1,0 +1,1297 @@
+% =====================================================================
+% Chapter 4: Verified population genetics
+% Primary sources: P7 (doi:10.5281/zenodo.23653850), N4 (doi:10.5281/zenodo.23660071),
+% H11/H12 (results/autoresearch/2026-10-25/), Lean: formal_cert/Autoresearch/PopGen*.lean,
+% formal_cert/Programmes/PopGen/*.lean, formal_cert/Programmes/EvoGraph/*.lean.
+% The Lean excerpts are copied verbatim, up to glyph rendering.
+% =====================================================================
+\chapter{Verified population genetics: fixation, selection and graphs}
+\label{ch4:debut}\label{ch4:chapitre}
+\chaptermark{Verified population genetics}
+\sloppy
+
+A mutation appears in a population of $N$ individuals. Will it disappear, or will it eventually be carried by
+everyone? This is the question of \emph{fixation}. It is both very concrete (will a bacterium that has become
+resistant to an antibiotic take over the colony?) and entirely accessible with the tools of a first course in
+probability and analysis. All one needs is finite Markov chains, geometric sums, the binomial theorem, linear
+recurrence relations and a little topology of $\R$.
+
+This chapter follows the same thread as the previous ones. Each statement receives an undergraduate-level
+\emph{human proof}, and next to it the statement \emph{as the Lean~4 kernel checked it}, with the file name and
+line number. The two do not always coincide: sometimes the Lean proof takes a different route from the human
+proof, and we point this out every time.
+
+\begin{warnbox}[: status of this chapter]
+\begin{itemize}[leftmargin=1.2em,itemsep=1pt]
+\item All the results of this chapter are \textbf{classical}: Moran (1958) \cite{ch4:Mor}, Fisher, Wright,
+Price (1970) \cite{ch4:Pri70}, Lieberman--Hauert--Nowak (2005) \cite{ch4:LHN}. No mathematical novelty is claimed. What is specific to the project
+is a formalisation checked by the Lean kernel. We have not carried out a systematic search for earlier
+formalisations.
+\item The Lean files, the proofs and this text were produced by AI agents (Claude) under the author's
+direction. A separate AI agent audited them: recompilation from source, axiom audit, planted controls. The
+verdicts are recorded in \texttt{AUDIT.md} and \texttt{verification.md}.
+\textbf{No human has audited these results.}
+\item Nothing here depends on the openai/math theorems of Chapters~1 to~3.
+\end{itemize}
+\end{warnbox}
+
+\paragraph{The tiers, recalled.} Here is what each label means in this chapter.
+\begin{itemize}[itemsep=1pt]
+\item \tierA{} means that the cited \emph{Lean statement} is checked by the kernel. Its axioms lie in
+$\{\lean{propext},\lean{Classical.choice},\lean{Quot.sound}\}$, and the module has passed a kernel replay
+(\texttt{leanchecker}) as well as a search for the soundness escapes \lean{skipKernelTC}, \lean{addDecl},
+\lean{native_decide} and \lean{implemented_by}. Tier~A concerns the Lean statement, \emph{never} its
+biological reading.
+\item \tierL{} means a published source, read and located to the page.
+\item \tierC{} means a human argument, including a proof in this book, that is not checked by
+a machine.
+\item \tierX{} means a computation (floating point, or exact rational arithmetic by a script) that illustrates and
+checks, but never establishes anything.
+\end{itemize}
+
+\paragraph{Kernel replay coverage.} The original audits checked two things: the list of axioms, and
+a recompilation by a separate agent. The N4 audit added a \texttt{leanchecker} replay of the modules
+\lean{Programmes.PopGen.Absorption}, \lean{Programmes.PopGen.MoranModel} and the three modules
+\lean{Programmes.EvoGraph.*}. Its negative control was a falsified theorem under \lean{debug.skipKernelTC},
+and the replay did reject it. The other modules cited here had no replay: \lean{Autoresearch.PopGenFisher},
+\lean{Autoresearch.PopGenWrightFisher}, \lean{Programmes.PopGen.WrightFisherFixation},
+\lean{Programmes.PopGen.MoranFixation} and \lean{Programmes.PopGen.Price}. For these, the agent writing this
+chapter ran \texttt{leanchecker} at the time of writing (2026-10-26), on the existing \texttt{.olean} files,
+all newer than their sources, with the pinned Lean~4.34.1 toolchain; it also searched with \texttt{grep}
+for the forbidden tokens. The result is given in §\ref{ch4:sec:bilan}. This replay is not a human audit.
+
+\paragraph{The bridge to probability \tierC.} Throughout the chapter, $P$ denotes a stochastic matrix
+on a finite state space. We define $P^n$ by the Chapman--Kolmogorov recursion $P^0=I$,
+$P^{n+1}(i,j)=\sum_kP^n(i,k)P(k,j)$ (this is \lean{kPow} in Lean). If $(X_n)$ is the Markov chain with transition
+matrix $P$ started at $i$, then by definition $\mathbb P_i(X_n=j)=P^n(i,j)$. If moreover the state $N$ is absorbing,
+$\{X_n=N\}=\{T_N\le n\}$, where $T_N$ is the hitting time of $N$. The limit of $P^n(i,N)$ is therefore
+$\mathbb P_i(T_N<\infty)$, the \emph{fixation probability}. This identification is standard, but it
+\emph{is not} a Lean statement: no path space is constructed. The Lean theorems are about
+limits of matrix powers, and that is the formulation we adopt, for instance ``the probability
+of absorption at $N$ after $n$ steps tends to \dots''.
+
+% ---------------------------------------------------------------------
+\section{Hardy--Weinberg and one-locus selection}\label{ch4:sec:hw}\sectionmark{Hardy--Weinberg and selection}
+
+\subsection{The model}
+A gene (a \emph{locus}) has two alleles $A_1$ and $A_2$, with frequencies $p$ and $q=1-p$. Individuals are
+diploid: each carries two copies, hence one of the three genotypes $A_1A_1$, $A_1A_2$ or $A_2A_2$.
+Generations do not overlap. We further assume random mating: a zygote is formed from two
+gametes drawn independently from the gamete pool.
+
+\begin{proposition}[Hardy--Weinberg]\label{ch4:prop:hw}
+Start from genotype frequencies $(x_{11},x_{12},x_{22})$ summing to~$1$, and set $p=x_{11}+x_{12}/2$. After one
+generation of random mating, the frequencies are $(p^2,2pq,q^2)$, summing to~$1$, and the frequency of
+allele $A_1$ is still $p$. These proportions are stationary from the first generation on.
+\tierA{} (\lean{hwStep_sum}, \lean{hwStep_allele}, \lean{hwStep_stationary}, \texttt{PopGenFisher.lean},
+ll.~129--148).
+\end{proposition}
+
+\begin{humanproof}
+A gamete carries $A_1$ with probability $x_{11}+\frac12x_{12}=p$. Since the two gametes are independent, we obtain
+$A_1A_1$ with probability $p^2$, $A_1A_2$ with probability $2pq$ (two possible orders) and $A_2A_2$ with
+probability $q^2$. The sum is $(p+q)^2=1$. In the new generation, the frequency of $A_1$ is
+$p^2+\frac12\cdot2pq=p(p+q)=p$: the map is therefore idempotent.
+\end{humanproof}
+
+\begin{leanbox}[: Hardy--Weinberg (\texttt{formal\_cert/Autoresearch/PopGenFisher.lean}, ll.~125--127 and 145)]
+\begin{lstlisting}[language=Lean]
+noncomputable def hwStep (x : ℝ × ℝ × ℝ) : ℝ × ℝ × ℝ :=
+  let p := x.1 + x.2.1 / 2
+  (p ^ 2, 2 * p * (1 - p), (1 - p) ^ 2)
+theorem hwStep_stationary (x : ℝ × ℝ × ℝ) : hwStep (hwStep x) = hwStep x := by
+\end{lstlisting}
+The statement \lean{hwStep_stationary} holds for every triple, even an unnormalised one, because $p^2+p(1-p)=p$ is an identity.
+On the other hand, \lean{hwStep} ignores $x_{22}$: it implicitly assumes a normalised input (remark by the
+verifier, \texttt{H12/verification.md}).
+\end{leanbox}
+
+\subsection{Viability selection}
+The genotypes $A_1A_1$, $A_1A_2$ and $A_2A_2$ survive to adulthood with \emph{fitnesses}
+$w_{11},w_{12},w_{22}>0$. Before selection, the zygotes are in Hardy--Weinberg proportions. From this we
+derive the \emph{mean fitness} and the new allele frequency:
+\[
+\bar w(p)=p^2w_{11}+2pq\,w_{12}+q^2w_{22},\qquad
+p'=\frac{p^2w_{11}+pq\,w_{12}}{\bar w(p)}.
+\]
+
+\begin{leanbox}[: the model (\texttt{PopGenFisher.lean}, ll.~19--24)]
+\begin{lstlisting}[language=Lean]
+noncomputable def wbar (w11 w12 w22 p : ℝ) : ℝ :=
+  p ^ 2 * w11 + 2 * p * (1 - p) * w12 + (1 - p) ^ 2 * w22
+
+/-- Allele frequency after one generation of viability selection. -/
+noncomputable def pnext (w11 w12 w22 p : ℝ) : ℝ :=
+  (p ^ 2 * w11 + p * (1 - p) * w12) / wbar w11 w12 w22 p
+\end{lstlisting}
+\end{leanbox}
+
+\begin{lemma}\label{ch4:lem:dp}
+Let $w_{11},w_{12},w_{22}>0$ and $p\in[0,1]$. Then:
+\begin{enumerate}[label=(\roman*),itemsep=1pt]
+\item $\bar w(p)>0$ and $p'\in[0,1]$;
+\item $\Delta p:=p'-p=\dfrac{pq\,s}{\bar w(p)}$, with $s=p(w_{11}-w_{12})+q(w_{12}-w_{22})$;
+\item $\bar w'(p)=2s$, whence Wright's form $\Delta p=\dfrac{pq\,\bar w'(p)}{2\bar w(p)}$.
+\end{enumerate}
+\tierA{} (\lean{wbar_pos}, \lean{pnext_mem_Icc}, \lean{delta_p_eq}, \lean{hasDerivAt_wbar},
+\lean{delta_p_eq_deriv}, \texttt{PopGenFisher.lean}, ll.~26--91).
+\end{lemma}
+
+\begin{humanproof}
+(i) If $p>0$, the term $p^2w_{11}$ is $>0$ and the other two are $\ge0$. If $p=0$, $\bar w=w_{22}>0$. The
+numerator of $p'$ is $\ge0$, and $\bar w-(p^2w_{11}+pqw_{12})=pqw_{12}+q^2w_{22}\ge0$, so $p'\le1$.
+(ii) We bring everything over a common denominator, using $1-p=q$ and $1-2p=q-p$:
+\[
+p^2w_{11}+pqw_{12}-p\,\bar w
+=p\bigl[pw_{11}(1-p)+qw_{12}(1-2p)-q^2w_{22}\bigr]
+=pq\bigl[pw_{11}+(q-p)w_{12}-qw_{22}\bigr]=pq\,s ,
+\]
+then divide by $\bar w>0$.
+(iii) Expanding, $\bar w(x)=w_{22}+2(w_{12}-w_{22})x+(w_{11}-2w_{12}+w_{22})x^2$, so
+$\bar w'(p)=2(w_{12}-w_{22})+2(w_{11}-2w_{12}+w_{22})p=2s$.
+\end{humanproof}
+
+In Lean, the derivative in (iii) is not a hand-written polynomial. It is the real derivative \lean{deriv} of the
+function $x\mapsto\bar w(x)$, obtained from an explicit \lean{HasDerivAt} statement (ll.~64--82).
+
+\subsection{The exact increment identity}
+
+\begin{theorem}[Monotonicity of mean fitness]\label{ch4:thm:wbar}
+Let $w_{11},w_{12},w_{22}>0$ and $p\in[0,1]$. With the notation of Lemma~\ref{ch4:lem:dp}, we have the exact
+identity
+\begin{equation}\label{ch4:eq:increment}
+\bar w(p')-\bar w(p)=\frac{pq\,s^2\,\bigl(\bar w(p)+p\,w_{11}+q\,w_{22}\bigr)}{\bar w(p)^2},
+\end{equation}
+and consequently $\bar w(p')\ge\bar w(p)$: mean fitness never decreases from one generation to the
+next. \tierA{} (\lean{wbar_increment} and \lean{fisher_mean_fitness_nondecreasing},
+\texttt{PopGenFisher.lean}, ll.~95--119).
+\end{theorem}
+
+\begin{humanproof}
+Set $W=\bar w(p)$, $a=w_{11}-2w_{12}+w_{22}$ and $\Delta=p'-p=pqs/W$ (Lemma~\ref{ch4:lem:dp}).
+
+\emph{Step 1: Taylor is exact.} $\bar w$ is a polynomial of degree~$2$ in $x$, with derivative $2s$ at $p$ and
+second derivative $2a$. Taylor's formula to order~$2$ is therefore exact:
+\[
+\bar w(p+\Delta)=W+2s\,\Delta+a\,\Delta^2 .
+\]
+
+\emph{Step 2: substitute $\Delta$.}
+\[
+\bar w(p')-W=2s\cdot\frac{pqs}{W}+a\,\frac{p^2q^2s^2}{W^2}=\frac{pq\,s^2}{W^2}\,\bigl(2W+a\,pq\bigr).
+\]
+
+\emph{Step 3: the key identity.} Expanding, one checks that
+\[
+W+a\,pq=p^2w_{11}+2pqw_{12}+q^2w_{22}+pq(w_{11}-2w_{12}+w_{22})=pw_{11}(p+q)+qw_{22}(p+q)=pw_{11}+qw_{22}.
+\]
+Thus $2W+a\,pq=W+pw_{11}+qw_{22}$, which gives exactly~\eqref{ch4:eq:increment}.
+
+\emph{Step 4: the sign.} The factors $p$, $q$, $s^2$, $W^2$ are $\ge0$ (and $W>0$), and
+$W+pw_{11}+qw_{22}>0$. The quotient is therefore $\ge0$.
+\end{humanproof}
+
+\begin{leanbox}[: the increment (\texttt{PopGenFisher.lean}, ll.~95--99 and 110--112)]
+\begin{lstlisting}[language=Lean]
+theorem wbar_increment {w11 w12 w22 p : ℝ} (h11 : 0 < w11) (h12 : 0 < w12) (h22 : 0 < w22)
+    (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
+    wbar w11 w12 w22 (pnext w11 w12 w22 p) - wbar w11 w12 w22 p
+      = p * (1 - p) * (p * (w11 - w12) + (1 - p) * (w12 - w22)) ^ 2
+          * (wbar w11 w12 w22 p + p * w11 + (1 - p) * w22) / (wbar w11 w12 w22 p) ^ 2 := by
+theorem fisher_mean_fitness_nondecreasing {w11 w12 w22 p : ℝ}
+    (h11 : 0 < w11) (h12 : 0 < w12) (h22 : 0 < w22) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
+    wbar w11 w12 w22 p ≤ wbar w11 w12 w22 (pnext w11 w12 w22 p) := by
+\end{lstlisting}
+\emph{Side by side.} The Lean proof does not go through Taylor. It clears denominators (\lean{field_simp}),
+then concludes with \lean{ring}. The docstring states that the identity was first found with \texttt{sympy}, then
+checked by the kernel. The human proof above explains \emph{why} the factor
+$\bar w+pw_{11}+qw_{22}$ appears: it is the identity of Step~3.
+\end{leanbox}
+
+\begin{remark}[Hypotheses \tierC]\label{ch4:rem:positivite}
+\emph{Strict} positivity of the fitnesses is sufficient, but not necessary: by~\eqref{ch4:eq:increment},
+$w\ge0$ with $\bar w(p)>0$ suffices, since then $\bar w+pw_{11}+qw_{22}\ge\bar w>0$. This is a correction by the
+independent verifier (\texttt{H12/verification.md}). The Lean theorem is correct, but narrower than it
+could be. \emph{Non-negativity}, however, cannot be dropped. The control
+\lean{fisher_fails_without_positivity} takes $w=(-1,1,0)$ and $p=\frac12$: then $\bar w=\frac14>0$, but $p'=0$ and
+$\bar w(p')=0<\frac14$ \tierA{} (ll.~164--167).
+\end{remark}
+
+\begin{remark}[The mean goes up, but $p$ may move away from equilibrium \tierA]
+Under underdominance, $w=(1,\frac12,1)$, there is an interior equilibrium $p=\frac12$. Yet, starting from
+$p=\frac25$, we get $p'=\frac7{19}<\frac25$: the frequency moves \emph{away} from the equilibrium, and $\bar w$
+increases all the same ($\frac{19}{25}<\frac{277}{361}$). This is \lean{underdominance_moves_away} (ll.~155--158),
+and the numerical values were recomputed in exact rational arithmetic \tierX. The increase of $\bar w$ therefore says
+nothing about convergence to a polymorphism.
+\end{remark}
+
+\begin{warnbox}[: this is not Fisher's ``fundamental theorem'']
+Theorem~\ref{ch4:thm:wbar} covers a single locus, two alleles, discrete generations, viability
+selection, constant fitnesses and random mating. It is the monotonicity of mean
+fitness \emph{for this model}. Fisher's fundamental theorem, in the sense of Price's (1972) reading
+in terms of the ``partial change'' \cite{ch4:Pri72} and additive genetic variance, is a different, finer statement, which
+\emph{is not formalised} here \tierC. The original Lean docstring spoke of ``Fisher's fundamental theorem''. The
+verifier required it to be renamed, and the module header now says ``one-locus, two-allele mean-fitness
+monotonicity''.
+\end{warnbox}
+
+% ---------------------------------------------------------------------
+\section[Neutral Wright--Fisher]{Neutral Wright--Fisher: martingale, harmonic functions, absorption}\label{ch4:sec:wf}
+
+\subsection{The chain}
+We now turn to \emph{chance} alone. Consider a population of $N$ genes, of which $i$ are of mutant
+type. The next generation is obtained by drawing $N$ genes \emph{with replacement} from the present generation.
+Without selection, the number $j$ of mutants in the next generation follows the binomial distribution
+$\mathcal B(N,i/N)$:
+\[
+P(i,j)=\binom Nj\Bigl(\frac iN\Bigr)^j\Bigl(1-\frac iN\Bigr)^{N-j},\qquad 0\le i,j\le N .
+\]
+
+\begin{leanbox}[: the transition kernel (\texttt{formal\_cert/Autoresearch/PopGenWrightFisher.lean}, ll.~25--26)]
+\begin{lstlisting}[language=Lean]
+noncomputable def wfP (N : ℕ) (i j : Fin (N + 1)) : ℝ :=
+  (N.choose (j : ℕ) : ℝ) * ((i : ℕ) / N : ℝ) ^ (j : ℕ) * (1 - ((i : ℕ) / N : ℝ)) ^ (N - (j : ℕ))
+\end{lstlisting}
+The positive control \lean{ctl_positive_wfP_value} establishes \lean{wfP 2 1 1 = 1 / 2}: the division is indeed
+real division, not the integer division of $\N$.
+\end{leanbox}
+
+\begin{proposition}\label{ch4:prop:wfbase}
+Let $N\ge1$.
+\begin{enumerate}[label=(\roman*),itemsep=1pt]
+\item $P$ is stochastic, and the states $0$ and $N$ are absorbing.
+\item \emph{(Martingale)} For every $i$, $\sum_jP(i,j)\,j=i$. In other words, $h(j)=j/N$ is \emph{harmonic}:
+$Ph=h$.
+\item From every state $0\le i<N$, we have $P(i,0)=(1-i/N)^N>0$.
+\end{enumerate}
+\tierA{} (\lean{wfP_nonneg}, \lean{wfP_sum_one}, \lean{wfP_zero}, \lean{wfP_last}, \lean{wfP_mean},
+\lean{frac_harmonic}, \lean{wfP_interior_zero_pos}, \texttt{PopGenWrightFisher.lean}, ll.~34--118).
+\end{proposition}
+
+\begin{humanproof}
+(i) By the binomial theorem, $\sum_j\binom Nj x^j(1-x)^{N-j}=(x+1-x)^N=1$. At $i=0$ we have $x=0$, and with the
+convention $0^0=1$ the row is $\delta_0$; likewise at $i=N$.
+(ii) We use $j\binom Nj=N\binom{N-1}{j-1}$ for $j\ge1$. With $x=i/N$ and $y=1-x$,
+\[
+\sum_{j=0}^N\binom Nj x^jy^{N-j}\,j=N\sum_{j=1}^{N}\binom{N-1}{j-1}x^jy^{N-j}=Nx\,(x+y)^{N-1}=Nx=i .
+\]
+(iii) This is the term $j=0$, which equals $(1-i/N)^N$, strictly positive as soon as $i<N$.
+\end{humanproof}
+
+Identity (ii) says that the number $X_n$ of mutants is a \emph{martingale}: its conditional expectation at the
+next step is its present value \tierC{} (probabilistic reading). By induction on $n$, we obtain
+$\sum_jP^n(i,j)\,j=i$ for every $n$. This computation requires no measure theory.
+
+\begin{uniremark}\tierL{} \emph{Optional stopping.} In the path-space language, $(X_n)$ is a martingale with
+values in $\{0,\dots,N\}$, hence bounded, and the absorption time $T=\min(T_0,T_N)$ is almost surely finite (this
+follows, for instance, from Lemma~\ref{ch4:lem:geom} below). The optional stopping theorem for bounded martingales
+then gives $\mathbb E_i[X_T]=X_0=i$, that is $N\,\mathbb P_i(X_T=N)=i$, so the fixation probability is $i/N$.
+This is the standard martingale proof \cite{app:williams,app:norris}; it is \emph{not} the route taken in Lean,
+which never constructs the path space.
+\end{uniremark}
+
+\subsection{Harmonic functions and the maximum principle}
+\begin{definition}
+Let $P$ be a stochastic matrix on $\{0,\dots,N\}$ whose states $0$ and $N$ are absorbing. A function
+$g:\{0,\dots,N\}\to\R$ is \emph{harmonic in the interior} if $\sum_jP(i,j)g(j)=g(i)$ for every $0<i<N$.
+\end{definition}
+
+The point of this notion is the following. The fixation probability $u(i)=\mathbb P_i(T_N<\infty)$ satisfies
+\emph{formally} the ``first-step'' equation $u(i)=\sum_jP(i,j)u(j)$, with $u(0)=0$ and $u(N)=1$ \tierC.
+If one knows that only one harmonic function has these boundary values, one therefore knows $u$.
+
+\begin{uniremark}\tierL{} \emph{Hitting probabilities as harmonic functions.} For a Markov chain on a countable
+state space and a target set $A$, the vector of hitting probabilities $u(i)=\mathbb P_i(\text{hit }A)$ is the
+\emph{minimal} non-negative solution of the system $u=1$ on $A$, $u(i)=\sum_jP(i,j)u(j)$ off $A$; on a
+finite state space from which $\{0,N\}$ is reached almost surely, the bounded solution with prescribed boundary
+values is unique, which is exactly what makes the first-step equation determine $u$ \cite{app:norris} (standard).
+\end{uniremark}
+
+\begin{theorem}[Maximum principle, uniqueness]\label{ch4:thm:maxprinc}
+Let $N\ge1$, and let $d$ be a function harmonic in the interior for the Wright--Fisher kernel, with $d(0)=d(N)=0$.
+Then $d\le0$, and by applying the same reasoning to $-d$, $d=0$. Consequently, $i\mapsto i/N$ is
+\emph{the unique} function harmonic in the interior that equals $0$ at $0$ and $1$ at $N$. \tierA{} (\lean{max_principle},
+\lean{harmonic_unique}, \lean{wright_fisher_fixation_harmonic}, \texttt{PopGenWrightFisher.lean}, ll.~122--187).
+\end{theorem}
+
+\begin{humanproof}
+Let $m$ be a point where $d$ attains its maximum; it exists because the set is finite. If $m\in\{0,N\}$, then
+$\max d=0$. Otherwise $m$ is interior, and
+\[
+0=d(m)-\sum_jP(m,j)d(j)=\sum_jP(m,j)\bigl(d(m)-d(j)\bigr),
+\]
+where we used $\sum_jP(m,j)=1$. Each term is $\ge0$, since $P\ge0$ and $d(m)$ is maximal; they
+are therefore all zero. But $P(m,0)>0$ (Proposition~\ref{ch4:prop:wfbase}(iii)), so $d(m)=d(0)=0$. In both
+cases, $\max d=0$. For uniqueness, if $g$ is a solution, then $d=g-h$ with $h(j)=j/N$ is harmonic in the interior and
+vanishes on the boundary.
+\end{humanproof}
+
+\begin{leanbox}[: the maximum principle (\texttt{PopGenWrightFisher.lean}, ll.~122--126)]
+\begin{lstlisting}[language=Lean]
+theorem max_principle {N : ℕ} (hN : 0 < N) (d : Fin (N + 1) → ℝ) (h0 : d 0 = 0)
+    (hN' : d (Fin.last N) = 0)
+    (hharm : ∀ i : Fin (N + 1), 0 < (i : ℕ) → (i : ℕ) < N → d i = ∑ j, wfP N i j * d j) :
+    ∀ i, d i ≤ 0 := by
+\end{lstlisting}
+The Lean proof follows the human proof exactly. \lean{Finset.exists_max_image} supplies the maximum point, then
+\lean{Finset.sum_eq_zero_iff_of_nonneg} kills each term, and \lean{wfP_interior_zero_pos} concludes.
+\end{leanbox}
+
+\begin{warnbox}[: what H11 did not prove]
+Module H11 \cite{ch4:H1112} stops there. It establishes that $i/N$ is \emph{the} harmonic solution, but the step ``the fixation
+probability is harmonic'' is not formalised in it. The verifier put it bluntly: ``this file does NOT
+kernel-check `fixation probability $= i/N$'\,'' (\texttt{H11/NOTE.md}). It suggested closing the gap
+\emph{without} measure theory, by proving $P^n(i,N)\to i/N$. This is what programme P7 did, and it is
+the subject of the next subsection.
+\end{warnbox}
+
+\subsection{Absorption: \texorpdfstring{$P^n(i,N)\to i/N$}{P\^{}n(i,N) -> i/N}}
+We write $I_n(i)=\sum_{0<k<N}P^n(i,k)$ for the \emph{interior mass} after $n$ steps, that is, the probability of not
+yet having been absorbed (\lean{interiorMass}).
+
+\begin{theorem}[Neutral fixation]\label{ch4:thm:wflim}
+For every $N\ge1$ and every $0\le i\le N$,
+\[
+P^n(i,N)\xrightarrow[n\to\infty]{}\frac iN,\qquad P^n(i,0)\xrightarrow[n\to\infty]{}1-\frac iN,
+\]
+and the sequence $\bigl(P^n(i,N)\bigr)_n$ is nondecreasing. \tierA{} (\lean{wright_fisher_fixation_limit},
+\lean{wright_fisher_fixation_mono}, \texttt{Programmes/PopGen/}\allowbreak\texttt{WrightFisherFixation.lean}, ll.~49--58). The general theorem \lean{fixation_limit} from which it follows reappears under the name \lean{KAL}.
+\end{theorem}
+
+We first give an undergraduate-level proof \tierC, which relies on the \emph{geometric decay}
+of the interior mass. The Lean proof takes a different route, presented afterwards.
+
+\begin{lemma}[Geometric decay \tierC]\label{ch4:lem:geom}
+Set $\delta=\min_{0<k<N}P(k,0)$. Then $\delta\ge N^{-N}>0$ and, for every $n$, $I_{n+1}(i)\le(1-\delta)\,I_n(i)$.
+Consequently $I_n(i)\le(1-\delta)^n$.
+\end{lemma}
+
+\begin{humanproof}
+For $0<k<N$, we have $P(k,0)=(1-k/N)^N\ge(1/N)^N$. Next,
+\[
+I_{n+1}(i)=\sum_{0<j<N}\sum_kP^n(i,k)P(k,j)=\sum_kP^n(i,k)\sum_{0<j<N}P(k,j).
+\]
+If $k\in\{0,N\}$, the inner sum is zero, because the state is absorbing. If $k$ is interior, it is at most
+$1-P(k,0)\le1-\delta$. Hence $I_{n+1}(i)\le(1-\delta)\sum_{0<k<N}P^n(i,k)=(1-\delta)I_n(i)$, and we conclude by
+induction, since $I_0\le1$.
+\end{humanproof}
+
+\begin{humanproof}[Human proof of Theorem~\ref{ch4:thm:wflim}]
+Set $h(j)=j/N$. By Proposition~\ref{ch4:prop:wfbase}, $Ph=h$ at every state, hence $P^nh=h$, which reads
+\[
+\frac iN=\sum_jP^n(i,j)\,\frac jN=P^n(i,N)+\sum_{0<j<N}P^n(i,j)\,\frac jN .
+\]
+The last term lies between $0$ and $I_n(i)$, which tends to $0$ by Lemma~\ref{ch4:lem:geom}. We deduce
+$P^n(i,N)\to i/N$ by squeezing. Next, $P^n(i,0)+P^n(i,N)+I_n(i)=1$ (the rows of $P^n$ sum to~$1$),
+whence $P^n(i,0)\to1-i/N$. Finally, $P^{n+1}(i,N)=\sum_kP^n(i,k)P(k,N)\ge P^n(i,N)P(N,N)=P^n(i,N)$.
+\end{humanproof}
+
+\begin{uniremark}\tierL{} \emph{The fundamental matrix.} Order the states so that the interior states
+$\{1,\dots,N-1\}$ come first and write $P=\begin{pmatrix}Q&R\\0&I\end{pmatrix}$, where $Q$ is the interior-to-interior
+block and $R$ the interior-to-boundary block. Lemma~\ref{ch4:lem:geom} says that $Q^n\to0$ geometrically, so
+the series $\sum_{n\ge0}Q^n$ converges and equals the \emph{fundamental matrix} $N_Q=(I-Q)^{-1}$; its entry
+$N_Q(i,k)$ is the expected number of visits to $k$ starting from $i$. The absorption probabilities are the entries
+of $B=N_QR$, and the vector of expected absorption times is $N_Q\mathbf 1$ \cite{app:norris} (standard). This is
+literature only: as recorded in §\ref{ch4:sec:bilan}, absorption times are not formalised in this chapter.
+\end{uniremark}
+
+\begin{leanbox}[: the general theorem and the Wright--Fisher case]
+\texttt{formal\_cert/Programmes/PopGen/Absorption.lean}, ll.~32--34, 45--53 and 302--308:
+\begin{lstlisting}[language=Lean]
+noncomputable def kPow (P : Fin (N + 1) → Fin (N + 1) → ℝ) : ℕ → Fin (N + 1) → Fin (N + 1) → ℝ
+  | 0 => fun i j => if i = j then 1 else 0
+  | n + 1 => fun i j => ∑ k, kPow P n i k * P k j
+structure AbsorbingChain (P : Fin (N + 1) → Fin (N + 1) → ℝ) : Prop where
+  nonneg : ∀ i j, 0 ≤ P i j
+  rowSum : ∀ i, ∑ j, P i j = 1
+  absorb0 : ∀ j, P 0 j = if j = 0 then 1 else 0
+  absorbN : ∀ j, P (Fin.last N) j = if j = Fin.last N then 1 else 0
+def InteriorHarmonic (P : Fin (N + 1) → Fin (N + 1) → ℝ) (g : Fin (N + 1) → ℝ) : Prop :=
+  ∀ i : Fin (N + 1), 0 < (i : ℕ) → (i : ℕ) < N → ∑ j, P i j * g j = g i
+theorem fixation_limit {P : Fin (N + 1) → Fin (N + 1) → ℝ} (hP : AbsorbingChain P) (hN : 0 < N)
+    {h : Fin (N + 1) → ℝ} (hh : InteriorHarmonic P h) (h0 : h 0 = 0) (h1 : h (Fin.last N) = 1)
+    (hvar : ∀ k : Fin (N + 1), 0 < (k : ℕ) → (k : ℕ) < N → 0 < ∑ j, P k j * (h j - h k) ^ 2)
+    (i : Fin (N + 1)) :
+    Tendsto (fun n => kPow P n i (Fin.last N)) atTop (𝓝 (h i)) ∧
+    Tendsto (fun n => kPow P n i 0) atTop (𝓝 (1 - h i)) := by
+\end{lstlisting}
+\texttt{WrightFisherFixation.lean}, ll.~49--51:
+\begin{lstlisting}[language=Lean]
+theorem wright_fisher_fixation_limit {N : ℕ} (hN : 0 < N) (i : Fin (N + 1)) :
+    Tendsto (fun n => kPow (wfP N) n i (Fin.last N)) atTop (𝓝 (((i : ℕ) : ℝ) / N)) ∧
+    Tendsto (fun n => kPow (wfP N) n i 0) atTop (𝓝 (1 - ((i : ℕ) : ℝ) / N)) := by
+\end{lstlisting}
+\emph{Side by side: two different routes.} The Lean proof does not use Lemma~\ref{ch4:lem:geom}. It
+uses a \emph{second-moment} argument, valid for every absorbing chain provided that a harmonic
+function $h$ has a one-step variance $v(k)=\sum_jP(k,j)(h(j)-h(k))^2$ that is strictly positive at every interior
+state (hypothesis \lean{hvar}). Here are the steps.
+\begin{enumerate}[itemsep=1pt]
+\item We have the identity $\sum_jP(k,j)h(j)^2=h(k)^2+v(k)$ (\lean{second_moment}, l.~145).
+\item With $\varepsilon=\min v>0$, we obtain $P^{m+1}(h^2)\ge P^m(h^2)+\varepsilon I_m$. Summing,
+$\varepsilon\sum_{m<n}I_m(i)\le\sum_jh(j)^2$.
+\item The series $\sum I_m$ therefore has non-negative terms and bounded partial sums: it converges, and
+$I_m\to0$ (\lean{interiorMass_tendsto_zero}, l.~156).
+\item We conclude by the squeeze above (\lean{absorption_tendsto}, \lean{mass_split}).
+\end{enumerate}
+This route does not give the geometric rate. On the other hand, it applies as is to the Moran model
+(§\ref{ch4:sec:moran}) and to graphs (§\ref{ch4:sec:graphes}), where a direct jump to $0$ is impossible. For
+Wright--Fisher, the variance is positive thanks to the jump to~$0$ alone: $v(k)\ge P(k,0)(k/N)^2>0$
+(\lean{wf_var_pos}, l.~34).
+\end{leanbox}
+
+\begin{remark}[Controls \tierA]\label{ch4:rem:wfctl}
+\emph{Positive control.} We have $P^2(1,2)=\frac38$ for $N=2$ (\lean{ctl_pos_wf_two_steps}, l.~62). The limit
+$\frac12$ is therefore not yet reached after two generations.
+\emph{Negative control.} The variance hypothesis cannot be dropped. The identity matrix on $\{0,1,2\}$
+is stochastic and absorbing, and $j/2$ is harmonic for it; yet $P^n(1,2)=0$ for every $n$
+(\lean{ctl_neg_identity_no_absorption}, \texttt{Absorption.lean}, l.~363).
+\emph{Uniqueness.} If $g$ is another harmonic function with the same boundary values, the same argument gives
+$P^n(i,N)\to g(i)$. By uniqueness of limits, $g=h$ (\lean{harmonic_unique_of_var}, l.~320). This replaces the
+maximum principle by the uniqueness of limits.
+\end{remark}
+
+\begin{remark}[The Genetic repository]\label{ch4:rem:genetic}
+The companion repository \texttt{SocrateAI-Scientific-Genetic} \cite{ch4:Genetic} contains an earlier version of these results, over
+$\mathbb Q$. It is in \texttt{formal/ANSE/}\allowbreak\texttt{AlixPopulationGenetics.lean}: the maximum principle
+\lean{ilene_harmonic_le_zero} (l.~82), uniqueness \lean{xav_wf_harmonic_solution_unique} (l.~199) and the bound
+without passing to the limit \lean{xav_wf_fixation_by_time_le} (l.~268), which asserts $P^t(i,N)\le i/N$ for every $t$.
+The latter follows in one line from the martingale:
+$P^t(i,N)\cdot1\le\sum_jP^t(i,j)\,j/N=i/N$. The proof of this one-line bound is a human proof \tierC. The file
+was not recompiled for this book, and we assign it no tier. The statements of this chapter
+come from the AutoevolveAI modules H11 and P7. Between the two repositories, the link is only textual: no Lean
+term connects the two namespaces \tierC.
+\end{remark}
+
+% ---------------------------------------------------------------------
+\section{The Moran process with selection}\label{ch4:sec:moran}\sectionmark{Moran with selection}
+
+\subsection{The model}
+A population has $N$ individuals, of which $i$ are mutants with fitness $r>0$; residents have
+fitness $1$. At each time step, two independent draws take place.
+\begin{itemize}[itemsep=1pt]
+\item One individual is chosen to reproduce, with probability proportional to its fitness. A
+mutant is therefore chosen with probability $\frac{ri}{ri+N-i}$.
+\item One individual is chosen \emph{uniformly} among the $N$ to die, and the offspring takes its place.
+\end{itemize}
+The number of mutants goes up by $1$ with probability $p_i$, goes down by $1$ with probability $q_i$ and stays
+unchanged otherwise:
+\[
+p_i=\frac{ri}{ri+N-i}\cdot\frac{N-i}{N},\qquad q_i=\frac{N-i}{ri+N-i}\cdot\frac iN .
+\]
+These are the rates of Keller and Uğurlu, up to a one-line rewriting \tierL{}~\cite{ch4:KU} (pp.~2--4) \tierC.
+
+\begin{leanbox}[: the Moran model (\texttt{formal\_cert/Programmes/PopGen/MoranModel.lean}, ll.~30--32, 74--83, 152--155)]
+\begin{lstlisting}[language=Lean]
+noncomputable def bdP (N : ℕ) (p q : ℕ → ℝ) (i j : Fin (N + 1)) : ℝ :=
+  (if (j : ℕ) = (i : ℕ) + 1 then p i else 0) + (if (j : ℕ) + 1 = (i : ℕ) then q i else 0) +
+    (if (j : ℕ) = (i : ℕ) then 1 - p i - q i else 0)
+noncomputable def moranUp (N : ℕ) (r : ℝ) (i : ℕ) : ℝ :=
+  r * i / (r * i + ((N : ℝ) - i)) * (((N : ℝ) - i) / N)
+noncomputable def moranDown (N : ℕ) (r : ℝ) (i : ℕ) : ℝ :=
+  ((N : ℝ) - i) / (r * i + ((N : ℝ) - i)) * ((i : ℝ) / N)
+noncomputable def moranP (N : ℕ) (r : ℝ) : Fin (N + 1) → Fin (N + 1) → ℝ :=
+  bdP N (moranUp N r) (moranDown N r)
+noncomputable def geomS (r : ℝ) (n : ℕ) : ℝ := ∑ k ∈ range n, r⁻¹ ^ k
+noncomputable def moranFix (N : ℕ) (r : ℝ) (i : ℕ) : ℝ := geomS r i / geomS r N
+\end{lstlisting}
+The independent auditor checked symbolically that \lean{moranUp} and \lean{moranDown} coincide with the
+Keller--Uğurlu rates (PG-C-0004). This is an AI judgement, not a human audit.
+\end{leanbox}
+
+\begin{lemma}\label{ch4:lem:moranbase}
+Let $N\ge1$ and $r>0$.
+\begin{enumerate}[label=(\roman*),itemsep=1pt]
+\item $p_i=r\,q_i$ for every $i$: the ratio of the rates is the fitness.
+\item $1-p_i-q_i=\dfrac{ri^2+(N-i)^2}{(ri+N-i)N}\ge0$, so the matrix is stochastic. Moreover
+$p_0=q_0=p_N=q_N=0$, so $0$ and $N$ are absorbing.
+\item For $0<i<N$, we have $p_i>0$ and $q_i>0$.
+\end{enumerate}
+\tierA{} (\lean{moranUp_eq}, \lean{moran_stay_eq}, \lean{moran_stay_nonneg}, \lean{moranUp_pos},
+\lean{moranDown_pos}, \lean{moran_absorbing}, \texttt{MoranModel.lean}, ll.~85--149, and
+\texttt{MoranFixation.lean}, l.~25).
+\end{lemma}
+
+\begin{humanproof}
+(i) We have $p_i/q_i=\frac{ri(N-i)}{(N-i)i}=r$ if $0<i<N$, and both rates vanish at the boundary.
+(ii) We compute
+$(ri+N-i)N-ri(N-i)-(N-i)i=riN-ri(N-i)+(N-i)(N-i)=ri^2+(N-i)^2$.
+(iii) All factors are strictly positive when $0<i<N$.
+\end{humanproof}
+
+\subsection{Gambler's ruin}
+
+\begin{theorem}[Fixation in the Moran model]\label{ch4:thm:moran}
+Let $N\ge1$, $r>0$, and $S_n=\sum_{k<n}r^{-k}$. For every $0\le i\le N$,
+\[
+P^n(i,N)\xrightarrow[n\to\infty]{}\frac{S_i}{S_N}=
+\begin{cases}\dfrac{1-r^{-i}}{1-r^{-N}}&\text{if }r\ne1,\\[2mm] \dfrac iN&\text{if }r=1,\end{cases}
+\qquad P^n(i,0)\longrightarrow1-\frac{S_i}{S_N}.
+\]
+Moreover, $S_i/S_N$ is the unique function harmonic in the interior that equals $0$ at $0$ and $1$ at $N$, and
+$\frac{1-r^{-i}}{1-r^{-N}}\to\frac iN$ as $r\to1$, $r\ne1$. \tierA{} (\lean{moran_fixation_limit},
+\lean{moran_fixation_limit_closed}, \lean{moran_fixation_limit_neutral}, \lean{moran_fixation_unique},
+\texttt{MoranFixation.lean}, ll.~72--97; \lean{moranFix_closed}, \lean{moran_closed_tendsto_neutral},
+\texttt{MoranModel.lean}, ll.~203 and 231).
+\end{theorem}
+
+\begin{humanproof}
+\emph{Step 1: the recurrence.} Let $h$ be harmonic in the interior, with $h(0)=0$ and $h(N)=1$. For $0<i<N$,
+the first-step equation reads
+\[
+p_ih(i+1)+q_ih(i-1)+(1-p_i-q_i)h(i)=h(i)\iff p_i\bigl(h(i+1)-h(i)\bigr)=q_i\bigl(h(i)-h(i-1)\bigr).
+\]
+Since $p_i=rq_i$ and $q_i>0$, the increments $\Delta_i=h(i+1)-h(i)$ satisfy $\Delta_i=r^{-1}\Delta_{i-1}$.
+This is a geometric sequence: $\Delta_i=r^{-i}\Delta_0$. Summing, $h(i)=\Delta_0\,S_i$. The condition $h(N)=1$
+then forces $\Delta_0=1/S_N$, with $S_N>0$. There is therefore \emph{at most} one solution, and conversely
+$h(i)=S_i/S_N$ is one, since the equivalences can be reversed. This is the classical ``gambler's
+ruin'' argument.
+
+\emph{Step 2: closed form.} If $r\ne1$, set $\rho=1/r\ne1$. Then $S_n=\frac{1-\rho^n}{1-\rho}$, whence
+$\frac{S_i}{S_N}=\frac{1-r^{-i}}{1-r^{-N}}$. If $r=1$, $S_n=n$. Each $S_n(r)$ is a finite sum of continuous
+functions of $r$ and $S_N(1)=N\ne0$, so the quotient is continuous at $r=1$. This is the neutral limit.
+
+\emph{Step 3: absorption.} We repeat the proof of Theorem~\ref{ch4:thm:wflim} with $h=S_\cdot/S_N$:
+$P^nh=h$, then $|h(i)-P^n(i,N)|\le I_n(i)$, because $0\le h\le1$. It remains to show that $I_n(i)\to0$.
+Lemma~\ref{ch4:lem:geom} no longer applies as is: from $i$, one cannot jump to $0$ in one step if
+$i\ge2$. We therefore argue in blocks. From every interior state $k$, the path $k\to k-1\to\dots\to0$ has
+probability $q_kq_{k-1}\cdots q_1>0$ and lasts only $k\le N-1$ steps. Once at $0$, the chain stays there. Set
+$m=N-1$ and $\eta=\min_{0<k<N}q_k\cdots q_1>0$. Then $P^m(k,0)\ge\eta$ for every interior $k$, and the same
+computation as in Lemma~\ref{ch4:lem:geom}, applied to the matrix $P^m$, gives $I_{n+m}(i)\le(1-\eta)I_n(i)$.
+Since $I_n$ is nonincreasing (absorbed mass stays absorbed), $I_n(i)\to0$ \tierC.
+\end{humanproof}
+
+\begin{leanbox}[: the theorem and its closed form (\texttt{MoranFixation.lean}, ll.~72--74; \texttt{MoranModel.lean}, ll.~173--175, 203--204)]
+\begin{lstlisting}[language=Lean]
+theorem moran_fixation_limit {N : ℕ} {r : ℝ} (hN : 0 < N) (hr : 0 < r) (i : Fin (N + 1)) :
+    Tendsto (fun n => kPow (moranP N r) n i (Fin.last N)) atTop (𝓝 (moranFix N r i)) ∧
+    Tendsto (fun n => kPow (moranP N r) n i 0) atTop (𝓝 (1 - moranFix N r i)) :=
+theorem moranFix_harmonic_nat {N : ℕ} {r : ℝ} (hr : 0 < r) {i : ℕ} (h1 : 0 < i) :
+    moranUp N r i * moranFix N r (i + 1) + moranDown N r i * moranFix N r (i - 1)
+      + (1 - moranUp N r i - moranDown N r i) * moranFix N r i = moranFix N r i := by
+theorem moranFix_closed {N : ℕ} {r : ℝ} (hr1 : r ≠ 1) (i : ℕ) :
+    moranFix N r i = (1 - r⁻¹ ^ i) / (1 - r⁻¹ ^ N) := by
+\end{lstlisting}
+\emph{Side by side.} Lean does not \emph{solve} the recurrence. It \emph{checks} that the guessed solution
+$S_i/S_N$ is harmonic (\lean{moranFix_harmonic_nat}, with a single \lean{linear_combination}). It then applies the
+general theorem \lean{fixation_limit} of §\ref{ch4:sec:wf}, with the variance
+$v(i)\ge p_i\,(r^{-i}/S_N)^2>0$ (\lean{moran_var_pos_nat}, l.~189). The block argument of Step~3 is not
+formalised; the second moment replaces it. Uniqueness comes from the uniqueness of limits
+(\lean{moran_fixation_unique}), not from Step~1.
+\end{leanbox}
+
+\begin{remark}[Controls \tierA]\label{ch4:rem:moranctl}
+The following controls are all checked by the kernel.
+\begin{itemize}[itemsep=1pt]
+\item \emph{Positive controls.} For $N=2$, $r=2$, we have $p_1=\frac13$, $q_1=\frac16$ and $h(1)=\frac23$
+(\lean{ctl_pos_moran_rates}, \lean{ctl_pos_moranFix_N2}). For $N=3$, $r=2$, we have $h=(0,\frac47,\frac67,1)$, and
+the first-step equation holds (\lean{ctl_pos_moranFix_N3}, \texttt{MoranModel.lean}, ll.~240--253).
+\item \emph{Negative controls.} The ``inverted-exponent'' formula $(1-r^i)/(1-r^N)$ gives $\frac17\ne\frac47$
+and violates the first-step equation. The neutral value $i/N$ also violates it under selection (ll.~259--276). At the level
+of the chain, $P^n(1,3)$ for $N=3$, $r=2$ tends neither to $\frac13$ nor to $\frac17$
+(\lean{ctl_neg_wrong_limits}, \texttt{MoranFixation.lean}, l.~102).
+\item \emph{Planted controls.} In a separate file that nothing imports, a ``theorem'' proved by \lean{sorry}
+and another derived from a planted axiom assert the false limits $\frac17$ and $\frac13$. This file
+(\texttt{PopGenProgControls.lean}) compiles with return code~$0$, but \texttt{\#print axioms} shows \lean{sorryAx}, resp.\ the planted axiom
+\lean{ctl_cheat}. They are therefore detected (PG-A-0012).
+\end{itemize}
+\end{remark}
+
+\begin{numbox}[: CVODE and the ``fail-closed'' certificate]
+\tierX{} Programme P7 also integrated the uniformised Kolmogorov equation $\dot\pi=\pi(P-I)$ with CVODE (BDF, exact
+Jacobian), in a new crate \texttt{qf-popgen} of rusty-SUNDIALS. The crate wraps itself in a certificate (``fail-closed'': it refuses by default) that rejects
+any doubtful result: valid kernel, mass conservation, componentwise positivity,
+decay of the interior mass and agreement with the target. Outcome: $106$ accepted runs agree with
+the closed forms to within $3.1\times10^{-10}$; the $9$ negative controls are all rejected. The uniformised
+law is a Poisson mixture of the $P^n$ \tierC. These computations therefore test the same formulas, but not the
+Lean matrix powers, and \emph{they establish nothing}.
+\end{numbox}
+
+\subsection{Interpretation: does a resistance mutation take over the population?}
+
+\begin{physbox}[: biological reading]
+\tierC{} The Moran model is often read as a model of the following question: a bacterium or a cell becomes
+resistant to a drug; does its lineage take over? If the mutation confers, in the presence of the
+drug, a relative advantage $r>1$, the probability that a single mutant fixes is
+\[
+\rho_N(1)=\frac{1-r^{-1}}{1-r^{-N}}\xrightarrow[N\to\infty]{}1-\frac1r .
+\]
+The closed form is \tierA{} (Theorem~\ref{ch4:thm:moran}) and the limit in $N$ is an elementary computation \tierC.
+Evaluated in floating point \tierX, it gives for $N=100$:
+\begin{center}\small
+\begin{tabular}{lccc}
+\toprule
+& $r=0.99$ & $r=1.01$ & $r=1.1$\\
+\midrule
+$\rho_{100}(1)$ & $0.0058$ & $0.0157$ & $0.0909$\\
+neutral value $1/N$ & $0.01$ & $0.01$ & $0.01$\\
+\bottomrule
+\end{tabular}
+\end{center}
+Two qualitative lessons follow. First, even an advantageous mutant ($r=1.1$) is lost most of the time, here
+in about $91\%$ of cases, swept away by drift. Second, a disadvantageous mutant ($r<1$) still has a small
+chance of fixing.
+
+\emph{Caution.} This is only a reading, and it remains at Tier~C. The model assumes a population of fixed size,
+well mixed, a constant fitness, no new mutation, uniform death and generations that overlap step by step.
+A real infection has a varying size, changing drug concentrations, a cost of resistance, spatial structure
+and recurrent mutations. No data were used, and no Lean theorem certifies that a real population follows
+this chain.
+\end{physbox}
+
+% ---------------------------------------------------------------------
+\section{The Price equation and the haploid corollary}\label{ch4:sec:price}\sectionmark{The Price equation}
+
+\subsection{An accounting identity}
+A finite population consists of types $i\in s$. Type $i$ has a count $n_i$, a fitness $w_i$
+(mean number of offspring per individual), a parental trait $z_i$, and its offspring have mean trait
+$z'_i$. We write
+\[
+M=\sum n_i,\quad A=\sum n_iw_i,\quad B=\sum n_iz_i,\quad C=\sum n_iw_iz_i,\quad D=\sum n_iw_iz'_i .
+\]
+We then define $\bar w=A/M$ and $\bar z=B/M$. The mean of the next generation is $\bar z'=D/A$, since
+type $i$ leaves $n_iw_i$ offspring: this is the \emph{modelling assumption}. Finally we write
+$\mathrm{Cov}_n(w,z)=\frac1M\sum n_i(w_i-\bar w)(z_i-\bar z)$ and $\mathbb E_n[f]=\frac1M\sum n_if_i$.
+
+\begin{theorem}[Price equation]\label{ch4:thm:price}
+Over an arbitrary field, if $M\ne0$ and $A\ne0$, then
+\[
+\bar w\,(\bar z'-\bar z)=\mathrm{Cov}_n(w,z)+\mathbb E_n\bigl[w\,(z'-z)\bigr].
+\]
+\tierA{} (\lean{price_equation}, \texttt{formal\_cert/Programmes/PopGen/Price.lean}, ll.~95--105; real version
+under positivity hypotheses \lean{price_equation_pos}, l.~170).
+\end{theorem}
+
+\begin{humanproof}
+On the one hand, $\mathrm{Cov}_n(w,z)=\frac1M\bigl(C-\bar wB-\bar zA+M\bar w\bar z\bigr)=\frac{C-AB/M}{M}$; on the other
+hand, $\mathbb E_n[w(z'-z)]=\frac{D-C}{M}$. The sum is $\frac DM-\frac{AB}{M^2}$. But
+\[
+\bar w(\bar z'-\bar z)=\frac AM\Bigl(\frac DA-\frac BM\Bigr)=\frac DM-\frac{AB}{M^2}. \qedhere
+\]
+\end{humanproof}
+
+\begin{leanbox}[: the statement (\texttt{Price.lean}, ll.~95--98)]
+\begin{lstlisting}[language=Lean,escapeinside={(*@}{@*)}]
+theorem price_equation (s : Finset (*@$\iota$@*)) (n w z z' : (*@$\iota$@*) → K)
+    (hN : ∑ i ∈ s, n i ≠ 0) (hW : ∑ i ∈ s, n i * w i ≠ 0) :
+    wmean s n w * (zbarNext s n w z' - wmean s n z)
+      = wcov s n w z + wmean s n (fun i => w i * (z' i - z i)) := by
+\end{lstlisting}
+The Lean proof follows the human proof. It expands the two numerators into the five raw sums
+(\lean{cov_num_expand}, \lean{trans_num_expand}), then concludes with a scalar lemma in which $M,A,B,C,D$ are
+atoms (\lean{price_scalar}: \lean{field_simp} then \lean{ring}). The statement holds over an arbitrary field \lean{K},
+for example $\mathbb Q$ or $\R$, and for every finite set of types.
+\end{leanbox}
+
+\subsection{The haploid corollary}
+\begin{corollary}[Haploid selection increment]\label{ch4:cor:haploide}
+Take as trait the fitness itself, $z=w$, and assume there is \emph{no transmission
+bias}, $z'=w$: clonal types, constant fitnesses, no mutation. Then
+\[
+\bar w\,(\bar w'-\bar w)=\mathrm{Var}_n(w),\qquad\text{hence}\qquad \Delta\bar w=\frac{\mathrm{Var}_n(w)}{\bar w}\ge0
+\quad(\text{if }n_i>0,\ w_i>0).
+\]
+\tierA{} (\lean{fisher_haploid}, \lean{fisher_haploid_div}, \lean{fisher_haploid_nondecreasing},
+\lean{fisher_haploid_pos}, \texttt{Price.lean}, ll.~125--185; \lean{fisher_haploid_nondecreasing} is re-exported under the name \lean{AURELIA}).
+\end{corollary}
+
+\begin{humanproof}
+With $z=z'=w$, the transmission term $\mathbb E_n[w(w-w)]$ vanishes identically, and
+$\mathrm{Cov}_n(w,w)=\mathrm{Var}_n(w)$. We divide by $\bar w\ne0$. The sign comes from $\mathrm{Var}_n(w)\ge0$ and
+$\bar w>0$.
+\end{humanproof}
+
+This is equation~(2.27) of LaGatta, with a vanishing environmental term \tierL{}~\cite{ch4:LaG}. It is also
+the discrete analogue of Baez's remark: $d\bar f/dt=\mathrm{Var}(f)$ when the fitnesses are
+constant \tierL{}~\cite{ch4:Bae}.
+
+For two alleles with frequencies $p$, $1-p$ and fitnesses $w_1$, $w_2$, one finds
+$\mathrm{Var}_n(w)=p(1-p)(w_1-w_2)^2$, whence $\Delta\bar w=p(1-p)(w_1-w_2)^2/\bar w$. Module P7 derives from it, in
+the case \lean{Fin 2}, two statements whose text is identical to two lemmas of the Genetic repository
+(\texttt{Price.lean}, ll.~224 and 235)
+\tierA. The connection between the two repositories remains textual \tierC.
+
+\begin{remark}[Controls \tierA]
+\emph{Positive control.} With three types, $n=(1,2,3)$, $w=(1,2,4)$, $z=(0,1,3)$ and $z'=(1,1,2)$, both sides
+of the Price equation equal $-\frac{13}{36}$ (\lean{ctl_pos_three_types}, l.~249).
+\emph{Transmission bias.} Take $n=(1,1)$ and $w=z=(1,2)$, but an offspring fitness
+$z'=(1,1)$. Then $\Delta\bar w=-\frac12$, whereas $\mathrm{Var}/\bar w=\frac16$: the variance formula
+\emph{fails}. The Price equation, however, still holds, with $-\frac34=-\frac34$ (\lean{ctl_neg_transmission_bias},
+l.~263).
+\emph{The factor $1/\bar w$ matters.} Without bias, $\Delta\bar w=\frac16$ but $\mathrm{Var}(w)=\frac14$
+(\lean{ctl_neg_missing_wbar}, l.~280).
+\end{remark}
+
+\begin{warnbox}[: a negative result, announced as such]
+The preregistration of programme P7 included an item \texttt{fisher\_general}: Fisher's fundamental theorem
+in Price's (1972) ``partial change'' reading, with a prior probability of $0.35$. This
+item was \textbf{not reached}. Only the haploid case with constant fitnesses is proved. Nor is it
+the multi-allelic diploid case, where monotonicity is an inequality and not this equality. Price (1970,
+1972) was not read; it is cited after LaGatta \cite{ch4:LaG} (p.~69).
+\end{warnbox}
+
+% ---------------------------------------------------------------------
+\section{Evolutionary graph theory: the isothermal theorem}\label{ch4:sec:graphes}\sectionmark{The isothermal theorem}
+
+\subsection{A structured population}
+In a tissue, a dividing cell does not replace just any other cell: it replaces a
+\emph{neighbour}. Evolutionary graph theory describes this structure by a weighted directed graph. The
+individuals are the vertices $V=\{1,\dots,n\}$. The \emph{replacement matrix} $W$ has entries $\ge0$, and is
+\emph{row-stochastic}: $\sum_jW_{ij}=1$. The entry $W_{ij}$ is the probability that the offspring of
+$i$ replaces $j$; loops $W_{ii}>0$ are allowed.
+
+A \emph{state} is the set $S\subseteq V$ of mutant vertices. Mutants have fitness $r>0$ and
+residents fitness~$1$; we write $f_S(i)=r$ if $i\in S$ and $f_S(i)=1$ otherwise. Fix
+selection weights $\mu_i>0$, and set $F(S)=\sum_k\mu_kf_S(k)$. One step of the \emph{birth--death} update
+proceeds as follows.
+\begin{itemize}[itemsep=1pt]
+\item Vertex $i$ is chosen to reproduce with probability $\mu_if_S(i)/F(S)$.
+\item Its offspring replaces $j$ with probability $W_{ij}$.
+\item The new state is $S\cup\{j\}$ if $i\in S$, and $S\setminus\{j\}$ otherwise.
+\end{itemize}
+The case $\mu\equiv1$ is the process of Lieberman, Hauert and Nowak \cite{ch4:LHN}. The chain has $2^n$ states; $\emptyset$
+and $V$ are absorbing. We write $P^{+}(S)$ and $P^{-}(S)$ for the probabilities that the \emph{number} of mutants $|S|$
+increases, resp.\ decreases, by one.
+
+\begin{definition}
+The matrix $W$ is \emph{isothermal} if it is, in addition, column-stochastic: $\sum_iW_{ij}=1$. The
+``temperature'' $\sum_iW_{ij}$ of each vertex then equals~$1$. It is \emph{strongly connected} if, for all
+$a,b$, there is a path $a=x_0,\dots,x_m=b$, $m\ge1$, with $W_{x_kx_{k+1}}>0$.
+\end{definition}
+
+\begin{leanbox}[: the model (\texttt{formal\_cert/Programmes/EvoGraph/BirthDeath.lean}, ll.~44--61, 73--74, 90--91)]
+\begin{lstlisting}[language=Lean]
+noncomputable def fit (r : ℝ) (S : Finset (Fin n)) (i : Fin n) : ℝ := if i ∈ S then r else 1
+noncomputable def ind (S : Finset (Fin n)) (i : Fin n) : ℝ := if i ∈ S then 1 else 0
+def upd (S : Finset (Fin n)) (i j : Fin n) : Finset (Fin n) := if i ∈ S then insert j S else S.erase j
+noncomputable def totFit (μ : Fin n → ℝ) (r : ℝ) (S : Finset (Fin n)) : ℝ := ∑ k, μ k * fit r S k
+noncomputable def coef (μ : Fin n → ℝ) (W : Fin n → Fin n → ℝ) (r : ℝ) (S : Finset (Fin n))
+    (i j : Fin n) : ℝ :=
+  μ i * fit r S i / totFit μ r S * W i j
+noncomputable def bdK (μ : Fin n → ℝ) (W : Fin n → Fin n → ℝ) (r : ℝ) (S T : Finset (Fin n)) : ℝ :=
+  ∑ i, ∑ j, coef μ W r S i j * (if upd S i j = T then 1 else 0)
+noncomputable def upP (μ : Fin n → ℝ) (W : Fin n → Fin n → ℝ) (r : ℝ) (S : Finset (Fin n)) : ℝ :=
+  ∑ T, bdK μ W r S T * (if T.card = S.card + 1 then 1 else 0)
+def StronglyConnected (W : Fin n → Fin n → ℝ) : Prop :=
+  ∀ a b, Relation.TransGen (fun x y => 0 < W x y) a b
+\end{lstlisting}
+The independent auditor judged that \lean{upP}, \lean{downP} and \lean{bdK} correctly model the
+Lieberman--Hauert--Nowak process. This is an AI judgement, not a human audit \tierC.
+\end{leanbox}
+
+\subsection{Forward bias, configuration by configuration}
+For $S\subseteq V$, we define the \emph{cuts}
+\[
+\mathrm{out}(S)=\sum_{i\in S}\sum_{j\notin S}\mu_iW_{ij},\qquad \mathrm{in}(S)=\sum_{i\notin S}\sum_{j\in S}\mu_iW_{ij}.
+\]
+
+\begin{lemma}[Moves are cuts]\label{ch4:lem:cuts}
+We have $P^{+}(S)=r\,\mathrm{out}(S)/F(S)$ and $P^{-}(S)=\mathrm{in}(S)/F(S)$. The chain is stochastic, and
+$\emptyset$, $V$ are absorbing. \tierA{} (\lean{up_eq}, \lean{down_eq}, \lean{bd_absorbing},
+\texttt{BirthDeath.lean}, ll.~148--250).
+\end{lemma}
+
+\begin{humanproof}
+The coefficients $c(S,i,j)=\mu_if_S(i)W_{ij}/F(S)$ are $\ge0$, and their sum is $1$, because $\sum_jW_{ij}=1$ and
+$\sum_i\mu_if_S(i)=F(S)$. There are four cases according to whether $i$ and $j$ are in $S$ or not.
+\begin{itemize}[itemsep=1pt]
+\item $i\in S$ and $j\notin S$: a mutant invades a resident, and $|S|$ increases. The weight is $\mu_irW_{ij}/F$.
+\item $i\notin S$ and $j\in S$: $|S|$ decreases. The weight is $\mu_iW_{ij}/F$.
+\item In the other two cases, the state does not change.
+\end{itemize}
+Summing, we obtain the two formulas. Finally, $\mathrm{upd}(\emptyset,i,j)=\emptyset$ and $\mathrm{upd}(V,i,j)=V$.
+\end{humanproof}
+
+\begin{proposition}[Cut balance and forward bias]\label{ch4:prop:bias}
+Assume $\mu$ is stationary: $\sum_i\mu_iW_{ij}=\mu_j$ for every $j$. Then $\mathrm{out}(S)=\mathrm{in}(S)$ for
+\emph{every} configuration $S$, and therefore
+\[
+P^{+}(S)=r\,P^{-}(S)\qquad\text{for every }S\subseteq V .
+\]
+In particular, this is the case if $W$ is isothermal and $\mu\equiv1$. \tierA{} (\lean{flow_balance},
+\lean{cut_balance}, \lean{forward_bias}, \texttt{BirthDeath.lean}, ll.~176--256).
+\end{proposition}
+
+\begin{humanproof}
+We compute the same quantity in two ways. On the one hand, $\sum_{i\in S}\sum_{j\in V}\mu_iW_{ij}=\mu(S)$, since
+$\sum_jW_{ij}=1$. On the other hand, $\sum_{j\in S}\sum_{i\in V}\mu_iW_{ij}=\mu(S)$, by stationarity. Both double
+sums contain the common part $\sum_{i\in S}\sum_{j\in S}\mu_iW_{ij}$. Once it is removed, what remains is
+$\mathrm{out}(S)=\mathrm{in}(S)$. Lemma~\ref{ch4:lem:cuts} then gives $P^{+}=r\,\mathrm{out}/F=r\,\mathrm{in}/F=rP^{-}$.
+If $W$ is isothermal, $\sum_i1\cdot W_{ij}=1=\mu_j$: this is the stationarity of $\mu\equiv1$.
+\end{humanproof}
+
+\begin{leanbox}[: forward bias (\texttt{BirthDeath.lean}, ll.~251--253)]
+\begin{lstlisting}[language=Lean]
+theorem forward_bias {μ : Fin n → ℝ} {W : Fin n → Fin n → ℝ} (r : ℝ) (hrow : ∀ i, ∑ j, W i j = 1)
+    (hstat : ∀ j, ∑ i, μ i * W i j = μ j) (S : Finset (Fin n)) :
+    upP μ W r S = r * downP μ W r S := by
+\end{lstlisting}
+The forward bias of Pattni et al. \tierL{}~\cite{ch4:PBRS} (Lemma~1, p.~11) and the ratio $p^-/p^+=1/r$ of
+Theorem~3.2 of Keller--Uğurlu \tierL{}~\cite{ch4:KU} say the same thing. Note that the identity is written
+without division: it remains true even if $P^{-}(S)=0$.
+\end{leanbox}
+
+\begin{proposition}[A harmonic function on configurations]\label{ch4:prop:harmgraph}
+Let $\rho_n(k)=S_k/S_n$ be the Moran fixation function of Theorem~\ref{ch4:thm:moran}. If $\mu$ is
+stationary, the function $h(S)=\rho_n(|S|)$ is harmonic for the configuration chain at every
+$S\ne\emptyset$. If moreover an edge $i\in S\to j\notin S$ satisfies $\mu_iW_{ij}>0$, the one-step variance of $h$ at
+$S$ is strictly positive. \tierA{} (\lean{moranFix_card_harmonic}, \lean{moranFix_card_var_pos},
+\texttt{BirthDeath.lean}, ll.~285--328).
+\end{proposition}
+
+\begin{humanproof}
+Set $k=|S|\ge1$. By Step~1 of Theorem~\ref{ch4:thm:moran}, $h$ goes up by $\Delta^{+}=r^{-k}/S_n$ on a
+$+1$ step, and goes down by $\Delta^{-}=r^{-(k-1)}/S_n=r\,\Delta^{+}$ on a $-1$ step. Otherwise, $h$ does not change. Hence
+\[
+\mathbb E\bigl[h(S')-h(S)\bigr]=P^{+}(S)\Delta^{+}-P^{-}(S)\Delta^{-}=\frac{r^{-k}}{S_n}\bigl(P^{+}(S)-r\,P^{-}(S)\bigr)=0
+\]
+by Proposition~\ref{ch4:prop:bias}. For the variance, the move $i\to j$ has probability $>0$ and changes
+$h$ by $\Delta^{+}\ne0$.
+\end{humanproof}
+
+This computation uses \emph{only} the forward bias. It never asserts that the number of mutants is a Markov
+chain. We shall see in §\ref{ch4:ssec:cycle} that this assertion would be false.
+
+\begin{lemma}[Connectivity forces cuts]\label{ch4:lem:conn}
+Assume $W$ is strongly connected and $\mu>0$. Then every nonempty subset $S$ different from $V$ has an outgoing
+edge $i\in S\to j\notin S$ with $\mu_iW_{ij}>0$. \tierA{} (\lean{cutPositive_of_strongly_connected},
+\texttt{BirthDeath.lean}, l.~332).
+\end{lemma}
+
+\begin{humanproof}
+Take $a\in S$, $b\notin S$, and a path $a=x_0,\dots,x_m=b$ of weight $>0$. Let $\ell$ be the smallest index such
+that $x_{\ell+1}\notin S$. It exists because $x_m\notin S$, and $x_\ell\in S$, because $x_0\in S$. The edge
+$x_\ell\to x_{\ell+1}$ leaves $S$. In Lean, the proof proceeds by induction on the \lean{TransGen} derivation.
+\end{humanproof}
+
+\subsection{The theorem}
+\begin{theorem}[Isothermal theorem, birth--death update]\label{ch4:thm:iso}
+Let $n\ge1$, $r>0$, and $W$ isothermal and strongly connected, with $\mu\equiv1$. For \emph{every} initial
+configuration $S$,
+\[
+P^t(S,V)\xrightarrow[t\to\infty]{}\rho_n(|S|)=\frac{1-r^{-|S|}}{1-r^{-n}}\quad(r\ne1),\qquad\frac{|S|}{n}\quad(r=1).
+\]
+In particular, a single mutant placed at \emph{any} vertex $v$ fixes with limiting probability
+$\frac{1-r^{-1}}{1-r^{-n}}$, exactly as in the well-mixed population. More generally, the same limit
+holds as soon as $\mu W=\mu$, $\mu>0$, and every nonempty proper subset has an outgoing edge.
+\tierA{} (\lean{isothermal_fixation}, \lean{isothermal_fixation_single}, \lean{isothermal_fixation_neutral},
+\lean{isothermal_fixation_uniform}, \lean{stationary_fixation}, \texttt{BirthDeath.lean}, ll.~356--416; \lean{isothermal_fixation_single} is re-exported under the name \lean{ILENE}).
+\end{theorem}
+
+\begin{humanproof}
+Proposition~\ref{ch4:prop:harmgraph} provides a function harmonic off $\{\emptyset,V\}$, equal to $0$ at
+$\emptyset$ and $1$ at $V$. Lemma~\ref{ch4:lem:conn} and Proposition~\ref{ch4:prop:harmgraph} ensure that its
+variance is $>0$ off the two absorbing states. The general absorption theorem of §\ref{ch4:sec:wf}
+applies, on an arbitrary finite state space. We transport it there by numbering the $2^n$ configurations from
+$0$ to $2^n-1$, with $\emptyset\mapsto0$ and $V\mapsto2^n-1$.
+\end{humanproof}
+
+\begin{leanbox}[: the isothermal theorem (\texttt{BirthDeath.lean}, ll.~376--378)]
+\begin{lstlisting}[language=Lean]
+theorem isothermal_fixation {W : Fin n → Fin n → ℝ} {r : ℝ} (hn : 0 < n) (hr : 0 < r)
+    (hW : Isothermal W) (hsc : StronglyConnected W) (S : Finset (Fin n)) :
+    Tendsto (fun t => sPow (bdK (fun _ => 1) W r) t S univ) atTop (𝓝 (moranFix n r S.card)) := by
+\end{lstlisting}
+\emph{Reuse.} The module \texttt{Transport.lean} reproves nothing. The theorem
+\lean{two_absorbing_limit} (l.~81) conjugates the configuration chain by a bijection with
+\lean{Fin (M + 1)}, then applies the theorem \lean{ProgPopGen.fixation_limit} of P7 \emph{as is}. The files
+\texttt{Absorption.lean} and \texttt{MoranModel.lean} are reused without modification.
+\emph{What is not proved.} The converse is not formalised: is a graph that gives the Moran value for
+every $r$ necessarily isothermal? Proposition~2 of Pattni et al.\ is an equivalence; only the ``sufficient'' direction
+is formalised here \tierL{}~\cite{ch4:PBRS}. The death--birth update is not formalised either.
+\end{leanbox}
+
+\subsection{Why the number of mutants does not ``lump''}\label{ch4:ssec:cycle}
+\begin{center}
+\setlength{\unitlength}{1cm}
+\begin{picture}(9.5,3.0)
+\put(0.5,2.5){\circle{0.5}}\put(0.42,2.42){\small 0}
+\put(2.5,2.5){\circle{0.5}}\put(2.42,2.42){\small 1}
+\put(2.5,0.5){\circle{0.5}}\put(2.42,0.42){\small 2}
+\put(0.5,0.5){\circle{0.5}}\put(0.42,0.42){\small 3}
+\put(0.75,2.5){\line(1,0){1.5}}\put(2.5,0.75){\line(0,1){1.5}}
+\put(0.75,0.5){\line(1,0){1.5}}\put(0.5,0.75){\line(0,1){1.5}}
+\put(3.3,1.4){\parbox{6cm}{\small The 4-cycle: each vertex sends its offspring to one of its two neighbours,
+with probability $\frac12$. $W$ is doubly stochastic, hence isothermal.}}
+\end{picture}
+\end{center}
+
+\begin{proposition}[The 4-cycle \tierA]\label{ch4:prop:cycle}
+On the 4-cycle, with $r=2$ and $\mu\equiv1$, the configurations $\{0,1\}$ and $\{0,2\}$ both have two mutants,
+but
+\[
+P^{+}(\{0,1\})=\tfrac13,\qquad P^{+}(\{0,2\})=\tfrac23,
+\]
+and the bias is $P^{+}=2P^{-}$ in both cases (\lean{cycle4_not_lumpable}, \texttt{Examples.lean},
+ll.~239--253).
+\end{proposition}
+
+\begin{humanproof}
+For $S=\{0,1\}$, we have $F=2+2+1+1=6$. The outgoing edges are $0\to3$ and $1\to2$, each of weight $\frac12$,
+so $\mathrm{out}=1$, whence $P^{+}=2\cdot1/6=\frac13$. Likewise $\mathrm{in}=1$ and $P^{-}=\frac16$. For
+$S=\{0,2\}$, the four edges leaving $0$ and $2$ all exit $S$, so $\mathrm{out}=\mathrm{in}=2$,
+$P^{+}=\frac46=\frac23$ and $P^{-}=\frac13$.
+\end{humanproof}
+
+\begin{leanbox}[: the counterexample (\texttt{Examples.lean}, ll.~230--231 and 239--243)]
+\begin{lstlisting}[language=Lean]
+noncomputable def Wcyc : Fin 4 → Fin 4 → ℝ :=
+  ![![0, 1 / 2, 0, 1 / 2], ![1 / 2, 0, 1 / 2, 0], ![0, 1 / 2, 0, 1 / 2], ![1 / 2, 0, 1 / 2, 0]]
+theorem cycle4_not_lumpable :
+    ({0, 1} : Finset (Fin 4)).card = ({0, 2} : Finset (Fin 4)).card ∧
+    upP (fun _ => 1) Wcyc 2 {0, 1} = 1 / 3 ∧ upP (fun _ => 1) Wcyc 2 {0, 2} = 2 / 3 ∧
+    upP (fun _ => 1) Wcyc 2 {0, 1} = 2 * downP (fun _ => 1) Wcyc 2 {0, 1} ∧
+    upP (fun _ => 1) Wcyc 2 {0, 2} = 2 * downP (fun _ => 1) Wcyc 2 {0, 2} := by
+\end{lstlisting}
+\end{leanbox}
+
+The transition probabilities of the count $|S_t|$ are therefore \emph{not} functions of $|S_t|$. The number of
+mutants is not a birth--death chain with fixed rates, in the sense of the strong lumpability
+of Kemeny and Snell \cite{ch4:KS}. Two clarifications are in order \tierC. First, we do not claim that the
+number of mutants is non-Markovian for \emph{every} initial distribution: only strong lumpability is refuted.
+Second, the \emph{jump chain}, the one in which the steps where nothing happens are removed, does lump. On the
+4-cycle, given that a move takes place, both configurations go up with the same probability
+$P^{+}/(P^{+}+P^{-})=\frac23$, whereas their probabilities of staying put are $\frac12$ and $0$ (exact rational
+computation \tierX). This is the argument of Pattni et al. \tierL{}~\cite{ch4:PBRS}. The Lean proof never lumps
+anything: it works configuration by configuration (Proposition~\ref{ch4:prop:harmgraph}).
+
+\subsection{The star graph: amplifying or suppressing selection}
+\begin{center}
+\setlength{\unitlength}{1cm}
+\begin{picture}(7,1.6)
+\put(0.5,0.8){\circle{0.5}}\put(0.42,0.72){\small 1}
+\put(3.5,0.8){\circle{0.5}}\put(3.42,0.72){\small 0}
+\put(6.5,0.8){\circle{0.5}}\put(6.42,0.72){\small 2}
+\put(3.25,0.95){\vector(-1,0){2.5}}\put(1.8,1.1){\small $\frac12$}
+\put(0.75,0.65){\vector(1,0){2.5}}\put(1.9,0.25){\small $1$}
+\put(3.75,0.95){\vector(1,0){2.5}}\put(4.9,1.1){\small $\frac12$}
+\put(6.25,0.65){\vector(-1,0){2.5}}\put(5.0,0.25){\small $1$}
+\end{picture}
+\[
+W_\star=\begin{pmatrix}0&\frac12&\frac12\\[1pt]1&0&0\\1&0&0\end{pmatrix}\qquad
+(\text{centre }0,\ \text{leaves }1,2).
+\]
+\end{center}
+
+The star is row-stochastic, but its column~$0$ sums to $2$: the centre has ``temperature'' $2$, and
+the graph is \emph{not} isothermal (\lean{star_not_isothermal}) \tierA. Starting from a mutant at the centre, we have
+$P^{+}(\{0\})=P^{-}(\{0\})=\frac12$. The ratio is $1$, not $r=2$ (\lean{star_bias}) \tierA.
+
+\begin{proposition}[Exact values on the star \tierA]\label{ch4:prop:star}
+For $n=3$, $r=2$ and $\mu\equiv1$, the limiting fixation probabilities are
+\[
+\tfrac5{12}\ \text{(mutant at the centre)},\qquad \tfrac23\ \text{(mutant on a leaf)},\qquad
+\tfrac7{12}\ \text{(mutant placed uniformly)},
+\]
+all different from the Moran value $\rho_3(1)=\frac47$ (\lean{star_fixation_centre},
+\lean{star_fixation_leaf}, \lean{star_fixation_uniform}, \lean{star_ne_moran}, \texttt{Examples.lean},
+ll.~171--196). With the stationary weights $\mu=(\frac12,\frac14,\frac14)$, one recovers $\frac47$ starting from the
+centre (\lean{starStationary_fixation}, l.~219).
+\end{proposition}
+
+The proof by hand is the subject of Exercise~\ref{ch4:ex:star}. In Lean, the table of the $2^3$ values
+$h=(0,\frac5{12},\frac23,\frac23,\frac56,\frac56,\frac{14}{15},1)$ is given explicitly (\lean{hStar}, l.~139).
+One checks that it is harmonic (\lean{star_harmonic}) and has positive variance, then feeds it into the
+\emph{same} transported absorption machinery. An independent script in exact rational arithmetic gives the same table
+\tierX.
+
+\begin{physbox}[: amplifiers and suppressors]
+\tierC{} Compare with the Moran value $\frac47\approx0.571$. For a mutant placed uniformly at random, the star
+\emph{amplifies} selection, since $\frac7{12}\approx0.583>\frac47$. For a mutant born at the centre, it
+\emph{suppresses} it, with $\frac5{12}\approx0.417$. These conclusions must be read with care. They are only
+\emph{three numbers}, for $n=3$ and $r=2$. They do not show that the star amplifies selection for every $r$ or
+for every $n$. The preregistration, incidentally, called the star an ``amplifier'' without qualification. For $n=4$,
+an unverified script gives in exact rationals $\frac{392}{1265}$ (centre), $\frac{168}{253}$ (leaf) and a
+mean $\frac{728}{1265}\ne\frac8{15}$. These values are \tierX{} and are not checked by the
+kernel. We do not quote the classical formula for the star, because the source (Lieberman--Hauert--Nowak) was not
+read.
+\end{physbox}
+
+\subsection{Connectivity is necessary}
+\begin{proposition}[Identity graph \tierA]\label{ch4:prop:identite}
+On $2$ vertices, the matrix $W=I$ is doubly stochastic, hence isothermal, but not strongly connected. With
+$r=2$, we have $P^t(\{0\},V)=0$ for every $t$, which therefore does not tend to $\rho_2(1)=\frac23$
+(\lean{identity_no_fixation}, \texttt{Examples.lean}, ll.~289--292).
+\end{proposition}
+Each individual replaces only itself, and nothing ever moves. The strong connectivity hypothesis of
+Theorem~\ref{ch4:thm:iso} therefore cannot be dropped. This is a \emph{counterexample}, not a proved
+converse \tierC.
+
+\subsection{A preregistration error, told honestly}
+\begin{warnbox}[: what was announced, and what was proved]
+\tierC{} On 26 October 2026, item N4 of the preregistration announced: prove that if the graph is isothermal,
+``\emph{the number of mutants is a birth-death chain with the Moran ratio $r$}'', and deduce from it the fixation
+$(1-r^{-1})/(1-r^{-N})$ by reusing P7. Here is what happened.
+\begin{itemize}[itemsep=1pt]
+\item The \emph{conclusion} is proved, and even more. It holds for every initial configuration, for a
+mutant at any vertex, for a uniformly placed mutant, and for $r=1$ (Theorem~\ref{ch4:thm:iso}).
+\item The italicised \emph{intermediate clause} is \textbf{false} for the chain that includes the steps where nothing
+happens. It was therefore not formalised. The 4-cycle counterexample (Proposition~\ref{ch4:prop:cycle}) is
+checked by the kernel.
+\item What is true and proved is the forward bias \emph{configuration by configuration}:
+$P^{+}(S)=rP^{-}(S)$ (Proposition~\ref{ch4:prop:bias}).
+\end{itemize}
+This is not a discovery. Keller and Uğurlu observe that the Lieberman--Hauert--Nowak argument projects the
+chain onto the number of mutants, and that ``the projection does not need to be Markovian'' \tierL{}~\cite{ch4:KU}
+(abstract, p.~4). The preregistration error thus reproduced a known gap in a published proof. Keller and
+Uğurlu also write that the theorem ``remains unproven till today''. We do not repeat this sentence, because
+Lemma~1 of Pattni et al., which is earlier, gives a valid proof of it via the jump chain \tierC. The lesson is one of
+method: state the goal, let the kernel decide, then publish the discrepancy.
+\end{warnbox}
+
+\begin{physbox}[: biological scope]
+\tierC{} In this model, a balanced (doubly stochastic) and strongly connected structure does not change the
+fixation probability of a mutant of fitness $r$, wherever it appears. A structure that amplifies or
+suppresses selection must therefore break this balance; the star is an example of this, for a single choice of the
+parameters. Tissues, where cells replace their neighbours, are the usual motivation. We make,
+however, no claim specific to any tissue, and use no data. The model omits mutation,
+other update rules, changing structures and frequency dependence.
+\end{physbox}
+
+% ---------------------------------------------------------------------
+\section{Summary: what is verified, what is not}\label{ch4:sec:bilan}\sectionmark{Summary}
+
+\begin{center}\small
+\begin{tabular}{p{0.44\linewidth}p{0.33\linewidth}c}
+\toprule
+statement & Lean declaration (module) & tier\\
+\midrule
+Hardy--Weinberg stationary & \lean{hwStep_stationary} (H12) & A\\
+increment identity, monotonicity of $\bar w$ & \lean{wbar_increment} (H12) & A\\
+$i/N$ harmonic and unique (maximum principle) & \lean{harmonic_unique} (H11) & A\\
+$P^n(i,N)\to h(i)$, general absorbing chain & \lean{fixation_limit} (P7) & A\\
+Wright--Fisher: $P^n(i,N)\to i/N$ & \lean{wright_fisher_fixation_limit} (P7) & A\\
+geometric decay of $I_n$ & --- (Lemma~\ref{ch4:lem:geom}) & C\\
+Moran: $P^n(i,N)\to\frac{1-r^{-i}}{1-r^{-N}}$ & \lean{moran_fixation_limit_closed} (P7) & A\\
+Price equation; $\Delta\bar w=\mathrm{Var}/\bar w$ (haploid) & \lean{price_equation}, \lean{fisher_haploid_div} (P7) & A\\
+Fisher's theorem, ``partial change'' reading & not reached & ---\\
+forward bias $P^{+}=rP^{-}$ & \lean{forward_bias} (N4) & A\\
+isothermal theorem (sufficient direction) & \lean{isothermal_fixation} (N4) & A\\
+4-cycle: $\frac13\ne\frac23$ & \lean{cycle4_not_lumpable} (N4) & A\\
+star $n=3$: $\frac5{12}$, $\frac23$, $\frac7{12}$; Moran $\frac47$ & \lean{star_fixation_uniform} (N4) & A\\
+star $n=4$ & exact script & X\\
+``fixation probability'' $=\lim P^n(i,N)$ & no path space & C\\
+biological reading (resistance, tissues) & --- & C\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Kernel replay performed for this chapter.}
+On 2026-10-26, the writing agent ran \texttt{leanchecker} (Lean~4.34.1, pinned toolchain, two
+cores) on the ten modules cited. They are \lean{Autoresearch.PopGenFisher}, \lean{Autoresearch.PopGenWrightFisher},
+\lean{Programmes.PopGen.Absorption}, \lean{WrightFisherFixation}, \lean{MoranModel}, \lean{MoranFixation},
+\lean{Price}, together with \lean{Programmes.EvoGraph.Transport}, \lean{BirthDeath} and \lean{Examples}. All ten
+runs returned code~$0$, in $55$ to $131$~s each, with no output at all. The five modules previously without replay
+(\lean{PopGenFisher}, \lean{PopGenWrightFisher}, \lean{WrightFisherFixation}, \lean{MoranFixation}, \lean{Price}) therefore now satisfy the
+definition of Tier~A in this book. The \texttt{grep} search for \lean{skipKernelTC}, \lean{addDecl},
+\lean{native_decide}, \lean{implemented_by}, \lean{sorry}, \lean{admit} and \lean{axiom} in these ten sources
+finds only two mentions in documentation comments (\texttt{MoranModel.lean}, l.~237;
+\texttt{Examples.lean}, l.~6). Three limitations should be noted.
+\begin{itemize}[itemsep=1pt]
+\item The replay was run on the producer's \texttt{.olean} files, not on a clean recompilation. These files
+are all dated after their source.
+\item The replay is not \texttt{--fresh}: Mathlib and the Lean core were loaded, not replayed.
+\item The only negative control of this run is a nonexistent module, rejected with code~$1$. The control
+by falsification under \lean{debug.skipKernelTC}, rejected by the same binary, is the one from the N4 audit.
+\end{itemize}
+Like the rest of the chapter, this verification is the work of an AI agent; no human carried it out. The
+trace is \texttt{results/kernel\_replay\_2026-10-26/ch4\_popgen\_trace/leancheck\_ch4.json}. The replay of the whole repository, run afterwards
+(\texttt{results/kernel\_replay\_2026-10-26/replay.jsonl}), also returned code~$0$ for \lean{PopGenFisher}, \lean{PopGenWrightFisher}
+and \lean{PopGenImportBoth}.
+
+\paragraph{What is not formalised.} The following points remain beyond the scope of this chapter.
+\begin{itemize}[itemsep=1pt]
+\item There is no measure on path space. A natural next step would be to identify \lean{kPow}
+with the law constructed by \lean{ProbabilityTheory.Kernel.traj} (Ionescu--Tulcea, in Mathlib, after Marion
+\tierL{}~\cite{ch4:Mar}).
+\item Also not formalised: absorption times, Kimura's diffusion limit, mutation,
+multi-allelic diploid selection, frequency dependence, the converse of the isothermal theorem and the
+death--birth update.
+\item No human has audited the adequacy of the statements. The ledgers of P7 and N4 flag
+every Tier~A line with \texttt{LEDGER\_UNAUDITED\_TIER\_A}: there are $14$ of them for P7 and $11$
+for N4. The Elenchus gate exits with code~$1$, and this is not hidden.
+\end{itemize}
+
+\paragraph{How to cite.} Programme P7 (fixation, Moran, Price) is published as doi:10.5281/zenodo.23653850, and
+programme N4 (isothermal theorem) as doi:10.5281/zenodo.23660071 \cite{ch4:P7,ch4:N4}. Neither has been
+peer reviewed.
+
+% ---------------------------------------------------------------------
+\section{Exercises}\label{ch4:sec:exercices}
+
+\begin{exercise}[Hardy--Weinberg]\label{ch4:ex:hw}
+A population has genotype frequencies $(x_{11},x_{12},x_{22})=(0.5,\,0.2,\,0.3)$.
+\begin{enumerate}[label=\alph*),itemsep=0pt]
+\item Compute $p$, then the genotype frequencies after one generation of random mating.
+\item Check that a second generation changes nothing further. Which Lean theorem expresses this fact?
+\end{enumerate}
+\emph{Answer.} $p=0.6$, then $(0.36,\,0.48,\,0.16)$. The theorem is \lean{hwStep_stationary}.
+\end{exercise}
+
+\begin{exercise}[Genic selection]
+Take $w_{11}=(1+s)^2$, $w_{12}=1+s$ and $w_{22}=1$, with $s>-1$.
+\begin{enumerate}[label=\alph*),itemsep=0pt]
+\item Show that $\bar w(p)=(1+ps)^2$ and that $p'=\dfrac{p(1+s)}{1+ps}$.
+\item Deduce that, if $s>0$ and $0<p<1$, the sequence of frequencies is strictly increasing and converges to
+$1$.
+\end{enumerate}
+\emph{Hint.} For b), write $1-p'=\frac{1-p}{1+ps}$ and iterate the inequality $1-p_{t+1}\le\frac{1-p_t}{1+p_0s}$.
+\end{exercise}
+
+\begin{exercise}[The increment identity]\label{ch4:ex:increment}
+\begin{enumerate}[label=\alph*),itemsep=0pt]
+\item Prove the key identity $\bar w+a\,pq=p\,w_{11}+q\,w_{22}$, with $a=w_{11}-2w_{12}+w_{22}$.
+\item Deduce~\eqref{ch4:eq:increment} without copying the proof given in the text.
+\item For $w=(2,1,1)$ and $p=\frac12$, compute $\bar w(p)$ and $\bar w(p')$. Check the identity on this example.
+\item For $w=(-1,1,0)$ and $p=\frac12$, show that $\bar w$ \emph{decreases}. Which factor
+of~\eqref{ch4:eq:increment} changes sign?
+\item \emph{Underdominance.} With $w=(1,\frac12,1)$, show that $p=\frac12$ is an equilibrium. Compute $p'$ and
+$\bar w(p')$ for $p=\frac25$, and comment.
+\end{enumerate}
+\emph{Answer.} c) $\bar w=\frac54$ and $\bar w(p')=\frac{34}{25}$. d) $\bar w=\frac14$, $p'=0$ and $\bar w(p')=0$;
+the factor $\bar w+pw_{11}+qw_{22}=-\frac14$ is negative. e) $p'=\frac7{19}$, and $\bar w$ goes from $\frac{19}{25}$
+to $\frac{277}{361}$: the mean goes up, but $p$ moves away from the equilibrium.
+\end{exercise}
+
+\begin{exercise}[Wright--Fisher with two genes]\label{ch4:ex:wf2}
+Take $N=2$.
+\begin{enumerate}[label=\alph*),itemsep=0pt]
+\item Write down the matrix $P$ ($3\times3$).
+\item Show that $P^n(1,1)=2^{-n}$ and that $P^n(1,2)=\frac12\bigl(1-2^{-n}\bigr)$. Recover $P^2(1,2)=\frac38$
+(\lean{ctl_pos_wf_two_steps}).
+\item Compare the rate obtained with the bound of Lemma~\ref{ch4:lem:geom}.
+\end{enumerate}
+\emph{Answer.} c) Here $\delta=\frac14$, so the bound is $(\frac34)^n$, whereas the true decay is
+$(\frac12)^n$.
+\end{exercise}
+
+\begin{exercise}[Wright--Fisher with three genes]
+Take $N=3$.
+\begin{enumerate}[label=\alph*),itemsep=0pt]
+\item Compute rows $1$ and $2$ of $P$. Check that, from each interior state, the probability of staying
+in the interior is $\frac23$.
+\item Deduce that $I_n(1)=(\frac23)^n$ exactly, and that $\bigl|P^n(1,3)-\frac13\bigr|\le\frac23\,(\frac23)^n$.
+\end{enumerate}
+\emph{Answer.} a) Row $1$ is $(\frac8{27},\frac49,\frac29,\frac1{27})$ and row $2$ is
+$(\frac1{27},\frac29,\frac49,\frac8{27})$.
+\end{exercise}
+
+\begin{exercise}[Moran, $N=3$, $r=2$]\label{ch4:ex:moran3}
+\begin{enumerate}[label=\alph*),itemsep=0pt]
+\item Compute $p_1,q_1,p_2,q_2$ and check that $p_i=2q_i$.
+\item Solve the gambler's-ruin recurrence, and recover $h=(0,\frac47,\frac67,1)$.
+\item Show that the ``inverted'' formula $(1-r^i)/(1-r^N)$ gives $\frac17$ at $i=1$, and that it does not satisfy
+the first-step equation.
+\end{enumerate}
+\emph{Answer.} a) $p_1=\frac13$, $q_1=\frac16$, $p_2=\frac4{15}$, $q_2=\frac2{15}$.
+\end{exercise}
+
+\begin{exercise}[Large population]
+\begin{enumerate}[label=\alph*),itemsep=0pt]
+\item If $r>1$, show that $\rho_N(1)=\frac{1-r^{-1}}{1-r^{-N}}$ decreases to $1-\frac1r$ as $N\to\infty$.
+\item If $0<r<1$, show that $\rho_N(1)\sim(r^{-1}-1)\,r^N$. Compare with the neutral value $1/N$.
+\item For $r=1.1$, what proportion of advantageous mutants is lost in a very large population? Why
+does this reading remain at Tier~C?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Price equation]
+\begin{enumerate}[label=\alph*),itemsep=0pt]
+\item Take $n=(1,2,3)$, $w=(1,2,4)$, $z=(0,1,3)$ and $z'=(1,1,2)$. Compute $\bar w$, $\bar z$, $\bar z'$,
+$\mathrm{Cov}_n(w,z)$ and $\mathbb E_n[w\Delta z]$, and check that both sides equal $-\frac{13}{36}$.
+\item For two types with frequencies $p$, $1-p$, show that $\mathrm{Var}_n(w)=p(1-p)(w_1-w_2)^2$.
+\item Take $n=(1,1)$, $w=z=(1,2)$ and $z'=(1,1)$. Show that $\Delta\bar w\ne\mathrm{Var}_n(w)/\bar w$, whereas
+the Price equation still holds. Which hypothesis of Corollary~\ref{ch4:cor:haploide} is missing?
+\end{enumerate}
+\emph{Answer.} a) $\bar w=\frac{17}6$, $\bar z=\frac{11}6$ and $\bar z'=\frac{29}{17}$, so
+$\bar z'-\bar z=-\frac{13}{102}$; b) follows by a direct
+computation; c) $\Delta\bar w=-\frac12$ and $\mathrm{Var}/\bar w=\frac16$; what is missing is the absence of transmission
+bias.
+\end{exercise}
+
+\begin{exercise}[The complete graph is the Moran model]
+Take $W_{ij}=\frac1n$ for all $i,j$ (loops included) and $\mu\equiv1$.
+\begin{enumerate}[label=\alph*),itemsep=0pt]
+\item Check that $W$ is isothermal and strongly connected.
+\item For $|S|=k$, compute $\mathrm{out}(S)$, $\mathrm{in}(S)$ and $F(S)$. Deduce that $P^{+}(S)$ and $P^{-}(S)$
+are exactly the rates $p_k$, $q_k$ of the Moran model (\lean{wellMixed_up}, \lean{wellMixed_down},
+\texttt{Examples.lean}, ll.~62--81).
+\item Deduce that, here, the configuration chain lumps exactly onto the Moran chain.
+\end{enumerate}
+\emph{Answer.} b) $\mathrm{out}=\mathrm{in}=k(n-k)/n$ and $F=rk+n-k$.
+\end{exercise}
+
+\begin{exercise}[The 4-cycle, by hand]
+\begin{enumerate}[label=\alph*),itemsep=0pt]
+\item Check that the matrix of the 4-cycle is doubly stochastic.
+\item Recover $P^{\pm}(\{0,1\})=(\frac13,\frac16)$ and $P^{\pm}(\{0,2\})=(\frac23,\frac13)$.
+\item Compute, for each of the two configurations, the probability of going up \emph{given that a move takes
+place}, and comment.
+\item What does the isothermal theorem give for a single mutant, when $r=2$?
+\end{enumerate}
+\emph{Answer.} c) $\frac23$ in both cases. d) $\rho_4(1)=\frac{1-1/2}{1-1/16}=\frac8{15}$.
+\end{exercise}
+
+\begin{exercise}[Fixation probability on the star, by hand]\label{ch4:ex:star}
+Take the three-vertex star (centre $0$, leaves $1$ and $2$), with $W_{0j}=\frac12$, $W_{j0}=1$, $r=2$ and
+$\mu\equiv1$. By symmetry, set $x_0=h(\{0\})$, $x_1=h(\{1\})=h(\{2\})$, $y=h(\{0,1\})=h(\{0,2\})$ and
+$z=h(\{1,2\})$.
+\begin{enumerate}[label=\alph*),itemsep=0pt]
+\item From $\{0\}$: show that $F=4$, that the chain moves to $\{0,j\}$ with probability $\frac12$ (in total) and to
+$\emptyset$ with probability $\frac12$. Deduce that $x_0=\frac y2$.
+\item From $\{1\}$: show that the chain moves to $\{0,1\}$ with probability $\frac12$, to $\emptyset$ with
+probability $\frac18$, and stays put with probability $\frac38$. Deduce that $x_1=\frac45y$.
+\item From $\{0,1\}$: show that the chain moves to $V$ with probability $\frac15$ and to $\{1\}$ with probability
+$\frac15$, and deduce that $2y=1+x_1$. From $\{1,2\}$: show that $z=\frac45+\frac{x_1}5$.
+\item Solve the system, and recover $x_0=\frac5{12}$, $x_1=\frac23$, $y=\frac56$ and $z=\frac{14}{15}$, then the
+value $\frac7{12}$ for a uniformly placed mutant. Compare with $\frac47$.
+\item Redo a) with $\mu=(\frac12,\frac14,\frac14)$. Check that $\mu W_\star=\mu$, then that $x_0=\frac47$
+(\lean{starStationary_fixation}).
+\end{enumerate}
+\emph{Answer.} d) One obtains $y=\frac12+\frac25y$, whence $y=\frac56$.
+\end{exercise}
+
+\begin{exercise}[Reading a Lean statement]
+\begin{enumerate}[label=\alph*),itemsep=0pt]
+\item Take $N=2$. Show that the absorbing kernels for which $j\mapsto j/2$ is harmonic are
+exactly those of the form $P(1,0)=P(1,2)=a$, $P(1,1)=1-2a$, with $a\in[0,\frac12]$. Show that the hypothesis
+\lean{hvar} of \lean{fixation_limit} is equivalent to $a>0$, and that in this case $P^n(1,2)=\frac12\bigl(1-(1-2a)^n\bigr)$.
+What happens for $a=0$?
+\item Why does a file containing \lean{sorry} compile with return code $0$? What are the three
+checks that make up the Tier~A gate in this book?
+\item Does the statement \lean{isothermal_fixation} talk about probabilities? Write in one sentence the \tierC{} bridge that
+connects it to the ``fixation probability''.
+\end{enumerate}
+\emph{Hint.} a) The one-step variance at $1$ is $2a\cdot\frac14=\frac a2$. For $a=0$, one recovers the
+identity kernel, that is, the negative control \lean{ctl_neg_identity_no_absorption}.
+\end{exercise}
+
+\begin{exercise}[(*) University exercise: Expected absorption time via the fundamental matrix]
+Consider the neutral Moran chain ($r=1$) with $N=3$, so that $p_i=q_i=i(N-i)/N^2$.
+\begin{enumerate}[label=\alph*),itemsep=0pt]
+\item Write down the interior block $Q$ (states $1,2$) and the interior-to-boundary block $R$ (columns $0,3$) of $P$.
+\item Compute the fundamental matrix $(I-Q)^{-1}$, and deduce the expected absorption time $t_i=\mathbb E_i[T]$,
+$T=\min(T_0,T_3)$, from $i=1$ and $i=2$, using $t=(I-Q)^{-1}\mathbf 1$.
+\item Compute $B=(I-Q)^{-1}R$ and check that its column for state $3$ is $(\frac13,\frac23)$, in agreement with
+Theorem~\ref{ch4:thm:moran} for $r=1$.
+\end{enumerate}
+\emph{Answer.} a) $Q=\begin{pmatrix}\frac59&\frac29\\[1pt]\frac29&\frac59\end{pmatrix}$,
+$R=\begin{pmatrix}\frac29&0\\[1pt]0&\frac29\end{pmatrix}$. b) $(I-Q)^{-1}=\begin{pmatrix}3&\frac32\\[1pt]\frac32&3\end{pmatrix}$,
+so $t_1=t_2=\frac92$. c) $B=\begin{pmatrix}\frac23&\frac13\\[1pt]\frac13&\frac23\end{pmatrix}$.
+\end{exercise}
+
+\begin{exercise}[(*) University exercise: The Moran fixation formula via a martingale]
+Let $(X_n)$ be the Moran chain with $N\ge1$ and $r>0$, $r\ne1$, started at $X_0=i$, and let $T=\min(T_0,T_N)$.
+\begin{enumerate}[label=\alph*),itemsep=0pt]
+\item Using $p_k=r\,q_k$ (Lemma~\ref{ch4:lem:moranbase}), show that
+$\mathbb E\bigl[r^{-X_{n+1}}\mid X_n=k\bigr]=r^{-k}$ for every $k$, so that $M_n=r^{-X_n}$ is a martingale.
+\item Justify that $T<\infty$ almost surely (for instance from $I_n(i)\to0$ in the proof of
+Theorem~\ref{ch4:thm:moran}), and that $M$ is bounded.
+\item Apply the optional stopping theorem to obtain $\mathbb P_i(X_T=N)=\dfrac{1-r^{-i}}{1-r^{-N}}$.
+\item Which martingale plays the same role for $r=1$?
+\end{enumerate}
+\emph{Answer.} a) $\mathbb E[r^{-X_{n+1}}\mid X_n=k]-r^{-k}=r^{-k}(r-1)\bigl(q_k-p_k/r\bigr)=0$.
+c) $r^{-i}=\mathbb E_i[r^{-X_T}]=u\,r^{-N}+(1-u)$ with $u=\mathbb P_i(X_T=N)$. d) $X_n$ itself, which gives $i/N$.
+\end{exercise}
+
+\label{ch4:fin}
+\fussy

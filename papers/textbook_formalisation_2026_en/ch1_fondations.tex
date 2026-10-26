@@ -1,0 +1,775 @@
+\chapter{Foundations: lattices, completely monotone functions and formal verification}
+\chaptermark{Foundations}
+\label{ch1:chap}
+
+\begin{quote}\small\itshape
+This chapter sets the stage. It assumes only first-year undergraduate analysis and linear algebra,
+plus the basic theory of Fourier series. The proofs are written by hand, as one would write them in an exam;
+the machine (Lean~4) enters only in the last part, to say what ``computer-verified'' means and, above all,
+what it does not mean.
+\end{quote}
+
+\section*{How to read this book}
+
+Every claim carries a \emph{tier} label that says \emph{who checked what}.
+These tiers, taken from the Elenchus method~\cite{elenchus} and detailed in §\ref{ch1:sec:tiers}, are the following.
+\begin{itemize}
+\item \tierA{}: a statement checked by the Lean~4 kernel, with three controls: axioms on the whitelist, kernel replay (\lean{leanchecker}) and a search for backdoors (§\ref{ch1:sec:lean}).
+\item \tierAs{}: as \tierA{}, but without the kernel replay (§\ref{ch1:sec:lean}).
+\item \tierL{}: a result from the literature, read and precisely referenced.
+\item \tierC{}: a human argument, written out in detail in this book, but not machine-checked.
+\item \tierX{}: a floating-point numerical exploration; it illustrates, it never proves.
+\end{itemize}
+
+\begin{warnbox}[: honesty about where the results come from]
+All results in this book were produced by AI agents (Claude) under the author's direction, and then audited
+by a \emph{separate} AI agent. \textbf{No human has audited these results.} Moreover, everything that relies on the
+\texttt{openai/math} repository is \emph{conditional} on that repository's theorems, which are themselves AI-generated and have not been
+peer reviewed~\cite{oai}. A \tierA{} result guarantees that the \emph{Lean} statement follows from the
+allowed axioms; it does not guarantee that this statement faithfully expresses the mathematical or physical statement one has in mind.
+\end{warnbox}
+
+\section{Lattices in the plane}
+\label{ch1:sec:reseaux}
+
+\subsection{Lattice, covolume, density}
+
+\begin{definition}[Lattice in the plane]\label{ch1:def:reseau}
+Let $(u,v)$ be a basis of $\R^2$. The \emph{lattice} it generates is $\Lambda=\Z u\oplus\Z v=\{mu+nv : (m,n)\in\Z^2\}$.
+Its \emph{covolume} is $\operatorname{covol}(\Lambda)=|\det(u,v)|$, the area of the parallelogram
+$P=\{su+tv : s,t\in[0,1)\}$, called the \emph{fundamental cell}. The covolume does not depend on the chosen basis
+(two bases differ by a matrix in $\mathrm{GL}_2(\Z)$, of determinant $\pm1$).
+\end{definition}
+
+We write $N_\Lambda(R)=\#\{x\in\Lambda : |x|\le R\}$ for the number of points of $\Lambda$ in the closed disk of radius $R$.
+A lattice is an example of a \emph{locally finite configuration}: every disk contains finitely many points.
+
+\begin{proposition}[Density of a lattice]\label{ch1:prop:comptage}
+If $V=\operatorname{covol}(\Lambda)$, then $N_\Lambda(R)/(\pi R^2)\to 1/V$ as $R\to\infty$. More precisely, with
+$\delta=|u|+|v|$ and for $R>\delta$,
+\[
+  \pi (R-\delta)^2\ \le\ V\,N_\Lambda(R)\ \le\ \pi (R+\delta)^2 .
+\]
+\tierC{}
+\end{proposition}
+
+\begin{humanproof}
+The translates $x+P$, $x\in\Lambda$, \emph{tile} the plane: every point $y=su'+tv'$ can be written uniquely as
+$y=x+p$ with $x\in\Lambda$ (integer part of the coordinates in the basis $(u,v)$) and $p\in P$. Each cell
+$x+P$ has area $V$ and diameter at most $\delta$.
+\begin{itemize}
+\item If $|x|\le R$, then $x+P\subset \overline{D}(0,R+\delta)$. The cells are disjoint, hence
+$V\,N_\Lambda(R)\le \pi(R+\delta)^2$.
+\item If $|y|\le R-\delta$, the point $y$ lies in a cell $x+P$ with $|y-x|\le\delta$, hence $|x|\le R$.
+Thus $\overline{D}(0,R-\delta)\subset\bigcup_{|x|\le R}(x+P)$ and $\pi(R-\delta)^2\le V\,N_\Lambda(R)$.
+\end{itemize}
+Divide by $\pi R^2$ and let $R$ tend to infinity.
+\end{humanproof}
+
+We say that $\Lambda$ has \emph{density} $1/V$. A lattice of covolume $1$ has density $1$: this is the normalisation
+used throughout the book, which allows different lattices to be compared at an equal number of points per unit area.
+
+\subsection{The triangular lattice}
+
+\begin{definition}[Triangular lattice $A$]\label{ch1:def:A}
+Let $a>0$ with $a^2=2/\sqrt3$. The \emph{triangular} (or hexagonal) \emph{lattice} of covolume $1$ is
+\[
+  A=\Z\,u\oplus\Z\,v,\qquad u=a(1,0),\quad v=a\bigl(\tfrac12,\tfrac{\sqrt3}{2}\bigr).
+\]
+\end{definition}
+
+The choice of $a$ comes from the covolume: $\det(u,v)=a^2\sqrt3/2=1$. Numerically $a\approx 1.0746$.
+
+\begin{proposition}[Norms in $A$]\label{ch1:prop:normesA}
+For $(m,n)\in\Z^2$ we have $|mu+nv|^2=a^2\,(m^2+mn+n^2)$. In particular the minimal distance between two points of $A$ is $a$, attained
+by exactly $6$ vectors (so the central point has $6$ nearest neighbours, at the vertices of a regular hexagon). \tierC{}
+\end{proposition}
+
+\begin{humanproof}
+Since $|u|^2=|v|^2=a^2$ and $u\cdot v=a^2/2$, we have $|mu+nv|^2=a^2(m^2+n^2+mn)$. Now
+$m^2+mn+n^2=(m+\tfrac n2)^2+\tfrac34n^2\ge0$, with equality only for $m=n=0$. The integer solutions of
+$m^2+mn+n^2=1$ satisfy $\tfrac34 n^2\le 1$, hence $n\in\{-1,0,1\}$; solving each case gives $(\pm1,0)$, $(0,\pm1)$,
+$\pm(1,-1)$. There are six of them, and the value $1$ is the smallest nonzero value because $m^2+mn+n^2$ is a nonnegative integer.
+\end{humanproof}
+
+The first values of $k=m^2+mn+n^2$ and their multiplicities, compared with those of the square lattice $\Z^2$ (also of covolume $1$),
+are given in Table~\ref{ch1:tab:couches}. These numbers were counted by machine computation \tierX{}; they are classical.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+Lattice & $k$ (value of the form) & multiplicity & $|x|^2$ \\
+\midrule
+$A$ & $1,\ 3,\ 4,\ 7,\ 9$ & $6,\ 6,\ 6,\ 12,\ 6$ & $a^2k\approx 1.155,\ 3.464,\ 4.619,\ 8.083,\ 10.392$ \\
+$\Z^2$ & $1,\ 2,\ 4,\ 5,\ 8$ & $4,\ 4,\ 4,\ 8,\ 4$ & $1,\ 2,\ 4,\ 5,\ 8$ \\
+\bottomrule
+\end{tabular}
+\caption{First shells of the lattices $A$ and $\Z^2$ (covolume $1$).}
+\label{ch1:tab:couches}
+\end{table}
+
+The triangular lattice has neighbours that are farther away ($|x|^2\approx1.155$ against $1$) and more numerous ($6$ against $4$):
+it ``balances'' the repulsion better, and this is what the universal optimality theorem will quantify.
+
+\subsection{Dual lattice}
+
+\begin{definition}[Dual lattice]\label{ch1:def:dual}
+If $\Lambda=M\Z^2$ with $M$ the matrix with columns $u,v$, the \emph{dual lattice} is
+$\Lambda^*=\{y\in\R^2 : x\cdot y\in\Z\ \ \forall x\in\Lambda\}=M^{-T}\Z^2$. Its covolume is $1/\operatorname{covol}(\Lambda)$.
+\end{definition}
+
+\begin{lemma}[$A$ is similar to its dual]\label{ch1:lem:autodual}
+The lattice $A^*$ is the image of $A$ under a rotation; in particular $A$ and $A^*$ have the same norms, with the same multiplicities. \tierC{}
+\end{lemma}
+
+\begin{humanproof}
+Let $M=a\begin{pmatrix}1&1/2\\0&\sqrt3/2\end{pmatrix}$. A direct computation gives
+$M^{-T}=\frac1a\begin{pmatrix}1&0\\-1/\sqrt3&2/\sqrt3\end{pmatrix}$. Its two columns $b_1,b_2$ satisfy
+$|b_1|^2=|b_2|^2=\frac{1}{a^2}\cdot\frac43=\frac{\sqrt3}{2}\cdot\frac43=a^2$ and $b_1\cdot b_2=-\frac{1}{a^2}\cdot\frac23=-\frac{a^2}{2}$:
+two vectors of norm $a$ at an angle of $120^\circ$. Then $(b_1,b_1+b_2)$ is a basis of $A^*$ consisting of two vectors
+of norm $a$ at an angle of $60^\circ$, that is, the basis of $A$ rotated. Hence $A^*$ is the image of $A$ under a rotation.
+\end{humanproof}
+
+\subsection{Energy of a lattice}
+
+We study identical particles that repel each other through a \emph{pair potential} $g$, a function of the \emph{square} $t=|x-y|^2$ of
+the distance (the convention of~\cite{ckmrv} and~\cite{oai}: Gaussians $e^{-\alpha t}$ are then the basic building blocks).
+The Riesz potential $|x-y|^{-s}$ reads $g(t)=t^{-s/2}$.
+
+\begin{definition}[Energy of a lattice]\label{ch1:def:enerreseau}
+For $g:(0,\infty)\to[0,\infty)$, the energy per particle of a lattice $\Lambda$ is
+$E_g(\Lambda)=\sum_{x\in\Lambda\setminus\{0\}} g(|x|^2)\in[0,+\infty]$.
+\end{definition}
+
+For a locally finite configuration $C$ of density $1$, we define the \emph{lower energy} as the average, over the points
+of the disk of radius $R$, of the interactions with the other points of the disk, followed by a limit inferior:
+\[
+  E_g(C;R)=\frac{1}{\#C_R}\sum_{x\in C_R}\ \sum_{y\in C_R\setminus\{x\}} g(|x-y|^2),\qquad E_g(C)=\liminf_{R\to\infty}E_g(C;R)\in[0,\infty],
+\]
+with $C_R=C\cap\overline D(0,R)$. Each pair is counted twice, which indeed gives $\sum_{a\neq0}g(|a|^2)$ for a lattice.
+\tierC{} The exact definition used by the \texttt{openai/math} repository, in $[0,\infty]$ arithmetic, will be quoted in §\ref{ch1:sec:univ}.
+
+\begin{proposition}[Riesz energy of a lattice]\label{ch1:prop:riesz}
+For $g(t)=t^{-s/2}$ with $s>0$, the energy $E_g(\Lambda)=\sum_{x\ne0}|x|^{-s}$ is finite if and only if $s>2$. \tierC{}
+\end{proposition}
+
+\begin{humanproof}
+Let $d>0$ be the smallest nonzero norm of $\Lambda$ and $V$ its covolume. There are finitely many nonzero points of norm $\le d$;
+for $k\ge0$ let $S_k=\{x\in\Lambda : 2^kd<|x|\le 2^{k+1}d\}$. By Proposition~\ref{ch1:prop:comptage},
+$\#S_k=N_\Lambda(2^{k+1}d)-N_\Lambda(2^kd)=\frac{3\pi d^2}{V}4^k+O(2^k)$, so there exist $0<c<C$ with $c\,4^k\le\#S_k\le C\,4^k$ for $k\ge k_0$.
+On $S_k$ we have $(2^{k+1}d)^{-s}\le |x|^{-s}<(2^kd)^{-s}$. The sum over $S_k$ therefore lies between positive multiples of $4^k2^{-ks}=2^{k(2-s)}$.
+The series $\sum_k 2^{k(2-s)}$ converges if and only if $s>2$.
+\end{humanproof}
+
+\begin{remark}
+For $0<s\le2$ the energy of a lattice is infinite: the optimality inequality $\infty\le\infty$ is then true but void, and a meaningful
+comparison would require a \emph{regularisation}. \tierC{}
+\end{remark}
+
+\subsection{Theta series and the Poisson summation formula}
+\label{ch1:sec:poisson}
+
+For $\alpha>0$, the \emph{Gaussian theta series} of the lattice $\Lambda$ is
+\[
+  \Theta_\Lambda(\alpha)=\sum_{x\in\Lambda}e^{-\pi\alpha|x|^2}\ \ (>1).
+\]
+(Not to be confused with the arithmetic Gauss sums $\sum e^{2\pi i n^2/p}$: here we are dealing with sums of \emph{real}
+exponentials of quadratic forms.) The series converges, by comparison with a geometric series via the lower bound
+$|mu+nv|^2\ge c(m^2+n^2)$. The energy of a Gaussian interaction $g(t)=e^{-\pi\alpha t}$ is therefore
+$E_g(\Lambda)=\Theta_\Lambda(\alpha)-1$.
+
+The key result is that $\Theta_\Lambda$ transforms simply when one passes from $\alpha$ to $1/\alpha$ and from $\Lambda$ to $\Lambda^*$.
+
+\begin{theorem}[Poisson summation for Gaussians]\label{ch1:thm:poisson}
+For every lattice $\Lambda$ in the plane of covolume $V$ and every $\alpha>0$,
+\[
+  \Theta_\Lambda(\alpha)=\frac{1}{V\,\alpha}\ \Theta_{\Lambda^*}\!\Bigl(\frac1\alpha\Bigr).
+\]
+For the triangular lattice ($V=1$, $A^*\simeq A$): $\Theta_A(\alpha)=\alpha^{-1}\Theta_A(1/\alpha)$. \tierC{}\
+(The pointwise convergence of the Fourier series used in Step~3 is Fourier's theorem on the torus: \tierL{}.)
+\end{theorem}
+
+\begin{humanproof}[Human proof in three steps]
+Convention: $\hat f(\xi)=\int f(x)e^{-2\pi i\,\xi\cdot x}\,dx$.
+
+\emph{Step 1: Fourier transform of a Gaussian in dimension 1.} Let $\varphi(x)=e^{-\pi\alpha x^2}$ and $h=\hat\varphi$.
+Differentiating under the integral sign (dominated by $|x|e^{-\pi\alpha x^2}$, which is integrable),
+$h'(\xi)=\int(-2\pi i x)\varphi(x)e^{-2\pi i\xi x}dx$. Now $\varphi'(x)=-2\pi\alpha x\varphi(x)$, so $-2\pi ix\varphi(x)=\frac{i}{\alpha}\varphi'(x)$ and
+\[
+  h'(\xi)=\frac i\alpha\int\varphi'(x)e^{-2\pi i\xi x}dx=\frac i\alpha\Bigl([\varphi e^{-2\pi i\xi x}]_{-\infty}^{+\infty}+2\pi i\xi\int\varphi(x)e^{-2\pi i\xi x}dx\Bigr)=-\frac{2\pi\xi}{\alpha}\,h(\xi),
+\]
+(the bracket vanishes because $\varphi\to0$ at $\pm\infty$). This linear differential equation gives $h(\xi)=h(0)\,e^{-\pi\xi^2/\alpha}$, and
+$h(0)=\int e^{-\pi\alpha x^2}dx=\alpha^{-1/2}$ (Gaussian integral $\int e^{-\pi x^2}dx=1$, computed in polar coordinates). Hence
+$\widehat{e^{-\pi\alpha x^2}}(\xi)=\alpha^{-1/2}e^{-\pi\xi^2/\alpha}$. In dimension $2$, by Fubini,
+$\widehat{e^{-\pi\alpha|x|^2}}(\xi)=\alpha^{-1}e^{-\pi|\xi|^2/\alpha}$.
+
+\emph{Step 2: periodisation.} Write $\Lambda=M\Z^2$ and set $f(x)=e^{-\pi\alpha|Mx|^2}$ for $x\in\R^2$. The function
+$F(x)=\sum_{n\in\Z^2}f(x+n)$ is well defined (locally normal convergence, together with that of its derivatives), $\mathcal C^\infty$, and $\Z^2$-periodic.
+Its Fourier coefficients are, for $k\in\Z^2$,
+\[
+  c_k=\int_{[0,1]^2}F(x)e^{-2\pi ik\cdot x}dx=\int_{\R^2}f(x)e^{-2\pi ik\cdot x}dx=\hat f(k),
+\]
+(the translates of $[0,1]^2$ are put together to form $\R^2$). The change of variables $u=Mx$ ($dx=du/V$) gives
+$\hat f(k)=\frac1V\int e^{-\pi\alpha|u|^2}e^{-2\pi i(M^{-T}k)\cdot u}du=\frac{1}{V\alpha}e^{-\pi|M^{-T}k|^2/\alpha}$ by Step~1.
+
+\emph{Step 3: evaluation at $0$.} The $c_k$ are summable over $\Z^2$ and $F$ is continuous; the Fourier series of $F$ therefore converges normally
+to a continuous function with the same coefficients, which is $F$ (uniqueness of the coefficients, Fejér's theorem). At $x=0$:
+\[
+  \sum_{n\in\Z^2}e^{-\pi\alpha|Mn|^2}=F(0)=\sum_{k\in\Z^2}c_k=\frac{1}{V\alpha}\sum_{k\in\Z^2}e^{-\pi|M^{-T}k|^2/\alpha}.
+\]
+The left-hand side is $\Theta_\Lambda(\alpha)$, and $M^{-T}\Z^2=\Lambda^*$: the right-hand side is $\frac{1}{V\alpha}\Theta_{\Lambda^*}(1/\alpha)$.
+For $A$, Lemma~\ref{ch1:lem:autodual} gives $\Theta_{A^*}=\Theta_A$.
+\end{humanproof}
+
+\begin{uniremark}\tierL{} The same three steps prove the Poisson summation formula in $\R^d$: for a lattice $\Lambda\subset\R^d$ and a Schwartz
+function $f$, $\sum_{x\in\Lambda}f(x)=\operatorname{covol}(\Lambda)^{-1}\sum_{y\in\Lambda^*}\hat f(y)$. With
+$f(x)=e^{-\pi\alpha|x|^2}$, whose Fourier transform is $\alpha^{-d/2}e^{-\pi|\xi|^2/\alpha}$, it yields
+$\Theta_\Lambda(\alpha)=\operatorname{covol}(\Lambda)^{-1}\alpha^{-d/2}\,\Theta_{\Lambda^*}(1/\alpha)$, the identity behind the Jacobi theta
+transformation and the functional equation of Epstein zeta functions (standard; see also~\cite{montgomery} for the planar case).
+\end{uniremark}
+
+\begin{example}[Jacobi theta function]\label{ch1:ex:jacobi}
+In dimension~1, the same proof gives, for $\vartheta(\alpha)=\sum_{n\in\Z}e^{-\pi\alpha n^2}$, the relation
+$\vartheta(1/\alpha)=\sqrt\alpha\,\vartheta(\alpha)$. It shows that $\vartheta(\alpha)\sim\alpha^{-1/2}$ as $\alpha\to0$: for small $\alpha$ the sum
+``sees'' the Gaussian integral. \tierC{}
+\end{example}
+
+\begin{numbox}[: the Poisson formula with its controls (code \texttt{code/ch1\_theta.py})]
+For $A$, we compare $\Theta_A(\alpha)$ with $\alpha^{-1}\Theta_A(1/\alpha)$ (positive control), and then with $\Theta_A(1/\alpha)$ \emph{without} the factor
+$\alpha^{-1}$ (negative control). Actual output of the script (in double precision):
+\begin{center}\small
+\begin{tabular}{@{}rlll@{}}
+\toprule
+$\alpha$ & $\Theta_A(\alpha)$ & gap to $\alpha^{-1}\Theta_A(1/\alpha)$ & gap without the factor \\
+\midrule
+$0.5$ & $2.008477918598$ & $4.4\cdot10^{-16}$ & $1.0$ \\
+$2$ & $1.004238959299$ & $2.2\cdot10^{-16}$ & $1.0$ \\
+$3$ & $1.000112671200$ & $8.9\cdot10^{-16}$ & $2.0$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+The negative control is discriminating ($\alpha\neq1$); at $\alpha=1$ both gaps vanish, so that point tests nothing.
+The script also compares $\Theta_A(\alpha)\le\Theta_{\Z^2}(\alpha)$ at eight values of $\alpha\in[0.1, 5]$ (always true), for example
+$\Theta_A(1)=1.159595267$ against $\Theta_{\Z^2}(1)=1.180340599$. \tierX{}: this illustrates Montgomery's theorem below, without proving it.
+\end{numbox}
+
+\begin{theorem}[Montgomery, 1988]\label{ch1:thm:montgomery}
+For every lattice $\Lambda$ in the plane of covolume $1$ and every $\alpha>0$, $\Theta_A(\alpha)\le\Theta_\Lambda(\alpha)$, with equality if and only if $\Lambda$ is
+the image of $A$ under a rotation. \tierL{} (cited second-hand)~\cite{montgomery}
+\end{theorem}
+
+Montgomery thus solves the optimality problem \emph{among lattices}, for every Gaussian interaction. We return to this in §\ref{ch1:sec:univ}
+to pass from Gaussians to completely monotone potentials. The difficulty lies elsewhere: comparing $A$ not with other lattices, but with
+\emph{all} point configurations of density $1$.
+
+\section{Completely monotone functions}
+\label{ch1:sec:cm}
+
+\subsection{Definition and first examples}
+
+\begin{definition}[Completely monotone function]\label{ch1:def:cm}
+A function $g:(0,\infty)\to\R$ is \emph{completely monotone} (CM) if it is of class $\mathcal C^\infty$ and
+$(-1)^n g^{(n)}(t)\ge0$ for every $n\in\N$ and every $t>0$.
+\end{definition}
+
+The case $n=0$ says $g\ge0$; the case $n=1$ says that $g$ is nonincreasing; the case $n=2$ says that $g$ is convex; and so on.
+The inequalities are \emph{non-strict}: constants are CM. In the \texttt{openai/math} repository, a function that is $\mathcal C^\infty$ on $(0,\infty)$,
+nonnegative and CM is called \emph{admissible}~\cite{oai}; since $n=0$ gives nonnegativity, the two notions coincide. This coincidence is
+itself a Lean theorem: \lean{ProgCM.isCompletelyMonotoneOn_iff_admissible} \tierA{} (library of programme P3~\cite{p3}).
+
+\begin{example}[Exponential, powers]\label{ch1:ex:exemples}
+\begin{enumerate}
+\item $g(t)=e^{-at}$, $a\ge0$: $(-1)^ng^{(n)}(t)=a^ne^{-at}\ge0$. \tierC{}
+\item $g(t)=t^{-s}$, $s\ge0$: $(-1)^ng^{(n)}(t)=s(s+1)\cdots(s+n-1)\,t^{-s-n}\ge0$ (immediate induction). \tierC{}
+For $s=\frac12$ this is the Coulomb repulsion $1/r$ in the variable $t=r^2$. The CM property of $t\mapsto t^{-s/2}$ (Riesz) is also
+checked by the kernel: \lean{TriangularRiesz.riesz_admissible} \tierA{}.
+\end{enumerate}
+\end{example}
+
+\begin{example}[Counterexamples]\label{ch1:ex:contre}
+$g(t)=t$ is not CM ($-g'=-1<0$), nor is $\cos t$ (it takes negative values), nor $e^{t}$ ($-g'<0$).
+A subtler counterexample, of physical origin (a charge--quadrupole combination), is
+$q(t)=t^{-1/2}-2(t+1)^{-1/2}+(t+4)^{-1/2}$: we have $q(3)=3^{-1/2}-2\cdot4^{-1/2}+7^{-1/2}\approx0.5774-1+0.3780<0$,
+so $q$ is not nonnegative, let alone CM. The rigorous verification of $q(3)<0$ and the non-CM property of $q$ are checked by the kernel
+(\lean{ProgCM.quadrupole_not_cm}) \tierA{}.
+\end{example}
+
+\subsection{Closure properties: human proofs}
+
+\begin{proposition}[Sum, product]\label{ch1:prop:cloture}
+Let $f,g$ be CM and $c\ge0$. Then $f+g$, $cf$ and $fg$ are CM. \tierC{} (Lean version: programme P3~\cite{p3}, \tierA{})
+\end{proposition}
+
+\begin{humanproof}
+The sum and multiplication by a nonnegative constant are immediate by linearity of differentiation.
+For the product, the Leibniz rule gives
+\[
+  (-1)^n(fg)^{(n)}=\sum_{k=0}^{n}\binom nk\ \bigl[(-1)^kf^{(k)}\bigr]\ \bigl[(-1)^{n-k}g^{(n-k)}\bigr],
+\]
+since $(-1)^n=(-1)^k(-1)^{n-k}$. Each bracket is nonnegative, hence so is the sum.
+\end{humanproof}
+
+A \emph{Bernstein function} is the right notion for composing with a CM function.
+
+\begin{definition}[Bernstein function]\label{ch1:def:bernstein}
+A $\mathcal C^\infty$ function $h:(0,\infty)\to[0,\infty)$ is a \emph{Bernstein function} if its derivative $h'$ is completely monotone
+(Lean definition \lean{IsBernsteinOn}; Theorem~\ref{ch1:thm:comp} additionally requires $h>0$). In particular $h$ is nondecreasing.
+\end{definition}
+
+\begin{example}\label{ch1:ex:bernstein}
+The following are Bernstein functions: $h(t)=at+b$ ($a,b\ge0$); $h(t)=t^\alpha$ for $0<\alpha\le1$, since
+$h'(t)=\alpha\,t^{-(1-\alpha)}$ is CM by Example~\ref{ch1:ex:exemples}; $h(t)=1-e^{-at}$ ($a>0$), since $h'=ae^{-at}$; $h(t)=\ln(1+t)$,
+since $h'(t)=1/(1+t)$. In particular $h(t)=\sqrt t$ (the case $\alpha=\frac12$) is one. \tierC{}
+\end{example}
+
+\begin{uniremark}\tierL{} Bernstein functions admit a L\'evy--Khintchine representation: $h:(0,\infty)\to[0,\infty)$ is a Bernstein function
+if and only if $h(t)=a+bt+\int_{(0,\infty)}(1-e^{-st})\,\nu(ds)$ with $a,b\ge0$ and $\nu$ a positive measure satisfying
+$\int_{(0,\infty)}\min(1,s)\,\nu(ds)<\infty$. This follows by integrating the Bernstein--Widder representation (Theorem~\ref{ch1:thm:bernstein})
+of the CM function $h'$; for instance $\sqrt t=\frac{1}{2\sqrt\pi}\int_0^\infty(1-e^{-st})\,s^{-3/2}\,ds$ (standard).
+\end{uniremark}
+
+\begin{theorem}[Subordination: CM $\circ$ Bernstein]\label{ch1:thm:comp}
+If $f$ is CM and $h$ is a \emph{strictly positive} Bernstein function, then $f\circ h$ is CM. \tierC{} Lean version:
+\texttt{ProgCM.IsCompletelyMonotoneOn\allowbreak .comp\_bernstein} \tierA{}, whose proof follows exactly the induction below~\cite{p3}.
+\end{theorem}
+
+\begin{humanproof}
+The composition $f\circ h$ is well defined (since $h>0$) and of class $\mathcal C^\infty$. We prove by strong induction on $n$ the property
+\[
+  \mathcal P(n) :\quad \text{for every CM } f \text{ and every Bernstein } h,\ \ (-1)^n(f\circ h)^{(n)}\ge0\ \text{on }(0,\infty).
+\]
+It is essential to quantify over \emph{all} functions $f$ and $h$: the induction hypothesis will be applied to a function other than $f$.
+
+\emph{Base case.} $\mathcal P(0)$: $f\circ h\ge0$ since $f\ge0$.
+
+\emph{Inductive step.} Assume $\mathcal P(k)$ for every $k\le n$. Let $f$ be CM and $h$ Bernstein. We have $(f\circ h)'=(f'\circ h)\,h'$, hence
+\[
+  -(f\circ h)'=G\cdot h',\qquad G=(-f')\circ h .
+\]
+Now $-f'$ is CM (it is $f$ differentiated once, with the sign: $(-1)^m(-f')^{(m)}=(-1)^{m+1}f^{(m+1)}\ge0$). By $\mathcal P(k)$ applied to the CM function $-f'$,
+$(-1)^kG^{(k)}\ge0$ for every $k\le n$. On the other hand $h'$ is CM by definition. Differentiating $n$ times and using the Leibniz rule,
+\[
+  (-1)^{n+1}(f\circ h)^{(n+1)}=(-1)^{n}\bigl(G\,h'\bigr)^{(n)}=\sum_{k=0}^{n}\binom nk\ \bigl[(-1)^kG^{(k)}\bigr]\ \bigl[(-1)^{n-k}(h')^{(n-k)}\bigr]\ \ge0 .
+\]
+Hence $\mathcal P(n+1)$.
+\end{humanproof}
+
+\begin{corollary}[The square-root case]\label{ch1:cor:sqrt}
+If $f$ is CM, then $t\mapsto f(\sqrt t)$ is CM. In particular, for $\kappa\ge0$, $t\mapsto e^{-\kappa\sqrt t}$ is CM, and so is the
+planar Yukawa potential $e^{-\kappa r}/r$ written in the variable $t=r^2$: $g_\kappa(t)=e^{-\kappa\sqrt t}\,t^{-1/2}$. \tierC{}
+(Lean: \lean{ProgCM.IsCompletelyMonotoneOn.comp_sqrt}, \lean{ProgCM.phi_cm} \tierA{}.)
+\end{corollary}
+
+\begin{humanproof}
+Theorem~\ref{ch1:thm:comp} with $h=\sqrt{\ \cdot\ }$ (Example~\ref{ch1:ex:bernstein}) gives the first sentence. With $f(u)=e^{-\kappa u}$ we obtain that
+$e^{-\kappa\sqrt t}$ is CM. The Yukawa potential is the \emph{product} of this function with $t^{-1/2}$, which is CM by Example~\ref{ch1:ex:exemples};
+Proposition~\ref{ch1:prop:cloture} concludes.
+\end{humanproof}
+
+\begin{remark}[Direct check on one case]
+For $\psi(t)=e^{-\sqrt t}$ we have $\psi'(t)=-\frac{1}{2\sqrt t}e^{-\sqrt t}$ and $\psi''(t)=\bigl(\frac1{4t}+\frac1{4t^{3/2}}\bigr)e^{-\sqrt t}$. The signs
+$-\psi'\ge0$ and $\psi''\ge0$ are as announced. A machine checks the signs up to order $8$ at seven points
+(script \texttt{code/ch1\_theta.py}): $e^{-\sqrt t}$ passes, $\cos t$ (negative control) fails at every order \tierX{}. This is not a proof:
+the proof is the induction above.
+\end{remark}
+
+\begin{physbox}[: why physicists meet CM functions]
+A potential that decays with distance while flattening out ``more and more slowly'' (Coulomb, screened Yukawa, dipole) is typically CM.
+The five physical potentials of Table~\ref{ch1:tab:flux} include dipolar excitons $2\bigl(1/r-1/\sqrt{r^2+d^2}\bigr)$ (doi:\,10.5281/zenodo.23646103) and the Yukawa potential
+(doi:\,10.5281/zenodo.23646105). In both cases admissibility is a \tierA{} theorem; the physical consequence (the triangular lattice has
+minimal energy) remains conditional on \texttt{openai/math}.
+\end{physbox}
+
+\subsection{Bernstein's theorem and Gaussian mixtures}
+
+\begin{theorem}[Bernstein--Widder]\label{ch1:thm:bernstein}
+A function $g:(0,\infty)\to\R$ is completely monotone if and only if there exists a positive measure $\mu$ on $[0,\infty)$ such that
+\[
+  g(t)=\int_{[0,\infty)}e^{-\alpha t}\,d\mu(\alpha)\qquad(t>0).
+\]
+The measure $\mu$ is then unique. \tierL{} (classical statement, cited second-hand)~\cite{bernstein,widder}
+\end{theorem}
+
+The geometric reading is essential: with $t=|x|^2$, we have $g(|x|^2)=\int e^{-\alpha|x|^2}d\mu(\alpha)$, that is, \emph{every completely monotone potential
+is a positive mixture of Gaussians}. The ``converse'' direction is easy and we prove it; the forward direction (CM $\Rightarrow$ mixture) is a deep
+result, which we cite, and which is \emph{not} formalised in the work described here.
+
+\begin{proposition}[Mixtures are CM (easy direction)]\label{ch1:prop:facile}
+Let $\mu$ be a positive measure on $[0,\infty)$ such that $\int e^{-\alpha t}d\mu(\alpha)<\infty$ for every $t>0$. Then $g(t)=\int e^{-\alpha t}d\mu(\alpha)$ is CM.
+\tierC{} (Lean: \lean{ProgCM.laplace_measure} \tierA{}, a statement of this same direction.)
+\end{proposition}
+
+\begin{humanproof}
+Fix $t_0>0$. For $t\ge t_0$ and $n\in\N$, we have $0\le\alpha^ne^{-\alpha t}\le C_n\,e^{-\alpha t_0/2}$ with
+$C_n=\sup_{\alpha\ge0}\alpha^ne^{-\alpha t_0/2}<\infty$, and $\alpha\mapsto e^{-\alpha t_0/2}$ is $\mu$-integrable by hypothesis. The theorem on differentiation under the
+integral sign (uniform domination on $[t_0,\infty)$, a consequence of Lebesgue's dominated convergence theorem) shows, by induction on $n$, that $g$ is of class $\mathcal C^\infty$ and
+$(-1)^ng^{(n)}(t)=\int\alpha^ne^{-\alpha t}d\mu(\alpha)\ge0$.
+\end{humanproof}
+
+\begin{example}[A CM potential that the closure rules do not see]\label{ch1:ex:dipole}
+For $c>0$, $\varphi(t)=t^{-1/2}-(t+c)^{-1/2}$ is a \emph{difference} of two CM functions, and nothing in Proposition~\ref{ch1:prop:cloture}
+allows us to conclude. But Euler's formula $u^{-1/2}=\frac{1}{\sqrt\pi}\int_0^\infty \alpha^{-1/2}e^{-\alpha u}d\alpha$ ($u>0$) gives
+\[
+  \varphi(t)=\frac{1}{\sqrt\pi}\int_0^\infty\alpha^{-1/2}\bigl(1-e^{-c\alpha}\bigr)\,e^{-\alpha t}\,d\alpha ,
+\]
+a mixture with \emph{positive} weight ($1-e^{-c\alpha}>0$): $\varphi$ is CM by Proposition~\ref{ch1:prop:facile}. This is the dipolar exciton potential,
+up to the factor $2$. \tierC{}
+\end{example}
+
+\paragraph{From the energy of Gaussians to that of mixtures.} Let $g(t)=\int e^{-\pi\alpha t}d\nu(\alpha)$ be a mixture, with $\nu$ positive.
+For a finite configuration $C_R$, by positivity (Tonelli's theorem) the double sum can be moved under the integral:
+\[
+  E_g(C;R)=\int E_{e^{-\pi\alpha\,\cdot}}(C;R)\,d\nu(\alpha).
+\]
+Fatou's lemma (valid in $[0,\infty]$) then gives $E_g(C)\ge\int\liminf_RE_{e^{-\pi\alpha\cdot}}(C;R)\,d\nu(\alpha)=\int E_{e^{-\pi\alpha\cdot}}(C)\,d\nu(\alpha)$.
+If we know that, for each $\alpha$, no configuration has a Gaussian energy lower than that of $A$, we deduce
+$E_g(C)\ge\int(\Theta_A(\alpha)-1)\,d\nu(\alpha)=E_g(A)$, by Tonelli on the lattice sum. \tierC{}
+\emph{The Gaussian case is therefore the heart of the problem}; it is this case, for every value of $\alpha$, that the theorem of the next part asserts.
+The same idea, applied to \emph{lattices} with Montgomery's Theorem~\ref{ch1:thm:montgomery}, gives: $E_g(A)\le E_g(\Lambda)$ for every lattice $\Lambda$ of
+covolume $1$ and every CM $g$ (a mixture $\nu$ of Gaussians), since $E_g(\Lambda)=\int(\Theta_\Lambda(\alpha)-1)\,d\nu(\alpha)$. \tierC{}\ (conditional on~\ref{ch1:thm:montgomery} and~\ref{ch1:thm:bernstein}, \tierL{})
+
+\section{Universal optimality}
+\label{ch1:sec:univ}
+
+\subsection{Statement}
+
+Cohn and Kumar~\cite{ck} defined a notion of \emph{universal optimality}: a configuration is universally optimal if it minimises the energy for
+\emph{every} completely monotone potential of the squared distance, simultaneously. They conjectured that this happens for many remarkable
+configurations, including the triangular lattice in the plane. Cohn, Kumar, Miller, Radchenko and Viazovska~\cite{ckmrv} proved the conjecture for the $E_8$ lattice in dimension $8$ and the Leech lattice
+in dimension $24$ \tierL{}, building on Viazovska's work~\cite{viazovska}. Dimension $2$ remained open in the literature we have read.
+
+The \texttt{openai/math} repository contains a statement and a proof in Lean~4 of the planar case~\cite{oai}. Here is the statement as it appears in the
+challenge file, first in English and then in Lean.
+
+\begin{theorem}[Universal optimality of the triangular lattice (\texttt{openai/math})]\label{ch1:thm:univ}
+Let $g$ be admissible (Definition~\ref{ch1:def:cm}) and $C\subset\R^2$ a locally finite configuration of centred density $1$. Then
+\[
+  \mathcal E_g(A)\ \le\ E_g(C)\qquad\text{and}\qquad \mathcal E_g(A)=E_g(A),\qquad\text{where}\quad \mathcal E_g(A)=\sum_{x\in A\setminus 0}g(|x|^2),
+\]
+with values in $[0,\infty]$, and $E_g(\cdot)$ the lower energy over closed centred disks (Lean: \lean{latticeEnergy g} for $\mathcal E_g(A)$ and \lean{energy g} for $E_g$). \tierA{} \emph{for the Lean statement}
+\lean{OAI.AtomicTriangular.universal_energy_minimum}, \textbf{conditional}: the proof is AI-generated and has not been peer reviewed.
+\end{theorem}
+
+\begin{leanbox}[: the main statement (extract from the challenge file, where the proof is \lean{sorry} by construction)]
+\begin{lstlisting}[language=Lean]
+theorem universal_energy_minimum (g : ℝ → ℝ) (C : Set Plane)
+    (hg : AdmissiblePotential g) (hC : LocallyFinite C) (hd : DensityOne C) :
+    latticeEnergy g ≤ energy g C ∧ latticeEnergy g = energy g A
+\end{lstlisting}
+\end{leanbox}
+
+Three reading remarks, essential for what follows.
+\begin{enumerate}
+\item The energy is a \emph{limit inferior} over \emph{closed disks centred at $0$}. The CKMRV definition~\cite{ckmrv} additionally requires the limit to exist for the
+optimal configuration. The notion used here is therefore weaker \tierC{}.
+\item The theorem does not say that $A$ is the only minimiser, and uniqueness is false in general: corollary D3 of textbook v1~\cite{v1} establishes
+non-uniqueness by removing one point of $A$ (a ``vacancy''), which changes neither the density nor the lower energy. \tierA{} (conditional)
+\item For $s\le2$ (Riesz), the energy of $A$ is infinite (Proposition~\ref{ch1:prop:riesz}): the inequality is then true but void. Content appears for $s>2$.
+\end{enumerate}
+
+\subsection{The thread of the formalisations}
+
+The rest of the book follows a natural sequence: each step takes the previous result as a black box.
+Table~\ref{ch1:tab:flux} summarises it. The DOI numbers and tiers are those of the record documents.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{@{}p{0.04\textwidth}p{0.50\textwidth}p{0.17\textwidth}p{0.20\textwidth}@{}}
+\toprule
+\# & Step & Tier & Reference \\
+\midrule
+1 & Upstream theorem (\texttt{openai/math}), planar case & \tierL{} and conditional \tierA{} & \cite{oai} \\
+2 & Corollaries D1 to D4: Riesz, every density, CKMRV sense and non-uniqueness, open or closed disks & \tierA{}, conditional on 1 & \cite{v1} (textbook v1) \\
+3 & Five physical potentials (dipolar excitons, Yukawa, Rytova--Keldysh, $\sigma=3$ enstrophy, Bogoliubov structure factor) & \tierA{} for the replayed modules (dipolar, Yukawa, Keldysh), \tierAs{} for $\sigma=3$ and Bogoliubov; Keldysh$\leftrightarrow$Struve: \tierC{} & 5 Zenodo deposits \\
+4 & CM/Bernstein library (P3): subordination, equivalence with \lean{AdmissiblePotential} & \tierA{} & \cite{p3} \\
+5 & Quantum surprise: the zero-point energy, QU-1 false for 8 CM potentials out of 12; certificate at $a=1$; no triangular$\to$oblique transition & \tierX{}, then \tierAs{} (logic) and \tierC{} (ball-arithmetic integrals); negative result & Zenodo \\
+6 & Sandier--Serfaty (Abrikosov lattices): audit, partial port to Lean, failure of the extension to the 3D case & \tierC{}, partial \tierAs{}; negative results & Zenodo \\
+7 & Navier--Stokes (corpus \texttt{openai/NavierStokesAndEuler}): rebuild and kernel replay & \tierA{} for the kernel replay of the corpus statements; faithfulness to Fefferman's alternative (C): \tierC{}; no ``Clay problem solved'' & doi:\newline 10.5281/\allowbreak zenodo.23661381 \\
+8 & Population genetics: Moran fixation, Price equation, isothermal theorem & \tierA{} & Zenodo \\
+\bottomrule
+\end{tabular}
+\caption{The sequence of formalisations, from the foundations (this chapter) to the applications.}
+\label{ch1:tab:flux}
+\end{table}
+
+\begin{warnbox}[: what the table does not claim]
+No row means ``conjecture proved'' beyond its tier. Rows 5 and 6 contain \emph{negative} results: they
+say that certain plausible extensions fail (or are not established), and this is information of the same value as the positive results.
+Step~7 is an audit of a third-party corpus: the credit belongs to its authors. We do not claim that a Clay problem is solved.
+\end{warnbox}
+
+\section{Lean 4 for the student}
+\label{ch1:sec:lean}
+
+\subsection{Propositions and proofs}
+
+Lean~4~\cite{lean4} is both a programming language and a \emph{proof assistant}. For an undergraduate reader,
+the following dictionary is enough to read the statements of this book (this is the Curry--Howard correspondence).
+\begin{itemize}
+\item A \emph{proposition} is a mathematical statement; in Lean, it is an object of type \lean{Prop}.
+\item A \emph{proof} of the proposition $P$ is an object \lean{h : P}. The Lean kernel checks that a term really has the announced type.
+\item $P\wedge Q$ is written \lean{P ∧ Q}: a proof is a \emph{pair} $\langle$\lean{hP}, \lean{hQ}$\rangle$.
+\item $P\Rightarrow Q$ is written \lean{P → Q}: a proof is a \emph{function} that turns every proof of $P$ into a proof of $Q$.
+\item $\forall n,\ P(n)$ is written \lean{∀ n, P n}: a proof is a function that assigns to each $n$ a proof of $P(n)$.
+\end{itemize}
+The Mathlib library~\cite{mathlib} provides many already proved theorems (analysis, algebra).
+
+\subsection{A minimal example, with its actual output}
+
+The following file was compiled as is with Lean 4.34.0-rc2, without any library (output reproduced identically by the independent auditor). It contains three true theorems and two false
+``theorems'' $1=2$ that can be proved only by cheating: one with \lean{sorry}, the other with an axiom added by the user.
+
+\begin{leanbox}[: \texttt{T.lean} (compiled on 2026-10-26)]
+\begin{lstlisting}[language=Lean]
+theorem and_swap' (p q : Prop) (h : p ∧ q) : q ∧ p := ⟨h.2, h.1⟩
+
+theorem add_comm' (a b : Nat) : a + b = b + a := Nat.add_comm a b
+
+theorem two_mul' (n : Nat) : 2 * n = n + n := by
+  omega
+
+theorem bad : 1 = 2 := by sorry
+
+axiom cheat : False
+theorem bad2 : 1 = 2 := cheat.elim
+
+#print axioms and_swap'
+#print axioms two_mul'
+#print axioms bad
+#print axioms bad2
+\end{lstlisting}
+\end{leanbox}
+
+The first two theorems are \emph{proof terms}: the object is written directly. The third uses a \emph{tactic} (\lean{by omega}):
+a small program that \emph{constructs} the proof term; the kernel then checks the term produced. Here is the actual output:
+
+\begin{lstlisting}[language={}]
+T.lean:8:8: warning: declaration uses `sorry`
+'and_swap'' does not depend on any axioms
+'two_mul'' depends on axioms: [propext, Quot.sound]
+'bad' depends on axioms: [sorryAx]
+'bad2' depends on axioms: [cheat]
+\end{lstlisting}
+
+The compiler's exit code was $0$: \textbf{Lean accepts a file that contains \lean{sorry}}, emitting only a warning.
+\emph{A zero exit code does not mean ``everything is proved''.}
+
+\subsection{Axioms, and the gate}
+
+Every proof in mathematics rests on axioms. The classical mathematics of Mathlib uses three: \lean{propext} (two equivalent
+propositions are equal), \lean{Classical.choice} (the axiom of choice) and \lean{Quot.sound} (compatibility of quotients). We call them the \emph{whitelist}:
+\[
+  \{\texttt{propext},\ \texttt{Classical.choice},\ \texttt{Quot.sound}\}.
+\]
+Any other axiom in the footprint of a theorem disqualifies it. In the output above, the footprint of \lean{bad} contains \lean{sorryAx} (the internal axiom
+hidden behind \lean{sorry}) and that of \lean{bad2} contains the user axiom \lean{cheat}: both false theorems are therefore \emph{detected}.
+This is the \emph{negative control} of the axiom gate; the \emph{positive control} is that \lean{and_swap'} and \lean{two_mul'} pass. A measurement without these two controls proves nothing.
+
+\begin{warnbox}[: \texttt{\#print axioms} is not enough]
+The A2 audit~\cite{a2} of the \texttt{openai/NavierStokesAndEuler} corpus (2\,440 modules rebuilt, kernel replay of $53\,752+34\,648$ declarations) showed that a declaration
+\emph{added directly to the kernel with its type checking disabled} (option \lean{debug.skipKernelTC}) is displayed by \texttt{\#print axioms} as
+``does not depend on any axioms'', even though it can establish \lean{False}. The audit's positive control (such a false declaration, deliberately fabricated) was
+\emph{invisible} to \texttt{\#print axioms} and \emph{caught} by the full kernel replay (\lean{leanchecker}) (a \tierX{}-tier observation in the A2 paper: it concerns a deliberately invalid declaration). The lesson: the axiom audit is necessary,
+not sufficient.
+\end{warnbox}
+
+The \tierA{} gate of this book therefore consists of \emph{four} controls (compilation, then the three checks of the preface):
+\begin{enumerate}
+\item compilation of the project without errors;
+\item the axiom list of each retained theorem is contained in the whitelist;
+\item full \emph{kernel replay} of the declarations by the tool \lean{leanchecker}, which rechecks every term without trusting the compiler;
+\item a textual search for the words \lean{skipKernelTC}, \lean{addDecl}, \lean{native_decide} and \lean{implemented_by} in the sources, which are the known backdoors.
+\end{enumerate}
+To this is added an organisational rule: whoever \emph{produces} a proof is not the one who \emph{verifies} it (here, two separate AI agents, and never a human).
+
+When the \lean{leanchecker} replay has not been done, we write \tierAs{}: axiom list, planted witnesses and independent recompilation, without kernel replay.
+
+\subsection{Reading the upstream statement; a short corollary}
+
+Once the main theorem is available, a corollary often reduces to checking a hypothesis. Here is the Riesz case,
+quoted from the file \lean{formal_cert/Triangular/Riesz.lean} of the repository (the ellipsis marks an omitted part):
+
+\begin{leanbox}[: Riesz corollary (extract, layout modified)]
+\begin{lstlisting}[language=Lean]
+noncomputable def riesz (s : ℝ) : ℝ → ℝ := fun t => t ^ (-(s / 2))
+
+theorem riesz_admissible {s : ℝ} (hs : 0 < s) : AdmissiblePotential (riesz s) := by
+  ...
+
+theorem triangular_riesz_optimal {s : ℝ} (hs : 0 < s) (C : Set Plane)
+    (hC : LocallyFinite C) (hd : DensityOne C) :
+    latticeEnergy (riesz s) ≤ energy (riesz s) C :=
+  (universal_energy_minimum (riesz s) C (riesz_admissible hs) hC hd).1
+\end{lstlisting}
+\end{leanbox}
+
+The last line ``applies'' the main theorem to $g=\text{riesz}\ s$ by supplying the three proofs of the hypotheses, and then takes the first component
+\lean{.1} of the conjunction. This is exactly a \emph{composition of functions} in the sense of the Curry--Howard dictionary.
+The hypothesis \lean{riesz_admissible} is the complete monotonicity property of Example~\ref{ch1:ex:exemples} (2). The ``every density'' corollary (D2) is re-exported in Chapter~5 under the name \lean{ALIX}.
+
+\subsection{The induction of §\ref{ch1:sec:cm}, on the Lean side}
+
+The subordination Theorem~\ref{ch1:thm:comp} has been formalised~\cite{p3}. The general statement and its square-root special case are the following
+(extracts from the file \lean{Bernstein.lean} in the folder \lean{formal_cert/Programmes/}\allowbreak\lean{CompletelyMonotone/}, proofs omitted):
+
+\begin{leanbox}[: subordination (statements)]
+\begin{lstlisting}[language=Lean]
+theorem IsCompletelyMonotoneOn.comp_bernstein {f g : ℝ → ℝ} (hf : IsCompletelyMonotoneOn f)
+    (hg : IsBernsteinOn g) (hpos : ∀ t, 0 < t → 0 < g t) :
+    IsCompletelyMonotoneOn (fun t => f (g t))
+
+theorem IsCompletelyMonotoneOn.comp_sqrt {f : ℝ → ℝ} (hf : IsCompletelyMonotoneOn f) :
+    IsCompletelyMonotoneOn (fun t => f (Real.sqrt t))
+\end{lstlisting}
+\end{leanbox}
+
+One recognises the structure of the human theorem. The hypotheses \lean{hf}, \lean{hg} and \lean{hpos} are the three
+hypotheses of the theorem ($f$ CM, $h$ Bernstein, $h>0$), \lean{fun t => f (g t)} is the function $f\circ h$, and \lean{comp_sqrt} is obtained from the general case by
+supplying the proof that $\sqrt{\ \cdot\ }$ is a Bernstein function and strictly positive on $(0,\infty)$. The repository states that the proof proceeds by strong
+induction on the order, quantified over all CM functions $f$, with the formula $(f\circ h)'=-((-f')\circ h)\cdot h'$ and the Leibniz lemma: this is
+the same reasoning as the human proof. \tierA{} for the statements above, \tierC{} for our human write-up, whose correspondence with the
+Lean proof is a comment by the author, not a theorem.
+
+\begin{remark}[Why \lean{hpos} appears in Lean]
+In paper mathematics, one tacitly assumes that $f\circ h$ makes sense. Lean does not: $f$ is a function defined everywhere on $\R$, but
+constrained only on $(0,\infty)$. If $h\equiv0$ (which is a Bernstein function), $f\circ h$ would be the spurious constant $f(0)$, about which the hypothesis says nothing. The hypothesis
+$h>0$ is not nitpicking: it is what makes the statement \emph{true}.
+\end{remark}
+
+\begin{warnbox}[: summary of the tiers of this chapter]
+\begin{itemize}
+\item \tierL{}: Poisson summation on the torus (Fourier's theorem), Montgomery's theorem and the Bernstein--Widder theorem (forward direction), both cited second-hand, the CKMRV result in dimensions $8$ and $24$.
+\item \tierC{}: all human proofs of this chapter (counting, Riesz energy, Poisson summation, closure of CM functions, subordination, mixtures, Fatou reduction).
+\item \tierA{} (with kernel replay for the Triangular modules, the CM/Bernstein library and P7; see the following chapters): the Lean statements cited (equivalence with \lean{AdmissiblePotential}, subordination, \lean{laplace_measure}, \lean{quadrupole_not_cm}, the upstream statement), the last one being \emph{conditional}.
+\item \tierX{}: the script \texttt{code/ch1\_theta.py}, which illustrates without proving.
+\end{itemize}
+\end{warnbox}
+
+\subsection{The Elenchus tiers}
+\label{ch1:sec:tiers}
+
+The Elenchus method~\cite{elenchus} attaches to each statement of the book one of four tiers, according to the \emph{nature of the available proof}.
+
+\begin{center}\small
+\begin{tabular}{@{}p{0.09\textwidth}p{0.40\textwidth}p{0.38\textwidth}@{}}
+\toprule
+Tier & What is guaranteed & What is not \\
+\midrule
+\tierA{} & The Lean statement is accepted by the kernel, with the four controls of the gate above & That the Lean statement faithfully expresses the intended mathematical or physical statement \\
+\tierL{} & The result appears in a source that was read and precisely referenced (for example a theorem of a published paper) & That we have rechecked it ourselves \\
+\tierC{} & A complete human argument, written in this book, reviewed by an independent AI agent & Any machine verification, and any human review \\
+\tierX{} & A floating-point computation, with positive and negative controls & Nothing: a numerical exploration never supports a claim \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Two composition rules, used throughout what follows.
+\begin{enumerate}
+\item \emph{The tier of a consequence is the weakest of the tiers of its hypotheses.} A corollary of \texttt{openai/math} is \emph{conditional} \tierA{}: the kernel has
+checked the implication, not the upstream hypothesis, whose proof has not been peer reviewed.
+\item \emph{A negative result is a result.} When a plausible extension fails, we write it down with its tier.
+\end{enumerate}
+
+\begin{warnbox}[: adequacy of the statement]
+The kernel certifies that the statement \lean{universal_energy_minimum}, \emph{with the repository's definitions}, follows from the whitelisted axioms. It does not certify
+that \lean{DensityOne} is the density the physicist has in mind, nor that \lean{energy} (a limit inferior over closed centred disks) is the CKMRV energy. No human
+has audited this adequacy. This is why every chapter repeats the tier, and it is the reason for the word ``conditional''.
+\end{warnbox}
+
+\section*{Exercises}
+\addcontentsline{toc}{section}{Exercises}
+\label{ch1:sec:exos}
+
+Hints follow the list of exercises. The exercises are of increasing difficulty (from * to ***).
+
+\begin{exercise}[*]\label{ch1:ex:covol}
+Show that the change-of-basis matrix between two bases of the same lattice lies in $\mathrm{GL}_2(\Z)$ and deduce that the covolume does not depend on the basis.
+Compute the covolume and the minimal distance of the lattice $\Z u\oplus\Z v$ with $u=(1,0)$, $v=(1/2,\sqrt3/2)$, then normalise it to density $1$. Recover $a^2=2/\sqrt3$.
+\end{exercise}
+
+\begin{exercise}[*]\label{ch1:ex:voisins}
+In $A$, determine all vectors of norm $a\sqrt3$ and their number (hint: $m^2+mn+n^2=3$). Compare with the case of $\Z^2$ (shell $|x|^2=2$). Justify that $a>1$: at equal covolume, the minimal distance of $A$ exceeds that of $\Z^2$.
+\end{exercise}
+
+\begin{exercise}[**]\label{ch1:ex:comptage}
+Write out the proof of Proposition~\ref{ch1:prop:comptage} for $\Lambda=\Z^2$ and deduce that $\#\{(m,n)\in\Z^2 : m^2+n^2\le R^2\}=\pi R^2+O(R)$.
+Is this error $O(R)$ optimal? (Look up the literature on the \emph{Gauss circle problem}.)
+\end{exercise}
+
+\begin{exercise}[**]\label{ch1:ex:epstein}
+Prove that $\sum_{x\in A\setminus0}|x|^{-s}$ diverges for $s\le2$ and converges for $s>2$. Using $t^{-s/2}=\frac{\pi^{s/2}}{\Gamma(s/2)}\int_0^\infty\alpha^{s/2-1}e^{-\pi\alpha t}d\alpha$,
+express this sum as an integral of $\Theta_A(\alpha)-1$ against $\alpha^{s/2-1}d\alpha$ and recover the condition $s>2$ from the behaviour of $\Theta_A$ at $0$ and at $+\infty$.
+\end{exercise}
+
+\begin{exercise}[**]\label{ch1:ex:poisson}
+(a) Prove the relation $\vartheta(1/\alpha)=\sqrt\alpha\,\vartheta(\alpha)$ of Example~\ref{ch1:ex:jacobi} by redoing the one-dimensional proof.
+(b) Deduce an algorithm that computes $\vartheta(\alpha)$ to within $10^{-12}$ by summing only over $|n|\le 6$, whatever $\alpha>0$. (c) Compute
+$\Theta_{\Z^2}(1)=\vartheta(1)^2$ and compare with the value $1.1803\ldots$ in the text.
+\end{exercise}
+
+\begin{exercise}[*]\label{ch1:ex:clotures}
+Show that if $f$ is CM and $a>0$, $b\ge0$, then $t\mapsto f(at+b)$ is CM. Deduce that $t\mapsto(t+1)^{-s}e^{-a t}$ is CM for $s,a\ge0$.
+Show by a computation that $t\mapsto t^{-1}e^{-t}$ is CM as well, without using the composition theorem.
+\end{exercise}
+
+\begin{exercise}[**]\label{ch1:ex:comp}
+(a) Check that $h(t)=\ln(1+t)$ is a Bernstein function. (b) Deduce that $t\mapsto(\ln(1+t))^{-s}$ is CM for $s\ge0$ (pay attention to the positivity of $h$ on $(0,\infty)$).
+(c) Show that $t\mapsto1/(1+\sqrt t)$ is CM by applying Corollary~\ref{ch1:cor:sqrt}.
+(d) Why can the hypothesis $h>0$ not be omitted in Theorem~\ref{ch1:thm:comp}? (Consider $h\equiv0$.)
+\end{exercise}
+
+\begin{exercise}[***]\label{ch1:ex:melange}
+Let $g(t)=t^{-1/2}-2(t+1)^{-1/2}+(t+4)^{-1/2}$. Noting that $g$ is a mixture of Gaussians with a \emph{signed weight}, explain why positivity of the weight fails,
+and recover in this way that $g$ is not CM (compare with $g(3)<0$).
+\end{exercise}
+
+\begin{exercise}[*]\label{ch1:ex:lean}
+Among the following four outputs of \texttt{\#print axioms}, which satisfy the axiom gate? Which satisfy the \emph{full} four-control gate?
+(i) \texttt{[propext, Classical.choice, Quot.sound]}; (ii) \texttt{[propext, sorryAx]}; (iii) \texttt{does not depend on any axioms}; (iv) \texttt{[cheat, propext]}.
+Explain why (iii) alone is not enough to conclude.
+\end{exercise}
+
+\begin{exercise}[**]\label{ch1:ex:fatou}
+Let $\Lambda$ be a lattice and $g\ge0$ an arbitrary potential. Show that the disk energy $E_g(\Lambda;R)$ defined above converges, as $R\to\infty$,
+to $\sum_{a\in\Lambda\setminus0}g(|a|^2)$ (finite or not). Thus, for a lattice, the lower energy and the lattice energy coincide.
+\end{exercise}
+
+\begin{exercise}[(*) University exercise: Poisson summation in $\R^d$]
+Let $\Lambda=M\Z^d\subset\R^d$ be a lattice, $M\in\mathrm{GL}_d(\R)$, with dual $\Lambda^*=M^{-T}\Z^d$ and $\Theta_\Lambda(\alpha)=\sum_{x\in\Lambda}e^{-\pi\alpha|x|^2}$.
+(a) Adapting the three steps of the proof of Theorem~\ref{ch1:thm:poisson}, prove that for every $\alpha>0$
+\[
+  \Theta_\Lambda(\alpha)=\frac{1}{\operatorname{covol}(\Lambda)}\,\alpha^{-d/2}\,\Theta_{\Lambda^*}\!\Bigl(\frac1\alpha\Bigr),\qquad \operatorname{covol}(\Lambda)=|\det M|.
+\]
+(b) Deduce that $\Theta_\Lambda(\alpha)\sim\operatorname{covol}(\Lambda)^{-1}\alpha^{-d/2}$ as $\alpha\to0^+$, and recover the case $d=1$ of Example~\ref{ch1:ex:jacobi}.
+(c) Show that if $\Lambda^*$ is the image of $\Lambda$ under an orthogonal map (so that $\operatorname{covol}(\Lambda)=1$), then $\alpha\mapsto\alpha^{d/4}\Theta_\Lambda(\alpha)$ is invariant under $\alpha\mapsto1/\alpha$.
+\end{exercise}
+
+\begin{exercise}[(*) University exercise: Exponentials of Bernstein functions]
+Let $h$ be a Bernstein function with $h>0$ on $(0,\infty)$.
+(a) Show that $t\mapsto e^{-u\,h(t)}$ is CM for every $u\ge0$, and that $t\mapsto 1/h(t)$ is CM.
+(b) Show that if $h_1,h_2$ are Bernstein functions with $h_2>0$, then $h_1\circ h_2$ is a Bernstein function. (Hint: $(h_1\circ h_2)'=(h_1'\circ h_2)\,h_2'$; use Theorem~\ref{ch1:thm:comp} and Proposition~\ref{ch1:prop:cloture}.)
+(c) Deduce that $t\mapsto\bigl(\ln(1+\sqrt t)\bigr)^{-1}$ and $t\mapsto e^{-\sqrt{t+t^{1/2}}}$ are CM.
+\end{exercise}
+
+\subsection*{Hints}
+
+\begin{itemize}
+\item[\ref{ch1:ex:covol}.] If $M,M'$ are two basis matrices, $M'=MP$ with $P$ integral and $M=M'P'$ with $P'$ integral: $PP'=I$, so $\det P\det P'=1$ with two
+integers, hence $\det P=\pm1$. For the last part: $\det(u,v)=\sqrt3/2$; rescale by the factor $a$ with $a^2\sqrt3/2=1$.
+\item[\ref{ch1:ex:voisins}.] $m^2+mn+n^2=3$: $(1,1)$, $(-1,-1)$, $(2,-1)$, $(-2,1)$, $(1,-2)$, $(-1,2)$, i.e.\ six vectors. Since $a^2=2/\sqrt3>1$ ($4>3$), $a>1$; the
+minimal distance of $\Z^2$ is $1$.\item[\ref{ch1:ex:comptage}.] Take $\delta=\sqrt2$ for $\Z^2$: $\pi(R-\sqrt2)^2\le N(R)\le\pi(R+\sqrt2)^2$, hence $N(R)=\pi R^2+O(R)$; optimality of the exponent $1$ is not asked for (the best known exponent is below $1$, see the literature).
+\item[\ref{ch1:ex:epstein}.] For divergence, reuse the lower bound on $\#S_k$. For the integral: $\Theta_A(\alpha)-1\sim6e^{-\pi a^2\alpha}$ as $\alpha\to\infty$ (convergence)
+and $\Theta_A(\alpha)\sim\alpha^{-1}$ as $\alpha\to0$ (by Poisson); the integral $\int_0\alpha^{s/2-1}\alpha^{-1}d\alpha$ converges iff $s/2-2>-1$, i.e.\ $s>2$.
+\item[\ref{ch1:ex:poisson}.] (b) For $\alpha\ge1$ sum directly; for $\alpha<1$ apply $\vartheta(\alpha)=\alpha^{-1/2}\vartheta(1/\alpha)$.
+(c) $\vartheta(1)=1.0864348\ldots$, hence $\Theta_{\Z^2}(1)=1.18034\ldots$
+\item[\ref{ch1:ex:clotures}.] $f(at+b)$: differentiate $n$ times and factor out $a^n$. For the last one: product of two CM functions (Proposition~\ref{ch1:prop:cloture}); or a direct computation via Leibniz.
+\item[\ref{ch1:ex:comp}.] (b) Set $f(u)=u^{-s}$, which is CM. (d) For $h\equiv 0$, $f\circ h$ is not defined on $(0,\infty)$ (or takes a spurious value $f(0)$ if one extends).
+\item[\ref{ch1:ex:melange}.] $t^{-1/2}=\pi^{-1/2}\int\alpha^{-1/2}e^{-\alpha t}d\alpha$; the weight of $g$ is $\pi^{-1/2}\alpha^{-1/2}(1-2e^{-\alpha}+e^{-4\alpha})$, which is negative for
+some $\alpha$ (study $1-2x+x^4$ with $x=e^{-\alpha}$). Injectivity of the Laplace transform (including for signed measures) shows that $g$ has no representation with a positive weight; more directly, $g(3)<0$ concludes.
+\item[\ref{ch1:ex:lean}.] (i) passes. (ii) fails (\lean{sorryAx}). (iii) passes the axiom gate alone, but the declaration might have been inserted by bypassing the
+kernel's type checker. (iv) fails.
+\item[\ref{ch1:ex:fatou}.] The term of $x\in\Lambda_R$ is $\sum_{a\in(\Lambda_R-x)\setminus0}g(|a|^2)$: it is bounded above by $\sum_{a\ne0}g(|a|^2)$, whence the upper bound on $E_g(\Lambda;R)$.
+For the lower bound, fix $r>0$: if $|x|\le R-r$, the term of $x$ contains all $a\ne0$ with $|a|\le r$. Hence
+$E_g(\Lambda;R)\ge\frac{N_\Lambda(R-r)}{N_\Lambda(R)}\sum_{0<|a|\le r}g(|a|^2)$; the ratio tends to $1$ (Proposition~\ref{ch1:prop:comptage}). Let $R$ and then $r$ tend to infinity.
+\end{itemize}

@@ -1,0 +1,53 @@
+/-- Only the values on `(0, (*@$\infty$@*))` matter. -/
+theorem congr (hf : IsCompletelyMonotoneOn f) (heq : EqOn f g (Ioi 0)) : IsCompletelyMonotoneOn g := -- proof elided
+
+/-- A nonnegative multiple. -/
+theorem const_mul (hf : IsCompletelyMonotoneOn f) {c : (*@$\mathbb{R}$@*)} (hc : 0 (*@$\le$@*) c) :
+    IsCompletelyMonotoneOn (fun t => c * f t) := -- proof elided
+
+/-- The sum of two completely monotone functions. -/
+theorem add (hf : IsCompletelyMonotoneOn f) (hg : IsCompletelyMonotoneOn g) :
+    IsCompletelyMonotoneOn (f + g) := -- proof elided
+
+/-- **Product (Leibniz).** The product of two completely monotone functions is completely monotone. -/
+theorem mul (hf : IsCompletelyMonotoneOn f) (hg : IsCompletelyMonotoneOn g) :
+    IsCompletelyMonotoneOn (f * g) :=
+  (*@$\langle$@*)hf.1.mul hg.1, fun n t ht => AutoresearchYukawa.mul_sign n (hf.contDiffAt ht n) (hg.contDiffAt ht n)
+    (fun i _ => hf.2 i t ht) (fun i _ => hg.2 i t ht)(*@$\rangle$@*)
+
+/-- **Translation.** `t (*@$\mapsto$@*) f (t + c)` is completely monotone for `c (*@$\ge$@*) 0`. -/
+theorem comp_add_const (hf : IsCompletelyMonotoneOn f) {c : (*@$\mathbb{R}$@*)} (hc : 0 (*@$\le$@*) c) :
+    IsCompletelyMonotoneOn (fun t => f (t + c)) := -- proof elided
+
+/-- **Derivative.** `-f'` is completely monotone. -/
+theorem neg_deriv (hf : IsCompletelyMonotoneOn f) : IsCompletelyMonotoneOn (fun t => -deriv f t) := -- proof elided
+
+/-- Each `(-1)^n f^{(n)}` is antitone on `(0, (*@$\infty$@*))`. -/
+theorem antitoneOn_sign (hf : IsCompletelyMonotoneOn f) (n : (*@$\mathbb{N}$@*)) :
+    AntitoneOn (fun t => (-1 : (*@$\mathbb{R}$@*)) ^ n * iteratedDeriv n f t) (Ioi 0) := -- proof elided
+
+/-- **Difference of a translate.** `t (*@$\mapsto$@*) f t - f (t + c)` is completely monotone for `c (*@$\ge$@*) 0`. -/
+theorem sub_comp_add_const (hf : IsCompletelyMonotoneOn f) {c : (*@$\mathbb{R}$@*)} (hc : 0 (*@$\le$@*) c) :
+    IsCompletelyMonotoneOn (fun t => f t - f (t + c)) := by
+  have hs := hf.comp_add_const hc
+  refine (*@$\langle$@*)hf.1.sub hs.1, fun n t ht => ?_(*@$\rangle$@*)
+  have htc : 0 < t + c := by linarith
+  have e : iteratedDeriv n (fun t => f t - f (t + c)) t =
+      iteratedDeriv n f t - iteratedDeriv n f (t + c) := by
+    have h := iteratedDeriv_sub (hf.contDiffAt ht n) (hs.contDiffAt ht n)
+    rw [iteratedDeriv_comp_add_const] at h
+    exact h
+  rw [e, mul_sub, sub_nonneg]
+  exact hf.antitoneOn_sign n ht htc (by linarith)
+
+/-- **Finite nonnegative combinations.** -/
+theorem sum {(*@$\iota$@*) : Type*} (s : Finset (*@$\iota$@*)) (w : (*@$\iota$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) (F : (*@$\iota$@*) (*@$\to$@*) (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) (hw : (*@$\forall$@*) i (*@$\in$@*) s, 0 (*@$\le$@*) w i)
+    (hF : (*@$\forall$@*) i (*@$\in$@*) s, IsCompletelyMonotoneOn (F i)) :
+    IsCompletelyMonotoneOn (fun t => (*@$\sum$@*) i (*@$\in$@*) s, w i * F i t) := -- proof elided
+
+/-- `e^{-a t}` is completely monotone for `a (*@$\ge$@*) 0`. -/
+theorem exp_neg_mul {a : (*@$\mathbb{R}$@*)} (ha : 0 (*@$\le$@*) a) : IsCompletelyMonotoneOn (fun t => Real.exp (-(a * t))) :=
+  of_admissible (AutoresearchKeldysh.expNeg_admissible ha)
+
+/-- `t^{-s}` is completely monotone for `s (*@$\ge$@*) 0`. -/
+theorem rpow_neg {s : (*@$\mathbb{R}$@*)} (hs : 0 (*@$\le$@*) s) : IsCompletelyMonotoneOn (fun t => t ^ (-s)) := -- proof elided

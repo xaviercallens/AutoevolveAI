@@ -1,0 +1,13 @@
+theorem double_comm_expect (hH : H.IsSymmetric) (h(*@$\psi$@*) : H (*@$\psi$@*) = (E0 : (*@$\mathbb{C}$@*)) (*@$\bullet$@*) (*@$\psi$@*)) ((*@$\rho$@*) : E (*@$\to$@*)(*@$_\ell$@*)[(*@$\mathbb{C}$@*)] E) :
+    (*@$\langle$@*)(*@$\psi$@*), comm (adjoint (*@$\rho$@*)) (comm H (*@$\rho$@*)) (*@$\psi$@*)(*@$\rangle$@*)_(*@$\mathbb{C}$@*) = excess H E0 (*@$\psi$@*) (*@$\rho$@*) + excess H E0 (*@$\psi$@*) (adjoint (*@$\rho$@*)) := by
+  have h1 : (*@$\langle$@*)(*@$\psi$@*), adjoint (*@$\rho$@*) (H ((*@$\rho$@*) (*@$\psi$@*)))(*@$\rangle$@*)_(*@$\mathbb{C}$@*) = (*@$\langle$@*)(*@$\rho$@*) (*@$\psi$@*), H ((*@$\rho$@*) (*@$\psi$@*))(*@$\rangle$@*)_(*@$\mathbb{C}$@*) := adjoint_inner_right (*@$\rho$@*) (*@$\psi$@*) _
+  have h2 : (*@$\langle$@*)(*@$\psi$@*), adjoint (*@$\rho$@*) ((*@$\rho$@*) (H (*@$\psi$@*)))(*@$\rangle$@*)_(*@$\mathbb{C}$@*) = (E0 : (*@$\mathbb{C}$@*)) * (*@$\langle$@*)(*@$\rho$@*) (*@$\psi$@*), (*@$\rho$@*) (*@$\psi$@*)(*@$\rangle$@*)_(*@$\mathbb{C}$@*) := by
+    rw [adjoint_inner_right, h(*@$\psi$@*), map_smul, inner_smul_right]
+  have h3 : (*@$\langle$@*)(*@$\psi$@*), H ((*@$\rho$@*) (adjoint (*@$\rho$@*) (*@$\psi$@*)))(*@$\rangle$@*)_(*@$\mathbb{C}$@*) = (E0 : (*@$\mathbb{C}$@*)) * (*@$\langle$@*)adjoint (*@$\rho$@*) (*@$\psi$@*), adjoint (*@$\rho$@*) (*@$\psi$@*)(*@$\rangle$@*)_(*@$\mathbb{C}$@*) := by
+    rw [inner_eig_H hH h(*@$\psi$@*), (*@$\leftarrow$@*) adjoint_inner_left (*@$\rho$@*) (adjoint (*@$\rho$@*) (*@$\psi$@*)) (*@$\psi$@*)]
+  have h4 : (*@$\langle$@*)(*@$\psi$@*), (*@$\rho$@*) (H (adjoint (*@$\rho$@*) (*@$\psi$@*)))(*@$\rangle$@*)_(*@$\mathbb{C}$@*) = (*@$\langle$@*)adjoint (*@$\rho$@*) (*@$\psi$@*), H (adjoint (*@$\rho$@*) (*@$\psi$@*))(*@$\rangle$@*)_(*@$\mathbb{C}$@*) :=
+    (adjoint_inner_left (*@$\rho$@*) _ (*@$\psi$@*)).symm
+  simp only [comm, LinearMap.sub_apply, LinearMap.comp_apply, map_sub, inner_sub_right]
+  rw [h1, h2, h3, h4]
+  unfold excess
+  ring

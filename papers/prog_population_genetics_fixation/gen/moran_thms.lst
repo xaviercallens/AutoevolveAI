@@ -1,0 +1,15 @@
+theorem moran_fixation_limit {N : (*@$\mathbb{N}$@*)} {r : (*@$\mathbb{R}$@*)} (hN : 0 < N) (hr : 0 < r) (i : Fin (N + 1)) :
+    Tendsto (fun n => kPow (moranP N r) n i (Fin.last N)) atTop ((*@$\mathcal{N}$@*) (moranFix N r i)) (*@$\wedge$@*)
+    Tendsto (fun n => kPow (moranP N r) n i 0) atTop ((*@$\mathcal{N}$@*) (1 - moranFix N r i)) := -- proof elided
+
+theorem moran_fixation_limit_closed {N : (*@$\mathbb{N}$@*)} {r : (*@$\mathbb{R}$@*)} (hN : 0 < N) (hr : 0 < r) (hr1 : r (*@$\ne$@*) 1)
+    (i : Fin (N + 1)) :
+    Tendsto (fun n => kPow (moranP N r) n i (Fin.last N)) atTop
+      ((*@$\mathcal{N}$@*) ((1 - r(*@$^{-}$@*)(*@$^{1}$@*) ^ (i : (*@$\mathbb{N}$@*))) / (1 - r(*@$^{-}$@*)(*@$^{1}$@*) ^ N))) := -- proof elided
+
+theorem moran_fixation_limit_neutral {N : (*@$\mathbb{N}$@*)} (hN : 0 < N) (i : Fin (N + 1)) :
+    Tendsto (fun n => kPow (moranP N 1) n i (Fin.last N)) atTop ((*@$\mathcal{N}$@*) (((i : (*@$\mathbb{N}$@*)) : (*@$\mathbb{R}$@*)) / N)) := -- proof elided
+
+theorem moran_fixation_unique {N : (*@$\mathbb{N}$@*)} {r : (*@$\mathbb{R}$@*)} (hN : 0 < N) (hr : 0 < r) {g : Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)}
+    (hg : InteriorHarmonic (moranP N r) g) (g0 : g 0 = 0) (g1 : g (Fin.last N) = 1) :
+    (*@$\forall$@*) i, g i = moranFix N r i := -- proof elided

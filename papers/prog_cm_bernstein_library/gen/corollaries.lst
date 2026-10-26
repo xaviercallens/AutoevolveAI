@@ -1,0 +1,36 @@
+/-- Riesz `t^{-s/2}` (energy `(*@$\Sigma$@*) r^{-s}`), `s (*@$\ge$@*) 0`. -/
+theorem riesz_cm {s : (*@$\mathbb{R}$@*)} (hs : 0 (*@$\le$@*) s) : IsCompletelyMonotoneOn (TriangularRiesz.riesz s) :=
+  (rpow_neg (by linarith : 0 (*@$\le$@*) s / 2)).congr' fun _ _ => rfl
+
+/-- **H2 as a corollary.** Planar Yukawa `e^{-(*@$\kappa$@*) r}/r` (`(*@$\kappa$@*) (*@$\ge$@*) 0`): Riesz (*@$\times$@*) (exp (*@$\circ$@*) (*@$\surd$@*)). -/
+theorem yukawa_cm {(*@$\kappa$@*) : (*@$\mathbb{R}$@*)} (h(*@$\kappa$@*) : 0 (*@$\le$@*) (*@$\kappa$@*)) : IsCompletelyMonotoneOn (AutoresearchYukawa.g (*@$\kappa$@*)) :=
+  ((riesz_cm zero_le_one).mul (phi_cm h(*@$\kappa$@*))).congr (AutoresearchYukawa.g_eqOn (*@$\kappa$@*))
+
+/-- **H1 as a corollary.** Bilayer dipolar exciton `2 (1/r - 1/(*@$\surd$@*)(r(*@$^2$@*) + d(*@$^2$@*)))`, every `d`: difference of a translate. -/
+theorem dipolar_cm (d : (*@$\mathbb{R}$@*)) : IsCompletelyMonotoneOn (AutoresearchDipolar.g d) :=
+  (((rpow_neg (by norm_num : (0 : (*@$\mathbb{R}$@*)) (*@$\le$@*) 1 / 2)).sub_comp_add_const (sq_nonneg d)).const_mul
+    zero_le_two).congr' fun _ _ => rfl
+
+/-- Screened multipole differences `r^{-s} - (r(*@$^2$@*) + c)^{-s/2}`, `s (*@$\ge$@*) 0`, `c (*@$\ge$@*) 0`. -/
+theorem shiftDiff_cm {s c : (*@$\mathbb{R}$@*)} (hs : 0 (*@$\le$@*) s) (hc : 0 (*@$\le$@*) c) :
+    IsCompletelyMonotoneOn (fun t => TriangularRiesz.riesz s t - TriangularRiesz.riesz s (t + c)) :=
+  (riesz_cm hs).sub_comp_add_const hc
+
+/-- **H3L as a corollary of the weakened Laplace lemma** (only the `n = 0` integrability is used). -/
+theorem keldysh_cm {r0 : (*@$\mathbb{R}$@*)} (hr0 : 0 < r0) : IsCompletelyMonotoneOn (AutoresearchKeldysh.keldysh r0) := -- proof elided
+
+/-- Finite-size (soft-core) Yukawa `e^{-(*@$\kappa$@*) (*@$\surd$@*)(r(*@$^2$@*) + b(*@$^2$@*))} / (*@$\surd$@*)(r(*@$^2$@*) + b(*@$^2$@*))`: translation closure. -/
+theorem yukawa_softcore_cm {(*@$\kappa$@*) b : (*@$\mathbb{R}$@*)} (h(*@$\kappa$@*) : 0 (*@$\le$@*) (*@$\kappa$@*)) :
+    IsCompletelyMonotoneOn (fun t => AutoresearchYukawa.g (*@$\kappa$@*) (t + b ^ 2)) :=
+  (yukawa_cm h(*@$\kappa$@*)).comp_add_const (sq_nonneg b)
+
+/-- Stretched exponential `e^{-a r^{2(*@$\alpha$@*)}}` (`a (*@$\ge$@*) 0`, `0 (*@$\le$@*) (*@$\alpha$@*) (*@$\le$@*) 1`, i.e. `e^{-a t^(*@$\alpha$@*)}`): subordination. -/
+theorem stretchedExp_cm {a (*@$\alpha$@*) : (*@$\mathbb{R}$@*)} (ha : 0 (*@$\le$@*) a) (h0 : 0 (*@$\le$@*) (*@$\alpha$@*)) (h1 : (*@$\alpha$@*) (*@$\le$@*) 1) :
+    IsCompletelyMonotoneOn (fun t => Real.exp (-(a * t ^ (*@$\alpha$@*)))) :=
+  exp_neg_comp ha (IsBernsteinOn.rpow h0 h1) (fun _ ht => Real.rpow_pos_of_pos ht (*@$\alpha$@*))
+
+/-- Triangular optimality for the soft-core Yukawa interaction (conditional on upstream). -/
+theorem triangular_yukawa_softcore_optimal {(*@$\kappa$@*) b : (*@$\mathbb{R}$@*)} (h(*@$\kappa$@*) : 0 (*@$\le$@*) (*@$\kappa$@*)) (C : Set OAI.AtomicTriangular.Plane)
+    (hC : OAI.AtomicTriangular.LocallyFinite C) (hd : OAI.AtomicTriangular.DensityOne C) :
+    OAI.AtomicTriangular.latticeEnergy (fun t => AutoresearchYukawa.g (*@$\kappa$@*) (t + b ^ 2)) (*@$\le$@*)
+      OAI.AtomicTriangular.energy (fun t => AutoresearchYukawa.g (*@$\kappa$@*) (t + b ^ 2)) C := -- proof elided

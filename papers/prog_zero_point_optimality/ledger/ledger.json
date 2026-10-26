@@ -1,0 +1,443 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "ZP-A-0001",
+   "statement": "ProgZeroPoint.hasDerivAt_Q_x, hasDerivAt_Q_y, hasDerivAt_Qx_x, hasDerivAt_Qy_y: for Q m n x y = ((m + n x)^2 + n^2 y^2)/y the four partial derivatives as HasDerivAt facts (y != 0 where needed).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:58371930828f20f685aade55c3fea96301bfeee8a608236ceb50d5977eb74613",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-A-0002",
+   "statement": "ProgZeroPoint.lap_Q and grad_Q: for y != 0, y^2 (Q_xx + Q_yy) = 2 Q and y^2 (Q_x^2 + Q_y^2) = Q^2 (with the partials written out explicitly).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:fe8da9b65ae5fe3b12f6580c8f5a76b82d2aef8d30fd40e344d881403f6e36ca",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-A-0003",
+   "statement": "ProgZeroPoint.lap_comp: for reals f1, f2 and y != 0, y^2 [f2 (Q_x^2 + Q_y^2) + f1 (Q_xx + Q_yy)] = Q^2 f2 + 2 Q f1 (pure algebra; that the left side is the hyperbolic Laplacian of f(Q) when f1 = f'(Q), f2 = f''(Q) is the chain rule and is NOT formalised).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "ZP-A-0002"
+   ],
+   "evidence": "sha256:49df50f14607e348b14377bcb960ecd23865fc46f5b5217ebf29c861b5605e64",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-A-0004",
+   "statement": "ProgZeroPoint.gauss_f', gauss_h, m2_f', m2_h: HasDerivAt facts giving, for f(u) = exp(-pi a u), h(u) = (u^2 f')' = (-2 pi a u + pi^2 a^2 u^2) exp(-pi a u), and for the second-moment density m2f(u) = (-4 pi a + 4 pi^2 a^2 u) exp(-pi a u), h(u) = (16 pi^2 a^2 u - 20 pi^3 a^3 u^2 + 4 pi^4 a^4 u^3) exp(-pi a u).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:520c78b1a51b614c6705b978378a3c46b9248916d4a97caddb9c3e3e764cc16a",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-A-0005",
+   "statement": "ProgZeroPoint.sqrt3_half_sq, rho_sq, gamma_fixes_rho, rho_sq_mul_rot, hasDerivAt_gamma: for rho = 1/2 + i sqrt3/2: rho^2 = rho - 1, gamma(tau) = (tau - 1)/tau fixes rho, rho^2 (-1/2 - i sqrt3/2) = 1, and gamma has complex derivative 1/rho^2 at rho (the rotation by -120 degrees).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:ec5732e7449724e12840443f4e5546dde8960e13a5679cb85c840718eb67164a",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-A-0006",
+   "statement": "ProgZeroPoint.rot120_comm_symm and rot120_fixed_vec: a symmetric 2x2 real matrix commuting with the rotation by 120 degrees is scalar (q = 0, r = p), and a vector fixed by that rotation is zero.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:df2542f973ff3fc93126fc110d0551c57a01c3a697d5d2df4e36ee229419b65d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-A-0007",
+   "statement": "ProgZeroPoint.deriv_at_one_of_inversion: if f(1/alpha) = alpha f(alpha) for all alpha > 0 and f has derivative d at 1, then d = -f(1)/2.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:5f178c056258ecd096aa2eb07c6426a162b637913ad5a14b346a98641a97aeca",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-A-0008",
+   "statement": "Planted controls (separate file Controls.lean importing the built module) are caught by #print axioms: ctl_sorry depends on sorryAx and ctl_axiom on the planted axiom ctl_cheat; the file compiles with rc 0, so the exit code is not the gate. lap_wrong_false proves the planted false identity is false (axioms within the allowlist).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:b977d5779c71f0e11beeace14a6a798c618ce1e5770651b19d3572072b2e6c3f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-L-0001",
+   "statement": "Luo-Wei (arXiv:2302.05042v1), p. 3, Corollary 1.1: for any alpha >= 1, min over unit-density lattices L of sum_{P in L} |P|^2 exp(-pi alpha |P|^2) is achieved at the hexagonal lattice.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:4ee3b74da6e00a2fd7f808e2c63db9879c3a3da8a1ddb0085c7c458150607b29",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-L-0002",
+   "statement": "Luo-Wei (arXiv:2302.05042v1), p. 12, Lemma 3.5: W_{1/(2 pi)}(1; z) = 0 for z in the upper half plane, i.e. S(1; L) = theta(1; L)/(2 pi) (as read by the lane agent; statement_match is a judgement).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:4d24cf6fef8e836c44039102869a056a957838f4aaa51b5dda5baefdcee84b0d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-L-0003",
+   "statement": "Montgomery (Glasgow Math. J. 30 (1988) 75-85) as restated in Deng-Luo (arXiv:2411.17199v1), p. 3, Theorem A: for all alpha > 0, theta(alpha; z) is minimised over the upper half plane (up to rotations and translations) at e^{i pi/3}. Secondary source; the original was not opened.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:3dffbbf7a153a7f249f42fe7b53d6a80bb85e44b5d1b5b403b87380edc792c48",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-C-0001",
+   "statement": "Model: a planar Bravais lattice L of covolume 1 with pair potential V(r) = g(r^2), hbar = m = 1, harmonic approximation. D(k) = sum_{R != 0} (1 - cos k.R) Hess V(R) (2x2), omega_j(k) = sqrt(lambda_j(D(k))), E_zp(L) = (1/2) <sum_j omega_j>_BZ. Conjecture QU-1: for every completely monotone g the triangular lattice minimises E_zp over unit-covolume planar Bravais lattices. A counterexample needs a lattice that is dynamically stable and has lower E_zp.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:fb3712afe1b39c94bafe17b21e268acf27c919d15fcd75cd351d7a75c662940f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-C-0002",
+   "statement": "Symmetry at the triangular point: E_zp depends on the lattice only up to rotation, hence E_zp(gamma tau) = E_zp(tau) for gamma in SL2(Z); gamma(tau) = (tau - 1)/tau fixes rho (ZP-A-0005) with derivative the -120 degree rotation J. For a C^2 invariant function the chain rule gives J^T grad E = grad E and J^T H J = H, so grad E(rho) = 0 and H is scalar (ZP-A-0006): E(tau) - E(rho) = (Lap E/4)|tau - rho|^2/y^2 + O(|tau - rho|^3) with Lap = y^2 (d_xx + d_yy). The invariance, the C^2 smoothness and the chain-rule step are not formalised.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "ZP-A-0005",
+    "ZP-A-0006",
+    "ZP-C-0001"
+   ],
+   "evidence": "sha256:408d786be534824aad165d41eb8745865c894ac0bd4c5d2b148fbafd0eb6729b",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-C-0003",
+   "statement": "Curvature of a pair energy: for F(tau) = sum_{R != 0} f(|R|^2), Lap F = sum_{R != 0} h(|R|^2) with h(u) = (u^2 f'(u))' = u^2 f''(u) + 2 u f'(u). The algebra is ZP-A-0001..0003; the chain rule and termwise differentiation of an absolutely convergent sum are not formalised.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "ZP-A-0001",
+    "ZP-A-0002",
+    "ZP-A-0003",
+    "ZP-A-0004"
+   ],
+   "evidence": "sha256:e6a843213e9fa6b9bb7b546cecb662a75a10c4e99e9104112b4c1e402bd9e6c1",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-C-0004",
+   "statement": "Poisson form of the Gaussian dynamical matrix: for V = exp(-pi a r^2), kappa = k/(2 pi), L* the dual lattice, D(k) = (4 pi^2/a) sum_{xi in L*} [(xi + kappa)(xi + kappa)^T exp(-pi |xi + kappa|^2/a) - xi xi^T exp(-pi |xi|^2/a)] (Poisson summation; the R = 0 term may be included because 1 - cos 0 = 0).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "ZP-C-0001"
+   ],
+   "evidence": "sha256:b91525f087b02f4666b46667650a674f8c668ab6fc3c19520cc6dd74b33fc897",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-C-0005",
+   "statement": "Sum rule: averaging tr D over the zone kills every cos k.R with R != 0, so <tr D>_BZ = sum_{R != 0} Lap V(R) = 4 pi a - (4 pi^2/a) S(1/a; L), S(alpha; L) = sum_{P in L} |P|^2 exp(-pi alpha |P|^2) (Poisson summation; the dual of a unit-covolume planar lattice is a rotation of it). Lap V for the Gaussian is the second-moment density of ZP-A-0004.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "ZP-C-0004",
+    "ZP-A-0004"
+   ],
+   "evidence": "sha256:521074390c67fff15c40742fc9f223bfeaee020c094dc0e3f5ccfce0eab3f287",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-C-0006",
+   "statement": "At a = 1: with theta_L(1/alpha) = alpha theta_L(alpha) (Jacobi, classical, not formalised), ZP-A-0007 gives theta'(1) = -theta(1)/2, hence S(1) = theta(1)/(2 pi) (this is also Luo-Wei Lemma 3.5, ZP-L-0002) and <tr D> = 4 pi - 2 pi theta_L(1). With Montgomery (ZP-L-0003) the triangular lattice is the unique maximiser of <tr D> at a = 1.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "ZP-C-0005",
+    "ZP-A-0007",
+    "ZP-L-0002",
+    "ZP-L-0003"
+   ],
+   "evidence": "sha256:5a98427e7ba0896c63ea73ea2675d7923f3c8bfc7f9ded14f5a7021d9b1f8c63",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-C-0007",
+   "statement": "For a <= 1 the triangular lattice is a global maximiser of the mean-square phonon frequency <tr D> among unit-covolume lattices (and hence of the Einstein bound): the identity of ZP-C-0005 turns Luo-Wei's minimum of S(alpha; L) for alpha = 1/a >= 1 (ZP-L-0001) into a maximum of <tr D>.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "ZP-C-0005",
+    "ZP-L-0001"
+   ],
+   "evidence": "sha256:a841ca2bb6bdacd9af04b10d50a7096de11ebae0cd976ec210c1c0b97c845ab4",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-C-0008",
+   "statement": "Einstein bound: by Cauchy-Schwarz, E_zp <= sqrt(<tr D>/2), with equality only for a flat spectrum.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "ZP-C-0001"
+   ],
+   "evidence": "sha256:521074390c67fff15c40742fc9f223bfeaee020c094dc0e3f5ccfce0eab3f287",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-C-0009",
+   "statement": "Concavity decomposition: with Phi(D) = tr D^{1/2} at fixed reduced k, Lap E_zp = Lin + Conc, Lin = (1/2)<y^2 sum_i tr(Phi'(D) d_i^2 D)>, Conc = (1/2)<y^2 sum_i Phi''(D)[d_i D, d_i D]>, and Conc <= 0 by operator concavity of the square root (Daleckii-Krein form with a per-branch and a branch-mixing part). The sign of Lin is not controlled by the sum rule.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "ZP-C-0001",
+    "ZP-C-0002"
+   ],
+   "evidence": "sha256:81fbd2b453063bb4ea646eb08e2dec8e6e27ed8fac92f1602fc81a522544c2da",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-C-0010",
+   "statement": "Structural reason QU-1 can fail: E_zp is not a pair sum (it is a trace of a square root of a lattice sum), so the Bernstein-mixture argument that transfers Montgomery's Gaussian theorem to every completely monotone potential is linear in V and does not apply to E_zp.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "ZP-C-0003",
+    "ZP-C-0009"
+   ],
+   "evidence": "sha256:6b17b3fe8c0f531d6cc8c283d123be5571c0c96376ec48ef1d2e7fe3de60f171",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-C-0011",
+   "statement": "Logic and scope: if a dynamically stable lattice has E_zp below the triangular value for some completely monotone g, QU-1 is false as stated. The competitor lattices are held in shape by an imposed constraint, not stress-free: the triangular lattice has the lower static energy, so a statement about E_static + Lambda E_zp at its own equilibrium shape is a different statement and is untested. Only Bravais lattices, the harmonic approximation, and Gaussian/Yukawa/dipolar-exciton/Riesz (s > 2) potentials; Coulomb and Keldysh are excluded.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "ZP-C-0001"
+   ],
+   "evidence": "sha256:02e10dba132593c26225d951010d174fd7ab761b4f2db7ae34ddc3e2bcd8903e",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-C-0012",
+   "statement": "Conditionality: no result in this preprint rests on openai/math (AI-generated, not peer reviewed). The refutation needs only that exp(-pi a r^2) is completely monotone in r^2, which is elementary; the static positive control uses Montgomery (ZP-L-0003) plus Bernstein mixtures. The pinned toolchain is the only openai/math dependence.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:65174912f94139a52f8e97794e59c55e8217515adca50cbe1a37bfa5f100dcf3",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-C-0013",
+   "statement": "Novelty: one alphaXiv search (keywords zero-point energy, triangular lattice, lattice energy minimization, phonon, theta function) found no paper on lattice-shape optimality of the harmonic zero-point energy. This is absence by one search, not a novelty claim.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:a21f7a679093b4f5fc8d8cb92965a3e932952e72809a56b4abb8653a1bbc0981",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-X-0001",
+   "statement": "Headline counterexample (Poisson dynamical matrix + Duffy-Gauss rule, N = 128): gauss:1, tau = 0.5 + 0.966025 i: E_zp = 1.4902783183 against 1.5033523522 for the triangular lattice, dE_zp = -1.3074e-2; quadrature error about 4e-15 (N = 96 vs 128); stable (min lambda/|k|^2 = 0.03493 over the zone at |k| >= 3e-3, exact long-wave 0.10466; triangular 0.03222 and 0.23826). Reproduced by Rust at n = 768 (G1 code) to 2.6e-9, and by a third minimal numpy implementation (human_check.py: Poisson form, half-shifted grids n = 128 and 256, Richardson) to 4e-12 in dE_zp.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "ZP-C-0001",
+    "ZP-C-0004"
+   ],
+   "evidence": "sha256:2d7cc8fa41f1a75fe3bfd1b03eb15abbf0642b6889220ea0b64359b78fbe1933",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-X-0002",
+   "statement": "Gate G1 (real-space folded sum, uniform k-grids, n^-3 extrapolation): 12 completely monotone potentials, 567 shapes each; k-grid exponent 3.00-3.01; n = 96 error at the triangular point between 2.6e-8 and 6.5e-6; an independent numpy implementation agrees to about 1e-6.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "ZP-C-0001"
+   ],
+   "evidence": "sha256:6605cf85cd02bafd5ae1460cd890f3649201e2b856d508c1a4ecc71153b01e13",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-X-0003",
+   "statement": "Refuted for 8 of 12 tested potentials (dipolar 0.1 and 0.5, gauss 0.5 and 1, riesz 3 and 4, yukawa 1 and 2) by a lattice stable on n = 96, 192, 384 with lower E_zp; not refuted for gauss 0.25, 2, 4 and riesz 6 on a 567-point scan plus dense 0.005-step edge scans (a sample, not an exhaustive search). The riesz:4 refutation rests on one competitor (0.3 + 0.954 i) whose exact long-wave eigenvalue is 0.08 % of the triangular value; for the other seven a second competitor at 0.5 + 0.966 i also lies below.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "ZP-C-0001"
+   ],
+   "evidence": "sha256:43223669eab34a5a4c6f9710ee28024a7171cb11368ccd5782c58e277f8bc3d0",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-X-0004",
+   "statement": "Correction: the largest-margin point gauss:1, 0.295 + 0.9555 i (dE_zp = -5.12e-2, E_zp confirmed by Duffy, n = 768 and Richardson to about 1e-10) is only marginally stable (exact long-wave eigenvalue 1.317e-4, 0.06 % of the triangular value) and is not the headline. A first independent run flagged it unstable because of round-off at |k| about 5e-7; the optimiser was then restricted to |k| >= 3e-3 and the exact elastic tensor used for the long-wave limit (both result files kept).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "ZP-X-0001"
+   ],
+   "evidence": "sha256:02d6a507fa880e913c9577bd838d7aeceada504657c92f95f02c0f9aefd5a427",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-X-0005",
+   "statement": "Curvature of E_zp at rho for exp(-pi a r^2): isotropic for a >= 0.5 (d_xx = d_yy to 1.5e-6 relative, |d_xy| <= 2e-8, |grad| <= 1.5e-6 over the four Gaussians with a >= 0.5 of the mechanism study (a = 0.5, 1, 2, 4); at a = 0.25 the relative difference is 4.3e-4 and the gradient about 1e-5); c(a) = Lap E_zp/4 is numerically < 0 (triangular is a strict local maximum of E_zp) on (0.37668, 1.58148) (23-point scan of a in [0.1, 8] followed by bisection of the sign changes; roots robust to node count and stencil; sign changes between scan points are not excluded; c = 0 at the roots, where the second-order test is inconclusive); positive for a in (0.15, 0.37668) and (1.58148, 4]. Rust real-space code at n = 768 confirms both sign changes. For a <= 0.123 the triangular lattice is marginal (shear eigenvalue <= 1.5e-9) and c changes sign again; a = 6, 8 are precision-flagged.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "ZP-C-0002"
+   ],
+   "evidence": "sha256:58f3aec085badfbab523a679fb57869ecb094b6c950ee9f2dfa6d059cd95d7b1",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-X-0006",
+   "statement": "Sum-rule and pair-sum checks: Poisson D vs explicit real-space sum agrees to <= 1.4e-14 relative at 200 random k in 12 cases; exact sum rule vs Duffy <tr D> to <= 2.7e-14; the stencil Laplacian of E_static and of <tr D> agrees with the exact lattice sum of h (ZP-A-0004) to <= 2.5e-10 relative for a >= 0.5; <tr D> = 4 pi - 2 pi theta(1) checked at five shapes to <= 5.1e-16; Lap <tr D>(rho) < 0 for a < 1.09361 (consistent with Luo-Wei and with Betermin's remark that hexagonal optimality of S cannot hold for all alpha).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "ZP-C-0003",
+    "ZP-C-0005",
+    "ZP-C-0006",
+    "ZP-A-0004"
+   ],
+   "evidence": "sha256:7a311e597d50b61db9508f0722390aa33fb899c0e7a4cecb4f56625b37d50dbc",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-X-0007",
+   "statement": "Mechanism (finite differences, shell-resolved): at a = 1, Lap E_zp = -3.848 = Lin (-0.799) + Conc (-3.048), 63 % from the zone-boundary shell. For the headline competitor the loss is a softening of the lower branch near the zone boundary (-1.497e-2 of -1.751e-2); <tr D> falls by 2.03e-2, which moves the Einstein bound by only -3.13e-3 (24 % of the gain), the other 76 % is the wider spread of the spectrum (Jensen gap). Negative control gauss:2 at the same shape: <tr D> rises, total +4.53e-3.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "ZP-C-0008",
+    "ZP-C-0009"
+   ],
+   "evidence": "sha256:69daa7dd72f59d5e6f2602539f3e00eb3d954b6e08989172c8db0533cf90df5d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-X-0008",
+   "statement": "Positive controls: frozen-phonon second difference of an independent pair-sum energy vs (1/2) e^T D e, max relative difference 2.14e-7 over 33 cases; Riesz statics vs Epstein closed forms and dipolar statics vs Ewald to <= 3.9e-7; cutoff rc 400 -> 800 changes E_zp by <= 2.2e-13; modular invariance of E_zp to <= 2.1e-13 at the same k-set; the static minimiser is the triangular lattice for all 12 potentials (Montgomery, ZP-L-0003).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "ZP-C-0001",
+    "ZP-L-0003"
+   ],
+   "evidence": "sha256:4e98ddcbf99c72d9c8d3feb9295bcbe1998925eff9eaf12b737d586a205217a0",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-X-0009",
+   "statement": "Negative controls: dropping the -xi xi^T term breaks the Poisson-vs-real-space match by a relative 0.027 to 17.7; swapping a <-> 1/a is invisible at the self-dual a = 1 (1.1e-15) but breaks it by 0.9 to 9.4 elsewhere; the square lattice is flagged unstable (min lambda/|k|^2 = -0.1475 for gauss:1); gauss:2, which survived G1, has no stable lower lattice at the gauss:1 competitor shapes (+4.53e-3, or unstable); non-completely-monotone 'wells' potentials show a stable lower-E_zp lattice (-3.03 and -2.04) so the search can detect a lower-E_zp stable lattice when one exists (detection power, not a false-positive control; morse:3;1.0 also has a stable lower-E_zp competitor at 0.5 + 0.966 i).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "ZP-C-0001"
+   ],
+   "evidence": "sha256:064e6e7fa5ff77c07dba0b503cf7f0c2a422129e64a35ffd1e690e995d70ad03",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-X-0010",
+   "statement": "Functional E_static + Lambda E_zp (V -> eps V, Lambda proportional to eps^-1/2; harmonic approximation fails for large Lambda, so this is a statement about the functional only): for each refuted potential the minimum over the stable sample leaves the triangular lattice at some Lambda between 0.1 and 10 (riesz:4 only at Lambda = 10); the survivors keep it at all five Lambda tested.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "ZP-C-0011"
+   ],
+   "evidence": "sha256:67eb47f3b387658e832e0ead653b89ecaa0194d30e2054968e8895023ec62a86",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-X-0011",
+   "statement": "Restricted conjecture QU-1' (suggested by the table, not proved): for exp(-pi a r^2) with 0.15 <= a <= 4 the triangular lattice is a strict local minimiser of E_zp among unit-covolume Bravais lattices if a < 0.37668 or a > 1.58148, and a strict local maximiser for 0.37668 < a < 1.58148 (numerical c); at the bisected numerical roots c = 0 and nothing is stated. At a = 0.15 the triangular lattice is barely stable (min lambda/|k|^2 = 1.7e-7). The global version is open and not claimed.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "ZP-X-0005",
+    "ZP-C-0002"
+   ],
+   "evidence": "sha256:1954ca62aaddbca782fa9f51e145bb8539346073ad4dd4a219719f10b626ddb9",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-X-0012",
+   "statement": "Paper-stage reruns by the same AI pipeline (not independent verification): Lean recompile of Basic.lean rc 0 in 7.9 s and of Controls.lean rc 0, axiom output identical to the lane's; sha256 of both files equal the recorded values; cargo test -p qf-yukawa-crystal at the branch HEAD: 59 passed, 0 failed, 1 ignored; cargo clippy --workspace --features experimental -- -D warnings: no warnings or errors; cargo fmt --check: exit 0; lattice_phonon duffy reproduces E_zp = 1.490278318280 (headline) and 1.503352352207 (triangular), curv gives c = -0.961984.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "ZP-A-0001"
+   ],
+   "evidence": "sha256:983cd73bf31e1602717c5f1d06ebce77f11bb7e023c97a07818e1bf1335b40c4",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZP-X-0013",
+   "statement": "Separate AI audit (a different Claude agent; no human audit; scope in AUDIT.md): recompiled Basic.lean and Controls.lean with the pinned Lean 4.34.1 (19 printed declarations within the allowlist; its own planted sorry and planted axiom caught by #print axioms); an independent real-space numpy code reproduces E_zp(gauss:1) = 1.5033523522067 at rho and 1.4902783182775 at 0.5+0.966025i (dE = -1.30740e-2), E_zp at -1/tau identical, the sign and size of c at a = 1 and 2, and dE = -1.4583e-2 for gauss:0.5 at (0.5, 1.016); regenerated all macros and tables byte-identically from data/. Not recomputed by the auditor: the dipolar, Riesz and Yukawa refutations, the long-wave elastic tensor, Lin/Conc, Result 5, c(a) beyond a = 1, 2, phonon.rs.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "ZP-X-0001",
+    "ZP-A-0001"
+   ],
+   "evidence": "sha256:45109d879bd28c737603ad555f156f5b6d63fadd3c807e28b82fc9cf7062e9a5",
+   "audit": null
+  }
+ ]
+}

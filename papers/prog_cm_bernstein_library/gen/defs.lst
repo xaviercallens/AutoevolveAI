@@ -1,0 +1,18 @@
+/-- `f` is completely monotone on `(0, (*@$\infty$@*))`: `C^(*@$\infty$@*)` there, and `(-1)^n f^{(n)} (*@$\ge$@*) 0` there for every `n`. -/
+def IsCompletelyMonotoneOn (f : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) : Prop :=
+  ContDiffOn (*@$\mathbb{R}$@*) ((*@$\top$@*) : (*@$\mathbb{N}$@*)(*@$\infty$@*)) f (Set.Ioi 0) (*@$\wedge$@*)
+  (*@$\forall$@*) (n : (*@$\mathbb{N}$@*)) (t : (*@$\mathbb{R}$@*)), 0 < t (*@$\to$@*) 0 (*@$\le$@*) (-1 : (*@$\mathbb{R}$@*)) ^ n * iteratedDeriv n f t
+
+/-- **Bridge (exact equivalence).** Complete monotonicity on `(0, (*@$\infty$@*))` is upstream's `AdmissiblePotential`. -/
+theorem isCompletelyMonotoneOn_iff_admissible {f : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)} :
+    IsCompletelyMonotoneOn f (*@$\leftrightarrow$@*) OAI.AtomicTriangular.AdmissiblePotential f := by
+  constructor
+  (*@$\cdot$@*) intro h
+    refine (*@$\langle$@*)h.1, fun t ht => ?_, h.2(*@$\rangle$@*)
+    simpa using h.2 0 t ht
+  (*@$\cdot$@*) intro h
+    exact (*@$\langle$@*)h.1, h.2.2(*@$\rangle$@*)
+
+/-- `g` is a Bernstein function on `(0, (*@$\infty$@*))`: `C^(*@$\infty$@*)`, nonnegative, with completely monotone derivative. -/
+def IsBernsteinOn (g : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) : Prop :=
+  ContDiffOn (*@$\mathbb{R}$@*) ((*@$\top$@*) : (*@$\mathbb{N}$@*)(*@$\infty$@*)) g (Set.Ioi 0) (*@$\wedge$@*) ((*@$\forall$@*) t : (*@$\mathbb{R}$@*), 0 < t (*@$\to$@*) 0 (*@$\le$@*) g t) (*@$\wedge$@*) IsCompletelyMonotoneOn (deriv g)

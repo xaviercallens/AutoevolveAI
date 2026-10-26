@@ -1,0 +1,38 @@
+/-- The sign statement behind the composition theorem, by strong induction on the order. -/
+theorem comp_sign (hg : IsBernsteinOn g) (hpos : ∀ t, 0 < t → 0 < g t) :
+    ∀ n : ℕ, ∀ f : ℝ → ℝ, IsCompletelyMonotoneOn f → ∀ m ≤ n, ∀ t : ℝ, 0 < t →
+      0 ≤ (-1 : ℝ) ^ m * iteratedDeriv m (fun t => f (g t)) t := by
+  intro n
+  induction n with
+  | zero =>
+    intro f hf m hm t ht
+    rw [Nat.le_zero.mp hm]
+    simpa using hf.nonneg (hpos t ht)
+  | succ n ih =>
+    intro f hf m hm t ht
+    rcases Nat.lt_or_eq_of_le hm with hlt | rfl
+    · exact ih f hf m (Nat.lt_succ_iff.mp hlt) t ht
+    · have hF : IsCompletelyMonotoneOn (fun u => -deriv f u) := hf.neg_deriv
+      have hEq : EqOn (deriv (fun t => f (g t)))
+          (-((fun t => -deriv f (g t)) * deriv g)) (Ioi 0) := by
+        intro s hs
+        have h1 : HasDerivAt f (deriv f (g s)) (g s) := (hf.differentiableAt (hpos s hs)).hasDerivAt
+        have h3 : HasDerivAt (fun t => f (g t)) (deriv f (g s) * deriv g s) s :=
+          h1.comp s (hg.hasDerivAt hs)
+        rw [h3.deriv]
+        simp
+      rw [iteratedDeriv_succ', hEq.iteratedDeriv_of_isOpen isOpen_Ioi n ht, iteratedDeriv_neg]
+      have hFg : ContDiffOn ℝ (⊤ : ℕ∞) (fun t => -deriv f (g t)) (Ioi 0) :=
+        hF.1.comp hg.1 (fun s hs => hpos s hs)
+      have key : 0 ≤ (-1 : ℝ) ^ n * iteratedDeriv n ((fun t => -deriv f (g t)) * deriv g) t :=
+        AutoresearchYukawa.mul_sign n ((hFg.contDiffAt (Ioi_mem_nhds ht)).of_le (by exact_mod_cast le_top))
+          (hg.2.2.contDiffAt ht n) (fun i hi => ih (fun u => -deriv f u) hF i hi t ht)
+          (fun i _ => hg.2.2.2 i t ht)
+      calc (0 : ℝ) ≤ (-1) ^ n * iteratedDeriv n ((fun t => -deriv f (g t)) * deriv g) t := key
+        _ = (-1) ^ (n + 1) * -iteratedDeriv n ((fun t => -deriv f (g t)) * deriv g) t := by ring
+
+/-- **Subordination (general).** A completely monotone function composed with a positive Bernstein function is
+completely monotone. -/
+theorem IsCompletelyMonotoneOn.comp_bernstein {f g : ℝ → ℝ} (hf : IsCompletelyMonotoneOn f)
+    (hg : IsBernsteinOn g) (hpos : ∀ t, 0 < t → 0 < g t) : IsCompletelyMonotoneOn (fun t => f (g t)) :=
+  ⟨hf.1.comp hg.1 (fun s hs => hpos s hs), fun n t ht => hg.comp_sign hpos n f hf n le_rfl t ht⟩

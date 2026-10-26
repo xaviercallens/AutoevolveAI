@@ -1,0 +1,21 @@
+{
+  "leanflow_worktree": "/home/callensxavier_gmail_com/LeanFlow-wt-p1",
+  "branch": "feat/lean-data-certificates-2026-10-25",
+  "commit": "84e0c2899830fba671022eefcd408af9ecd565c8",
+  "pushed": false,
+  "tests": {
+    "command": "taskset -c 4-5 .venv/bin/python -I -m pytest -c pyproject.toml tests -q -p no:cacheprovider",
+    "result": "88 passed in 21.72s (84 not-pinned incl. 300-example Hypothesis property; 4 pinned against Lean 4.34.1 + Mathlib, see leanflow_pinned_tests.log). Before the audit fix: 82 passed at commit 542cea97 (rerun/leanflow_pytest_before_fix_commit542cea9.txt).",
+    "lean_version": "Lean (version 4.34.1, x86_64-unknown-linux-gnu, commit 5045d0056413266e57c625dcd7c365b10e377c52, Release)"
+  },
+  "applied_to": "lean_data_certificates/{claim,result}_{positive_run,negctl_run}.json via scripts/certify_run_outputs.py (core Lean, decide)",
+  "sentinel_fix_commit": "2c168be2de8104dddc48daecee1423c8d8f076b7",
+  "commit_before_audit_fix": "542cea97aa78e30d8935ec81278aeb697a9f5dc7",
+  "audit_fix": {
+    "finding": "P1 audit B2: check_lean_source returned status ok / verified true for a source with a custom axiom, a forged IO.println axiom report and #exit (a false statement); #exit skips the appended #print axioms.",
+    "fix": "per-run random sentinel appended after the #print axioms lines and required exactly once after the last report; the #exit warning is refused (code exit-command); docs/LEAN_CERTIFY.md and the check.py docstring no longer claim that the source cannot choose what is audited.",
+    "new_tests": 6,
+    "probe_before_after": "data/leanflow_exit_probe/{probe_exit_forge.out.json (pre-fix, from the audit), probe_exit_forge.after_fix.json}",
+    "certify_path_unaffected": "certify() renders names by regex and labels as single-line comments (audit probe_certify_inject); the 13/13 and 3/10 results were re-run unchanged with the fixed checker: data/lean_data_certificates_after_fix/"
+  }
+}

@@ -1,0 +1,372 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "PH-A-0001",
+   "statement": "ProgFeynmanBijl.double_comm_expect (with inner_eig_H): for a symmetric H on a finite-dimensional complex inner product space, H psi = E0 psi (E0 real) and any operator rho with Mathlib adjoint rho^dagger: <psi, [rho^dagger,[H,rho]] psi> = A(rho) + A(rho^dagger), where A(X) = <X psi, H X psi> - E0 <X psi, X psi>. No further hypothesis.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:bab9d91db04adfb25881a165166a60cf154edb767603f00de583b478ef76e834",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-A-0002",
+   "statement": "excess_eq_half, excess_re, rayleigh_normalised, trial_energy_eq: under the symmetry hypothesis A(rho^dagger) = A(rho) (hsym) and a real double-commutator value f, A(rho) = f/2, and for N > 0, rho psi != 0 the normalised trial state rho psi/||rho psi|| has re<phi,H phi> - E0 = f/(2 N S) with S = ||rho psi||^2/N.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PH-A-0001"
+   ],
+   "evidence": "sha256:8b220799e24d8e0d70c6e2c116093016f912803b4e7ecff94ddea04b759a55c9",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-A-0003",
+   "statement": "trial_energy_le_of_ground: with psi a ground state (E0 ||x||^2 <= re<x,Hx> for all x) and no symmetry hypothesis, the trial state's excess energy is <= f/(N S) (weaker by a factor 2 than PH-A-0002).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PH-A-0001"
+   ],
+   "evidence": "sha256:324f45c80ebe5c2bf251e14a862abb5c982539950496641ac52645422e2cafff",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-A-0004",
+   "statement": "exists_le_weighted_mean, rayleigh_expansion, sector_eigenvalue_le (Mathlib spectral theorem: eigenvectorBasis, eigenvalues, Parseval): for phi != 0 some eigenvector e_i of symmetric H with <e_i,phi> != 0 has eigenvalue <= re<phi,H phi>/||phi||^2.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:7ce490f4f4cbfc669d475395f77873d6c4dfaeef0951c561c3a6e932f80b759a",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-A-0005",
+   "statement": "feynman_bijl_bound and feynman_bijl_bound_ground: with the f-sum value <psi,[rho^dagger,[H,rho]] psi> = N hbar^2 k^2/m taken as a HYPOTHESIS, S = ||rho psi||^2/N > 0, and hsym (resp. a ground-state hypothesis instead of hsym), some eigenvector e_i of H with <e_i, rho psi> != 0 has lambda_i - E0 <= hbar^2 k^2/(2 m S) (resp. <= hbar^2 k^2/(m S)).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PH-A-0002",
+    "PH-A-0003",
+    "PH-A-0004"
+   ],
+   "evidence": "sha256:6af98d148453ac15794d24f74467e5f5c8ea2d87d4086b71d158aa94c4c76712",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-A-0006",
+   "statement": "feynman_bijl_gap: adding that psi is a ground state and that rho psi is orthogonal to every E0-eigenvector (hypothesis), the eigenvalue found satisfies 0 < lambda_i - E0 <= hbar^2 k^2/(2 m S), so it is a genuine excitation and not the E0 level.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PH-A-0005"
+   ],
+   "evidence": "sha256:b5c092d563f4fd659c50b39b6eaaeb11b561535ee865d43d52333291709d1515",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-A-0007",
+   "statement": "Bogoliubov link, re-proved on the pinned stack: epsFree_units (eps0 = hbar^2 k^2/2m for hc = hbar c, ks = 2mc/hbar), feynman_sBog_eq and feynman_sBog_units (the Feynman energy eps0/S_B equals eps_B exactly; S_B = eps0/eps_B by definition), feynman_le_epsBog_iff (for S > 0, eps0/S <= eps_B iff S_B <= S).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:f5dcc4595842679dfc26bd87213fc95c24562306e81243c61c1bbbcec510cb15",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-A-0008",
+   "statement": "epsBog_pos, sBog_pos, sBog_sq, sBog_le_sqrt: S_B(k)^2 = k^2/(ks^2 + k^2) and S_B(k) <= sqrt(k/(2 ks)) for hc, k, ks > 0 (the H8 bound, re-proved on the pinned stack; the original H8 file was compiled on another stack, QuantumFluids, and independently recompiled by a verifier, results/autoresearch/2026-10-25/H8/verification.md).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:69fa403a9c8adbc2329d6ae05d9f601f0709960192cc9f9545c34ab5a8035312",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-A-0009",
+   "statement": "Negative control symmetry_needed, symmetry_needed_fin2 (with ketBra_apply, ketBra_self_symm): H = |e1><e1|, psi = e0, rho = |e1><e0| on orthonormal e0, e1 give double commutator 1 and A(rho) = 1 != 1/2 (A(rho^dagger) = 0), so hsym cannot be dropped from the halving step excess_eq_half. The Lean statements prove only A(rho) != f/2 (with f = 1, A(rho) = 1); they do NOT prove that the conclusion of trial_energy_eq or feynman_bijl_bound fails in this example (that is a hand computation, PH-C-0007).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PH-A-0001"
+   ],
+   "evidence": "sha256:0739bd375460c3159e58c830e61d81e55cc2807f1e8a3d61b2c4408a2b2a64f1",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-A-0010",
+   "statement": "Positive control gap_witness, gap_witness_applies, orthonormal_pair_fin2: on a two-level instance (H = |e1><e1|, psi = e0, Hermitian rho = |e1><e0| + |e0><e1|, N = hbar = k = 1, m = 1/2) every hypothesis of feynman_bijl_gap holds, its conclusion is reached, and H(rho psi) = 1 * rho psi with 1 = hbar^2 k^2/(2 m S), so the bound is attained. The witness rho is Hermitian, so hsym holds trivially (rho^dagger = rho); no witness exercises a non-trivial hsym.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PH-A-0006"
+   ],
+   "evidence": "sha256:0e61b334f3523fd8fcf94d3e9c5a7a524bf296e6ae3c78580cd487ee9befd0c1",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-A-0011",
+   "statement": "Planted controls (separate file Controls.lean, never imported) are caught by #print axioms: ctl_sorry depends on sorryAx and ctl_axiom on the planted axiom ctl_cheat. Each claims the false strengthening A(rho) = f. The file compiles with rc 0, so exit status is not the gate.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:e691d027f35d7b317b9b3dddc008a73c9c420840b8c07ec53ab9e84e148ea95e",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-L-0001",
+   "statement": "Stamper-Kurn et al. (arXiv:cond-mat/9906035v2): S(q) is the ratio of Bragg line strengths of the trapped to the expanded (free-particle, S = 1) cloud; Bogoliubov S(q) = omega0_q/omega_B_q (Eq. 3); the trapped line strength in the Thomas-Fermi local density approximation tends to 15 pi/32 (hbar omega0_q/2 mu)^(1/2) in the phonon regime; Fig. 3a plots S(q) against mu with a fixed q.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:b025813dad56263cc1a73738bf86d453bdc36f36efc88bdde3c99c57f1353710",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-L-0002",
+   "statement": "Steinhauer et al. (arXiv:cond-mat/0111438v1): the f-sum rule yields Feynman's relation S(k) = (hbar k^2/2m)/omega(k) (Eq. 2; their ref. [11] is Feynman, Phys. Rev. 94, 262 (1954), not read by us); the plotted closed circles of Fig. 4 are the measured S(k) multiplied by 2.3 'giving rough agreement' with LDA Bogoliubov theory; the open circles are computed from Eq. 2 and the measured omega(k).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:e15ca1193a86b88cc9edb10e1a6e8ed5a5f43234c39ab3ceaaadffd908d507b3",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-L-0003",
+   "statement": "Godfrin et al. (arXiv:2012.09067v1): c = 238.3 +- 0.1 m/s for 4He at saturated vapour pressure (ultrasound) and m4 = 4.0026032 g/mol.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:a63832d6d788abb7b245dce0d2c073e7618e95491c2a393f39ca15818dc8c34e",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-L-0004",
+   "statement": "Donnelly-Barenghi web edition, chapter 14: Table 14.1 'Adopted database used for structure factor of liquid 4He' with keys 1 (Robkoff-Hallock X-ray, 0.213 <= Q <= 5.129) and 2 (Svensson et al. neutron, 0.79 <= Q <= 6.66), S(0) = 0.051 adopted from theory, no uncertainties printed, no temperatures printed, and the note that the authors of the two sets 'are unable to explain the discrepancy ... in the region of the peak'. Secondary compilation; the page is assumed, not checked, to reproduce Table 14.1 of J. Phys. Chem. Ref. Data 27, 1217 (1998); the primary PRB tables were not seen.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:3fd071714344bac7155994c5a61015af51ed98794fff6854ade039e757c0c2bd",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-L-0005",
+   "statement": "Morresi-Garberoglio (arXiv:2501.08730v1) give the reference Svensson, Sears, Woods, Martel, Phys. Rev. B 21, 3638-3651 (1980) (the compilation prints the year 1989) and use it as the experimental pair distribution at T = 2 K; the temperature of the Svensson S(Q) points in the compilation is not verified.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:c35e6d5817281611d308125b30e88a382e54bae59a32e51eaa65a25a56bc7774",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-C-0001",
+   "statement": "f-sum rule: for N bosons with H = sum p_j^2/2m + V(r) and rho_k = sum_j exp(-i k.r_j), [rho_k^dagger,[H,rho_k]] = N hbar^2 k^2/m as an operator identity (only the kinetic term fails to commute with rho_k; [p^2, e^{-ik.r}] = -hbar (k.p e^{-ik.r} + e^{-ik.r} k.p), then [e^{ik.r}, k.p] = -hbar k^2 e^{ik.r}). It has no finite-dimensional representation, so PH-A-0005 takes its value as a hypothesis.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:e1f53c2f4f3616bc563a7aeaad4455128c0864605ff2c07917e7ec3b65065b1d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-C-0002",
+   "statement": "Physical reading of PH-A-0005/PH-A-0006: if the density operator, the f-sum value and the k <-> -k symmetry of the physical ground state are as in PH-C-0001, then the lowest excitation in the density channel at wavevector k obeys eps(k) <= hbar^2 k^2/(2 m S(k)) (Feynman, Bijl). Reading a measured S(k) this way needs the T = 0 ground-state S, the exact f-sum rule, the symmetry, and (for the gap form) momentum conservation, none of which is formalised. No novelty is claimed: this is the textbook Feynman-Bijl argument.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PH-A-0005",
+    "PH-A-0006",
+    "PH-C-0001",
+    "PH-L-0002"
+   ],
+   "evidence": "sha256:bb8bc504c3a1f4e9ddfb556f0779f35f43ae856ad2c981be65048924e454dec9",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-C-0003",
+   "statement": "Diffraction test: for every k > 0 the Bogoliubov structure factor with sound speed c satisfies S_B(k) <= sqrt(k/2k*), k* = 2mc/hbar (PH-A-0008). Hence a structure factor S(k) > sqrt(k/2k*) at some k cannot be S_B of a homogeneous Bogoliubov gas of that c; and since S > S_B gives eps0/S < eps_B (PH-A-0007), PH-C-0002 puts the lowest density-channel excitation of that system below eps_B(k). A point S <= sqrt(k/2k*) does not confirm Bogoliubov: the bound is an upper envelope. This is the same test as in doi:10.5281/zenodo.23646117; here it is applied to tabulated data.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PH-A-0007",
+    "PH-A-0008",
+    "PH-C-0002"
+   ],
+   "evidence": "sha256:8931417b39257ed3e0edce5dedd28606b820c1a45d85f72aeaf635fabcd80003",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-C-0004",
+   "statement": "Physical gloss of the He-4 result (conditional): 4He is not a weakly interacting Bose gas (the textbook fact that k a << 1 fails), and the tabulated S(Q) of PH-L-0004 exceeding sqrt(Q/2k*) with k* = 2 m4 c/hbar from PH-L-0003 from the roton region outward is consistent with that. Hand check at the peak, from the L rows only: PH-L-0004 gives S = 1.458 at Q = 2.058 per A (X-ray; and 1.376 at Q = 2.070, neutron), PH-L-0003 gives k* = 3.00379 per A, so sqrt(Q/2k*) = sqrt(2.058/6.00758) = 0.5853 (resp. 0.5870), and 1.458 > 0.5853 + 0.082 (resp. 1.376 > 0.5870 + 0.082). It is conditional on (i) the data being secondary and at 1.4-4 K rather than T = 0, with the temperature dependence of the peak not quantified here, (ii) the post hoc 0.082 threshold, which is not in the preregistration, and (iii) the Tier C reading PH-C-0003. It does not refute Bogoliubov theory in its range of validity, and it does not use the Bijl-Feynman bound to bound anything about He-4.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PH-A-0008",
+    "PH-C-0003",
+    "PH-L-0003",
+    "PH-L-0004",
+    "PH-L-0005"
+   ],
+   "evidence": "sha256:7178acbde4b4738250e626d08c47302651ed6a9ce408a8ac8dc4f65ae5db1d3c",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-C-0005",
+   "statement": "Trapped-gas comparator: for a Thomas-Fermi cloud in the local density approximation S_LDA(q) = <S_B(q; n)> over atoms with weight w(x) = (15/4) x sqrt(1-x), x = n/n0, k*(x) = k*_peak sqrt(x). Applying PH-A-0008 pointwise gives S_LDA(q) <= B_LDA(q) = <sqrt(q/(2 k*(x)))>. A bound built from one k* (peak c, c_eff or mean-density c) is NOT implied; whether it fails is checked numerically (PH-X-0004). Homogeneous-gas Lean statements say nothing about the trap beyond this averaging argument.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PH-A-0008",
+    "PH-L-0001"
+   ],
+   "evidence": "sha256:549e77c783b4789350abead0ac04c3642df03c3fb91548f7623b68e5775f48c8",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-C-0006",
+   "statement": "Scope: the Feynman-Bijl formalisation is a textbook argument (no novelty claimed); the data analysis tests a bound already published as a diffraction test in doi:10.5281/zenodo.23646117, now applied to 99 tabulated points, with controls and a trapped-gas comparator. No rusty-SUNDIALS or LeanFlow change was made in lane P6; the numerics are Python/numpy at Tier X.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:5718403ea9d02a814c179bbcdadf2eabe27927eb18e76f434fe53fbcd6b70c0a",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-C-0007",
+   "statement": "Hand computation for the counterexample of PH-A-0009 (not a Lean statement): with H = |e1><e1|, psi = e0, rho = |e1><e0| and N = hbar = k = 1, m = 1 (so that the f-sum value f = N hbar^2 k^2/m = 1 equals the double-commutator value of PH-A-0001/PH-A-0009), rho psi = e1, S = ||rho psi||^2/N = 1, the only eigenvector of H overlapping rho psi has eigenvalue 1 = lambda - E0, and the bound of feynman_bijl_bound without hsym would read lambda - E0 <= hbar^2 k^2/(2 m S) = 1/2; 1 > 1/2, so the final bound itself fails in this example when hsym is dropped. Kernel-checked is only the halving step (PH-A-0009).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PH-A-0009",
+    "PH-A-0005"
+   ],
+   "evidence": "sha256:536b3ebe40e40d91209d3d03af0f649a3d37b3d124cd45d8b6f369c6300b50b1",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-X-0001",
+   "statement": "He-4 test on Table 14.1 (Q > 0): 99 points (49 X-ray, 50 neutron), k* = 3.00379 per A. Verdicts: 29 CONSISTENT, 7 UNDECIDED, 63 REFUTED (REFUTED means S - sqrt(Q/2k*) > Delta_ds = 0.082, the gap between the two datasets' peak maxima; Delta_ds is a post hoc proxy defined in the work stage, not in the preregistration). Onset in (1.4, 1.47] per A; strict refuted run 1.55 to 5.129 per A; roton/peak region 1.7-2.4 per A: 21 points, all REFUTED, S/bound 1.62-2.49. Sensitivity (revision_checks.json): Delta_ds in 0.07-0.10 moves REFUTED between 60 and 64, refuted above Q = 2.4 between 36 and 40, X-ray refuted between 30 and 32; the 29 CONSISTENT and the 21 roton refutations are unchanged (smallest roton margin 0.328, about 4.0 Delta_ds). Donnelly-Barenghi's recommended subset (X-ray Q < 1, neutron Q > 1; 60 points): 23 CONSISTENT, 6 UNDECIDED, 31 REFUTED; 10 neutron roton points all REFUTED (S/bound 1.62-2.38, min margin 0.328, refuted even at Delta_ds = 0).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "PH-L-0003",
+    "PH-L-0004",
+    "PH-A-0008"
+   ],
+   "evidence": "sha256:28ce8d077324af2850da32903853dbfa8aa41257c3fced6b661ff4e842de826e",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-X-0002",
+   "statement": "He-4 controls: homogeneous Bogoliubov S_B at the 99 abscissae gives 0 violations (max S/bound 0.9999996); with Gaussian noise sigma 0.01/0.02/0.04 the fraction of 2000 trials with any REFUTED point is 0/0.0005/0.41 (data scatter about the Donnelly spline: rms 0.019); S = 1 exceeds the bound at 95 points (exactly those with Q < 2k*); planted 1.5 S_B is caught at 89; two independent parses of the HTML agree on all 300 + 266 numbers.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "PH-X-0001"
+   ],
+   "evidence": "sha256:078c37c376f8e04530b52246322c40058280bbf87414796ac47a8bbb191d7feb",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-X-0003",
+   "statement": "Feynman self-check of the data: S <= eps0/eps with Godfrin's eps(k) (conservative eps - err), 68 points with 0.05 <= Q <= 3.6: 2 exceed it, Q = 0.213 and 0.267, both X-ray, consistent with (not proof of) thermal S at T >= 1.38 K. Reported, not dropped.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "PH-X-0001",
+    "PH-L-0003"
+   ],
+   "evidence": "sha256:7b99bf8ef875fddfbee2ce63e276ef9a6382c69bd8d47657238058dcdd0015d4",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-X-0004",
+   "statement": "Trapped-gas positive control on 24 values of mu/h (0.5-12 kHz) at the Stamper-Kurn q: the trapped Bogoliubov model S_LDA exceeds a single-k* bound at 16/24 (peak c), 8/24 (c_eff) and 4/24 (mean-density c) points and at 0/24 for the LDA-averaged bound; grid control (6 mu x 7 q, Rb): 0 violations of S_LDA <= B_LDA of 42, S = 1 exceeds B_LDA at 38; the LDA model reproduces the solid curve of Fig. 3a at six columns to |diff| <= 0.0022.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "PH-C-0005",
+    "PH-L-0001"
+   ],
+   "evidence": "sha256:0434ecc0b3fa958dce470c4b2de0f24090e520eff393024d128ece8cd682f5ca",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-X-0005",
+   "statement": "Stamper-Kurn Fig. 3a (Na, q = 2.506 per um, values read from the figure): S = 0.541, 0.379, 0.293 at mu/h = 3.08, 6.72, 9.30 kHz with sigma 0.129, 0.091, 0.071 against B_LDA = 0.583, 0.480, 0.442: z = -0.33, -1.10, -2.09; all three below the bound, the model sits at 0.82-0.95 of the bound. No refutation, low test power; 'BEC consistent' is not claimed.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "PH-X-0004",
+    "PH-L-0001"
+   ],
+   "evidence": "sha256:1ac66301f83f8034f8db276efda4a38fe2dc0ca54f49710cf9c8502b2cbac8a2",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-X-0006",
+   "statement": "Steinhauer Fig. 4 (87Rb, mu/h = 1.91 kHz, values read from the figure): the closed circles are multiplied by 2.3 to fit the Bogoliubov-LDA curve, so a test on them is circular; 3 of 13 exceed B_LDA nominally (max z = 0.31), none un-rescaled; the open circles are eps0/omega from the measured dispersion (rms difference to the LDA model 0.026), not diffraction values. Not decisive in either direction.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "PH-X-0004",
+    "PH-L-0002"
+   ],
+   "evidence": "sha256:82c3103ee7217f38798b6b3e3268508af90ab28825a475ea52eed42adeb4ca16",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-X-0007",
+   "statement": "Float cross-check of the Lean statements (200 random 12x12 instances, seed 20261025): double-commutator identity max relative residual 1.7e-15; Hermitian rho: A = f/2 within 6.7e-16, trial-energy equality within 1.1e-16, sector bound 200/200; Bogoliubov eps0/S_B = eps_B within 1.8e-16 and the H8 bound at 2000/2000 grid points; negative controls: the 2x2 case gives A = 1, A^dagger = 0, f = 1; non-symmetric rho |A - f/2|/|f| has min 0.0019 and median 0.079; the planted claim A = f is caught 200/200. Supports no claim.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "PH-A-0001"
+   ],
+   "evidence": "sha256:b8bf15034c7b9b995eb985355dbf51435c6f171da6b8fc342466c01d697f23b1",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH-X-0008",
+   "statement": "Paper-stage rerun by the same AI pipeline (not itself an independent check; the independent recompile is documented in AUDIT.md, see the independent_recompile field of the Tier A rows): the four Lean files recompiled with lean_pinned.py (Basic.lean re-elaborated from source without writing an olean; the other three import the stage-1 olean), all rc 0, identical #print axioms lines to the stage-1 transcripts; file sha256 values match those recorded in FEYNMAN_BIJL.md.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "PH-A-0001"
+   ],
+   "evidence": "sha256:d1d0ff7b9747df54f2192167ee3123b68c4ed261b10f1f77e895af6905637a1b",
+   "audit": null
+  }
+ ]
+}

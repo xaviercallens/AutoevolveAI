@@ -1,0 +1,30 @@
+/-- The charges `+1, -2, +1` in layers `0, d, 2d` give shifts `0, d(*@$^2$@*), 4d(*@$^2$@*)` in `t = r(*@$^2$@*)`; unit case `d = 1`. -/
+noncomputable def quadrupole (t : (*@$\mathbb{R}$@*)) : (*@$\mathbb{R}$@*) := t ^ (-(1 / 2 : (*@$\mathbb{R}$@*))) - 2 * (t + 1) ^ (-(1 / 2 : (*@$\mathbb{R}$@*))) + (t + 4) ^ (-(1 / 2 : (*@$\mathbb{R}$@*)))
+
+/-- **Negative result.** The (unit) charge-quadrupole combination is not completely monotone. -/
+theorem quadrupole_not_cm : (*@$\neg$@*) IsCompletelyMonotoneOn quadrupole := fun h => by
+  have := h.nonneg (t := 3) (by norm_num)
+  linarith [quadrupole_neg_at_three]
+
+/-- **Negative result at every layer spacing** `c > 0`: reduced to `c = 1` by the scaling `t (*@$\mapsto$@*) c t`
+(`comp_affine`). -/
+theorem quadrupoleC_not_cm {c : (*@$\mathbb{R}$@*)} (hc : 0 < c) : (*@$\neg$@*) IsCompletelyMonotoneOn (quadrupoleC c) := -- proof elided
+
+/-- Pair interaction of two aligned `+1, -2, +1` quadrupoles for a pair potential `f` (in `t = r(*@$^2$@*)`, `c = d(*@$^2$@*)`). -/
+noncomputable def quadrupolarPair (f : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) (c t : (*@$\mathbb{R}$@*)) : (*@$\mathbb{R}$@*) := 2 * (3 * f t - 4 * f (t + c) + f (t + 4 * c))
+
+/-- **Quadrupolar exciton-exciton interaction** is completely monotone for every completely monotone pair potential. -/
+theorem quadrupolarPair_cm {f : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)} (hf : IsCompletelyMonotoneOn f) {c : (*@$\mathbb{R}$@*)} (hc : 0 (*@$\le$@*) c) :
+    IsCompletelyMonotoneOn (quadrupolarPair f c) := by
+  have hg := hf.sub_comp_add_const hc
+  have h1 := hg.sub_comp_add_const hc
+  have h2 := hg.sub_comp_add_const (by linarith : (0 : (*@$\mathbb{R}$@*)) (*@$\le$@*) 2 * c)
+  have h3 := hg.sub_comp_add_const (by linarith : (0 : (*@$\mathbb{R}$@*)) (*@$\le$@*) 3 * c)
+  refine (((h1.add h2).add h3).const_mul zero_le_two).congr' fun t _ => ?_
+  simp only [quadrupolarPair, Pi.add_apply]
+  ring_nf
+
+/-- Unscreened (Coulomb pair potential `t^{-1/2}`) quadrupolar exciton interaction, `c = d(*@$^2$@*)`. -/
+theorem quadrupolarCoulomb_cm (d : (*@$\mathbb{R}$@*)) :
+    IsCompletelyMonotoneOn (quadrupolarPair (fun t => t ^ (-(1 / 2 : (*@$\mathbb{R}$@*)))) (d ^ 2)) :=
+  quadrupolarPair_cm (rpow_neg (by norm_num : (0 : (*@$\mathbb{R}$@*)) (*@$\le$@*) 1 / 2)) (sq_nonneg d)

@@ -1,0 +1,6 @@
+theorem wf_var_pos {N : (*@$\mathbb{N}$@*)} (hN : 0 < N) (k : Fin (N + 1)) (hk1 : 0 < (k : (*@$\mathbb{N}$@*))) (hk2 : (k : (*@$\mathbb{N}$@*)) < N) :
+    0 < (*@$\sum$@*) j, wfP N k j * (((j : (*@$\mathbb{N}$@*)) : (*@$\mathbb{R}$@*)) / N - ((k : (*@$\mathbb{N}$@*)) : (*@$\mathbb{R}$@*)) / N) ^ 2 := -- proof elided
+
+theorem wright_fisher_fixation_limit {N : (*@$\mathbb{N}$@*)} (hN : 0 < N) (i : Fin (N + 1)) :
+    Tendsto (fun n => kPow (wfP N) n i (Fin.last N)) atTop ((*@$\mathcal{N}$@*) (((i : (*@$\mathbb{N}$@*)) : (*@$\mathbb{R}$@*)) / N)) (*@$\wedge$@*)
+    Tendsto (fun n => kPow (wfP N) n i 0) atTop ((*@$\mathcal{N}$@*) (1 - ((i : (*@$\mathbb{N}$@*)) : (*@$\mathbb{R}$@*)) / N)) := -- proof elided

@@ -1,0 +1,417 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "PG-A-0001",
+   "statement": "ProgPopGen.fixation_limit and harmonic_unique_of_var (Absorption.lean), with kPow_harmonic, second_moment, interiorMass_tendsto_zero, absorption_tendsto, mass_split, kPow_last_mono: for a stochastic kernel P on Fin (N+1) (non-negative entries, unit row sums) with 0 and N absorbing, 0 < N, and h interior-harmonic with h 0 = 0, h N = 1 and positive one-step variance sum_j P(k,j)(h j - h k)^2 at every interior k, the n-step kernel kPow P n (left Chapman-Kolmogorov recursion) satisfies kPow P n i N -> h i and kPow P n i 0 -> 1 - h i; every interior-harmonic g with the same boundary values equals h; kPow P n i N is non-decreasing in n. The statement concerns the matrix power kPow, not a path measure.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:3e4fc79836f093916d4a1971d2c0f95c0641862796ab692dcfe2754afffbe847",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-A-0002",
+   "statement": "ProgPopGen.wright_fisher_fixation_limit (WrightFisherFixation.lean), with wf_absorbing, wf_var_pos, wright_fisher_fixation_mono: for 0 < N and the neutral Wright-Fisher kernel wfP N (H11's kernel C(N,j)(i/N)^j(1-i/N)^(N-j), unchanged), kPow (wfP N) n i N -> i/N and kPow (wfP N) n i 0 -> 1 - i/N; kPow (wfP N) n i N is non-decreasing in n. Closes the gap H11 recorded as 'not formalised'.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PG-A-0001"
+   ],
+   "evidence": "sha256:39192692731e54888ef44135e87e80b02cf7ebc21a5142f0f584fd6ee1966015",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-A-0003",
+   "statement": "Moran model, Nat-indexed lemmas (MoranModel.lean): bdP_sum (first-step expectation of a birth-death kernel), moranUp_eq (p_i = r q_i), moran_stay_nonneg, moranFix_harmonic_nat (p_i h(i+1) + q_i h(i-1) + (1 - p_i - q_i) h(i) = h(i) for every i > 0, h = moranFix), moran_var_pos_nat (positive one-step variance at interior i), moranFix_closed (r != 1: moranFix N r i = (1 - r^-i)/(1 - r^-N)), moranFix_neutral (moranFix N 1 i = i/N), moranFix_tendsto_one and moran_closed_tendsto_neutral ((1 - r^-i)/(1 - r^-N) -> i/N as r -> 1 within r != 1). Definitions: moranUp N r i = r i/(r i + N - i) * ((N - i)/N), moranDown N r i = ((N - i)/(r i + N - i)) * (i/N), moranFix N r i = S_i/S_N with S_n = sum_{k<n} r^-k, all in real arithmetic.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:fe641ca946d4bbe2af8c5e38771fdbc1463502ca06e8617fb67e527c803105aa",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-A-0004",
+   "statement": "Moran chain theorems (MoranFixation.lean): moran_absorbing, moran_interiorHarmonic, moran_var_pos, and for 0 < N, 0 < r: moran_fixation_limit (kPow (moranP N r) n i N -> moranFix N r i and kPow (moranP N r) n i 0 -> 1 - moranFix N r i), moran_fixation_limit_closed (r != 1: limit (1 - r^-i)/(1 - r^-N)), moran_fixation_limit_neutral (r = 1: limit i/N), moran_fixation_unique (every interior-harmonic g with g 0 = 0, g N = 1 equals moranFix N r).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PG-A-0001",
+    "PG-A-0003"
+   ],
+   "evidence": "sha256:98b26a09cf1d07602b1ff5ca69ff3dec3c4d2f26b20ed978e16a0e8c37af64d3",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-A-0005",
+   "statement": "ProgPopGen.Price.price_equation (Price.lean), over an arbitrary field K and a Finset of types: if sum n != 0 and sum n w != 0 then wmean n w * (zbarNext n w z' - wmean n z) = wcov n w z + wmean n (fun i => w i * (z' i - z i)), where zbarNext = (sum n w z')/(sum n w) is the offspring-generation mean (the modelling assumption). Also wcov_eq_moment (Cov = E(fg) - E f E g), wmean_ne_zero, and price_equation_pos over R under s.Nonempty, n i > 0, w i > 0.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:981d7b9facd301603e60224b1c9972a15942497602cc675872c5465002eab9c2",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-A-0006",
+   "statement": "Haploid selection increment from Price (Price.lean): with z = w and no transmission bias z' = w, fisher_haploid (wbar (wbar' - wbar) = Var_n(w)), fisher_haploid_div (wbar' - wbar = Var_n(w)/wbar), wvar_nonneg, fisher_haploid_nondecreasing (n >= 0, sum n > 0, sum n w > 0 implies wbar <= wbar') and fisher_haploid_pos (R, s nonempty, n i > 0, w i > 0). Scope: haploid/asexual types with constant type fitnesses; NOT Fisher's theorem in the partial-change / additive-genetic-variance reading and NOT the diploid case.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PG-A-0005"
+   ],
+   "evidence": "sha256:47acda85a6c627df2e305ea2ae4d42088bcf280d6054ca909e526e2a0403c766",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-A-0007",
+   "statement": "Crosswalk (Price.lean, namespace ProgPopGen.Price.Alix): meanFit and selectP copied verbatim from SocrateAI-Scientific-Genetic formal/ANSE/AlixPopulationGenetics.lean over Q; aurelia_mean_fitness_increment (derived from the multi-type fisher_haploid_div at Fin 2, n = ![p, 1-p]) and kal_increment_is_variance (the wvar definition at Fin 2) restate two of that file's three H12 theorems with identical statement text. The match is textual; no Lean term links ProgPopGen.Price.Alix to ANSE.Alix.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PG-A-0006"
+   ],
+   "evidence": "sha256:c5ba57bfb3a315647bbebdbcd51cbb241fe007d7858a19ecf8c35003694a6f2c",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-A-0008",
+   "statement": "Negative controls, kernel-checked: ctl_neg_identity_no_absorption (Absorption.lean: the identity kernel on {0,1,2} is stochastic and absorbing, j/2 is interior-harmonic, yet kPow n 1 2 = 0 for all n, so it does not tend to 1/2 - the positive-variance hypothesis of fixation_limit cannot be dropped); ctl_neg_flipped_value (flipped formula (1 - r^i)/(1 - r^N) gives 1/7, not 4/7, at N = 3, r = 2, i = 1), ctl_neg_flipped_not_harmonic, ctl_neg_neutral_not_harmonic (MoranModel.lean); ctl_neg_wrong_limits (MoranFixation.lean: for N = 3, r = 2, kPow (moranP 3 2) n 1 3 tends neither to 1/3 nor to 1/7).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PG-A-0001",
+    "PG-A-0004"
+   ],
+   "evidence": "sha256:570e3bf9fabaf343e9a3103615f77484c787b65c9062684bd52dc257594480e7",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-A-0009",
+   "statement": "Positive controls, kernel-checked (each evaluated directly, not through the limit theorems): ctl_pos_wf_two_steps (kPow (wfP 2) 2 1 2 = 3/8), ctl_pos_moran_rates (moranUp 2 2 1 = 1/3, moranDown 2 2 1 = 1/6), ctl_pos_moranFix_N2 (2/3), ctl_pos_moranFix_N3 (moranFix 3 2 1 = 4/7, moranFix 3 2 2 = 6/7, and the first-step equation holds with these numbers).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:25d954ccb8e221b9486423fa84fe48c38952b9c8b6fcb8b07fc0528f503960e5",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-A-0010",
+   "statement": "Price controls, kernel-checked (Price.lean): ctl_pos_three_types (n = (1,2,3), w = (1,2,4), z = (0,1,3), z' = (1,1,2): both sides of the Price equation evaluate to -13/36); ctl_neg_transmission_bias (n = (1,1), w = z = (1,2), z' = (1,1): delta wbar = -1/2 but Var/wbar = 1/6, while Price still holds, -3/4 = -3/4); ctl_neg_missing_wbar (delta wbar = 1/6 but Var = 1/4: the 1/wbar factor cannot be dropped); nonvacuous_pos.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:f427fcefb9560283bda8e7f20cd9fa385aefc2ab49955ae1fbb110e7d6ca2b6f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-A-0011",
+   "statement": "Non-vacuity and import-together (PopGenProgImportAll.lean, PriceImportAll.lean): AbsorbingChain (moranP 3 2) and AbsorbingChain (wfP 3) hold; instance_wf_N3 (kPow (wfP 3) n 1 3 -> 1/3) and instance_moran_N10 (r = 3/2: kPow (moranP 10 (3/2)) n 1 10 -> (1 - (2/3)^1)/(1 - (2/3)^10)); instance_four_types (the monotonicity theorem for n = (1,1,1,1), w = (1,2,3,4)); the H11, H12 and all P7 modules import together without name clashes.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PG-A-0001",
+    "PG-A-0005"
+   ],
+   "evidence": "sha256:84acbfd6ef74fabcf2932bf0a0865715a3615c9eeb4d951bdc0bf7c7af296fa0",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-A-0012",
+   "statement": "Planted controls for the fixation and Price modules (PopGenProgControls.lean, PriceControls.lean; never imported) are caught by #print axioms: ProgPopGenControls.ctl_sorry depends on sorryAx and ctl_axiom on the planted axiom ProgPopGenControls.ctl_cheat (they claim the wrong limits 1/7 and 1/3 for the Moran chain at N = 3, r = 2); ProgPopGenPriceControls.ctl_sorry and ctl_axiom (false Price statements) likewise. Both files compile with rc 0, so exit status is not the gate.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:4f9d1b2aea7388aa8971fca77ca866c955f97758926adb2c3da4a70a13185ed4",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-A-0013",
+   "statement": "Arithmetic data certificates (FixationDataCert.lean): for the decimal literals L printed by the CVODE run, |L - moranFix N r i| < 1e-11 for (N, r, i) = (2, 2, 1), (3, 2, 1), (3, 2, 2), (10, 3/2, 1), (10, 3/2, 5) and < 1e-12 for (10, 1, 3) (cert_*); negative control ctl_neg_wrong_literal: |0.1 - moranFix 10 (3/2) 1| < 1e-3 is false. These are inequalities between decimal literals and exact rationals; they do not certify CVODE and are not statements about a Markov chain.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PG-A-0003"
+   ],
+   "evidence": "sha256:3d8bee80ab4d5e254af622c0075f6dd5c6beeca70fb7b803c2edc2e21c7ef629",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-A-0014",
+   "statement": "Planted controls for the data-certificate module (FixationDataCertControls.lean, never imported): ProgPopGenCertControls.ctl_sorry depends on sorryAx and ctl_axiom on the planted axiom ctl_cheat; both claim the false bound |0.1 - moranFix 10 (3/2) 1| < 1e-11; the file compiles with rc 0.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "PG-A-0013"
+   ],
+   "evidence": "sha256:dbc46b17e6e866d8af15b985f8320a7f5ebf7a538209b58280469429985a2d67",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-L-0001",
+   "statement": "Keller and Ugurlu (arXiv:2403.12598v2), eq. (3), p. 2: the classic Moran process on {0,...,n} with absorbing 0 and n has up/down probabilities p+(j) = r/(1+(r-1)j/n) (j/n)(n-j)/n and p-(j) = 1/(1+(r-1)j/n) ((n-j)/n)(j/n), the individual to be replaced being chosen uniformly at random. These are the rates the Lean definitions moranUp and moranDown are checked against (algebraic identity by hand, PG-C-0004).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:5ad90f1a28b6cf63b46919c2cfadf005d921263a6c9309677c1b0d9fe141f06f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-L-0002",
+   "statement": "Keller and Ugurlu (arXiv:2403.12598v2), eq. (4), p. 4 and Section 1.1.2, p. 3: the Moran fixation probabilities are rho_i = i/n for r = 1 and (1 - 1/r^i)/(1 - 1/r^n) for r != 1; they are derived there by optional stopping applied to the martingale r^(-M_k) (h(j) = r^(-j) is harmonic on the transient states). Theorem 2.1 on p. 7 prints a typo in the denominator (missing the exponent n); the optional-stopping line on p. 3 prints r^i, r^M0, r^MT, r^0, r^n where r^-i, r^-M0, r^-MT, r^0, r^-n are meant (sign slip in the source; not copied). Moran (1958) is cited as [Mor58] on p. 18 and was not read.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:1feb43059de239447251866f1b20f77a66b74952eda08f666711611c805ef75f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-L-0003",
+   "statement": "Marion (arXiv:2506.18616v5): the Ionescu-Tulcea construction, i.e. a trajectory measure of a Markov chain (partialTraj, traj : Kernel (Pi i : Iic a, X i) (Pi n, X n), pp. 9 and 12), is described as integrated into Mathlib (p. 1); the paper does not treat hitting or absorption probabilities. That ProbabilityTheory.Kernel.traj is present in the PINNED Mathlib build is a separate repository fact, not a Tier L citation: it is declared in Mathlib/Probability/Kernel/IonescuTulcea/Traj.lean at line 518 (found by grep by the independent auditor). This is the available route for formalising the bridge PG-C-0001, which this paper does not take.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:b27e4b4147a987a9f129b3bc4ed4486b0a89f33457a459502dc363e013368433",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-L-0004",
+   "statement": "LaGatta (arXiv:2202.10289v4): the discrete Price equation Delta(X-bar) = cov(X, U) + E[Delta_w(X) U] (1.6, p. 9); Fisher's theorem in Price's reading d_NS(U) = var(U) (1.8, p. 9); the aggregate form d_NS(W) = var(W)/W-bar (2.24, p. 18); the two-generation identity W'-bar - W-bar = var(W)/W-bar + E[Delta_w(W,W')W]/W-bar (2.27, p. 19), of which the Lean fisher_haploid_div is the case in which the environmental/transmission term vanishes. Price (1970) and Price (1972) are listed on p. 69 and were not read.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:3a20036d11bfdbabd7750220ea33c708c6fe313ad2b55623243ef9383f7cf014",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-L-0005",
+   "statement": "Price's (1972) reading of Fisher, as quoted by LaGatta (p. 4): the theorem concerns the change due to natural selection, not the total change. Baez (arXiv:2107.05610v3, p. 4): with constant fitness functions d f-bar/dt = Var(f); p. 1-2: the naive reading 'rate of change of mean fitness = variance' holds only under very restrictive conditions, and Ewens concluded that the theorem does not provide the substantial biological statement Fisher claimed.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:43b4ace8b74ca6f258fbe21cf2aaf583e140049ea39176d27e74935f69a677c5",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-C-0001",
+   "statement": "Bridge to probability (not formalised): kPow P n i N is by definition the n-step transition probability of the Markov chain with kernel P, i.e. P_i(X_n = N); since N is absorbing this equals P_i(T_N <= n) (consistent with the kernel-checked monotonicity kPow_last_mono), so its limit is the fixation probability P_i(T_N < infinity). No path space and no ProbabilityTheory.Kernel.traj measure is built in Lean. The Tier A statements are about matrix powers; the words 'fixation probability' attach to them only through this standard identification.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PG-A-0001",
+    "PG-L-0003"
+   ],
+   "evidence": "sha256:bbbebb8bf10acc1d8153d5785f846ef4ce3d19db97c19690fcbf4d675e3567f3",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-C-0002",
+   "statement": "Uniformisation link (not formalised): exp(t (P - I)) = sum_n Poisson(t; n) P^n, so the absorption mass pi_N(t) of the CVODE ODE d pi/dt = pi (P - I) is a Poisson mixture of the n-step probabilities kPow P n i N; because kPow P n i N is non-decreasing and bounded by 1 and converges to h(i) (PG-A-0001), the mixture converges to the same limit. The CVODE runs therefore test the same closed forms but not the Lean matrix powers themselves.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PG-A-0001"
+   ],
+   "evidence": "sha256:66a5e2eea6c96270f4fab15c4203378f5715a7b656d0ef17d75067140fec5a8f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-C-0003",
+   "statement": "Step-by-step human proof of the absorption limit and of the Moran formulas (martingale; second-moment accumulation; squeeze; uniqueness by uniqueness of limits; Wright-Fisher variance via the jump to 0; Moran first-step equation via p_i = r q_i and h(i+1) - h(i) = r^-i/S_N). Each step is paired with the Lean declaration of PG-A-0001..0004; the human text itself is not machine-checked and has had no human referee.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PG-A-0001",
+    "PG-A-0002",
+    "PG-A-0003",
+    "PG-A-0004"
+   ],
+   "evidence": "sha256:bf287e444fc74116afdca62af4cc076ee2efc8a479821f452d293d2650fa767f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-C-0004",
+   "statement": "Definition fidelity of the Moran rates: moranUp N r i = r i/(r i + N - i) * ((N - i)/N) equals Keller-Ugurlu's p+(j) = r/(1 + (r-1)j/n) (j/n)(n-j)/n because r (j/n)/(1 + (r-1) j/n) = r j/(n + (r-1) j) = r j/(r j + n - j); likewise moranDown N r i equals p-(j). This is a hand computation; no Lean term compares the two forms.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PG-L-0001",
+    "PG-A-0003"
+   ],
+   "evidence": "sha256:bdb4d47f56040f4beba7743472e580cbf5734b91a7c025823bb3eaa25efce096",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-C-0005",
+   "statement": "Scope of the Price/Fisher results: the Lean identity is the exact Price equation for a finite population in which the offspring-generation mean trait is defined as sum n w z'/sum n w; the corollary delta wbar = Var_n(w)/wbar holds for haploid/asexual types with constant type fitnesses and no transmission bias. It is not Fisher's fundamental theorem in the Price (1972)/Ewens/Edwards partial-change reading with additive genetic variance, and not the diploid multi-allele case. The preregistered item fisher_general (prior 0.35) was NOT achieved.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PG-A-0006",
+    "PG-L-0004",
+    "PG-L-0005"
+   ],
+   "evidence": "sha256:56c1cb275662a4322c6bcf19a6887f987500bf1b249d7436ca125cac72878397",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-C-0006",
+   "statement": "Novelty: none claimed. Absorption of finite chains, the Wright-Fisher value i/N, the Moran formula and the Price equation are classical. The literature search for prior proof-assistant formalisations was limited to a few alphaXiv queries (absence by search is not proof). The only items offered are the explicit, kernel-checked statements in the stated form (matrix-power limits, one general theorem covering both models, uniqueness by uniqueness of limits) and the fail-closed CVODE certificate.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PG-L-0002"
+   ],
+   "evidence": "sha256:bafc8b57a24de6a373e18c2ed8d673e2c2841b7404e14479b56c74751f94259a",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-C-0007",
+   "statement": "Genetic-repo relation: a whole-repo search of the SocrateAI-Scientific-Genetic clone found no Price-equation or covariance-decomposition result ('price' appears only as unrelated English; 'covariance' only as phylogenetic tree covariance matrices); the crosswalk theorems (PG-A-0007) are textual restatements in a separate namespace, and Price.lean was compiled only under the AutoevolveAI pin, not inside the Genetic repo's own build (that clone has no lean-toolchain or lakefile at its root).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PG-A-0007"
+   ],
+   "evidence": "sha256:f4075cef69f8a62a6b9fd482b5165039273c76ca58f44ef62fdeb8a2e6b184f7",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-C-0008",
+   "statement": "Conditionality: the P7 Lean modules import only Mathlib and the earlier modules H11 and H12 (which themselves import only Mathlib); no result of the openai/math repository is used, so the Tier A claims here are not conditional on openai/math results. The pinned toolchain happens to be the openai/math checkout.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PG-A-0001"
+   ],
+   "evidence": "sha256:d15137d435a2695294699786ec309acb06a14937229a700e7cb0cec4e42ea098",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-X-0001",
+   "statement": "CVODE absorption runs (rusty-SUNDIALS qf-popgen, BDF, rtol 1e-11, atol 1e-15, analytic linear Jacobian): 106 accepted runs (78 Moran with N = 2..30 and r in {0.8, 1, 1.2, 1.5, 2}; 28 Wright-Fisher with N = 10, 20), every start i = 1..N-1; the absorption mass at N agrees with the closed forms i/N or S_i/S_N to at most 3.1e-10, the interior mass at the stopping time is at most 6.3e-10, the largest mass drift |sum pi - 1| is 9.8e-14, and the smallest component pi_k(t) seen at any output of any accepted run is -4.6e-18 (the certificate requires >= -1e-12 for every component, added in commit cda9a90 after the audit; all other fields of results.jsonl are identical to the first version produced at 2b716c5 - compare_results.json).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "PG-C-0002"
+   ],
+   "evidence": "sha256:bd99a306ebc4b686f552f5bcfb6a69f353eac263fae0add3c3b3d284e20f36b0",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-X-0002",
+   "statement": "Negative controls of the fail-closed certificate: 9 of 9 refused for the stated reason - exponent-flipped target and neutral i/N under selection (6 ValueMismatch at N = 10, r = 1.5, i = 1, 3, 7), the identity kernel (NotAbsorbed: valid absorbing kernel, no absorption flow), a horizon of t <= 4 (NotAbsorbed), and a corrupted row sum (InvalidKernel). No negative control was accepted. The identity-kernel row carries r = null (the first version of the file carried a meaningless r = 1.5). In addition, a unit-level negative control (cargo test, not a CVODE run) shows that the new componentwise check check_nonnegative refuses the state (0.5, -0.25, 0.25, 0.5), whose total mass is 1 and interior mass 0, together with a round-off-level positive control.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "PG-X-0001"
+   ],
+   "evidence": "sha256:1da39a00747976c1202088dc671161e8c3ce2b2211f342e1c6afbdb2bb4349ea",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-X-0003",
+   "statement": "Independent cross-check: kernels rebuilt in numpy (separate code from the Rust constructors) and exp(t_stop (P - I)) evaluated with scipy.linalg.expm; the CVODE absorption mass differs from it by at most 1.0e-13 over all 106 accepted runs.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "PG-X-0001"
+   ],
+   "evidence": "sha256:9dd16ea4659737a7bbaa16341a392504af55ede78afe9ff002916eb211b77c09",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-X-0004",
+   "statement": "Provenance of the decimal literals in FixationDataCert.lean: they are the shortest round-trip decimal forms (Python repr) of the p_fix doubles that fixation_ode writes with 18 significant digits (e.g. JSONL text 6.66666666666660079e-1 gives the literal 0.6666666666666601), for (N, r, i) = (2, 2, 1), (3, 2, 1), (3, 2, 2), (10, 3/2, 1), (10, 3/2, 5), (10, 1, 3). Differences between the DECIMAL LITERAL as written in Lean and the exact rational (exact arithmetic): 6.57e-15, 9.55e-14, 7.79e-14, 6.49e-13, 8.46e-13, 2.30e-16. Differences between the float64 p_fix and the float64 nearest the exact value (the abs_err field of results.jsonl): 6.55e-15, 9.55e-14, 7.79e-14, 6.49e-13, 8.46e-13, 2.22e-16 (the (10,1,3) literal 0.29999999999999977 is 2.30e-16 below 3/10 as a decimal and 2.22e-16 below as a float64 difference). Both are far inside the Lean bounds (1e-11, and 1e-12 for the neutral case).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "PG-X-0001"
+   ],
+   "evidence": "sha256:2d16eae5ddcf80221a226b90c8db9aec1d964520f12e15cd66f5025c6c8d4b73",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-X-0005",
+   "statement": "WORK1 cross-check: exact rationals (WF N = 2: P^2(1,2) = 3/8; Moran N = 3, r = 2: [0, 4/7, 6/7, 1]; N = 10, r = 3/2: exact first-step solve equals the closed form and not the flipped one) and mpmath 60-digit matrix powers P^4096 at N = 10 (Wright-Fisher error <= 2e-61; Moran r = 3/2 error <= 3.7e-50; r = 4/5 errors <= 2.2e-41 and r = 1 errors at most 6.6062e-37 (rounds to 6.7e-37 upward) on the sampled i; the flipped formula is off by 0.33-0.67 and i/N by 0.24-0.42 at r = 3/2).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:13d1eb8549249f19de229d13b4e85db12b6dff2044a968fe762c0bd16bc11ff9",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-X-0006",
+   "statement": "WORK2 cross-check of the Price results: exact Fraction values reproduce all Lean control values (-13/36; -1/2 vs 1/6 with Price -3/4 = -3/4; 1/6 vs 1/4); 500/500 random exact instances (1-8 types) satisfy the Price identity and the haploid increment; the worst float64 residual is 1.42e-14.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:96a640eccebac676cc18c54516593df9c90297fbacd441fb4beb891e3854b458",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-X-0007",
+   "statement": "Build hygiene of the rusty-SUNDIALS change (branch physics/p7-fixation-2026-10-25, commit cda9a90 (parent 2b716c58, which the audit examined: 6 tests passed there), base 7630f7e, not pushed): cargo test --release -p qf-popgen -- --test-threads=2: 8 passed, 0 failed (two new tests for the componentwise non-negativity check); cargo clippy --workspace --features experimental -- -D warnings: exit 0, no warnings or errors; cargo fmt --all --check: rc 0.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "PG-X-0001"
+   ],
+   "evidence": "sha256:309cc7953c45e79ad168bc407a64121825b2b88f64ecb9018d2a3cd52d184e78",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-X-0008",
+   "statement": "Paper-stage recompile by the same AI pipeline of all 11 claimed or control Lean files (pinned Lean 4.34.1): every rc 0; sha256 values equal those recorded in FIXATION.md and PRICE.md; axiom lines identical to the producer transcripts (11, 5, 16, 8, 21, 6, 4, 2, 2, 7, 2 #print axioms lines). Same AI pipeline (the FixationDataCert row is the recompile of the revised file, sha256 87dea63c...; the pre-revision records are in revision_stage/). The independent recompile is PG-X-0009.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:23bb1b6be879e9eac87c110981728040284e31ee418f8c37ef6403d3ccc578a7",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PG-X-0009",
+   "statement": "Independent AI audit of this preprint (AUDIT.md, verdict ACCEPT_WITH_CORRECTIONS, no blocking issue; auditor: a separate Claude agent, same model family as the producer, NOT a human): every Lean module recompiled from source into the auditor's own olean directory (producer .olean_out excluded) with rc 0 and only allowlisted axioms for the claimed declarations (36 key declarations printed by the auditor's own file); the producer's planted controls and the auditor's own planted controls (sorry, planted axiom, sorry hidden in a lemma) caught by #print axioms; a mutation (4/7 -> 1/3) rejected by the kernel (rc 1); qf-popgen at 2b716c5 rebuilt and fixation_ode re-run with results.jsonl byte-identical to the first version; macros, tables and literals recomputed from data; hand proofs checked with sympy residual 0; four arXiv citations matched page by page and tools/citation_check.py accepted a real quote and refused a mutated one on the primary KU Theorem 3.1 text. It audited the pre-revision FixationDataCert.lean (doc comment later changed) and the Rust crate at 2b716c5 (componentwise check later added); the 14 Tier A audit fields stay null because no human has audited statement adequacy.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:b012cdad0f8021bf36deec684f7cb159c71a0627ab63f3805a8b05fb5d3c7207",
+   "audit": null
+  }
+ ]
+}

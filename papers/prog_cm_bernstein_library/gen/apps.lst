@@ -1,0 +1,31 @@
+/-- **H2** (original statement of `AutoresearchYukawa.yukawa_admissible`). -/
+theorem H2_yukawa_admissible {(*@$\kappa$@*) : (*@$\mathbb{R}$@*)} (h(*@$\kappa$@*) : 0 < (*@$\kappa$@*)) : AdmissiblePotential (AutoresearchYukawa.g (*@$\kappa$@*)) :=
+  (((riesz_cm zero_le_one).mul (phi_cm h(*@$\kappa$@*).le)).congr (AutoresearchYukawa.g_eqOn (*@$\kappa$@*))).admissible
+
+/-- **H1** (statement of `AutoresearchDipolar.dipolar_admissible_all`; the original `dipolar_admissible` needed `0 < d`). -/
+theorem H1_dipolar_admissible (d : (*@$\mathbb{R}$@*)) : AdmissiblePotential (AutoresearchDipolar.g d) :=
+  ((((rpow_neg (by norm_num : (0 : (*@$\mathbb{R}$@*)) (*@$\le$@*) 1 / 2)).sub_comp_add_const (sq_nonneg d)).const_mul
+    zero_le_two).congr' fun _ _ => rfl).admissible
+
+/-- **H3L** (original statement of `AutoresearchKeldysh.keldysh_admissible`). -/
+theorem H3_keldysh_admissible {r0 : (*@$\mathbb{R}$@*)} (hr0 : 0 < r0) : AdmissiblePotential (AutoresearchKeldysh.keldysh r0) :=
+  (keldysh_cm hr0).admissible
+
+/-- The screened bilayer exciton potential is completely monotone (`(*@$\kappa$@*) (*@$\ge$@*) 0`, every `d`). -/
+theorem screenedDipolar_cm {(*@$\kappa$@*) : (*@$\mathbb{R}$@*)} (h(*@$\kappa$@*) : 0 (*@$\le$@*) (*@$\kappa$@*)) (d : (*@$\mathbb{R}$@*)) : IsCompletelyMonotoneOn (screenedDipolar (*@$\kappa$@*) d) :=
+  ((yukawa_cm h(*@$\kappa$@*)).sub_comp_add_const (sq_nonneg d)).const_mul zero_le_two
+
+/-- **Yukawa mixtures with a nonnegative spectral density are completely monotone**, provided
+`e^{-c(*@$\kappa$@*)} m((*@$\kappa$@*))` is integrable on `(0, (*@$\infty$@*))` for every `c > 0`. Proof: `t^{-1/2} (*@$\cdot$@*) (Laplace(m) (*@$\circ$@*) (*@$\surd$@*))`. -/
+theorem yukawaSpectrum_cm {m : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)} (hm : Measurable m) (hm0 : (*@$\forall$@*) (*@$\kappa$@*), 0 < (*@$\kappa$@*) (*@$\to$@*) 0 (*@$\le$@*) m (*@$\kappa$@*))
+    (hint : (*@$\forall$@*) c : (*@$\mathbb{R}$@*), 0 < c (*@$\to$@*) IntegrableOn (fun (*@$\kappa$@*) => Real.exp (-(c * (*@$\kappa$@*))) * m (*@$\kappa$@*)) (Ioi 0)) :
+    IsCompletelyMonotoneOn (yukawaSpectrum m) := -- proof elided
+
+/-- Second difference in `t = r(*@$^2$@*)` (shifts `0, c, 2c`): completely monotone for completely monotone `f`.
+This is NOT the equally spaced-layer quadrupole (shifts `0, d(*@$^2$@*), 4d(*@$^2$@*)`); see Part 3 and Part 4 (`quadrupolarPair_cm`). -/
+theorem secondDiff_cm {f : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)} (hf : IsCompletelyMonotoneOn f) {c : (*@$\mathbb{R}$@*)} (hc : 0 (*@$\le$@*) c) :
+    IsCompletelyMonotoneOn (fun t => f t - 2 * f (t + c) + f (t + 2 * c)) :=
+  ((hf.sub_comp_add_const hc).sub_comp_add_const hc).congr' fun t _ => by
+    show f t - f (t + c) - (f (t + c) - f (t + c + c)) = _
+    rw [show t + c + c = t + 2 * c by ring]
+    ring

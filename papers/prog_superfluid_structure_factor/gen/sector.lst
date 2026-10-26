@@ -1,0 +1,9 @@
+lemma exists_le_weighted_mean {(*@$\iota$@*) : Type*} [Fintype (*@$\iota$@*)] (w l : (*@$\iota$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) (hw : (*@$\forall$@*) i, 0 (*@$\le$@*) w i)
+    (hpos : 0 < (*@$\sum$@*) i, w i) : (*@$\exists$@*) i, 0 < w i (*@$\wedge$@*) l i * (*@$\sum$@*) j, w j (*@$\le$@*) (*@$\sum$@*) j, w j * l j := ... -- proof elided
+
+lemma rayleigh_expansion (hH : H.IsSymmetric) (x : E) :
+    ((*@$\langle$@*)x, H x(*@$\rangle$@*)_(*@$\mathbb{C}$@*)).re = (*@$\sum$@*) i, (*@$\Vert$@*)(*@$\langle$@*)hH.eigenvectorBasis rfl i, x(*@$\rangle$@*)_(*@$\mathbb{C}$@*)(*@$\Vert$@*) ^ 2 * hH.eigenvalues rfl i := ... -- proof elided
+
+theorem sector_eigenvalue_le (hH : H.IsSymmetric) ((*@$\varphi$@*) : E) (h(*@$\varphi$@*) : (*@$\varphi$@*) (*@$\ne$@*) 0) :
+    (*@$\exists$@*) i, (*@$\langle$@*)hH.eigenvectorBasis rfl i, (*@$\varphi$@*)(*@$\rangle$@*)_(*@$\mathbb{C}$@*) (*@$\ne$@*) 0 (*@$\wedge$@*)
+      hH.eigenvalues rfl i (*@$\le$@*) ((*@$\langle$@*)(*@$\varphi$@*), H (*@$\varphi$@*)(*@$\rangle$@*)_(*@$\mathbb{C}$@*)).re / (*@$\Vert$@*)(*@$\varphi$@*)(*@$\Vert$@*) ^ 2 := ... -- proof elided

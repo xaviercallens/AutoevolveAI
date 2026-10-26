@@ -1,0 +1,9 @@
+theorem sBog_sq {hc ks k : (*@$\mathbb{R}$@*)} (hhc : 0 < hc) (hk : 0 < k) (hks : 0 < ks) :
+    sBog hc ks k ^ 2 = k ^ 2 / (ks ^ 2 + k ^ 2) := ... -- proof elided
+
+theorem sBog_le_sqrt {hc ks k : (*@$\mathbb{R}$@*)} (hhc : 0 < hc) (hk : 0 < k) (hks : 0 < ks) :
+    sBog hc ks k (*@$\le$@*) Real.sqrt (k / (2 * ks)) := by
+  rw [(*@$\leftarrow$@*) Real.sqrt_sq (sBog_pos hhc hk hks).le]
+  apply Real.sqrt_le_sqrt
+  rw [sBog_sq hhc hk hks, div_le_div_iff(*@$_0$@*) (by positivity) (by positivity)]
+  nlinarith [mul_nonneg hk.le (sq_nonneg (k - ks))]

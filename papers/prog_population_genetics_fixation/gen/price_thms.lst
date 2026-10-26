@@ -1,0 +1,24 @@
+theorem price_equation (s : Finset (*@$\iota$@*)) (n w z z' : (*@$\iota$@*) (*@$\to$@*) K)
+    (hN : (*@$\sum$@*) i (*@$\in$@*) s, n i (*@$\ne$@*) 0) (hW : (*@$\sum$@*) i (*@$\in$@*) s, n i * w i (*@$\ne$@*) 0) :
+    wmean s n w * (zbarNext s n w z' - wmean s n z)
+      = wcov s n w z + wmean s n (fun i => w i * (z' i - z i)) := -- proof elided
+
+theorem wcov_eq_moment (s : Finset (*@$\iota$@*)) (n f g : (*@$\iota$@*) (*@$\to$@*) K) (hN : (*@$\sum$@*) i (*@$\in$@*) s, n i (*@$\ne$@*) 0) :
+    wcov s n f g = wmean s n (fun i => f i * g i) - wmean s n f * wmean s n g := -- proof elided
+
+theorem fisher_haploid (s : Finset (*@$\iota$@*)) (n w : (*@$\iota$@*) (*@$\to$@*) K)
+    (hN : (*@$\sum$@*) i (*@$\in$@*) s, n i (*@$\ne$@*) 0) (hW : (*@$\sum$@*) i (*@$\in$@*) s, n i * w i (*@$\ne$@*) 0) :
+    wmean s n w * (wbarNext s n w - wmean s n w) = wvar s n w := -- proof elided
+
+theorem fisher_haploid_div (s : Finset (*@$\iota$@*)) (n w : (*@$\iota$@*) (*@$\to$@*) K)
+    (hN : (*@$\sum$@*) i (*@$\in$@*) s, n i (*@$\ne$@*) 0) (hW : (*@$\sum$@*) i (*@$\in$@*) s, n i * w i (*@$\ne$@*) 0) :
+    wbarNext s n w - wmean s n w = wvar s n w / wmean s n w := -- proof elided
+
+theorem fisher_haploid_nondecreasing (s : Finset (*@$\iota$@*)) (n w : (*@$\iota$@*) (*@$\to$@*) (*@$\mathbb{R}$@*))
+    (hn : (*@$\forall$@*) i (*@$\in$@*) s, 0 (*@$\le$@*) n i) (hN : 0 < (*@$\sum$@*) i (*@$\in$@*) s, n i) (hW : 0 < (*@$\sum$@*) i (*@$\in$@*) s, n i * w i) :
+    wmean s n w (*@$\le$@*) wbarNext s n w := -- proof elided
+
+theorem price_equation_pos (s : Finset (*@$\iota$@*)) (n w z z' : (*@$\iota$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) (hs : s.Nonempty)
+    (hn : (*@$\forall$@*) i (*@$\in$@*) s, 0 < n i) (hw : (*@$\forall$@*) i (*@$\in$@*) s, 0 < w i) :
+    wmean s n w * (zbarNext s n w z' - wmean s n z)
+      = wcov s n w z + wmean s n (fun i => w i * (z' i - z i)) := -- proof elided

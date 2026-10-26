@@ -1,0 +1,27 @@
+
+-- PLANTED ESCAPES (negative control for source_scan.py); one per category
+theorem planted_sorry : False := by sorry
+theorem planted_admit : False := by admit
+theorem planted_nd : (2 : Nat) + 2 = 4 := by native_decide
+theorem planted_orb : True := by have := Lean.ofReduceBool; trivial
+axiom planted_axiom : False
+def planted_impl_spec : Nat := 0
+@[implemented_by planted_impl_spec] def planted_impl : Nat := 1
+@[extern "lean_planted"] def planted_extern : Nat := 1
+unsafe def planted_unsafe : Nat := 1
+@[csimp] theorem planted_csimp : @planted_impl = @planted_impl := rfl
+opaque planted_opaque : Nat
+partial def planted_partial (n : Nat) : Nat := planted_partial n
+set_option debug.skipKernelTC true in
+theorem planted_skip : False := sorry
+set_option pp.proofs false
+set_option maxHeartbeats 0
+open Lean Elab Command in
+elab "planted_cmd" : command => do modifyEnv id
+run_cmd pure ()
+#eval 1
+initialize planted_init : IO.Ref Nat ← IO.mkRef 0
+macro "planted_macro" : term => `(0)
+syntax "planted_syntax" : term
+@[command_elab Lean.Parser.Command.check] def planted_ce : Lean.Elab.Command.CommandElab := fun _ => pure ()
+#exit

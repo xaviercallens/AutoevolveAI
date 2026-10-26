@@ -1,0 +1,3205 @@
+{
+ "counts": {
+  "total": 420,
+  "forks": 317,
+  "non_forks": 103,
+  "private_total": 21,
+  "non_fork_outside_window": 21,
+  "kept": 82,
+  "kept_public": 63,
+  "kept_private": 19,
+  "science_relevant": 57,
+  "by_domain": {
+   "personal/other": 17,
+   "AI agents/methodology/verification": 16,
+   "physics": 12,
+   "mathematics": 11,
+   "cosmology": 8,
+   "numerics/software": 7,
+   "infrastructure/devops": 6,
+   "genetics/biology": 2,
+   "education": 2,
+   "fusion/plasma": 1
+  },
+  "window": "2025-10-26..2026-10-26",
+  "criteria": "created OR pushed on/after window start; isFork=false",
+  "empty_or_placeholder_repos": 12
+ },
+ "repos": [
+  {
+   "name": "AutoevolveAI",
+   "visibility": "PUBLIC",
+   "created": "2026-09-19",
+   "pushed": "2026-10-26",
+   "language": "Python",
+   "disk_kb": 189959,
+   "stars": 1,
+   "description": "",
+   "domain": "AI agents/methodology/verification",
+   "science_relevant": true,
+   "summary": "Verification-first harness (ANSE) for LLM-agent science: gates must be able to fail, claims must trace to artifacts; hosts the local-LLM/Lean/GPU tooling used by the other projects. README says an internal audit found 14 components reporting success without doing the work; not peer reviewed.",
+   "lean": {
+    "lean_files": 164,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 3,
+    "rs_files": 57,
+    "sundials_mention": true
+   },
+   "notebooks": 0,
+   "data_files": 688,
+   "tex_files": 118,
+   "py_files": 1004,
+   "commits_since_2025_10_26": 352,
+   "merged_prs": 7,
+   "tree_truncated": false,
+   "honesty_files": [
+    "docs/remediation/AUDIT_2026-09-25.md",
+    "docs/remediation/AUDIT_2026-09-26.md",
+    "docs/remediation/P0-7-status.md",
+    "docs/roadmap/RUNUX_HARDWARE_AUDIT_REPORT.md"
+   ],
+   "key_quotes": {
+    "docs/remediation/AUDIT_2026-09-25.md": [
+     "**Scope:** commissioned as \"analyse, audit and provide implementation plan\" covering Claude Code hardening, MCP, ANSE v12, T4 model deployment, night dream training, Redis long-term memory with GCS backup, and GCP T4 deployment of the DeepSeek Lean solver + open-weight model + LoRA.",
+     "nvidia-smi -L    \u2192 NVIDIA-SMI has failed... couldn't communicate with the NVIDIA driver (exit 9)",
+     "**Fix package exists:** `linux-modules-nvidia-580-server-6.8.0-1067-gcp` (exact) and `linux-modules-nvidia-580-server-gcp` (candidate `6.8.0-1067.75~22.04.1+2`, **tracks the kernel**). Use the flavour metapackage \u2014 the version-pinned one guarantees the GPU disappears again at the next kernel bump, which for a 01:00 training job means a silent nightly failure.",
+     "### 1.3 Redis does not exist on this machine"
+    ],
+    "docs/remediation/AUDIT_2026-09-26.md": [
+     "**Scope:** requested as \"ensure the system is fully deployed and working\" (GCP T4 VM, 2 disks, LTM, VectorDB, RAG, ANSE), followed by \"commit, push, merge and release,\" followed by this audit. This document is the honest reconciliation of what actually happened versus what was claimed in the interim, plus a fresh architecture and training-pipeline review.",
+     "**Status: this audit supersedes and extends `AUDIT_2026-09-25.md`.** That document is still substantially correct and is not restated in full here \u2014 read both. This one adds: a self-reported release-integrity incident, reproduced gate failures, a card-ledger reconciliation against git reality, a README/results fabrication audit, an architecture sprawl map, and a training-pipeline truth table.",
+     "The 14 commits containing P1-1 through P4-1 exist **only** on `night/remediation-2026-09-25`. The `release/v12.4.0` branch was cut from `main` (post PR #1), not from `night/...`, and only added a version bump, `CHANGELOG.md`, and `DEPLOYMENT_REPORT.md`. **The merge to `main` added zero lines of the remediation code it describes.** The two verification gates it claims pass do not:",
+     "[FAIL] Hallucinated imports (rl_agent_api, z3, rl_common, pymilvus, sentence_transformers,"
+    ]
+   }
+  },
+  {
+   "name": "DarkMatterK3-Home.github.io",
+   "visibility": "PUBLIC",
+   "created": "2026-07-04",
+   "pushed": "2026-10-11",
+   "language": "Python",
+   "disk_kb": 279491,
+   "stars": 0,
+   "description": "DarkMatterK3@Home as continuity of SETi@home to discover if Dark Matter and Energy are structured by K3 geometry structure",
+   "domain": "cosmology",
+   "science_relevant": true,
+   "summary": "Proposed distributed-computing project to test whether cosmic-web topology matches K3 moduli-space (Picard-Fuchs) structure; repo also holds the self-audits that gate-failed the laboratory-scale re-scope.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 159,
+   "tex_files": 20,
+   "py_files": 222,
+   "commits_since_2025_10_26": 380,
+   "merged_prs": 22,
+   "tree_truncated": false,
+   "honesty_files": [
+    "DATA_INTEGRITY_AUDIT.md",
+    "LESSONS_LEARNED.md",
+    "WP_A2_CIRCULARITY_AUDIT.md",
+    "briefs/D0_VERIFICATION/D0C_ENV_AUDIT.md",
+    "briefs/DEEPTHINK_DEBRIEF_AUDIT_2026_07_28.md",
+    "briefs/DEEPTHINK_DEBRIEF_AUDIT_2026_07_29.md",
+    "briefs/STREAM3_AUDIT_DIRECTIVES_2026_07_26.md",
+    "briefs/STREAM3_K3_SELECTION_ROUTE_AUDIT_2026_09_21.md",
+    "briefs/WP_A_DISCOVERY_PDF_AUDIT_2026_07_31.md",
+    "docs/CRITERION_STATUS.md",
+    "docs/STREAMS_STATUS_2026_07_24.md",
+    "docs/STREAMS_STATUS_2026_07_25.md"
+   ],
+   "key_quotes": {
+    "LESSONS_LEARNED.md": [
+     "# Lessons Learned: V5 Deep Review & Pivot (2026-07-14)",
+     "**Lesson**: Every numeric constant must be verified against an external",
+     "- No hardcoding of raw values from unverified sources",
+     "**Lesson**: The radius of convergence for a power series is a mathematical"
+    ],
+    "DATA_INTEGRITY_AUDIT.md": [
+     "- Latest Q1 2026 data from Euclid space telescope",
+     "- **Euclid Q1 Mission Data** (48.6%) \u2014 Latest space telescope observations"
+    ],
+    "WP_A2_CIRCULARITY_AUDIT.md": [
+     "# WP_A2_CIRCULARITY_AUDIT.md \u2014 Gate 0 of the Laboratory-Scale Re-Scope: FAIL",
+     "**Honest outcome up front:** **FAIL.** No region of the B1 window is simultaneously",
+     "hypothesis; a clean negative, reported with the same prominence as a positive.",
+     "## 4. Verdict and why it is final for this scope"
+    ]
+   }
+  },
+  {
+   "name": "GWAYA-GwenLayaOpenModel",
+   "visibility": "PUBLIC",
+   "created": "2026-10-03",
+   "pushed": "2026-10-25",
+   "language": "Python",
+   "disk_kb": 18792,
+   "stars": 0,
+   "description": "GWAYA: Fail-Closed Gate, AST Stub Auditing & Real Toolchain Verification for LLM Code Generation (Qwen series). MCP server & Ollama deployment.",
+   "domain": "AI agents/methodology/verification",
+   "science_relevant": true,
+   "summary": "Fail-closed verification gate for LLM-generated code (real compilers + sandboxed tests, AST stub auditing) with a paper and per-claim audits of its own numbers.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 210,
+   "tex_files": 32,
+   "py_files": 225,
+   "commits_since_2025_10_26": 217,
+   "merged_prs": 29,
+   "tree_truncated": false,
+   "honesty_files": [
+    "docs/CLAIM_AUDIT.md",
+    "docs/CLAIM_AUDIT_3100.md",
+    "docs/CLAIM_AUDIT_3120.md",
+    "docs/CLAIM_AUDIT_3120_author.md",
+    "docs/CLAIM_AUDIT_3130.md",
+    "docs/CLAIM_AUDIT_340.md",
+    "docs/CLAIM_AUDIT_350.md",
+    "docs/CLAIM_AUDIT_360.md",
+    "docs/CLAIM_AUDIT_370.md",
+    "docs/CLAIM_AUDIT_380.md",
+    "docs/CLAIM_AUDIT_390.md"
+   ],
+   "key_quotes": {
+    "docs/CLAIM_AUDIT.md": [
+     "Scope: `papers/gwenlaya_v4.tex` (line numbers below refer to it), `papers/gwenlaya_v4.bib`,",
+     "- **C (external/citations), 19 rows.** Every cited work exists and its arXiv id, authors and year match. One bib entry is wrong: the gwayav3 title does not match the Zenodo record. One README badge is overstated.",
+     "**Fix:** either update to \"7 lines, \\$1.98 (sum of `usd_estimate` = 1.9809)\" and add the two rows to the spend table, or pin the snapshot: \"Read from `spend_ledger.jsonl` as of 2026-10-08 08:04 (its first 5 lines, \\$1.54); two later lines (\\$0.441, a post-v3.3.1 TPU run including a 6-minute orphan VM) are outside this report.\" Either way, H13 is still not refuted.",
+     "4. **C12. WRONG. Bib entry `gwayav3`.** The title \"GWAYA v3: A Fail-Closed Verification Gate for LLM-Generated Code\" does not match the record. Zenodo record 10.5281/zenodo.23121788 is titled \"GWAYA v3.1: Fail-Closed Gate & Real Toolchain Verification for LLM Code Generation\", version 3.1.0, published 2026-10-03."
+    ],
+    "docs/CLAIM_AUDIT_3100.md": [
+     "| A6 | hidden suites: LeetCode mean 98 assertions, FSB 3.4, BCB 5.6 test methods; 149 references did not verify | `manifest_F.json` `counts.python.hidden_tests_per_task_by_source`, `reports.python.sources.*.sanity_drops` | V. Hidden-suite means 98.0 / 3.4 / 5.6; 20+49+80 = 149 `reference_fails_hidden`. |",
+     "| B6 | visible vs not visible CWR: 4B 0.124 vs 0.128, 9B 0.135 vs 0.135, 2B 0.067 vs 0.184 | `numbers_F_pm.json` `per_slice.python/gate_{visible,not_visible}` | X. Numbers V (0.124/0.128, 0.135/0.135, 0.067/0.184); **the reading is wrong (S1):** \"does not show an effect\" for the 2B; the marginal CIs [0.022,0.125] and [0.142,0.227] do not overlap. |"
+    ],
+    "docs/CLAIM_AUDIT_3120.md": [
+     "`docs/CLAIM_AUDIT_3120_author.md` (same ids). V = recomputed and matches to printed precision; VN = verified with a stated caveat or only partly verifiable; X = mismatch or unsupported statement (correct value given).",
+     "| D6 | 1,968 steps, 1,522 s, router 581 s; 154 hard negatives in train | V. status.jsonl 1522 / 581 s; `feedback_report.json` 154 train, 46 held out; manifest 1,968 steps (train wall 1,458 s inside the 1,522 s step). The plan's \"183 of 2,724\" is the Python count only (S6). |",
+     "| S8 | Section p2-bok, caveat on truncation | \"(plan text)\" for 690 / 26 / 1 / 85 | recomputed from rows: same values | sentence says recomputed by the audit; 2B and 4B truncation rates given |",
+     "- Two A31 secondary cells (4B and 2B HumanEval+ at the frozen threshold) do not meet rule (i) and are printed as such; the paper's wording \"met, barely\" for the 4B pooled is accurate (0.852 [0.812,0.884])."
+    ]
+   }
+  },
+  {
+   "name": "HiveMind",
+   "visibility": "PUBLIC",
+   "created": "2026-10-18",
+   "pushed": "2026-10-26",
+   "language": "Python",
+   "disk_kb": 17713,
+   "stars": 4,
+   "description": "HiveMind",
+   "domain": "AI agents/methodology/verification",
+   "science_relevant": true,
+   "summary": "Decentralised sparse-MoE training/inference over volunteer GPUs (Steam/BOINC/DiLoCo style). README states the legacy scientific-swarm paths are synthetic simulations and the only real-token evidence is a tiny CPU smoke test.",
+   "lean": {
+    "lean_files": 3,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 144,
+   "tex_files": 2,
+   "py_files": 304,
+   "commits_since_2025_10_26": 474,
+   "merged_prs": 127,
+   "tree_truncated": false,
+   "honesty_files": [
+    "docs/STEAM_STATUS.md"
+   ],
+   "key_quotes": {
+    "docs/STEAM_STATUS.md": [
+     "The legacy `3133700` App ID and `3133701` Depot ID constants remain in runtime code and test fixtures as local development defaults so all unit and integration tests pass deterministically. Do not use `3133700` to publish to SteamPipe; replace it with your own partner-assigned Valve App ID before uploading to Steamworks."
+    ]
+   }
+  },
+  {
+   "name": "HiveMind-home.github.ui",
+   "visibility": "PUBLIC",
+   "created": "2026-10-24",
+   "pushed": "2026-10-24",
+   "language": null,
+   "disk_kb": 1,
+   "stars": 0,
+   "description": "Federated open source AI like SETI@Home for AI",
+   "domain": "infrastructure/devops",
+   "science_relevant": false,
+   "summary": "Near-empty placeholder repo for the HiveMind@home front end (1 commit).",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 1,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "HiveMindatHome.github.io",
+   "visibility": "PUBLIC",
+   "created": "2026-10-24",
+   "pushed": "2026-10-26",
+   "language": "HTML",
+   "disk_kb": 314,
+   "stars": 0,
+   "description": "HiveMind@home & La Ruche \u2014 Cyber-Bee Community Supercomputer: Share idle consumer GPUs when not gaming, earn Compute Points, and use open Sparse MoE models (GWAYA Python, Gwen MoE, Astrophysics)",
+   "domain": "infrastructure/devops",
+   "science_relevant": false,
+   "summary": "Static project site for HiveMind@home / La Ruche (compute-reciprocity charter, no money involved).",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 3,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 9,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "Mirror-Map-Sieve",
+   "visibility": "PUBLIC",
+   "created": "2026-06-18",
+   "pushed": "2026-07-12",
+   "language": "Python",
+   "disk_kb": 49380,
+   "stars": 0,
+   "description": "Automated neuro-symbolic pipeline classifying Calabi-Yau periods \u2014 exact Q-nullspace algebraic shielding, 0-axiom Lean 4 formal verification, and Callens-ALIX INT64 attention kernels.",
+   "domain": "mathematics",
+   "science_relevant": true,
+   "summary": "Exploratory preprint and pipeline studying one weight-5 Apery-like binomial sum S20(n) and its possible Calabi-Yau-operator interpretation; README says explicitly 'We do not claim a discovery'.",
+   "lean": {
+    "lean_files": 18,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 1,
+   "data_files": 52,
+   "tex_files": 18,
+   "py_files": 77,
+   "commits_since_2025_10_26": 101,
+   "merged_prs": 1,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "OpenAI-NSE-Epistemic-Audit",
+   "visibility": "PUBLIC",
+   "created": "2026-09-10",
+   "pushed": "2026-09-19",
+   "language": "Python",
+   "disk_kb": 33975,
+   "stars": 4,
+   "description": "Epistemic Audit of the OpenAI Navier-Stokes/Euler Lean 4 Blow-up Proof \u2014 Physical Vacuity, Thermodynamic Censorship & Structural Instability",
+   "domain": "physics",
+   "science_relevant": true,
+   "summary": "Audit of the OpenAI Navier-Stokes/Euler Lean 4 blow-up proof read physically (Knudsen-number / continuum-assumption analysis) plus follow-up improvement plan; a later note withdraws earlier 'physical vacuity/censorship' wording.",
+   "lean": {
+    "lean_files": 22,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 3,
+    "rs_files": 20,
+    "sundials_mention": false
+   },
+   "notebooks": 5,
+   "data_files": 40,
+   "tex_files": 9,
+   "py_files": 67,
+   "commits_since_2025_10_26": 132,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [
+    "02_Empirical_Observation/SECTION_1_INVESTIGATION_PHYSICS_AUDIT.md",
+    "05_Community_Research_Directions/DUALSCALE_ASSESSMENT_AND_NEXT_DIRECTIONS.md",
+    "AUDIT_AND_IMPROVEMENT_PLAN.md"
+   ],
+   "key_quotes": {
+    "AUDIT_AND_IMPROVEMENT_PLAN.md": [
+     "> proofs are correct and this project reads them physically rather than refuting them. Withdrawn, wherever",
+     "> they appear below: \"physical vacuity\", thermodynamic/topological \"censorship\" (including the Lean files",
+     "- In `PhysLibThermodynamicCensorship.lean` (line 136), the proposition `physlib_admissible_non_vacuous` is declared as an `axiom`, despite the file header stating \"0 custom axioms\".",
+     "| **Continuum Hypothesis** | Continuous manifold $\\mathbb{R}^3$ ad infinitum | Knudsen number $Kn = \\ell_{\\text{mfp}} / \\ell_r \\ge 0.1$ | **$\\tau \\approx 9.0 \\times 10^{-16}\\text{ s}$**; PDE continuum assumption fails |"
+    ],
+    "02_Empirical_Observation/SECTION_1_INVESTIGATION_PHYSICS_AUDIT.md": [
+     "> \"interception\" theorem rested on an underived global enstrophy bound and is an unverified draft. OpenAI's proofs",
+     "that model describes a real fluid. It is a physical reading of a correct theorem, not a refutation, and it says",
+     "| `directive2_thermodynamic_paradox.py` | local energy density | $e_{\\text{local}}\\sim\\tau^{-1.010}\\to\\infty$ | the decoupled-temperature assumption fails |",
+     "plasma. Inside the model, energy balance holds and dissipation is non-negative; what fails is the assumption that"
+    ],
+    "05_Community_Research_Directions/DUALSCALE_ASSESSMENT_AND_NEXT_DIRECTIONS.md": [
+     "**Scope:** `~/xdev/SocrateAI-Numeric-DualScale-Solver`, `~/xdev/runux-ai-runtime`,",
+     "deconstruction\" points fail)",
+     "### 1.2 Physical claims that are overclaims",
+     "- **\"Incompressibility prohibits focal collapse.\"** Self-refuting in context: OpenAI's solution"
+    ]
+   }
+  },
+  {
+   "name": "OpenAI4F",
+   "visibility": "PUBLIC",
+   "created": "2026-09-24",
+   "pushed": "2026-09-24",
+   "language": "TypeScript",
+   "disk_kb": 85,
+   "stars": 0,
+   "description": "OpenSource AI for Finance",
+   "domain": "personal/other",
+   "science_relevant": false,
+   "summary": "Stub repo (OpenSource AI for Finance), 2 commits.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 3,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 2,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "OpenCycloInitiative",
+   "visibility": "PUBLIC",
+   "created": "2026-02-20",
+   "pushed": "2026-02-21",
+   "language": "Python",
+   "disk_kb": 414,
+   "stars": 0,
+   "description": "",
+   "domain": "genetics/biology",
+   "science_relevant": true,
+   "summary": "Design documents for an open-source algae photobioreactor unit (cyclo-vortex hydrodynamics); documentation-level, 25 commits over two days.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 7,
+   "tex_files": 0,
+   "py_files": 37,
+   "commits_since_2025_10_26": 25,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "OpenSourceAI4Finance-ControlCenter",
+   "visibility": "PUBLIC",
+   "created": "2026-09-24",
+   "pushed": "2026-09-24",
+   "language": null,
+   "disk_kb": 1,
+   "stars": 0,
+   "description": "",
+   "domain": "personal/other",
+   "science_relevant": false,
+   "summary": "Empty placeholder repo.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 1,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "OptimalEnergyAI",
+   "visibility": "PRIVATE",
+   "created": "2026-10-12",
+   "pushed": "2026-10-17",
+   "language": "TeX",
+   "disk_kb": 4177,
+   "stars": 0,
+   "description": null,
+   "domain": "mathematics",
+   "science_relevant": true,
+   "summary": "Applies the triangular-lattice universal-optimality result as a design idea for latent geometry in ML: Lean 4 spec, three CPU proof-of-concept experiments (hexagonal vs square grid, E8 vs Z^8 quantiser), plus business/IP planning docs. Private; no real-data PoC yet per README.",
+   "lean": {
+    "lean_files": 10,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 101,
+   "tex_files": 21,
+   "py_files": 88,
+   "commits_since_2025_10_26": 38,
+   "merged_prs": 10,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "PersonaShield",
+   "visibility": "PRIVATE",
+   "created": "2026-01-24",
+   "pushed": "2026-01-24",
+   "language": null,
+   "disk_kb": 0,
+   "stars": 0,
+   "description": null,
+   "domain": "personal/other",
+   "science_relevant": false,
+   "summary": "Private empty repo.",
+   "lean": {
+    "lean_files": null,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": null,
+    "sundials_mention": null
+   },
+   "notebooks": null,
+   "data_files": null,
+   "tex_files": null,
+   "py_files": null,
+   "commits_since_2025_10_26": null,
+   "merged_prs": 0,
+   "tree_truncated": null,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "ReadyPlayerTogether",
+   "visibility": "PUBLIC",
+   "created": "2026-08-06",
+   "pushed": "2026-08-23",
+   "language": "GDScript",
+   "disk_kb": 483743,
+   "stars": 0,
+   "description": "",
+   "domain": "personal/other",
+   "science_relevant": false,
+   "summary": "Godot 4 VR/desktop metaverse game project; not scientific.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 10,
+   "tex_files": 0,
+   "py_files": 136,
+   "commits_since_2025_10_26": 81,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-CohnKumar-8D-Numeric",
+   "visibility": "PUBLIC",
+   "created": "2026-10-11",
+   "pushed": "2026-10-11",
+   "language": null,
+   "disk_kb": 0,
+   "stars": 0,
+   "description": "",
+   "domain": "mathematics",
+   "science_relevant": true,
+   "summary": "Empty repo (created 2026-10-11) reserved for 8D Cohn-Kumar numerics; no content.",
+   "lean": {
+    "lean_files": null,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": null,
+    "sundials_mention": null
+   },
+   "notebooks": null,
+   "data_files": null,
+   "tex_files": null,
+   "py_files": null,
+   "commits_since_2025_10_26": null,
+   "merged_prs": 0,
+   "tree_truncated": null,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Dual-Scale-Agora-Lab",
+   "visibility": "PUBLIC",
+   "created": "2026-08-14",
+   "pushed": "2026-08-15",
+   "language": null,
+   "disk_kb": 255,
+   "stars": 0,
+   "description": "y. The goal is to build an \"Agora\" (a public gathering place) that attracts both elite scientists (Lean 4, string theory) and passionate citizen scientists on new scientific theory of the Dual Scale with an Holography Lab",
+   "domain": "cosmology",
+   "science_relevant": true,
+   "summary": "Near-empty README-level repo describing the Dual-Scale Agora lab aim; no code.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 2,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-DualScaleTopologicalUniverseModel-LeanProposal",
+   "visibility": "PUBLIC",
+   "created": "2026-07-15",
+   "pushed": "2026-10-10",
+   "language": "Lean",
+   "disk_kb": 16776,
+   "stars": 0,
+   "description": "Lean 4 formal definiton of a conjectured Dual Scale Topological Universe Model theory hypothesis",
+   "domain": "cosmology",
+   "science_relevant": true,
+   "summary": "Stream 1 of the Dual-Scale Topological Universe Model: Lean 4 formalisation of arithmetic/lattice claims (Tier A kernel-checked, Tier B conjectural); several early headline claims were retracted in July 2026.",
+   "lean": {
+    "lean_files": 47,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 1,
+   "data_files": 19,
+   "tex_files": 41,
+   "py_files": 56,
+   "commits_since_2025_10_26": 196,
+   "merged_prs": 7,
+   "tree_truncated": false,
+   "honesty_files": [
+    "STATUS_2026-07-24_PHASE_SETUP_COMPLETE.md",
+    "briefs/P1_DRAFT_STATUS_2026_07_29.md",
+    "briefs/STREAM1_S1_10_11_12_STATUS_AND_UNBLOCK_2026_07_26.md",
+    "briefs/STREAM2_EFT_ESCALATION_STATUS.md",
+    "briefs/WP_B_LEAN_ORACLE_AUDIT_2026_07_31.md"
+   ],
+   "key_quotes": {
+    "STATUS_2026-07-24_PHASE_SETUP_COMPLETE.md": [
+     "> verified, geometry predictable) were retracted on 2026-07-25 \u2014 see",
+     "| **S1-07 (Vacuous axioms)** | \u2705 CLOSED | Completed | No |",
+     "- Review brief with scope & directives",
+     "unconditionally) and one of the two real ones had a negative control that could never"
+    ],
+    "briefs/P1_DRAFT_STATUS_2026_07_29.md": [
+     "- **(iii) U1, T \u2245 U\u2295\u27e814\u27e9, Tier B** \u2014 `06-lattice.tex` Proposition `prop:usplit` (unconditional",
+     "statement about the exhibited Gram matrix) + `08-dolgachev-doran.tex` (conditional",
+     "either wrong would be a real overclaim:",
+     "by construction, rank(NS)=19 is forced; I wrote two explicit paragraphs (\"What it does not"
+    ],
+    "briefs/STREAM1_S1_10_11_12_STATUS_AND_UNBLOCK_2026_07_26.md": [
+     "| S1-11 | s10/s18 partner series **NOT integral** \u2014 complete proofs, witnesses `17/2`, `45/2` at n=2. s7 partner integrality: **PASS(7) only**, general case = named open goal. Two vacuous S1-03 \"integrality\" theorems disclosed (F6, README). | A / PASS(7) |",
+     "The candidate-separation picture, stated with its honest asymmetry: **s10/s18 partners are",
+     "s7 avoiding it is the anomaly and is verified PASS(7)/PASS(81-CAS), not proved.**",
+     "`python scripts/render_status_table.py` to merge our `open_goals.json` \u2014 **that script does not"
+    ]
+   }
+  },
+  {
+   "name": "SocrateAI-Lean-Lib",
+   "visibility": "PUBLIC",
+   "created": "2026-09-05",
+   "pushed": "2026-09-10",
+   "language": "Lean",
+   "disk_kb": 1343,
+   "stars": 0,
+   "description": "Formal Lean 4 Scientific Foundation Library \u2014 14 domains, 40+ modules, zero sorry, kernel-verified",
+   "domain": "mathematics",
+   "science_relevant": true,
+   "summary": "Lean 4 library of 14 'domains' / 40+ modules claimed zero-sorry with an axiom-audit report; 'computational zero axioms' checks are theorems about specific numbers.",
+   "lean": {
+    "lean_files": 114,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 2,
+   "tex_files": 0,
+   "py_files": 4,
+   "commits_since_2025_10_26": 12,
+   "merged_prs": 1,
+   "tree_truncated": false,
+   "honesty_files": [
+    "docs/AXIOM_AUDIT_REPORT.md"
+   ],
+   "key_quotes": {
+    "docs/AXIOM_AUDIT_REPORT.md": [
+     "| `SocrateAI.AlienMath.KalChargingMatrix` | `charging_potential_nonnegative` | `COMPUTATIONAL_ZERO_AXIOMS` | `None (0)` | \u2705 PASS |",
+     "| `SocrateAI.ChameleonGravity.DACModel` | `regime_II_mass_negative` | `COMPUTATIONAL_ZERO_AXIOMS` | `None (0)` | \u2705 PASS |",
+     "| `SocrateAI.Core.ReferenceTheorems` | `desi_wa_is_negative` | `COMPUTATIONAL_ZERO_AXIOMS` | `None (0)` | \u2705 PASS |",
+     "| `SocrateAI.Core.ReferenceTheorems` | `nanograv_slope_negative` | `COMPUTATIONAL_ZERO_AXIOMS` | `None (0)` | \u2705 PASS |"
+    ]
+   }
+  },
+  {
+   "name": "SocrateAI-Lean-Verification",
+   "visibility": "PRIVATE",
+   "created": "2026-06-13",
+   "pushed": "2026-06-13",
+   "language": "Lean",
+   "disk_kb": 5012,
+   "stars": 0,
+   "description": null,
+   "domain": "mathematics",
+   "science_relevant": true,
+   "summary": "Private Lean 4 library on tensor rank / asymptotic algebra / 'Kal Alien Mathematics' (high-level only).",
+   "lean": {
+    "lean_files": 56,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 1,
+   "data_files": 4,
+   "tex_files": 11,
+   "py_files": 12,
+   "commits_since_2025_10_26": 1,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Numeric-DualScale-Solver",
+   "visibility": "PUBLIC",
+   "created": "2026-08-30",
+   "pushed": "2026-09-22",
+   "language": "Python",
+   "disk_kb": 43038,
+   "stars": 0,
+   "description": "",
+   "domain": "numerics/software",
+   "science_relevant": true,
+   "summary": "LeanFlow: pseudo-spectral 2D/3D Navier-Stokes solver with a dyadic shell sub-grid model, Rust crates + Lean 4 certificates, and a codebase audit that fixed tautological negative controls.",
+   "lean": {
+    "lean_files": 40,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 5,
+    "rs_files": 23,
+    "sundials_mention": true
+   },
+   "notebooks": 0,
+   "data_files": 52,
+   "tex_files": 20,
+   "py_files": 171,
+   "commits_since_2025_10_26": 51,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [
+    ".agents/agents/fsi_multiphysics_auditor.md",
+    ".agents/agents/licensing_audit_agent.md",
+    ".agents/agents/qa_scientific_auditor.md",
+    "reports/codebase_audit_and_improvement_plan.md"
+   ],
+   "key_quotes": {
+    "reports/codebase_audit_and_improvement_plan.md": [
+     "**Scope:** Full Codebase Inspection (`lean4/`, `crates/`, `src/dualscale_solver/`, `tests/`, `scripts/verify.sh`, Governance & Documentation)",
+     "1. **Remediated Epistemic Vulnerabilities (Phase 8 Negative Controls):** Tautological local literal checks were replaced by an authoritative validation engine (`AuditGateEnforcer`), properly rejecting corrupted payloads for HIL latency, CAD non-manifold topology, gRPC packet loss, FSI traction mismatch, and tampered license tokens.",
+     "5. **Scientific Report & Nomenclature Alignment:** Resolved inline formula contradictions in the LaTeX abstract ($\\Omega(t) \\le 1/\\alpha'$ removed in favor of exact $\\Omega(t) \\le \\Omega(0)$) and renamed VAD performance claims to \"Surrogate Optimization / Directional Shear Reduction\" in alignment with clinical safety caveats.",
+     "Combined with Orszag 2/3 spectral dealiasing mask, ensuring unconditional numerical stability and exact energy-enstrophy balances."
+    ]
+   }
+  },
+  {
+   "name": "SocrateAI-Numeric-DualScale-Solver-Enterprise",
+   "visibility": "PRIVATE",
+   "created": "2026-08-31",
+   "pushed": "2026-09-18",
+   "language": "Python",
+   "disk_kb": 43224,
+   "stars": 0,
+   "description": null,
+   "domain": "numerics/software",
+   "science_relevant": true,
+   "summary": "Private near-copy of the LeanFlow NS solver repository (high-level only).",
+   "lean": {
+    "lean_files": 40,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 5,
+    "rs_files": 69,
+    "sundials_mention": true
+   },
+   "notebooks": 0,
+   "data_files": 54,
+   "tex_files": 20,
+   "py_files": 171,
+   "commits_since_2025_10_26": 58,
+   "merged_prs": 3,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Scientific-Agora",
+   "visibility": "PRIVATE",
+   "created": "2026-05-31",
+   "pushed": "2026-06-26",
+   "language": "TeX",
+   "disk_kb": 184610,
+   "stars": 0,
+   "description": null,
+   "domain": "AI agents/methodology/verification",
+   "science_relevant": true,
+   "summary": "Private multi-agent infrastructure/workspace of the SocrateAI Agora (large Lean+Rust+TeX tree); identical metrics to NewDiscoveries, probably the same repository under a former name.",
+   "lean": {
+    "lean_files": 200,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 5,
+    "rs_files": 43,
+    "sundials_mention": true
+   },
+   "notebooks": 1,
+   "data_files": 251,
+   "tex_files": 95,
+   "py_files": 768,
+   "commits_since_2025_10_26": 36,
+   "merged_prs": 7,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Scientific-Agora-AlphaEvolve-K3-T2",
+   "visibility": "PUBLIC",
+   "created": "2026-07-28",
+   "pushed": "2026-07-28",
+   "language": "Python",
+   "disk_kb": 210,
+   "stars": 0,
+   "description": "",
+   "domain": "cosmology",
+   "science_relevant": true,
+   "summary": "Small prototype linking Python tensor optimisation to a Lean 4 JSON-RPC daemon for K3 x T^2 compactification search.",
+   "lean": {
+    "lean_files": 4,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 36,
+   "tex_files": 0,
+   "py_files": 66,
+   "commits_since_2025_10_26": 9,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Scientific-Agora-K3-DarkMatter",
+   "visibility": "PUBLIC",
+   "created": "2026-06-25",
+   "pushed": "2026-10-10",
+   "language": "Python",
+   "disk_kb": 57301,
+   "stars": 0,
+   "description": "Automated Algebraic Derivation and Formal Verification of Asymmetric 4D K3 String Vacua for Fuzzy Dark Matter.Tags: string-theory dark-matter lean4 astrophysics sympy public-scienceLicense: MIT (Code)",
+   "domain": "cosmology",
+   "science_relevant": true,
+   "summary": "Dual-scale topological universe model repo: Cooper s7/s10 operator identities proved in Lean, attempted K3/dark-matter links; README discloses that C1/C2 lattice numbers were retracted.",
+   "lean": {
+    "lean_files": 64,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 3,
+   "data_files": 123,
+   "tex_files": 33,
+   "py_files": 216,
+   "commits_since_2025_10_26": 485,
+   "merged_prs": 62,
+   "tree_truncated": false,
+   "honesty_files": [
+    "PROOF_STATUS.txt",
+    "archive/pre-ledger/CAVEATS.md",
+    "archive/pre-ledger/CURRENT_SESSION_CONTINUATION_STATUS.md",
+    "archive/pre-ledger/PROJECT_STATUS_TRACKER.md",
+    "briefs/EXTERNAL_REVIEW_FABLE51_AUDIT_AND_DIRECTIONS_2026_09_27.md",
+    "briefs/STREAM1_S1_10_11_12_STATUS_AND_UNBLOCK_2026_07_26.md",
+    "briefs/STREAM1_WP_B1_STATUS_2026_07_25.md",
+    "briefs/STREAM2_CONTINUATION_STATUS_2026_07_25.md",
+    "briefs/STREAM2_STATUS_FOR_DEEPTHINK_2026_07_25.md",
+    "briefs/STREAM2_STATUS_TABLE_RENDERER_2026_09_27.md",
+    "briefs/STREAM2_TO_STREAM1_E009_STATUS_2026_07_26.md",
+    "briefs/STREAM2_TO_STREAM3_STATUS_AND_DIRECTIVES_2026_07_26.md"
+   ],
+   "key_quotes": {
+    "PROOF_STATUS.txt": [
+     "Scope:  Cooper s7 (bulk A183204, partner A279619) and s10 (bulk A005260, rational partner).",
+     "Epistemic scope (VISION \u00a72): This is a MATHEMATICAL operator identity only.",
+     "It does NOT establish any bulk<->brane physical coupling; that interpretation"
+    ],
+    "briefs/EXTERNAL_REVIEW_FABLE51_AUDIT_AND_DIRECTIONS_2026_09_27.md": [
+     "- The review's own caveat: \"literature identifiers below are from memory and should be pinned before",
+     "| # | review clause (Stream-2 scope) | source of confirmation |",
+     "**Findings in band (not failures of the review):**",
+     "`ratio_fails_at_every_class` CharactersAll.lean:215, `literal_lock_fails_at_2A` ForgerTest.lean:72);"
+    ],
+    "briefs/STREAM1_S1_10_11_12_STATUS_AND_UNBLOCK_2026_07_26.md": [
+     "| S1-11 | s10/s18 partner series **NOT integral** \u2014 complete proofs, witnesses `17/2`, `45/2` at n=2. s7 partner integrality: **PASS(7) only**, general case = named open goal. Two vacuous S1-03 \"integrality\" theorems disclosed (F6, README). | A / PASS(7) |",
+     "The candidate-separation picture, stated with its honest asymmetry: **s10/s18 partners are",
+     "s7 avoiding it is the anomaly and is verified PASS(7)/PASS(81-CAS), not proved.**",
+     "`python scripts/render_status_table.py` to merge our `open_goals.json` \u2014 **that script does not"
+    ]
+   }
+  },
+  {
+   "name": "SocrateAI-Scientific-Agora-LeanFlow",
+   "visibility": "PRIVATE",
+   "created": "2026-09-19",
+   "pushed": "2026-10-26",
+   "language": "TeX",
+   "disk_kb": 799,
+   "stars": 0,
+   "description": null,
+   "domain": "numerics/software",
+   "science_relevant": true,
+   "summary": "Private planning repository for a general MCP server for stiff solvers, TDA and Lean-checked data certificates; README: 'There is no server code yet'.",
+   "lean": {
+    "lean_files": 3,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 1,
+    "rs_files": 1,
+    "sundials_mention": true
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 1,
+   "py_files": 1,
+   "commits_since_2025_10_26": 4,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Scientific-Agora-LeanMaster",
+   "visibility": "PUBLIC",
+   "created": "2026-09-12",
+   "pushed": "2026-10-25",
+   "language": "Lean",
+   "disk_kb": 95383,
+   "stars": 0,
+   "description": "",
+   "domain": "physics",
+   "science_relevant": true,
+   "summary": "Lean 4 + Mathlib formalisation of T-duality, double field theory, K3 x T^2 lattices and Mathieu-moonshine arithmetic; README revised after an audit found over-claims ('first fully certified String Theory' withdrawn).",
+   "lean": {
+    "lean_files": 887,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 1,
+    "rs_files": 1,
+    "sundials_mention": true
+   },
+   "notebooks": 1,
+   "data_files": 1010,
+   "tex_files": 79,
+   "py_files": 138,
+   "commits_since_2025_10_26": 191,
+   "merged_prs": 5,
+   "tree_truncated": false,
+   "honesty_files": [
+    "contrib/openai_math_corollaries/audit/autoresearch_2026-10-25/H9/AUDIT.md",
+    "contrib/openai_math_corollaries/audit/triangular/ledger/manuscript_audit_2026-10-11.md",
+    "contrib/openai_math_corollaries/papers/ar_bogoliubov_sk/AUDIT.md",
+    "contrib/openai_math_corollaries/papers/ar_dipolar_exciton/AUDIT.md",
+    "contrib/openai_math_corollaries/papers/ar_keldysh_tmd/AUDIT.md",
+    "contrib/openai_math_corollaries/papers/ar_sigma3_enstrophy/AUDIT.md",
+    "contrib/openai_math_corollaries/papers/ar_yukawa_crystal/AUDIT.md",
+    "papers/publication/axiom_audit_log.txt"
+   ],
+   "key_quotes": {
+    "papers/publication/axiom_audit_log.txt": [
+     "'DoubleFieldTheory.K3Topology.k3_euler_characteristic' does not depend on any axioms",
+     "'DoubleFieldTheory.K3Topology.k3_atiyah_singer_dirac_index' does not depend on any axioms",
+     "'DualScaleValidation.Observables.tensor_to_scalar_ratio_reduction' does not depend on any axioms",
+     "'DualScaleValidation.UseCase2.bps_cross_multiplication_lock' does not depend on any axioms"
+    ],
+    "contrib/openai_math_corollaries/papers/ar_bogoliubov_sk/AUDIT.md": [
+     "Date: 2026-10-25. Scope: `main.tex`/`main.pdf`, `gen_numbers.tex`, `gen_inputs.py`, `ledger/`, `publication_meta.json`, `data/`,",
+     "comes from a result file. The tiers are honest, and the citations are real and quoted faithfully. The",
+     "- `s4_strict : sBog 1 1 2 < \u221a(2/(2\u00b71))`. The bound is strict away from `k = ks`, so it does not hold trivially as an equality.",
+     "- `s4_disp_nonvacuous`. The hypotheses of `diffraction_test_dispersion` (`hfeyn`, `hpeak`, `S > 0`) can all hold at once: with `S = 1` and `epsSq = 0` it concludes `0 \u2260 bogoliubovSq 1 1 1`."
+    ],
+    "contrib/openai_math_corollaries/papers/ar_dipolar_exciton/AUDIT.md": [
+     "Scope: `main.tex`/`main.pdf`, `ledger/`, `publication_meta.json`, `data/`, `results/autoresearch/2026-10-25/H1/contribution/`,",
+     "- `papers/ar_dipolar_exciton/audit/audit_epstein_check.py`: an independent numerical check that does not use Ewald",
+     "This is C^\u221e (not analytic), nonnegative and completely monotone, which matches \u00a7Setting.",
+     "One feature is not mentioned in the paper: values pass through `ENNReal.ofReal`, so a negative g would be clipped to"
+    ]
+   }
+  },
+  {
+   "name": "SocrateAI-Scientific-Agora-Physique-Cinetique",
+   "visibility": "PUBLIC",
+   "created": "2026-06-22",
+   "pushed": "2026-09-27",
+   "language": "Jupyter Notebook",
+   "disk_kb": 5095,
+   "stars": 0,
+   "description": "",
+   "domain": "physics",
+   "science_relevant": true,
+   "summary": "Exact-rational kinetic response-function engine with Lean proofs and comparison to published data; carries RETRACTIONS and two audits that found phantom simulation output and stub kernels.",
+   "lean": {
+    "lean_files": 6,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 1,
+    "rs_files": 2,
+    "sundials_mention": false
+   },
+   "notebooks": 4,
+   "data_files": 16,
+   "tex_files": 4,
+   "py_files": 35,
+   "commits_since_2025_10_26": 57,
+   "merged_prs": 4,
+   "tree_truncated": false,
+   "honesty_files": [
+    "AUDIT_SUMMARY.md",
+    "SCIENTIFIC_AUDIT_REPORT.md"
+   ],
+   "key_quotes": {
+    "AUDIT_SUMMARY.md": [
+     "**Audit Scope:** Verify alignment between documented claims and actual implementation",
+     "This repository had undergone one prior audit (recorded in `RETRACTIONS.md`), with corrections applied to the codebase. A comprehensive secondary audit revealed:",
+     "This is exactly the fabricated phantom simulation that `RETRACTIONS.md` \u00a7R2 identifies as \"not produced by any code in this repository.\" The commit message claiming to \"remove floating point JSON\" (217f94a) **never touched this file** \u2014 it only added an unrelated script.",
+     "`KineticStage.evaluate_bakry_emery_L_star()` builds a full SymPy Ricci tensor + metric object, then discards it and returns `2 * d` \u2014 which is just the dimension multiplied by 2. The code does nothing with the manifold/tensor structure it creates."
+    ],
+    "SCIENTIFIC_AUDIT_REPORT.md": [
+     "- **Status:** **FAIL (Corrected)**",
+     "2. **Phenomenological Stub (Rule 5 / Unvalidated Applications):** The Godfrin agent extracted a roton scattering kernel that was merely a parameterized polynomial `1 + 0.8 * cos(theta)^2` rather than empirical ILL IN5 data. Claiming this as \"data extraction\" violates the epistemological rigor established in `LL.md` Lesson 2 and Lesson 19.",
+     "- **Honest Data Labeling:** All phenomenological polynomials are explicitly labeled as \"Algebraic Stubs (Pending ILL IN5 data ingestion)\".",
+     "1. **Adversarial Verification:** All numerical outputs generated by Python are now considered unverified hypotheses until fully formalized by a `lake build` step."
+    ]
+   }
+  },
+  {
+   "name": "SocrateAI-Scientific-Agora-RamanujanNeuroSymbolic",
+   "visibility": "PUBLIC",
+   "created": "2026-08-09",
+   "pushed": "2026-08-28",
+   "language": "Lean",
+   "disk_kb": 100620,
+   "stars": 0,
+   "description": "",
+   "domain": "mathematics",
+   "science_relevant": true,
+   "summary": "Automated pipeline on K3xT^2, mock modular forms and hydrodynamic limits; huge Lean tree (4,471 .lean files, likely generated).",
+   "lean": {
+    "lean_files": 4471,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 38,
+   "tex_files": 99,
+   "py_files": 98,
+   "commits_since_2025_10_26": 91,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Scientific-AlienMathematics-Foundation",
+   "visibility": "PUBLIC",
+   "created": "2026-06-08",
+   "pushed": "2026-06-13",
+   "language": "Python",
+   "disk_kb": 2841,
+   "stars": 0,
+   "description": "",
+   "domain": "mathematics",
+   "science_relevant": true,
+   "summary": "Retrospective of a June 2026 AI-driven 'alien mathematics' exploration: self-described failures, one claimed publishable result, lessons.",
+   "lean": {
+    "lean_files": 16,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 7,
+   "tex_files": 3,
+   "py_files": 7,
+   "commits_since_2025_10_26": 2,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Scientific-AutoEvolve-K3xT2",
+   "visibility": "PUBLIC",
+   "created": "2026-07-29",
+   "pushed": "2026-10-25",
+   "language": "Python",
+   "disk_kb": 41998,
+   "stars": 0,
+   "description": "AlphaEvolve neuro-symbolic framework for cosmological K3\u00d7T\u00b2 geometry discovery",
+   "domain": "cosmology",
+   "science_relevant": true,
+   "summary": "AlphaEvolve-style evolutionary search for K3 x T^2 cosmology models with DESI BAO likelihood and nested sampling; docs say no definitive empirical discovery claimed and record a decisive NANOGrav refutation of one spectrum.",
+   "lean": {
+    "lean_files": 7,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": true
+   },
+   "notebooks": 0,
+   "data_files": 408,
+   "tex_files": 22,
+   "py_files": 224,
+   "commits_since_2025_10_26": 144,
+   "merged_prs": 1,
+   "tree_truncated": false,
+   "honesty_files": [
+    "brief/euclid_q1_data_audit_certificate.md",
+    "docs/EPISTEMIC_STATUS_AND_EVIDENCE_SYNTHESIS.md",
+    "docs/PEER_REVIEW_AUDIT_REPORT.md",
+    "specs/phase10_math_physics_audit.md",
+    "specs/phase10_physics_audit_and_lowtier_plan.md",
+    "specs/phase11_scientific_rigor_audit.md",
+    "specs/phase12_scientific_rigor_audit.md",
+    "specs/phase9_critical_audit_and_gaps.md"
+   ],
+   "key_quotes": {
+    "docs/EPISTEMIC_STATUS_AND_EVIDENCE_SYNTHESIS.md": [
+     "> - **We do not yet claim definitive empirical *discovery* in the strict laboratory sense** (definitive physical confirmation requires primary measurements from LiteBIRD, DUNE, or HERA).",
+     "3. **NANOGrav 15-Year Refutation Check (Self-Correction)**:",
+     "- The framework demonstrated self-correcting rigor: testing an unconstrained steep primordial axion spectrum ($\\gamma = 4.847$) against NANOGrav 15-year PTA data resulted in decisive refutation ($\\ln B = -51.58$), confirming that the observed nHz stochastic background is astrophysical (SMBHB), not a runaway string relic."
+    ]
+   }
+  },
+  {
+   "name": "SocrateAI-Scientific-Communication",
+   "visibility": "PUBLIC",
+   "created": "2026-09-06",
+   "pushed": "2026-09-10",
+   "language": "TeX",
+   "disk_kb": 2847,
+   "stars": 0,
+   "description": "",
+   "domain": "AI agents/methodology/verification",
+   "science_relevant": true,
+   "summary": "Papers plus the reviews that examined them, organised by claim strength, including claims that did not survive.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 6,
+   "py_files": 5,
+   "commits_since_2025_10_26": 20,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Scientific-CondensedMatterTheory",
+   "visibility": "PUBLIC",
+   "created": "2026-09-27",
+   "pushed": "2026-10-10",
+   "language": "Python",
+   "disk_kb": 7406,
+   "stars": 0,
+   "description": "",
+   "domain": "physics",
+   "science_relevant": true,
+   "summary": "AdS/CMT literature review (73 arXiv papers, RAG on AutoevolveAI's vector store) plus Lean offsets file with an explicit 'not proved' section.",
+   "lean": {
+    "lean_files": 5,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": true
+   },
+   "notebooks": 0,
+   "data_files": 291,
+   "tex_files": 15,
+   "py_files": 126,
+   "commits_since_2025_10_26": 158,
+   "merged_prs": 3,
+   "tree_truncated": false,
+   "honesty_files": [
+    "lean/dtn_offsets/STATUS.md"
+   ],
+   "key_quotes": {
+    "lean/dtn_offsets/STATUS.md": [
+     "## What is not proved, and what this does not show"
+    ]
+   }
+  },
+  {
+   "name": "SocrateAI-Scientific-DualScaleSimulator",
+   "visibility": "PUBLIC",
+   "created": "2026-09-10",
+   "pushed": "2026-10-10",
+   "language": "Python",
+   "disk_kb": 43326,
+   "stars": 0,
+   "description": "Mechanized T-Duality and Frontier String Dynamics on K3 x T2 with LeanFlow, TDA, and Lean 4 Certification",
+   "domain": "physics",
+   "science_relevant": true,
+   "summary": "T-duality / string-dynamics simulator on K3 x T^2 with LeanFlow, TDA and Lean certification; no README.",
+   "lean": {
+    "lean_files": 26,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 1,
+    "rs_files": 9,
+    "sundials_mention": false
+   },
+   "notebooks": 1,
+   "data_files": 724,
+   "tex_files": 7,
+   "py_files": 420,
+   "commits_since_2025_10_26": 321,
+   "merged_prs": 1,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Scientific-Elenchus",
+   "visibility": "PRIVATE",
+   "created": "2026-09-18",
+   "pushed": "2026-09-20",
+   "language": "Python",
+   "disk_kb": 635,
+   "stars": 0,
+   "description": null,
+   "domain": "AI agents/methodology/verification",
+   "science_relevant": true,
+   "summary": "Private laboratory method + harness for AI-assisted science: cross-examine claims with tiers and refuting gates ('it removes false confidence, and that is all').",
+   "lean": {
+    "lean_files": 9,
+    "lakefile": false,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 1,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 80,
+   "tex_files": 0,
+   "py_files": 36,
+   "commits_since_2025_10_26": 24,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Scientific-FusionEnergy",
+   "visibility": "PUBLIC",
+   "created": "2026-10-19",
+   "pushed": "2026-10-19",
+   "language": null,
+   "disk_kb": 0,
+   "stars": 0,
+   "description": "",
+   "domain": "fusion/plasma",
+   "science_relevant": true,
+   "summary": "Empty repository (created 2026-10-19) reserved for fusion work; no content in the repo itself.",
+   "lean": {
+    "lean_files": null,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": null,
+    "sundials_mention": null
+   },
+   "notebooks": null,
+   "data_files": null,
+   "tex_files": null,
+   "py_files": null,
+   "commits_since_2025_10_26": null,
+   "merged_prs": 0,
+   "tree_truncated": null,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Scientific-Genetic",
+   "visibility": "PUBLIC",
+   "created": "2026-10-20",
+   "pushed": "2026-10-26",
+   "language": "TeX",
+   "disk_kb": 25236,
+   "stars": 0,
+   "description": "",
+   "domain": "genetics/biology",
+   "science_relevant": true,
+   "summary": "Lean 4 + Python/Rust hub for reverse transcription, chromatin remodelling and E8 dicodon ideas; AUDIT_2026-10-21 records a model-output (POLE P286R TMB) as not an observation and a refuted stage-removal model class.",
+   "lean": {
+    "lean_files": 26,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 1,
+    "rs_files": 15,
+    "sundials_mention": true
+   },
+   "notebooks": 0,
+   "data_files": 73,
+   "tex_files": 26,
+   "py_files": 33,
+   "commits_since_2025_10_26": 57,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [
+    "docs/AUDIT_2026-10-21.md",
+    "docs/CONTROVERSY_AND_EPISTEMIC_AUDIT.md"
+   ],
+   "key_quotes": {
+    "docs/AUDIT_2026-10-21.md": [
+     "Scope: Papers D and E, University Textbook, Lean files, `data/*peer_review.json`.",
+     "4. **POLE P286R TMB 12500/9 mut/Mb** is a model output, not an observation. *Labelled, then tested and refuted \u2014 see below.*",
+     "6. **GAR.H15's mechanism for POLE P286R is refuted** (edition 3). Not a parameter problem: the whole stage-removal model class fails. See below.",
+     "## Edition 3 result: stage-removal models refuted"
+    ],
+    "docs/CONTROVERSY_AND_EPISTEMIC_AUDIT.md": [
+     "Every mathematical and biological claim in **`SocrateAI-Scientific-Genetic`** undergoes a 5-round adversarial peer-review tribunal led by **`claude-opus-4-6`** (co-synthesized with **`gemini-4-argon`**) enforcing the 6 external referee hardness gates (`ARGOS-PEER-008` through `ARGOS-PEER-013`) and the honest controversy disclosure protocol (`ARGOS-CENTAUR-005`).",
+     "- **`ARGOS-PEER-009` (Mathematical Honesty & Precise Naming):** Every theorem title matches the exact algebraic/analytic object proved in Lean 4."
+    ]
+   }
+  },
+  {
+   "name": "SocrateAI-Scientific-LLeanM",
+   "visibility": "PUBLIC",
+   "created": "2026-08-10",
+   "pushed": "2026-08-10",
+   "language": null,
+   "disk_kb": 0,
+   "stars": 0,
+   "description": "",
+   "domain": "personal/other",
+   "science_relevant": false,
+   "summary": "Empty repository.",
+   "lean": {
+    "lean_files": null,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": null,
+    "sundials_mention": null
+   },
+   "notebooks": null,
+   "data_files": null,
+   "tex_files": null,
+   "py_files": null,
+   "commits_since_2025_10_26": null,
+   "merged_prs": 0,
+   "tree_truncated": null,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Scientific-LeanMaster-CoreStringTheoryFormalization",
+   "visibility": "PUBLIC",
+   "created": "2026-09-16",
+   "pushed": "2026-09-16",
+   "language": null,
+   "disk_kb": 1,
+   "stars": 0,
+   "description": "First string theory formalization",
+   "domain": "physics",
+   "science_relevant": true,
+   "summary": "Placeholder with one commit ('First string theory formalization').",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 1,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Scientific-Mathesis",
+   "visibility": "PUBLIC",
+   "created": "2026-08-13",
+   "pushed": "2026-08-25",
+   "language": "Python",
+   "disk_kb": 751,
+   "stars": 0,
+   "description": "la mathesis universalis de Leibniz, le programme d'une notation formelle universelle au service de toutes les sciences, est litt\u00e9ralement la fiche de poste de ce stream 0",
+   "domain": "AI agents/methodology/verification",
+   "science_relevant": true,
+   "summary": "Stream 0 shared notation, verification kernel and epistemic ledger for the other streams; audit pack warns non-vacuous witnessed theorems can still be the wrong statement.",
+   "lean": {
+    "lean_files": 13,
+    "lakefile": false,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 1,
+    "rs_files": 3,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 3,
+   "tex_files": 1,
+   "py_files": 16,
+   "commits_since_2025_10_26": 24,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [
+    "docs/AUDIT_PACK.md"
+   ],
+   "key_quotes": {
+    "docs/AUDIT_PACK.md": [
+     "non-vacuous, carry witnesses in both polarities, and still be the wrong statement \u2014 about a",
+     "degenerate case, with a quantifier in the wrong order, or named after a theorem it does not",
+     "**Does not say:** that these five tiers are the right five, or that \"Literature\" belongs",
+     "**Does not say:** anything about cycles. A ledger with `a \u2192 b \u2192 a` is transitively closed and"
+    ]
+   }
+  },
+  {
+   "name": "SocrateAI-Scientific-MechanicaFluidorum",
+   "visibility": "PUBLIC",
+   "created": "2026-08-12",
+   "pushed": "2026-10-25",
+   "language": "Python",
+   "disk_kb": 10501,
+   "stars": 0,
+   "description": "La r\u00e9duction du probl\u00e8me de Navier-Stokes L'Hypoth\u00e8se U sert de goulot d'\u00e9tranglement conceptuel : toute la difficult\u00e9 du probl\u00e8me de Navier-Stokes est extraite et isol\u00e9e dans cette simple proposition limitrophe .",
+   "domain": "mathematics",
+   "science_relevant": true,
+   "summary": "Staged verifier-in-the-loop programme on 3D Navier-Stokes regularity around 'Hypothesis U' (enstrophy control of truncated system); audit packet says a 'no' answer or killed track counts as success; Hypothesis U not proved.",
+   "lean": {
+    "lean_files": 16,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 3,
+    "rs_files": 3,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 59,
+   "tex_files": 3,
+   "py_files": 51,
+   "commits_since_2025_10_26": 177,
+   "merged_prs": 1,
+   "tree_truncated": false,
+   "honesty_files": [
+    "docs/AUDIT_PACKET.md",
+    "docs/designs/DOOR2_MEMO_SIGN_AUDIT.md",
+    "docs/escalations/2026-09-12-E3-stray-premature-audit-error.txt",
+    "docs/harness/agent-claim-auditor.md",
+    "docs/harness/agent-manuscript-auditor.md",
+    "docs/proposals/openai-audit-PROVENANCE.md",
+    "docs/proposals/openai-audit-main.transcript.txt",
+    "docs/proposals/openai-audit-placeholders.transcript.txt"
+   ],
+   "key_quotes": {
+    "docs/AUDIT_PACKET.md": [
+     "> the executed pivot in `PLAN.md` \u00a710. Do not audit against this packet's commit again \u2014",
+     "commits are outside this packet's scope.",
+     "**A \"no\" answer is a success, not a failure.** This programme's Definition of Done explicitly",
+     "does not include proving Hypothesis U; a negative verdict or a killed track counts as a"
+    ],
+    "docs/designs/DOOR2_MEMO_SIGN_AUDIT.md": [
+     "With `u\u2099(0) \u2265 0` and `g\u2099 \u2265 0`, every term is non-negative and positivity is preserved. The",
+     "**S2 \u2014 the interpolation is a case analysis on orderings of non-negative reals.** The text",
+     "`c\u2082 > 0`. For non-negative data the cross term is `\u2265 0`, so `H \u2265 \u2016u\u2016\u00b2_\u03b3`: **`H` dominates the",
+     "`u\u2099u\u2099\u208a\u2081 < 0` term by term, the cross term is negative, and `H` can be strictly smaller than"
+    ],
+    "docs/escalations/2026-09-12-E3-stray-premature-audit-error.txt": [
+     "/home/xavkal/xdev/SocrateAI-Scientific-MechanicaFluidorum/docs/proposals/openai-axiom-audit.lean:21:0: error: object file '/home/xavkal/xdev/OpenAINavierStokesEuler/NavierStokesAndEuler/.lake/build/lib/lean/NavierStokes/ComparatorR3Theorem.olean' of module NavierStokes.ComparatorR3Theorem does not exist"
+    ]
+   }
+  },
+  {
+   "name": "SocrateAI-Scientific-Mensura",
+   "visibility": "PUBLIC",
+   "created": "2026-08-14",
+   "pushed": "2026-08-25",
+   "language": "Python",
+   "disk_kb": 4511,
+   "stars": 0,
+   "description": "",
+   "domain": "mathematics",
+   "science_relevant": true,
+   "summary": "Tier-B exact-arithmetic and numerical companion to the Navier-Stokes Lean programme.",
+   "lean": {
+    "lean_files": 3,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 1,
+    "rs_files": 1,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 37,
+   "tex_files": 4,
+   "py_files": 147,
+   "commits_since_2025_10_26": 38,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Scientific-NewDiscoveries",
+   "visibility": "PRIVATE",
+   "created": "2026-06-18",
+   "pushed": "2026-10-26",
+   "language": "TeX",
+   "disk_kb": 110548,
+   "stars": 0,
+   "description": null,
+   "domain": "AI agents/methodology/verification",
+   "science_relevant": true,
+   "summary": "Private; same content/metrics as SocrateAI-Scientific-Agora (likely rename/duplicate).",
+   "lean": {
+    "lean_files": 200,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 5,
+    "rs_files": 43,
+    "sundials_mention": true
+   },
+   "notebooks": 1,
+   "data_files": 251,
+   "tex_files": 95,
+   "py_files": 768,
+   "commits_since_2025_10_26": 36,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Scientific-Poly-Algebraic-Calculus",
+   "visibility": "PUBLIC",
+   "created": "2026-08-11",
+   "pushed": "2026-08-11",
+   "language": null,
+   "disk_kb": 1,
+   "stars": 0,
+   "description": "This paper introduces Poly-Algebraic Calculus, a foundational mathematical framework that replaces scalar variables and binary operations with $N$-arity structural variables ($\\Xi^{\\langle N \\rangle}$) and higher-morphism operators.",
+   "domain": "mathematics",
+   "science_relevant": true,
+   "summary": "Single-commit placeholder with only an abstract of a proposed 'Poly-Algebraic Calculus'.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 1,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Scientific-QuantumComputing",
+   "visibility": "PUBLIC",
+   "created": "2026-10-11",
+   "pushed": "2026-10-11",
+   "language": "Python",
+   "disk_kb": 158,
+   "stars": 0,
+   "description": "Experimentation on Quantum Computing",
+   "domain": "physics",
+   "science_relevant": true,
+   "summary": "Quantum-hardware verification stream; README: 'prepared, not implemented', not peer reviewed.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": true
+   },
+   "notebooks": 0,
+   "data_files": 74,
+   "tex_files": 0,
+   "py_files": 5,
+   "commits_since_2025_10_26": 4,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Scientific-QuantumFluids",
+   "visibility": "PUBLIC",
+   "created": "2026-08-14",
+   "pushed": "2026-10-18",
+   "language": "Python",
+   "disk_kb": 129334,
+   "stars": 2,
+   "description": "",
+   "domain": "physics",
+   "science_relevant": true,
+   "summary": "Machine-checked Lean 4 library of quantum-fluid structure (257 theorems) with a textbook tribute to Godfrin's work; RETRACTIONS.md and pre-registered criteria, one hypothesis refuted as written.",
+   "lean": {
+    "lean_files": 95,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 5,
+    "rs_files": 39,
+    "sundials_mention": true
+   },
+   "notebooks": 0,
+   "data_files": 1451,
+   "tex_files": 68,
+   "py_files": 444,
+   "commits_since_2025_10_26": 511,
+   "merged_prs": 3,
+   "tree_truncated": false,
+   "honesty_files": [
+    "book/facts/lean_audit.md"
+   ],
+   "key_quotes": {
+    "book/facts/lean_audit.md": [
+     "## Deliberate negative controls among the book's Lean files (compiled expecting errors; never counted as failures or as theorem files)",
+     "| file | exit | errors | failed as intended | first error | audited |",
+     "| Ch02_NegativeControl | 1 | 2 | yes | ring failed, ring expressions not equal | 2026-10-10 01:30:17 |",
+     "| Ch04_NegativeControl_D15121 | 1 | 1 | yes | unsolved goals | 2026-10-10 01:40:28 |"
+    ]
+   }
+  },
+  {
+   "name": "SocrateAI-Scientific-SectorCausalityTheory",
+   "visibility": "PUBLIC",
+   "created": "2026-09-27",
+   "pushed": "2026-09-28",
+   "language": "Jupyter Notebook",
+   "disk_kb": 3266,
+   "stars": 0,
+   "description": "",
+   "domain": "physics",
+   "science_relevant": true,
+   "summary": "Criterion for when self-duality has physical consequences, with Lean formalisation, notebooks and an MCP server; tested on sixteen candidate systems; README has a 'what this theory does not claim' section.",
+   "lean": {
+    "lean_files": 30,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": true
+   },
+   "notebooks": 3,
+   "data_files": 33,
+   "tex_files": 3,
+   "py_files": 13,
+   "commits_since_2025_10_26": 10,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SocrateAI-Scientific-TNN-UniversModel",
+   "visibility": "PUBLIC",
+   "created": "2026-08-12",
+   "pushed": "2026-08-28",
+   "language": "Python",
+   "disk_kb": 20727,
+   "stars": 0,
+   "description": "Manifeste pour le TNN : Vers un \"Univers Model\" via l'\u00c9nergie et la Topologie",
+   "domain": "AI agents/methodology/verification",
+   "science_relevant": true,
+   "summary": "Thermodynamic/topological tensor-NN 'Univers Model' with real-data registry; a certified audit renamed overclaimed items (e.g. 'Live Sonic Horizon Simulator' became a 1D advection-diffusion proxy).",
+   "lean": {
+    "lean_files": 13,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 1,
+    "rs_files": 1,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 42,
+   "tex_files": 13,
+   "py_files": 116,
+   "commits_since_2025_10_26": 68,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [
+    "specs/CERTIFIED_SCIENTIFIC_AUDIT_LAB1.md",
+    "specs/Lab-5_Audit_Memo.md",
+    "specs/REAL_DATA_AUDIT_LEDGER_AND_MODEL_REGISTRY.md",
+    "specs/Scientific_Audit_Ledger.md",
+    "specs/Scientific_Rigor_Audit.md"
+   ],
+   "key_quotes": {
+    "specs/CERTIFIED_SCIENTIFIC_AUDIT_LAB1.md": [
+     "| **P1** | \"Live Sonic Horizon Simulator\" / \"analogous to Hawking white hole\" | Renamed \"1D Advection-Diffusion Proxy\". Honesty note in all files. | \u2705 |",
+     "| **P4** | \"Hamiltonian drift\" misuses symplectic vocabulary | Renamed to **L2-Norm Drift** everywhere. Dissipative caveat added. | \u2705 |",
+     "### Negative Control (Fr < 1, No Horizon)",
+     "- Torres 2017 citation is **conditionally valid** if ergoregion MSE ratio > radial-only MSE ratio"
+    ],
+    "specs/Lab-5_Audit_Memo.md": [
+     "4. **Macroscopic Isometry (Scale-Invariance):** The formal proof that the P4 mechanism acts as a perfect isometry in the macroscopic regime, guaranteeing that the TDA pipeline does not artificially distort the large-scale structures of the physical datasets."
+    ],
+    "specs/REAL_DATA_AUDIT_LEDGER_AND_MODEL_REGISTRY.md": [
+     "| **1** | **Cosmologie & Mati\u00e8re Noire** | DESI DR1 (T\u00e9lescope Mayall) | `scripts/real_data/desi_3d_coords.npy` | **12.0 Mo** | NumPy Tensor float32 | 10 000 galaxies $(X, Y, Z)$ | Coordonn\u00e9es cart\u00e9siennes tridimensionnelles issues des d\u00e9calages vers le rouge spectroscopiques $z \\in [0.1, 1.4]$. |",
+     "| **4** | **Relev\u00e9 Spatial Profond** | T\u00e9lescope Spatial ESA Euclid | `/mnt/disks/disk-socrateai-local-1/SocrateAI-stream3-realdata/euclid/` | **944 Ko** | Tableaux CSV astronomiques | Champs profonds Fornax, North, South | Cartographie de lentillage gravitationnel faible et cisaillement cosmique. |",
+     "| **23** | **Sismologie & Failles** | IRIS EarthScope / USGS | 400 Hypocentres & Magnitudes | `RateAndStateSeismicTNN` | $\\\\beta_1 = 39$ | Friction Dieterich-Ruina | $3.09 \\\\times 10^{-4}$ | \u2705 CONVERGED |",
+     "| **2** | **Sismicit\u00e9 Induite en Aquif\u00e8re $\\\\text{CO}_2$** (Poreux $\\\\times$ Faille) | `CahnHilliardDieterichTNN` vs **ResNet + Euler** | **285.9x plus pr\u00e9cis** ($3.2\\\\times 10^{-4}$ vs $0.091$) | **128.8x moins de d\u00e9rive** (Z\u00e9ro violation de glissement) | **98%** vs 45% | 18.1 ms vs 36.1 ms | **2.00x plus rapide** | \u2705 **Pas d art\u00e9fact d instabilit\u00e9 num\u00e9rique** |"
+    ]
+   }
+  },
+  {
+   "name": "SocrateAI-Wolfram-Hypergraph",
+   "visibility": "PUBLIC",
+   "created": "2026-07-28",
+   "pushed": "2026-08-03",
+   "language": "Python",
+   "disk_kb": 24524,
+   "stars": 0,
+   "description": "Wolfram Hypergraph for Dark Matter",
+   "domain": "cosmology",
+   "science_relevant": true,
+   "summary": "Computation-augmented-generation proof of concept for Wolfram-hypergraph dark-matter cosmology; brief says it does not claim to have discovered particles.",
+   "lean": {
+    "lean_files": 13,
+    "lakefile": true,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 1,
+    "rs_files": 3,
+    "sundials_mention": true
+   },
+   "notebooks": 0,
+   "data_files": 354,
+   "tex_files": 2,
+   "py_files": 100,
+   "commits_since_2025_10_26": 41,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [
+    "brief/deepmind_scientific_audit_brief.md"
+   ],
+   "key_quotes": {
+    "brief/deepmind_scientific_audit_brief.md": [
+     "- We do not claim to have \"discovered\" physical particles.",
+     "- $K_3$: Evaporates completely to $0$ edges (sub-threshold dispersion / \"failed halo\")."
+    ]
+   }
+  },
+  {
+   "name": "SocrateAI-thesisautoresearch",
+   "visibility": "PRIVATE",
+   "created": "2026-05-21",
+   "pushed": "2026-05-24",
+   "language": "HTML",
+   "disk_kb": 202661,
+   "stars": 0,
+   "description": null,
+   "domain": "AI agents/methodology/verification",
+   "science_relevant": true,
+   "summary": "Private autonomous research / DBA thesis copilot with Lean 4, Z3 and RAG tracks (high-level only).",
+   "lean": {
+    "lean_files": 18,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 117,
+   "tex_files": 9,
+   "py_files": 125,
+   "commits_since_2025_10_26": 86,
+   "merged_prs": 1,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "SuperGravity",
+   "visibility": "PUBLIC",
+   "created": "2026-09-20",
+   "pushed": "2026-09-20",
+   "language": "Python",
+   "disk_kb": 2500,
+   "stars": 0,
+   "description": "",
+   "domain": "AI agents/methodology/verification",
+   "science_relevant": true,
+   "summary": "Zero-trust gateway and continuous self-improvement framework for agentic coding, built on AutoevolveAI/ANSE and Lean.",
+   "lean": {
+    "lean_files": 11,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 18,
+   "tex_files": 0,
+   "py_files": 101,
+   "commits_since_2025_10_26": 12,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "TIC4206066-Exoplanet-Verification",
+   "visibility": "PUBLIC",
+   "created": "2026-10-11",
+   "pushed": "2026-10-11",
+   "language": "Python",
+   "disk_kb": 18653,
+   "stars": 0,
+   "description": "TIC4206066 Exoplanet Verification from Pavel Rabtsevich discovery",
+   "domain": "cosmology",
+   "science_relevant": true,
+   "summary": "Independent adversarial re-analysis (refutation gates with positive/negative controls) of a third party's TESS exoplanet candidate TIC 4206066 b, with Lean checks and a Zenodo data package.",
+   "lean": {
+    "lean_files": 2,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 1021,
+   "tex_files": 0,
+   "py_files": 354,
+   "commits_since_2025_10_26": 12,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [
+    "data/zenodo/part2/07_signal_B/from_T5_signal_B/audit_final_params_B_dump.txt",
+    "data/zenodo/part3/10_environment/pip_freeze_audit_env.txt",
+    "data/zenodo/part3/13_supporting_pipelines/PUBLICATION_AUDIT/METHOD_AUDIT.md",
+    "data/zenodo/part3/13_supporting_pipelines/PUBLICATION_AUDIT/logs/audit_env_freeze.txt",
+    "data/zenodo/part3/13_supporting_pipelines/pubprep/METHOD_AUDIT.md",
+    "data/zenodo/part3/13_supporting_pipelines/pubprep/UNRESOLVED_LIMITATIONS.md"
+   ],
+   "key_quotes": {
+    "data/zenodo/part3/13_supporting_pipelines/PUBLICATION_AUDIT/METHOD_AUDIT.md": [
+     "| Teff | TIC 8.2 4010 \u00b1 120; Mann+2015 erratum Table 2 V\u2212J relation 4048 \u00b1 86 (3984 with [Fe/H] = \u22120.27); ARIADNE 4012 +45/\u221240; Gaia DR2 Apsis 4069. GSP-Spec 4182 rejected (extrapolation flag, logg 5.01). | **4030 \u00b1 90 K** | 4080 \u00b1 100 | CORRECTED |",
+     "injection \u03c3 to ~10 %, which does not change any conclusion (all excluded stars are \u2265 8\u03c3 away). Neighbour hypotheses: fixed-position fits and",
+     "page (no TOI/CTOI/files/notes), NASA toi by TIC (0 rows), exo.MAST TCEs (`{\"TCE\":[]}`) \u2014 all negative. arXiv API and"
+    ]
+   }
+  },
+  {
+   "name": "Universcraft",
+   "visibility": "PUBLIC",
+   "created": "2026-08-25",
+   "pushed": "2026-09-20",
+   "language": "Rust",
+   "disk_kb": 114129,
+   "stars": 0,
+   "description": "",
+   "domain": "numerics/software",
+   "science_relevant": true,
+   "summary": "Rust procedural-engine (HoloEngine) for multi-scale world rendering; software project with physics-flavoured claims, not a research result.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 1,
+    "rs_files": 67,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 13,
+   "tex_files": 0,
+   "py_files": 5,
+   "commits_since_2025_10_26": 43,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [
+    "specs/Lab-5_Audit_Memo.md"
+   ],
+   "key_quotes": {
+    "specs/Lab-5_Audit_Memo.md": [
+     "4. **Macroscopic Isometry (Scale-Invariance):** The formal proof that the P4 mechanism acts as a perfect isometry in the macroscopic regime, guaranteeing that the TDA pipeline does not artificially distort the large-scale structures of the physical datasets."
+    ]
+   }
+  },
+  {
+   "name": "VibeSpec",
+   "visibility": "PUBLIC",
+   "created": "2026-03-22",
+   "pushed": "2026-03-22",
+   "language": "TypeScript",
+   "disk_kb": 430,
+   "stars": 0,
+   "description": "The \"Vibe-to-Spec\" pipeline for autonomous front-end engineering. Automatically transform mockup directories or ZIP files into formal EARS requirements, XState logic, and character-consistent assets via Gemini Nano Banana. Ready for instant implementation and verification in Google Antigravity. \ud83c\udfa8\u27a1\ufe0f\ud83e\udd16",
+   "domain": "personal/other",
+   "science_relevant": false,
+   "summary": "Mockup-to-formal-spec-to-code pipeline for front-end generation; software tooling.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 20,
+   "tex_files": 0,
+   "py_files": 5,
+   "commits_since_2025_10_26": 10,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "WebWebLightv4",
+   "visibility": "PRIVATE",
+   "created": "2026-03-21",
+   "pushed": "2026-03-21",
+   "language": "TypeScript",
+   "disk_kb": 81,
+   "stars": 0,
+   "description": null,
+   "domain": "personal/other",
+   "science_relevant": false,
+   "summary": "AI Studio web app scaffold.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 4,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 3,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "amcp",
+   "visibility": "PUBLIC",
+   "created": "2025-09-24",
+   "pushed": "2026-10-25",
+   "language": "Java",
+   "disk_kb": 1367,
+   "stars": 0,
+   "description": "",
+   "domain": "AI agents/methodology/verification",
+   "science_relevant": true,
+   "summary": "Agent Mesh Communication Protocol v1.5 enterprise edition: Java framework for mobile agents with LLM orchestration.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 2,
+   "merged_prs": 7,
+   "tree_truncated": false,
+   "honesty_files": [
+    "PROJECT_STATUS.md"
+   ],
+   "key_quotes": {}
+  },
+  {
+   "name": "amcp-v1.5-opensource",
+   "visibility": "PUBLIC",
+   "created": "2025-09-27",
+   "pushed": "2026-10-25",
+   "language": "Java",
+   "disk_kb": 25172,
+   "stars": 0,
+   "description": "The Agent Mesh Communication Protocol (AMCP) v1.5 is an open-source framework for building distributed, mobile AI agent-based systems. AMCP provides a solution for creating autonomous computational entities that can migrate between execution contexts, collaborate through event-driven communication, and scale dynamically across cloud environments.",
+   "domain": "AI agents/methodology/verification",
+   "science_relevant": true,
+   "summary": "Open-source edition of the AMCP Java agent framework; status file reports 14 tests, 0 failures.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 0,
+   "merged_prs": 2,
+   "tree_truncated": false,
+   "honesty_files": [
+    "AMCP_DEPLOYMENT_STATUS.md",
+    "COMPILATION_TEST_STATUS_REPORT.md",
+    "GITHUB_ACTIONS_DEPLOYMENT_STATUS.md",
+    "PROJECT_STATUS.md"
+   ],
+   "key_quotes": {
+    "COMPILATION_TEST_STATUS_REPORT.md": [
+     "Tests run: 14, Failures: 0, Errors: 0, Skipped: 0",
+     "- \u2705 **Examples Module**: 14 tests run, 0 failures, 0 errors",
+     "- \u2705 **CLI Module**: No test failures",
+     "No compilation errors or test failures."
+    ]
+   }
+  },
+  {
+   "name": "attentionmatter",
+   "visibility": "PRIVATE",
+   "created": "2026-06-25",
+   "pushed": "2026-06-25",
+   "language": "Python",
+   "disk_kb": 736,
+   "stars": 0,
+   "description": null,
+   "domain": "AI agents/methodology/verification",
+   "science_relevant": true,
+   "summary": "Private proof of concept for attention-inspired prompt token reduction (README claims 30-56% reduction; not independently checked here).",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 1,
+   "tex_files": 1,
+   "py_files": 61,
+   "commits_since_2025_10_26": 12,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "liaspeaking",
+   "visibility": "PUBLIC",
+   "created": "2025-11-01",
+   "pushed": "2026-02-22",
+   "language": "Python",
+   "disk_kb": 359,
+   "stars": 0,
+   "description": "",
+   "domain": "education",
+   "science_relevant": false,
+   "summary": "Local voice-based educational companion app for children aged 8-13.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 0,
+   "py_files": 97,
+   "commits_since_2025_10_26": 1,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "macmagicbrush",
+   "visibility": "PRIVATE",
+   "created": "2025-12-29",
+   "pushed": "2026-01-08",
+   "language": "TypeScript",
+   "disk_kb": 193,
+   "stars": 0,
+   "description": null,
+   "domain": "personal/other",
+   "science_relevant": false,
+   "summary": "Private local web UI for the MagicBrush image-editing model.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 4,
+   "tex_files": 0,
+   "py_files": 2,
+   "commits_since_2025_10_26": 1,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "mopga",
+   "visibility": "PRIVATE",
+   "created": "2026-02-15",
+   "pushed": "2026-02-15",
+   "language": null,
+   "disk_kb": 0,
+   "stars": 0,
+   "description": null,
+   "domain": "personal/other",
+   "science_relevant": false,
+   "summary": "Private manifesto note on planetary CO2 removal; no README.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 1,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "nSymboCoder",
+   "visibility": "PRIVATE",
+   "created": "2026-05-10",
+   "pushed": "2026-05-10",
+   "language": "Python",
+   "disk_kb": 28,
+   "stars": 0,
+   "description": null,
+   "domain": "AI agents/methodology/verification",
+   "science_relevant": true,
+   "summary": "Private sub-1B neuro-symbolic code-model concept.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 0,
+   "py_files": 30,
+   "commits_since_2025_10_26": 1,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "runux-ai-runtime",
+   "visibility": "PRIVATE",
+   "created": "2026-05-23",
+   "pushed": "2026-09-27",
+   "language": "Python",
+   "disk_kb": 41930,
+   "stars": 0,
+   "description": null,
+   "domain": "infrastructure/devops",
+   "science_relevant": false,
+   "summary": "Private proprietary RISC-V LLM runtime (KV-cache compression, integer attention); Rust + some Lean.",
+   "lean": {
+    "lean_files": 16,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 5,
+    "rs_files": 37,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 108,
+   "tex_files": 7,
+   "py_files": 147,
+   "commits_since_2025_10_26": 153,
+   "merged_prs": 12,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "rust-linux-mini-kernel",
+   "visibility": "PUBLIC",
+   "created": "2026-05-15",
+   "pushed": "2026-10-14",
+   "language": "HTML",
+   "disk_kb": 158551,
+   "stars": 0,
+   "description": "RunuX: a #[no_std] Rust kernel and Linux-subsystem reimplementation with Lean 4 formal verification. Real boots on x86_64, RISC-V, and AArch64 (QEMU + real GCP VMs), an eBPF-style syscall firewall, and real PCIe/IOMMU probing on Google Cloud TPU hardware. Research project, contributions welcome.",
+   "domain": "infrastructure/devops",
+   "science_relevant": false,
+   "summary": "RunuX: no_std Rust kernel / Linux-subsystem reimplementation with Lean verification of parts, boots under QEMU and cloud VMs; build-status files record failed container builds.",
+   "lean": {
+    "lean_files": 45,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 5,
+    "rs_files": 354,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 125,
+   "tex_files": 8,
+   "py_files": 73,
+   "commits_since_2025_10_26": 377,
+   "merged_prs": 60,
+   "tree_truncated": false,
+   "honesty_files": [
+    ".agents/agents/runux-security-auditor.md",
+    "azure_build/EXECUTION_STATUS.md",
+    "azure_build/FINAL_STATUS.md",
+    "azure_build/STATUS_UPDATE_20260517.md",
+    "azure_codex_compiler/SOCRATE_ENDPOINT_STATUS.md",
+    "docs/archive_reports/COMPILATION_STATUS_REPORT.md",
+    "docs/archive_reports/CURRENT_STATUS_AND_NEXT_STEPS.md",
+    "docs/archive_reports/MANUAL_FIX_FINAL_STATUS.md",
+    "docs/archive_reports/SCENARIO_B_STATUS.md",
+    "specifications/### **Honest Review of [rust-linux-mini-.md",
+    "specs/MVK_SPECIFICATION_STATUS.md",
+    "specs/PROOF_STATUS_REPORT.md"
+   ],
+   "key_quotes": {
+    "azure_build/EXECUTION_STATUS.md": [
+     "| dt1 | Failed | 1m34s | cargo-watch requires edition2024 |",
+     "| dt2 | Failed | 1m39s | cargo-watch requires edition2024 |",
+     "| dt3 | Failed | 1m29s | cargo tools require Rust 1.85+ |",
+     "### If Docker build fails again:"
+    ],
+    "azure_build/FINAL_STATUS.md": [
+     "- Azure Container Apps limitations"
+    ]
+   }
+  },
+  {
+   "name": "rusty-Fenris-CMRR",
+   "visibility": "PUBLIC",
+   "created": "2026-10-11",
+   "pushed": "2026-10-11",
+   "language": "Rust",
+   "disk_kb": 20,
+   "stars": 0,
+   "description": "",
+   "domain": "numerics/software",
+   "science_relevant": true,
+   "summary": "Small Rust crate relaxing 2D mesh nodes under a Yukawa repulsion using the local rusty-SUNDIALS CVODE; README status says early version.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 1,
+    "rs_files": 8,
+    "sundials_mention": true
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 2,
+   "merged_prs": 1,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "rusty-SUNDIALS",
+   "visibility": "PUBLIC",
+   "created": "2026-05-11",
+   "pushed": "2026-10-26",
+   "language": "Rust",
+   "disk_kb": 502637,
+   "stars": 1,
+   "description": "",
+   "domain": "numerics/software",
+   "science_relevant": true,
+   "summary": "AI-assisted pure-Rust translation of SUNDIALS CVODE (ODE/stiff solver, ~500 MB tree) with Lean specification files; used as the numerics backbone for other projects.",
+   "lean": {
+    "lean_files": 75,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 5,
+    "rs_files": 157,
+    "sundials_mention": true
+   },
+   "notebooks": 1,
+   "data_files": 281,
+   "tex_files": 14,
+   "py_files": 126,
+   "commits_since_2025_10_26": 272,
+   "merged_prs": 75,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "rusty-leveldb",
+   "visibility": "PUBLIC",
+   "created": "2026-05-11",
+   "pushed": "2026-05-11",
+   "language": "Rust",
+   "disk_kb": 614,
+   "stars": 0,
+   "description": "",
+   "domain": "numerics/software",
+   "science_relevant": true,
+   "summary": "Rust LevelDB port derived from a fork of dermesser/leveldb-rs; not science.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 5,
+    "rs_files": 85,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 1,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 3,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "scikit-runux-tribute",
+   "visibility": "PUBLIC",
+   "created": "2026-05-25",
+   "pushed": "2026-09-22",
+   "language": "Python",
+   "disk_kb": 794,
+   "stars": 0,
+   "description": "",
+   "domain": "education",
+   "science_relevant": false,
+   "summary": "Tribute / teaching-style scikit-learn-like library dedicated to two professors.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": true
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 0,
+   "py_files": 11,
+   "commits_since_2025_10_26": 11,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "scribemed",
+   "visibility": "PUBLIC",
+   "created": "2025-11-29",
+   "pushed": "2025-12-02",
+   "language": "Python",
+   "disk_kb": 257,
+   "stars": 0,
+   "description": "",
+   "domain": "personal/other",
+   "science_relevant": false,
+   "summary": "Local medical-scribe AI assistant (French); not research.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 1,
+   "tex_files": 0,
+   "py_files": 33,
+   "commits_since_2025_10_26": 4,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [
+    "hypocrate/STATUS_ACTUEL.txt",
+    "hypocrate/STATUS_FINAL.md"
+   ],
+   "key_quotes": {
+    "hypocrate/STATUS_ACTUEL.txt": [
+     "\u26a0\ufe0f  \u00c0 faire : Remplacer par vrai logo avec st\u00e9thoscope"
+    ]
+   }
+  },
+  {
+   "name": "symbioticfactory",
+   "visibility": "PUBLIC",
+   "created": "2026-02-22",
+   "pushed": "2026-02-22",
+   "language": "Python",
+   "disk_kb": 26653,
+   "stars": 0,
+   "description": "",
+   "domain": "personal/other",
+   "science_relevant": false,
+   "summary": "Open blueprint documents for a carbon-negative water-energy-food-carbon biorefinery; design-level, no experiments.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 0,
+   "py_files": 11,
+   "commits_since_2025_10_26": 20,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "triangular-universal-optimality-lean",
+   "visibility": "PUBLIC",
+   "created": "2026-10-11",
+   "pushed": "2026-10-22",
+   "language": "TeX",
+   "disk_kb": 1641,
+   "stars": 0,
+   "description": "conditional corollaries of an AI-generated openai/math theorem, not a proof of the conjecture",
+   "domain": "mathematics",
+   "science_relevant": true,
+   "summary": "Kernel-checked Lean 4 corollaries of the upstream openai/math triangular-lattice universal-optimality theorem, opened for red-team review; LIMITATIONS.md says it is not a proof of the conjecture and uses a weaker optimality notion.",
+   "lean": {
+    "lean_files": 9,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 32,
+   "tex_files": 4,
+   "py_files": 4,
+   "commits_since_2025_10_26": 18,
+   "merged_prs": 3,
+   "tree_truncated": false,
+   "honesty_files": [
+    "LIMITATIONS.md",
+    "verification/manuscript_audit_2026-10-11.md"
+   ],
+   "key_quotes": {
+    "LIMITATIONS.md": [
+     "| # | Limitation | Consequence |",
+     "| L2 | `UniversallyOptimal` (D3) uses lower energy (liminf). CKMRV Def. 1.2\u20131.3 also require the energy to exist as a limit. | Our notion is weaker than CKMRV's. We do not claim it is *strictly* weaker, because we have no witness. |",
+     "| L3 | Upstream does not claim the per-potential form of Cohn\u2013Kumar (a sharp auxiliary function for each potential). | Neither do we. |"
+    ]
+   }
+  },
+  {
+   "name": "videomorph",
+   "visibility": "PRIVATE",
+   "created": "2026-01-24",
+   "pushed": "2026-01-24",
+   "language": null,
+   "disk_kb": 0,
+   "stars": 0,
+   "description": null,
+   "domain": "personal/other",
+   "science_relevant": false,
+   "summary": "Private empty repo.",
+   "lean": {
+    "lean_files": null,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": null,
+    "sundials_mention": null
+   },
+   "notebooks": null,
+   "data_files": null,
+   "tex_files": null,
+   "py_files": null,
+   "commits_since_2025_10_26": null,
+   "merged_prs": 0,
+   "tree_truncated": null,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "wazair",
+   "visibility": "PUBLIC",
+   "created": "2025-12-18",
+   "pushed": "2026-10-24",
+   "language": null,
+   "disk_kb": 17,
+   "stars": 0,
+   "description": "",
+   "domain": "personal/other",
+   "science_relevant": false,
+   "summary": "Empty repo.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 1,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "webwarcybergame",
+   "visibility": "PUBLIC",
+   "created": "2026-03-13",
+   "pushed": "2026-09-05",
+   "language": "Python",
+   "disk_kb": 253909,
+   "stars": 0,
+   "description": "",
+   "domain": "personal/other",
+   "science_relevant": false,
+   "summary": "Browser cyber-warfare strategy game.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 12,
+   "tex_files": 0,
+   "py_files": 120,
+   "commits_since_2025_10_26": 26,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "xAuraOS",
+   "visibility": "PUBLIC",
+   "created": "2026-08-06",
+   "pushed": "2026-08-06",
+   "language": "Python",
+   "disk_kb": 343980,
+   "stars": 0,
+   "description": "A polysynthetic substrate",
+   "domain": "AI agents/methodology/verification",
+   "science_relevant": true,
+   "summary": "Local-first 'cognitive operating substrate' (AuraOS): governed agent runtime with verifiers and capability leases; huge commit count (2,157), includes its own deep audit.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 7,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 157,
+   "tex_files": 1,
+   "py_files": 974,
+   "commits_since_2025_10_26": 2157,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [
+    "DEEP_AUDIT_REPORT.md",
+    "PHASE_C3_STATUS.md",
+    "docs/AURA_MODEL_COGNOME_MR0_MR1_STATUS.md",
+    "docs/AURA_PHASE_AND_AUDIT_COCKPIT.md",
+    "docs/AURA_PHASE_C2_IMPLEMENTATION_STATUS.md",
+    "forged_roots_audit.md"
+   ],
+   "key_quotes": {
+    "DEEP_AUDIT_REPORT.md": [
+     "self.log_error(\"DB_WRITE_FAIL\", str(e))",
+     "**Impact:** Inconsistent error handling makes debugging difficult and can lead to silent failures",
+     "2. **Add Circuit Breakers**: For cloud API calls to prevent cascading failures"
+    ],
+    "PHASE_C3_STATUS.md": [
+     "Current implementation scope:"
+    ]
+   }
+  },
+  {
+   "name": "xPersonaShield",
+   "visibility": "PRIVATE",
+   "created": "2026-01-24",
+   "pushed": "2026-10-08",
+   "language": "Python",
+   "disk_kb": 49844,
+   "stars": 0,
+   "description": null,
+   "domain": "personal/other",
+   "science_relevant": false,
+   "summary": "Private GPU adversarial-perturbation tool to protect portraits from AI manipulation.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 26,
+   "tex_files": 0,
+   "py_files": 143,
+   "commits_since_2025_10_26": 57,
+   "merged_prs": 1,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "xaviercallens-SocrateAI-Scientific-Agora-K3-Quatum",
+   "visibility": "PUBLIC",
+   "created": "2026-08-04",
+   "pushed": "2026-08-10",
+   "language": "Python",
+   "disk_kb": 1618,
+   "stars": 0,
+   "description": "",
+   "domain": "physics",
+   "science_relevant": true,
+   "summary": "Architecture notes for quantum simulation of K3 x T^2 models; small, mostly TeX.",
+   "lean": {
+    "lean_files": 1,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 2,
+   "tex_files": 10,
+   "py_files": 38,
+   "commits_since_2025_10_26": 10,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "xaviercallens-SocrateAI-Scientific-FluidMecanism",
+   "visibility": "PUBLIC",
+   "created": "2026-08-12",
+   "pushed": "2026-08-12",
+   "language": null,
+   "disk_kb": 1,
+   "stars": 0,
+   "description": "",
+   "domain": "physics",
+   "science_relevant": true,
+   "summary": "Empty placeholder (1 commit).",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 1,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "xaviercallens-SocrateAI-Scientific-LeanMaster-StringTheoryFormalization",
+   "visibility": "PUBLIC",
+   "created": "2026-09-14",
+   "pushed": "2026-09-14",
+   "language": "HTML",
+   "disk_kb": 144,
+   "stars": 0,
+   "description": "",
+   "domain": "physics",
+   "science_relevant": true,
+   "summary": "Earlier public copy of the string-theory Lean formalisation; claims 'first machine-verified formalisation', a claim the main LeanMaster repo later withdrew.",
+   "lean": {
+    "lean_files": 32,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 5,
+   "tex_files": 0,
+   "py_files": 3,
+   "commits_since_2025_10_26": 3,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "xaviercallens.github.io",
+   "visibility": "PUBLIC",
+   "created": "2026-10-25",
+   "pushed": "2026-10-25",
+   "language": "HTML",
+   "disk_kb": 119,
+   "stars": 0,
+   "description": "HiveMind@home & La Ruche \u2014 Decentralized Dual-GPU Sparse MoE Supercomputer",
+   "domain": "infrastructure/devops",
+   "science_relevant": false,
+   "summary": "Static site mirror of the HiveMind@home page.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 2,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 8,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "xavuntu-AIRustLinux",
+   "visibility": "PUBLIC",
+   "created": "2026-10-03",
+   "pushed": "2026-10-03",
+   "language": "HTML",
+   "disk_kb": 38880,
+   "stars": 0,
+   "description": "Xavuntu: Autonomous AI-Native Rust Linux Distribution with RunuX Kernel, 14B TPU Model, PolarQuant, Redis LTM & Cyberpunk GNOME Desktop",
+   "domain": "infrastructure/devops",
+   "science_relevant": false,
+   "summary": "AI-native Rust Linux distribution concept built on the RunuX kernel; failed-build status files included.",
+   "lean": {
+    "lean_files": 50,
+    "lakefile": true,
+    "lean_toolchain": true
+   },
+   "rust": {
+    "cargo_tomls": 5,
+    "rs_files": 355,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 94,
+   "tex_files": 8,
+   "py_files": 455,
+   "commits_since_2025_10_26": 5,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [
+    "kernel/.agents/agents/runux-security-auditor.md",
+    "kernel/azure_build/EXECUTION_STATUS.md",
+    "kernel/azure_build/FINAL_STATUS.md",
+    "kernel/azure_build/STATUS_UPDATE_20260517.md",
+    "kernel/azure_codex_compiler/SOCRATE_ENDPOINT_STATUS.md",
+    "kernel/docs/archive_reports/COMPILATION_STATUS_REPORT.md",
+    "kernel/docs/archive_reports/CURRENT_STATUS_AND_NEXT_STEPS.md",
+    "kernel/docs/archive_reports/MANUAL_FIX_FINAL_STATUS.md",
+    "kernel/docs/archive_reports/SCENARIO_B_STATUS.md",
+    "kernel/specifications/### **Honest Review of [rust-linux-mini-.md",
+    "kernel/specs/MVK_SPECIFICATION_STATUS.md",
+    "kernel/specs/PROOF_STATUS_REPORT.md"
+   ],
+   "key_quotes": {
+    "kernel/azure_build/EXECUTION_STATUS.md": [
+     "| dt1 | Failed | 1m34s | cargo-watch requires edition2024 |",
+     "| dt2 | Failed | 1m39s | cargo-watch requires edition2024 |",
+     "| dt3 | Failed | 1m29s | cargo tools require Rust 1.85+ |",
+     "### If Docker build fails again:"
+    ],
+    "kernel/azure_build/FINAL_STATUS.md": [
+     "- Azure Container Apps limitations"
+    ]
+   }
+  },
+  {
+   "name": "xprivateremoteaccess",
+   "visibility": "PRIVATE",
+   "created": "2026-05-10",
+   "pushed": "2026-05-10",
+   "language": "PowerShell",
+   "disk_kb": 182,
+   "stars": 0,
+   "description": null,
+   "domain": "personal/other",
+   "science_relevant": false,
+   "summary": "Private SSH remote-access notes.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 1,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  },
+  {
+   "name": "xvideomorph",
+   "visibility": "PRIVATE",
+   "created": "2026-01-24",
+   "pushed": "2026-01-25",
+   "language": null,
+   "disk_kb": 0,
+   "stars": 0,
+   "description": null,
+   "domain": "personal/other",
+   "science_relevant": false,
+   "summary": "Private empty repo.",
+   "lean": {
+    "lean_files": 0,
+    "lakefile": false,
+    "lean_toolchain": false
+   },
+   "rust": {
+    "cargo_tomls": 0,
+    "rs_files": 0,
+    "sundials_mention": false
+   },
+   "notebooks": 0,
+   "data_files": 0,
+   "tex_files": 0,
+   "py_files": 0,
+   "commits_since_2025_10_26": 1,
+   "merged_prs": 0,
+   "tree_truncated": false,
+   "honesty_files": [],
+   "key_quotes": {}
+  }
+ ],
+ "lessons": [
+  {
+   "repo": "AutoevolveAI",
+   "quote": "Every quantitative claim must be traceable to an artifact, and every gate must be able to fail. A gate that has never rejected anything is not a gate."
+  },
+  {
+   "repo": "AutoevolveAI",
+   "quote": "An internal audit found 14 components reporting success without doing the work (README, 'Measured status')."
+  },
+  {
+   "repo": "SocrateAI-Scientific-Agora-LeanMaster",
+   "quote": "Earlier README described the project as 'the first fully certified String Theory' ... An audit found that several headline claims held only for a much narrower Lean statement than the one described in prose (e.g. a bound over N presented as holding over R) ... one Lean theorem contained a real bug (a non-unique 'unique minimum' caused by Nat truncation, now fixed)."
+  },
+  {
+   "repo": "SocrateAI-Scientific-Agora-K3-DarkMatter",
+   "quote": "F6 disclosure (2026-07-24): C1/C2 lattice numbers retracted ... mislabeled them as z-space singular points, with hardcoded exponents ... The resulting ... numbers rho=4, T=18 ... are NOT valid and are retracted."
+  },
+  {
+   "repo": "SocrateAI-DualScaleTopologicalUniverseModel-LeanProposal",
+   "quote": "Two vacuous S1-03 'integrality' theorems discovered; s10/s18 partner series NOT integral (witnesses 17/2, 45/2 at n=2); s7 integrality 'PASS(7) only, general case = named open goal'."
+  },
+  {
+   "repo": "DarkMatterK3-Home.github.io",
+   "quote": "WP_A2_CIRCULARITY_AUDIT: 'Gate 0 of the Laboratory-Scale Re-Scope: FAIL ... a clean negative, reported with the same prominence as a positive.'"
+  },
+  {
+   "repo": "DarkMatterK3-Home.github.io",
+   "quote": "Lesson: every numeric constant must be verified against an external source; no hardcoding of raw values from unverified sources (LESSONS_LEARNED.md)."
+  },
+  {
+   "repo": "Mirror-Map-Sieve",
+   "quote": "'Status: exploratory preprint seeking expert review. We do not claim a discovery.' A fixed CY positional bias first failed (+10% ppl); a learnable bias passed (+8.1%) but the gain is learnability, not Calabi-Yau structure."
+  },
+  {
+   "repo": "SocrateAI-Scientific-AlienMathematics-Foundation",
+   "quote": "'An honest account of an AI-driven mathematical exploration, its failures, its one genuine contribution' - 6 independent computational methods failed to find any exact decomposition even at R = 48 where one is known to exist."
+  },
+  {
+   "repo": "SocrateAI-Scientific-Agora-Physique-Cinetique",
+   "quote": "Secondary audit found a 'fabricated phantom simulation ... not produced by any code in this repository' and a Bakry-Emery routine that built a SymPy Ricci tensor then discarded it and returned 2*d; roton kernel was a parameterised polynomial relabelled 'Algebraic Stubs'; status FAIL (Corrected)."
+  },
+  {
+   "repo": "SocrateAI-Scientific-AutoEvolve-K3xT2",
+   "quote": "'We do not yet claim definitive empirical discovery'; an unconstrained steep axion spectrum was decisively refuted by NANOGrav 15-yr (lnB = -51.58)."
+  },
+  {
+   "repo": "SocrateAI-Scientific-Genetic",
+   "quote": "AUDIT_2026-10-21: 'POLE P286R TMB 12500/9 mut/Mb is a model output, not an observation'; 'GAR.H15's mechanism for POLE P286R is refuted ... the whole stage-removal model class fails.'"
+  },
+  {
+   "repo": "SocrateAI-Scientific-QuantumFluids",
+   "quote": "Pre-registered criterion 'refutes the hypothesis as written'; two hypotheses refuted for one reason; some criteria 'failed through my own design' (README)."
+  },
+  {
+   "repo": "SocrateAI-Scientific-Communication",
+   "quote": "A claim of being the first Lean 4 formalization of this material 'was false, and it was refuted' (README, 'honest status of the current paper')."
+  },
+  {
+   "repo": "SocrateAI-Scientific-TNN-UniversModel",
+   "quote": "Certified audit renamed 'Live Sonic Horizon Simulator / analogous to Hawking white hole' to '1D Advection-Diffusion Proxy' and 'Hamiltonian drift' to 'L2-Norm Drift'."
+  },
+  {
+   "repo": "OpenAI-NSE-Epistemic-Audit",
+   "quote": "'A Physical Reading, Not a Physical Refutation'; later note withdraws 'physical vacuity' and 'censorship' wording; found an axiom declared in a file whose header claimed '0 custom axioms'."
+  },
+  {
+   "repo": "triangular-universal-optimality-lean",
+   "quote": "Open red-team review, 'Not peer reviewed'; LIMITATIONS: our UniversallyOptimal uses lower energy (liminf), weaker than CKMRV's definition; upstream does not claim the per-potential Cohn-Kumar form and neither do we."
+  },
+  {
+   "repo": "SocrateAI-Scientific-MechanicaFluidorum",
+   "quote": "'A \"no\" answer is a success, not a failure' - Definition of Done does not include proving Hypothesis U; a negative verdict or a killed track counts."
+  },
+  {
+   "repo": "SocrateAI-Numeric-DualScale-Solver",
+   "quote": "Tautological local literal negative controls replaced by an authoritative validation engine; LaTeX abstract inequality contradicting the exact bound was corrected."
+  },
+  {
+   "repo": "GWAYA-GwenLayaOpenModel",
+   "quote": "CLAIM_AUDIT: 'One bib entry is wrong ... One README badge is overstated'; recomputed numbers marked V (verified), VN (caveat) or X (mismatch)."
+  },
+  {
+   "repo": "HiveMind",
+   "quote": "'The legacy scientific swarm and domain-trainer paths are synthetic Gaussian-regression/game simulations, not language benchmarks. Their MSE is not perplexity ... [the smoke test] does not validate the broader hardware, WAN, frontier-capability or performance claims.'"
+  },
+  {
+   "repo": "SocrateAI-Scientific-Agora-LeanFlow",
+   "quote": "'Status (2026-09-19): planning repository. There is no server code yet.'"
+  },
+  {
+   "repo": "SocrateAI-Scientific-QuantumComputing",
+   "quote": "'Status (2026-10-11): prepared, not implemented. Not peer reviewed.'"
+  },
+  {
+   "repo": "SocrateAI-Scientific-Mathesis",
+   "quote": "A statement can be non-vacuous, carry witnesses in both polarities, and still be the wrong statement (AUDIT_PACK.md)."
+  },
+  {
+   "repo": "SocrateAI-Scientific-Elenchus",
+   "quote": "'The elenchus ... never establishes a positive truth. It removes false confidence, and that is all it does.'"
+  },
+  {
+   "repo": "TIC4206066-Exoplanet-Verification",
+   "quote": "Positive control recovered 100%; eclipsing-binary, secondary-occultation and centroid-shift negative controls all REFUTED as intended."
+  }
+ ]
+}

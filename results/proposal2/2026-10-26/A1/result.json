@@ -1,0 +1,797 @@
+{
+ "item": "A1",
+ "date": "2026-10-26",
+ "claim_boundary": "The Sandier-Serfaty conjecture is NOT formally proved. Kernel-checked: the stages listed with their level; L1 = kernel re-execution of the C++ interval computation from stated premises, bit-equal to the C++ output.",
+ "stages_total": 12,
+ "stages_L1_complete": [
+  "init_constants",
+  "bcons/eps",
+  "calcLam",
+  "calcK"
+ ],
+ "stages_L2_complete": [
+  "init_constants"
+ ],
+ "stages_arith_on_exact_endpoints": [
+  "asserts after calcK",
+  "global_grid outer",
+  "global_grid negative",
+  "inside_hess",
+  "cs (|c1|<1)",
+  "22 printed pairs"
+ ],
+ "stages": [
+  {
+   "stage": "init_constants",
+   "level": "L1+L2 complete",
+   "theorems": [
+    "ln2_comp_eq",
+    "pi_comp_eq",
+    "p_comp_eq",
+    "R_comp_eq",
+    "a_comp_eq",
+    "log_two_mem",
+    "pi_mem",
+    "p_mem",
+    "R_mem",
+    "a_mem",
+    "a_mem_triScale",
+    "p_mem_triScale"
+   ]
+  },
+  {
+   "stage": "cs + init_after_co",
+   "level": "A only (|c1|<1 on exact endpoints); computation not ported",
+   "theorems": [
+    "cpp_asserts"
+   ]
+  },
+  {
+   "stage": "table",
+   "level": "not ported (premise of calcLam, calcK, bdsup, global_grid, inside_hess)",
+   "theorems": []
+  },
+  {
+   "stage": "core_test",
+   "level": "not ported",
+   "theorems": []
+  },
+  {
+   "stage": "bcons/eps",
+   "level": "L1 complete (premise: co[1..38] from cs)",
+   "theorems": [
+    "bcons_comp_eq",
+    "premises_chain"
+   ]
+  },
+  {
+   "stage": "calcLam",
+   "level": "L1 complete, conditional on the table enclosures",
+   "theorems": [
+    "calcLam_stage (600 chunks + calcLam_chunk_sums + calcLam_eq)"
+   ]
+  },
+  {
+   "stage": "calcK",
+   "level": "L1 complete, conditional on the table enclosures",
+   "theorems": [
+    "calcK_stage (97 + 194 chunks + calcK_mesh + calcK_K_eq)"
+   ]
+  },
+  {
+   "stage": "asserts after calcK",
+   "level": "A on exact endpoints + conditional L2",
+   "theorems": [
+    "cpp_asserts",
+    "rat_consts_eq",
+    "lambda_real",
+    "K_real",
+    "fl_real",
+    "slope_real"
+   ]
+  },
+  {
+   "stage": "bdsup",
+   "level": "printed hulls A only; computation not ported",
+   "theorems": [
+    "printed_pairs"
+   ]
+  },
+  {
+   "stage": "global_grid outer",
+   "level": "final assertion A + conditional L2; computation not ported",
+   "theorems": [
+    "cpp_asserts",
+    "grid_margins",
+    "gmf_real"
+   ]
+  },
+  {
+   "stage": "global_grid negative",
+   "level": "final assertion A + conditional L2; computation not ported",
+   "theorems": [
+    "cpp_asserts",
+    "grid_margins",
+    "neglhs_real"
+   ]
+  },
+  {
+   "stage": "inside_hess",
+   "level": "hull minima A; computation not ported",
+   "theorems": [
+    "cpp_asserts"
+   ]
+  }
+ ],
+ "share_of_cpp_ivops_reexecuted": {
+  "mul_plus_inv_reexecuted": 1685129,
+  "mul_plus_inv_total": 1238829689,
+  "fraction": 0.0013602588111689983
+ },
+ "op_counts": {
+  "init_constants": {
+   "mul": 1311,
+   "add": 505,
+   "inv": 1006,
+   "sqrt": 3,
+   "log": 0,
+   "G": 0,
+   "Gfull": 0,
+   "fh": 0,
+   "lookup": 0
+  },
+  "init_constants_again": {
+   "mul": 1311,
+   "add": 505,
+   "inv": 1006,
+   "sqrt": 3,
+   "log": 0,
+   "G": 0,
+   "Gfull": 0,
+   "fh": 0,
+   "lookup": 0
+  },
+  "cs": {
+   "mul": 1217,
+   "add": 62303,
+   "inv": 152,
+   "sqrt": 0,
+   "log": 0,
+   "G": 0,
+   "Gfull": 0,
+   "fh": 0,
+   "lookup": 0
+  },
+  "init_after_co": {
+   "mul": 39742,
+   "add": 8310,
+   "inv": 3157,
+   "sqrt": 0,
+   "log": 0,
+   "G": 0,
+   "Gfull": 0,
+   "fh": 0,
+   "lookup": 0
+  },
+  "table": {
+   "mul": 650719043,
+   "add": 522428086,
+   "inv": 29043655,
+   "sqrt": 0,
+   "log": 42014,
+   "G": 0,
+   "Gfull": 0,
+   "fh": 13651,
+   "lookup": 0
+  },
+  "bcons_eps": {
+   "mul": 407,
+   "add": 244,
+   "inv": 202,
+   "sqrt": 0,
+   "log": 1,
+   "G": 0,
+   "Gfull": 0,
+   "fh": 0,
+   "lookup": 0
+  },
+  "core_test": {
+   "mul": 16355419,
+   "add": 13335274,
+   "inv": 471300,
+   "sqrt": 0,
+   "log": 2233,
+   "G": 0,
+   "Gfull": 0,
+   "fh": 0,
+   "lookup": 0
+  },
+  "init_core_rest": {
+   "mul": 0,
+   "add": 0,
+   "inv": 0,
+   "sqrt": 0,
+   "log": 0,
+   "G": 0,
+   "Gfull": 0,
+   "fh": 0,
+   "lookup": 0
+  },
+  "calcLam": {
+   "mul": 1170066,
+   "add": 1272010,
+   "inv": 270024,
+   "sqrt": 90002,
+   "log": 0,
+   "G": 0,
+   "Gfull": 0,
+   "fh": 0,
+   "lookup": 90000
+  },
+  "calcK": {
+   "mul": 203308,
+   "add": 122155,
+   "inv": 38805,
+   "sqrt": 4655,
+   "log": 0,
+   "G": 3103,
+   "Gfull": 1552,
+   "fh": 0,
+   "lookup": 4655
+  },
+  "bdsup": {
+   "mul": 39948239,
+   "add": 52815498,
+   "inv": 6329213,
+   "sqrt": 421947,
+   "log": 0,
+   "G": 0,
+   "Gfull": 421947,
+   "fh": 0,
+   "lookup": 421947
+  },
+  "global_grid": {
+   "mul": 178370424,
+   "add": 133662969,
+   "inv": 50606017,
+   "sqrt": 7895832,
+   "log": 0,
+   "G": 7895832,
+   "Gfull": 0,
+   "fh": 0,
+   "lookup": 7895832
+  },
+  "inside_hess": {
+   "mul": 228480114,
+   "add": 124482693,
+   "inv": 36776868,
+   "sqrt": 2451479,
+   "log": 0,
+   "G": 0,
+   "Gfull": 2451479,
+   "fh": 0,
+   "lookup": 2451479
+  }
+ },
+ "compile_logs": {
+  "IV": {
+   "present": true,
+   "rc": 0,
+   "seconds": 12.1,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792981424.153479
+  },
+  "Constants": {
+   "present": true,
+   "rc": 0,
+   "seconds": 76.1,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792981504.303267
+  },
+  "Asserts": {
+   "present": true,
+   "rc": 0,
+   "seconds": 17.7,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792981885.292841
+  },
+  "Bcons": {
+   "present": true,
+   "rc": 0,
+   "seconds": 287.1,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792984089.6940403
+  },
+  "CalcKCore": {
+   "present": true,
+   "rc": 0,
+   "seconds": 9.8,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792982612.132342
+  },
+  "CalcK": {
+   "present": true,
+   "rc": 0,
+   "seconds": 20.7,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792984131.9830945
+  },
+  "CalcLamCore": {
+   "present": true,
+   "rc": 0,
+   "seconds": 10.1,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792983619.0930517
+  },
+  "CalcLam": {
+   "present": true,
+   "rc": 0,
+   "seconds": 160.4,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792989213.7761471
+  },
+  "SignedEndpoints": {
+   "present": true,
+   "rc": 0,
+   "seconds": 10.6,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792981540.1368546
+  },
+  "Bridge": {
+   "present": true,
+   "rc": 0,
+   "seconds": 9.3,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792984918.3848867
+  },
+  "Chain": {
+   "present": true,
+   "rc": 0,
+   "seconds": 18.9,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792989590.7543764
+  },
+  "CalcKPilot": {
+   "present": true,
+   "rc": 0,
+   "seconds": 35.2,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792981997.0419106
+  },
+  "CalcKS0": {
+   "present": true,
+   "rc": 0,
+   "seconds": 148.2,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792983026.2962778
+  },
+  "CalcKS1": {
+   "present": true,
+   "rc": 0,
+   "seconds": 204.2,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792983239.1976686
+  },
+  "CalcKS2": {
+   "present": true,
+   "rc": 0,
+   "seconds": 162.0,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792983408.2138212
+  },
+  "CalcKS3": {
+   "present": true,
+   "rc": 0,
+   "seconds": 169.5,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792983583.8575068
+  },
+  "CalcKF0": {
+   "present": true,
+   "rc": 0,
+   "seconds": 48.5,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792983638.3584433
+  },
+  "CalcKF1": {
+   "present": true,
+   "rc": 0,
+   "seconds": 52.4,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792983696.3796337
+  },
+  "CalcKF2": {
+   "present": true,
+   "rc": 0,
+   "seconds": 56.3,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792983758.8331444
+  },
+  "CalcKF3": {
+   "present": true,
+   "rc": 0,
+   "seconds": 72.2,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792983836.6207623
+  },
+  "CalcKF4": {
+   "present": true,
+   "rc": 0,
+   "seconds": 71.2,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792982949.7447436
+  },
+  "CalcKF5": {
+   "present": true,
+   "rc": 0,
+   "seconds": 85.8,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792983042.4124427
+  },
+  "CalcKF6": {
+   "present": true,
+   "rc": 0,
+   "seconds": 108.5,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792983162.0940948
+  },
+  "CalcKF7": {
+   "present": true,
+   "rc": 0,
+   "seconds": 72.5,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792983244.7590697
+  },
+  "CalcLamF0": {
+   "present": true,
+   "rc": 0,
+   "seconds": 476.7,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792984112.9027164
+  },
+  "CalcLamF1": {
+   "present": true,
+   "rc": 0,
+   "seconds": 598.9,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792984718.4914503
+  },
+  "CalcLamF2": {
+   "present": true,
+   "rc": 0,
+   "seconds": 447.9,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792985179.5827503
+  },
+  "CalcLamF3": {
+   "present": true,
+   "rc": 0,
+   "seconds": 694.7,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792985902.3379538
+  },
+  "CalcLamF4": {
+   "present": true,
+   "rc": 0,
+   "seconds": 684.9,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792986595.3450115
+  },
+  "CalcLamF5": {
+   "present": true,
+   "rc": 0,
+   "seconds": 438.4,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792987039.8291175
+  },
+  "CalcLamF6": {
+   "present": true,
+   "rc": 0,
+   "seconds": 435.3,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792987479.6248853
+  },
+  "CalcLamF7": {
+   "present": true,
+   "rc": 0,
+   "seconds": 430.0,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792987914.0432653
+  },
+  "CalcLamF8": {
+   "present": true,
+   "rc": 0,
+   "seconds": 432.9,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792988351.2538452
+  },
+  "CalcLamF9": {
+   "present": true,
+   "rc": 0,
+   "seconds": 446.9,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792988803.0394785
+  },
+  "CalcLamE0": {
+   "present": true,
+   "rc": 0,
+   "seconds": 568.9,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792984680.7227225
+  },
+  "CalcLamE1": {
+   "present": true,
+   "rc": 0,
+   "seconds": 405.4,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792985117.1722434
+  },
+  "CalcLamE2": {
+   "present": true,
+   "rc": 0,
+   "seconds": 631.3,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792985756.2123988
+  },
+  "CalcLamE3": {
+   "present": true,
+   "rc": 0,
+   "seconds": 630.5,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792986393.141404
+  },
+  "CalcLamE4": {
+   "present": true,
+   "rc": 0,
+   "seconds": 501.9,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792986902.3161845
+  },
+  "CalcLamE5": {
+   "present": true,
+   "rc": 0,
+   "seconds": 410.3,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792987317.5311766
+  },
+  "CalcLamE6": {
+   "present": true,
+   "rc": 0,
+   "seconds": 411.4,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792987733.5322263
+  },
+  "CalcLamE7": {
+   "present": true,
+   "rc": 0,
+   "seconds": 411.6,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792988149.533275
+  },
+  "CalcLamE8": {
+   "present": true,
+   "rc": 0,
+   "seconds": 417.8,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792988572.2998118
+  },
+  "CalcLamE9": {
+   "present": true,
+   "rc": 0,
+   "seconds": 434.4,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792989011.2595189
+  },
+  "Controls": {
+   "present": true,
+   "rc": 0,
+   "seconds": 14.6,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792982308.4704034
+  },
+  "CalcControls": {
+   "present": true,
+   "rc": 0,
+   "seconds": 89.3,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792989411.37442
+  },
+  "ControlsReject": {
+   "present": true,
+   "rc": 1,
+   "seconds": 14.8,
+   "sorry_warning": false,
+   "errors": 7,
+   "log_mtime": 1792982328.5098512
+  },
+  "CalcKReject": {
+   "present": true,
+   "rc": 1,
+   "seconds": 29.9,
+   "sorry_warning": false,
+   "errors": 2,
+   "log_mtime": 1792984962.6030803
+  },
+  "CalcControlsReject": {
+   "present": true,
+   "rc": 1,
+   "seconds": 125.3,
+   "sorry_warning": false,
+   "errors": 2,
+   "log_mtime": 1792989541.001783
+  },
+  "Axioms": {
+   "present": true,
+   "rc": 0,
+   "seconds": 41.1,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792982232.0998857
+  },
+  "AxiomsCalcK": {
+   "present": true,
+   "rc": 0,
+   "seconds": 12.5,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792984177.181359
+  },
+  "AxiomsAll": {
+   "present": true,
+   "rc": 0,
+   "seconds": 14.0,
+   "sorry_warning": false,
+   "errors": 0,
+   "log_mtime": 1792989628.9401345
+  }
+ },
+ "must_fail_rejected": {
+  "ControlsReject": true,
+  "CalcKReject": true,
+  "CalcControlsReject": true
+ },
+ "stale_oleans": [
+  "CalcKCore.lean"
+ ],
+ "axiom_audit": {
+  "rc": 0,
+  "reports": 615,
+  "axiom_sets": {
+   "propext": 603,
+   "none": 6,
+   "Classical.choice,Quot.sound,propext": 6
+  },
+  "non_whitelisted": []
+ },
+ "leanflow": {
+  "worktree": "/home/callensxavier_gmail_com/LeanFlow-wt-p1",
+  "commit": "06084ef5c40057c66c476feba18ea3da8fb150ba",
+  "tests": "94 passed",
+  "exact": {
+   "status": "ok",
+   "code": "verified",
+   "tier": "A",
+   "seconds": 1.0777532630017959
+  },
+  "planted": {
+   "status": "rejected",
+   "code": "false-statement",
+   "tier": null,
+   "failed": [
+    "cert_5"
+   ],
+   "seconds": 0.8236658929963596
+  }
+ },
+ "a1b": {
+  "theorem": "ProgSandierSerfaty.Reduction.signed_endpoints",
+  "also": [
+   "assembly_algebra",
+   "b_lt_dstar"
+  ],
+  "controls": [
+   "ctl_signed_without_sum_false",
+   "ctl_signed_hyps"
+  ]
+ },
+ "lean_sources_sha256": {
+  "Asserts.lean": "8867bbd1223bebe356b482f979a2f4ef2e9e8ab86a7f4ea7405d407bf644865b",
+  "Axioms.lean": "40045ba27247c73de72733c0afc32145edf4419568758a290de3dc363eaecb6c",
+  "AxiomsAll.lean": "eb173c85476983939a2aa4de94ecbc2e8fee3e128f4f4a7738acb59367615dd5",
+  "AxiomsCalcK.lean": "cf323f9069323d1ad4b3ca214ec5d803b566334ec18b6b54949b224929cb4c49",
+  "Bcons.lean": "9e0af8f6e1b468682919d3f3eb22d536eb20212fb4f5ca8cf68048c82c8d73d9",
+  "Bridge.lean": "f8374c9944a62b239ebc79b0048bbfc64396fdd297254693626aee5e348ef6b8",
+  "CalcControls.lean": "18705134969a253e41cadbdc16664be3175db254e54782945d3cbcdb116b06cf",
+  "CalcControlsReject.lean": "fe813cbaf09282933e74b5720ee543f488052a0535de5bf36cd5b8583c5a4dc1",
+  "CalcK.lean": "ed4b5bcf80438b0937f9ee1e402d1f06391c6f7d740d2d9f12d131e1e0bdbc7f",
+  "CalcKCore.lean": "ad540325a0a3f70e6fe91379fa5ed8d409328a9496b38cb474a36e69a18af7af",
+  "CalcKF0.lean": "8a9b9473f6e3c4d88b28bd7e708100aaf43377db5c333ff29e8c6415cd5b5b37",
+  "CalcKF1.lean": "cc98ef006ca4d206dd155de58bba5459edaec3b02193ae12798381d44b4a2de7",
+  "CalcKF2.lean": "04148206eecb3b13b5e3f1cf754efb9af410610d0b90883f9fae3ad052c532b3",
+  "CalcKF3.lean": "b963c3d6a1e403ba59870f497af6062d496f4dbc9157d1f841a6ed46e7cd52f7",
+  "CalcKF4.lean": "e5461c4df0b22037407f5aa01065627b18c583b43c13e8fcc77005415f83e462",
+  "CalcKF5.lean": "50e0141320d65efdb3fb613bb9e4a8db53a3497119bce5d24650bbc57a4e1e7f",
+  "CalcKF6.lean": "58bc544aeaba83cf2a66b103cb5037ca5b8f4a809bb2cfe6d3d35164e7c3e079",
+  "CalcKF7.lean": "74ac89d0325be6f75e37a7c07027bc34dc9031c5bc77b18c44c0e8ca5f94adb4",
+  "CalcKPilot.lean": "41d3087ddb4ad88ecc585c11a1241048a3a2bab91bae27008d40f7a6b7ba9b6d",
+  "CalcKReject.lean": "1aae3eefa5cffb4d75c41b5eb087a786374da8ddc36e9eb6de855d06646572c1",
+  "CalcKS0.lean": "5e7524a56898fa4096d2a914e8256a578f599b96a246401ca21038bbadd9821e",
+  "CalcKS1.lean": "1b1fba87483ef77c42b0ad1f3d8445edd7ee20c38f55d2aa201c4ace3d9dc408",
+  "CalcKS2.lean": "1090cbcf14272aa46f09ef04bc56fdf95f2539ce9b1fdfa02542429ef8b649b9",
+  "CalcKS3.lean": "20580894360b15466fa2189a40fb336d12679bc57d6ceffded1cba91c287cb4e",
+  "CalcLam.lean": "a54d5ad263b8a41c5fc2b3a04c3694fc51d8a98954592a0683849436a9b370dd",
+  "CalcLamCore.lean": "411f2e3fc8ec7bb16d88f7b3241e985ac38eccac1e1ce58501450da252d70089",
+  "CalcLamE0.lean": "2cf3bdff2d9547cf5ce1f61829e156458734451f8ba285c435f13999bd77369a",
+  "CalcLamE1.lean": "bbbb1c8d152babc4203d8c4a52f5d2cd382b9d9284d525f7ce3337e307294cdd",
+  "CalcLamE2.lean": "044459ad5b46d6697ab2f99bfcbabf4be669ceb39b4a207120113728d2cbc61f",
+  "CalcLamE3.lean": "267a4e6676c980d0a18fc909ed74e16f3a431b535ed07ff2d49a3d3b6dea7714",
+  "CalcLamE4.lean": "3718c802e5183bdf29472cb860c600884e2fd0b798f08c5e62f53b4922eee29f",
+  "CalcLamE5.lean": "bcf5345c634938abef5b9aac65941290f6f4907ec4702978adfc61597050ca99",
+  "CalcLamE6.lean": "3b5e8a5384c4f6d623c1bb7310d5645af524bc85c7abe77eac4c33e8681d87b0",
+  "CalcLamE7.lean": "b8f52ba2782d930ac91e5611a4d33afd12534c01bff9853736560cf5ebc14f8c",
+  "CalcLamE8.lean": "d89ffef8e0cf7f5af04c102e2c8d76fc8b88c06791e53231c276a0a13595d7a3",
+  "CalcLamE9.lean": "ed3785d4581b7121d2730d200f2b35c937af3c51b07c3afc57236a4717598fc0",
+  "CalcLamF0.lean": "53760f39fe58d451941f6df5cf341d5662590e9492f9d5b216e03cdb68681aca",
+  "CalcLamF1.lean": "889a3c1a3c234aeafcf40cb83f22e9282813c92ade90ce508244a1fc5768fc31",
+  "CalcLamF2.lean": "c00e1f7e0c68194d023c49fbd7a949f49f4de1cd89a6c777c11170816ab4f48b",
+  "CalcLamF3.lean": "6543a1cfd861d933d18860ad43dd2605724e09887c247010272967e13e26f14b",
+  "CalcLamF4.lean": "cbb4edfbcd8f5870e956f3b602ac0c810a5ba6a817cb343a664d20c43d582396",
+  "CalcLamF5.lean": "680aa10a6d1b2903fa0724323bdd28950c92cdc0120fdeb393718ec69a85504d",
+  "CalcLamF6.lean": "7dff7fa1ce8dbfc06381a1b324a2fdafb4b61f1d45af13fb9586280deeeb1788",
+  "CalcLamF7.lean": "46088dec3ede70ced8ca63078cb9591222f11a896346b3e6a87fa0b163d5d0b5",
+  "CalcLamF8.lean": "e230acb44908512dca371ac36daa3658b67618c2f6b78569169f7783748629e2",
+  "CalcLamF9.lean": "ebb10bb7001aa86c474a235129b89badce1dbb8eca59da65f83528e0c833509c",
+  "Chain.lean": "6e3fc2abae2badf60d797694c38679602f666315b4798573fd0b761d6225d055",
+  "Constants.lean": "758eef1e4a64de2a134e7c76f1919f43a52b379b9d90d52465fc49980f57ad62",
+  "Controls.lean": "09d16c4d2d3deacd66500f5f97b29eb56d75e27559daed618f7bc777d14fb806",
+  "ControlsReject.lean": "1d50d3c59b79692d59ae48f89b74b774bc87b8e7b0c161281dc7080c809dc069",
+  "IV.lean": "1dd54660a9d75e6e705874d9b482b226fc34dcf91287b6c0231fd72192824b9f",
+  "SignedEndpoints.lean": "ec046f04865f51355d4b560ec22880f80203f568e1bdf9a517a2a14d7faba2ac"
+ }
+}

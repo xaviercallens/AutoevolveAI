@@ -1,0 +1,464 @@
+% Annexe E -- Reproduire les calculs du livre. A inclure apres \appendix.
+% Chaque commande ci-dessous a ete verifiee (fichier present, sous-commande lue dans la source). Les sorties et durees
+% marquees « relance 2026-10-26 » ont ete obtenues par l'agent redacteur de cette annexe ; les autres sont celles des
+% enregistrements cites, marquees « enregistrement ».
+% Definitions communes aux annexes C, D et E (chacune les porte, pour pouvoir etre incluse seule).
+\ifdefined\chemin\else
+\lstdefinestyle{appC}{language=Lean,
+  literate={ℝ}{{$\mathbb{R}$}}1 {ℕ}{{$\mathbb{N}$}}1 {≤}{{$\le$}}1 {→}{{$\to$}}1 {∀}{{$\forall$}}1 {∃}{{$\exists$}}1
+  {∧}{{$\wedge$}}1 {∈}{{$\in$}}1 {∑}{{$\sum$}}1 {·}{{$\cdot$}}1 {⟨}{{$\langle$}}1 {⟩}{{$\rangle$}}1 {α}{{$\alpha$}}1
+  {é}{{\'e}}1 {è}{{\`e}}1 {ê}{{\^e}}1 {à}{{\`a}}1 {ô}{{\^o}}1 {ç}{{\c{c}}}1 {«}{{\guillemotleft}}1 {»}{{\guillemotright}}1
+  {’}{{'}}1}
+\DeclareUrlCommand\chemin{\urlstyle{tt}\def\UrlBreaks{\do\/\do\_\do\-\do\.}}
+\DeclareUrlCommand\sha{\urlstyle{tt}\def\UrlBreaks{\do0\do1\do2\do3\do4\do5\do6\do7\do8\do9\do a\do b\do c\do d\do e\do f}}
+\fi
+\chapter{Reproduire les calculs du livre}\label{appE:chap}
+\sloppy % beaucoup de chemins et d'empreintes longs : on préfère des espaces inégaux à des débordements
+
+Cette annexe est un guide pas à pas pour refaire chaque résolution numérique et chaque simulation du livre. Elle
+donne l'environnement exact (§\ref{appE:sec:env}), les jeux de données (§\ref{appE:sec:donnees}), les commandes
+chapitre par chapitre avec les sorties attendues (§\ref{appE:sec:ch1} à §\ref{appE:sec:annexes}), les calculs relancés
+pour cette annexe (§\ref{appE:sec:relances}) et les pannes connues (§\ref{appE:sec:pannes}).
+
+\begin{warnbox}[: ce que « reproduire » veut dire ici]
+\begin{itemize}
+\item Les commandes ont été écrites et exécutées sur la machine de l'auteur (Linux~6.8, 8~cœurs, 29~Go de mémoire), avec
+des chemins absolus sous \chemin{/home/callensxavier_gmail_com} et un second disque monté sous
+\chemin{/mnt/disks/disk-socrateai-local-1}. Sur une autre machine, remplacez ces préfixes. Nous écrivons \texttt{\~{}}
+pour le répertoire personnel, \texttt{W} pour la racine de la copie de travail AutoevolveAI
+(\chemin{~/AutoevolveAI/.claude/worktrees/openai-math-discovery}), \texttt{PY} pour
+\chemin{~/AutoevolveAI/.venv/bin/python} \texttt{-I}, et \texttt{T} pour le dossier de construction Rust
+\texttt{\~{}/rusty-target-ar}.
+\item Pour chaque calcul, la durée et la sortie sont marquées soit \emph{relancé le 2026-10-26} (exécuté pour cette
+annexe), soit \emph{enregistrement} (valeur lue dans le fichier cité, non relancée ici).
+\item Plusieurs dépôts sont des branches locales, et certains commits n'étaient pas poussés au moment de la
+rédaction : nous le signalons. Une reproduction hors de cette machine suppose que ces branches aient été publiées.
+\item Reproduire un nombre de niveau~X ne le fait pas changer de niveau.
+\end{itemize}
+\end{warnbox}
+
+%=====================================================================================================================
+\section{L'environnement}\label{appE:sec:env}
+
+\subsection{Python}
+\begin{itemize}
+\item \textbf{Interpréteur principal :} l'environnement virtuel \chemin{~/AutoevolveAI/.venv}, Python~3.11.16. Versions
+relevées le 2026-10-26 : numpy~2.4.6, scipy~1.17.1, sympy~1.14.0, matplotlib~3.11.2, pyarrow~25.0.1, mpmath~1.3.0,
+hypothesis~6.168.0. Il est créé par \texttt{uv sync --all-extras} depuis le \texttt{pyproject.toml} du dépôt
+AutoevolveAI. \emph{Il ne contient ni \texttt{h5py} ni \texttt{python-flint}.}
+\item \textbf{python-flint~0.6.0} (Arb) : installé par \texttt{pip install --target} dans \chemin{W/.scratchpad/b2_pylib},
+compilé pour CPython~3.11 (fichier \chemin{pyflint.cpython-311-x86_64-linux-gnu.so}). Les scripts B2 et
+\chemin{code/appD_certifie.py} l'ajoutent eux-mêmes à \texttt{sys.path} ; ils doivent donc tourner avec le Python~3.11
+du \texttt{.venv}.
+\item \textbf{Python du système :} \texttt{python3}~3.10.12, avec python-flint~0.9.0 dans \texttt{\~{}/.local}. Il sert au
+certificat de Sandier--Serfaty (P1, §\ref{appE:sec:ch2}). \emph{Ne l'utilisez pas pour pytest} : il y a un conflit
+numpy/zarr dans cet environnement.
+\item \textbf{Toujours \texttt{-I}.} L'option isole l'interpréteur (pas de \texttt{PYTHONPATH}, pas de répertoire
+courant dans \texttt{sys.path}) : un fichier \texttt{json.py} piégé dans un dossier de données téléchargées ne sera pas
+importé. Les scripts qui ont besoin d'un module hors de l'environnement (LeanFlow, python-flint) l'ajoutent
+explicitement.
+\end{itemize}
+
+\subsection{Rust et rusty-SUNDIALS}
+\begin{itemize}
+\item \textbf{Chaîne :} \texttt{rustc~1.96.1} et \texttt{cargo~1.96.1}, édition~2024 (déclarée dans le
+\texttt{Cargo.toml} du dépôt).
+\item \textbf{Dépôt :} \url{https://github.com/xaviercallens/rusty-SUNDIALS}. La copie principale
+\texttt{\~{}/rusty-SUNDIALS} est sur une branche locale (\texttt{merge-mcp-temp}) ; \emph{n'y construisez rien pour ce
+livre}. Chaque étude a sa copie de travail (\emph{worktree}), au commit indiqué dans le tableau~\ref{appE:tab:wt}.
+\item \textbf{Dossier de construction partagé :} toutes les copies utilisent \texttt{T} $=$ \texttt{\~{}/rusty-target-ar}.
+Les binaires de \texttt{T/release} sont donc ceux de la \emph{dernière} construction, quelle que soit la copie.
+Reconstruisez depuis la bonne copie avant chaque chapitre.
+\end{itemize}
+
+\begin{table}[ht]\centering\scriptsize
+\caption{Copies de travail rusty-SUNDIALS (commits lus par \texttt{git rev-parse HEAD} le 2026-10-26).}\label{appE:tab:wt}
+\begin{tabular}{p{2.9cm}p{4.7cm}p{6.3cm}}\toprule
+copie \chemin{~/rusty-SUNDIALS-wt-...} & branche & commit (HEAD) et usage\\\midrule
+\texttt{tb2ch5} & \chemin{textbook2/ch5-cas-usage-2026-10-26} & \sha{cda9a9057ec16820f2e16b560cc0e63cf7eb05b9} ; chapitre~5 (U1--U5), annexe~D. Au-dessus de \texttt{origin/main} \sha{7630f7e6436f6791a8abc9fea05b76868305bc35} ; contient \texttt{qf-yukawa-crystal}, \texttt{qf-shell-cascade}, \texttt{qf-gpe2d}, \texttt{qf-popgen}\\
+\texttt{p7} & \chemin{physics/p7-fixation-2026-10-25} & même commit \texttt{cda9a905\ldots} ; P7, \texttt{qf-popgen}\\
+\texttt{ar-h1} & \chemin{physics/ar-dipolar-exciton-2026-10-25} & \sha{272a09e62c1b9b36eabc167cdafaa2845fbe9198} ; excitons dipolaires\\
+\texttt{ar-h2} & \chemin{physics/ar-yukawa-2026-10-25} & \sha{89a1fb79daac676c41db3fed57940c071161d855} (fusion ultérieure ; code de l'article \sha{cc5a8aed81b3228bd9e9eb69f2c326f926903a34}, résultats \sha{7f2a45c32a9eb9722ca36c334329cb7a5a541951}, non poussés) ; Yukawa\\
+\texttt{ar-h3} & \chemin{physics/ar-keldysh-2026-10-25} & \sha{859de5bcd7c4b0d4319ab5dc5b950db22c9e2448} (commit de l'article \sha{2e41505cc9df8c46d2b2d667c89ea53e977218ca}, ancêtre) ; Keldysh\\
+\texttt{p2} & \chemin{physics/p2-zero-point-optimality-2026-10-25} & \sha{9e85e15b23be0c74a665b6a5b74ec02b0bbffc5f} ; P2, B1 (\texttt{lattice\_phonon}, \texttt{scha.rs})\\
+\bottomrule\end{tabular}
+\end{table}
+
+Construction type (un seul paquet, deux tâches, sans réseau) :
+\begin{lstlisting}[style=appC,language={}]
+cargo build --manifest-path ~/rusty-SUNDIALS-wt-tb2ch5/Cargo.toml --target-dir ~/rusty-target-ar \
+    --release -j 2 --offline -p qf-yukawa-crystal -p qf-shell-cascade -p qf-popgen
+\end{lstlisting}
+L'option \texttt{--target-dir} équivaut à la variable \chemin{CARGO_TARGET_DIR=~/rusty-target-ar} des
+enregistrements. Le chapitre~5 (§\ref{ch5:methode}) donne la même commande sous cette forme.
+
+\subsection{Lean}\label{appE:sec:lean}
+Le livre emploie \emph{deux} chaînes Lean ; ne les mélangez pas.
+\begin{itemize}
+\item \textbf{La pile épinglée (Lean~4.34.1).} C'est une copie du répertoire \texttt{lean/} d'openai/math, avec son
+\texttt{.lake} complet (environ 8~Go), dans
+\chemin{/mnt/disks/disk-socrateai-local-1/callensxavier_home_data/openai_math_pinned/lean}. Lean~4.34.1, commit
+\sha{5045d0056413266e57c625dcd7c365b10e377c52} ; Mathlib
+\sha{d13f23b723b8a846827a245b89c10fc7d3f11612} (lu dans \chemin{lake-manifest.json}, avec batteries
+\sha{f2effa3d803fda822b1f97b806c47cf2adfbcbc2} et une trentaine d'autres paquets). La copie n'est pas un dépôt
+\texttt{git} ; le clone d'openai/math d'où elle vient est au commit \sha{adc7f1241b42e322a6451854ab7e4b4c146bf78a}. La
+chaîne elle-même est dans \chemin{.../callensxavier_home_data/elan/toolchains/leanprover--lean4---v4.34.1/bin} (avec
+\texttt{lake} et \texttt{leanchecker}) ; une seconde copie de la même version est dans \chemin{~/.elan/toolchains}, et
+LeanFlow l'utilise (cœur seul). Tous les modules \texttt{formal\_cert/} cités aux chapitres~1 à~5 et les exemples de
+l'annexe~C ont été vérifiés avec cette pile.
+\item \textbf{Lean~v4.34.0-rc2.} C'est la chaîne par défaut d'elan sur la machine. Elle a servi au fichier minimal
+\texttt{T.lean} du chapitre~1 (sans bibliothèque), à l'environnement QuantumFluids du cas U3 (\lean{sBog_le_sqrt}) et au
+projet du modèle en couches $\sigma=3$ (cas U4), qui ont chacun leur propre Mathlib, hors de ce dépôt. Ces deux
+derniers sont \tierAs{} : aucun rejeu \lean{leanchecker} n'est enregistré pour eux.
+\end{itemize}
+Compiler un fichier avec la pile épinglée, depuis \texttt{W} :
+\begin{lstlisting}[style=appC,language={}]
+taskset -c 6,7 PY scripts/certified_numerics/lean_pinned.py compile FICHIER.lean --json-out SORTIE.json \
+    [--olean Module.Nom]
+\end{lstlisting}
+Sans \texttt{--olean}, aucun \texttt{.olean} n'est écrit, et les fichiers suivants ne peuvent pas importer celui-ci.
+Avec \texttt{--olean}, les \texttt{.olean} vont dans \chemin{W/formal_cert/.olean_out}, dossier codé en dur dans le
+script ; compilez alors les modules dans l'ordre de leurs \texttt{import}. Le rejeu se fait avec le binaire
+\texttt{leanchecker} de la même chaîne et le même \texttt{LEAN\_PATH} ; \chemin{code/appC_leanchecker.py} montre comment
+(annexe~\ref{appC:chap}).
+
+\subsection{LeanFlow}
+Dépôt \chemin{https://github.com/xaviercallens/SocrateAI-Scientific-Agora-LeanFlow}, copie de travail
+\texttt{\~{}/LeanFlow-wt-p1}, branche \chemin{feat/lean-data-certificates-2026-10-25}, commit
+\sha{06084ef5c40057c66c476feba18ea3da8fb150ba} (le commit qui ajoute la tactique \texttt{decide\_kernel}). Au
+2026-10-26, ce commit était \emph{local} : la branche distante s'arrêtait à
+\sha{84e0c2899830fba671022eefcd408af9ecd565c8}, qui ne connaît pas \texttt{decide\_kernel}. Interface en ligne de
+commande :
+\begin{lstlisting}[style=appC,language={}]
+PY -m leanflow_mcp.lean AFFIRMATION.json --lean ~/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean
+# code de sortie 0 = vérifié (niveau A), 1 = rejeté, 2 = erreur
+\end{lstlisting}
+Sous \texttt{-I}, il faut que \chemin{~/LeanFlow-wt-p1/src} soit dans \texttt{sys.path} : les scripts du livre
+(\chemin{ch5_U5_fixation.py}, \texttt{appD\_certifie.py}) l'y ajoutent avec leur option \texttt{--leanflow-src}.
+
+\subsection{Le dépôt AutoevolveAI}
+Les scripts, les enregistrements (\texttt{results/}), les sources Lean (\texttt{formal\_cert/}) et ce livre
+(\chemin{papers/textbook_formalisation_2026/}) sont sur la branche \chemin{worktree-openai-math-discovery} du dépôt
+AutoevolveAI. Quelques dossiers d'enregistrements n'étaient pas encore suivis par \texttt{git} au moment de la
+rédaction, notamment \chemin{results/kernel_replay_2026-10-26/} (le rejeu \lean{leanchecker} en cours) et
+\chemin{results/proposal2/2026-10-26/A1-continuation/}.
+
+%=====================================================================================================================
+\section{Les jeux de données}\label{appE:sec:donnees}
+
+\begin{table}[ht]\centering\scriptsize
+\caption{Jeux de données. Les révisions et empreintes sont celles que vérifient les scripts ; les licences sont celles
+qu'affiche la carte du jeu, non vérifiées en amont.}\label{appE:tab:hf}
+\begin{tabular}{p{1.0cm}p{4.6cm}p{4.3cm}p{4.0cm}}\toprule
+cas & identifiant Hugging Face, révision & fichier, sha256 & licence ; copie locale\\\midrule
+U1 & \chemin{colabfit/JARVIS_DFT_3D_12_12_2022}, \sha{f4de0085edcf92885870c67459363d2c7080c90b} &
+\texttt{co/co\_0.parquet} (54\,027\,813 octets), \sha{9f6c21a2a3eda4316eee1f2be7dddc276eeb5f905de87dcce70f20e36132510b} &
+\og unknown \fg~\cite{ch5:jarvis} ; \chemin{~/hf-data/dipolar_exciton/...}\\
+U2 & \chemin{colabfit/OC20_IS2RES_val_id}, \sha{6a1dfef12aec878b4cda99edd54b16a6a254e135} &
+\texttt{co/co\_10.parquet} (142\,986\,687 octets), \sha{9e4249ba20cf4cdc46f69e7fe6deb19be286dd19c9f1cf85d350816d2b1e748b} &
+CC-BY-4.0~\cite{ch5:oc20} ; disque~2, \chemin{hf_datasets/oc20_is2res_val_id/}\\
+U3 & aucun jeu sur le Hub ; Table~14.1 de Donnelly--Barenghi~\cite{ch3-db} &
+\chemin{W/papers/prog_superfluid_structure_factor/} \chemin{data/he4_Sk_donnelly_table14_1.csv} & source secondaire \tierL\\
+U4 & \chemin{polymathic-ai/turbulent_radiative_layer_2D}, \sha{2ee7756575ff6f90981d0308cbcb6a2ab5995bdc} &
+\chemin{data/test/turbulent_radiative_layer_tcool_0.32.hdf5}, \sha{06cbd36c1dbea84e70906a363d20143b228765ee37850ec65351e247cf7df747} &
+CC-BY-4.0~\cite{ch5:thewell} ; \chemin{~/hf-data/sigma3_enstrophy/...}\\
+U5 & \chemin{katarinagresova/Genomic_Benchmarks_demo_coding_vs_intergenomic_seqs}, \sha{85458172cab6cffad46cb172e64ca94780506ed6} &
+\chemin{data/test-00000-of-00001-6fccc31405110e30.parquet} (2\,456\,511 octets), \sha{dfe13715a0227204cbae1ff6a167b2138337b749ca4f748da7c5a838a0049afe} &
+aucune licence sur la carte~\cite{ch5:gb} ; \chemin{~/hf-data/textbook2/...}\\
+\bottomrule\end{tabular}
+\end{table}
+
+Les scripts U1 et U5 téléchargent eux-mêmes le fichier s'il manque, à l'adresse
+\chemin{https://huggingface.co/datasets/<id>/resolve/<révision>/<fichier>}, puis \emph{s'arrêtent} si l'empreinte
+diffère. Les scripts U2 et U4 vérifient l'empreinte si le fichier est présent, et sinon se contentent des données
+dérivées rangées dans la crate (\chemin{data/initial/*.csv} pour U2, \chemin{results/sigma3/well_amps.txt} pour U4).
+L'extraction des spectres de The Well demande \texttt{h5py}, absent du \texttt{.venv} : elle a été faite à part par les
+scripts \chemin{results/sigma3/scripts/well_spectrum.py} et \texttt{make\_amps.py} de la crate.
+
+%=====================================================================================================================
+\section{Chapitre 1}\label{appE:sec:ch1}
+
+\paragraph{Formule de Poisson et contrôles.} \texttt{PY} \chemin{papers/textbook_formalisation_2026/code/ch1_theta.py}, sans
+argument ; il n'écrit aucun fichier. \emph{Relancé le 2026-10-26} : 3,4~s ; sortie conforme au tableau du
+§\ref{ch1:sec:poisson} (extrait au §\ref{appE:sec:relances}).
+
+\paragraph{Lean.} Le fichier \texttt{T.lean} du §\ref{ch1:sec:lean} se compile avec \texttt{lean T.lean} (v4.34.0-rc2,
+sans bibliothèque). Les exemples de l'annexe~C en sont une version étendue, avec la pile épinglée.
+
+%=====================================================================================================================
+\section{Chapitre 2}\label{appE:sec:ch2}
+
+\paragraph{Excitons dipolaires (relaxations CVODE).} Copie \texttt{ar-h1}. Source :\\ \chemin{W/results/autoresearch/2026-10-25/H1/contribution/NUMERICS.md}, section \emph{Reproduce}.
+\begin{lstlisting}[style=appC,language={}]
+cargo build --manifest-path ~/rusty-SUNDIALS-wt-ar-h1/Cargo.toml --target-dir ~/rusty-target-ar \
+    --release -j 2 --offline -p qf-yukawa-crystal
+D=~/rusty-SUNDIALS-wt-ar-h1/crates/qf-yukawa-crystal
+T/release/dipolar_crystal refs $D ;  T/release/dipolar_crystal gaps $D ;  T/release/dipolar_crystal controls $D
+T/release/dipolar_crystal main $D 0.066 8 2          # 8 uniformes, 2 recuits, 2 incommensurables (défaut)
+\end{lstlisting}
+Sous-commandes réelles (lues dans \chemin{src/bin/dipolar_crystal.rs}) : \texttt{refs}, \texttt{gaps},
+\texttt{controls}, \texttt{main} ; arguments de \texttt{main} : dossier, $\tilde d$, nombre de départs uniformes,
+nombre de départs recuits, nombre de départs incommensurables. \emph{Enregistrement :} 57~min~48~s pour le \texttt{main}
+à $\tilde d=0{,}066$, 8~min~13~s pour \texttt{controls}. Les relaxations principales ont été faites avec des binaires
+du commit \texttt{17ea6be} de cette branche. Le chapitre~5 relance deux de ces relaxations
+(\texttt{main <dossier> 0.066 1 0 1}, environ 8~min sur deux cœurs) et retrouve l'enregistrement chiffre pour chiffre.
+
+\paragraph{Yukawa (erratum, potentiel exact).} Copie \texttt{ar-h2} ; source \chemin{W/papers/ar_yukawa_crystal/main.tex},
+section reproductibilité.
+\begin{lstlisting}[style=appC,language={}]
+cargo build --manifest-path ~/rusty-SUNDIALS-wt-ar-h2/Cargo.toml --target-dir ~/rusty-target-ar \
+    --release -j 2 --offline -p qf-yukawa-crystal
+D=~/rusty-SUNDIALS-wt-ar-h2/crates/qf-yukawa-crystal
+T/release/yukawa_crystal exact-refs $D                 # énergies exactes, borne de queue, Ewald
+T/release/yukawa_crystal exact-relax $D 2 1 0 0        # kappa nrun recuit premier (voir scripts/run_exact_relax.sh)
+T/release/yukawa_crystal exact-saddle $D               # témoin négatif : réseau carré, col
+PY $D/scripts/mpmath_lattice_control.py $D SORTIE.json # témoin positif, 40 chiffres
+bash $D/scripts/check_crate.sh                         # fmt, clippy, tests
+\end{lstlisting}
+\emph{Enregistrement :} 60 à 158~s par relaxation à $\kappa=2$, 208 à 1\,486~s à $\kappa=1$ ; \texttt{check\_crate.sh} :
+24 tests réussis, 0 échec, 1 ignoré.
+
+\paragraph{Keldysh (jellium).} Copie \texttt{ar-h3}. Construire d'abord depuis cette copie :
+\begin{lstlisting}[style=appC,language={}]
+cargo build --manifest-path ~/rusty-SUNDIALS-wt-ar-h3/Cargo.toml --target-dir ~/rusty-target-ar \
+    --release -j 2 --offline -p qf-yukawa-crystal
+\end{lstlisting}
+puis lancer
+\chemin{T/release/keldysh_jellium} \texttt{scan} \chemin{results/keldysh/scan.json} (sous-commandes \texttt{scan} et \texttt{points}),
+puis \texttt{PY} \chemin{scripts/keldysh/analyze.py} \texttt{final} \texttt{results/keldysh} \chemin{~/hf-data/keldysh_tmd/tmd_rows.json}, depuis la
+crate. \emph{Enregistrement :} le balayage prend 0,33~s. Le contrôle à 30~chiffres de la route~E (avec deux erreurs
+plantées) est \texttt{PY} \chemin{W/results/autoresearch/2026-10-25/H3/contribution/route_e_check.py} \texttt{SORTIE.json}
+(\emph{enregistrement :} erreur relative du témoin positif $2{,}1\times10^{-17}$ ; témoins négatifs $0{,}37$ et $0{,}82$).
+
+\paragraph{Sandier--Serfaty, P1 : le certificat d'intervalles (478~s).} Dans le dossier \texttt{verification} de la
+prépublication, sous le clone d'openai/math
+(\chemin{.../lean4basesource/openai-math/preprints/Triangular-minimality-for-planar-Coulomb-renormalized-energy-September-23-2026/verification}) :
+\begin{lstlisting}[style=appC,language={}]
+python3 -I -B run-certificate.py --output-dir NOUVEAU_DOSSIER
+\end{lstlisting}
+avec le \texttt{python3} du système et \texttt{g++}~11.4.0 (le script compile en \texttt{-std=c++17 -O3 -fopenmp} et
+fixe lui-même \chemin{OMP_NUM_THREADS=32}). \emph{Enregistrement} (\chemin{W/results/programmes/2026-10-25/P1/}) :
+dernière ligne \texttt{OK}, \texttt{TIMING full certificate 478.001 seconds} (490~s au total), 22 paires sur 22
+identiques. Témoins négatifs : \chemin{P1/s1_neg/launch_negctl.sh} et \chemin{launch_negctl_AB.sh}.
+
+\paragraph{A1 et B3.}
+\begin{itemize}
+\item A1 (portage Lean) : compilation par \texttt{lean\_pinned.py} et \chemin{W/results/proposal2/2026-10-26/A1/scripts/compile_seq.py} ;
+mesures de coût par \chemin{A1/scripts/bench_run.py} \texttt{SORTIE} \texttt{FICHIERS...} et la copie instrumentée
+\chemin{A1/cpp/patch_counters.py}. \emph{Aucune commande de compilation n'est enregistrée pour
+\chemin{cpp/dump_driver.cpp}} : ce pas n'est pas reproductible tel quel.
+\item B3 (bcc en dimension~3), depuis \chemin{W/papers/p2_3d_feasibility/} : \texttt{PY} \chemin{code/n1_energies.py},
+\texttt{code/n3b\_cubic.py}, \chemin{code/n2_voronoi.py}, \chemin{code/n3_green_obstruction.py} (environ 45~min), puis
+\texttt{make\_all.py}. Seuls \texttt{n1} et \texttt{n3b} ont été relancés par le producteur (sorties identiques
+octet pour octet) ; \texttt{n2} et \texttt{n3} ne l'ont jamais été.
+\end{itemize}
+
+%=====================================================================================================================
+\section{Chapitre 3}\label{appE:sec:ch3}
+
+\paragraph{P2 : énergie de point zéro.} Copie \texttt{p2}. Construction :
+\texttt{bash} \chemin{W/results/programmes/2026-10-25/P2/build.sh} (il construit le seul binaire \texttt{lattice\_phonon}, sur les
+cœurs 4--7). Sous-commandes réelles : \texttt{point}, \texttt{scan}, \texttt{frozen}, \texttt{ewald\_static},
+\texttt{duffy}, \texttt{curv}, \texttt{scha}. Exemples :
+\begin{lstlisting}[style=appC,language={}]
+T/release/lattice_phonon point gauss:1 0.5 0.966025403784 96,192,384 400   # le concurrent rhombique
+PY ~/rusty-SUNDIALS-wt-p2/crates/qf-yukawa-crystal/scripts/phonon_mechanism.py SORTIE.json
+PY W/papers/prog_zero_point_optimality/human_check.py                       # 1.490278318 et 1.503352352
+\end{lstlisting}
+La chaîne complète de la porte G1 (625 formes, 12 potentiels) est décrite pas à pas dans
+\chemin{W/results/programmes/2026-10-25/P2/GATE.md} (scripts \chemin{phonon_gen_taus.py}, \chemin{phonon_run_gate.py},
+\chemin{phonon_edge_check.py} de la crate). \emph{Enregistrement :} \chemin{phonon_mechanism.py} donne les racines de
+l'intervalle $a\in(0{,}37668;\,1{,}58148)$ en 121,6~s.
+
+\paragraph{B2 : la courbure certifiée (448~s).} Depuis le dossier \chemin{W/results/proposal2/2026-10-26/B2/}, avec le
+Python du \texttt{.venv} (obligatoire : python-flint~0.6.0 pour CPython~3.11, chargé depuis \chemin{.scratchpad/b2_pylib}
+par le script) :
+\begin{lstlisting}[style=appC,language={}]
+B2_REFINE_TOL=0.01 B2_MAX_DEPTH=3 PY code/b2_certify.py 1 shear 64 1/100000 21 run_a1_shear_main.json
+B2_REFINE_TOL=0.01 B2_MAX_DEPTH=3 PY code/b2_certify.py 1 diag 64 1/100000 21 run_a1_diag_ctl.json
+B2_REFINE_TOL=0.01 B2_MAX_DEPTH=3 PY code/b2_certify.py 2 shear 64 1/100000 21 run_a2_shear_negctl.json
+B2_REFINE_TOL=0.01 B2_MAX_DEPTH=3 PY code/b2_certify.py 1/2 shear 64 1/100000 21 run_a05_shear_limit.json
+PY code/b2_leanflow_claims.py run_a1_shear_main.json leanflow_claim_a1.json b2_a1_shear
+\end{lstlisting}
+\emph{Enregistrement :} 448,1~s, 206\,468 cellules, aucun échec, $U''(0)\in[-1{,}94771;\,-1{,}90017]$ ; contrôles :
+677,9~s (\texttt{diag}), 1\,342,4~s ($a=2$), 1\,238,6~s ($a=1/2$). Le fichier \texttt{b2\_certify.py} a été corrigé
+après ces exécutions (facteur de queue, effet nul selon le rapport) et n'a pas été relancé : son empreinte actuelle
+diffère de celle de l'enregistrement. Puis, côté Lean (depuis \texttt{W}) :
+\texttt{lean\_pinned.py} \texttt{compile} \chemin{formal_cert/Programmes/ZeroPointCert/Basic.lean} \texttt{--olean} \chemin{Programmes.ZeroPointCert.Basic},
+puis \texttt{Controls.lean}, et les deux fichiers qui doivent échouer, \chemin{RejectTampered.lean} et
+\texttt{RejectA2.lean}.
+
+\paragraph{B1 : SCHA.} Depuis \texttt{W}, avec \chemin{B=results/proposal2/2026-10-26/B1}, sur les cœurs~6 et~7
+(\texttt{B/TRANSITION.md}, section \emph{Commands}) :
+\begin{lstlisting}[style=appC,language={}]
+PY B/code/b1a_curvature.py B/data/b1a_curvature.json        # ~1 min
+PY B/code/b1a_scan.py B/data 1.0 0.3 0.4 0.45 0.5 0.6 0.7 0.8 0.9 1.1 1.2 1.3 1.4 1.5 2.0   # ~12 min
+bash B/code/run_stage2.sh                                    # témoins + SCHA, ~70 min
+PY B/code/b1_summary.py B
+bash B/code/rust_check.sh                                    # 63 tests
+T/release/lattice_phonon scha 1 0.5 0.8660254037844386 0.1 32
+\end{lstlisting}
+L'accord Python--Rust à $8{,}9\times10^{-16}$ vient de \chemin{W/papers/p2_quantum_transition/ledger/scha_crosscheck.py},
+qui appelle \chemin{T/release/lattice_phonon} : construisez d'abord depuis la copie \texttt{p2}. La transformée de Fourier
+plane du potentiel en épaulement (minimum relatif $-0{,}0448$ en $kR_c=4{,}82$) est recalculée par
+\texttt{PY} \chemin{W/papers/p2_quantum_transition/checks.py}.
+
+\paragraph{Hélium : le test de la région des rotons.} \texttt{PY} \chemin{W/results/programmes/2026-10-25/P6/scripts/analysis.py}
+(écrit \texttt{results.json}) ; la version du chapitre~5 est \chemin{code/ch5_U3_helium.py}, relancée ci-dessous.
+
+%=====================================================================================================================
+\section{Chapitre 4}\label{appE:sec:ch4}
+
+\begin{lstlisting}[style=appC,language={}]
+cargo build --manifest-path ~/rusty-SUNDIALS-wt-p7/Cargo.toml --target-dir ~/rusty-target-ar \
+    --release -j 2 --offline -p qf-popgen
+T/release/fixation_ode DOSSIER            # 115 lignes : 106 acceptées, 9 témoins refusés
+PY W/results/programmes/2026-10-25/P7/numerics_fixation.py     # fractions exactes
+PY W/results/programmes/2026-10-25/P7/price_numerics.py
+PY W/results/proposal3/2026-10-26/N4/numerics_evograph.py      # étoile n = 3 et 4, 4-cycle
+\end{lstlisting}
+Les trois scripts Python ne prennent pas d'argument et écrivent leur fichier JSON à côté d'eux (ils écrasent donc
+l'enregistrement : comparez avec \texttt{git diff}). \emph{Enregistrement :} étoile $n=4$ : $392/1265$, $168/253$,
+moyenne $728/1265$ ; 4-cycle : montée/descente $(1/3,1/6)$ et $(2/3,1/3)$. Les tests unitaires de \texttt{qf-popgen} ont
+été relancés pour cette annexe (§\ref{appE:sec:relances}). Le rejeu \lean{leanchecker} des dix modules du chapitre est
+décrit au §\ref{ch4:sec:bilan}. Trois nombres du chapitre n'ont pas de script de reproduction : la découverte par
+\texttt{sympy} de l'incrément de Fisher, le recalcul rationnel de $7/19$ et $277/361$ (que le noyau vérifie de toute
+façon), et le tableau des $\rho_{100}$ de Moran.
+
+%=====================================================================================================================
+\section{Chapitre 5}\label{appE:sec:ch5}
+
+Construire d'abord, depuis la copie \texttt{tb2ch5} (commande du §\ref{appE:sec:env}). Les scripts écrivent leur figure
+dans \texttt{figures/} \emph{à côté du script} : lancés depuis le livre, ils écrasent les figures imprimées. Pour un
+simple contrôle, copiez le dossier du livre ailleurs et lancez la copie, comme nous l'avons fait.
+\begin{center}\small
+\begin{tabular}{p{1.0cm}p{8.6cm}p{4.4cm}}\toprule
+cas & commande (depuis le dossier du livre) & durée\\\midrule
+U1 & \texttt{PY} \chemin{code/ch5_U1_dipolar.py} \texttt{SORTIE} \texttt{--bin} \texttt{T/release} & environ 11~s (enregistrement)\\
+U2 & \texttt{PY} \chemin{code/ch5_U2_yukawa.py} \texttt{SORTIE} \texttt{[--skip-relax]} & 3 relaxations de 1 à 2~min (enregistrement)\\
+U3 & \texttt{PY} \chemin{code/ch5_U3_helium.py} \texttt{SORTIE} \texttt{[--gpe-json} \texttt{FICHIER]} & 4,3~s (relancé)\\
+U4 & \texttt{PY} \chemin{code/ch5_U4_shell.py} \texttt{SORTIE} & 2,5 à 6~min (enregistrement)\\
+U5 & \texttt{PY} \chemin{code/ch5_U5_fixation.py} \texttt{SORTIE} & 20,4~s (relancé)\\
+\bottomrule\end{tabular}
+\end{center}
+La réponse linéaire de Gross--Pitaevskii (U3, panneau b) se calcule par l'exemple de \texttt{qf-gpe2d} :
+\begin{lstlisting}[style=appC,language={}]
+cargo run --manifest-path ~/rusty-SUNDIALS-wt-tb2ch5/Cargo.toml --target-dir ~/rusty-target-ar \
+    --release -j 2 --offline -p qf-gpe2d --example bogoliubov_dispersion -- GPE.json
+PY code/ch5_U3_helium.py SORTIE --gpe-json GPE.json
+\end{lstlisting}
+(\emph{Enregistrement :} 10~min~24~s sur un cœur.) Les sous-commandes appelées par les scripts existent bien :
+\texttt{dipolar\_crystal refs|gaps}, \texttt{yukawa\_crystal} \chemin{exact-refs|exact-relax} (arguments : dossier, $\kappa$,
+nombre de départs, recuit, premier), \texttt{sigma3\_study full SORTIE.json well\_amps.txt ÉTIQUETTE}, \texttt{fixation\_ode
+DOSSIER}.
+
+%=====================================================================================================================
+\section{Annexes C et D}\label{appE:sec:annexes}
+
+\begin{lstlisting}[style=appC,language={}]
+taskset -c 6,7 PY scripts/certified_numerics/lean_pinned.py compile \
+    papers/textbook_formalisation_2026/code/lean/appC_1_logique.lean --json-out SORTIE.json    # idem 2 à 6
+taskset -c 6,7 PY papers/textbook_formalisation_2026/code/appC_leanchecker.py TRAVAIL SORTIE.json \
+    appC_1_logique appC_2_calcul appC_3_recurrence appC_4_lire_mathlib appC_5_temoins appC_6_contrefacon
+PY papers/textbook_formalisation_2026/code/appD_certifie.py SORTIE
+cargo run --manifest-path ~/rusty-SUNDIALS-wt-tb2ch5/Cargo.toml --target-dir ~/rusty-target-ar \
+    --release -j 2 --offline -p examples --example robertson
+\end{lstlisting}
+Codes de sortie attendus : $0$ pour les compilations 1 à 6 (même l'exemple~5, qui contient \lean{sorry}) ; $0$ pour
+\chemin{appC_leanchecker.py}, qui vérifie lui-même que seul l'exemple~6 et le module inexistant sont refusés ; $0$ pour
+\texttt{appD\_certifie.py}, qui vérifie ses sept contrôles.
+
+%=====================================================================================================================
+\section{Ce qui a été relancé pour cette annexe}\label{appE:sec:relances}
+
+Le 2026-10-26, l'agent rédacteur de cette annexe a relancé les calculs suivants, depuis une \emph{copie} du dossier du
+livre (pour ne pas écraser les figures), sur deux cœurs. Les sorties sont copiées des terminaux.
+
+\paragraph{\texttt{ch1\_theta.py} (3,4~s).}
+\begin{lstlisting}[style=appC,language={}]
+A   a=0.5: Theta=2.008477918598  a^-1 Theta(1/a)=2.008477918598  diff=4.44e-16  sans facteur diff=1.00e+00
+A   a=2.0: Theta=1.004238959299  a^-1 Theta(1/a)=1.004238959299  diff=2.22e-16  sans facteur diff=1.00e+00
+A   a=3.0: Theta=1.000112671200  a^-1 Theta(1/a)=1.000112671200  diff=8.88e-16  sans facteur diff=2.00e+00
+a=1.0: Theta_A=1.159595267  Theta_Z2=1.180340599  A<=Z2: True
+all ok: True
+exp(-sqrt t) [True, True, True, True, True, True, True, True, True]
+cos t (controle negatif) [False, False, False, False, False, False, False, False, False]
+\end{lstlisting}
+(extrait). Les valeurs sont celles du chapitre~1.
+
+\paragraph{\texttt{ch5\_U3\_helium.py} (4,3~s, avec \texttt{--csv} explicite).}
+\begin{lstlisting}[style=appC,language={}]
+"kstar": 3.003789625995706,  "n_points": 99,  "delta_ds": 0.08200000000000007,
+"counts": {"CONSISTENT": 29, "UNDECIDED": 7, "REFUTED": 63},
+"roton_n": 21,  "roton_all_refuted": true,  "roton_ratio_range": [1.6166788059571657, 2.491062323005841],
+"pos_control_SB_fires": 0,  "neg_control_free_fires": "95/95",  "all_controls_pass": true
+\end{lstlisting}
+Ce sont les nombres du cas U3 (29, 7, 63 ; facteur 1,62 à 2,49 ; témoins 0 sur 99 et 95 sur 95).
+
+\paragraph{\texttt{ch5\_U5\_fixation.py} (20,4~s).}
+\begin{lstlisting}[style=appC,language={}]
+"rows": 115,  "accepted": 106,  "refused": 9,  "max_err_vs_exact": 3.130636638815076e-10,
+"dataset_rows": 25000,  "gc_fraction": 0.5381068 (label 0), 0.4003632 (label 1),
+"leanflow": {"pos_cvode_within_1e-11_of_4_7": "ok", "neg_neutral_1_3": "rejected",
+             "neg_too_tight_1e-14": "rejected", "pos_harmonic_moran_N3_r2": "ok",
+             "neg_harmonic_neutral_i_over_N": "rejected"},
+"leanflow_all_as_expected": true,  "literal": "0.5714285714284759"
+\end{lstlisting}
+(mise en forme resserrée). Ce sont les nombres du cas U5.
+
+\paragraph{Tests de \texttt{qf-popgen} (15,9~s, compilation comprise).}
+\begin{lstlisting}[style=appC,language={}]
+cargo test --manifest-path ~/rusty-SUNDIALS-wt-tb2ch5/Cargo.toml --target-dir ~/rusty-target-ar \
+    --release -j 2 --offline -p qf-popgen
+running 8 tests
+test tests::negative_corrupted_kernel_is_refused ... ok
+test tests::negative_identity_kernel_never_absorbs ... ok
+test tests::negative_horizon_too_short_is_refused ... ok
+test tests::nonnegativity_check_refuses_cancelling_entries_that_the_signed_sums_accept ... ok
+test tests::accepted_runs_record_a_nonnegative_minimum_component ... ok
+test tests::positive_moran_n3_r2_matches_the_lean_values ... ok
+test tests::positive_neutral_wright_fisher_gives_i_over_n ... ok
+test tests::negative_flipped_and_neutral_targets_are_refused_under_selection ... ok
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+\end{lstlisting}
+
+\paragraph{Annexes C et D.} Les six compilations Lean, le rejeu \lean{leanchecker}, \texttt{appD\_certifie.py} (1,7~s) et
+l'exemple \texttt{robertson} (43~s, compilation comprise) : sorties citées aux annexes~\ref{appC:chap}
+et~\ref{appD:chap}.
+
+\paragraph{Non relancés.} U1, U2 et U4, la réponse linéaire de Gross--Pitaevskii, et tous les calculs des
+chapitres~2 à~4 autres que les tests de \texttt{qf-popgen} : leurs durées et sorties ci-dessus sont celles des
+enregistrements.
+
+%=====================================================================================================================
+\section{Pannes connues et remèdes}\label{appE:sec:pannes}
+
+\begin{description}
+\item[Cache disque froid.] Le premier chargement de Mathlib, ou d'\lean{import Lean}, lit des gigaoctets de
+\texttt{.olean} sur le disque. Dans l'annexe~C, le même fichier a compilé en 51,6~s la première fois et en 4,4~s la
+seconde. Ne concluez pas d'une première mesure lente ; ne comparez des durées qu'à cache chaud. Le rejeu
+\lean{leanchecker} prend environ une minute par module, même pour un module minuscule, à cause de ce chargement.
+\item[CPU.] Limitez le parallélisme : \texttt{cargo -j 2}, \texttt{taskset -c 6,7} pour Python et Lean. Un processus déjà
+lancé se borne avec \texttt{taskset -a -cp 0,1 PID}. Le certificat P1 fixe lui-même \chemin{OMP_NUM_THREADS=32} ; sur
+une petite machine, il prendra bien plus que 478~s.
+\item[Mémoire.] Nous n'avons pas mesuré le pic de mémoire des compilations Lean ; un import de toute Mathlib en demande
+nettement plus que nos imports ciblés. LeanFlow accepte une limite (\texttt{max\_memory\_mb} de \texttt{LeanConfig}) ; un
+dépassement donne une \texttt{error}, jamais un \texttt{ok}.
+\item[Binaires périmés.] \texttt{T/release} est partagé : si un nombre diffère de l'enregistrement, reconstruisez depuis
+la copie du chapitre (tableau~\ref{appE:tab:wt}) avant de chercher plus loin.
+\item[\texttt{cargo --offline} échoue.] Le cache des dépendances (\texttt{\~{}/.cargo/registry}) doit être rempli : lancez
+une fois \texttt{cargo fetch --manifest-path .../Cargo.toml} avec le réseau.
+\item[Un module Lean introuvable.] \texttt{unknown module prefix} ou \texttt{Could not find any oleans} : le module importé
+n'a pas été compilé avec \texttt{--olean}, ou pas dans l'ordre. Les \texttt{.olean} de \texttt{lean\_pinned.py} vont
+toujours dans \chemin{W/formal_cert/.olean_out}.
+\item[\texttt{ModuleNotFoundError: flint} ou erreur d'ABI.] Le script tourne avec le mauvais Python : B2 et
+\texttt{appD\_certifie.py} exigent le Python~3.11 du \texttt{.venv}, et python-flint~0.6.0 de \texttt{b2\_pylib}.
+\item[\texttt{ModuleNotFoundError: leanflow\_mcp}.] Passez \texttt{--leanflow-src \~{}/LeanFlow-wt-p1/src} ; sous
+\texttt{-I}, \texttt{PYTHONPATH} est ignoré.
+\item[\texttt{sha256 mismatch}.] Le fichier téléchargé n'est pas celui de la révision épinglée (ou le téléchargement a été
+tronqué). Supprimez-le et relancez ; ne contournez jamais la vérification.
+\item[Figures écrasées.] Les scripts \texttt{code/ch5\_U*.py} écrivent dans \texttt{figures/} à côté d'eux. Travaillez sur une
+copie du livre, ou vérifiez avec \texttt{git diff} avant de valider.
+\item[Le code de retour 0.] Lean accepte \lean{sorry} avec le code~$0$ ; \texttt{lean\_pinned.py}
+aussi. Lisez toujours les lignes \texttt{\#print axioms}, et rejouez avec \lean{leanchecker} avant d'écrire \tierA.
+\end{description}

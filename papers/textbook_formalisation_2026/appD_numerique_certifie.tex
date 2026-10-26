@@ -1,0 +1,298 @@
+% Annexe D -- Calcul numerique certifie. A inclure apres \appendix.
+% Les sorties citees viennent de code/appD_certifie.py et de l'exemple robertson de rusty-SUNDIALS, executes le 2026-10-26.
+% Definitions communes aux annexes C, D et E (chacune les porte, pour pouvoir etre incluse seule).
+\ifdefined\chemin\else
+\lstdefinestyle{appC}{language=Lean,
+  literate={ℝ}{{$\mathbb{R}$}}1 {ℕ}{{$\mathbb{N}$}}1 {≤}{{$\le$}}1 {→}{{$\to$}}1 {∀}{{$\forall$}}1 {∃}{{$\exists$}}1
+  {∧}{{$\wedge$}}1 {∈}{{$\in$}}1 {∑}{{$\sum$}}1 {·}{{$\cdot$}}1 {⟨}{{$\langle$}}1 {⟩}{{$\rangle$}}1 {α}{{$\alpha$}}1
+  {é}{{\'e}}1 {è}{{\`e}}1 {ê}{{\^e}}1 {à}{{\`a}}1 {ô}{{\^o}}1 {ç}{{\c{c}}}1 {«}{{\guillemotleft}}1 {»}{{\guillemotright}}1
+  {’}{{'}}1}
+\DeclareUrlCommand\chemin{\urlstyle{tt}\def\UrlBreaks{\do\/\do\_\do\-\do\.}}
+\DeclareUrlCommand\sha{\urlstyle{tt}\def\UrlBreaks{\do0\do1\do2\do3\do4\do5\do6\do7\do8\do9\do a\do b\do c\do d\do e\do f}}
+\fi
+\chapter{Calcul numérique certifié}\label{appD:chap}
+
+Un nombre calculé en virgule flottante est une approximation dont on ne connaît pas l'erreur. Un nombre
+\emph{certifié} est accompagné d'un encadrement démontré. Entre les deux, ce livre distingue plusieurs degrés
+(§\ref{ch1:sec:tiers}) :
+\begin{itemize}
+\item un calcul en flottants, même très précis, est de niveau \tierX{} ;
+\item un encadrement en arithmétique de boules (Arb) est rigoureux \emph{si le code est juste} ; comme ce code n'est pas
+vérifié par Lean, le livre le classe \tierC{} (« C-ball » au chapitre~3) ;
+\item une affirmation sur des \emph{rationnels énoncés}, décidée par le noyau de Lean, est \tierAs{} pour cette
+affirmation arithmétique seule, et \tierA{} quand le module a de plus été rejoué par \lean{leanchecker} avec le code~$0$.
+\end{itemize}
+Cette annexe explique ces trois étages, puis la résolution d'équations différentielles raides avec CVODE, et pourquoi
+un résultat CVODE reste de niveau~X. Un exemple complet, \chemin{code/appD_certifie.py}, parcourt les trois étages avec
+ses témoins.
+
+%=====================================================================================================================
+\section{La virgule flottante}\label{appD:sec:flottant}
+
+Un flottant binaire64 (norme IEEE~754~\cite{app:ieee754}) s'écrit $\pm m\cdot2^{e}$ avec une mantisse de 53 bits. Le
+résultat d'une opération ($+,-,\times,\div,\sqrt{\ }$) est l'arrondi du résultat exact, et la norme garantit
+\[\mathrm{fl}(x\circ y)=(x\circ y)(1+\varepsilon),\qquad|\varepsilon|\le u=2^{-53}\approx1{,}1\times10^{-16},\]
+en arrondi au plus proche (hors dépassement de capacité). La norme offre aussi les \emph{arrondis dirigés} : vers
+$-\infty$ et vers $+\infty$.
+
+\begin{example}[Dix fois un dixième]
+$1/10$ n'est pas représentable en binaire. Le flottant \texttt{0.1} vaut exactement
+$0{,}1000000000000000055511\ldots$, un peu plus que $1/10$. En Python, \texttt{sum([0.1]*10)} donne
+\chemin{0.9999999999999999} et non $1$ : l'erreur d'arrondi s'accumule, et le signe de l'erreur finale n'est pas celui
+de l'erreur initiale.
+\end{example}
+
+Les fonctions élémentaires ($\exp$, $\sin$\ldots) de la bibliothèque mathématique du système n'ont en général
+\emph{aucune} garantie d'arrondi correct : la norme IEEE~754 le recommande sans l'imposer. Un encadrement rigoureux ne
+peut donc pas s'appuyer sur \texttt{math.exp}.
+
+%=====================================================================================================================
+\section{L'arithmétique d'intervalles}\label{appD:sec:intervalles}
+
+\begin{definition}
+On représente un réel inconnu $x$ par un intervalle $[\underline x,\overline x]$ qui le contient. Les opérations sont
+définies par
+\[[a,b]+[c,d]=[a+c,\,b+d],\qquad[a,b]-[c,d]=[a-d,\,b-c],\]
+\[[a,b]\times[c,d]=[\min S,\max S],\quad\text{où }S=\{ac,ad,bc,bd\}.\]
+\end{definition}
+
+\begin{theorem}[Propriété d'inclusion]\label{appD:thm:inclusion}
+Si $x\in[a,b]$ et $y\in[c,d]$, alors $x+y\in[a,b]+[c,d]$, $x-y\in[a,b]-[c,d]$ et $xy\in[a,b]\times[c,d]$. Par
+récurrence, toute expression construite avec ces opérations, évaluée sur des intervalles contenant les arguments,
+donne un intervalle qui contient la valeur exacte.
+\end{theorem}
+
+\begin{humanproof}
+Pour la somme : $a\le x\le b$ et $c\le y\le d$ donnent $a+c\le x+y\le b+d$. Pour la différence, on ajoute
+$-d\le-y\le-c$. Pour le produit, à $y$ fixé, $x\mapsto xy$ est affine, donc $xy$ est entre $ay$ et $by$ ; puis $y\mapsto
+ay$ et $y\mapsto by$ sont affines, donc $ay$ et $by$ sont entre leurs valeurs en $c$ et $d$. Ainsi $xy$ est entre le
+plus petit et le plus grand des quatre produits.
+\end{humanproof}
+
+\paragraph{L'arrondi dirigé.} En machine, les bornes sont des flottants et chaque opération arrondit. Pour garder la
+propriété d'inclusion, on arrondit la borne inférieure \emph{vers le bas} et la borne supérieure \emph{vers le haut} :
+c'est l'\emph{arrondi vers l'extérieur}. Faute d'accès aux modes d'arrondi, on peut élargir chaque borne d'un ulp
+(l'écart entre deux flottants consécutifs) avec \texttt{math.nextafter} : c'est plus large que nécessaire, mais sûr,
+puisque l'arrondi au plus proche se trompe de moins d'un demi-ulp.
+
+\paragraph{Le problème de dépendance.} L'arithmétique d'intervalles ne sait pas que deux occurrences d'une même
+variable sont égales : pour $x\in[0,1]$, $x-x$ donne $[0,1]-[0,1]=[-1,1]$, et non $\{0\}$. Les encadrements grossissent
+vite si l'on n'y prend pas garde ; on y remédie en réécrivant les expressions, en subdivisant le domaine (les 206\,468
+cellules de B2 au chapitre~3) ou en utilisant des développements de Taylor.
+
+\begin{numbox}[: étape 1 de \chemin{code/appD_certifie.py}]
+Dix additions de l'intervalle $[\texttt{nextafter(0.1,-inf)},\,\texttt{0.1}]$, qui contient $1/10$, avec élargissement
+d'un ulp à chaque addition. Sortie réelle (2026-10-26) :
+\begin{lstlisting}[style=appC,language={}]
+"naive_sum": "0.9999999999999999",   "naive_equals_1": false,
+"outward": ["0.9999999999999991", "1.0000000000000009"],   "outward_contains_1": true,
+"nearest": ["0.9999999999999999", "0.9999999999999999"],   "nearest_contains_1": false
+\end{lstlisting}
+\emph{Témoin positif :} l'intervalle arrondi vers l'extérieur contient exactement $1$ (le test d'appartenance est fait
+en rationnels exacts, \chemin{fractions.Fraction}). \emph{Témoin négatif :} le même calcul, bornes arrondies au plus
+proche, donne un « intervalle » qui exclut la vraie valeur.
+\end{numbox}
+
+%=====================================================================================================================
+\section{L'arithmétique de boules : Arb et python-flint}\label{appD:sec:boules}
+
+Arb~\cite{ch3-arb} représente un réel par une \emph{boule} $[m\pm r]$ : un centre $m$ en précision arbitraire (un
+nombre dyadique $M\cdot2^E$) et un rayon $r$ en basse précision, arrondi vers le haut. C'est une arithmétique
+d'intervalles sous la forme centre--rayon, plus économique quand la précision est grande.
+
+\begin{proposition}[Produit de deux boules]\label{appD:prop:produit}
+Si $|x-m_1|\le r_1$ et $|y-m_2|\le r_2$, alors $|xy-m_1m_2|\le|m_1|r_2+|m_2|r_1+r_1r_2$.
+\end{proposition}
+
+\begin{humanproof}
+$xy-m_1m_2=m_1(y-m_2)+m_2(x-m_1)+(x-m_1)(y-m_2)$ ; on applique l'inégalité triangulaire.
+\end{humanproof}
+En machine, Arb calcule le centre $m_1m_2$ arrondi, et ajoute au rayon l'erreur de cet arrondi, majorée vers le haut.
+Pour les fonctions ($\exp$, $\operatorname{erf}$, intégrales\ldots), la bibliothèque utilise des développements avec
+une majoration explicite du reste. Le résultat contient la valeur exacte, \emph{si le code d'Arb est juste} : c'est un
+logiciel testé et publié, pas un programme vérifié formellement.
+
+\paragraph{En Python.} La bibliothèque \texttt{python-flint} donne accès à Arb. L'étude B2 du chapitre~3 a utilisé la
+version~0.6.0, installée dans \chemin{.scratchpad/b2_pylib} du dépôt pour le Python~3.11 de l'environnement
+\texttt{.venv} ; le \texttt{python3} du système (3.10) porte, lui, la version~0.9.0 (annexe~\ref{appE:chap}). L'exemple
+de cette annexe utilise la version~0.6.0.
+
+\begin{numbox}[: étape 2 de \chemin{code/appD_certifie.py}]
+Encadrement de $I=\int_0^1e^{-x^2}dx$ par \texttt{acb.integral} à 96~bits, contrôlé par la boule indépendante
+$\frac{\sqrt\pi}2\operatorname{erf}(1)$. Sortie réelle :
+\begin{lstlisting}[style=appC,language={}]
+"python_flint": "0.6.0",  "prec_bits": 96,
+"ball":     "[0.746824132812427025399467436 +/- 2.30e-28]",
+"erf_ball": "[0.7468241328124270253994674361 +/- 5.34e-29]",   "erf_overlaps": true,
+"midpoint_float_n10": "0.7471308777479975",   "midpoint_inside_ball": false
+\end{lstlisting}
+\emph{Témoin positif :} les deux boules, calculées par deux chemins (quadrature rigoureuse, fonction d'erreur), se
+recoupent. \emph{Témoin négatif :} la méthode du point milieu à $10$ points, en flottants, donne $0{,}74713$ : une valeur
+plausible, fausse au quatrième chiffre, et hors de la boule. Un flottant n'est pas un encadrement.
+\end{numbox}
+
+%=====================================================================================================================
+\section{Certificats rationnels vérifiés par Lean : LeanFlow}\label{appD:sec:leanflow}
+
+\subsection{Le principe}
+Le noyau de Lean sait décider des égalités et des inégalités entre \emph{entiers} explicites : c'est un calcul fini.
+LeanFlow (\texttt{leanflow\_mcp.lean}, fonction \texttt{certify}) transforme une affirmation numérique en un tel
+énoncé, en quatre temps :
+\begin{enumerate}
+\item \textbf{L'affirmation.} Des encadrements rationnels nommés, \texttt{x = [lo, hi]}, et des inégalités linéaires
+entre leurs bornes. Les nombres sont écrits \texttt{p/q} ou en décimal ; un flottant binaire est refusé (il est de niveau
+X).
+\item \textbf{Le gabarit.} Chaque inégalité devient un théorème sur $\Z$, dénominateurs chassés symboliquement, de la
+forme \texttt{theorem cert\_i : (0 : Int) < D $\wedge$ N * RD $\le$ RN * D := by decide +kernel}. Python ne fait qu'assembler du
+texte à partir de littéraux entiers ; toutes les multiplications et comparaisons sont faites par Lean.
+\item \textbf{Le noyau décide.} La tactique \lean{decide +kernel} (nom LeanFlow : \texttt{decide\_kernel}) fait évaluer
+la proposition par le noyau lui-même, sans axiome supplémentaire.
+\item \textbf{L'audit.} LeanFlow ajoute après la source un \texttt{\#print axioms} par théorème et une sentinelle aléatoire,
+puis exige exactement un rapport par théorème, dans la liste blanche, et la sentinelle à la fin. Un oracle exact en
+Python (\texttt{Fraction}) doit rendre le même verdict.
+\end{enumerate}
+
+\paragraph{Fail-closed.} « Fermé en cas de doute » : toute situation anormale donne \texttt{error}, jamais
+\texttt{ok}. La documentation de LeanFlow (\chemin{docs/LEAN_CERTIFY.md}) recense les cas, chacun avec un test : chaîne
+Lean absente, module importé sans \texttt{.olean}, code de retour non nul, aucun rapport d'axiomes, \lean{sorry},
+axiome utilisateur, \lean{native_decide} (qui introduit un axiome propre à l'usage), rapport d'axiomes contrefait,
+\texttt{\#exit}, affirmation invalide, désaccord avec l'oracle. Une affirmation \emph{fausse} donne \texttt{rejected} avec
+le code \texttt{false-statement}.
+
+\paragraph{Ce que le niveau A couvre.} Le statut \texttt{ok} porte sur l'énoncé arithmétique \emph{sur les nombres
+énoncés}, et sur rien d'autre : ni la provenance de ces nombres, ni le fait qu'ils encadrent vraiment l'intégrale. C'est
+pourquoi, au chapitre~3, la chaîne de B2 est \tierC{} au total : l'arithmétique est vérifiée, la boule ne l'est pas.
+LeanFlow n'audite que \texttt{\#print axioms} ; le livre ajoute le rejeu \lean{leanchecker} quand il revendique \tierA{}
+(annexe~\ref{appC:chap}, §\ref{appC:sec:leanchecker}, et cas U5 du chapitre~5).
+
+\subsection{L'exemple complet}
+On arrondit la boule de l'étape~2 vers l'extérieur en deux décimaux à 30~chiffres, en rationnels exacts :
+$\mathtt{lo}=\lfloor10^{30}(m-r)\rfloor/10^{30}$ et $\mathtt{hi}=\lceil10^{30}(m+r)\rceil/10^{30}$. LeanFlow reçoit
+alors deux affirmations :
+\begin{lstlisting}[style=appC,language={}]
+{"name": "gaussI", "tactic": "decide_kernel",
+ "enclosures": {"I": ["186706033203106756349866858969/250000000000000000000000000000",
+                      "74682413281242702539946743623/100000000000000000000000000000"]},
+ "assertions": [{"label": "I.lo > 0.7468", "endpoint": "I.lo", "op": ">", "rhs": "7468/10000"},
+                {"label": "I.hi < 0.7469", "endpoint": "I.hi", "op": "<", "rhs": "7469/10000"}]}
+\end{lstlisting}
+et, comme témoin négatif, la même boule avec l'assertion fausse \texttt{I.hi < 7468/10000}.
+\begin{numbox}[: étape 3 de \chemin{code/appD_certifie.py}]
+Sortie réelle (Lean 4.34.1, commit \sha{5045d0056413266e57c625dcd7c365b10e377c52}, cœur seul) :
+\begin{lstlisting}[style=appC,language={}]
+"pos_I_between_0.7468_and_0.7469": {"status": "ok", "code": "verified", "tier": "A", "failed": [],
+                                    "seconds": 0.64}
+"neg_I_below_0.7468":              {"status": "rejected", "code": "false-statement", "tier": null,
+                                    "failed": ["cert_0"], "seconds": 0.49}
+"all_controls_pass": true
+\end{lstlisting}
+Les sept contrôles du script (trois pour l'étape~1, deux pour chacune des étapes~2 et~3) sont passés ; tout le script a duré 1,7~s.
+\end{numbox}
+\noindent Bilan des niveaux : l'énoncé « $0{,}7468<\mathtt{lo}$ et $\mathtt{hi}<0{,}7469$ » est \tierAs{} : LeanFlow
+renvoie \texttt{"tier": "A"}, mais nous n'avons pas rejoué ces certificats avec \lean{leanchecker}, et la convention
+du livre réserve \tierA{} aux modules rejoués avec le code~$0$ ; l'affirmation « $I\in[\mathtt{lo},\mathtt{hi}]$ » est \tierC{} (elle repose sur Arb) ; la
+conclusion « $0{,}7468<I<0{,}7469$ » hérite du plus faible des deux, \tierC.
+
+%=====================================================================================================================
+\section{Équations différentielles raides et CVODE}\label{appD:sec:cvode}
+
+\subsection{La raideur}
+Considérons $y'=-\lambda y$ avec $\lambda>0$ grand. La solution $e^{-\lambda t}$ est triviale, mais la méthode d'Euler
+explicite $y_{n+1}=y_n+hf(y_n)=(1-h\lambda)y_n$ ne reste bornée que si $|1-h\lambda|\le1$, c'est-à-dire $h\le2/\lambda$.
+Un système est \emph{raide} quand il mêle des échelles de temps très différentes : la stabilité d'une méthode
+explicite impose alors un pas dicté par la plus rapide, bien plus petit que ce que demande la précision sur la plus
+lente. La méthode d'Euler \emph{implicite}, $y_{n+1}=y_n+hf(y_{n+1})$, donne $y_{n+1}=y_n/(1+h\lambda)$ : elle est stable
+pour tout $h>0$.
+
+\subsection{Les formules BDF}
+CVODE~\cite{app:sundials} intègre les systèmes raides par les \emph{formules de différentiation rétrograde} (BDF)
+d'ordre $q=1,\dots,5$. On approche $y'(t_{n+1})$ par la dérivée du polynôme qui interpole $y_{n+1},y_n,\dots,y_{n+1-q}$ :
+\[\text{BDF1 : }y_{n+1}-y_n=hf(y_{n+1}),\qquad\text{BDF2 : }y_{n+1}-\tfrac43y_n+\tfrac13y_{n-1}=\tfrac23hf(y_{n+1}).\]
+Chaque pas demande de résoudre une équation \emph{non linéaire} en $y_{n+1}$, de la forme $G(y)=y-\gamma hf(y)-a_n=0$, où
+$a_n$ regroupe les valeurs passées et $\gamma$ dépend de l'ordre.
+
+\subsection{Newton et le jacobien}
+CVODE résout $G(y)=0$ par une méthode de Newton modifiée :
+$\bigl(I-\gamma hJ\bigr)\,\delta^{(k)}=-G(y^{(k)})$, $y^{(k+1)}=y^{(k)}+\delta^{(k)}$, où $J=\partial f/\partial y$ est le
+jacobien. La matrice $I-\gamma hJ$ n'est recalculée et factorisée que de temps en temps. Le jacobien est soit fourni
+analytiquement par l'utilisateur, soit approché par différences finies, colonne par colonne (une évaluation de $f$ de
+plus par colonne). Les crates \texttt{qf-*} du livre fournissent des jacobiens analytiques : pour un flot de gradient
+$\dot x=-\nabla E(x)$ (relaxations des cas U1 et U2), $J=-\mathrm{Hess}\,E$ ; pour l'équation de Kolmogorov
+$\dot\pi=\pi(P-I)$ (cas U5), le système est linéaire et $J$ est exact.
+
+\subsection{Le contrôle d'erreur, et ce qu'il ne garantit pas}
+À chaque pas, CVODE estime l'erreur \emph{locale} $e$ (celle commise en un pas, à partir de valeurs supposées exactes)
+et accepte le pas si
+\[\|e\|_{\mathrm{WRMS}}=\Bigl(\frac1n\sum_{i=1}^n\Bigl(\frac{e_i}{\mathrm{rtol}\,|y_i|+\mathrm{atol}_i}\Bigr)^2\Bigr)^{1/2}\le1 ;\]
+sinon il réduit le pas. Il ajuste aussi l'ordre $q$. Ce contrôle est \emph{heuristique} : l'erreur globale, après des
+milliers de pas, n'est pas bornée par rtol ; l'estimation de l'erreur locale repose sur des développements
+asymptotiques ; et tout se fait en flottants. C'est pourquoi \textbf{un résultat CVODE est de niveau~X}. Le livre ne le
+présente jamais comme une preuve : il le compare à une valeur exacte (U5), à une conservation (U4), ou à un théorème
+(U1, U2), avec des témoins.
+
+\paragraph{Le certificat de \texttt{qf-popgen} n'est pas une preuve.} Le « certificat d'absorption » du cas U5
+(noyau stochastique, masse conservée, aucune composante négative, masse intérieure $<10^{-9}$, valeur finale à
+$10^{-8}$ de la cible) est un ensemble de \emph{contrôles} qui refusent les exécutions douteuses. Il rend une exécution
+plus fiable, il ne la démontre pas. La seule partie de niveau~A du cas U5 est l'énoncé LeanFlow sur le nombre
+\chemin{0.5714285714284759} et sur le vecteur $(0,\frac47,\frac67,1)$.
+
+\subsection{Un exemple raide : la cinétique de Robertson}
+Le problème de Robertson est le test classique de raideur, avec des constantes de vitesse de $0{,}04$ à $3\times10^{7}$ :
+\[y_1'=-0{,}04y_1+10^4y_2y_3,\quad y_2'=0{,}04y_1-10^4y_2y_3-3\times10^7y_2^2,\quad y_3'=3\times10^7y_2^2,\]
+avec $y(0)=(1,0,0)$ et $t\in[0,4\times10^{10}]$. La somme $y_1+y_2+y_3$ est conservée exactement par le système, ce qui
+donne un contrôle. rusty-SUNDIALS en fournit l'exemple \chemin{examples/robertson.rs} (BDF jusqu'à l'ordre $5$,
+$\mathrm{rtol}=10^{-4}$, $\mathrm{atol}=10^{-8}$, jacobien analytique). Commande, depuis la copie de travail
+\chemin{rusty-SUNDIALS-wt-tb2ch5} :
+\begin{lstlisting}[style=appC,language={}]
+cargo run --manifest-path ~/rusty-SUNDIALS-wt-tb2ch5/Cargo.toml --target-dir ~/rusty-target-ar \
+    --release -j 2 --offline -p examples --example robertson
+\end{lstlisting}
+\begin{numbox}[: sortie réelle (2026-10-26, 43~s dont la compilation)]
+\begin{lstlisting}[style=appC,language={}]
+           t             y1             y2             y3
+----------------------------------------------------------
+   4.0000e-1    9.851721e-1    3.386396e-5    1.479401e-2
+    4.0000e0    9.055204e-1    2.240497e-5    9.445716e-2
+    4.0000e2    4.505200e-1    3.222938e-6    5.494767e-1
+    4.0000e6    5.169270e-4    2.068765e-9    9.994831e-1
+   4.0000e10    5.155066e-8   2.062027e-13    9.999999e-1
+
+Solver statistics:
+  Steps:      633  (C ref: 1070, ratio: 0.6x)
+  RHS evals:  1762  (C ref: 1537, ratio: 1.1x)
+  Final order: 5
+  Conservation (y1+y2+y3): 1.000000000000000e0 (should be 1.0)
+  Conservation error: 4.44e-16  (threshold 1e-12)
+\end{lstlisting}
+(Lignes intermédiaires omises ; la dernière ligne du programme, \texttt{Conservation: PASS} suivie d'une coche, est
+coupée ici parce que la coche n'est pas imprimable.)
+\end{numbox}
+\noindent Lecture : en $633$ pas, CVODE traverse onze ordres de grandeur de temps ; le pas grandit d'autant. Une méthode
+explicite serait limitée en stabilité, sur tout l'intervalle, par les valeurs propres rapides du jacobien. Le
+programme compare ses statistiques à la version C de SUNDIALS (\texttt{cvRoberts\_dns}, valeurs de référence écrites
+dans le code de l'exemple, non relancées ici). La conservation à $4{,}4\times10^{-16}$ près est un contrôle
+\emph{nécessaire} ; elle ne prouve rien sur $y_2$, qui pourrait être faux sans violer la conservation. C'est un calcul
+\tierX.
+
+%=====================================================================================================================
+\section{Exercices}\label{appD:sec:exos}
+
+\begin{exercise}
+Démontrer que, pour $x\in[a,b]$ avec $0<a$, l'intervalle $[1/b,1/a]$ contient $1/x$. Que faire si $0\in[a,b]$ ?
+\end{exercise}
+
+\begin{exercise}
+Évaluer $f(x)=x^2-2x$ sur $[0,2]$ en arithmétique d'intervalles, puis la forme $f(x)=(x-1)^2-1$. Comparer avec
+l'image exacte $[-1,0]$ et expliquer l'écart par le problème de dépendance.
+\end{exercise}
+
+\begin{exercise}
+Pour la méthode BDF2 appliquée à $y'=-\lambda y$, écrire la récurrence linéaire satisfaite par $y_n$ et montrer que
+ses racines caractéristiques sont de module $<1$ pour tout $h\lambda>0$ (stabilité A de BDF2).
+\end{exercise}
+
+\begin{exercise}[LeanFlow, témoin négatif]
+Modifier dans \chemin{code/appD_certifie.py} la précision de \texttt{ctx.prec} à $20$~bits. La boule contient-elle
+encore la valeur ? Les deux certificats LeanFlow passent-ils encore ? Pourquoi un encadrement plus large rend-il
+l'assertion \texttt{I.lo > 0.7468} plus difficile à certifier ?
+\end{exercise}

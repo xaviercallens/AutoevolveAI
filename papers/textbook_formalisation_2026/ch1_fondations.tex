@@ -318,7 +318,7 @@ car $h'(t)=1/(1+t)$. En particulier $h(t)=\sqrt t$ (cas $\alpha=\frac12$) l'est.
 
 \begin{theorem}[Subordination : CM $\circ$ Bernstein]\label{ch1:thm:comp}
 Si $f$ est CM et $h$ est de Bernstein \emph{strictement positive}, alors $f\circ h$ est CM. \tierC{} Version Lean :
-\lean{ProgCM.IsCompletelyMonotoneOn.comp_bernstein} \tierA{}, dont la démonstration suit exactement la récurrence ci-dessous~\cite{p3}.
+\texttt{ProgCM.IsCompletelyMonotoneOn\allowbreak .comp\_bernstein} \tierA{}, dont la démonstration suit exactement la récurrence ci-dessous~\cite{p3}.
 \end{theorem}
 
 \begin{humanproof}
@@ -472,7 +472,7 @@ Le tableau~\ref{ch1:tab:flux} le résume. Les numéros de DOI et les niveaux son
 4 & Bibliothèque CM/Bernstein (P3) : subordination, équivalence avec \lean{AdmissiblePotential} & \tierA{} & \cite{p3} \\
 5 & Surprise quantique : l'énergie de point zéro, QU-1 faux pour 8 potentiels CM sur 12 ; certificat à $a=1$ ; pas de transition triangulaire$\to$oblique & \tierX{}, puis \tierAs{} (logique) et \tierC{} (intégrales en boules) ; résultat négatif & Zenodo \\
 6 & Sandier--Serfaty (réseaux d'Abrikosov) : audit, portage partiel en Lean, échec de l'extension au cas~3D & \tierC{}, \tierAs{} partiel ; résultats négatifs & Zenodo \\
-7 & Navier--Stokes (corpus \texttt{openai/NavierStokesAndEuler}) : reconstruction et rejeu noyau & \tierA{} pour le rejeu noyau des énoncés du corpus ; fidélité à l'alternative (C) de Fefferman : \tierC{} ; pas de \og problème Clay résolu \fg{} & doi:\,10.5281/zenodo.23661381 \\
+7 & Navier--Stokes (corpus \texttt{openai/NavierStokesAndEuler}) : reconstruction et rejeu noyau & \tierA{} pour le rejeu noyau des énoncés du corpus ; fidélité à l'alternative (C) de Fefferman : \tierC{} ; pas de \og problème Clay résolu \fg{} & doi:\newline 10.5281/\allowbreak zenodo.23661381 \\
 8 & Génétique des populations : fixation de Moran, équation de Price, théorème isotherme & \tierA{} & Zenodo \\
 \bottomrule
 \end{tabular}
@@ -555,9 +555,9 @@ C'est le \emph{contrôle négatif} de la porte d'axiomes ; le \emph{contrôle po
 
 \begin{warnbox}[: \texttt{\#print axioms} ne suffit pas]
 L'audit A2~\cite{a2} du corpus \texttt{openai/NavierStokesAndEuler} (2\,440 modules reconstruits, rejeu noyau de $53\,752+34\,648$ déclarations) a mis en évidence qu'une déclaration
-\emph{ajoutée directement au noyau en désactivant sa vérification de types} (option \lean{debug.skipKernelTC}) est affichée par \lean{#print axioms} comme
+\emph{ajoutée directement au noyau en désactivant sa vérification de types} (option \lean{debug.skipKernelTC}) est affichée par \texttt{\#print axioms} comme
 \og ne dépend d'aucun axiome \fg{}, alors qu'elle peut établir \lean{False}. Le contrôle positif de l'audit (une telle fausse déclaration, fabriquée exprès) a été
-\emph{invisible} à \lean{#print axioms} et \emph{attrapé} par le rejeu complet du noyau (\lean{leanchecker}) (observation de niveau \tierX{} dans l'article A2 : elle porte sur une déclaration volontairement invalide). La leçon : l'audit d'axiomes est nécessaire,
+\emph{invisible} à \texttt{\#print axioms} et \emph{attrapé} par le rejeu complet du noyau (\lean{leanchecker}) (observation de niveau \tierX{} dans l'article A2 : elle porte sur une déclaration volontairement invalide). La leçon : l'audit d'axiomes est nécessaire,
 non suffisant.
 \end{warnbox}
 
@@ -712,7 +712,7 @@ et retrouver par ce biais que $g$ n'est pas CM (comparer à $g(3)<0$).
 \end{exercise}
 
 \begin{exercise}[*]\label{ch1:ex:lean}
-Parmi les quatre sorties suivantes de \lean{#print axioms}, lesquelles satisfont la porte d'axiomes ? Lesquelles satisfont la porte \emph{complète} à quatre contrôles ?
+Parmi les quatre sorties suivantes de \texttt{\#print axioms}, lesquelles satisfont la porte d'axiomes ? Lesquelles satisfont la porte \emph{complète} à quatre contrôles ?
 (i) \texttt{[propext, Classical.choice, Quot.sound]} ; (ii) \texttt{[propext, sorryAx]} ; (iii) \texttt{does not depend on any axioms} ; (iv) \texttt{[cheat, propext]}.
 Expliquer pourquoi (iii), seule, ne suffit pas à conclure.
 \end{exercise}

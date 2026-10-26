@@ -1,0 +1,330 @@
+% Annexe C -- Lean 4 pour debutants. A inclure apres \appendix.
+% Les six exemples sont dans code/lean/appC_*.lean ; ils ont ete compiles le 2026-10-26 avec Lean 4.34.1 + Mathlib
+% d13f23b7 (pile epinglee), et les sorties citees sont celles de ces compilations, copiees sans retouche.
+% Definitions communes aux annexes C, D et E (chacune les porte, pour pouvoir etre incluse seule).
+\ifdefined\chemin\else
+\lstdefinestyle{appC}{language=Lean,
+  literate={ℝ}{{$\mathbb{R}$}}1 {ℕ}{{$\mathbb{N}$}}1 {≤}{{$\le$}}1 {→}{{$\to$}}1 {∀}{{$\forall$}}1 {∃}{{$\exists$}}1
+  {∧}{{$\wedge$}}1 {∈}{{$\in$}}1 {∑}{{$\sum$}}1 {·}{{$\cdot$}}1 {⟨}{{$\langle$}}1 {⟩}{{$\rangle$}}1 {α}{{$\alpha$}}1
+  {é}{{\'e}}1 {è}{{\`e}}1 {ê}{{\^e}}1 {à}{{\`a}}1 {ô}{{\^o}}1 {ç}{{\c{c}}}1 {«}{{\guillemotleft}}1 {»}{{\guillemotright}}1
+  {’}{{'}}1}
+\DeclareUrlCommand\chemin{\urlstyle{tt}\def\UrlBreaks{\do\/\do\_\do\-\do\.}}
+\DeclareUrlCommand\sha{\urlstyle{tt}\def\UrlBreaks{\do0\do1\do2\do3\do4\do5\do6\do7\do8\do9\do a\do b\do c\do d\do e\do f}}
+\fi
+\chapter{Lean 4 pour débutants}\label{appC:chap}
+
+Le §\ref{ch1:sec:lean} a présenté Lean en lecteur : comment lire un énoncé et ce que garantit le noyau. Cette annexe
+s'adresse à qui veut \emph{écrire} ses premières preuves. Elle suit six petits fichiers, rangés dans
+\chemin{code/lean/appC_1_logique.lean} à \chemin{appC_6_contrefacon.lean}. Ils ont tous été compilés pour de vrai,
+le 2026-10-26, avec la chaîne épinglée du livre (Lean~4.34.1, Mathlib au commit
+\sha{d13f23b723b8a846827a245b89c10fc7d3f11612}). Chaque sortie reproduite ici est copiée de la compilation, sans
+retouche, à ceci près que les chemins absolus des fichiers ont été raccourcis.
+
+%=====================================================================================================================
+\section{Installer Lean, Lake et Mathlib}\label{appC:sec:install}
+
+\paragraph{Les trois outils.}
+\begin{itemize}
+\item \textbf{elan} est le gestionnaire de versions : il installe les chaînes Lean (\emph{toolchains}) et choisit la
+bonne pour chaque projet, d'après le fichier \texttt{lean-toolchain} du projet.
+\item \textbf{lake} est l'outil de construction, livré avec Lean. Il lit \texttt{lakefile.lean} (ou
+\texttt{lakefile.toml}), télécharge les dépendances et compile les modules dans l'ordre de leurs \texttt{import}.
+\item \textbf{Mathlib} est la bibliothèque mathématique communautaire~\cite{mathlib}. On en dépend comme d'un paquet
+Lake, épinglé à un commit précis.
+\end{itemize}
+
+\paragraph{Installation type (Linux ou macOS).} Les commandes suivantes sont la procédure documentée par les projets
+elan et Mathlib~\cite{app:elan,app:mathlibinstall} ; nous ne les avons \emph{pas} rejouées sur une machine vierge pour
+ce livre (la machine de l'auteur avait déjà ses chaînes), et une version plus récente de ces outils peut en changer
+les détails.
+\begin{lstlisting}[style=appC,language={}]
+curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh
+elan toolchain install leanprover/lean4:v4.34.1
+lake new mon_projet math          # gabarit « math » : projet qui dépend de Mathlib
+cd mon_projet
+lake exe cache get                # télécharge les .olean précompilés de Mathlib
+lake build
+\end{lstlisting}
+Pour reproduire exactement la version du livre, épinglez Mathlib dans \texttt{lakefile.lean} :
+\begin{lstlisting}[style=appC,language={}]
+require mathlib from git "https://github.com/leanprover-community/mathlib4.git" @ "d13f23b723b8a846827a245b89c10fc7d3f11612"
+\end{lstlisting}
+et mettez \chemin{leanprover/lean4:v4.34.1} dans \texttt{lean-toolchain}. Le cache précompilé n'existe que pour les
+commits de Mathlib publiés ; sinon, \texttt{lake build} recompile Mathlib, ce qui prend des heures.
+
+\paragraph{La chaîne du livre.} Les résultats Lean des chapitres~1 à~5 ont été vérifiés dans la copie du répertoire
+\texttt{lean/} d'openai/math (avec sa Mathlib et ses quelque trente dépendances), et non dans un projet neuf
+(annexe~\ref{appE:chap}, §\ref{appE:sec:lean}). Les six exemples de cette annexe n'importent que des modules de Mathlib
+et du cœur de Lean ; un projet \texttt{lake new ... math} à la même révision de Mathlib devrait donc les compiler aussi,
+mais nous ne l'avons pas vérifié.
+
+\paragraph{Compiler un fichier.} Dans un projet, \texttt{lake env lean Fichier.lean} compile un fichier avec les
+bonnes bibliothèques ; dans un éditeur (VS Code et l'extension Lean~4), l'état de la preuve s'affiche en continu.
+Pour ce livre, nous avons utilisé le script du dépôt :
+\begin{lstlisting}[style=appC,language={}]
+taskset -c 6,7 .venv/bin/python -I scripts/certified_numerics/lean_pinned.py compile FICHIER.lean --json-out SORTIE.json
+\end{lstlisting}
+Il appelle \texttt{lean} \chemin{-DautoImplicit=false} avec le \texttt{LEAN\_PATH} de la pile épinglée et écrit le code de
+retour, la durée et toute la sortie dans \texttt{SORTIE.json}.
+
+\begin{warnbox}[: pas d'\texttt{import Mathlib} global]
+Importez des modules précis (\lean{Mathlib.Tactic.Ring}, \lean{Mathlib.Tactic.Linarith}, ...), comme le font nos
+exemples. Un \texttt{import Mathlib} charge toute la bibliothèque : c'est lent, et, dans une construction partielle de
+Mathlib (comme celle du répertoire \texttt{formal/} du dépôt AutoevolveAI), cela échoue sur les modules non construits.
+\end{warnbox}
+
+%=====================================================================================================================
+\section{Premiers théorèmes : logique et quantificateurs}\label{appC:sec:logique}
+
+Le premier fichier n'importe rien : il n'utilise que le cœur de Lean.
+\lstinputlisting[style=appC,title={\texttt{\detokenize{code/lean/appC_1_logique.lean}}}]{code/lean/appC_1_logique.lean}
+
+\noindent Sortie de la compilation (code de retour $0$, 2,0~s) :
+\begin{lstlisting}[style=appC,language={}]
+'et_comm_terme' does not depend on any axioms
+'et_comm_tactique' does not depend on any axioms
+'modus_ponens_chaine' does not depend on any axioms
+'existe_successeur' does not depend on any axioms
+\end{lstlisting}
+
+\paragraph{Ce qu'il faut retenir.}
+\begin{itemize}
+\item Après \lean{:=}, on donne soit un \emph{terme} (\texttt{$\langle$h.2, h.1$\rangle$}), soit \lean{by} suivi de \emph{tactiques}.
+\item \lean{intro h} transforme le but $P\to Q$ en le but $Q$, avec l'hypothèse \lean{h : P} dans le contexte.
+\item \lean{exact e} ferme le but si \lean{e} a exactement le type du but.
+\item \lean{apply f} raisonne à rebours : si \texttt{f : A $\to$ B} et que le but est \lean{B}, le nouveau but est \lean{A}.
+\item \lean{constructor} coupe un but $P\wedge Q$ en deux buts ; les points \texttt{$\cdot$} les traitent un par un.
+\item \texttt{obtain $\langle$hp, hq$\rangle$ := h} découpe une hypothèse \texttt{h : P $\wedge$ Q} en ses deux morceaux.
+\item Un « il existe » se prouve par une paire $\langle$témoin, preuve$\rangle$ ; ici, le témoin est $n+1$ et la preuve
+\lean{rfl} (« égal par définition »).
+\end{itemize}
+Aucun de ces quatre théorèmes n'utilise d'axiome : la logique intuitionniste suffit.
+
+%=====================================================================================================================
+\section{Les tactiques usuelles}\label{appC:sec:tactiques}
+
+\begin{table}[ht]\centering\small
+\caption{Les tactiques employées dans les exemples, et ce qu'elles font.}\label{appC:tab:tactiques}
+\begin{tabular}{p{2.4cm}p{11.2cm}}\toprule
+tactique & effet\\\midrule
+\lean{intro} & introduit l'hypothèse d'une implication ou la variable d'un $\forall$\\
+\lean{exact} & ferme le but avec un terme du bon type\\
+\lean{apply} & ramène le but à l'hypothèse d'une implication connue\\
+\lean{constructor} & sépare un $\wedge$ (ou un $\leftrightarrow$) en deux buts\\
+\lean{obtain}, \lean{rcases} & déstructure une hypothèse ($\wedge$, $\exists$, $\vee$)\\
+\lean{rfl} & ferme un but $a=a$ « par définition »\\
+\lean{simp} & réécrit avec les lemmes marqués \lean{@[simp]} (et ceux qu'on lui donne) jusqu'à une forme normale\\
+\lean{ring} & prouve une égalité dans un anneau commutatif (identité de polynômes)\\
+\lean{linarith} & prouve une inégalité linéaire combinaison des hypothèses (ordre total, corps ordonné)\\
+\lean{nlinarith} & comme \lean{linarith}, en multipliant des hypothèses ; on l'aide en lui fournissant des carrés\\
+\lean{norm_num} & calcule exactement sur des littéraux numériques (entiers, rationnels)\\
+\lean{positivity} & prouve $0<e$ ou $0\le e$ d'après la forme syntaxique de $e$\\
+\lean{decide} & évalue une proposition décidable close (le noyau fait le calcul)\\
+\lean{omega} & arithmétique linéaire sur $\N$ et $\Z$\\
+\lean{induction} & récurrence sur un entier naturel (ou toute structure inductive)\\
+\bottomrule\end{tabular}
+\end{table}
+
+\subsection{Calcul dans les réels}
+\lstinputlisting[style=appC,title={\texttt{\detokenize{code/lean/appC_2_calcul.lean}}}]{code/lean/appC_2_calcul.lean}
+\noindent Sortie (code de retour $0$, 6,3~s) :
+\begin{lstlisting}[style=appC,language={}]
+'carre_somme' depends on axioms: [propext, Classical.choice, Quot.sound]
+'moyenne_entre' depends on axioms: [propext, Classical.choice, Quot.sound]
+'am_gm_deux' depends on axioms: [propext, Classical.choice, Quot.sound]
+'quatre_septiemes' depends on axioms: [propext, Classical.choice, Quot.sound]
+'positif' depends on axioms: [propext, Classical.choice, Quot.sound]
+\end{lstlisting}
+Les nombres réels de Mathlib sont construits à partir des suites de Cauchy, avec l'axiome du choix : tout théorème sur
+$\R$ dépend des trois axiomes de la liste blanche. C'est normal.
+
+\begin{remark}[Une bibliothèque qui bouge]
+La première version de ce fichier importait \lean{Mathlib.Data.Real.Basic}. Elle compilait, avec cet avertissement :
+\begin{lstlisting}[style=appC,language={}]
+warning: 'Mathlib.Data.Real.Basic' has been deprecated: please replace this import by
+import Mathlib.Basic.Real.Basic
+\end{lstlisting}
+Nous avons suivi le conseil. Les noms de modules et de lemmes changent d'une version de Mathlib à l'autre : c'est
+pourquoi on épingle un commit, et pourquoi un fichier écrit pour une autre version peut ne plus compiler.
+\end{remark}
+
+\subsection{Récurrence, \texttt{simp} et \texttt{decide}}
+\lstinputlisting[style=appC,title={\texttt{\detokenize{code/lean/appC_3_recurrence.lean}}}]{code/lean/appC_3_recurrence.lean}
+\noindent Sortie (code de retour $0$, 4,3~s) :
+\begin{lstlisting}[style=appC,language={}]
+'double_somme' depends on axioms: [propext, Classical.choice, Quot.sound]
+'petit_calcul' depends on axioms: [propext, Classical.choice, Quot.sound]
+'simp_exemple' depends on axioms: [propext]
+\end{lstlisting}
+Dans \lean{double_somme}, le cas \lean{succ k} commence par \lean{rw [sum_range_succ]}, qui sépare le dernier terme :
+$\sum_{i<k+1}i=\sum_{i<k}i+k$. Après normalisation par \lean{ring_nf}, l'hypothèse de récurrence \lean{ih} et le but sont
+deux égalités d'entiers que \lean{omega} relie. Il y a souvent plusieurs chemins ; celui-ci n'est pas le plus court.
+
+%=====================================================================================================================
+\section{Lire un énoncé de Mathlib}\label{appC:sec:lire}
+
+Avant d'utiliser un lemme, on lit son énoncé exact avec \texttt{\#check}. Le préfixe \lean{@} affiche aussi les arguments
+implicites.
+\lstinputlisting[style=appC,title={\texttt{\detokenize{code/lean/appC_4_lire_mathlib.lean}}}]{code/lean/appC_4_lire_mathlib.lean}
+\noindent Sortie (code de retour $0$, 5,3~s) :
+\begin{lstlisting}[style=appC,language={}]
+Real.exp_pos : ∀ (x : ℝ), 0 < Real.exp x
+Real.add_one_le_exp : ∀ (x : ℝ), x + 1 ≤ Real.exp x
+@abs_sub_comm : ∀ {α : Type u_1} [inst : Lattice α] [inst_1 : AddGroup α] (a b : α), |a - b| = |b - a|
+'exp_moins_positif' depends on axioms: [propext, Classical.choice, Quot.sound]
+'exp_minore' depends on axioms: [propext, Classical.choice, Quot.sound]
+\end{lstlisting}
+
+\paragraph{Comment lire la troisième ligne.}
+\begin{itemize}
+\item \texttt{\{$\alpha$ : Type u\_1\}} entre accolades : un argument \emph{implicite}, que Lean devine (ici le type des éléments).
+\item \texttt{[inst : Lattice $\alpha$]} entre crochets : une \emph{instance}, une structure que Lean cherche tout seul
+(ici : $\alpha$ est un treillis, ce qui donne $\max$ et $\min$, donc la valeur absolue $|a|=\max(a,-a)$).
+\item \texttt{(a b : $\alpha$)} entre parenthèses : les arguments explicites, qu'on donne à l'appel.
+\item Après la virgule, la conclusion.
+\end{itemize}
+L'énoncé est donc : dans tout groupe additif réticulé, $|a-b|=|b-a|$. On l'applique comme une fonction : le terme
+\lean{abs_sub_comm x y} a le type \lean{|x - y| = |y - x|}. C'est exactement ce que fait \lean{exp_moins_positif} avec
+\lean{Real.exp_pos (-x)}. Les énoncés du livre se lisent de la même façon ; par exemple, dans
+\texttt{triangular\_yukawa\_optimal \{$\kappa$ : $\mathbb R$\} (h$\kappa$ : 0 < $\kappa$) (C : Set Plane) ...} (chapitre~5), \texttt{$\kappa$} est implicite parce
+qu'il se lit dans le type de \texttt{h$\kappa$}.
+
+\paragraph{Chercher un lemme.} Les noms de Mathlib suivent une convention : \lean{add_one_le_exp} se lit
+« $x+1\le\exp x$ ». La tactique \lean{exact?} cherche un lemme qui ferme le but, et le site de documentation de
+Mathlib permet une recherche par nom. Le serveur LeanMaster utilisé pendant la rédaction offre aussi une recherche
+(\texttt{search\_theorems}), mais sur sa propre bibliothèque.
+
+%=====================================================================================================================
+\section{Le contrôle des axiomes}\label{appC:sec:axiomes}
+
+Un fichier qui compile n'est pas un fichier démontré. Le cinquième exemple contient deux faux théorèmes :
+\lstinputlisting[style=appC,title={\texttt{\detokenize{code/lean/appC_5_temoins.lean}}}]{code/lean/appC_5_temoins.lean}
+\noindent Sortie (code de retour $0$ !, 1,0~s) :
+\begin{lstlisting}[style=appC,language={}]
+appC_5_temoins.lean:8:8: warning: declaration uses `sorry`
+'vrai_controle_positif' does not depend on any axioms
+'faux_par_sorry' depends on axioms: [sorryAx]
+'faux_par_axiome' depends on axioms: [triche]
+\end{lstlisting}
+Le compilateur accepte le fichier : \lean{sorry} ne produit qu'un avertissement, et un \lean{axiom} est une déclaration
+légale. Ce sont les lignes \texttt{\#print axioms} qui révèlent la triche : \lean{sorryAx} dans la première, l'axiome
+utilisateur \lean{triche} dans la seconde. La règle de ce livre est donc :
+\begin{center}
+\emph{un théorème n'est retenu que si \texttt{\#print axioms} n'affiche que des axiomes de
+$\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$.}
+\end{center}
+Le théorème \lean{vrai_controle_positif} est le témoin positif : la porte le laisse passer.
+
+%=====================================================================================================================
+\section{Pourquoi il faut aussi rejouer le noyau}\label{appC:sec:leanchecker}
+
+\subsection{Une contrefaçon invisible à \texttt{\#print axioms}}
+Le noyau de Lean est le seul juge, mais le compilateur peut lui demander de ne pas juger : l'option
+\lean{debug.skipKernelTC} désactive la vérification de types du noyau pour les déclarations ajoutées. Le sixième
+fichier s'en sert pour fabriquer une « preuve » de \lean{False} :
+\lstinputlisting[style=appC,title={\texttt{\detokenize{code/lean/appC_6_contrefacon.lean}}}]{code/lean/appC_6_contrefacon.lean}
+\noindent Sortie (code de retour $0$ ; 51,6~s à la première compilation, cache disque froid, 4,4~s à la seconde) :
+\begin{lstlisting}[style=appC,language={}]
+'contrefacon' does not depend on any axioms
+'un_egale_deux' does not depend on any axioms
+\end{lstlisting}
+Le fichier compile, et \texttt{\#print axioms} déclare que $1=2$ ne dépend d'\emph{aucun} axiome. La porte de la
+section précédente le laisserait passer.
+
+\begin{remark}[Un premier essai, refusé]
+Notre première version écrivait simplement \lean{set_option debug.skipKernelTC true in theorem contrefacon : False :=
+True.intro}. Elle a été refusée (code de retour $1$) avec le message \texttt{Type mismatch: True.intro has type True
+but is expected to have type False} : avant le noyau, l'\emph{élaborateur} vérifie lui aussi les types. L'option ne
+débranche que le noyau ; pour la contrefaçon, il faut donc ajouter la déclaration directement au noyau
+(\lean{addDecl}), comme l'a fait l'auditeur de N4. Cette précision ne rassure pas : un fichier hostile peut faire
+exactement cela.
+\end{remark}
+
+\subsection{Le rejeu par \texttt{leanchecker}}
+L'outil \lean{leanchecker}, livré avec Lean, relit le fichier \texttt{.olean} compilé et \emph{rejoue} chaque
+déclaration du module dans un noyau neuf, sans faire confiance à ce que le compilateur a enregistré. Il faut donc
+d'abord produire un \texttt{.olean}. Le script \chemin{code/appC_leanchecker.py} compile chaque exemple en module
+\lean{AppC.E<n>_<nom>} dans un dossier de travail, puis lance \lean{leanchecker} avec le même \texttt{LEAN\_PATH} :
+\begin{lstlisting}[style=appC,language={}]
+taskset -c 6,7 .venv/bin/python -I papers/textbook_formalisation_2026/code/appC_leanchecker.py \
+    DOSSIER_DE_TRAVAIL SORTIE.json appC_1_logique appC_2_calcul appC_3_recurrence \
+    appC_4_lire_mathlib appC_5_temoins appC_6_contrefacon
+\end{lstlisting}
+Résultat du 2026-10-26, pour les six exemples puis un module inexistant (compilation et rejeu, deux c\oe urs) :
+\begin{center}\small
+\begin{tabular}{lrrrl}\toprule
+module & compil. & rejeu & durée & sortie du rejeu\\\midrule
+\texttt{AppC.E1\_logique} & 0 & 0 & 48,4~s & (vide)\\
+\texttt{AppC.E2\_calcul} & 0 & 0 & 54,3~s & (vide)\\
+\chemin{AppC.E3_recurrence} & 0 & 0 & 56,7~s & (vide)\\
+\chemin{AppC.E4_lire_mathlib} & 0 & 0 & 58,4~s & (vide)\\
+\texttt{AppC.E5\_temoins} & 0 & 0 & 53,6~s & (vide)\\
+\chemin{AppC.E6_contrefacon} & 0 & \textbf{1} & 58,6~s & voir ci-dessous\\
+\chemin{AppC.ModuleInexistant} & -- & \textbf{1} & -- & \texttt{Could not find any oleans}\\
+\bottomrule\end{tabular}
+\end{center}
+La sortie du rejeu de l'exemple~6 est :
+\begin{lstlisting}[style=appC,language={}]
+leanchecker found a problem in AppC.E6_contrefacon
+uncaught exception: while replaying declaration 'contrefacon':
+(kernel) declaration type mismatch, 'contrefacon' has type
+  True
+but it is expected to have type
+  False
+\end{lstlisting}
+Le script se termine par la ligne \texttt{\{"all\_controls\_pass": true\}} : chaque module a rendu le code attendu.
+
+\paragraph{Lecture.}
+\begin{itemize}
+\item \emph{Témoins positifs.} Les modules honnêtes sont rejoués sans erreur (code~$0$, aucune sortie).
+\item \emph{Témoin négatif principal.} La contrefaçon est refusée (code~$1$) : en rejouant \lean{contrefacon}, le noyau
+constate que le terme \lean{True.intro} a le type \lean{True} et non \lean{False}.
+\item \emph{Témoin négatif trivial.} Un module inexistant est refusé (code~$1$) : le code~$0$ des autres n'est pas
+celui d'un outil qui ne fait rien.
+\item Une minute environ par module : \lean{leanchecker} charge toutes les dépendances (Mathlib ou \lean{Lean}) avant de
+rejouer le module. Le rejeu ne porte que sur les déclarations du module : Mathlib et le cœur de Lean sont chargés,
+pas rejoués (il faudrait l'option \texttt{--fresh}, beaucoup plus coûteuse).
+\end{itemize}
+
+\begin{warnbox}[: chaque contrôle attrape ce que l'autre laisse passer]
+\lean{leanchecker} ne remplace pas \texttt{\#print axioms} : un \lean{sorry} ou un \lean{axiom} déclaré est
+\emph{légal} pour le noyau, et le rejeu du module de l'exemple~5 est accepté (tableau ci-dessus : code~$0$ ; c'est le comportement attendu). Inversement, \texttt{\#print axioms} ne voit pas la contrefaçon de l'exemple~6.
+D'où la porte de niveau~A du livre, en quatre contrôles (§\ref{ch1:sec:lean}) :
+\begin{enumerate}
+\item la compilation sans erreur ;
+\item la liste des axiomes incluse dans la liste blanche ;
+\item le rejeu \lean{leanchecker} du module, avec le code~$0$ ;
+\item une recherche textuelle de \lean{skipKernelTC}, \lean{addDecl}, \lean{native_decide} et \lean{implemented_by}
+dans les sources (elle trouverait l'exemple~6 immédiatement).
+\end{enumerate}
+Quand le troisième contrôle manque, le livre écrit \tierAs{} au lieu de \tierA.
+\end{warnbox}
+
+\paragraph{Et \texttt{native\_decide} ?} La tactique \lean{native_decide} fait évaluer une proposition par du code
+compilé, hors du noyau. Lean~4.34.1 l'enregistre comme un axiome propre à chaque usage (de la forme
+\texttt{\_native.native\_decide.ax\_\dots}), que \texttt{\#print axioms} affiche et que la liste blanche refuse ; LeanFlow
+le classe à part (annexe~\ref{appD:chap}). Pour faire calculer le noyau lui-même, on écrit \lean{decide +kernel}.
+
+%=====================================================================================================================
+\section{Exercices}\label{appC:sec:exos}
+
+\begin{exercise}
+Écrire et compiler la preuve de $\forall\,p\,q:\mathrm{Prop},\ (p\vee q)\to(q\vee p)$, d'abord par un terme, puis avec
+les tactiques \lean{intro}, \lean{rcases} et \lean{exact} (indications : \lean{Or.inl}, \lean{Or.inr}).
+\end{exercise}
+
+\begin{exercise}
+Prouver en Lean que $\sum_{i<n}(2i+1)=n^2$ sur le modèle de \lean{double_somme}. Vérifier avec \texttt{\#print axioms}
+que votre preuve n'utilise que la liste blanche.
+\end{exercise}
+
+\begin{exercise}
+Dans \chemin{appC_2_calcul.lean}, remplacer \lean{nlinarith [sq_nonneg (a - b)]} par \lean{linarith}. Que se
+passe-t-il, et pourquoi ?
+\end{exercise}
+
+\begin{exercise}[Témoin négatif]
+Modifier \lean{quatre_septiemes} en $4/7-1/3=1/4$ et compiler. Quel est le message, et quel est le code de retour ?
+Comparer avec l'exemple~5 : pourquoi une preuve fausse fait-elle échouer la compilation, alors qu'un \lean{sorry} ne la
+fait pas échouer ?
+\end{exercise}

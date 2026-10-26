@@ -1,0 +1,367 @@
+% Annexe B -- Probabilites : chaines de Markov finies. A inclure apres \appendix.
+% Etiquettes prefixees appB: ; references prefixees app: (refs_app.tex).
+\chapter{Chaînes de Markov finies}\label{appB:chap}
+
+Le chapitre~4 étudie trois chaînes : Wright--Fisher, Moran, et la chaîne des configurations sur un graphe. Toutes trois
+sont des chaînes de Markov sur un ensemble fini, avec des états absorbants. Cette annexe rassemble, avec leurs
+démonstrations, les résultats généraux sur ces chaînes : matrice fondamentale, probabilités et temps moyens
+d'absorption, fonctions harmoniques, principe du maximum, martingales et théorème d'arrêt. Le chapitre~4 en démontre des
+cas particuliers ; les renvois sont indiqués au fil du texte. Les références classiques sont Kemeny et
+Snell~\cite{ch4:KS}, Norris~\cite{app:norris} et Williams~\cite{app:williams}.
+
+\begin{warnbox}[: niveaux]
+Les démonstrations de cette annexe sont des démonstrations humaines \tierC. Les cas particuliers formalisés au
+chapitre~4 (absorption de Wright--Fisher et de Moran, unicité de la fonction harmonique, théorème isotherme) sont de
+niveau \tierA{} dans les fichiers \texttt{formal\_cert/Programmes/PopGen/} et \texttt{EvoGraph/} ; les énoncés généraux
+ci-dessous ne le sont pas.
+\end{warnbox}
+
+%=====================================================================================================================
+\section{Matrices stochastiques et chaînes de Markov}\label{appB:sec:def}
+
+\begin{definition}
+Soit $E$ un ensemble fini. Une matrice $P=(P(i,j))_{i,j\in E}$ est \emph{stochastique} si $P(i,j)\ge0$ pour tous $i,j$
+et $\sum_jP(i,j)=1$ pour tout $i$. Une suite de variables aléatoires $(X_n)_{n\ge0}$ à valeurs dans $E$ est une
+\emph{chaîne de Markov de matrice $P$} si, pour tout $n$ et tous $i_0,\dots,i_{n+1}$ tels que l'événement conditionnant
+soit de probabilité non nulle,
+\[\mathbb P(X_{n+1}=i_{n+1}\mid X_0=i_0,\dots,X_n=i_n)=P(i_n,i_{n+1}) .\]
+\end{definition}
+On note $\mathbb P_i$ et $\mathbb E_i$ la probabilité et l'espérance quand $X_0=i$. Une matrice stochastique a la valeur
+propre $1$, de vecteur propre $\mathbf 1=(1,\dots,1)^{\mathsf T}$, puisque $P\mathbf 1=\mathbf 1$.
+
+\begin{proposition}[Chapman--Kolmogorov]\label{appB:prop:ck}
+Pour tous $n\ge0$ et $i,j\in E$, $\mathbb P_i(X_n=j)=P^n(i,j)$. Plus généralement, si la loi de $X_0$ est le vecteur
+ligne $\pi_0$, la loi de $X_n$ est $\pi_0P^n$.
+\end{proposition}
+
+\begin{humanproof}
+Par récurrence sur $n$. Pour $n=0$, $P^0=I$. Si c'est vrai au rang $n$, la formule des probabilités totales et la
+propriété de Markov donnent
+$\mathbb P_i(X_{n+1}=j)=\sum_k\mathbb P_i(X_n=k)\,P(k,j)=\sum_kP^n(i,k)P(k,j)=P^{n+1}(i,j)$.
+\end{humanproof}
+
+\begin{example}[Les chaînes du chapitre~4]
+\begin{itemize}
+\item \emph{Wright--Fisher neutre}, $E=\{0,\dots,N\}$ : la loi de $X_{n+1}$ sachant $X_n=i$ est binomiale,
+$P(i,j)=\binom Nj(i/N)^j(1-i/N)^{N-j}$.
+\item \emph{Moran avec sélection}, $E=\{0,\dots,N\}$ : $P(i,i+1)=p_i$, $P(i,i-1)=q_i$, $P(i,i)=1-p_i-q_i$, avec $p_i=rq_i$
+(chapitre~5, §\ref{ch5:U5}). C'est une \emph{chaîne de naissance et de mort}.
+\item \emph{Configurations sur un graphe}, $E=\mathcal P(V)$ : l'état est l'ensemble des sommets mutants.
+\end{itemize}
+Dans les trois cas, les états « tous résidents » et « tous mutants » sont absorbants.
+\end{example}
+
+%=====================================================================================================================
+\section{États absorbants et matrice fondamentale}\label{appB:sec:abs}
+
+\begin{definition}
+Un état $a$ est \emph{absorbant} si $P(a,a)=1$. On note $A$ l'ensemble des états absorbants et $T=E\setminus A$ celui
+des autres états, dits \emph{transitoires} dans ce contexte. La chaîne est \emph{absorbante} si $A\ne\emptyset$ et si,
+depuis tout état de $T$, un état de $A$ est accessible : pour tout $i\in T$ il existe $n$ et $a\in A$ avec $P^n(i,a)>0$.
+\end{definition}
+
+En rangeant les états de $T$ avant ceux de $A$, la matrice prend la \emph{forme canonique}
+\[P=\begin{pmatrix}Q&R\\0&I\end{pmatrix},\qquad P^n=\begin{pmatrix}Q^n&(I+Q+\dots+Q^{n-1})R\\0&I\end{pmatrix},\]
+où $Q$ est la restriction de $P$ à $T\times T$ et $R$ sa restriction à $T\times A$. La seconde formule se démontre par
+récurrence en effectuant le produit par blocs.
+
+\begin{lemma}[Décroissance géométrique]\label{appB:lem:geom}
+Si la chaîne est absorbante, il existe $m\ge1$ et $\alpha<1$ tels que $\sum_{j\in T}Q^m(i,j)\le\alpha$ pour tout $i\in
+T$. Par conséquent $\sum_{j\in T}Q^n(i,j)\le\alpha^{\lfloor n/m\rfloor}$ et $Q^n\to0$.
+\end{lemma}
+
+\begin{humanproof}
+Pour chaque $i\in T$, il existe $n_i$ avec $\mathbb P_i(X_{n_i}\in A)>0$. Comme $A$ est absorbant, $\mathbb P_i(X_n\in
+A)$ croît avec $n$. Avec $m=\max_in_i$, on a donc $\mathbb P_i(X_m\in A)>0$ pour tout $i\in T$, et
+$\sum_{j\in T}Q^m(i,j)=\mathbb P_i(X_m\in T)=1-\mathbb P_i(X_m\in A)$. On pose $\alpha=\max_{i\in T}\bigl(1-\mathbb P_i(X_m\in
+A)\bigr)<1$ ($T$ est fini). Notons $s_n=\max_i\sum_jQ^n(i,j)$ ; les coefficients de $Q$ étant positifs,
+$s_{n+m}\le s_n\,s_m\le\alpha\,s_n$, et $s_n\le1$.
+\end{humanproof}
+
+C'est la version générale du lemme~\ref{ch4:lem:geom} du chapitre~4.
+
+\begin{theorem}[Matrice fondamentale]\label{appB:thm:fond}
+Si la chaîne est absorbante, la matrice $I-Q$ est inversible, et
+\[N=(I-Q)^{-1}=\sum_{n\ge0}Q^n .\]
+Le coefficient $N(i,j)$ est l'espérance du nombre de visites en $j$ partant de $i$ : $N(i,j)=\mathbb
+E_i\bigl[\sum_{n\ge0}\mathbf 1_{X_n=j}\bigr]$.
+\end{theorem}
+
+\begin{humanproof}
+D'après le lemme, la série $\sum_nQ^n$ converge (ses coefficients positifs sont majorés par une série géométrique).
+Sa somme $N$ vérifie $(I-Q)N=N(I-Q)=\lim_n(I-Q^{n+1})=I$. Enfin, par Chapman--Kolmogorov et le théorème de
+convergence monotone, $\mathbb E_i\bigl[\sum_n\mathbf 1_{X_n=j}\bigr]=\sum_nP^n(i,j)=\sum_nQ^n(i,j)$ pour $i,j\in T$.
+\end{humanproof}
+
+\begin{theorem}[Absorption : probabilités et temps moyen]\label{appB:thm:absorption}
+Soit une chaîne absorbante et $\tau=\inf\{n\ge0:X_n\in A\}$ le temps d'absorption.
+\begin{enumerate}
+\item $\tau<\infty$ presque sûrement, et même $\mathbb E_i[\tau]<\infty$.
+\item Le vecteur des temps moyens $t(i)=\mathbb E_i[\tau]$, $i\in T$, vaut $t=N\mathbf 1$.
+\item La matrice $B(i,a)=\mathbb P_i(X_\tau=a)$, $i\in T$, $a\in A$, vaut $B=NR$.
+\item $\lim_{n\to\infty}P^n(i,a)=B(i,a)$ pour $i\in T$, $a\in A$.
+\end{enumerate}
+\end{theorem}
+
+\begin{humanproof}
+(1) $\mathbb P_i(\tau>n)=\mathbb P_i(X_n\in T)=\sum_{j\in T}Q^n(i,j)\le\alpha^{\lfloor n/m\rfloor}$ par le
+lemme~\ref{appB:lem:geom}. Donc $\mathbb P_i(\tau=\infty)=0$ et $\mathbb E_i[\tau]=\sum_{n\ge0}\mathbb P_i(\tau>n)<\infty$.
+
+(2) Avant l'absorption, chaque pas est une visite d'un état de $T$ : $\tau=\sum_{n\ge0}\sum_{j\in T}\mathbf 1_{X_n=j}$.
+En prenant l'espérance, $t(i)=\sum_{j\in T}N(i,j)$.
+
+(3) L'absorption en $a$ a lieu au pas $n+1$ si $X_n=j\in T$ et $X_{n+1}=a$ :
+$\mathbb P_i(X_\tau=a)=\sum_{n\ge0}\sum_{j\in T}Q^n(i,j)R(j,a)=(NR)(i,a)$.
+
+(4) La forme canonique de $P^n$ donne $P^n(i,a)=\bigl((I+\dots+Q^{n-1})R\bigr)(i,a)\to(NR)(i,a)$.
+\end{humanproof}
+
+\begin{example}[Moran, $N=3$, $r=2$ : le calcul complet]\label{appB:ex:moran3}
+Les probabilités de transition sont $p_1=\frac13$, $q_1=\frac16$, $p_2=\frac4{15}$, $q_2=\frac2{15}$ (chapitre~5,
+§\ref{ch5:U5}). Avec $T=\{1,2\}$ et $A=\{0,3\}$,
+\[Q=\begin{pmatrix}\frac12&\frac13\\[2pt]\frac2{15}&\frac35\end{pmatrix},\qquad
+I-Q=\begin{pmatrix}\frac12&-\frac13\\[2pt]-\frac2{15}&\frac25\end{pmatrix},\qquad\det(I-Q)=\frac15-\frac2{45}=\frac7{45},\]
+\[N=\frac{45}7\begin{pmatrix}\frac25&\frac13\\[2pt]\frac2{15}&\frac12\end{pmatrix}=\begin{pmatrix}\frac{18}7&\frac{15}7\\[2pt]
+\frac67&\frac{45}{14}\end{pmatrix},\qquad t=N\mathbf 1=\begin{pmatrix}\frac{33}7\\[2pt]\frac{57}{14}\end{pmatrix},\qquad
+B(\cdot,3)=N\begin{pmatrix}0\\ \frac4{15}\end{pmatrix}=\begin{pmatrix}\frac47\\[2pt]\frac67\end{pmatrix}.\]
+On retrouve les probabilités de fixation $\frac47$ et $\frac67$ de la formule $(1-r^{-i})/(1-r^{-N})$, et l'on obtient
+en plus les temps moyens d'absorption : $33/7\approx4{,}71$ pas depuis un mutant, $57/14\approx4{,}07$ depuis deux. Ces
+fractions ont été recalculées en arithmétique exacte (\texttt{fractions.Fraction} de Python) pour cette annexe
+\tierX{} : $N=\bigl(\begin{smallmatrix}18/7&15/7\\6/7&45/14\end{smallmatrix}\bigr)$, $t=(33/7,\,57/14)$,
+$B(\cdot,3)=(4/7,\,6/7)$ et $B(\cdot,0)=(3/7,\,1/7)$.
+\end{example}
+
+%=====================================================================================================================
+\section{Fonctions harmoniques et principe du maximum}\label{appB:sec:harm}
+
+\begin{definition}
+Une fonction $h:E\to\R$ est \emph{harmonique} en $i$ si $h(i)=\sum_jP(i,j)h(j)$, c'est-à-dire si $(Ph)(i)=h(i)$. Elle
+est \emph{harmonique sur $T$} si elle l'est en tout point de $T$.
+\end{definition}
+Autrement dit, $h(i)$ est la moyenne des valeurs de $h$ un pas plus tard. Pour une chaîne de naissance et de mort,
+l'harmonicité en $i$ s'écrit $p_i\bigl(h(i+1)-h(i)\bigr)=q_i\bigl(h(i)-h(i-1)\bigr)$ : c'est l'équation du premier pas du
+chapitre~5.
+
+\begin{theorem}[Principe du maximum]\label{appB:thm:max}
+Soit une chaîne absorbante et $h$ harmonique sur $T$. Alors $\max_Eh=\max_Ah$ et $\min_Eh=\min_Ah$.
+\end{theorem}
+
+\begin{humanproof}
+Soit $M=\max_Eh$, atteint en un état $i_0$. Si $i_0\in A$, c'est fini. Sinon, $i_0\in T$ et
+$M=h(i_0)=\sum_jP(i_0,j)h(j)$ est une moyenne de valeurs $\le M$, à poids positifs de somme $1$ : toutes les valeurs
+$h(j)$ avec $P(i_0,j)>0$ valent $M$. De proche en proche, $h=M$ en tout état accessible depuis $i_0$, en particulier
+en un état de $A$ (la chaîne est absorbante). Pour le minimum, on applique le résultat à $-h$.
+\end{humanproof}
+
+\begin{corollary}[Problème de Dirichlet]\label{appB:cor:dirichlet}
+Pour toute fonction $f:A\to\R$, il existe une unique fonction $h$ harmonique sur $T$ et égale à $f$ sur $A$ : c'est
+$h(i)=\mathbb E_i[f(X_\tau)]=\sum_{a\in A}B(i,a)f(a)$ pour $i\in T$.
+\end{corollary}
+
+\begin{humanproof}
+\emph{Unicité.} La différence $d$ de deux solutions est harmonique sur $T$ et nulle sur $A$ ; par le
+théorème~\ref{appB:thm:max}, $0\le d\le0$.
+\emph{Existence.} Sur $T$, l'équation s'écrit $h_T=Qh_T+Rf$, soit $(I-Q)h_T=Rf$, qui a la solution $h_T=NRf=Bf$
+(théorème~\ref{appB:thm:fond}).
+\end{humanproof}
+
+En prenant $A=\{0,N\}$, $f(0)=0$ et $f(N)=1$, on obtient : \emph{la probabilité de fixation est l'unique fonction
+harmonique à l'intérieur qui vaut $0$ en $0$ et $1$ en $N$}. C'est exactement la structure des preuves du chapitre~4 :
+théorème~\ref{ch4:thm:maxprinc} pour Wright--Fisher, où $h(j)=j/N$ ; théorème~\ref{ch4:thm:moran} pour Moran, où
+$h(i)=S_i/S_N$ ; proposition~\ref{ch4:prop:harmgraph} pour les graphes. Dans Lean, le pas « la probabilité de
+fixation est harmonique » est remplacé par la limite $P^n(i,N)\to h(i)$ (point~4 du théorème~\ref{appB:thm:absorption}),
+qui ne demande pas de définir $\tau$.
+
+\begin{remark}[La connexité compte]
+Sans l'hypothèse « absorbante », le principe du maximum est faux. Sur $E=\{0,1,2\}$ avec $P(1,1)=1$ et $0,2$
+absorbants, toute fonction est harmonique en $1$ ; $h(1)$ est arbitraire et le problème de Dirichlet a une infinité de
+solutions. C'est la raison d'être des hypothèses de variance positive (chapitre~4, §\ref{ch4:sec:wf}) et de forte
+connexité (lemme~\ref{ch4:lem:conn}) dans les énoncés Lean.
+\end{remark}
+
+%=====================================================================================================================
+\section{Martingales discrètes}\label{appB:sec:mart}
+
+Nous restons dans le cadre élémentaire d'une chaîne de Markov finie, où toutes les variables sont bornées.
+
+\begin{definition}
+Une suite $(M_n)$ de variables aléatoires réelles bornées, avec $M_n$ fonction de $(X_0,\dots,X_n)$, est une
+\emph{martingale} (relativement à $(X_n)$) si $\mathbb E[M_{n+1}\mid X_0,\dots,X_n]=M_n$ pour tout $n$. De façon
+équivalente : $\mathbb E[(M_{n+1}-M_n)\,Z]=0$ pour toute variable bornée $Z$ fonction de $(X_0,\dots,X_n)$.
+\end{definition}
+
+\begin{proposition}\label{appB:prop:harmmart}
+Si $h$ est harmonique sur $E$ tout entier (en particulier sur $T$, et constante sur chaque état absorbant), alors
+$M_n=h(X_n)$ est une martingale.
+\end{proposition}
+
+\begin{humanproof}
+Par la propriété de Markov,
+\[\mathbb E[h(X_{n+1})\mid X_0,\dots,X_n]=\sum_jP(X_n,j)h(j)=(Ph)(X_n)=h(X_n) .\]
+En un état
+absorbant $a$, $(Ph)(a)=h(a)$ automatiquement, car $P(a,a)=1$.
+\end{humanproof}
+
+\begin{example}
+\begin{itemize}
+\item \emph{Wright--Fisher.} L'espérance de la loi binomiale $\mathcal B(N,i/N)$ est $i$, donc $h(j)=j$ est harmonique :
+le nombre de mutants $X_n$ est une martingale (chapitre~4, §\ref{ch4:sec:wf}).
+\item \emph{Moran avec sélection.} $h(i)=r^{-i}$ est harmonique en $0<i<N$. En effet, l'harmonicité s'écrit
+$p_i\bigl(h(i+1)-h(i)\bigr)+q_i\bigl(h(i-1)-h(i)\bigr)=0$, et avec $p_i=rq_i$ :
+$rq_i(r^{-i-1}-r^{-i})+q_i(r^{-i+1}-r^{-i})=q_ir^{-i}\bigl((1-r)+(r-1)\bigr)=0$. Donc
+$r^{-X_n}$ est une martingale. C'est la martingale qu'utilisent Keller et Uğurlu pour les graphes~\cite{ch4:KU}.
+\end{itemize}
+\end{example}
+
+\begin{theorem}[Théorème d'arrêt]\label{appB:thm:arret}
+Soit $(M_n)$ une martingale et $\tau$ un \emph{temps d'arrêt} : pour tout $n$, l'événement $\{\tau=n\}$ ne dépend que de
+$(X_0,\dots,X_n)$.
+\begin{enumerate}
+\item Si $\tau\le K$ presque sûrement pour un entier $K$, alors $\mathbb E[M_\tau]=\mathbb E[M_0]$.
+\item Si $\tau<\infty$ presque sûrement et si $|M_n|\le C$ pour tout $n$, alors $\mathbb E[M_\tau]=\mathbb E[M_0]$.
+\end{enumerate}
+\end{theorem}
+
+\begin{humanproof}
+(1) On écrit $M_\tau=M_0+\sum_{k=0}^{K-1}(M_{k+1}-M_k)\mathbf 1_{\tau>k}$. L'événement $\{\tau>k\}$, complémentaire de
+$\{\tau\le k\}$, ne dépend que de $(X_0,\dots,X_k)$ ; par définition d'une martingale, chaque terme de la somme est
+d'espérance nulle.
+
+(2) Pour $K$ fixé, $\tau\wedge K=\min(\tau,K)$ est un temps d'arrêt borné, donc $\mathbb E[M_{\tau\wedge
+K}]=\mathbb E[M_0]$ par (1). Quand $K\to\infty$, $M_{\tau\wedge K}\to M_\tau$ presque sûrement (car $\tau<\infty$) et
+$|M_{\tau\wedge K}|\le C$ : la convergence dominée (théorème~\ref{appA:thm:cvd}, sous sa forme probabiliste) conclut.
+\end{humanproof}
+
+\begin{corollary}[Ruine du joueur et formule de Moran]\label{appB:cor:ruine}
+Pour la chaîne de Moran avec $r\ne1$, partant de $i$, $\mathbb P_i(X_\tau=N)=\dfrac{1-r^{-i}}{1-r^{-N}}$.
+\end{corollary}
+
+\begin{humanproof}
+La chaîne est absorbante ($p_i>0$ pour $0<i<N$), donc $\tau<\infty$ presque sûrement (théorème~\ref{appB:thm:absorption}).
+La martingale $r^{-X_n}$ est bornée par $\max(1,r^{-N})$. Le théorème d'arrêt donne
+$r^{-i}=\mathbb E_i[r^{-X_\tau}]=\varphi_i\,r^{-N}+(1-\varphi_i)\cdot1$, avec $\varphi_i=\mathbb P_i(X_\tau=N)$.
+On résout : $\varphi_i=(1-r^{-i})/(1-r^{-N})$.
+\end{humanproof}
+Avec la martingale $X_n$ de Wright--Fisher, le même calcul donne $\varphi_i=i/N$. Ce sont deux démonstrations
+probabilistes des formules que le chapitre~4 démontre par l'algèbre linéaire (récurrence sur les différences
+$\delta_i$, puis limite de $P^n$).
+
+%=====================================================================================================================
+\section{Chaînes irréductibles et loi stationnaire}\label{appB:sec:stat}
+
+Les chaînes absorbantes ne sont pas les seules du livre : la matrice de remplacement $W$ d'un graphe (chapitre~4,
+§\ref{ch4:sec:graphes}) est elle-même une matrice stochastique, en général \emph{irréductible}, et le théorème de
+Keller--Uğurlu~\cite{ch4:KU} fait intervenir sa loi stationnaire.
+
+\begin{definition}
+Une matrice stochastique $P$ est \emph{irréductible} si, pour tous $i,j$, il existe $n\ge0$ avec $P^n(i,j)>0$. Une
+\emph{loi stationnaire} est un vecteur ligne $\pi\ge0$, de somme $1$, tel que $\pi P=\pi$.
+\end{definition}
+
+\begin{proposition}[Existence]\label{appB:prop:existence}
+Toute matrice stochastique sur un ensemble fini a au moins une loi stationnaire.
+\end{proposition}
+
+\begin{humanproof}
+Partons d'une loi $\pi_0$ quelconque et posons $\mu_n=\frac1n\sum_{k=0}^{n-1}\pi_0P^k$. Ce sont des lois de
+probabilité ; elles vivent dans le simplexe, qui est compact. Une sous-suite $(\mu_{n_l})$ converge vers une loi $\mu$.
+Or $\mu_nP-\mu_n=\frac1n(\pi_0P^n-\pi_0)$, dont chaque coefficient est majoré par $1/n$ en valeur absolue. À la limite,
+$\mu P=\mu$.
+\end{humanproof}
+
+\begin{proposition}[Unicité et positivité]\label{appB:prop:unicite}
+Si $P$ est irréductible, la loi stationnaire $\pi$ est unique et $\pi(j)>0$ pour tout $j$.
+\end{proposition}
+
+\begin{humanproof}
+\emph{Les fonctions harmoniques sont constantes.} Si $Ph=h$ sur tout $E$, l'argument du théorème~\ref{appB:thm:max}
+montre que $h$ vaut son maximum en tout état accessible depuis un point où il est atteint, donc partout, par
+irréductibilité. Le noyau de $P-I$ est donc la droite engendrée par $\mathbf 1$.
+\emph{Unicité.} Le noyau à gauche, $\{x:x(P-I)=0\}$, a la même dimension que le noyau à droite (rang d'une matrice et
+de sa transposée), donc il est de dimension $1$ ; une seule de ses droites a une somme égale à $1$.
+\emph{Positivité.} Si $\pi(i)>0$ (il en existe un) et $P^n(i,j)>0$, alors $\pi(j)=(\pi P^n)(j)\ge\pi(i)P^n(i,j)>0$.
+\end{humanproof}
+
+\begin{theorem}[Convergence géométrique]\label{appB:thm:doeblin}
+Supposons qu'il existe $m\ge1$ et $\delta>0$ tels que $P^m(i,j)\ge\delta$ pour tous $i,j$ (matrice \emph{primitive}). Soit
+$n=|E|$. Pour toutes lois $\mu,\nu$, $\|\mu P^m-\nu P^m\|_1\le(1-n\delta)\|\mu-\nu\|_1$. En particulier $\pi_0P^k\to\pi$
+pour toute loi initiale $\pi_0$, à vitesse géométrique.
+\end{theorem}
+
+\begin{humanproof}
+On a $n\delta\le1$, car une ligne de $P^m$ a $n$ coefficients $\ge\delta$ de somme $1$. Si $n\delta=1$, toutes les lignes
+de $P^m$ sont uniformes et $\mu P^m=\nu P^m$. Sinon, écrivons $P^m=n\delta\,U+(1-n\delta)R$, où $U$ a toutes ses
+lignes égales à $(\frac1n,\dots,\frac1n)$ ; la matrice $R=(P^m-n\delta U)/(1-n\delta)$ est alors à coefficients
+positifs, de lignes de somme $1$. Le vecteur $x=\mu-\nu$ est de somme nulle, donc $xU=0$, et
+$xP^m=(1-n\delta)\,xR$. Enfin $\|xR\|_1\le\sum_i|x_i|\sum_jR(i,j)=\|x\|_1$. On applique l'inégalité à $\mu=\pi_0P^k$ et
+$\nu=\pi$ (qui vérifie $\pi P^m=\pi$) ; les puissances intermédiaires ne font pas croître la norme, par le même calcul
+avec $P$ à la place de $R$.
+\end{humanproof}
+
+\begin{example}[Le graphe en étoile à trois sommets]\label{appB:ex:etoile}
+Prenons le centre $0$ et les feuilles $1$, $2$, avec $W(0,1)=W(0,2)=\frac12$ et $W(1,0)=W(2,0)=1$ (exercice~\ref{ch4:ex:star}).
+L'équation $\pi W=\pi$ donne $\pi(0)=\pi(1)+\pi(2)$ et $\pi(1)=\pi(2)=\pi(0)/2$, d'où $\pi=(\frac12,\frac14,\frac14)$.
+Cette matrice est irréductible mais \emph{pas} primitive : elle est périodique de période $2$ (on alterne entre le
+centre et les feuilles), et $\pi_0W^k$ ne converge pas si l'on part du centre. Le théorème~\ref{appB:thm:doeblin} ne
+s'applique donc pas ; la loi stationnaire existe et est unique quand même. L'étoile n'est pas isotherme ($W$ n'est pas
+doublement stochastique : la colonne du centre somme à $2$), ce qui explique que sa probabilité de fixation diffère de
+celle de Moran (chapitre~4). Avec des poids de sélection stationnaires au sens de l'énoncé Lean \lean{stationary_fixation}
+(\texttt{EvoGraph/BirthDeath.lean}), l'enregistrement N4~\cite{ch4:N4} retrouve la valeur de Moran $4/7$ depuis chacun
+des trois sommets (calcul en fractions exactes, \tierX).
+\end{example}
+
+\begin{remark}[Et les chaînes absorbantes ?]
+Une chaîne absorbante n'est pas irréductible dès qu'elle a un état transitoire. Ses lois stationnaires sont les
+mélanges de masses de Dirac sur les états absorbants, et la loi limite dépend du point de départ : c'est la matrice
+$B$ du théorème~\ref{appB:thm:absorption}.
+\end{remark}
+
+%=====================================================================================================================
+\section{Du temps discret au temps continu : l'uniformisation}\label{appB:sec:unif}
+
+La crate \texttt{qf-popgen} (chapitre~5, cas U5) n'itère pas $P^n$ : elle intègre l'équation différentielle linéaire
+$\dot\pi(t)=\pi(t)(P-I)$ avec CVODE. Voici pourquoi les deux calculs ont la même limite.
+
+\begin{proposition}[Mélange de Poisson]\label{appB:prop:unif}
+La solution de $\dot\pi=\pi(P-I)$, $\pi(0)=\pi_0$, est
+\[\pi(t)=\pi_0e^{t(P-I)}=\sum_{n\ge0}e^{-t}\frac{t^n}{n!}\,\pi_0P^n .\]
+Si $P$ est absorbante, $\pi(t)(a)\to\sum_i\pi_0(i)B(i,a)$ quand $t\to\infty$, pour tout $a\in A$.
+\end{proposition}
+
+\begin{humanproof}
+Les matrices $tP$ et $-tI$ commutent, donc
+\[e^{t(P-I)}=e^{-t}e^{tP}=e^{-t}\sum_{n\ge0}\frac{t^nP^n}{n!} .\]
+Pour la limite, notons
+$u_n=\pi_0P^n(a)$, qui converge vers $\ell=\sum_i\pi_0(i)B(i,a)$ (théorème~\ref{appB:thm:absorption}, point~4, et
+$P^n(a,a)=1$). Les poids $e^{-t}t^n/n!$ forment une loi de Poisson de paramètre $t$, dont la masse sur $\{n\le n_0\}$
+tend vers $0$ quand $t\to\infty$, pour tout $n_0$ fixé. On coupe la somme en $n\le n_0$ et $n>n_0$, avec $n_0$ tel que
+$|u_n-\ell|\le\varepsilon$ pour $n>n_0$ ; comme $|u_n-\ell|\le2$ pour tout $n$,
+\[|\pi(t)(a)-\ell|\le2\,\mathbb P\bigl(\mathrm{Poisson}(t)\le n_0\bigr)+\varepsilon .\]
+\end{humanproof}
+Cette proposition est le pas « l'équation différentielle et le noyau à $n$ pas ont la même limite » que le chapitre~5
+signale comme non formalisé : elle est de niveau \tierC{} dans ce livre.
+
+%=====================================================================================================================
+\section{Exercices}\label{appB:sec:exos}
+
+\begin{exercise}
+Pour la chaîne de Moran neutre ($r=1$) à $N$ individus, montrer que $\delta_i=\varphi_{i+1}-\varphi_i$ est constant et
+retrouver $\varphi_i=i/N$. Calculer la matrice fondamentale pour $N=3$ et le temps moyen d'absorption depuis $i=1$.
+\end{exercise}
+
+\begin{exercise}
+Montrer que, pour une chaîne de naissance et de mort absorbante en $0$ et $N$, le vecteur $t$ des temps moyens vérifie
+$t(i)=1+p_it(i+1)+q_it(i-1)+(1-p_i-q_i)t(i)$ pour $0<i<N$, avec $t(0)=t(N)=0$. Vérifier sur l'exemple~\ref{appB:ex:moran3}
+que $(33/7,57/14)$ est solution.
+\end{exercise}
+
+\begin{exercise}
+Soit $(X_n)$ la chaîne de Wright--Fisher neutre. Montrer que $X_n(N-X_n)\,(1-1/N)^{-n}$ est une martingale. En déduire
+que $\mathbb E_i[X_n(N-X_n)]=i(N-i)(1-1/N)^n$, puis une majoration de $\mathbb P_i(\tau>n)$.
+\end{exercise}
+
+\begin{exercise}[Le témoin négatif du théorème d'arrêt]
+Sur $\Z$, la marche simple symétrique $S_n$ partant de $0$ est une martingale, et $\tau=\inf\{n:S_n=1\}$ est fini
+presque sûrement (on l'admet). Montrer que $\mathbb E[S_\tau]=1\ne\mathbb E[S_0]$. Quelle hypothèse du
+théorème~\ref{appB:thm:arret} est violée ?
+\end{exercise}

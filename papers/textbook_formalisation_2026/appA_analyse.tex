@@ -52,7 +52,7 @@ $\int_I\sum_nu_n=\sum_n\int_Iu_n$.
 \subsection{Continuité et dérivation sous l'intégrale}
 
 \begin{theorem}[Continuité sous l'intégrale]\label{appA:thm:cont}
-Soit $A$ une partie de $\R$ et $f:A\times I\to\C$ telle que $f(\cdot,x)$ est continue pour tout $x$, $f(a,\cdot)$ est
+Soit $A$ une partie de $\R$ et $f:A\times I\to\mathbb{C}$ telle que $f(\cdot,x)$ est continue pour tout $x$, $f(a,\cdot)$ est
 continue par morceaux pour tout $a$, et $|f(a,x)|\le\varphi(x)$ avec $\varphi$ intégrable. Alors
 $F(a)=\int_If(a,x)\,dx$ est continue sur $A$.
 \end{theorem}
@@ -63,7 +63,7 @@ $\varphi$. Le théorème~\ref{appA:thm:cvd} donne $F(a_n)\to F(a)$, et la caract
 \end{humanproof}
 
 \begin{theorem}[Dérivation sous l'intégrale]\label{appA:thm:deriv}
-Soit $J$ un intervalle et $f:J\times I\to\C$. On suppose que $f(a,\cdot)$ est intégrable pour tout $a\in J$, que
+Soit $J$ un intervalle et $f:J\times I\to\mathbb{C}$. On suppose que $f(a,\cdot)$ est intégrable pour tout $a\in J$, que
 $\partial f/\partial a$ existe, est continue en $a$ et continue par morceaux en $x$, et qu'il existe $\psi$ intégrable
 avec $|\partial_af(a,x)|\le\psi(x)$ pour tous $a,x$. Alors $F(a)=\int_If(a,x)\,dx$ est de classe $\mathcal C^1$ sur $J$,
 et $F'(a)=\int_I\partial_af(a,x)\,dx$.
@@ -88,7 +88,7 @@ pour $t\ge\alpha>0$.
 Pour $\alpha>0$, $G(\alpha)=\int_\R e^{-\pi\alpha x^2}dx=\alpha^{-1/2}$ (intégrale de Gauss). Sur $[\alpha_0,\infty[$ avec
 $\alpha_0>0$, $|\partial_\alpha e^{-\pi\alpha x^2}|=\pi x^2e^{-\pi\alpha x^2}\le\pi x^2e^{-\pi\alpha_0x^2}$, qui est
 intégrable. Le théorème~\ref{appA:thm:deriv} donne $\int\pi x^2e^{-\pi\alpha x^2}dx=-G'(\alpha)=\tfrac12\alpha^{-3/2}$.
-En dérivant $m$ fois, $\int(\pi x^2)^me^{-\pi\alpha x^2}dx=\frac{(2m)!}{4^mm!}\,\alpha^{-1/2-m}$ (exercice~\ref{appA:ex:moments}).
+En dérivant $m$ fois, $\int(\pi x^2)^me^{-\pi\alpha x^2}dx=\frac{(2m)!}{4^mm!}\,\alpha^{-1/2-m}$ (exercice~\ref{appA:exo:moments}).
 C'est la même technique qui, au chapitre~1, calcule la transformée de Fourier d'une gaussienne
 (théorème~\ref{ch1:thm:poisson}, étape~1).
 \end{example}
@@ -115,7 +115,7 @@ chapitre~3 sont précisément $-\Theta_\Lambda'(\alpha)/\pi$.
 \subsection{La transformée de Fourier}
 
 \begin{definition}
-Pour $f:\R^d\to\C$ intégrable, la \emph{transformée de Fourier} de $f$ est
+Pour $f:\R^d\to\mathbb{C}$ intégrable, la \emph{transformée de Fourier} de $f$ est
 \[\hat f(\xi)=\int_{\R^d}f(x)\,e^{-2\pi i\,\xi\cdot x}\,dx,\qquad\xi\in\R^d .\]
 \end{definition}
 C'est la convention du chapitre~1 : le facteur $2\pi$ est dans l'exponentielle, et la formule d'inversion n'a alors
@@ -224,7 +224,7 @@ Le chapitre~1 démontre la formule de Poisson pour les gaussiennes. Voici l'éno
 particulier, en dimension~$1$ d'abord, puis pour un réseau quelconque.
 
 \begin{theorem}[Formule de Poisson en dimension 1]\label{appA:thm:poisson1}
-Soit $f:\R\to\C$ continue. On suppose qu'il existe $C>0$ et $\delta>0$ tels que
+Soit $f:\R\to\mathbb{C}$ continue. On suppose qu'il existe $C>0$ et $\delta>0$ tels que
 \[|f(x)|\le C(1+|x|)^{-1-\delta}\quad\text{et}\quad|\hat f(\xi)|\le C(1+|\xi|)^{-1-\delta}\qquad(x,\xi\in\R).\]
 Alors, pour tout $x\in\R$, $\displaystyle\sum_{n\in\Z}f(x+n)=\sum_{k\in\Z}\hat f(k)\,e^{2\pi ikx}$, les deux séries
 convergeant absolument. En particulier $\sum_nf(n)=\sum_k\hat f(k)$.
@@ -314,8 +314,9 @@ $\operatorname{erfc}(x)\sim\frac{e^{-x^2}}{x\sqrt\pi}$ quand $x\to\infty$.
 \end{proposition}
 
 \begin{humanproof}
-\emph{Majoration.} Pour $s\ge x>0$, $1\le s/x$, donc $\int_x^\infty e^{-s^2}ds\le\frac1x\int_x^\infty se^{-s^2}ds=
-\frac{e^{-x^2}}{2x}$. On multiplie par $2/\sqrt\pi$.
+\emph{Majoration.} Pour $s\ge x>0$, on a $1\le s/x$, donc
+\[\int_x^\infty e^{-s^2}ds\le\frac1x\int_x^\infty se^{-s^2}ds=\frac{e^{-x^2}}{2x} .\]
+On multiplie par $2/\sqrt\pi$.
 
 \emph{Minoration.} On l'admet \tierL{} (elle se démontre en étudiant la différence des deux membres, qui tend vers $0$ à
 l'infini et dont on contrôle le signe de la dérivée) ; elle n'est utilisée que pour l'équivalent, que la majoration et
@@ -323,9 +324,9 @@ une intégration par parties suffisent aussi à établir (exercice~\ref{appA:ex:
 \end{humanproof}
 Le chapitre~2 utilise les bornes $0<\operatorname{erfcx}(x)\le1$ pour $x\ge0$ et $\operatorname{erfcx}(x)\le1/(\sqrt\pi
 x)$ pour $x>0$, démontrées là par la représentation $\operatorname{erfcx}(x)=\frac2{\sqrt\pi}\int_0^\infty
-e^{-(y^2+2xy)}dy$. Dans les sommes de réseau certifiées, $\operatorname{erfc}$ apparaît aussi dans les bornes de queue
-des gaussiennes : $\sum_{|n|>R}e^{-\pi n^2}$ se compare à une intégrale de gaussienne, c'est-à-dire à
-$\operatorname{erfc}(\sqrt\pi R)$.
+e^{-(y^2+2xy)}dy$. La proposition sert aussi à borner une queue de série gaussienne : par comparaison série--intégrale,
+$\sum_{n>R}e^{-\pi n^2}\le\int_{R-1}^\infty e^{-\pi x^2}dx=\frac12\operatorname{erfc}\bigl(\sqrt\pi(R-1)\bigr)$ pour $R\ge1$
+(exercice~\ref{appA:ex:erfc}).
 
 \subsection{Les fonctions de Bessel \texorpdfstring{$J_0$}{J0}, \texorpdfstring{$Y_0$}{Y0} et \texorpdfstring{$K_0$}{K0}}
 
@@ -391,7 +392,7 @@ $P^{-1}=\pm\,\mathrm{com}(P)^{\mathsf T}$ est entière, et les deux réseaux son
 Le covolume $|\det(u,v)|$ ne dépend donc pas de la base.
 
 \subsection{Le paramètre de forme \texorpdfstring{$\tau$}{tau}}
-Identifions $\R^2$ à $\C$. Quitte à faire une similitude directe (une rotation et une homothétie, qui ne changent pas la
+Identifions $\R^2$ à $\mathbb{C}$. Quitte à faire une similitude directe (une rotation et une homothétie, qui ne changent pas la
 « forme »), on peut supposer $u=1$. Quitte à remplacer $v$ par $-v$, on peut supposer $\operatorname{Im}v>0$. Le réseau
 est alors $\Z+\Z\tau$ avec $\tau$ dans le demi-plan de Poincaré $\mathbb H=\{\operatorname{Im}\tau>0\}$. Un changement
 de base direct $\binom{u'}{v'}=\begin{pmatrix}d&c\\b&a\end{pmatrix}\binom uv$ avec $ad-bc=1$ remplace $\tau$ par
@@ -417,7 +418,7 @@ $|\tau|=1$).
 \begin{humanproof}[Démonstration humaine du point 1]
 Notons $T:\tau\mapsto\tau+1$ et $S:\tau\mapsto-1/\tau$ ; ils correspondent à $\bigl(\begin{smallmatrix}1&1\\0&1\end{smallmatrix}\bigr)$
 et $\bigl(\begin{smallmatrix}0&-1\\1&0\end{smallmatrix}\bigr)$. Pour $\tau$ fixé, les nombres $c\tau+d$, $(c,d)\in\Z^2\setminus\{0\}$,
-forment un réseau de $\C$ ; il n'y en a qu'un nombre fini de module $\le1$. D'après~\eqref{appA:eq:im},
+forment un réseau de $\mathbb{C}$ ; il n'y en a qu'un nombre fini de module $\le1$. D'après~\eqref{appA:eq:im},
 $\operatorname{Im}(\gamma\cdot\tau)$ ne prend donc qu'un nombre fini de valeurs $\ge\operatorname{Im}\tau$, et il existe
 $\gamma_0$ telle que $\tau'=\gamma_0\cdot\tau$ ait une partie imaginaire maximale dans l'orbite. Une puissance de $T$
 amène $\operatorname{Re}\tau'$ dans $[-\frac12,\frac12]$ sans changer sa partie imaginaire. Si l'on avait $|\tau'|<1$,
@@ -448,15 +449,16 @@ Le point~1 du théorème est aussi un algorithme. Partant d'une base $(u,v)$ :
 \end{enumerate}
 L'algorithme termine, car $|u|$ décroît strictement à chaque échange et ne prend qu'un nombre fini de valeurs (ce sont
 des normes de vecteurs du réseau inférieures à la norme initiale). À la fin, $|u|\le|v|\le|v\pm u|$ : $u$ est un plus
-court vecteur non nul et $\tau=v/u$ (au signe près) est dans $\mathcal F$. Les sommes de réseau tronquées des chapitres~3
-et~5 utilisent une base ainsi réduite, pour laquelle le disque de rayon $R$ ne contient que $O(R^2)$ points de la forme
-$mu+nv$ avec $|m|,|n|\le CR$.
+court vecteur non nul et $\tau=v/u$ (au signe près) est dans $\mathcal F$. Avec une base réduite, la troncature d'une somme de réseau au disque de rayon
+$R$ est commode : tous les points $mu+nv$ du disque vérifient $|m|,|n|\le CR$ pour une constante $C$ ne dépendant que de
+la forme (exercice). Nous n'avons pas vérifié quels codes du livre réduisent leur base ; c'est une remarque de méthode,
+pas une description de ces codes.
 
 %=====================================================================================================================
 \section{Exercices}\label{appA:sec:exos}
 
-\begin{exercise}\label{appA:ex:moments}
-Démontrer par récurrence sur $m$ la formule des moments gaussiens de l'exemple~\ref{appA:ex:moments}. En déduire
+\begin{exercise}\label{appA:exo:moments}
+Démontrer par récurrence sur $m$ la formule de l'exemple~\ref{appA:ex:moments}. En déduire
 $\int_\R x^{2m}e^{-x^2}dx=\Gamma(m+\tfrac12)$.
 \end{exercise}
 

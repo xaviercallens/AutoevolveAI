@@ -236,7 +236,7 @@ monotonicity ».
 \end{warnbox}
 
 % ---------------------------------------------------------------------
-\section{Wright--Fisher neutre : martingale, fonctions harmoniques, absorption}\label{ch4:sec:wf}\sectionmark{Wright--Fisher neutre}
+\section[Wright--Fisher neutre]{Wright--Fisher neutre : martingale, fonctions harmoniques, absorption}\label{ch4:sec:wf}
 
 \subsection{La chaîne}
 On s'intéresse maintenant au \emph{hasard} seul. Considérons une population de $N$ gènes, dont $i$ sont de type
@@ -340,7 +340,7 @@ Pour tout $N\ge1$ et tout $0\le i\le N$,
 P^n(i,N)\xrightarrow[n\to\infty]{}\frac iN,\qquad P^n(i,0)\xrightarrow[n\to\infty]{}1-\frac iN,
 \]
 et la suite $\bigl(P^n(i,N)\bigr)_n$ est croissante. \tierA{} (\lean{wright_fisher_fixation_limit},
-\lean{wright_fisher_fixation_mono}, \texttt{Programmes/PopGen/}\allowbreak\texttt{WrightFisherFixation.lean}, l.~49--58).
+\lean{wright_fisher_fixation_mono}, \texttt{Programmes/PopGen/}\allowbreak\texttt{WrightFisherFixation.lean}, l.~49--58). Le théorème général \lean{fixation_limit} dont il découle reparaît sous le nom \lean{KAL}.
 \end{theorem}
 
 Nous donnons d'abord une démonstration de niveau CPGE \tierC, qui repose sur la \emph{décroissance géométrique}
@@ -556,7 +556,7 @@ formalisé ; le second moment le remplace. L'unicité vient de l'unicité des li
 \end{leanbox}
 
 \begin{remark}[Contrôles \tierA]\label{ch4:rem:moranctl}
-Les contrôles suivants sont tous kernel-checked.
+Les contrôles suivants sont tous vérifiés par le noyau.
 \begin{itemize}[itemsep=1pt]
 \item \emph{Contrôles positifs.} Pour $N=2$, $r=2$, on a $p_1=\frac13$, $q_1=\frac16$ et $h(1)=\frac23$
 (\lean{ctl_pos_moran_rates}, \lean{ctl_pos_moranFix_N2}). Pour $N=3$, $r=2$, on a $h=(0,\frac47,\frac67,1)$, et
@@ -574,7 +574,7 @@ et un autre tiré d'un axiome planté affirment les limites fausses $\frac17$ et
 
 \begin{numbox}[: CVODE et le certificat « fail-closed »]
 \tierX{} Le programme P7 a aussi intégré l'équation de Kolmogorov uniformisée $\dot\pi=\pi(P-I)$ avec CVODE (BDF, jacobien
-exact), dans un nouveau crate \texttt{qf-popgen} de rusty-SUNDIALS. Le crate s'entoure d'un certificat qui refuse
+exact), dans un nouveau crate \texttt{qf-popgen} de rusty-SUNDIALS. Le crate s'entoure d'un certificat (« fail-closed » : qui refuse par défaut) qui refuse
 tout résultat douteux : noyau valide, conservation de la masse, positivité composante par composante,
 décroissance de la masse intérieure et accord avec la cible. Bilan : $106$ exécutions acceptées s'accordent avec
 les formes closes à $3{,}1\times10^{-10}$ près ; les $9$ contrôles négatifs sont tous refusés. La loi
@@ -667,7 +667,7 @@ transmission}, $z'=w$ : types clonaux, valeurs sélectives constantes, pas de mu
 \quad(\text{si }n_i>0,\ w_i>0).
 \]
 \tierA{} (\lean{fisher_haploid}, \lean{fisher_haploid_div}, \lean{fisher_haploid_nondecreasing},
-\lean{fisher_haploid_pos}, \texttt{Price.lean}, l.~125--185).
+\lean{fisher_haploid_pos}, \texttt{Price.lean}, l.~125--185 ; \lean{fisher_haploid_nondecreasing} est ré-exporté sous le nom \lean{AURELIA}).
 \end{corollary}
 
 \begin{humanproof}
@@ -682,8 +682,8 @@ constantes \tierL{}~\cite{ch4:Bae}.
 
 Pour deux allèles de fréquences $p$, $1-p$ et de valeurs sélectives $w_1$, $w_2$, on trouve
 $\mathrm{Var}_n(w)=p(1-p)(w_1-w_2)^2$, d'où $\Delta\bar w=p(1-p)(w_1-w_2)^2/\bar w$. Le module P7 en tire, au
-cas \lean{Fin 2}, deux énoncés au texte identique à ceux du dépôt Genetic,
-\lean{aurelia_mean_fitness_increment} et \lean{kal_increment_is_variance} (\texttt{Price.lean}, l.~224 et 235)
+cas \lean{Fin 2}, deux énoncés au texte identique à deux lemmes du dépôt Genetic
+(\texttt{Price.lean}, l.~224 et 235)
 \tierA. Le rapprochement entre les deux dépôts reste textuel \tierC.
 
 \begin{remark}[Contrôles \tierA]
@@ -850,7 +850,7 @@ En particulier, un mutant unique placé en \emph{n'importe quel} sommet $v$ se f
 $\frac{1-r^{-1}}{1-r^{-n}}$, exactement comme dans la population bien mélangée. Plus généralement, la même limite
 vaut dès que $\mu W=\mu$, $\mu>0$, et que toute partie propre non vide possède une arête sortante.
 \tierA{} (\lean{isothermal_fixation}, \lean{isothermal_fixation_single}, \lean{isothermal_fixation_neutral},
-\lean{isothermal_fixation_uniform}, \lean{stationary_fixation}, \texttt{BirthDeath.lean}, l.~356--416).
+\lean{isothermal_fixation_uniform}, \lean{stationary_fixation}, \texttt{BirthDeath.lean}, l.~356--416 ; \lean{isothermal_fixation_single} est ré-exporté sous le nom \lean{ILENE}).
 \end{theorem}
 
 \begin{humanproof}
@@ -1057,7 +1057,7 @@ cœurs) sur les dix modules cités. Ce sont \lean{Autoresearch.PopGenFisher}, \l
 \lean{Programmes.PopGen.Absorption}, \lean{WrightFisherFixation}, \lean{MoranModel}, \lean{MoranFixation},
 \lean{Price}, ainsi que \lean{Programmes.EvoGraph.Transport}, \lean{BirthDeath} et \lean{Examples}. Les dix
 exécutions ont rendu le code~$0$, en $55$ à $131$~s chacune, sans aucune sortie. Les cinq modules jusque-là sans rejeu
-(\lean{PopGenFisher}, \lean{PopGenWrightFisher}, \lean{WrightFisherFixation}, \lean{MoranFixation}, \lean{Price}) ils satisfont donc maintenant la
+(\lean{PopGenFisher}, \lean{PopGenWrightFisher}, \lean{WrightFisherFixation}, \lean{MoranFixation}, \lean{Price}) satisfont donc maintenant la
 définition du niveau~A de ce livre. La recherche par \texttt{grep} de \lean{skipKernelTC}, \lean{addDecl},
 \lean{native_decide}, \lean{implemented_by}, \lean{sorry}, \lean{admit} et \lean{axiom} dans ces dix sources ne
 trouve que deux mentions dans des commentaires de documentation (\texttt{MoranModel.lean}, l.~237 ;
@@ -1070,8 +1070,9 @@ sont tous datés d'après leur source.
 par falsification sous \lean{debug.skipKernelTC}, rejeté par le même binaire, est celui de l'audit N4.
 \end{itemize}
 Comme le reste du chapitre, cette vérification est l'œuvre d'un agent d'IA ; aucun humain ne l'a faite. La
-trace (\texttt{leancheck\_ch4.json}) se trouve dans le répertoire de travail temporaire de l'agent, et elle
-n'est pas versionnée.
+trace est \texttt{results/kernel\_replay\_2026-10-26/ch4\_popgen\_trace/leancheck\_ch4.json}. Le rejeu de l'ensemble du dépôt, lancé ensuite
+(\texttt{results/kernel\_replay\_2026-10-26/replay.jsonl}), a aussi rendu le code~$0$ pour \lean{PopGenFisher}, \lean{PopGenWrightFisher}
+et \lean{PopGenImportBoth}.
 
 \paragraph{Ce qui n'est pas formalisé.} Les points suivants restent hors de portée de ce chapitre.
 \begin{itemize}[itemsep=1pt]

@@ -59,7 +59,8 @@ listed, and nowhere else. If a number is not here or in a listed file, do not us
    - The openai/NavierStokesAndEuler corpus was independently rebuilt (2,440 modules) and kernel-replayed (53,752 +
      34,648 declarations). The axioms are on the whitelist, no soundness escape was found, and the statements are
      faithful to Clay alternative (C).
-   - Paper in preparation. Never claim "Clay solved". The credit belongs to the corpus authors.
+   - Published, independently audited (ACCEPT_WITH_CORRECTIONS): doi:10.5281/zenodo.23661381. Never claim "Clay
+     solved". The credit belongs to the corpus authors.
 8. **Population genetics.**
    - H11/H12: Wright–Fisher harmonic characterisation and diploid mean-fitness monotonicity.
    - P7: Pⁿ(i,N) → i/N; Moran with selection gives fixation (1 − r^{−i})/(1 − r^{−N}); the Price equation.

@@ -1,4 +1,5 @@
 \chapter{Fondations : réseaux, fonctions complètement monotones et vérification formelle}
+\chaptermark{Fondations}
 \label{ch1:chap}
 
 \begin{quote}\small\itshape
@@ -13,7 +14,8 @@ ce que cela ne signifie pas.
 Chaque affirmation porte une étiquette de \emph{niveau} qui dit \emph{qui a vérifié quoi}.
 Ces niveaux, empruntés à la méthode Elenchus~\cite{elenchus} et détaillés au §\ref{ch1:sec:tiers}, sont les suivants.
 \begin{itemize}
-\item \tierA{} : énoncé vérifié par le noyau de Lean~4, avec un contrôle des axiomes utilisés.
+\item \tierA{} : énoncé vérifié par le noyau de Lean~4, avec trois contrôles : axiomes de la liste blanche, rejeu du noyau (\lean{leanchecker}) et recherche des portes dérobées (§\ref{ch1:sec:lean}).
+\item \tierAs{} : comme \tierA{}, mais sans le rejeu du noyau (§\ref{ch1:sec:lean}).
 \item \tierL{} : résultat de la littérature, lu et référencé précisément.
 \item \tierC{} : argument humain, écrit en détail dans ce livre, mais non vérifié par machine.
 \item \tierX{} : exploration numérique en virgule flottante ; elle illustre, elle ne prouve jamais.
@@ -247,7 +249,7 @@ $\Theta_A(1)=1{,}159595267$ contre $\Theta_{\Z^2}(1)=1{,}180340599$. \tierX{} : 
 
 \begin{theorem}[Montgomery, 1988]\label{ch1:thm:montgomery}
 Pour tout réseau $\Lambda$ du plan de covolume $1$ et tout $\alpha>0$, $\Theta_A(\alpha)\le\Theta_\Lambda(\alpha)$, avec égalité si et seulement si $\Lambda$ est
-l'image de $A$ par une rotation. \tierL{}~\cite{montgomery}
+l'image de $A$ par une rotation. \tierL{} (cité de seconde main)~\cite{montgomery}
 \end{theorem}
 
 Montgomery résout ainsi le problème d'optimalité \emph{parmi les réseaux}, pour toute interaction gaussienne. Nous y reviendrons au §\ref{ch1:sec:univ}
@@ -274,7 +276,7 @@ elle-même un théorème Lean : \lean{ProgCM.isCompletelyMonotoneOn_iff_admissib
 \item $g(t)=e^{-at}$, $a\ge0$ : $(-1)^ng^{(n)}(t)=a^ne^{-at}\ge0$. \tierC{}
 \item $g(t)=t^{-s}$, $s\ge0$ : $(-1)^ng^{(n)}(t)=s(s+1)\cdots(s+n-1)\,t^{-s-n}\ge0$ (récurrence immédiate). \tierC{}
 Pour $s=\frac12$ c'est la répulsion de Coulomb $1/r$ en la variable $t=r^2$. La CM de $t\mapsto t^{-s/2}$ (Riesz) est aussi
-vérifiée par le noyau :\lean{TriangularRiesz.riesz_admissible} \tierA{}.
+vérifiée par le noyau : \lean{TriangularRiesz.riesz_admissible} \tierA{}.
 \end{enumerate}
 \end{example}
 
@@ -304,18 +306,18 @@ car $(-1)^n=(-1)^k(-1)^{n-k}$. Chaque crochet est positif, donc la somme aussi.
 Une \emph{fonction de Bernstein} est la bonne notion pour composer avec une fonction CM.
 
 \begin{definition}[Fonction de Bernstein]\label{ch1:def:bernstein}
-Une fonction $h:\,]0,\infty[\to\,]0,\infty[$ de classe $\mathcal C^\infty$ est \emph{de Bernstein} si sa dérivée $h'$ est complètement monotone.
-(En particulier $h$ est croissante.)
+Une fonction $h:\,]0,\infty[\to[0,\infty[$ de classe $\mathcal C^\infty$ est \emph{de Bernstein} si sa dérivée $h'$ est complètement monotone
+(définition de Lean \lean{IsBernsteinOn} ; le théorème~\ref{ch1:thm:comp} demande en plus $h>0$). En particulier $h$ est croissante.
 \end{definition}
 
 \begin{example}\label{ch1:ex:bernstein}
-Sont de Bernstein : $h(t)=at+b$ ($a\ge0$, $b>0$ ou $a>0$, $b\ge 0$) ; $h(t)=t^\alpha$ pour $0<\alpha\le1$, car
+Sont de Bernstein : $h(t)=at+b$ ($a,b\ge0$) ; $h(t)=t^\alpha$ pour $0<\alpha\le1$, car
 $h'(t)=\alpha\,t^{-(1-\alpha)}$ est CM par l'exemple~\ref{ch1:ex:exemples} ; $h(t)=1-e^{-at}$ ($a>0$), car $h'=ae^{-at}$ ; $h(t)=\ln(1+t)$,
 car $h'(t)=1/(1+t)$. En particulier $h(t)=\sqrt t$ (cas $\alpha=\frac12$) l'est. \tierC{}
 \end{example}
 
 \begin{theorem}[Subordination : CM $\circ$ Bernstein]\label{ch1:thm:comp}
-Si $f$ est CM et $h$ est de Bernstein, alors $f\circ h$ est CM. \tierC{} Version Lean :
+Si $f$ est CM et $h$ est de Bernstein \emph{strictement positive}, alors $f\circ h$ est CM. \tierC{} Version Lean :
 \lean{ProgCM.IsCompletelyMonotoneOn.comp_bernstein} \tierA{}, dont la démonstration suit exactement la récurrence ci-dessous~\cite{p3}.
 \end{theorem}
 
@@ -373,7 +375,7 @@ Une fonction $g:\,]0,\infty[\to\R$ est complètement monotone si et seulement s'
 \[
   g(t)=\int_{[0,\infty[}e^{-\alpha t}\,d\mu(\alpha)\qquad(t>0).
 \]
-La mesure $\mu$ est alors unique. \tierL{}~\cite{bernstein,widder}
+La mesure $\mu$ est alors unique. \tierL{} (énoncé classique cité de seconde main)~\cite{bernstein,widder}
 \end{theorem}
 
 La lecture géométrique est essentielle : avec $t=|x|^2$, on a $g(|x|^2)=\int e^{-\alpha|x|^2}d\mu(\alpha)$, c'est-à-dire que \emph{tout potentiel complètement monotone
@@ -466,11 +468,11 @@ Le tableau~\ref{ch1:tab:flux} le résume. Les numéros de DOI et les niveaux son
 \midrule
 1 & Théorème amont (\texttt{openai/math}), cas planaire & \tierL{} et \tierA{} conditionnel & \cite{oai} \\
 2 & Corollaires D1 à D4 : Riesz, toute densité, sens CKMRV et non-unicité, disques ouverts ou fermés & \tierA{}, conditionnel à 1 & \cite{v1} (livre v1) \\
-3 & Cinq potentiels physiques (excitons dipolaires, Yukawa, Rytova--Keldysh, enstrophie $\sigma=3$, structure de Bogoliubov) & \tierA{} ; Keldysh$\leftrightarrow$Struve : \tierC{} & 5 dépôts Zenodo \\
+3 & Cinq potentiels physiques (excitons dipolaires, Yukawa, Rytova--Keldysh, enstrophie $\sigma=3$, structure de Bogoliubov) & \tierA{} pour les modules rejoués (dipolaire, Yukawa, Keldysh), \tierAs{} pour $\sigma=3$ et Bogoliubov ; Keldysh$\leftrightarrow$Struve : \tierC{} & 5 dépôts Zenodo \\
 4 & Bibliothèque CM/Bernstein (P3) : subordination, équivalence avec \lean{AdmissiblePotential} & \tierA{} & \cite{p3} \\
-5 & Surprise quantique : l'énergie de point zéro, QU-1 faux pour 8 potentiels CM sur 12 ; certificat à $a=1$ ; pas de transition triangulaire$\to$oblique & \tierX{}, puis \tierA{} (logique) et \tierC{} (intégrales en boules) ; résultat négatif & Zenodo \\
-6 & Sandier--Serfaty (réseaux d'Abrikosov) : audit, portage partiel en Lean, échec de l'extension au cas~3D & \tierC{}, \tierA{} partiel ; résultats négatifs & Zenodo \\
-7 & Navier--Stokes (corpus \texttt{openai/NavierStokesAndEuler}) : reconstruction et rejeu noyau & \tierA{} ; pas de \og problème Clay résolu \fg{} & article en préparation \\
+5 & Surprise quantique : l'énergie de point zéro, QU-1 faux pour 8 potentiels CM sur 12 ; certificat à $a=1$ ; pas de transition triangulaire$\to$oblique & \tierX{}, puis \tierAs{} (logique) et \tierC{} (intégrales en boules) ; résultat négatif & Zenodo \\
+6 & Sandier--Serfaty (réseaux d'Abrikosov) : audit, portage partiel en Lean, échec de l'extension au cas~3D & \tierC{}, \tierAs{} partiel ; résultats négatifs & Zenodo \\
+7 & Navier--Stokes (corpus \texttt{openai/NavierStokesAndEuler}) : reconstruction et rejeu noyau & \tierA{} pour le rejeu noyau des énoncés du corpus ; fidélité à l'alternative (C) de Fefferman : \tierC{} ; pas de \og problème Clay résolu \fg{} & doi:\,10.5281/zenodo.23661381 \\
 8 & Génétique des populations : fixation de Moran, équation de Price, théorème isotherme & \tierA{} & Zenodo \\
 \bottomrule
 \end{tabular}
@@ -502,7 +504,7 @@ La bibliothèque Mathlib~\cite{mathlib} fournit de nombreux théorèmes déjà d
 
 \subsection{Un exemple minimal, avec sa sortie réelle}
 
-Le fichier suivant a été compilé tel quel avec Lean 4.34.0-rc2, sans aucune bibliothèque. Il contient trois théorèmes vrais et deux \og théorèmes \fg{}
+Le fichier suivant a été compilé tel quel avec Lean 4.34.0-rc2, sans aucune bibliothèque (sortie reproduite à l'identique par l'auditeur indépendant). Il contient trois théorèmes vrais et deux \og théorèmes \fg{}
 faux $1=2$ que l'on ne démontre qu'en trichant : l'un avec \lean{sorry}, l'autre avec un axiome ajouté par l'utilisateur.
 
 \begin{leanbox}[: \texttt{T.lean} (compilé le 2026-10-26)]
@@ -555,11 +557,11 @@ C'est le \emph{contrôle négatif} de la porte d'axiomes ; le \emph{contrôle po
 L'audit A2~\cite{a2} du corpus \texttt{openai/NavierStokesAndEuler} (2\,440 modules reconstruits, rejeu noyau de $53\,752+34\,648$ déclarations) a mis en évidence qu'une déclaration
 \emph{ajoutée directement au noyau en désactivant sa vérification de types} (option \lean{debug.skipKernelTC}) est affichée par \lean{#print axioms} comme
 \og ne dépend d'aucun axiome \fg{}, alors qu'elle peut établir \lean{False}. Le contrôle positif de l'audit (une telle fausse déclaration, fabriquée exprès) a été
-\emph{invisible} à \lean{#print axioms} et \emph{attrapé} par le rejeu complet du noyau (\lean{leanchecker}) \tierA{}. La leçon : l'audit d'axiomes est nécessaire,
+\emph{invisible} à \lean{#print axioms} et \emph{attrapé} par le rejeu complet du noyau (\lean{leanchecker}) (observation de niveau \tierX{} dans l'article A2 : elle porte sur une déclaration volontairement invalide). La leçon : l'audit d'axiomes est nécessaire,
 non suffisant.
 \end{warnbox}
 
-La porte de niveau \tierA{} de ce livre comprend donc \emph{quatre} contrôles :
+La porte de niveau \tierA{} de ce livre comprend donc \emph{quatre} contrôles (la compilation, puis les trois vérifications de la préface) :
 \begin{enumerate}
 \item compilation du projet sans erreur ;
 \item liste d'axiomes de chaque théorème retenu incluse dans la liste blanche ;
@@ -568,12 +570,14 @@ La porte de niveau \tierA{} de ce livre comprend donc \emph{quatre} contrôles :
 \end{enumerate}
 S'y ajoute une règle d'organisation : celui qui \emph{produit} une preuve n'est pas celui qui la \emph{vérifie} (ici, deux agents d'IA distincts, et jamais un humain).
 
+Quand le rejeu \lean{leanchecker} n'a pas été fait, nous écrivons \tierAs{} : liste d'axiomes, témoins plantés et recompilation indépendante, sans rejeu du noyau.
+
 \subsection{Lire l'énoncé amont ; un corollaire court}
 
 Une fois le théorème principal disponible, un corollaire se réduit souvent à vérifier une hypothèse. Voici le cas de Riesz,
 cité depuis le fichier \lean{formal_cert/Triangular/Riesz.lean} du dépôt (les points de suspension marquent une partie omise) :
 
-\begin{leanbox}[: corollaire de Riesz (extrait)]
+\begin{leanbox}[: corollaire de Riesz (extrait, mise en page modifiée)]
 \begin{lstlisting}[language=Lean]
 noncomputable def riesz (s : ℝ) : ℝ → ℝ := fun t => t ^ (-(s / 2))
 
@@ -589,12 +593,12 @@ theorem triangular_riesz_optimal {s : ℝ} (hs : 0 < s) (C : Set Plane)
 
 La dernière ligne \og applique \fg{} le théorème principal à $g=\text{riesz}\ s$ en fournissant les trois preuves d'hypothèses, puis prend la première composante
 \lean{.1} de la conjonction. C'est exactement une \emph{composition de fonctions} au sens du dictionnaire de Curry--Howard.
-L'hypothèse \lean{riesz_admissible} est, elle, la propriété de complète monotonie de l'exemple~\ref{ch1:ex:exemples} (2).
+L'hypothèse \lean{riesz_admissible} est, elle, la propriété de complète monotonie de l'exemple~\ref{ch1:ex:exemples} (2). Le corollaire « toute densité » (D2) est ré-exporté au chapitre~5 sous le nom \lean{ALIX}.
 
 \subsection{La récurrence du §\ref{ch1:sec:cm}, côté Lean}
 
 Le théorème de subordination~\ref{ch1:thm:comp} a été formalisé~\cite{p3}. L'énoncé général et son cas particulier de la racine carrée sont les suivants
-(extraits du fichier \lean{formal_cert/Programmes/CompletelyMonotone/Bernstein.lean}, preuves omises) :
+(extraits du fichier \lean{Bernstein.lean} du dossier \lean{formal_cert/Programmes/}\allowbreak\lean{CompletelyMonotone/}, preuves omises) :
 
 \begin{leanbox}[: subordination (énoncés)]
 \begin{lstlisting}[language=Lean]
@@ -622,9 +626,9 @@ $h>0$ n'est pas du pinaillage : elle est ce qui rend l'énoncé \emph{vrai}.
 
 \begin{warnbox}[: récapitulatif des niveaux de ce chapitre]
 \begin{itemize}
-\item \tierL{} : formule de Poisson sur le tore (théorème de Fourier), théorème de Montgomery, théorème de Bernstein--Widder (sens direct), résultat de CKMRV en dimensions $8$ et $24$.
+\item \tierL{} : formule de Poisson sur le tore (théorème de Fourier), théorème de Montgomery et théorème de Bernstein--Widder (sens direct), tous deux cités de seconde main, résultat de CKMRV en dimensions $8$ et $24$.
 \item \tierC{} : toutes les démonstrations humaines de ce chapitre (comptage, énergie de Riesz, formule de Poisson, clôture des fonctions CM, subordination, mélanges, réduction de Fatou).
-\item \tierA{} : les énoncés Lean cités (équivalence avec \lean{AdmissiblePotential}, subordination, \lean{laplace_measure}, \lean{quadrupole_not_cm}, l'énoncé amont), le dernier étant \emph{conditionnel}.
+\item \tierA{} (avec rejeu du noyau pour les modules Triangular, de la bibliothèque CM/Bernstein et de P7 ; voir les chapitres suivants) : les énoncés Lean cités (équivalence avec \lean{AdmissiblePotential}, subordination, \lean{laplace_measure}, \lean{quadrupole_not_cm}, l'énoncé amont), le dernier étant \emph{conditionnel}.
 \item \tierX{} : le script \texttt{code/ch1\_theta.py}, qui illustre sans prouver.
 \end{itemize}
 \end{warnbox}
@@ -640,7 +644,7 @@ La méthode Elenchus~\cite{elenchus} attache à chaque énoncé du livre l'un de
 Niveau & Ce qui est garanti & Ce qui ne l'est pas \\
 \midrule
 \tierA{} & L'énoncé Lean est accepté par le noyau, avec les quatre contrôles de la porte ci-dessus & Que l'énoncé Lean traduise fidèlement l'énoncé mathématique ou physique visé \\
-\tierL{} & Le résultat figure dans une source lue, référencée précisément (par exemple un théorème d'article publié) & Qu'il ait été reverifié par nos soins \\
+\tierL{} & Le résultat figure dans une source lue, référencée précisément (par exemple un théorème d'article publié) & Qu'il ait été revérifié par nos soins \\
 \tierC{} & Un argument humain complet, écrit dans ce livre, relu par un agent d'IA indépendant & Toute vérification par machine, et toute relecture humaine \\
 \tierX{} & Un calcul en virgule flottante, avec contrôles positif et négatif & Rien : une exploration numérique ne soutient jamais une affirmation \\
 \bottomrule
@@ -732,7 +736,7 @@ et $\Theta_A(\alpha)\sim\alpha^{-1}$ quand $\alpha\to0$ (par Poisson) ; l'intég
 \item[\ref{ch1:ex:clotures}.] $f(at+b)$ : dériver $n$ fois et factoriser $a^n$. Pour la dernière : produit de deux fonctions CM (proposition~\ref{ch1:prop:cloture}) ; ou calcul direct par Leibniz.
 \item[\ref{ch1:ex:comp}.] (b) Poser $f(u)=u^{-s}$, CM. (d) Pour $h\equiv 0$, $f\circ h$ n'est pas défini sur $]0,\infty[$ (ou vaut une valeur parasite $f(0)$ si on prolonge).
 \item[\ref{ch1:ex:melange}.] $t^{-1/2}=\pi^{-1/2}\int\alpha^{-1/2}e^{-\alpha t}d\alpha$ ; le poids de $g$ est $\pi^{-1/2}\alpha^{-1/2}(1-2e^{-\alpha}+e^{-4\alpha})$, qui est négatif pour
-certains $\alpha$ (étudier $1-2x+x^4$ avec $x=e^{-\alpha}$). L'unicité de $\mu$ dans Bernstein--Widder et la positivité de $g$ en $t=3$ concluent.
+certains $\alpha$ (étudier $1-2x+x^4$ avec $x=e^{-\alpha}$). L'injectivité de la transformée de Laplace (y compris pour les mesures signées) montre que $g$ n'a pas de représentation à poids positif ; plus directement, $g(3)<0$ conclut.
 \item[\ref{ch1:ex:lean}.] (i) passe. (ii) échoue (\lean{sorryAx}). (iii) passe la porte d'axiomes seule, mais la déclaration pourrait avoir été insérée en contournant le
 vérificateur de types du noyau. (iv) échoue.
 \item[\ref{ch1:ex:fatou}.] Le terme de $x\in\Lambda_R$ est $\sum_{a\in(\Lambda_R-x)\setminus0}g(|a|^2)$ : il est majoré par $\sum_{a\ne0}g(|a|^2)$, d'où la majoration de $E_g(\Lambda;R)$.

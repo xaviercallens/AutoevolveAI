@@ -20,7 +20,7 @@
 \noindent Le chapitre~1 a raconté une victoire : pour toute interaction répulsive \emph{complètement monotone}
 $V(r)=g(r^2)$, le réseau triangulaire minimise l'énergie \emph{statique} $\tfrac12\sum_{R\neq0}V(|R|)$, parmi toutes les
 configurations de densité un (énoncé de l'amont openai/math, \tierA{} conditionnel à des théorèmes amont produits par une
-IA et non évalués par les pairs ; voir aussi le manuel version~1~\cite{ch3-txtv1}). Ce chapitre pose la question suivante, très naturelle pour un physicien : \emph{que
+IA et non évalués par les pairs ; voir aussi le manuel version~1~\cite{v1}). Ce chapitre pose la question suivante, très naturelle pour un physicien : \emph{que
 devient ce résultat quand on tient compte de la mécanique quantique ?} Un cristal réel n'est jamais immobile. Même au
 zéro absolu, chaque atome vibre autour de son site, et cette vibration coûte une énergie, l'énergie de \emph{point zéro}.
 
@@ -165,7 +165,7 @@ F(\tau)-F(\rho)=c\,\frac{|\tau-\rho|^2}{y_\rho^2}+O(|\tau-\rho|^3),\qquad c=\tfr
 \Delta=y^2(\partial_x^2+\partial_y^2).
 \end{equation}
 \textbf{Le signe de $c$ décide tout :} minimum local si $c>0$, maximum local si $c<0$. Les deux faits d'algèbre
-linéaire sont vérifiés par le noyau \tierA ; le passage « invariance $\Rightarrow$ gradient nul, hessienne scalaire »
+linéaire sont vérifiés par le noyau \tierAs ; le passage « invariance $\Rightarrow$ gradient nul, hessienne scalaire »
 (dérivation en chaîne, régularité de $E_{\mathrm{zp}}$) est \tierC.
 
 \begin{leanbox}[: \lean{formal_cert/Programmes/ZeroPoint/Basic.lean}, lignes 91--92, 168--171 et 201]
@@ -184,9 +184,9 @@ $y^2(Q_{xx}+Q_{yy})$, avec $Q_{xx}=2n^2/y$ et $Q_{yy}=2(m+nx)^2/y^3$). \lean{rot
 symétrique $\bigl(\begin{smallmatrix}p&q\\q&r\end{smallmatrix}\bigr)$ commutant avec la rotation de $120^\circ$
 (de coefficients $-\tfrac12$ et $\pm s$, $s^2=\tfrac34$) vérifie $q=0$ et $r=p$. Le module contient 19 déclarations
 imprimées, toutes d'axiomes dans $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$, et des contrôles
-piégés (un \lean{sorry} et un axiome planté) attrapés par \texttt{\#print axioms}~\cite{ch3-p2zp}. \tierA
+piégés (un \lean{sorry} et un axiome planté) attrapés par \texttt{\#print axioms}~\cite{ch3-p2zp}. \tierAs
 
-\paragraph{L'énergie statique.} Pour la gaussienne, le théorème de Montgomery~\cite{ch3-montgomery} affirme que le réseau
+\paragraph{L'énergie statique.} Pour la gaussienne, le théorème de Montgomery~\cite{montgomery} affirme que le réseau
 triangulaire minimise l'énergie statique $E_{\mathrm{st}}=\tfrac12\sum_{R\ne0}e^{-\pi a|R|^2}$ parmi les réseaux de
 covolume un, pour tout $a>0$ (\tierL, cité de seconde main à travers Deng--Luo~\cite{ch3-dengluo}). Pour un potentiel
 d'amplitude $\varepsilon$, de portée $l$ et une masse $m$, l'énergie harmonique totale s'écrit
@@ -269,8 +269,9 @@ $c(a)$ & $+0{,}1882$ & $+0{,}0796$ & $-0{,}0799$ & $-0{,}4605$ & $-1{,}0707$ & $
 \end{table}
 
 \begin{proposition}[Résultat numérique, P2]\label{ch3:prop:intervalle}
-Pour la gaussienne $e^{-\pi ar^2}$ avec $0{,}15\le a\le4$, la courbure $c(a)$ est négative, donc le réseau triangulaire
-est un \emph{maximum local strict} de $E_{\mathrm{zp}}$, pour $a\in(0{,}37668\,;\,1{,}58148)$. \tierX
+Pour la gaussienne $e^{-\pi ar^2}$, parmi les valeurs $0{,}15\le a\le4$ explorées, la courbure $c(a)$ est négative exactement
+sur l'intervalle numérique $a\in(0{,}37668\,;\,1{,}58148)$ ; sur cet intervalle, le réseau triangulaire est un
+\emph{maximum local strict} de $E_{\mathrm{zp}}$. \tierX
 \end{proposition}
 \noindent Les bornes sont des racines numériques obtenues par dichotomie ; le balayage n'exclut pas d'autres changements
 de signe entre ses points, et en $c=0$ le test du second ordre ne conclut pas. La version restreinte QU-1$'$ (minimum
@@ -325,7 +326,7 @@ La forme du réseau $L_t$ est $\tau(t)=\rho+\sqrt3\,t+O(t^2)$ \tierC.
 
 \begin{theorem}[B2]\label{ch3:thm:b2}
 Pour tout $t$ avec $0<|t|\le10^{-5}$, on a $E(t)<E(0)$. Par conséquent le réseau triangulaire n'est pas un minimum local de
-l'énergie harmonique de point zéro pour $e^{-\pi r^2}$. \tierC{} au total ; logique et arithmétique \tierA{} ; intégrales
+l'énergie harmonique de point zéro pour $e^{-\pi r^2}$. \tierC{} au total ; logique et arithmétique \tierAs{} ; intégrales
 \tierC{} (arithmétique de boules).
 \end{theorem}
 \noindent La preuve tient en cinq briques. Nous les donnons dans l'ordre, chacune avec son niveau.
@@ -336,7 +337,7 @@ Soient $X$ symétrique réelle définie positive, $S$ symétrique réelle et $P=
 \[
 2\operatorname{tr}S\le\operatorname{tr}X+\operatorname{tr}(X^{-1}S^2),\qquad\text{avec égalité si }S=X.
 \]
-\tierA{} pour les matrices $2\times2$ (le seul cas utilisé) ; \tierC{} en taille quelconque.
+\tierAs{} pour les matrices $2\times2$ (le seul cas utilisé) ; \tierC{} en taille quelconque.
 \end{lemma}
 \begin{humanproof}
 \emph{Cas scalaire d'abord.} Pour $x>0$ et $s\in\R$ : $x+s^2/x-2s=(s-x)^2/x\ge0$. C'est exactement l'inégalité
@@ -418,7 +419,7 @@ $|\xi|<t$. En séparant $H_n''(\xi)=H_n''(0)+(H_n''(\xi)-H_n''(0))$, on obtient 
 \end{equation}
 La réduction est \tierC. Les dérivées le long du chemin, $q(t)=|P_tR_0|^2$, $q'$, $q''$ et la règle du produit pour
 un coefficient de hessienne, sont vérifiées par le noyau (\lean{hasDerivAt_qS}, \lean{hasDerivAt_gaussS'},
-\lean{hasDerivAt_entry'}) \tierA.
+\lean{hasDerivAt_entry'}) \tierAs.
 
 \paragraph{Les nombres \tierC{} (arithmétique de boules).} Les trois quantités de~\eqref{ch3:eq:fenetre} ont été encadrées
 rigoureusement en arithmétique de boules Arb~\cite{ch3-arb} (python-flint 0.6.0, 96 bits, arrondi vers l'extérieur) : la
@@ -463,7 +464,7 @@ theorem cert_stability : 0 < lmin_lo - dB_hi := by
 \noindent \textbf{Vérification à la main.} $\mathrm{Upp0}_{hi}=-1{,}900167500524$, $\mathrm{trW}_{hi}=1{,}833533600095$,
 $\mathrm{esum}_{hi}=0{,}031964165579$ ; le produit vaut environ $0{,}0586074$ et la somme environ $-1{,}8415601<0$.
 \lean{norm_num} fait le même calcul en arithmétique rationnelle exacte. L'outil LeanFlow \lean{lean.certify} a
-vérifié indépendamment les deux inégalités, réécrites en entiers \tierA. Ce que le noyau \emph{ne} vérifie \emph{pas} :
+vérifié indépendamment les deux inégalités, réécrites en entiers \tierAs. Ce que le noyau \emph{ne} vérifie \emph{pas} :
 que ces rationnels bornent vraiment les intégrales (c'est le contenu \tierC{} de la brique~3). Qu'ils coïncident avec le
 fichier de résultats est contrôlé par un script.
 
@@ -471,7 +472,7 @@ fichier de résultats est contrôlé par un script.
 \begin{lemma}[Un majorant concave exclut un minimum local]\label{ch3:lem:logique}
 Soient $E,U:\R\to\R$, $t_0>0$ et $B<0$. On suppose $E\le U$ sur $[-t_0,t_0]$, $U(0)=E(0)$, et
 $U(t)+U(-t)-2U(0)\le t^2B$ pour $0<t\le t_0$. Alors $0$ n'est pas un minimum local de $E$. Si de plus $E$ est paire,
-alors $E(t)<E(0)$ pour tout $0<t\le t_0$. \tierA
+alors $E(t)<E(0)$ pour tout $0<t\le t_0$. \tierAs
 \end{lemma}
 \begin{humanproof}
 Pour $0<t\le t_0$ : $E(t)+E(-t)\le U(t)+U(-t)\le2U(0)+t^2B<2U(0)=2E(0)$. Donc l'un au moins des nombres $E(t)$, $E(-t)$
@@ -516,11 +517,11 @@ $-3{,}848$ de P2 \tierX, et beaucoup plus faible : la méthode borne $E''$ par $
 \item \textbf{Contrôle négatif $a=2$} (P2 y trouve un minimum local) : on obtient $U''(0)\in[+12{,}69365\,;\,+12{,}75701]$, le
 certificat n'est \emph{pas} produit ; LeanFlow le rejette (\texttt{false-statement}) et le fichier \lean{RejectA2.lean}
 échoue à la compilation (rc~1). Cela montre que la méthode ne dit pas toujours « pas un minimum » ; cela ne montre pas
-qu'elle est complète. \tierC{} et \tierA.
-\item \textbf{Certificat falsifié} (signe de $\mathrm{Upp0}_{hi}$ inversé) : \lean{RejectTampered.lean} échoue (rc~1) \tierA.
+qu'elle est complète. \tierC{} et \tierAs.
+\item \textbf{Certificat falsifié} (signe de $\mathrm{Upp0}_{hi}$ inversé) : \lean{RejectTampered.lean} échoue (rc~1) \tierAs.
 \item \textbf{\lean{sorry} et axiome plantés} : \lean{Controls.lean} compile avec rc~0, mais \texttt{\#print axioms}
 affiche \lean{sorryAx} et \lean{ProgZeroPointCert.ctl_cheat}. Le code de retour n'est pas la porte ; la liste des axiomes
-l'est \tierA.
+l'est \tierAs.
 \item \textbf{Sous-produit non préenregistré, $a=1/2$} : $B_{hi}=-0{,}918357<0$, même conclusion \tierC.
 \end{itemize}
 
@@ -531,8 +532,9 @@ Une recherche de \lean{skipKernelTC}, \lean{addDecl}, \lean{native_decide}, \lea
 \lean{axiom} dans les fichiers \lean{ZeroPoint/Basic.lean}, \lean{ZeroPointCert/Basic.lean} et
 \lean{FeynmanBijl/Basic.lean} ne trouve rien (vérifié lors de la rédaction de ce chapitre). En revanche, aucun rejeu
 \lean{leanchecker} (le troisième contrôle de la définition du niveau~A) n'est enregistré dans les dossiers de ces trois
-modules (P2, B2 et P6) : il reste à faire. Leur niveau~A repose ici sur la compilation par le noyau, la liste des axiomes
-et la recherche ci-dessus. Les huit drapeaux \texttt{LEDGER\_UNAUDITED\_TIER\_A} du registre restent ouverts, car aucune
+modules (P2, B2 et P6). Ils figurent dans le plan de rejeu du 2026-10-26 (\texttt{results/kernel\_replay\_2026-10-26/}),
+mais celui-ci n'avait pas abouti pour eux à l'assemblage de ce livre : leurs énoncés portent donc l'étiquette \tierAs{},
+qui repose sur la compilation par le noyau, la liste des axiomes et la recherche ci-dessus. Les huit drapeaux \texttt{LEDGER\_UNAUDITED\_TIER\_A} du registre restent ouverts, car aucune
 personne n'a certifié que les énoncés Lean disent ce que disent leurs gloses.
 \end{warnbox}
 
@@ -644,7 +646,7 @@ donc une identité algébrique, pas une dérivation à $N$ corps indépendante.
 
 \begin{proposition}[Enveloppe de Bogoliubov]\label{ch3:prop:enveloppe}
 Pour $h_c,k,k_*>0$ : $S_{\mathrm B}(k)^2=k^2/(k_*^2+k^2)$ et $S_{\mathrm B}(k)\le\sqrt{k/2k_*}$, avec égalité si et
-seulement si $k=k_*$. \tierA
+seulement si $k=k_*$. \tierAs
 \end{proposition}
 \begin{humanproof}
 $S_{\mathrm B}^2=\varepsilon_0^2/\varepsilon_{\mathrm B}^2=\dfrac{h_c^2k^4/k_*^2}{h_c^2k^2+h_c^2k^4/k_*^2}=\dfrac{k^2}{k_*^2+k^2}$
@@ -684,7 +686,7 @@ En physique, $\rho=\hat\rho_{\mathbf k}=\sum_je^{-i\mathbf k\cdot\mathbf r_j}$, 
 $NS(k)=\|\rho\psi\|^2$.
 
 \begin{lemma}[Double commutateur]\label{ch3:lem:dc}
-Pour toute matrice $\rho$ : $\langle\psi,[\rho^\dagger,[H,\rho]]\psi\rangle=\mathcal A(\rho)+\mathcal A(\rho^\dagger)$. \tierA
+Pour toute matrice $\rho$ : $\langle\psi,[\rho^\dagger,[H,\rho]]\psi\rangle=\mathcal A(\rho)+\mathcal A(\rho^\dagger)$. \tierAs
 \end{lemma}
 \begin{humanproof}
 On développe $[\rho^\dagger,[H,\rho]]=\rho^\dagger H\rho-\rho^\dagger\rho H-H\rho\rho^\dagger+\rho H\rho^\dagger$ et on
@@ -699,7 +701,7 @@ En regroupant (a)$-$(b) et (d)$-$(c), on trouve $\mathcal A(\rho)+\mathcal A(\rh
 
 \begin{lemma}[Quotient de Rayleigh dans un secteur]\label{ch3:lem:rayleigh}
 Soit $(e_i)$ une base orthonormée de vecteurs propres de $H$, $He_i=\lambda_ie_i$. Pour tout $x\ne0$, il existe $i$ avec
-$\langle e_i,x\rangle\neq0$ et $\lambda_i\le\langle x,Hx\rangle/\|x\|^2$. \tierA
+$\langle e_i,x\rangle\neq0$ et $\lambda_i\le\langle x,Hx\rangle/\|x\|^2$. \tierAs
 \end{lemma}
 \begin{humanproof}
 Avec $c_i=\langle e_i,x\rangle$ : $\langle x,Hx\rangle=\sum_i|c_i|^2\lambda_i$ et $\|x\|^2=\sum_i|c_i|^2>0$ (Parseval). Le
@@ -713,7 +715,7 @@ Supposons $N,m>0$, $S=\|\rho\psi\|^2/N>0$, la règle de somme f
 $\langle\psi,[\rho^\dagger,[H,\rho]]\psi\rangle=N\hbar^2k^2/m$ et la symétrie $\mathcal A(\rho^\dagger)=\mathcal
 A(\rho)$. Alors il existe un vecteur propre $e_i$ avec $\langle e_i,\rho\psi\rangle\ne0$ et
 \[
-\lambda_i-E_0\le\frac{\hbar^2k^2}{2mS}. \tierA
+\lambda_i-E_0\le\frac{\hbar^2k^2}{2mS}. \tierAs
 \]
 \end{theorem}
 \begin{humanproof}
@@ -751,11 +753,11 @@ Or la relation $[x,p]=i\hbar$ \emph{n'a aucune réalisation en dimension finie} 
 alors que celle de $i\hbar I$ ne l'est pas (exercice~\ref{ch3:ex:trace}). C'est pourquoi le théorème Lean, posé en
 dimension finie, prend la règle de somme f en \emph{hypothèse}. Il en va de même de la symétrie $\mathbf k\leftrightarrow-\mathbf k$.
 Un contre-exemple vérifié par le noyau montre que la symétrie ne peut pas être retirée de l'étape de division par deux
-\tierA, et un témoin vérifié par le noyau montre que toutes les hypothèses sont satisfaisables ensemble et que la borne est
-atteinte \tierA.
+\tierAs, et un témoin vérifié par le noyau montre que toutes les hypothèses sont satisfaisables ensemble et que la borne est
+atteinte \tierAs.
 
 \paragraph{Lien avec Bogoliubov.} Pour $S>0$ : $\varepsilon_0/S\le\varepsilon_{\mathrm B}\iff S_{\mathrm B}\le S$, et
-$\varepsilon_0/S_{\mathrm B}=\varepsilon_{\mathrm B}$ (\lean{feynman_le_epsBog_iff}, \lean{feynman_sBog_eq}) \tierA.
+$\varepsilon_0/S_{\mathrm B}=\varepsilon_{\mathrm B}$ (\lean{feynman_le_epsBog_iff}, \lean{feynman_sBog_eq}) \tierAs.
 D'où le \emph{test de diffraction unilatéral} \tierC : si un $S(k)$ mesuré dépasse $\sqrt{k/2k_*}$, il n'est pas le
 $S_{\mathrm B}$ d'un gaz de Bogoliubov homogène de même vitesse du son. Un point sous l'enveloppe ne confirme rien.
 
@@ -788,14 +790,14 @@ al.~\cite{ch3-st} ont été multipliés par 2,3 par les auteurs. Aucun test déc
 \begin{tabular}{p{8.6cm}p{5.6cm}}\toprule
 affirmation & niveau\\\midrule
 $E_{\mathrm{zp}}\ge\tfrac12\hbar\omega$ pour l'oscillateur ; phonons de la chaîne & \tierC\\
-identités de $Q$, isotropie (algèbre $2\times2$), $\rho^2=\rho-1$ & \tierA{} (colle : \tierC)\\
+identités de $Q$, isotropie (algèbre $2\times2$), $\rho^2=\rho-1$ & \tierAs{} (colle : \tierC)\\
 QU-1 réfutée pour 8 potentiels sur 12 ; maximum local pour $a\in(0{,}37668\,;1{,}58148)$ & \tierX\\
 mécanisme : concavité de $\operatorname{tr}\sqrt{\cdot}$ & \tierC{} (nombres \tierX)\\
-inégalité $2\operatorname{tr}S\le\operatorname{tr}X+\operatorname{tr}(X^{-1}S^2)$, logique, certificat rationnel & \tierA\\
+inégalité $2\operatorname{tr}S\le\operatorname{tr}X+\operatorname{tr}(X^{-1}S^2)$, logique, certificat rationnel & \tierAs\\
 encadrements des intégrales ($U''(0)\in[-1{,}948\,;-1{,}900]$) & \tierC{} (arithmétique de boules)\\
 B2 : $\rho$ n'est pas un minimum local à $a=1$ & \tierC{} au total\\
 B1 : pas de transition dans la SCHA ; PIMC bloqué & \tierX{} (négatif)\\
-$S_{\mathrm B}\le\sqrt{k/2k_*}$ ; borne de Feynman--Bijl abstraite & \tierA{} (règle f : hypothèse)\\
+$S_{\mathrm B}\le\sqrt{k/2k_*}$ ; borne de Feynman--Bijl abstraite & \tierAs{} (règle f : hypothèse)\\
 $^4$He : 21/21 points de la région des rotons au-dessus de l'enveloppe & données \tierL, calcul \tierX, lecture \tierC\\
 \bottomrule\end{tabular}
 \end{table}

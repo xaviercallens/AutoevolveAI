@@ -1,0 +1,484 @@
+% Annexe A -- Rappels d'analyse. A inclure apres \appendix par \input{appA_analyse.tex}.
+% Etiquettes prefixees appA: ; references bibliographiques prefixees app: (refs_app.tex).
+\chapter{Rappels d'analyse}\label{appA:chap}
+
+Cette annexe rassemble les outils d'analyse que les chapitres utilisent sans toujours les redémontrer :
+\begin{itemize}
+\item l'interversion d'une limite et d'une intégrale ou d'une série (§\ref{appA:sec:param}) ;
+\item les transformées de Fourier et de Laplace (§\ref{appA:sec:fourier}) ;
+\item la formule sommatoire de Poisson, dans le cas général (§\ref{appA:sec:poisson}) ;
+\item les fonctions spéciales rencontrées : $\Gamma$, $\operatorname{erfc}$, $J_0$, $K_0$, $Y_0$ et la fonction de
+Struve $\mathbf H_0$ (§\ref{appA:sec:speciales}) ;
+\item les réseaux du plan et le domaine fondamental de $SL_2(\Z)$ (§\ref{appA:sec:sl2}).
+\end{itemize}
+Le niveau visé est celui de la deuxième année de classe préparatoire. L'intégrale est celle de Lebesgue, mais il suffit
+de savoir appliquer les deux théorèmes de convergence du programme.
+
+\begin{warnbox}[: niveaux des énoncés de cette annexe]
+Les démonstrations écrites ici sont des démonstrations humaines \tierC{} : aucune n'est vérifiée par Lean dans ce livre.
+Les énoncés admis (convergence dominée, théorème de Fejér, propriétés des fonctions de Bessel et de Struve tirées du
+DLMF~\cite{app:dlmf}) sont de niveau \tierL. La Mathlib épinglée contient des versions formelles de plusieurs d'entre
+eux : la convergence dominée (\lean{MeasureTheory.tendsto_integral_of_dominated_convergence}, fichier
+\texttt{MeasureTheory/Integral/DominatedConvergence.lean}) et la formule de Poisson (fichiers
+\texttt{Analysis/Fourier/PoissonSummation.lean} et \texttt{Analysis/SpecialFunctions/Gaussian/PoissonSummation.lean}).
+Nous avons seulement constaté que ces fichiers existent ; nous n'avons ni comparé leurs énoncés à ceux de cette annexe,
+ni relié ces énoncés aux démonstrations ci-dessous.
+\end{warnbox}
+
+%=====================================================================================================================
+\section{Séries et intégrales dépendant d'un paramètre}\label{appA:sec:param}
+
+\subsection{Le théorème de convergence dominée}
+
+\begin{theorem}[Convergence dominée \tierL]\label{appA:thm:cvd}
+Soit $I$ un intervalle de $\R$ et $(f_n)$ une suite de fonctions continues par morceaux sur $I$. On suppose que :
+\begin{enumerate}
+\item $(f_n)$ converge simplement sur $I$ vers une fonction $f$ continue par morceaux ;
+\item il existe $\varphi:I\to\R_+$ intégrable sur $I$ telle que $|f_n(x)|\le\varphi(x)$ pour tout $n$ et tout $x$
+(hypothèse de domination).
+\end{enumerate}
+Alors les $f_n$ et $f$ sont intégrables sur $I$, et $\int_If_n\to\int_If$.
+\end{theorem}
+
+Le point essentiel est que la fonction dominante $\varphi$ ne dépend pas de $n$. Sans elle, la conclusion peut échouer :
+$f_n=n\,\mathbf 1_{]0,1/n]}$ tend simplement vers $0$ sur $]0,1]$, alors que $\int f_n=1$ pour tout $n$.
+
+\begin{theorem}[Interversion série--intégrale \tierL]\label{appA:thm:serieint}
+Soit $(u_n)$ une suite de fonctions intégrables sur $I$ telle que $\sum_n u_n$ converge simplement vers une fonction
+continue par morceaux et $\sum_n\int_I|u_n|<\infty$. Alors $\sum_nu_n$ est intégrable et
+$\int_I\sum_nu_n=\sum_n\int_Iu_n$.
+\end{theorem}
+
+\subsection{Continuité et dérivation sous l'intégrale}
+
+\begin{theorem}[Continuité sous l'intégrale]\label{appA:thm:cont}
+Soit $A$ une partie de $\R$ et $f:A\times I\to\C$ telle que $f(\cdot,x)$ est continue pour tout $x$, $f(a,\cdot)$ est
+continue par morceaux pour tout $a$, et $|f(a,x)|\le\varphi(x)$ avec $\varphi$ intégrable. Alors
+$F(a)=\int_If(a,x)\,dx$ est continue sur $A$.
+\end{theorem}
+
+\begin{humanproof}
+Soit $a_n\to a$ dans $A$. Les fonctions $x\mapsto f(a_n,x)$ convergent simplement vers $f(a,\cdot)$ et sont dominées par
+$\varphi$. Le théorème~\ref{appA:thm:cvd} donne $F(a_n)\to F(a)$, et la caractérisation séquentielle conclut.
+\end{humanproof}
+
+\begin{theorem}[Dérivation sous l'intégrale]\label{appA:thm:deriv}
+Soit $J$ un intervalle et $f:J\times I\to\C$. On suppose que $f(a,\cdot)$ est intégrable pour tout $a\in J$, que
+$\partial f/\partial a$ existe, est continue en $a$ et continue par morceaux en $x$, et qu'il existe $\psi$ intégrable
+avec $|\partial_af(a,x)|\le\psi(x)$ pour tous $a,x$. Alors $F(a)=\int_If(a,x)\,dx$ est de classe $\mathcal C^1$ sur $J$,
+et $F'(a)=\int_I\partial_af(a,x)\,dx$.
+\end{theorem}
+
+\begin{humanproof}
+Fixons $a\in J$ et une suite $h_n\to0$, $h_n\ne0$, avec $a+h_n\in J$. Posons
+$g_n(x)=\bigl(f(a+h_n,x)-f(a,x)\bigr)/h_n$. Par définition de la dérivée partielle, $g_n(x)\to\partial_af(a,x)$ pour
+tout $x$. Par l'inégalité des accroissements finis appliquée à $t\mapsto f(t,x)$ entre $a$ et $a+h_n$,
+$|g_n(x)|\le\sup_t|\partial_af(t,x)|\le\psi(x)$. Le théorème~\ref{appA:thm:cvd} donne
+$\bigl(F(a+h_n)-F(a)\bigr)/h_n=\int g_n\to\int\partial_af(a,x)\,dx$. La continuité de $F'$ découle du
+théorème~\ref{appA:thm:cont} appliqué à $\partial_af$.
+\end{humanproof}
+
+\begin{remark}[Domination locale]
+Il suffit en pratique que la domination ait lieu sur tout segment $[\alpha,\beta]\subset J$ : la dérivabilité est une
+propriété locale. C'est ainsi qu'on traite les transformées de Laplace ci-dessous, où la domination n'est uniforme que
+pour $t\ge\alpha>0$.
+\end{remark}
+
+\begin{example}[Moments gaussiens]\label{appA:ex:moments}
+Pour $\alpha>0$, $G(\alpha)=\int_\R e^{-\pi\alpha x^2}dx=\alpha^{-1/2}$ (intégrale de Gauss). Sur $[\alpha_0,\infty[$ avec
+$\alpha_0>0$, $|\partial_\alpha e^{-\pi\alpha x^2}|=\pi x^2e^{-\pi\alpha x^2}\le\pi x^2e^{-\pi\alpha_0x^2}$, qui est
+intégrable. Le théorème~\ref{appA:thm:deriv} donne $\int\pi x^2e^{-\pi\alpha x^2}dx=-G'(\alpha)=\tfrac12\alpha^{-3/2}$.
+En dérivant $m$ fois, $\int(\pi x^2)^me^{-\pi\alpha x^2}dx=\frac{(2m)!}{4^mm!}\,\alpha^{-1/2-m}$ (exercice~\ref{appA:ex:moments}).
+C'est la même technique qui, au chapitre~1, calcule la transformée de Fourier d'une gaussienne
+(théorème~\ref{ch1:thm:poisson}, étape~1).
+\end{example}
+
+\subsection{Séries de fonctions}
+
+\begin{proposition}[Convergence normale \tierL]\label{appA:prop:normale}
+Soit $(u_n)$ des fonctions continues sur une partie $A$ de $\R^d$ avec $\sum_n\sup_A|u_n|<\infty$. Alors
+$\sum_nu_n$ converge uniformément sur $A$ et sa somme est continue. Si de plus les $u_n$ sont $\mathcal C^1$ sur un
+ouvert et $\sum_n\sup|\nabla u_n|<\infty$, la somme est $\mathcal C^1$ et se dérive terme à terme.
+\end{proposition}
+
+\begin{example}[Séries thêta]
+Pour un réseau $\Lambda$ du plan et $\alpha\ge\alpha_0>0$, on a $|x|^2\ge c\,(m^2+n^2)$ pour $x=mu+nv$ (chapitre~1),
+donc $e^{-\pi\alpha|x|^2}\le e^{-\pi\alpha_0c(m^2+n^2)}$, terme général d'une série convergente. La série
+$\Theta_\Lambda(\alpha)$ converge donc normalement sur $[\alpha_0,\infty[$, et elle y est $\mathcal C^\infty$ en
+$\alpha$ : on dérive terme à terme autant qu'on veut. Les sommes de réseau $S(\alpha)=\sum|P|^2e^{-\pi\alpha|P|^2}$ du
+chapitre~3 sont précisément $-\Theta_\Lambda'(\alpha)/\pi$.
+\end{example}
+
+%=====================================================================================================================
+\section{Transformées de Fourier et de Laplace}\label{appA:sec:fourier}
+
+\subsection{La transformée de Fourier}
+
+\begin{definition}
+Pour $f:\R^d\to\C$ intégrable, la \emph{transformée de Fourier} de $f$ est
+\[\hat f(\xi)=\int_{\R^d}f(x)\,e^{-2\pi i\,\xi\cdot x}\,dx,\qquad\xi\in\R^d .\]
+\end{definition}
+C'est la convention du chapitre~1 : le facteur $2\pi$ est dans l'exponentielle, et la formule d'inversion n'a alors
+aucun facteur devant l'intégrale. D'autres livres, en physique surtout, écrivent $\int f(x)e^{-ik\cdot x}dx$ ; on passe
+de l'une à l'autre par $k=2\pi\xi$.
+
+\begin{proposition}[Propriétés élémentaires]\label{appA:prop:fourierprop}
+Soit $f$ intégrable, $a\in\R^d$, $\lambda>0$ et $M$ une matrice inversible.
+\begin{enumerate}
+\item $\hat f$ est continue et bornée par $\|f\|_1$.
+\item Translation : $\widehat{f(\cdot-a)}(\xi)=e^{-2\pi i\,a\cdot\xi}\hat f(\xi)$.
+\item Changement linéaire de variable : $\widehat{f\circ M}(\xi)=|\det M|^{-1}\hat f(M^{-\mathsf T}\xi)$.
+\item Si $f$ est $\mathcal C^1$ et que $f$ et $\partial_jf$ sont intégrables, $\widehat{\partial_jf}(\xi)=2\pi
+i\,\xi_j\hat f(\xi)$.
+\end{enumerate}
+\end{proposition}
+
+\begin{humanproof}
+(1) découle du théorème~\ref{appA:thm:cont}, avec $|f(x)e^{-2\pi i\xi\cdot x}|=|f(x)|$. (2) et (3) sont des changements
+de variables $y=x-a$ et $y=Mx$ (jacobien $|\det M|$, et $\xi\cdot M^{-1}y=(M^{-\mathsf T}\xi)\cdot y$). (4) est une
+intégration par parties en $x_j$ ; le terme de bord tend vers $0$ le long d'une suite de bornes, car $f$ est intégrable
+et a une dérivée intégrable.
+\end{humanproof}
+
+\begin{example}[Gaussiennes]\label{appA:ex:gauss}
+Pour $\alpha>0$, $\widehat{e^{-\pi\alpha|x|^2}}(\xi)=\alpha^{-d/2}e^{-\pi|\xi|^2/\alpha}$. La preuve en dimension~1
+(une équation différentielle pour $\hat f$, obtenue par dérivation sous l'intégrale) est l'étape~1 de la démonstration
+du théorème~\ref{ch1:thm:poisson} ; on passe à la dimension $d$ par Fubini, car l'exponentielle se factorise. En
+particulier $e^{-\pi|x|^2}$ est sa propre transformée de Fourier. Pour une gaussienne de covariance quelconque,
+le point~(3) de la proposition~\ref{appA:prop:fourierprop} donne la formule générale.
+\end{example}
+
+\begin{theorem}[Inversion \tierL]\label{appA:thm:inversion}
+Si $f$ et $\hat f$ sont intégrables, alors $f(x)=\int\hat f(\xi)e^{2\pi i\,\xi\cdot x}d\xi$ en tout point où $f$ est
+continue.
+\end{theorem}
+
+\subsection{Fonctions radiales du plan et fonction de Bessel \texorpdfstring{$J_0$}{J0}}\label{appA:ssec:hankel}
+
+Les potentiels des chapitres~2 et~3 ne dépendent que de la distance $r=|x|$. Leur transformée de Fourier plane est
+alors radiale aussi, et elle s'écrit avec la fonction de Bessel $J_0$, définie par
+\begin{equation}\label{appA:eq:J0int}
+J_0(z)=\frac1{2\pi}\int_0^{2\pi}e^{iz\cos\theta}\,d\theta=\frac1\pi\int_0^\pi\cos(z\cos\theta)\,d\theta .
+\end{equation}
+
+\begin{proposition}[Transformée de Hankel d'ordre $0$]\label{appA:prop:hankel}
+Si $f(x)=F(|x|)$ est intégrable sur $\R^2$, alors $\hat f(\xi)=2\pi\int_0^\infty F(r)\,J_0(2\pi|\xi|r)\,r\,dr$.
+\end{proposition}
+
+\begin{humanproof}
+En coordonnées polaires $x=r(\cos\theta,\sin\theta)$, et en choisissant les axes de sorte que
+$\xi=(|\xi|,0)$ (l'intégrale est invariante par rotation), $\xi\cdot x=|\xi|r\cos\theta$. Par Fubini,
+\[\hat f(\xi)=\int_0^\infty F(r)\Bigl(\int_0^{2\pi}e^{-2\pi i|\xi|r\cos\theta}d\theta\Bigr)r\,dr
+=2\pi\int_0^\infty F(r)J_0(2\pi|\xi|r)\,r\,dr ,\]
+car $J_0$ est paire (remplacer $\theta$ par $\theta+\pi$ dans~\eqref{appA:eq:J0int}).
+\end{humanproof}
+
+\begin{remark}[Contrôle sur la gaussienne]
+Avec $F(r)=e^{-\pi ar^2}$, la proposition et l'exemple~\ref{appA:ex:gauss} donnent
+$2\pi\int_0^\infty e^{-\pi ar^2}J_0(2\pi kr)\,r\,dr=a^{-1}e^{-\pi k^2/a}>0$ : c'est la formule employée au
+chapitre~3 pour opposer la gaussienne, à transformée partout positive, au potentiel en épaulement des atomes de Rydberg
+habillés, dont la transformée plane prend des valeurs négatives. Le calcul numérique de cette dernière est la
+transformée de Hankel ci-dessus, évaluée par quadrature \tierX.
+\end{remark}
+
+\subsection{La transformée de Laplace}
+
+\begin{definition}
+Soit $\mu$ une mesure positive sur $[0,\infty[$ (par exemple $\mu(da)=w(a)\,da$ avec $w\ge0$). Sa \emph{transformée de
+Laplace} est $\mathcal L\mu(t)=\int_0^\infty e^{-ta}\,\mu(da)$, pour les $t$ où l'intégrale converge.
+\end{definition}
+
+\begin{proposition}[Une transformée de Laplace est complètement monotone]\label{appA:prop:laplacecm}
+Si $\mathcal L\mu(t)<\infty$ pour tout $t>0$, alors $\mathcal L\mu$ est $\mathcal C^\infty$ sur $]0,\infty[$ et
+$(-1)^m(\mathcal L\mu)^{(m)}(t)=\int_0^\infty a^me^{-ta}\mu(da)\ge0$.
+\end{proposition}
+
+\begin{humanproof}
+Sur $[t_0,\infty[$ avec $t_0>0$, on a $a^me^{-ta}\le a^me^{-t_0a}\le C_m\,e^{-t_0a/2}$, où
+$C_m=\sup_{a\ge0}a^me^{-t_0a/2}<\infty$. Cette fonction est $\mu$-intégrable puisque $\mathcal L\mu(t_0/2)<\infty$.
+Le théorème~\ref{appA:thm:deriv} (version mesure, même preuve) s'applique $m$ fois.
+\end{humanproof}
+C'est le sens « facile » du théorème de Bernstein (théorème~\ref{ch1:thm:bernstein}, proposition~\ref{ch1:prop:facile}) ;
+la réciproque, toute fonction complètement monotone est une transformée de Laplace, est de niveau \tierL.
+
+\begin{example}[Trois transformées de Laplace utilisées dans le livre]\label{appA:ex:laplace}
+\begin{enumerate}
+\item \emph{Puissances.} Pour $s>0$ et $t>0$, $t^{-s}=\frac1{\Gamma(s)}\int_0^\infty a^{s-1}e^{-ta}\,da$. En effet, le
+changement de variable $u=ta$ donne $\int_0^\infty a^{s-1}e^{-ta}da=t^{-s}\int_0^\infty u^{s-1}e^{-u}du=t^{-s}\Gamma(s)$.
+Avec $t=r^2$ et $s=1/2$, on obtient $1/r=\pi^{-1/2}\int_0^\infty a^{-1/2}e^{-ar^2}da$ : le potentiel de Coulomb est
+un mélange de gaussiennes. Le changement $a=u^2$ donne la forme $1/r=\frac2{\sqrt\pi}\int_0^\infty e^{-r^2u^2}du$,
+point de départ de la décomposition d'Ewald du cas U1 (chapitre~5).
+\item \emph{Exciton dipolaire.} En retranchant la même formule écrite pour $r^2+d^2$,
+$\frac1r-\frac1{\sqrt{r^2+d^2}}=\frac2{\sqrt\pi}\int_0^\infty e^{-r^2u^2}\bigl(1-e^{-d^2u^2}\bigr)du$, avec un poids
+positif : c'est la formule du chapitre~5 (cas U1) au facteur $2$ près.
+\item \emph{Subordination.} Pour $\rho>0$, $e^{-\rho\sqrt t}=\int_0^\infty e^{-ta}\,\frac{\rho}{2\sqrt\pi}\,a^{-3/2}
+e^{-\rho^2/(4a)}\,da$ \tierL{} ; c'est la formule que le chapitre~2 emploie pour le potentiel de Yukawa et la
+forme de Laplace du potentiel de Keldysh.
+\end{enumerate}
+\end{example}
+
+%=====================================================================================================================
+\section{La formule sommatoire de Poisson}\label{appA:sec:poisson}
+
+Le chapitre~1 démontre la formule de Poisson pour les gaussiennes. Voici l'énoncé général dont elle est un cas
+particulier, en dimension~$1$ d'abord, puis pour un réseau quelconque.
+
+\begin{theorem}[Formule de Poisson en dimension 1]\label{appA:thm:poisson1}
+Soit $f:\R\to\C$ continue. On suppose qu'il existe $C>0$ et $\delta>0$ tels que
+\[|f(x)|\le C(1+|x|)^{-1-\delta}\quad\text{et}\quad|\hat f(\xi)|\le C(1+|\xi|)^{-1-\delta}\qquad(x,\xi\in\R).\]
+Alors, pour tout $x\in\R$, $\displaystyle\sum_{n\in\Z}f(x+n)=\sum_{k\in\Z}\hat f(k)\,e^{2\pi ikx}$, les deux séries
+convergeant absolument. En particulier $\sum_nf(n)=\sum_k\hat f(k)$.
+\end{theorem}
+
+\begin{humanproof}
+\emph{Étape 1 : la périodisée.} Posons $F(x)=\sum_{n\in\Z}f(x+n)$. Sur $[0,1]$, $|f(x+n)|\le C(1+|n|-1)^{-1-\delta}$
+pour $|n|\ge2$, terme général d'une série convergente ; la série converge donc normalement sur $[0,1]$, et par
+périodicité sur $\R$. La fonction $F$ est continue (proposition~\ref{appA:prop:normale}) et $1$-périodique.
+
+\emph{Étape 2 : ses coefficients de Fourier.} Pour $k\in\Z$, par le théorème~\ref{appA:thm:serieint} (la série des
+intégrales des modules converge, car elle vaut $\int_\R|f|<\infty$),
+\[c_k(F)=\int_0^1F(x)e^{-2\pi ikx}dx=\sum_{n\in\Z}\int_n^{n+1}f(y)e^{-2\pi ik(y-n)}dy=\int_\R f(y)e^{-2\pi iky}dy=\hat
+f(k),\]
+puisque $e^{2\pi ikn}=1$.
+
+\emph{Étape 3 : la série de Fourier converge vers $F$.} L'hypothèse sur $\hat f$ donne $\sum_k|c_k(F)|<\infty$. La série
+$G(x)=\sum_k\hat f(k)e^{2\pi ikx}$ converge donc normalement vers une fonction continue $1$-périodique, et
+$c_k(G)=\hat f(k)$ (on intègre terme à terme). La fonction $H=F-G$ est continue, périodique, et tous ses coefficients
+de Fourier sont nuls. Par le théorème de Fejér \tierL, les moyennes de Cesàro de la série de Fourier d'une fonction
+continue périodique convergent uniformément vers elle ; ici elles sont toutes nulles, donc $H=0$.
+\end{humanproof}
+
+\begin{remark}[Pourquoi deux hypothèses de décroissance]
+La décroissance de $f$ rend $F$ continue ; celle de $\hat f$ rend la série de Fourier absolument convergente. Sans la
+seconde, la formule peut tomber en défaut : il existe des fonctions continues intégrables dont la série $\sum f(n)$
+converge mais ne vaut pas $\sum\hat f(k)$. Les gaussiennes, et plus généralement les fonctions de Schwartz, vérifient
+les deux hypothèses avec n'importe quel $\delta$.
+\end{remark}
+
+\begin{theorem}[Formule de Poisson pour un réseau]\label{appA:thm:poissonres}
+Soit $\Lambda=M\Z^d$ un réseau de $\R^d$, de covolume $V=|\det M|$, et $\Lambda^*=M^{-\mathsf T}\Z^d$ son réseau dual.
+Si $f$ est continue avec $|f(x)|\le C(1+|x|)^{-d-\delta}$ et $|\hat f(\xi)|\le C(1+|\xi|)^{-d-\delta}$, alors
+\[\sum_{x\in\Lambda}f(x+y)=\frac1V\sum_{\xi\in\Lambda^*}\hat f(\xi)\,e^{2\pi i\,\xi\cdot y}\qquad(y\in\R^d).\]
+\end{theorem}
+
+\begin{humanproof}
+On applique la version $d$-dimensionnelle de la démonstration précédente (le tore $\R^d/\Z^d$ à la place de
+$\R/\Z$, et le théorème de Fejér sur le tore \tierL) à $g=f\circ M$. Les hypothèses de décroissance passent de $f$ à $g$,
+car $|Mx|\ge\|M^{-1}\|^{-1}|x|$. On obtient $\sum_{n\in\Z^d}g(n+z)=\sum_{k\in\Z^d}\hat g(k)e^{2\pi ik\cdot z}$. Puis
+$\hat g(k)=V^{-1}\hat f(M^{-\mathsf T}k)$ (proposition~\ref{appA:prop:fourierprop}, point~3). On pose enfin $y=Mz$ :
+$k\cdot z=(M^{-\mathsf T}k)\cdot y$, et $M^{-\mathsf T}k$ parcourt $\Lambda^*$.
+\end{humanproof}
+
+Avec $f(x)=e^{-\pi\alpha|x|^2}$ et $y=0$, on retrouve exactement le théorème~\ref{ch1:thm:poisson}.
+
+\subsection{Application : l'idée de la sommation d'Ewald}\label{appA:ssec:ewald}
+
+Les sommes de réseau d'un potentiel à longue portée, comme $\sum_{x\in\Lambda\setminus\{0\}}|x|^{-3}$, convergent
+lentement : l'erreur de troncature à la distance $R$ décroît comme $1/R$. La méthode d'Ewald coupe le potentiel en deux
+grâce à une représentation en mélange de gaussiennes $V(r)=\int_0^\infty e^{-r^2u^2}w(u)\,du$, avec $w\ge0$
+(exemple~\ref{appA:ex:laplace}). On choisit un paramètre $\eta>0$ et l'on écrit
+\[V(r)=\underbrace{\int_\eta^\infty e^{-r^2u^2}w(u)\,du}_{\text{courte portée}}+
+\underbrace{\int_0^\eta e^{-r^2u^2}w(u)\,du}_{\text{lisse, longue portée}} .\]
+\begin{itemize}
+\item La partie de courte portée décroît comme $e^{-\eta^2r^2}$ : sa somme sur le réseau converge très vite dans
+l'espace direct.
+\item La partie lisse est un mélange de gaussiennes larges. Le théorème~\ref{appA:thm:poissonres} transforme sa somme
+en une somme sur le réseau dual de gaussiennes étroites $e^{-\pi^2|\xi|^2/u^2}$, qui converge aussi très vite.
+\end{itemize}
+Le résultat ne dépend pas de $\eta$ : c'est un contrôle naturel du code. Le cas U1 du chapitre~5 rapporte
+justement que l'énergie d'Ewald de rusty-SUNDIALS ne varie pas avec ce paramètre de découpage à mieux que
+$9{,}0\times10^{-15}$ près \tierX.
+
+%=====================================================================================================================
+\section{Fonctions spéciales}\label{appA:sec:speciales}
+
+Nous ne démontrons ici que les propriétés élémentaires. Les autres sont citées du \emph{Digital Library of
+Mathematical Functions} du NIST~\cite{app:dlmf} (chapitres~5 pour $\Gamma$, 7 pour $\operatorname{erf}$, 10 pour les
+fonctions de Bessel, 11 pour celles de Struve) \tierL.
+
+\subsection{La fonction \texorpdfstring{$\Gamma$}{Gamma}}
+Pour $s>0$, $\Gamma(s)=\int_0^\infty u^{s-1}e^{-u}du$. Une intégration par parties donne $\Gamma(s+1)=s\Gamma(s)$, donc
+$\Gamma(n+1)=n!$. Le changement $u=\pi x^2$ donne $\Gamma(1/2)=\int_\R e^{-\pi x^2}dx\cdot\sqrt\pi=\sqrt\pi$, grâce à
+l'intégrale de Gauss.
+
+\subsection{Fonction d'erreur et fonction d'erreur complémentaire}
+\begin{definition}
+$\operatorname{erf}(x)=\frac2{\sqrt\pi}\int_0^xe^{-s^2}ds$, $\operatorname{erfc}(x)=1-\operatorname{erf}(x)=
+\frac2{\sqrt\pi}\int_x^\infty e^{-s^2}ds$, et $\operatorname{erfcx}(x)=e^{x^2}\operatorname{erfc}(x)$.
+\end{definition}
+
+\begin{proposition}\label{appA:prop:erfc}
+Pour $x>0$ : $\displaystyle\frac{2}{\sqrt\pi}\,\frac{e^{-x^2}}{x+\sqrt{x^2+2}}\le\operatorname{erfc}(x)
+\le\frac{e^{-x^2}}{x\sqrt\pi}$. En particulier $\operatorname{erfcx}(x)\le\frac1{x\sqrt\pi}$ et
+$\operatorname{erfc}(x)\sim\frac{e^{-x^2}}{x\sqrt\pi}$ quand $x\to\infty$.
+\end{proposition}
+
+\begin{humanproof}
+\emph{Majoration.} Pour $s\ge x>0$, $1\le s/x$, donc $\int_x^\infty e^{-s^2}ds\le\frac1x\int_x^\infty se^{-s^2}ds=
+\frac{e^{-x^2}}{2x}$. On multiplie par $2/\sqrt\pi$.
+
+\emph{Minoration.} On l'admet \tierL{} (elle se démontre en étudiant la différence des deux membres, qui tend vers $0$ à
+l'infini et dont on contrôle le signe de la dérivée) ; elle n'est utilisée que pour l'équivalent, que la majoration et
+une intégration par parties suffisent aussi à établir (exercice~\ref{appA:ex:erfc}).
+\end{humanproof}
+Le chapitre~2 utilise les bornes $0<\operatorname{erfcx}(x)\le1$ pour $x\ge0$ et $\operatorname{erfcx}(x)\le1/(\sqrt\pi
+x)$ pour $x>0$, démontrées là par la représentation $\operatorname{erfcx}(x)=\frac2{\sqrt\pi}\int_0^\infty
+e^{-(y^2+2xy)}dy$. Dans les sommes de réseau certifiées, $\operatorname{erfc}$ apparaît aussi dans les bornes de queue
+des gaussiennes : $\sum_{|n|>R}e^{-\pi n^2}$ se compare à une intégrale de gaussienne, c'est-à-dire à
+$\operatorname{erfc}(\sqrt\pi R)$.
+
+\subsection{Les fonctions de Bessel \texorpdfstring{$J_0$}{J0}, \texorpdfstring{$Y_0$}{Y0} et \texorpdfstring{$K_0$}{K0}}
+
+\begin{proposition}[$J_0$]\label{appA:prop:J0}
+La fonction $J_0$ définie par~\eqref{appA:eq:J0int} vérifie :
+\begin{enumerate}
+\item $J_0(z)=\sum_{m\ge0}\frac{(-1)^m}{(m!)^2}\bigl(\frac z2\bigr)^{2m}$ pour tout $z\in\R$ ;
+\item $|J_0(z)|\le1$ et $J_0(0)=1$ ;
+\item $J_0$ est solution de l'équation de Bessel d'ordre $0$ : $zy''+y'+zy=0$ ;
+\item \tierL{} $J_0(z)=\sqrt{2/(\pi z)}\,\bigl(\cos(z-\pi/4)+O(1/z)\bigr)$ quand $z\to+\infty$.
+\end{enumerate}
+\end{proposition}
+
+\begin{humanproof}
+(1) On développe $\cos(z\cos\theta)=\sum_m(-1)^m z^{2m}\cos^{2m}\theta/(2m)!$ ; la série converge normalement en
+$\theta$, et l'on intègre terme à terme. Les intégrales de Wallis donnent
+$\frac1\pi\int_0^\pi\cos^{2m}\theta\,d\theta=\binom{2m}m4^{-m}$, d'où le coefficient
+$\frac{1}{(2m)!}\binom{2m}{m}4^{-m}=\frac{1}{(m!)^2 4^m}$.
+(2) Le module de l'intégrande de~\eqref{appA:eq:J0int} vaut $1$.
+(3) Par dérivation sous l'intégrale, $J_0'(z)=-\frac1\pi\int_0^\pi\cos\theta\sin(z\cos\theta)d\theta$ et
+$J_0''(z)=-\frac1\pi\int_0^\pi\cos^2\theta\cos(z\cos\theta)d\theta$. Donc
+$zJ_0''+zJ_0=\frac z\pi\int_0^\pi\sin^2\theta\cos(z\cos\theta)d\theta$. Une intégration par parties, avec
+$\frac{d}{d\theta}\sin(z\cos\theta)=-z\sin\theta\cos(z\cos\theta)$, transforme cette intégrale en
+$\frac1\pi\int_0^\pi\cos\theta\sin(z\cos\theta)d\theta=-J_0'(z)$.
+\end{humanproof}
+
+L'équation de Bessel a une seconde solution, singulière en $0$ : la fonction de Neumann $Y_0$, avec
+$Y_0(z)\sim\frac2\pi\ln z$ quand $z\to0^+$ \tierL. La \emph{fonction de Bessel modifiée} $K_0$ est définie pour $x>0$ par
+\[K_0(x)=\int_0^\infty e^{-x\cosh t}\,dt .\]
+Elle est positive, décroissante, se comporte comme $-\ln x$ en $0$ et comme $\sqrt{\pi/(2x)}\,e^{-x}$ à l'infini \tierL.
+C'est la fonction de Green de l'opérateur $-\Delta+\kappa^2$ dans le plan : $(-\Delta+\kappa^2)\frac1{2\pi}K_0(\kappa|x|)=\delta_0$
+\tierL. Les chapitres~2 et~5 notent que ce potentiel de Debye--Hückel bidimensionnel n'est \emph{pas} traité dans
+ce livre, qui étudie le Yukawa tridimensionnel restreint au plan, $e^{-\kappa r}/r$.
+
+\subsection{La fonction de Struve \texorpdfstring{$\mathbf H_0$}{H0} et le potentiel de Rytova--Keldysh}
+
+\begin{definition}
+La fonction de Struve d'ordre $0$ est $\mathbf H_0(z)=\frac2\pi\sum_{m\ge0}\frac{(-1)^mz^{2m+1}}{\bigl(1\cdot3\cdot5\cdots(2m+1)\bigr)^2}$
+pour $z\in\R$.
+\end{definition}
+La série converge pour tout $z$ (critère de d'Alembert). On a aussi la représentation intégrale
+$\mathbf H_0(z)=\frac2\pi\int_0^{\pi/2}\sin(z\cos\theta)\,d\theta$ \tierL, et $\mathbf H_0(z)-Y_0(z)\sim\frac2{\pi z}$
+quand $z\to+\infty$ \tierL. Mathlib, à la version épinglée, ne connaît ni $\mathbf H_0$ ni $Y_0$ : c'est pourquoi le
+chapitre~2 formalise le potentiel de Keldysh sous une forme de Laplace, et relie cette forme à la combinaison
+$\mathbf H_0-Y_0$ par un argument de niveau \tierC{} qui s'appuie sur la représentation
+$\mathbf K_0(z)=\mathbf H_0(z)-Y_0(z)=\frac2\pi\int_0^\infty e^{-zu}(1+u^2)^{-1/2}du$ pour $\operatorname{Re}z>0$
+(DLMF~11.5.2, citée au chapitre~2~\cite{ch2dlmf}). Le comportement $\sim 2/(\pi z)$ est la loi de Coulomb $1/r$
+retrouvée aux grandes distances.
+
+%=====================================================================================================================
+\section{Réseaux du plan et domaine fondamental de \texorpdfstring{$SL_2(\Z)$}{SL2(Z)}}\label{appA:sec:sl2}
+
+\subsection{Bases d'un réseau}
+Un réseau du plan est $\Lambda=\Z u\oplus\Z v$ avec $(u,v)$ base de $\R^2$ (définition~\ref{ch1:def:reseau}). Deux bases
+$(u,v)$ et $(u',v')$ engendrent le même réseau si et seulement si $\binom{u'}{v'}=P\binom uv$ avec $P\in GL_2(\Z)$,
+c'est-à-dire $P$ à coefficients entiers et $\det P=\pm1$.
+
+\begin{humanproof}
+Si $\Z u'\oplus\Z v'=\Z u\oplus\Z v$, chaque base s'écrit dans l'autre avec des coefficients entiers : $P$ et $P'$
+entières avec $PP'=I$, donc $\det P\det P'=1$ dans $\Z$, d'où $\det P=\pm1$. Réciproquement, si $P\in GL_2(\Z)$, alors
+$P^{-1}=\pm\,\mathrm{com}(P)^{\mathsf T}$ est entière, et les deux réseaux sont inclus l'un dans l'autre.
+\end{humanproof}
+Le covolume $|\det(u,v)|$ ne dépend donc pas de la base.
+
+\subsection{Le paramètre de forme \texorpdfstring{$\tau$}{tau}}
+Identifions $\R^2$ à $\C$. Quitte à faire une similitude directe (une rotation et une homothétie, qui ne changent pas la
+« forme »), on peut supposer $u=1$. Quitte à remplacer $v$ par $-v$, on peut supposer $\operatorname{Im}v>0$. Le réseau
+est alors $\Z+\Z\tau$ avec $\tau$ dans le demi-plan de Poincaré $\mathbb H=\{\operatorname{Im}\tau>0\}$. Un changement
+de base direct $\binom{u'}{v'}=\begin{pmatrix}d&c\\b&a\end{pmatrix}\binom uv$ avec $ad-bc=1$ remplace $\tau$ par
+\[\gamma\cdot\tau=\frac{a\tau+b}{c\tau+d},\qquad\gamma=\begin{pmatrix}a&b\\c&d\end{pmatrix}\in SL_2(\Z),\]
+après renormalisation de $u'$ à $1$. Les formes de réseaux à similitude près correspondent donc aux orbites de
+$SL_2(\Z)$ dans $\mathbb H$. Le calcul clé est
+\begin{equation}\label{appA:eq:im}
+\operatorname{Im}(\gamma\cdot\tau)=\frac{\operatorname{Im}\tau}{|c\tau+d|^2},
+\end{equation}
+obtenu en multipliant numérateur et dénominateur par $\overline{c\tau+d}$ et en utilisant $ad-bc=1$.
+
+\subsection{Le domaine fondamental}
+\begin{theorem}\label{appA:thm:domaine}
+Soit $\mathcal F=\{\tau\in\mathbb H:|\operatorname{Re}\tau|\le\tfrac12,\ |\tau|\ge1\}$.
+\begin{enumerate}
+\item Tout $\tau\in\mathbb H$ a un point de son orbite sous $SL_2(\Z)$ dans $\mathcal F$.
+\item Si deux points distincts de $\mathcal F$ sont dans la même orbite, ils sont sur le bord de $\mathcal F$
+(symétriques par rapport à l'axe imaginaire, sur les droites $\operatorname{Re}\tau=\pm\frac12$ ou sur le cercle
+$|\tau|=1$).
+\end{enumerate}
+\end{theorem}
+
+\begin{humanproof}[Démonstration humaine du point 1]
+Notons $T:\tau\mapsto\tau+1$ et $S:\tau\mapsto-1/\tau$ ; ils correspondent à $\bigl(\begin{smallmatrix}1&1\\0&1\end{smallmatrix}\bigr)$
+et $\bigl(\begin{smallmatrix}0&-1\\1&0\end{smallmatrix}\bigr)$. Pour $\tau$ fixé, les nombres $c\tau+d$, $(c,d)\in\Z^2\setminus\{0\}$,
+forment un réseau de $\C$ ; il n'y en a qu'un nombre fini de module $\le1$. D'après~\eqref{appA:eq:im},
+$\operatorname{Im}(\gamma\cdot\tau)$ ne prend donc qu'un nombre fini de valeurs $\ge\operatorname{Im}\tau$, et il existe
+$\gamma_0$ telle que $\tau'=\gamma_0\cdot\tau$ ait une partie imaginaire maximale dans l'orbite. Une puissance de $T$
+amène $\operatorname{Re}\tau'$ dans $[-\frac12,\frac12]$ sans changer sa partie imaginaire. Si l'on avait $|\tau'|<1$,
+alors $\operatorname{Im}(S\tau')=\operatorname{Im}\tau'/|\tau'|^2>\operatorname{Im}\tau'$, ce qui contredirait la
+maximalité. Donc $\tau'\in\mathcal F$.
+\end{humanproof}
+
+Le point~2, dont la preuve est un examen de cas à partir de~\eqref{appA:eq:im}, est de niveau \tierL~\cite{app:serre}.
+Le domaine $\mathcal F$ contient deux points remarquables :
+\begin{itemize}
+\item $\tau=i$, le réseau carré. Son stabilisateur dans $SL_2(\Z)$ est engendré par $S$, d'ordre $4$ dans $SL_2(\Z)$
+(et $2$ dans le quotient par $\pm I$) : $S$ agit au voisinage de $i$ comme une rotation d'angle $\pi$.
+\item $\tau=\rho=e^{i\pi/3}=\frac12+i\frac{\sqrt3}2$, le réseau triangulaire. Il est fixé par
+$\gamma(\tau)=(\tau-1)/\tau$, d'ordre $3$ modulo $\pm I$, qui agit au voisinage de $\rho$ comme une rotation d'angle
+$\pm120^\circ$.
+\end{itemize}
+C'est l'argument du §\ref{ch3:sec:isotropie} : une fonction de la forme du réseau, invariante par $SL_2(\Z)$ et de
+classe $\mathcal C^2$, a un gradient nul en $\rho$ et une hessienne scalaire, parce que la seule matrice symétrique qui
+commute avec une rotation de $120^\circ$ est un multiple de l'identité. En $i$, la rotation d'angle $\pi$ ne force que
+le gradient à s'annuler : la hessienne peut y être anisotrope.
+
+\subsection{Réduction de Gauss d'une base}
+Le point~1 du théorème est aussi un algorithme. Partant d'une base $(u,v)$ :
+\begin{enumerate}
+\item si $|v|<|u|$, échanger $u$ et $v$ ;
+\item remplacer $v$ par $v-ku$, où $k$ est l'entier le plus proche de $\operatorname{Re}(v\bar u)/|u|^2$ ;
+\item recommencer tant que $|v|<|u|$.
+\end{enumerate}
+L'algorithme termine, car $|u|$ décroît strictement à chaque échange et ne prend qu'un nombre fini de valeurs (ce sont
+des normes de vecteurs du réseau inférieures à la norme initiale). À la fin, $|u|\le|v|\le|v\pm u|$ : $u$ est un plus
+court vecteur non nul et $\tau=v/u$ (au signe près) est dans $\mathcal F$. Les sommes de réseau tronquées des chapitres~3
+et~5 utilisent une base ainsi réduite, pour laquelle le disque de rayon $R$ ne contient que $O(R^2)$ points de la forme
+$mu+nv$ avec $|m|,|n|\le CR$.
+
+%=====================================================================================================================
+\section{Exercices}\label{appA:sec:exos}
+
+\begin{exercise}\label{appA:ex:moments}
+Démontrer par récurrence sur $m$ la formule des moments gaussiens de l'exemple~\ref{appA:ex:moments}. En déduire
+$\int_\R x^{2m}e^{-x^2}dx=\Gamma(m+\tfrac12)$.
+\end{exercise}
+
+\begin{exercise}\label{appA:ex:erfc}
+Montrer, par une intégration par parties, que $\operatorname{erfc}(x)=\frac{e^{-x^2}}{x\sqrt\pi}\bigl(1-\frac1{2x^2}
++O(x^{-4})\bigr)$ quand $x\to\infty$. Combien de termes de $\sum_{n\ge1}e^{-\pi n^2}$ faut-il pour une erreur inférieure
+à $10^{-30}$ ?
+\end{exercise}
+
+\begin{exercise}
+Appliquer le théorème~\ref{appA:thm:poisson1} à $f(x)=e^{-2\pi a|x|}$, $a>0$, dont la transformée de Fourier est
+$\hat f(\xi)=\frac{a}{\pi(a^2+\xi^2)}$ (à vérifier). En déduire $\sum_{k\in\Z}\frac1{a^2+k^2}=\frac\pi a\coth(\pi a)$,
+puis $\sum_{k\ge1}k^{-2}=\pi^2/6$ en faisant tendre $a$ vers $0$.
+\end{exercise}
+
+\begin{exercise}
+Vérifier numériquement la proposition~\ref{appA:prop:hankel} pour $F(r)=e^{-\pi r^2}$ en évaluant $J_0$ par sa série
+entière (avec \texttt{mpmath}, par exemple). Pourquoi la série entière de $J_0$ est-elle un mauvais moyen de calculer
+$J_0(50)$ en virgule flottante ? (Penser à l'annulation de termes de l'ordre de $e^{50}$.)
+\end{exercise}
+
+\begin{exercise}
+Réduire par l'algorithme de Gauss la base $u=(1,0)$, $v=(7{,}5;\,0{,}2)$, et donner le paramètre $\tau\in\mathcal F$
+obtenu. Calculer le stabilisateur de $\rho$ dans $SL_2(\Z)$ et vérifier qu'il a six éléments.
+\end{exercise}

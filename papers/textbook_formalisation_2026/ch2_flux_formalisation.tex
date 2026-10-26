@@ -52,8 +52,8 @@ ni les démonstrations « humaines » écrites ici.
 
 Le point de départ (chapitre~1) est le théorème amont \lean{universal_energy_minimum} d'openai/math : pour tout potentiel
 $g$ \emph{admissible}, le réseau triangulaire $\Lat$ de covolume un a une énergie inférieure ou égale à celle de toute
-configuration localement finie de densité un \tierA{}, conditionnellement à l'amont~\cite{ch2oai}. Dans la
-littérature humaine, l'optimalité universelle est démontrée en dimensions 8 et 24~\cite{ch2ckmrv} \tierL, et
+configuration localement finie de densité un \tierA{}, conditionnellement à l'amont~\cite{oai}. Dans la
+littérature humaine, l'optimalité universelle est démontrée en dimensions 8 et 24~\cite{ckmrv} \tierL, et
 Petrache et Serfaty écrivaient en 2019 que le cas plan restait ouvert~\cite{ch2ps} \tierL : le théorème amont est donc
 une revendication d'IA sur un problème ouvert, acceptée ici uniquement comme énoncé Lean vérifié par le noyau à partir
 des définitions amont. Rappelons les deux énoncés, cités mot pour mot.
@@ -82,7 +82,7 @@ Le flux de ce chapitre est le suivant (figure~\ref{ch2:fig:flux}).
 \begin{enumerate}[itemsep=1pt]
 \item \textbf{Amont} (chapitre~1) : l'optimalité universelle en dimension deux \tierA{} conditionnel, et nos corollaires
 D1--D4 (Riesz, toute densité, sens CKMRV, disques ouverts ou fermés), publiés dans le manuel~v1
-(doi\string:10.5281/zenodo.23295142)~\cite{ch2txt}.
+(doi\string:10.5281/zenodo.23295142)~\cite{v1}.
 \item \textbf{Trois potentiels physiques} (section~\ref{ch2:sec:pot}) : excitons dipolaires, Yukawa plan, Rytova--Keldysh.
 Pour chacun : une démonstration de complète monotonie en $r^2$, l'énoncé Lean, la conséquence.
 \item \textbf{La généralisation} (section~\ref{ch2:sec:lib}) : une bibliothèque CM/Bernstein dont le théorème de
@@ -120,7 +120,7 @@ bleu : amont cité ; orange : travail dont le statut mathématique reste \tierC{
 \section{La méthode : préenregistrer, falsifier, laisser juger le noyau}\label{ch2:sec:methode}
 
 Avant le moindre calcul, il faut dire comment on saura qu'on s'est trompé. La méthode suivie dans tous les travaux de ce
-chapitre tient en quatre règles. Elle est outillée par Elenchus~\cite{ch2elenchus}, un registre de revendications
+chapitre tient en quatre règles. Elle est outillée par Elenchus~\cite{elenchus}, un registre de revendications
 (« ledger ») muni d'une porte automatique.
 
 \subsection{Règle 1 : préenregistrer}\label{ch2:ssec:prereg}
@@ -163,7 +163,7 @@ theorem ProgCM.ctl_axiom : ProgCM.IsCompletelyMonotoneOn Real.cos := ProgCM.ctl_
 \end{lstlisting}
 \end{leanbox}
 \noindent Les deux « preuves » de l'énoncé faux « $\cos$ est CM » compilent avec le code~0 ; seule la commande
-\texttt{\#print axioms} les démasque (\lean{sorryAx}, resp.\ \lean{ProgCM.ctl_cheat})~\cite{ch2cm}. D'où la définition du
+\texttt{\#print axioms} les démasque (\lean{sorryAx}, resp.\ \lean{ProgCM.ctl_cheat})~\cite{p3}. D'où la définition du
 \tierA{} (fiche \texttt{FACTS.md}) : la liste des axiomes est contenue dans $\{$\lean{propext}, \lean{Classical.choice},
 \lean{Quot.sound}$\}$, plus un rejeu par le noyau (\texttt{leanchecker}), plus une recherche textuelle de
 \lean{skipKernelTC}, \lean{addDecl}, \lean{native_decide}, \lean{implemented_by}.
@@ -171,11 +171,15 @@ theorem ProgCM.ctl_axiom : ProgCM.IsCompletelyMonotoneOn Real.cos := ProgCM.ctl_
 \begin{remark}[Pourquoi \texttt{\#print axioms} ne suffit pas]\label{ch2:rem:skip}
 L'audit A2 du corpus Navier--Stokes d'openai a montré qu'une déclaration forgée avec l'option
 \lean{debug.skipKernelTC} peut afficher une liste d'axiomes irréprochable. Le rejeu complet par le noyau ferme cette
-porte dérobée. Par honnêteté : les articles sources des sections~\ref{ch2:sec:pot} et~\ref{ch2:sec:lib} rapportent la
-liste d'axiomes, les témoins plantés, des recherches textuelles de jetons interdits et des recompilations par un agent
-séparé ; ils ne rapportent pas de rejeu \texttt{leanchecker}, rapporté en revanche pour l'audit A2. Le \tierA{} de ces
-sections est donc celui de leurs articles : liste d'axiomes, témoins plantés détectés, recompilation indépendante par un
-agent d'IA.
+porte dérobée. Par honnêteté : les articles sources de ces sections ne rapportaient pas de rejeu \texttt{leanchecker}. Ce rejeu a été
+fait pour ce livre le 2026-10-26 (enregistrement \texttt{results/kernel\_replay\_2026-10-26/}), sur les modules
+cités ici : code de retour~0 pour chacun des modules dipolaires (\lean{DipolarExciton}, \lean{DipolarExcitonMultipolar},
+\lean{DipolarExcitonStep1}), de Yukawa (\lean{Yukawa}, \lean{YukawaMix}), de Keldysh (\lean{KeldyshCM}) et de la
+bibliothèque CM/Bernstein (\lean{Basic}, \lean{Bernstein}, \lean{Laplace}, \lean{Corollaries}, \lean{Applications},
+\lean{Examples}, \lean{Limits}), et la recherche textuelle ne trouve aucun jeton interdit hors des fichiers de contrôles
+plantés. Le rejeu porte sur les déclarations de ces modules ; Mathlib et le cœur de Lean sont chargés, non rejoués.
+Les modules de la section~\ref{ch2:sec:ss} (Sandier--Serfaty) figurent dans le plan de rejeu mais n'avaient pas été
+rejoués à l'assemblage de ce livre : leurs énoncés portent l'étiquette \tierAs{}.
 \end{remark}
 
 \subsection{Règle 4 : le producteur n'est pas le vérificateur}\label{ch2:ssec:prodverif}
@@ -228,7 +232,7 @@ et trou--trou à distance $r$ (répulsion $+1/r$ chacune), et deux paires crois�
 $-1/\sqrt{r^2+d^2}$ chacune). On néglige l'énergie de liaison interne, constante. En unités $e^2/(4\pi\varepsilon)$ :
 \[V(r)=\frac2r-\frac2{\sqrt{r^2+d^2}},\qquad g_d(t)=2\bigl(t^{-1/2}-(t+d^2)^{-1/2}\bigr),\quad V(r)=g_d(r^2).\]
 À grande distance $V(r)=d^2/r^3+O(r^{-5})$ : la loi dipôle--dipôle. Ce comptage de paires est \tierC{} ; l'identité
-algébrique $g_d(r^2)=2(1/r-1/\sqrt{r^2+d^2})$ est vérifiée par le noyau (\lean{g_inplane}, \tierA, module vérifié par le producteur seulement)~\cite{ch2dip}.
+algébrique $g_d(r^2)=2(1/r-1/\sqrt{r^2+d^2})$ est vérifiée par le noyau (\lean{g_inplane}, \tierA{} : le module \texttt{DipolarExcitonStep1.lean} n'était vérifié que par son producteur dans l'article source~\cite{ch2dip} ; il a depuis été rejoué par \lean{leanchecker}, code~0).
 \end{physbox}
 
 \begin{leanbox}[--- \lean{formal_cert/Autoresearch/DipolarExciton.lean:22}]
@@ -625,6 +629,8 @@ theorem laplace_admissible (h : MixtureData μ k m) :
 \end{lstlisting}
 \end{leanbox}
 
+Ce théorème est ré-exporté sous le nom \lean{ALEXIS} (chapitre~5).
+
 \paragraph{Étape 2 : l'instance de Keldysh.} On prend la mesure de Lebesgue sur $]0,+\infty[$, $k(a)=\frac1{4a}$ et
 $m(a)=\frac{w(a)}{2a}$. Il faut vérifier les moments : $F_n(a)=(4a)^{-n}e^{-c/(4a)}\frac{w(a)}{2a}$ est intégrable.
 On coupe en $a=1$. Sur $]0,1]$, avec $u=\frac1{4a}$ : $F_n=2w(a)\,u^{n+1}e^{-cu}$, et $e^{cu}\ge(cu)^N/N!$ donne
@@ -701,7 +707,7 @@ Article : doi\string:10.5281/zenodo.23646107.
 \section{La généralisation : une bibliothèque CM/Bernstein}\label{ch2:sec:lib}
 
 Les trois démonstrations précédentes ont un air de famille : une différence de translatées (dipôles), un produit et une
-composition avec $\sqrt t$ (Yukawa), un mélange de Laplace (Keldysh). La bibliothèque P3~\cite{ch2cm} (doi\string:10.5281/zenodo.23653842)
+composition avec $\sqrt t$ (Yukawa), un mélange de Laplace (Keldysh). La bibliothèque P3~\cite{p3} (doi\string:10.5281/zenodo.23653842)
 isole ces mécanismes une fois pour toutes. Bilan de la porte : \textbf{130 théorèmes} déclarés, chacun avec sa ligne
 \texttt{\#print axioms}, tous dans la liste autorisée, aucun avertissement ; un audit par un agent d'IA séparé a
 reconstruit les 11 fichiers et 5 modules prérequis depuis les sources et trouvé 0 constante hors liste parmi 167
@@ -709,7 +715,7 @@ reconstruit les 11 fichiers et 5 modules prérequis depuis les sources et trouv�
 
 \subsection{Deux définitions et un pont}
 \begin{definition}[fonction de Bernstein]
-$\psi:\,]0,+\infty[\,\to\R$ est \emph{de Bernstein} si elle est $C^\infty$, positive, et si $\psi'$ est CM.
+$\psi:\,]0,+\infty[\,\to\R$ est \emph{de Bernstein} si elle est $C^\infty$, positive au sens large ($\psi\ge0$), et si $\psi'$ est CM.
 Exemples : $at+b$ ($a,b\ge0$), $t^\alpha$ pour $0\le\alpha\le1$, en particulier $\sqrt t$ ; $1-e^{-at}$ ; $\ln(1+t)$.
 \end{definition}
 \begin{leanbox}[--- \lean{formal_cert/Programmes/CompletelyMonotone/Basic.lean:28-30, 33-34} et \lean{Bernstein.lean:24-25}]
@@ -809,7 +815,7 @@ induction ad hoc ; la bibliothèque couvre $\kappa\ge0$.
 plus que tous les moments sont finis, mais seulement que $e^{-ck}m$ est intégrable pour tout $c>0$ : l'inégalité
 $u^n\le n!\,(c/2)^{-n}e^{(c/2)u}$ ($u\ge0$) donne $k^ne^{-ck}m\le\frac{n!}{(c/2)^n}e^{-(c/2)k}m$, d'où tous les
 moments. C'est la direction \emph{facile} du théorème de Bernstein--Widder (une transformée de Laplace d'une mesure
-positive est CM) ; la direction difficile (toute fonction CM est une telle transformée~\cite{ch2widder}) n'est
+positive est CM) ; la direction difficile (toute fonction CM est une telle transformée~\cite{widder}) n'est
 \emph{pas} démontrée.
 
 \subsection{Les trois potentiels deviennent des corollaires}
@@ -836,7 +842,7 @@ dépendances des trois résultats H1, H2, H3 réunis : elle \emph{augmente} quan
 coût \emph{marginal} d'un nouveau potentiel devient petit. Pour Keldysh, la preuve courte s'appuie toujours sur les
 bornes lourdes de \lean{keldysh_data} (erfcx, intégrabilité) du module d'origine : l'hypothèse affaiblie est
 \emph{disponible} mais n'est pas \emph{exercée}. Mathlib contient déjà une notion voisine, \lean{AbsolutelyMonotoneOn}
-(sans signes alternés) ; la bibliothèque n'est pas prête pour Mathlib~\cite{ch2cm}.
+(sans signes alternés) ; la bibliothèque n'est pas prête pour Mathlib~\cite{p3}.
 \end{warnbox}
 
 \paragraph{Nouvelles conséquences \tierA, conditionnelles pour l'optimalité.} Yukawa à c\oe{}ur mou
@@ -932,7 +938,7 @@ def SandierSerfatyStatement : Prop :=
             (∀ R : ℝ, 1 < R → HasLocalEnergy Λ E (χ R) (w R)) → WSq w₀ ≤ WSq w
 \end{lstlisting}
 \end{leanbox}
-\noindent Seuls dix lemmes de non-dégénérescence sont \tierA{} : la classe admissible est non vide (le champ $E=-\pi x$,
+\noindent Seuls dix lemmes de non-dégénérescence sont \tierAs{} : la classe admissible est non vide (le champ $E=-\pi x$,
 sans charge), la constante de fond $2\pi$ est porteuse (avec $0$ ou $-2\pi$ à la place, ce champ n'est plus
 admissible), les classes de troncatures sont non vides. Attention : le témoin de \lean{competitor_nonvacuous} est ce
 champ $-\pi x$, dont l'énergie est $+\infty$ \tierC{} ; il montre que les hypothèses sur un concurrent sont
@@ -956,9 +962,9 @@ réel} appartient à l'intervalle.
 \begin{center}\small
 \begin{tabular}{@{}p{0.31\linewidth}p{0.5\linewidth}l@{}}\toprule
 Résultat (journaux sauvegardés) & Valeur & Niveau\\\midrule
-Étapes complètes en L1 & 4 sur 12 (\lean{init_constants}, \lean{bcons/eps}, \lean{calcLam}, \lean{calcK}) & \tierA\\
+Étapes complètes en L1 & 4 sur 12 (\lean{init_constants}, \lean{bcons/eps}, \lean{calcLam}, \lean{calcK}) & \tierAs{} pour \lean{init_constants}, \lean{bcons/eps} ; \tierC{} pour \lean{calcLam}, \lean{calcK} (pas de recompilation indépendante)\\
 \quad dont conditionnelles & \lean{calcLam}, \lean{calcK} (tables en prémisses), \lean{bcons} (coefficients $c_m$) & \\
-Étapes complètes en L2 & 1 sur 12 (\lean{init_constants} : $\ln2,\pi,p,R_0,a$ réels) & \tierA\\
+Étapes complètes en L2 & 1 sur 12 (\lean{init_constants} : $\ln2,\pi,p,R_0,a$ réels) & \tierAs\\
 Part des opérations d'intervalles réexécutées & $1\,685\,129$ sur $1\,238\,829\,689$, soit $0{,}136\,\%$ & \tierX\\
 Énoncés faux plantés rejetés & 11 & \tierX\\
 Coût projeté du reste en L1 & 854 à 2\,240 heures-c\oe{}ur & \tierX\\\bottomrule
@@ -974,7 +980,7 @@ est le niveau L2 du contenu analytique (fonctions radiales, coefficients de rés
 30 autres étapes de la réduction : un projet de plusieurs mois \tierC~\cite{ch2ssl}. Article A1 :
 doi\string:10.5281/zenodo.23656804.
 
-\paragraph{Le lemme \lean{signed_endpoints} \tierA.} C'est le seul lemme de la réduction démontré complètement. Il
+\paragraph{Le lemme \lean{signed_endpoints} \tierAs.} C'est le seul lemme de la réduction démontré complètement. Il
 permet de traiter un secteur de Voronoï dont le pied de la perpendiculaire tombe hors de son arête. Cadre : un noyau
 $G(d,s)$, pair en $s$ et localement intégrable pour $d\ge d_0$, et sa primitive $g_d(x)=\int_0^xG(d,s)\,ds$.
 
@@ -1007,7 +1013,7 @@ intégrale infinie \emph{viole} l'hypothèse, au lieu de produire la valeur poub
 
 \begin{theorem}[points d'extrémité signés]\label{ch2:thm:signed}
 Sous les hypothèses du tableau, pour $d\ge d_0$ et $|\alpha|,|\beta|<\frac\pi2$ avec $\alpha+\beta>0$ :
-$g_d(d\tan\alpha)+g_d(d\tan\beta)\ge K$. \tierA
+$g_d(d\tan\alpha)+g_d(d\tan\beta)\ge K$. \tierAs
 \end{theorem}
 \begin{humanproof}
 \emph{(1) Imparité.} Par parité de $G(d,\cdot)$ et le changement de variable $s\mapsto-s$, $g_d(-x)=-g_d(x)$.
@@ -1037,7 +1043,7 @@ n'est revendiquée}. La fidélité de l'énoncé au manuscrit a été comparée 
 
 \subsection{B3 : pourquoi la méthode ne passe pas telle quelle en dimension trois}\label{ch2:ssec:b3}
 En dimension trois, l'analogue est la conjecture de Wigner : le réseau cubique centré (bcc) minimiserait l'énergie du
-jellium parmi \emph{toutes} les configurations ; il n'est connu optimal que parmi les réseaux de Bravais~\cite{ch2mn}
+jellium parmi \emph{toutes} les configurations ; il n'est connu optimal que parmi les réseaux de Bravais de covolume un, pour l'énergie de Born coulombienne (Muratov--Novaga, théorème~1, p.~4~\cite{ch2mn})
 \tierL. L'étude B3 (doi\string:10.5281/zenodo.23655002)~\cite{ch2b3} découpe la preuve plane en 13 étapes et classe chacune :
 indépendante de la dimension, transférable, ou spécifiquement plane. Le décompte d'incidences (identité d'Euler par
 cellule) \emph{n'est pas} l'obstacle.

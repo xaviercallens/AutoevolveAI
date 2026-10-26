@@ -136,10 +136,10 @@ Le deuxième énoncé est essentiel : il garantit que l'inégalité n'est pas le
 majoration $g_d(t)\le d^2t^{-3/2}$ et de la convergence de la somme de Riesz d'exposant~3. Le troisième énoncé
 est un témoin négatif formel : le potentiel $h_d(t)=t^{-1/2}-2(t+d^2)^{-1/2}$, qui compte deux fois l'attraction
 croisée, n'est pas admissible, puisque $h_d(d^2)=(1-\sqrt2)/d<0$. Article :
-doi:10.5281/zenodo.23646103~\cite{ch5:dipolar}.
+doi:10.5281/zenodo.23646103~\cite{ch2dip}.
 
 \paragraph{Les données.} Une recherche sur le Hub (26 requêtes, dont C2DB, \emph{heterobilayer}, TMD et
-\emph{interlayer}) n'a trouvé aucun jeu de données d'hétérobicouches~\cite{ch5:dipolar}. Nous utilisons donc un miroir
+\emph{interlayer}) n'a trouvé aucun jeu de données d'hétérobicouches~\cite{ch2dip}. Nous utilisons donc un miroir
 ColabFit de JARVIS-DFT~\cite{ch5:jarvis} :
 \begin{itemize}
 \item identifiant : \url{colabfit/JARVIS_DFT_3D_12_12_2022} ;
@@ -198,7 +198,7 @@ Converti en énergie (non écrantée, à diviser par $\varepsilon_r$), l'écart 
 $0{,}0014$, $0{,}044$ et $0{,}224$~meV par exciton aux trois densités. Ces valeurs sont interpolées sur la grille ;
 l'article donnait $0{,}223$~meV au point de grille le plus proche. C'est de un à cinq ordres de grandeur sous la
 profondeur des puits de moiré, \og des dizaines à 100~meV \fg{}~\cite{ch5:wang}. Dans l'étude publiée, aucun
-des 21 compétiteurs relaxés par CVODE n'est passé sous le réseau triangulaire~\cite{ch5:dipolar}.
+des 21 compétiteurs relaxés par CVODE n'est passé sous le réseau triangulaire~\cite{ch2dip}.
 
 \paragraph{Les témoins.}
 \begin{itemize}
@@ -259,11 +259,11 @@ theorem latticeEnergy_yukawa_lt_top {κ : ℝ} (hκ : 0 < κ) : latticeEnergy (g
 Le module \texttt{YukawaMix.lean} étend le résultat à tout mélange fini $\sum_iw_ie^{-\kappa_ir}/r$ à poids
 $w_i\ge0$. Le témoin négatif formel est le mélange signé $g_1-2g_2$ : il vaut $2e^{-1/2}-4e^{-1}\approx-0{,}2585$
 en $t=\tfrac14$, donc il n'est pas admissible. Le théorème ne s'applique pas à lui, ce qui ne veut pas dire que
-l'optimalité échoue. Article : doi:10.5281/zenodo.23646105~\cite{ch5:yukawa}.
+l'optimalité échoue. Article : doi:10.5281/zenodo.23646105~\cite{ch2yuk}.
 
 \paragraph{Les données.} Le 2026-10-25, une recherche sur le Hub (\emph{dusty plasma}, \emph{complex plasma},
 \emph{colloid}, \emph{yukawa}, \emph{wigner crystal}) n'a trouvé aucun jeu de positions de grains ou de
-colloïdes~\cite{ch5:yukawa}. C'est une absence constatée par recherche, pas une preuve. Les conditions initiales
+colloïdes~\cite{ch2yuk}. C'est une absence constatée par recherche, pas une preuve. Les conditions initiales
 désordonnées viennent donc d'un tout autre domaine, la catalyse :
 \begin{itemize}
 \item identifiant \texttt{colabfit/OC20\_IS2RES\_val\_id}, licence CC-BY-4.0~\cite{ch5:oc20} ;
@@ -325,7 +325,7 @@ $R=20$). Les trois relaxations à $\kappa=2$ convergent, sans mode négatif de l
 \item boîte incommensurable $17\times17$ : écart $3{,}78\times10^{-4}$, 4 défauts.
 \end{itemize}
 Dans l'étude complète, aucune des 24 étapes relaxées sous le potentiel exact n'est passée sous le réseau
-triangulaire~\cite{ch5:yukawa}.
+triangulaire~\cite{ch2yuk}.
 
 \paragraph{Les témoins.}
 \begin{itemize}
@@ -334,7 +334,7 @@ $1{,}4\times10^{-16}$ près en relatif au plus (le seuil exigé est $10^{-12}$).
 infinie à $2{,}2\times10^{-16}$ près.
 \item \emph{Négatifs.} Les énergies tronquées à $r_c=8$ ratent la valeur exacte de bien plus que $10^{-9}$. La boîte
 $17\times17$, qui ne peut pas contenir le réseau triangulaire, reste au-dessus. Le réseau carré parfait est un col
-du potentiel exact, avec 72 modes négatifs à $\kappa=2$ et 64 à $\kappa=1$~\cite{ch5:yukawa}.
+du potentiel exact, avec 72 modes négatifs à $\kappa=2$ et 64 à $\kappa=1$~\cite{ch2yuk}.
 \end{itemize}
 
 \paragraph{Ce que cela ne montre pas.}
@@ -360,26 +360,26 @@ $S_B(k)=k/\sqrt{k^{*2}+k^2}$ et
 Les deux membres sont positifs ; on compare leurs carrés. $S_B^2\le k/2k^*$ équivaut à
 $2k^*k\le k^{*2}+k^2$, c'est-à-dire à $(k-k^*)^2\ge0$.
 \end{humanproof}
-L'énoncé est de niveau \tierA{}, dans l'environnement QuantumFluids (Lean v4.34.0-rc2), sous le nom
+L'énoncé est de niveau \tierAs{}, dans l'environnement QuantumFluids (Lean v4.34.0-rc2 ; aucun rejeu \texttt{leanchecker} enregistré pour cet environnement), sous le nom
 \lean{sBog_le_sqrt}. Les deux témoins sont vérifiés par le noyau : le test se déclenche sur la valeur libre $S=1$
 pour tout $0<k<2k^*$ (\lean{free_S_one_violates}), et ne se déclenche jamais sur $S_B$. Le corollaire
 \lean{not_bogoliubov_of_structure_factor} donne le \og test de diffraction \fg{} : si un $S$ mesuré dépasse
 $\sqrt{k/2k^*}$, ce $S$ n'est pas le facteur de structure d'un gaz de Bogoliubov ayant cette vitesse du son.
 L'argument de Feynman--Bijl relie $S$ à l'énergie d'excitation, $\varepsilon(k)\le\hbar^2k^2/(2mS(k))$. Son
 c\oe ur à un mode est formalisé en Lean 4.34.1, l'identité de la règle de somme f étant prise comme
-\emph{hypothèse}. Articles : doi:10.5281/zenodo.23646117~\cite{ch5:bsk} et
-doi:10.5281/zenodo.23653846~\cite{ch5:p6}.
+\emph{hypothèse}. Articles : doi:10.5281/zenodo.23646117~\cite{ch3-bsk} et
+doi:10.5281/zenodo.23653846~\cite{ch3-fb}.
 
 \paragraph{Les données (pas Hugging Face).} Aucun jeu de données de facteur de structure n'existe sur le Hub : les
 recherches de ces deux articles n'en ont trouvé aucun. Nous utilisons la Table~14.1 de la compilation de Donnelly et
-Barenghi~\cite{ch5:donnelly}, dans son édition web (supposée, sans vérification, reproduire la table de 1998) :
+Barenghi~\cite{ch3-db}, dans son édition web (supposée, sans vérification, reproduire la table de 1998) :
 \begin{itemize}
 \item 99 points avec $Q>0$ : 49 points de rayons X (Robkoff--Hallock) et 50 points de neutrons (Svensson et al.) ;
 \item des températures de 1,4 à 4~K, aucune barre d'erreur imprimée.
 \end{itemize}
 C'est une source secondaire de niveau \tierL{}. Le fichier extrait est
 \url{papers/prog_superfluid_structure_factor/data/he4_Sk_donnelly_table14_1.csv}. On prend
-$c=238{,}3\pm0{,}1$~m/s~\cite{ch5:godfrin}, d'où $k^*=3{,}00379$~\AA$^{-1}$ (entre 3,0025 et 3,0051).
+$c=238{,}3\pm0{,}1$~m/s~\cite{ch3-godfrin}, d'où $k^*=3{,}00379$~\AA$^{-1}$ (entre 3,0025 et 3,0051).
 
 \paragraph{La méthode.} Pour chaque point, le verdict est :
 \begin{itemize}
@@ -456,7 +456,7 @@ Notons $H_3(0)$ la valeur de $H$ à l'instant $0$. Comme $H$ est conservé, $2D\
 $2D\Omega(t)\le H_3(0)+|C(t)|\le H_3(0)+S(t)^{3/2}$. Comme $S$ est conservé,
 $2D\Omega(t)\le H_3(0)+(2E(0))^{3/2}$.
 \end{humanproof}
-Lean vérifie tout cela \tierA{} (Lean v4.34.0-rc2, Mathlib du projet) :
+Lean vérifie tout cela \tierAs{} (Lean v4.34.0-rc2, Mathlib du projet ; sans rejeu \texttt{leanchecker}) :
 \begin{itemize}
 \item l'identité de taux de $H$ le long du champ de vecteurs ;
 \item la règle de dérivation en chaîne ;
@@ -591,10 +591,10 @@ les noms \lean{KAL} et \lean{ILENE} dans la section~\ref{ch5:acronymes}.
 Le nombre de mutants sur un graphe n'est \emph{pas} une chaîne de Markov en général. Sur le 4-cycle, la probabilité de
 montée d'un pas dépend de la configuration, $1/3$ contre $2/3$ à $r=2$. Ce qui est vrai, et prouvé, c'est le biais
 \emph{par configuration} $P^+=r\,P^-$. Sur l'étoile à $n=3$ nœuds, qui n'est pas isotherme, les limites valent
-$5/12$, $2/3$ et $7/12$, contre $4/7$ pour Moran. Articles : doi:10.5281/zenodo.23653850~\cite{ch5:p7} et
-doi:10.5281/zenodo.23660071~\cite{ch5:n4}.
+$5/12$, $2/3$ et $7/12$, contre $4/7$ pour Moran. Articles : doi:10.5281/zenodo.23653850~\cite{ch4:P7} et
+doi:10.5281/zenodo.23660071~\cite{ch4:N4}.
 
-\paragraph{Les données : ce qu'elles illustrent, et ce qu'elles n'estiment pas.} Le dépôt Genetic du propriétaire
+\paragraph{Les données : ce qu'elles illustrent, et ce qu'elles n'estiment pas.} Le dépôt Genetic de l'auteur
 utilise les jeux \texttt{katarinagresova/Genomic\_Benchmarks\_*}~\cite{ch5:gb}. Nous en prenons un :
 \begin{itemize}
 \item identifiant \url{katarinagresova/Genomic_Benchmarks_demo_coding_vs_intergenomic_seqs}, révision
@@ -615,7 +615,7 @@ utilisées plus bas (0,8, 1, 1,2, 1,5 et 2) sont \emph{choisies}, pas mesurées.
 \paragraph{La méthode numérique.} La crate \texttt{qf-popgen} écrit la chaîne absorbante comme une équation
 différentielle linéaire, $\dot\pi=\pi(P-I)$ : c'est l'équation de Kolmogorov progressive de la chaîne uniformisée. Elle
 l'intègre avec CVODE (BDF, jacobien exact, $\mathrm{rtol}=10^{-11}$, $\mathrm{atol}=10^{-15}$). Un
-\emph{certificat d'absorption} refuse toute exécution douteuse, dans l'esprit fail-closed : une exécution n'est
+\emph{certificat d'absorption} refuse toute exécution douteuse, dans l'esprit « fail-closed » (qui refuse par défaut) : une exécution n'est
 acceptée que si cinq conditions sont réunies :
 \begin{itemize}
 \item le noyau est stochastique et absorbant ;
@@ -654,7 +654,7 @@ refusés, sans aucune exception. Sur les exécutions de Moran acceptées, l'éca
 exacte $S_i/S_N$ est de $3{,}1\times10^{-10}$ \tierX.
 
 Pour $N=3$, $r=2$, $i=1$, CVODE donne $0{,}5714285714284759$, soit un écart de $9{,}55\times10^{-14}$ à $4/7$.
-LeanFlow certifie alors deux affirmations \tierA{} (sur l'énoncé arithmétique seulement, liste d'axiomes vide) :
+LeanFlow certifie alors deux affirmations \tierA{} (sur l'énoncé arithmétique seulement, liste d'axiomes vide ; chaque affirmation est découpée par LeanFlow en propositions élémentaires) :
 \begin{itemize}
 \item \emph{proximité} : $4/7-10^{-11}<0{,}5714285714284759<4/7+10^{-11}$ ;
 \item \emph{harmonicité} : le vecteur $(0,\tfrac47,\tfrac67,1)$ vérifie exactement les équations du premier pas de la
@@ -764,8 +764,8 @@ montre pas \fg{}, et cette rubrique compte autant que le résultat.
 
 Quelques théorèmes de ce livre portent, dans le code Lean, un second nom fait d'initiales. Ces noms ne
 prouvent rien de nouveau : ce sont des ré-exportations de résultats déjà vérifiés par le noyau, chacune accompagnée
-d'un rétro-acronyme dans sa documentation. Ils sont rassemblés dans le fichier
-\texttt{formal\_cert/Programmes/Famille/Acronymes.lean}, dont voici la liste.
+d'un rétro-acronyme dans sa documentation. Ils sont rassemblés dans
+le fichier \texttt{Acronymes.lean} de \texttt{formal\_cert/Programmes/}, dont voici la liste.
 
 \IfFileExists{acronymes_listing.tex}{\input{acronymes_listing.tex}}{}
 

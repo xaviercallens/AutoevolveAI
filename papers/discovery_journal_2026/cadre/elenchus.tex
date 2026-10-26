@@ -1,0 +1,412 @@
+% Chapitre 1 : la méthode Elenchus, expliquée à ma grand-mère.
+\xdef\labelcourant{ch:elenchus}
+\chapter{La méthode Elenchus, expliquée à ma grand-mère}
+
+Si je devais expliquer à ma grand-mère ce que j'ai fait cette année, je ne commencerais pas par les théorèmes. Je
+commencerais par une question qu'elle se pose sûrement : \emph{comment savoir si une machine dit vrai ?} Les agents
+d'IA écrivent vite et bien. Ils écrivent aussi, avec la même assurance, des choses fausses. Ce chapitre raconte la
+méthode que nous avons fini par adopter pour ne plus les croire sur parole. Elle n'a rien de magique. Elle tient en
+quelques règles qu'une cuisinière, un juge ou un inspecteur des ponts connaissent déjà.
+
+\section{Un nom grec pour une idée simple}
+
+\emph{Elenchos}, en grec ancien, désigne l'examen par questions, celui que pratiquait Socrate. Socrate ne cherchait pas
+à prouver qu'il avait raison. Il interrogeait son interlocuteur jusqu'à trouver l'endroit où ses affirmations se
+contredisaient. Ce qui résistait à l'examen méritait d'être cru, au moins un temps ; le reste devait être abandonné.
+
+Nous avons repris l'idée en la transformant en ingénierie. Au lieu d'un philosophe qui pose des questions, il y a des
+\emph{règles} que chaque résultat doit traverser avant d'être publié, et des \emph{programmes} qui posent une partie des
+questions à notre place. La méthode a été écrite en septembre 2026, dans un article qui décrit la façon de travailler
+d'un petit laboratoire assisté par l'IA, du choix des questions jusqu'à la publication.\reference{« A laboratory method
+for AI-assisted science », 18 septembre 2026. \doi{10.5281/zenodo.22829767}} Elle a ensuite été appliquée, de plus en plus
+strictement, à toutes les contributions de ce livre.
+
+Voici les règles, une par une.
+
+\begin{encadre}[Les sept règles d'Elenchus, en une page]
+\begin{enumerate}[leftmargin=1.6em]
+\item \textbf{Écrire l'affirmation avant le test}, et dire à l'avance ce qui la ferait tomber.
+\item \textbf{Donner un niveau à chaque affirmation} : A, L, C ou X, selon qui l'a vérifiée.
+\item \textbf{Faire un test qui doit échouer et un test qui doit réussir}, pour vérifier que le test fonctionne.
+\item \textbf{Séparer celui qui fabrique de celui qui vérifie.}
+\item \textbf{Publier les résultats négatifs}, avec le même soin que les autres.
+\item \textbf{Confier la logique à un juge impartial}, le noyau de Lean, et savoir comment on peut le tromper.
+\item \textbf{Tenir un registre} de toutes les affirmations, avec leur niveau et leurs preuves, et le laisser dire
+« non » quand il manque quelque chose.
+\end{enumerate}
+\end{encadre}
+
+\section{Règle 1 : écrire l'affirmation avant le test}
+
+Un archer malhonnête tire d'abord sa flèche, puis peint la cible autour. Il touche toujours le centre. En science, la
+tentation est la même : on fait un calcul, on regarde le résultat, puis on décide après coup ce qu'on cherchait. Le
+remède est connu depuis longtemps en médecine, où il s'appelle le \emph{pré-enregistrement} : avant de lancer
+l'expérience, on écrit, daté et archivé, ce que l'on prédit, et ce qui, si on l'observe, prouvera qu'on avait tort.
+
+Dans ce projet, chaque hypothèse importante a été pré-enregistrée dans un fichier, avant le calcul. Le fichier dit
+l'affirmation, la probabilité que l'auteur lui donnait de survivre au test, et la « règle d'arrêt » : ce qui la tuerait.
+Par exemple, la conjecture que nous appellerons QU-1 (elle revient plus loin dans ce chapitre) a été inscrite avec une
+chance de survie estimée à 0,6, c'est-à-dire un peu plus d'une chance sur deux.
+
+Pré-enregistrer ne garantit pas qu'on ne se trompe pas. Cela garantit qu'on ne peut pas \emph{se raconter} qu'on ne
+s'est pas trompé. Et cela oblige à une forme d'honnêteté supplémentaire : quand le travail réel s'écarte de ce qui
+avait été annoncé, il faut le dire. Plusieurs articles de ce livre ont une section intitulée « déviations par rapport
+au pré-enregistrement ». L'un d'eux, au chapitre~\ref{ch:c07}, signale qu'une de ses propres sous-hypothèses
+pré-enregistrées était tout simplement fausse.
+
+\section{Règle 2 : chaque affirmation porte un niveau}
+
+La deuxième règle est la plus visible dans ce livre : chaque affirmation porte une étiquette qui dit \emph{qui l'a
+vérifiée}. Il y a quatre niveaux, et chacun a son image.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  niv/.style={rectangle,rounded corners=3pt,minimum width=5.3cm,minimum height=1.55cm,text width=4.9cm,
+    align=left,inner sep=6pt,font=\small},
+  lettre/.style={circle,minimum size=0.95cm,font=\sffamily\bfseries\large,text=white,inner sep=0pt}]
+  \node[niv,fill=okvert!14!ivoire,draw=okvert,line width=0.8pt] (A) at (0,0)
+    {\lettreniv{okvert}{A}\textbf{« Le juge a regardé. »}\\ Un programme, le noyau de Lean, a contrôlé chaque pas logique.};
+  \node[niv,fill=okbleu!12!ivoire,draw=okbleu,line width=0.8pt] (L) at (5.75,0)
+    {\lettreniv{okbleu}{L}\textbf{« C'est écrit dans un livre sérieux. »}\\ Un résultat publié, lu et cité précisément.};
+  \node[niv,fill=okorange!14!ivoire,draw=okorange,line width=0.8pt] (C) at (0,-1.95)
+    {\lettreniv{okorange}{C}\textbf{« Un raisonnement. »}\\ Mené ici par des agents d'IA ; personne ne l'a vérifié à la machine.};
+  \node[niv,fill=okpourpre!14!ivoire,draw=okpourpre,line width=0.8pt] (X) at (5.75,-1.95)
+    {\lettreniv{okpourpre}{X}\textbf{« Une esquisse au crayon. »}\\ Un calcul en nombres à virgule : il oriente, il ne prouve rien.};
+\end{tikzpicture}
+\caption{Les quatre niveaux de confiance, avec les mots de tous les jours utilisés dans tout le livre.}
+\label{fig:niveaux}
+\end{figure}
+
+\paragraph{\niveau{A} « le juge a regardé »} Un programme, le \emph{noyau} de Lean, a contrôlé chacun des pas logiques
+de la démonstration. Ce n'est pas l'ordinateur qui « pense » ; il vérifie qu'aucun pas ne saute. Pour mériter ce
+niveau, trois contrôles doivent passer : la démonstration n'utilise que trois règles de base de la logique, toujours
+les mêmes (leurs noms techniques sont \texttt{propext}, \texttt{Classical.choice} et \texttt{Quot.sound}) ; un
+second programme a relu la démonstration de bout en bout, ce qu'on appelle le \emph{rejeu} ; et une recherche des
+raccourcis qui permettent de contourner le juge n'a rien trouvé. Quand le rejeu manque, le livre écrit
+\niveau{As}.
+
+\paragraph{\niveau{L} « c'est écrit dans un livre sérieux »} Le résultat a été publié dans la littérature
+scientifique, et nous l'avons lu et cité avec la page et la ligne. Nous n'avons pas refait la preuve, mais d'autres
+l'ont relue avant nous.
+
+\paragraph{\niveau{C} « un raisonnement, mené ici par des agents d'IA, que personne n'a vérifié à la machine »}
+C'est un raisonnement écrit, souvent juste, que personne n'a soumis au juge. Dans les sciences, ce raisonnement est
+d'habitude celui d'un chercheur ; dans ce livre, il a presque toujours été mené par un agent d'IA et relu par un autre
+agent. C'est une raison de plus d'être prudent.
+
+\paragraph{\niveau{X} « une esquisse au crayon »} C'est un calcul fait par ordinateur avec des nombres à virgule, comme
+ceux d'une calculatrice. Ces nombres sont arrondis à chaque opération ; ils donnent une très bonne idée, et parfois une
+idée fausse. Une simulation, même énorme, reste une esquisse.
+
+\medskip
+Une affirmation complète mélange souvent plusieurs niveaux. Dans ce cas, \emph{elle vaut ce que vaut son maillon le
+plus faible}. Un exemple le montrera à la fin du chapitre.
+
+\begin{analogie}
+Pensez aux étiquettes d'un pot de confiture. « Fait maison » ne dit pas la même chose que « contrôlé par le service
+d'hygiène », ni que « recette de grand-mère, jamais analysée ». Aucune étiquette n'est honteuse ; ce qui serait
+malhonnête, c'est de coller « contrôlé » sur un pot que personne n'a ouvert. L'image s'arrête là : un pot contrôlé
+peut encore être mauvais, alors qu'un théorème de niveau A est exactement aussi vrai que l'énoncé qu'il démontre ; c'est
+la question de l'énoncé qui reste ouverte, comme on le verra.
+\end{analogie}
+
+\section{Règle 3 : un test qui doit échouer, et un test qui doit réussir}
+
+Un détecteur de fumée qui ne sonne jamais est très rassurant, jusqu'au jour de l'incendie. C'est pourquoi on appuie
+sur son bouton de test : on vérifie qu'il \emph{sait} sonner. Les scientifiques appellent cela des \emph{contrôles}.
+Un contrôle positif est un cas où l'on sait que la réponse doit être « oui » ; un contrôle négatif, un cas où l'on sait
+qu'elle doit être « non ». Si le test répond « oui » aux deux, il ne vaut rien.
+
+Dans ce projet, aucune mesure n'est rapportée sans ses deux contrôles. Quelques exemples que l'on retrouvera dans les
+chapitres :
+\begin{itemize}
+\item Pour vérifier que le juge Lean refuse bien une démonstration inachevée, on lui soumet exprès une démonstration
+\emph{trouée}, avec la mention « à finir » (en Lean, ce mot s'écrit \texttt{sorry}). Le contrôle réussit quand le trou
+est détecté.
+\item Pour vérifier un certificat de calcul, on lui donne aussi un cas où il \emph{doit} échouer. Dans l'exemple de la
+fin du chapitre, la même méthode, appliquée à un autre paramètre où le résultat attendu est différent, « échoue, comme
+elle le doit ».
+\item Pour vérifier un auditeur, on cache des erreurs dans le travail qu'on lui confie. Au chapitre~\ref{ch:c07},
+l'auditeur a planté des erreurs dans une copie des fichiers, et elles ont été attrapées. Au chapitre~\ref{ch:c13}, une
+copie volontairement abîmée d'un grand certificat a été rejetée.
+\end{itemize}
+Même la couverture de ce livre a ses contrôles : le programme qui la dessine vérifie que chaque cellule a six côtés et
+une aire de~1, puis vérifie que ce test échoue sur un réseau légèrement déformé.
+
+\begin{analogie}[Une image : le détecteur de fumée]
+Un test qui n'a jamais échoué n'a jamais été testé. Avant de croire un « tout va bien », on vérifie que l'appareil
+sait dire « attention ». L'image a une limite : un détecteur qui sonne au test peut encore manquer un feu d'un autre
+genre. Un contrôle montre que le test marche sur \emph{ce} cas, pas sur tous.
+\end{analogie}
+
+\section{Règle 4 : celui qui fabrique n'est pas celui qui vérifie}
+
+Le cuisinier qui goûte sa propre sauce la trouve toujours à son goût : il sait ce qu'il a voulu y mettre. C'est pour
+cela qu'on fait goûter quelqu'un d'autre, qui ne connaît pas la recette et qui n'a aucune raison de faire plaisir au
+cuisinier.
+
+Dans ce projet, l'agent d'IA qui produit un résultat n'est jamais celui qui le vérifie. Un second agent, lancé à part,
+reçoit les fichiers, les recompile, refait les calculs avec ses propres programmes et rend un verdict écrit dans un
+fichier d'audit. Les verdicts ont des noms précis : « accepté avec corrections », « confirmé avec corrections ». Puis
+l'auteur applique les corrections, et un second fichier, le fichier de révision, en garde la trace. Par exemple,
+l'audit des distances entre galaxies (chapitre~\ref{ch:c01}) a relevé treize défauts d'attribution et de portée,
+corrigés avant la publication ; celui du dernier article de l'année, sur les forces écrantées, a conduit à douze
+révisions.\reference{\doi{10.5281/zenodo.23663551}}
+
+Cette séparation a une limite évidente, et nous la disons : le goûteur est lui aussi une IA, souvent du même fabricant.
+Il ne connaît pas la recette, mais il a peut-être les mêmes papilles. C'est une raison pour laquelle un audit par IA
+n'est pas une relecture humaine (nous y revenons plus bas).
+
+\begin{analogie}[Une image : la recette goûtée par un autre]
+On ne demande pas au cuisinier si son plat est bon ; on le fait goûter à quelqu'un qui n'a pas cuisiné, et on note ce
+qu'il dit. L'image s'arrête là où commence la science : ici, le goûteur ne donne pas seulement son avis, il refait la
+recette de son côté et compare les deux plats, gramme par gramme.
+\end{analogie}
+
+\section{Règle 5 : on publie les résultats négatifs}
+
+Un résultat négatif, c'est une idée qui ne marche pas : une formule que les données contredisent, une conjecture
+réfutée, une méthode qui ne s'étend pas. La tentation est grande de les ranger dans un tiroir. Mais un tiroir plein
+d'échecs cachés fausse l'image que tout le monde se fait d'un sujet : on ne voit que ce qui a réussi.
+
+Ce livre fait l'inverse. Trois des vingt contributions sont des « leçons » au sens strict, et beaucoup d'autres
+contiennent une réfutation. Au chapitre~\ref{ch:c05}, les mesures de l'hélium superfluide contredisent une formule que
+le projet avait lui-même proposée quelques semaines plus tôt. Aux chapitres~\ref{ch:c12} et~\ref{ch:c11}, une belle
+idée (« le réseau triangulaire est aussi le meilleur dans le monde quantique ») est démentie, d'abord par le calcul,
+puis avec un certificat. Au
+chapitre~\ref{ch:c20}, une affirmation du lot du 19 octobre est retirée parce que la mesure la contredit.
+
+Un résultat négatif bien fait n'est pas un échec : c'est une carte qui dit « ne passez pas par là ». Il apprend
+souvent plus que le succès qu'on espérait.
+
+\section{Règle 6 : un juge impartial, et comment on peut le tromper}
+
+\subsection{Le juge}
+
+Lean est un langage dans lequel on écrit des démonstrations mathématiques si détaillées qu'un ordinateur peut les
+contrôler. Au centre de Lean se trouve un petit programme, le \emph{noyau}, dont la seule tâche est de vérifier
+chaque pas : celui-ci découle-t-il vraiment du précédent, selon les règles admises ? Le noyau ne sait pas inventer une
+démonstration. Il sait seulement dire « oui, chaque pas est correct » ou « non, ici quelque chose ne va pas ».
+
+C'est un correcteur qui ne fatigue pas, ne flatte pas et se trompe rarement. Il ne fatigue pas : il relit la centième
+page avec la même attention que la première ; l'audit du chapitre~\ref{ch:c15} lui a fait relire 88\,400
+déclarations. Il ne flatte pas : il ne sait pas qui a écrit la démonstration, une IA célèbre ou un débutant, et cela
+lui est égal. Il se trompe rarement : son code est petit et public, conçu pour pouvoir être relu ; mais rarement ne
+veut pas dire jamais.
+
+\begin{analogie}[Une image : le procès]
+Imaginez un procès. L'agent d'IA qui a produit le résultat est la défense : il plaide que c'est vrai. L'agent qui
+l'audite est l'accusation : il cherche la faille. Le noyau de Lean est le juge, et ce juge a une particularité : il ne
+lit que les pièces écrites et la loi, jamais les plaidoiries. Les beaux discours ne l'impressionnent pas. Mais le juge
+ne décide pas de tout. Il ne dit pas si le procès portait sur la bonne question : c'est à l'humain, à la fin, de
+décider ce que le verdict veut dire et s'il mérite d'être publié. L'image s'arrête là : un vrai juge pèse des
+témoignages, alors que le noyau ne pèse rien, il vérifie.
+\end{analogie}
+
+\subsection{Quatre façons de tromper le juge, et comment on s'en aperçoit}
+
+Le juge est impartial, mais il n'est pas à l'abri d'une ruse. L'année nous en a appris quatre, et chacune a donné une
+règle.
+
+\paragraph{Le devoir rendu avec une page « à finir »} En Lean, on peut écrire \texttt{sorry} à la place d'un morceau de
+démonstration : c'est une façon de dire « je reviendrai plus tard ». Le programme accepte alors de compiler le fichier,
+et il \emph{termine sans erreur}. Pendant l'été, un article affirmait que ses vérifications Lean étaient réussies
+parce que le programme avait terminé sans erreur. Or un \texttt{sorry} termine, lui aussi, sans erreur. Le remède : ne
+jamais se fier au simple « terminé sans erreur », mais demander au juge la liste de ce sur quoi repose chaque
+théorème. Si un trou s'y cache, il apparaît sous le nom \texttt{sorryAx}.
+
+\paragraph{La règle ajoutée en douce} En Lean, on peut aussi déclarer un \emph{axiome} : une règle qu'on admet sans
+démonstration. Si l'on admet une règle fausse, on peut tout démontrer, y compris que $1=2$. Un des travaux de ce
+livre l'a montré exprès (chapitre~\ref{ch:c18}) : un fichier « démontrant » $1=2$ grâce à un axiome caché se compile
+sans la moindre erreur, et seul l'audit des axiomes le démasque. D'où la règle : la liste des axiomes de chaque
+théorème doit se limiter aux trois règles de base citées plus haut.
+
+\paragraph{La pièce glissée dans le dossier sans passer devant le juge} C'est la ruse la plus subtile, et elle a été
+trouvée par nos propres audits. Lean permet, par une option réservée aux développeurs, d'ajouter une déclaration
+\emph{sans la faire contrôler} par le noyau. Lors de l'audit des preuves d'OpenAI sur les équations des fluides
+(chapitre~\ref{ch:c15}), l'auditeur a fabriqué exprès une telle pièce, qui « démontre » une absurdité, et a constaté
+un résultat négatif qu'il a placé en tête de son rapport : \emph{la liste des axiomes ne détecte pas cette
+contrefaçon}.\reference{Audit A2, 26 octobre 2026, \nolinkurl{AXIOMS.md} et \nolinkurl{SOUNDNESS_SCAN.md}.} Elle est propre ;
+le juge n'a simplement jamais vu la pièce.
+
+La parade, c'est le \emph{rejeu} : un second programme, \texttt{leanchecker}, relit depuis le début toutes les
+déclarations enregistrées et les soumet de nouveau au noyau. Le 26 octobre, en même temps que le rejeu de nos propres modules, nous
+avons refait l'expérience sur une contrefaçon de contrôle. La liste des axiomes répondait que la pièce « ne dépend
+d'aucun axiome » : le contrôle habituel l'aurait laissée passer. Le rejeu, lui, s'est arrêté en erreur, avec le
+message « le type de la déclaration ne correspond pas ».\reference{Rejeu du 26 octobre 2026, \nolinkurl{results/kernel_replay_2026-10-26/},
+contrôle \texttt{KRForged}.} Le rejeu a été lancé sur 93 de nos modules de démonstration, qui ont tous passé ; une
+recherche des quatre options de contournement connues dans 871 fichiers n'a rien trouvé.
+
+\begin{analogie}[Une image : l'inspection du pont]
+Un pont porte une plaque : « inspecté et conforme ». La plaque, c'est la liste des axiomes : elle dit ce que le
+dossier contient. Mais un dossier peut contenir une page que l'inspecteur n'a jamais signée. Le rejeu, c'est
+l'inspecteur qui revient, et qui refait le tour du pont boulon par boulon, sans regarder la plaque. L'image a une
+limite : un pont s'use, une démonstration non. Une fois le rejeu passé, il n'y a pas à recommencer, sauf si l'on change
+les fichiers.
+\end{analogie}
+
+\paragraph{La bonne preuve d'une mauvaise question} La dernière ruse n'en est pas une, et c'est la plus importante. Le
+juge vérifie que la démonstration prouve l'énoncé écrit. Il ne vérifie pas que l'énoncé écrit dit bien ce que nous
+\emph{racontons} qu'il dit. Si j'écris en Lean « tout carré est un rectangle » en me trompant de définition, le juge
+validera avec joie un théorème sans intérêt. Seul un lecteur qui compare l'énoncé formel avec la question posée peut
+attraper ce genre d'erreur. Cette étape, que nous appelons \emph{l'audit de l'énoncé}, n'a encore été faite par aucun
+humain pour les résultats de ce livre. Le registre, règle suivante, le dit à chaque fois.
+
+\section{Règle 7 : le registre des affirmations}
+
+Chaque article de la fin de l'année est accompagné d'un \emph{registre} : un fichier qui contient une ligne par
+affirmation. Chaque ligne porte un identifiant, le niveau, l'énoncé en mots, une empreinte numérique de la preuve
+(une sorte de code-barre qui change si l'on modifie le moindre fichier), et une case « audit humain ». Voici, traduite,
+une vraie ligne du registre de l'audit des preuves sur les fluides (chapitre~\ref{ch:c15}) :
+
+\begin{encadre}[Une ligne du registre]
+\small
+\textsf{\textbf{P2NS-A-0001}} \quad \niveau{A} \quad \textsf{audit humain : aucun}\par\smallskip
+\emph{Énoncé :} le théorème Lean \texttt{navier\_stokes\_breakdown\_R3} affirme que, pour toute viscosité positive, il
+existe une vitesse initiale et une force, lisses et décroissant très vite, pour lesquelles aucune solution lisse
+d'énergie bornée des équations de Navier--Stokes n'existe. Notre propre audit des axiomes donne exactement les trois
+règles de base ; le module a été reconstruit à partir des sources, et ses 53\,752 déclarations ont été rejouées par le
+noyau. \emph{Un énoncé sur le terme Lean uniquement.}\par\smallskip
+\emph{Preuve :} empreinte \texttt{sha256:0c86f9d7\dots}
+\end{encadre}
+
+Un programme, la \emph{porte du registre}, lit toutes les lignes et refuse de dire « tout va bien » tant qu'il manque
+quelque chose. Pour cet article, sa réponse est : quatre fois le signal \texttt{LEDGER\_UNAUDITED\_TIER\_A}, « le noyau a
+vérifié la preuve, et aucune personne n'a encore certifié que l'énoncé veut dire ce que dit sa glose », puis le code de
+sortie~1, qui veut dire « non ».
+
+C'est voulu. Presque tous les registres de ce livre se terminent ainsi, parce que l'audit humain des énoncés n'a pas
+été fait. L'auteur a choisi de publier quand même, et de l'écrire dans chaque article. C'est déjà le cas de
+l'article du chapitre~\ref{ch:c03}, dont le registre compte vingt-deux affirmations. Publier avec le drapeau rouge
+levé, en le montrant, est plus honnête que de baisser le drapeau.
+
+\section{Ce qu'un audit par IA n'est pas}
+
+Il faut le dire clairement, parce que l'année nous a pris en défaut sur ce point : \textbf{un audit par un agent d'IA
+n'est pas une relecture par des pairs}. La relecture par des pairs, dans la science, c'est l'examen d'un travail par
+des chercheurs humains du domaine, qui engagent leur jugement et leur réputation. Rien dans ce livre n'a reçu cet
+examen.
+
+Les 19 et 20 octobre, des articles sont parus avec la mention « relu en cinq tours par des pairs ». Le 21 octobre,
+l'un d'eux a publié une seconde édition qui retire cette mention : le fichier de relecture joint « a été produit par un
+script qui n'appelle aucun relecteur ».\reference{Retrait du 21 octobre 2026 : \doi{10.5281/zenodo.23525655}} Dès le
+19 octobre, un autre dépôt avait retiré un « rapport de relecture » écrit par un programme, avec des relecteurs
+imaginaires.\reference{\doi{10.5281/zenodo.23468458}} Un mois plus tôt, l'audit de l'atelier lui-même avait trouvé un
+script de « relecture par les pairs » qui n'appelait jamais de modèle.
+
+D'où deux règles, que nous appliquons désormais à la lettre. Un fichier de relecture doit montrer qu'un relecteur a
+réellement été appelé : qui, quand, avec quelle réponse. Et l'on écrit « audité par un agent d'IA », jamais « relu par
+des pairs », tant qu'aucun humain du domaine ne l'a fait.
+
+\section{Un exemple : une idée qui monte et descend les niveaux}
+
+Voici, pour finir, l'histoire d'une seule affirmation, du brouillon au registre. Elle est racontée en détail aux
+chapitres~\ref{ch:c12} et~\ref{ch:c11} ; ici, on ne suit que ses niveaux.
+
+\paragraph{L'idée} On sait (c'est le fil de la deuxième partie) que le réseau triangulaire minimise l'énergie
+\emph{immobile} de points qui se repoussent. Mais dans le monde quantique, les points ne sont jamais tout à fait
+immobiles : même au zéro absolu, ils vibrent un peu. Cette vibration minimale a une énergie, l'\emph{énergie de point
+zéro}. L'idée naturelle, baptisée QU-1, était : « le réseau triangulaire minimise aussi l'énergie de point zéro ». À ce
+stade, c'est une conjecture : pas même un argument, une intuition. Elle est pré-enregistrée, avec une chance de survie
+estimée à~0,6.
+
+\paragraph{L'esquisse au crayon \niveau{X}} Avant d'essayer de la démontrer, on la teste par le calcul. Quatre
+programmes indépendants calculent l'énergie de point zéro de nombreux réseaux. Résultat : pour huit des douze forces
+testées, un autre réseau, stable, a une énergie de point zéro plus basse que le réseau triangulaire. QU-1 est réfutée,
+mais seulement « au crayon » : des nombres à virgule, si concordants soient-ils, ne prouvent rien.\reference{Réfutation
+numérique, 26 octobre 2026 : \doi{10.5281/zenodo.23653833}}
+
+\paragraph{Le certificat \niveau{A} pour la logique, \niveau{C} pour l'ensemble} Pour une des forces, la cloche
+gaussienne, on veut une preuve. On déforme très légèrement le réseau triangulaire, par un petit \emph{cisaillement},
+comme on pousse le dessus d'une pile de cartes. Un calcul rigoureux par encadrements, qui garantit à chaque étape que
+la vraie valeur est dans un intervalle (cela s'appelle l'arithmétique de boules), montre que l'énergie de point zéro
+\emph{baisse} pour tout cisaillement assez petit : le réseau triangulaire n'est donc même pas un minimum local. Le
+calcul a découpé le problème en 206\,468 cellules et aucune n'a échoué. Le noyau de Lean vérifie la logique de
+l'argument et l'arithmétique exacte du certificat.\reference{Certificat, 26 octobre 2026 :
+\doi{10.5281/zenodo.23655392}}
+
+Mais les encadrements eux-mêmes ont été calculés par un programme \emph{extérieur} au noyau, et certaines étapes qui
+relient les morceaux sont des raisonnements humains. Alors l'article écrit, honnêtement : « le résultat principal est
+de niveau C dans son ensemble ; seules sa logique et son arithmétique sont de niveau A ». C'est la règle du maillon le
+plus faible.
+
+\paragraph{Les contrôles} La même méthode, appliquée à une cloche plus étroite pour laquelle les calculs « au crayon »
+ne prévoient pas de baisse, ne parvient pas à certifier de baisse, « comme elle le doit ». Des démonstrations
+volontairement trouées, un axiome planté et un certificat falsifié ont été soumis au juge, qui les a tous refusés.
+
+\paragraph{L'audit et le registre} Un agent distinct a refait les calculs ; un article suivant a étendu le résultat aux
+forces écrantées, avec un audit et douze révisions.\reference{Forces écrantées, 26 octobre 2026 :
+\doi{10.5281/zenodo.23663551}} Et la porte du registre répond toujours
+« non » : aucune personne n'a encore certifié que les énoncés Lean disent bien ce que disent leurs gloses.
+
+\begin{encadre}[Ce que l'exemple montre]
+En quelques semaines, une même idée a été une intuition, une hypothèse pré-enregistrée, une réfutation au crayon, puis
+un certificat mixte dont chaque morceau porte son niveau. À aucun moment on n'a écrit « démontré » pour ce qui ne
+l'était pas. C'est cela, Elenchus : non pas avoir toujours raison, mais savoir à chaque instant \emph{à quel point} on
+a raison, et le dire.
+\end{encadre}
+
+\section{Même les plus grands : vérifier la preuve d'une autre IA}
+
+Les règles ne s'appliquent pas seulement à nos propres agents. Elles s'appliquent, avec la même rigueur, aux travaux
+des grands laboratoires. En septembre 2026, OpenAI a publié des démonstrations produites par une IA et vérifiées par
+ordinateur. Il aurait été tentant de les prendre telles quelles : elles venaient d'une équipe réputée, et le juge
+Lean les avait acceptées. Nous les avons pourtant examinées comme les nôtres, avant de bâtir dessus.
+
+\paragraph{Une affirmation sur les charges électriques} La publication affirme aussi démontrer la conjecture de
+Sandier et Serfaty, sur la disposition la plus économe de charges dans un fond neutralisant, par une réduction et un
+très gros certificat de calcul. Un agent a refait tourner ce certificat : il s'est reproduit en environ huit minutes.
+Il a vérifié qu'une copie volontairement abîmée est rejetée (c'est le contrôle négatif), et il a lu la réduction pas à
+pas sans y trouver de trou. Le chapitre~\ref{ch:c13} le raconte, et son titre le dit : \emph{aucune preuve n'est
+revendiquée}. Ni démontrée, ni vérifiée, ni réfutée par nous ; reproduite et auditée, ce qui est différent. Au passage,
+l'audit a trouvé et réparé un trou dans \emph{notre} outil de certificat. Puis quatre des douze étapes du certificat
+ont été refaites à l'intérieur du noyau (chapitre~\ref{ch:c14}) ; les huit autres attendent.
+
+\paragraph{Des théorèmes sur les fluides} OpenAI a aussi publié, en Lean, des théorèmes d'« explosion » pour les
+équations de Navier--Stokes et d'Euler, qui décrivent l'écoulement des fluides. Un agent les a reconstruits de façon
+indépendante : 2\,440 modules recompilés, 88\,400 déclarations rejouées par le noyau, aucune échappatoire trouvée, et
+les énoncés comparés aux textes officiels des problèmes (chapitre~\ref{ch:c15}). Ce travail ne prétend pas qu'un
+problème du millénaire soit résolu, et le mérite des preuves revient à leurs auteurs. Il dit seulement, de façon
+vérifiable par quiconque, ce qui a été contrôlé et ce qui ne l'a pas été.
+
+\begin{analogie}[Une image : le contrôle technique]
+Une voiture neuve d'une grande marque passe quand même le contrôle technique. Ce n'est pas un soupçon contre la
+marque ; c'est la règle, la même pour tous. L'image s'arrête là : le contrôleur d'une voiture connaît la liste des
+points à vérifier, alors que pour une preuve nouvelle, une partie du travail consiste à inventer cette liste.
+\end{analogie}
+
+\section{Les niveaux des vingt, d'un coup d'œil}
+
+Le tableau de la fin du livre donne, pour chaque contribution, sa note de rigueur dans la grille de sélection, de 0 à
+3. Seize obtiennent 3 : une preuve vérifiée par le juge et rejouée, ou un certificat de calcul recontrôlé par un
+programme différent. Une obtient 2 (vérifiée par le juge, sans rejeu), deux obtiennent 1, et une obtient 0 :
+l'instrument de calcul rusty-SUNDIALS, dont tous les nombres sont des nombres à virgule. C'est voulu : un instrument
+n'a pas à être un théorème.
+
+Il faut lire ce décompte avec prudence. La note est celle du \emph{meilleur} morceau de chaque travail, pas de son
+ensemble ; elle n'est pas non plus tout à fait un niveau Elenchus, puisqu'un certificat recontrôlé sans rejeu du juge
+y vaut autant qu'un rejeu. Les pastilles de niveau de chaque chapitre font foi. Une contribution de niveau A contient presque toujours aussi des simulations (X), des citations (L) et
+des raisonnements (C), et sa conclusion principale vaut ce que vaut son maillon le plus faible, comme dans l'exemple
+de QU-1. C'est pourquoi chaque chapitre a une section « Comment on s'est assuré que ce n'est pas faux », qui détaille
+les niveaux morceau par morceau, et une section « Ce que ça ne dit pas ».
+
+\section{Les règles appliquées à ce livre}
+
+Ce livre essaie de suivre ses propres règles. Ses sources sont fixées à l'avance : un nombre qui ne figure pas dans le
+dossier d'un travail n'y est pas utilisé. Les vingt contributions ont été choisies par une grille écrite et gelée avant
+la moindre note, appliquée de la même façon à tous les candidats (c'est l'équivalent du pré-enregistrement). Chaque
+chapitre suit le même plan, quel que soit le domaine, pour qu'aucun résultat ne soit mieux présenté qu'un autre
+simplement parce qu'il est plus séduisant. Les erreurs et les retraits ont leur propre chapitre à la fin. Et ce livre,
+comme ses résultats, n'a pas été relu par un scientifique humain extérieur : il porte donc, lui aussi, un drapeau
+levé.
+
+\section{Ce que la méthode ne fait pas}
+
+Elenchus n'est pas une garantie. Elle ne remplace pas la relecture humaine ; elle ne dit pas si une question vaut la
+peine d'être posée ; elle n'empêche pas de se tromper, elle rend les erreurs plus faciles à trouver. Et elle ne
+s'applique pas toute seule : la rechute du 19 octobre est arrivée un mois \emph{après} que la méthode a été écrite.
+Une règle sur le papier ne protège de rien. Ce qui protège, c'est de la faire tourner, à chaque fois, y compris quand
+on est pressé et content de soi.
+
+Les vingt chapitres qui suivent en sont l'application. Lisez le niveau avant la phrase.

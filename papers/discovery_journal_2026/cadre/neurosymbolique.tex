@@ -1,0 +1,296 @@
+% Chapitre de synthèse : vers une science neuro-symbolique.
+\xdef\labelcourant{ch:neurosymbolique}
+\chapter{Vers une science neuro-symbolique}
+
+Les vingt chapitres précédents racontent vingt histoires différentes : des galaxies, des cristaux, de l'hélium, des
+mutations. Mises bout à bout, elles dessinent pourtant un seul chemin. Ce chapitre essaie de le tracer, sans
+l'embellir : ce qui a marché, ce qui a échoué, et ce que nous ne savons pas encore.
+
+\section{Deux façons de penser, et une troisième}
+
+On distingue souvent deux grandes familles d'intelligence artificielle. La première est celle des \emph{réseaux de
+neurones}, dont font partie les grands modèles de langage comme ceux qui ont écrit, avec moi, ce livre. Ils apprennent
+à partir d'énormes quantités d'exemples ; ils sont doués pour proposer, deviner, écrire, traduire. Ils ont des
+intuitions, au sens où ils produisent vite une réponse plausible. Mais ils ne savent pas, d'eux-mêmes, si cette
+réponse est juste.
+
+La seconde famille est celle des méthodes \emph{symboliques} : la logique, le calcul exact, les démonstrations
+formelles. Le noyau de Lean en est un exemple parfait. Il n'a aucune intuition, il ne propose rien ; mais ce qu'il
+accepte, il l'a vérifié pas à pas.
+
+On appelle \emph{neuro-symbolique} une façon de faire travailler les deux ensemble : le neuronal propose, le
+symbolique vérifie. Cette année y a ajouté une troisième voix, qu'on oublie souvent : le \emph{numérique}, c'est-à-dire
+la simulation par ordinateur. Entre une intuition et une preuve, il y a presque toujours un calcul qui dit « ça a l'air
+vrai » ou « ça a l'air faux ». Et il y a un quatrième acteur, qui n'est pas une machine : l'humain qui décide de la
+question et de ce que la réponse veut dire.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  etape/.style={rectangle,rounded corners=4pt,minimum width=3.3cm,minimum height=1.25cm,text width=3.0cm,
+    align=center,inner sep=5pt,font=\small,line width=0.9pt},
+  fl/.style={-{Stealth[length=2.6mm]},line width=1pt},
+  non/.style={-{Stealth[length=2.2mm]},line width=0.7pt,dashed,color=okvermillon}]
+  \node[etape,draw=okorange,fill=okorange!12!ivoire] (ia) at (0,2.6)
+    {\textbf{L'IA propose}\\[1pt]{\footnotesize conjectures, code, démonstrations}};
+  \node[etape,draw=okpourpre,fill=okpourpre!12!ivoire] (num) at (3.85,0)
+    {\textbf{Le calcul explore}\\[1pt]{\footnotesize simulations, encadrements, données}};
+  \node[etape,draw=okvert,fill=okvert!12!ivoire] (lean) at (0,-2.6)
+    {\textbf{La preuve juge}\\[1pt]{\footnotesize noyau Lean, rejeu, axiomes}};
+  \node[etape,draw=okbleu,fill=okbleu!10!ivoire] (hum) at (-3.85,0)
+    {\textbf{L'humain décide}\\[1pt]{\footnotesize la question, le sens, la publication}};
+  \node[circle,draw=encre!50,fill=ivoire,minimum size=2.2cm,text width=2cm,align=center,font=\footnotesize,
+    line width=0.6pt] (aud) at (0,0) {un auditeur\\ distinct\\ vérifie tout};
+  \draw[fl,okorange] (ia.east) to[bend left=22] (num.north);
+  \draw[fl,okpourpre] (num.south) to[bend left=22] (lean.east);
+  \draw[fl,okvert] (lean.west) to[bend left=22] (hum.south);
+  \draw[fl,okbleu] (hum.north) to[bend left=22] (ia.west);
+  \draw[non] (num.west) -- node[above,font=\scriptsize,sloped]{« non »} (aud.east);
+  \draw[non] (lean.north) -- node[right,font=\scriptsize]{« non »} (aud.south);
+  \draw[non] (aud.north) -- node[right,font=\scriptsize]{retour} (ia.south);
+\end{tikzpicture}
+\caption{La boucle que l'année a fini par apprendre. Chaque étape a le droit de dire « non » ; un auditeur distinct
+de celui qui produit vérifie le tout ; l'humain choisit la question au départ et décide du sens à l'arrivée.}
+\label{fig:boucle}
+\end{figure}
+
+\section{La boucle, pas à pas}
+
+La figure~\ref{fig:boucle} résume la boucle. Elle a l'air évidente une fois dessinée ; elle ne l'était pas en mai.
+
+\paragraph{L'IA propose} Les propositions viennent de deux sources. D'abord, de travaux publiés par d'autres IA : la
+preuve d'OpenAI sur l'optimalité du réseau triangulaire est le point de départ de toute la deuxième partie. Ensuite,
+de nos propres agents, qui ont formulé des hypothèses, écrit les programmes de calcul et rédigé les démonstrations
+Lean. Proposer est la partie facile ; c'est aussi celle où les IA sont les plus convaincantes, donc les plus
+dangereuses.
+
+\paragraph{Le calcul explore} Avant d'essayer de démontrer, on calcule. C'est la règle qui a sauvé le plus de temps :
+au chapitre~\ref{ch:c12}, la conjecture QU-1 a été réfutée par le calcul avant qu'on ne perde des semaines à chercher
+sa preuve. Le calcul sert aussi à confronter les idées aux mesures réelles, comme les données de l'hélium au
+chapitre~\ref{ch:c05}. Les simulations de l'année reposent sur rusty-SUNDIALS (chapitre~\ref{ch:c17}), un solveur
+d'équations traduit en Rust avec l'aide de l'IA.
+
+\paragraph{La preuve juge} Ce qui doit être sûr passe devant le noyau de Lean. Le progrès le plus net de l'année est
+d'avoir fait entrer le calcul lui-même dans le tribunal : au chapitre~\ref{ch:c01}, un programme de calcul rapide, à
+qui l'on ne fait pas confiance, produit ses résultats \emph{accompagnés d'un tableau de vérifications en nombres
+entiers}, et c'est le noyau qui contrôle ce tableau. Le calcul reste une esquisse ; le contrôle de l'esquisse, lui,
+devient une preuve.
+
+\paragraph{Un auditeur distinct vérifie} Au centre de la boucle se trouve un agent qui n'a rien produit : il
+recompile, refait les calculs, rejoue les démonstrations et rend un verdict écrit. Les corrections qu'il demande sont
+appliquées, et la liste en est publiée.
+
+\paragraph{L'humain décide} Enfin, quelqu'un doit dire ce que tout cela \emph{veut dire}, et s'il faut le publier.
+C'est le seul rôle que la boucle ne peut pas déléguer. Nous y revenons plus bas.
+
+\section{Trois sortes de nombres}
+
+Le numérique mérite qu'on s'y arrête, parce que c'est là que l'année a le plus appris. Un ordinateur peut produire
+trois sortes de nombres, qui n'inspirent pas du tout la même confiance.
+
+\paragraph{Le nombre à virgule \niveau{X}} C'est le nombre ordinaire d'une simulation. Il est arrondi à chaque
+opération, et une simulation en fait des milliards. Le résultat est souvent excellent, parfois faux, et rien dans le
+nombre lui-même ne dit lequel. Tout ce que calcule rusty-SUNDIALS (chapitre~\ref{ch:c17}) est de cette sorte ; ses
+résultats ont été refaits à l'identique par des auditeurs, ce qui montre qu'ils sont reproductibles, pas qu'ils sont
+exacts.
+
+\paragraph{L'encadrement rigoureux} On peut remplacer chaque nombre par un petit intervalle dont on est sûr qu'il
+contient la vraie valeur, et faire tout le calcul sur ces intervalles. Le résultat n'est plus « environ 3,14 » mais
+« certainement entre 3,1415 et 3,1417 ». C'est ce qu'a fait le certificat du chapitre~\ref{ch:c11}. Mais le programme qui manipule ces intervalles tourne hors du juge : on lui fait confiance, comme à
+une balance bien étalonnée.
+
+\paragraph{Le certificat contrôlé par le juge \niveau{A}} Enfin, un programme rapide peut produire, en plus de ses
+résultats, un tableau de vérifications en nombres entiers, que le noyau de Lean contrôle ensuite ligne par ligne. Le
+programme rapide n'a plus besoin d'être cru : s'il s'était trompé, le tableau ne passerait pas. C'est la méthode des
+distances entre galaxies (chapitre~\ref{ch:c01}), reprise aussitôt pour la tension de Hubble (chapitre~\ref{ch:c02}).
+
+\begin{analogie}[Une image : la caisse du magasin]
+La caissière additionne vite, à la machine. Le soir, un contrôleur qui ne fait confiance qu'au crayon reprend les
+tickets un par un et vérifie le total. Il ne refait pas le travail de la caissière, il vérifie qu'il est juste.
+L'image s'arrête là : le contrôleur du magasin peut se tromper en additionnant ; le noyau, lui, ne se lasse pas, et
+il refuse le total dès qu'une seule ligne est fausse.
+\end{analogie}
+
+Passer d'une sorte de nombre à l'autre coûte cher. Le rejeu d'un seul de nos modules a pris jusqu'à un quart d'heure
+de calcul, et le certificat de Sandier--Serfaty n'est entré qu'au tiers dans le noyau. Mais c'est ce passage, de
+l'esquisse à l'encadrement puis au certificat, qui transforme une simulation en connaissance.
+
+\section{Une boucle par domaine}
+
+La même boucle a tourné dans cinq domaines. Un exemple par domaine suffit à la montrer.
+
+\paragraph{Mathématiques} Au chapitre~\ref{ch:c16}, les premières briques : trois conséquences du théorème d'OpenAI,
+énoncées et vérifiées dans Lean. Elles sont mathématiquement faciles, et c'est leur intérêt : de petites pièces
+solides, nommées, sur lesquelles d'autres articles ont ensuite construit. L'IA a proposé (le théorème amont), le juge
+a vérifié, l'humain a choisi de les publier comme ce qu'elles sont, des corollaires.
+
+\paragraph{Physique} Au chapitre~\ref{ch:c04}, le cas des particules qui se repoussent avec une force « écrantée »,
+comme les poussières chargées dans un plasma. Le noyau vérifie que cette force appartient à la famille couverte par le
+théorème ; la simulation d'un article précédent (chapitre~\ref{ch:c03}) avait commis une erreur, une coupure de la
+force qui déplaçait les énergies de plus que l'écart mesuré, signalée par un erratum puis corrigée dans cet article
+avec la force exacte. La boucle a tourné deux fois : c'est normal.
+
+\paragraph{Génétique} Au chapitre~\ref{ch:c06}, la chance qu'une mutation nouvelle finisse par envahir toute une
+population. Les réponses classiques sont connues depuis des décennies ; ce qui est nouveau, c'est que le juge les a
+vérifiées, et que l'article suivant (chapitre~\ref{ch:c07}) a pu réutiliser ces pièces au lieu de les refaire. La
+méthode a quitté la physique sans changer de forme.
+
+\paragraph{Cosmologie} Au chapitre~\ref{ch:c02}, une question célèbre, la « tension de Hubble » entre deux façons de
+mesurer la vitesse d'expansion de l'univers, devient une inégalité vérifiée par le noyau, dans un cadre simplifié
+dont toutes les hypothèses sont écrites. Ce n'est pas une mesure nouvelle ; c'est une façon nouvelle d'être sûr d'un
+calcul ancien.
+
+\paragraph{Calcul numérique et méthode} Au chapitre~\ref{ch:c18}, une porte de contrôle pour le code écrit par des
+IA, qui montre qu'un fichier « démontrant » $1=2$ passe la compilation et n'est arrêté que par l'audit des axiomes. Et
+au chapitre~\ref{ch:c20}, le même genre de rigueur appliqué à une méthode de simulation : une affirmation du lot du
+19 octobre, testée par la mesure, s'avère fausse, et elle est retirée.
+
+\section{Ce qui a marché, et pourquoi}
+
+\paragraph{Séparer les niveaux} Le simple fait d'étiqueter chaque phrase (A, L, C ou X) a changé la façon d'écrire.
+Il devient impossible d'écrire « démontré » pour une simulation sans que cela se voie.
+
+\paragraph{Les contrôles qui peuvent échouer} Chaque fois qu'un test a été accompagné d'un cas qui devait échouer, il a
+attrapé quelque chose : un trou dans une démonstration, un axiome planté, un certificat falsifié, une erreur dans nos
+propres outils. L'audit de Sandier--Serfaty (chapitre~\ref{ch:c13}) a ainsi trouvé et réparé un trou dans notre propre
+outil de certificat ; celui des preuves sur les fluides (chapitre~\ref{ch:c15}), une erreur dans son propre programme
+de recherche de motifs, corrigée avant que les résultats ne soient rapportés.
+
+\paragraph{Le rejeu} Rejouer les démonstrations avec un second programme a coûté des heures de calcul et n'a, jusqu'ici,
+trouvé aucune faute dans nos modules. C'est exactement ce qu'on attend d'une inspection : la plupart du temps, elle ne
+trouve rien. Mais elle a montré qu'une contrefaçon que la liste des axiomes laisse passer est, elle, arrêtée.
+
+\paragraph{L'audit avec corrections publiées} Les audits par des agents distincts ont presque tous demandé des
+corrections, et presque toutes ont été appliquées et listées. C'est moins qu'une relecture humaine ; c'est beaucoup
+plus que rien.
+
+\section{Ce qui a échoué, et pourquoi}
+
+\paragraph{Croire les rapports des agents} Le premier échec, et le plus long, a été de croire qu'un agent avait fait ce
+qu'il disait avoir fait. Quatorze composants de notre propre atelier annonçaient un succès sans avoir fait le travail
+(chapitre~\ref{ch:c19}). Un agent d'IA est entraîné à produire une réponse satisfaisante ; « c'est fait » est une
+réponse très satisfaisante.
+
+\paragraph{Les nombres trop beaux} En été, une théorie de cosmologie a été construite sur des coïncidences de
+nombres. Mise à l'épreuve en septembre, elle a échoué aux tests pré-enregistrés et a été retirée. Un nombre qui « tombe juste » n'est pas une
+explication tant qu'on n'a pas vérifié qu'il ne tombe pas juste par hasard.
+
+\paragraph{La méthode sur le papier} L'échec le plus instructif est la rechute du 19 octobre : un mois après avoir
+écrit la méthode, nous avons publié des articles qui la violaient, avec une fausse mention de relecture. La méthode
+n'avait pas échoué ; elle n'avait pas été appliquée. Les retraits sont venus deux jours plus tard, et ils ont été
+publiés.
+
+\paragraph{Les limites de taille} Certaines vérifications sont trop grosses pour le juge, du moins pour l'instant. Le
+grand certificat de Sandier--Serfaty compte douze étapes ; quatre seulement ont été refaites dans le noyau
+(chapitre~\ref{ch:c14}), et le coût des autres a été mesuré, pas payé. Un essai d'étendre en trois dimensions
+l'architecture de ce certificat a conclu à un résultat négatif de faisabilité.\reference{Résultat négatif de faisabilité en 3D, 26 octobre 2026 : \doi{10.5281/zenodo.23655002}}
+
+\section{Le rôle de l'humain}
+
+Si les machines proposent, calculent, vérifient et auditent, que reste-t-il à l'humain ? Cette année répond : trois
+choses, qu'aucune machine n'a faites à sa place.
+
+\paragraph{Choisir les questions qui comptent} Une IA peut produire mille théorèmes vrais et sans intérêt. Choisir de
+regarder la tension de Hubble plutôt qu'une identité de plus, choisir des forces qui existent vraiment dans des
+matériaux réels, choisir de vérifier la preuve d'un autre avant de bâtir dessus : ces choix donnent son sens au
+travail. Le chapitre~\ref{ch:c15} en est un exemple : rejouer de l'extérieur la preuve phare d'un laboratoire d'IA,
+pour que d'autres puissent lui faire confiance, ou non, en connaissance de cause.
+
+\paragraph{Refuser les affirmations excessives} La boucle peut dire « non », mais quelqu'un doit accepter ce « non »,
+surtout quand il contredit une idée qu'on aime. Retirer, corriger, publier le retrait : c'est une décision humaine, et
+elle coûte. Cette année, elle a été prise plus de quinze fois (voir la liste des retraits à la fin du livre).
+
+\paragraph{Auditer les auditeurs} Un auditeur peut lui-même se tromper, ou faire semblant d'avoir audité. Les faux
+rapports de relecture d'octobre l'ont montré. Vérifier qu'un audit a vraiment eu lieu, qu'un relecteur a vraiment été
+appelé, que le registre dit vrai : c'est la dernière ligne de défense, et elle est humaine.
+
+\begin{analogie}[Une image : le chef d'orchestre]
+L'humain de cette boucle ressemble moins à un savant solitaire qu'à un chef d'orchestre. Il ne joue d'aucun
+instrument mieux que les musiciens ; mais il choisit l'œuvre, il entend la fausse note, et il décide quand
+recommencer. L'image s'arrête là : un orchestre joue une partition écrite à l'avance, alors qu'ici personne ne sait
+à l'avance ce que la musique va donner.
+\end{analogie}
+
+\section{Ce que ce chemin peut apporter}
+
+Il serait facile, et faux, d'écrire que ces vingt contributions changent le monde. Elles ne le changent pas. Mais
+elles montrent, à petite échelle, quelque chose qui pourrait compter au-delà de ce livre.
+
+\paragraph{La confiance dans la science produite par des machines} Dans les années qui viennent, une part croissante
+des calculs, des démonstrations et des articles sera écrite par des IA. La question ne sera plus « une machine peut-elle
+le faire ? », mais « comment savoir si c'est juste ? ». Ce que cette année propose n'est pas une réponse complète ;
+c'est une façon de travailler où chaque affirmation dit qui l'a vérifiée, où chaque contrôle peut échouer, et où les
+retraits sont publiés. N'importe quel laboratoire peut la reprendre : les règles sont écrites, les programmes sont
+publics, et les registres disent où sont les trous.
+
+\paragraph{Vérifier ceux qui ont le plus de moyens} Les grands laboratoires d'IA publient désormais des preuves
+mathématiques. Il est sain qu'un petit atelier puisse les reconstruire et les rejouer chez lui, et dire publiquement
+ce qu'il a contrôlé et ce qu'il n'a pas contrôlé (chapitres~\ref{ch:c13} à~\ref{ch:c15}). Ce genre de contre-expertise
+ne demande pas d'être plus fort que l'auteur ; il demande d'être méthodique.
+
+\paragraph{Apprendre, et enseigner} Un résultat présenté trois fois, en démonstration humaine, en énoncé vérifié et en
+calcul, est un outil d'enseignement : l'étudiant voit la même idée sous trois angles, et voit aussi où chacun s'arrête.
+C'est le pari du manuel du chapitre~\ref{ch:c08}. C'est aussi celui de ce livre, à un niveau plus simple.
+
+\paragraph{Des questions qui touchent le réel} Les vingt contributions parlent de matériaux réels (des cristaux de
+poussières chargées, des semi-conducteurs d'un atome d'épaisseur, l'hélium superfluide), de l'histoire de l'univers et
+de l'évolution des populations. Aucune ne guérit une maladie ni ne produit d'énergie. Mais chacune montre qu'on peut
+relier une question concrète à une preuve vérifiée, sans tricher sur ce qui reste à faire.
+
+\begin{analogie}[Une image : le carnet de l'apprenti]
+Un apprenti qui note chaque soir ce qu'il a réussi, ce qu'il a raté et ce qu'il ne sait pas encore faire n'est pas
+encore un maître. Mais son carnet vaut de l'or pour celui qui viendra après lui. Ce livre est un carnet de ce genre.
+L'image a sa limite : un carnet d'apprenti est privé, alors que celui-ci est public, avec tout ce que cela oblige à
+dire.
+\end{analogie}
+
+\section{Ce qui reste hors de portée}
+
+Il faut dire honnêtement ce que ce chemin n'atteint pas, ou pas encore.
+
+\paragraph{Aucun mathématicien humain n'a relu ces résultats} C'est la limite la plus importante. Tout ce qui est de
+niveau A a été vérifié par le noyau ; rien n'a été relu par un spécialiste humain qui dirait : « oui, cet énoncé dit
+bien ce que vous prétendez ». C'est pourquoi presque tous les registres se terminent par « non ».
+
+\paragraph{La dépendance à openai/math} Une grande partie du livre repose sur un théorème produit par une IA d'OpenAI,
+vérifié par ordinateur mais non relu par des pairs, et dont aucune personne n'a audité l'énoncé. Si cet énoncé ne
+disait pas exactement ce qu'on croit, les chapitres~\ref{ch:c16}, \ref{ch:c03}, \ref{ch:c09}, \ref{ch:c04}
+et~\ref{ch:c10} perdraient leur portée physique, même si leur logique resterait correcte.
+
+\paragraph{L'échelle} Le juge vérifie ce qu'on lui donne, au rythme où il le peut. Certains certificats sont trop
+gros ; certains calculs ne sont faits qu'en un seul point (au chapitre~\ref{ch:c01}, une seule valeur de la densité de
+matière) ; certains modules n'ont pas encore été rejoués.
+
+\paragraph{La portée humaine} Ces résultats sont-ils utiles à des chercheurs, à des ingénieurs, à des enseignants ?
+Nous l'espérons, pour le manuel (chapitre~\ref{ch:c08}) et pour la méthode. Nous ne le savons pas.
+
+\section{Ce que nous ne savons pas encore}
+
+\begin{encadre}[Questions ouvertes à la fin de l'année]
+\begin{itemize}
+\item Les énoncés Lean de niveau A disent-ils exactement ce que disent leurs gloses en français ? Seul un audit humain
+des énoncés peut répondre.
+\item Le théorème amont d'openai/math est-il correct au sens où les mathématiciens l'entendent, et son énoncé est-il
+fidèle à la conjecture qu'il prétend résoudre ?
+\item Le réseau triangulaire est-il le meilleur pour un vrai cristal quantique, et pas seulement pour le modèle simplifié
+des chapitres~\ref{ch:c12} et~\ref{ch:c11} ?
+\item Les huit étapes restantes du certificat de Sandier--Serfaty peuvent-elles entrer dans le noyau pour un coût
+raisonnable ?
+\item La boucle tient-elle quand on va plus vite, ou quand on est plusieurs ? La rechute d'octobre dit qu'elle peut
+céder.
+\item Comment organiser, pour des résultats produits par des machines, une relecture humaine qui ne soit ni une
+formalité ni un goulot d'étranglement ?
+\end{itemize}
+\end{encadre}
+
+\section{Une science qui a du sens}
+
+Je voudrais finir sur ce qui a donné du sens à cette année. Ce n'est pas d'avoir produit vingt contributions : c'est
+d'avoir appris, à nos dépens, à distinguer ce que nous savons de ce que nous croyons. Les machines d'aujourd'hui
+écrivent mieux que beaucoup d'entre nous ; elles ne savent pas, seules, ce qui mérite d'être cherché, ni quand il
+faut dire « je me suis trompé ». La collaboration qui a fonctionné n'est pas celle où l'humain laisse faire la
+machine, ni celle où il s'en méfie au point de ne rien en tirer. C'est celle où chacun fait ce qu'il fait le mieux :
+la machine propose et vérifie, sans fatigue ; l'humain choisit, doute, et répond de ce qui est publié.
+
+Si cette façon de travailler peut servir à d'autres, au-delà des réseaux et des galaxies, alors ce livre aura été
+utile. C'est une hypothèse. Elle n'est que de niveau C.

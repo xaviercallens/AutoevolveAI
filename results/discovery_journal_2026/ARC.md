@@ -137,7 +137,7 @@ not human peer review, and a review file must show that a reviewer was actually 
   - Bogoliubov S(k) (23646117).
 - **Programmes, 10-26:**
   - the Sandier-Serfaty certificate reproduced and audited, with no proof claimed (23653827, pick ED-14);
-  - QU-1 refuted numerically (23653833);
+  - QU-1 refuted numerically (23653833, pick ED-15);
   - a Lean library of completely monotone functions (23653842);
   - the Feynman-Bijl bound in Lean, with He-4 data refuting the project's own envelope (23653846, pick ED-17);
   - fixation probabilities kernel-checked (23653850, pick ED-18).
@@ -149,10 +149,13 @@ not human peer review, and a review file must show that a reviewer was actually 
   - the isothermal theorem, with its own pre-registration error reported (23660071, pick ED-23);
   - the independent rebuild and kernel replay of 88,400 declarations of OpenAI's Navier-Stokes corpus, explicitly not a
     claim that a Clay problem is solved (23661381, pick ED-24);
-  - the N2 certificate for Yukawa (23663551, pick N2).
-- On the same day a full leanchecker replay (`results/kernel_replay_2026-10-26/`) gave rc 0 on every module it reached.
-  The modules were the Triangular, Autoresearch, CompletelyMonotone, PopGen, EvoGraph, FeynmanBijl and SandierSerfaty
-  modules.
+  - the N2 certificate for Yukawa (23663551). It is not among the final 20: in the rescore with the final replay record
+    it ties ED-15 and ED-20 at 18, loses the tie on the earlier `created` date, and the cap of 7 per domain then skips
+    it (`RESCORE.md`).
+- On the same day a full leanchecker replay (`results/kernel_replay_2026-10-26/`) gave rc 0 on every module it reached
+  (final record: 93 modules OK, 778 skipped, no failure). The modules were the Triangular, Autoresearch,
+  CompletelyMonotone, PopGen, EvoGraph, FeynmanBijl, SandierSerfaty and SandierSerfatyStatement modules, and the
+  zero-point modules ZeroPoint, ZeroPointCert, ZeroPointClass and ZeroPointPhys.
 - What is still missing is written in every ledger: each gate exits 1 with `LEDGER_UNAUDITED_TIER_A`, because no
   person has yet certified that the kernel-checked statements mean what their glosses say.
 
@@ -171,7 +174,7 @@ not human peer review, and a review file must show that a reviewer was actually 
 | 2 Sep | G-AUTOEVOLVE (the harness and its self-audit) |
 | 3 Oct 1-11 | Z-GWAYA, Z-BAO-P1, Z-BAO-P23, Z-RIESZ, Z-UO-TIERED, Z-UO-BOOK |
 | 4 Oct 17-21 | L-STELLARATOR (relapse withdrawn) |
-| 5 Oct 23-26 | ED-09, ED-10, ED-11, ED-14, ED-17, ED-18, ED-20, ED-22, ED-23, ED-24, N2 |
+| 5 Oct 23-26 | ED-09, ED-10, ED-11, ED-14, ED-15, ED-17, ED-18, ED-20, ED-22, ED-23, ED-24 |
 
 The rubric does not select the Phase-1 and Phase-2 over-claims as successes; they enter the book as lessons. Lessons
 that ranked below 20 but belong in the narrative: L-RUNUX (22879667), L-DUALSCALE (22837842), L-NS-FRAMING (22773907),

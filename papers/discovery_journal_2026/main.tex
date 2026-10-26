@@ -1,0 +1,278 @@
+% Le journal des découvertes -- cadre du livre (pdflatex, trois passes ; voir code/build.py).
+% Interface partagée avec les chapitres (STYLE.md) : \niveau{A|L|C|X|As}, \reference{...}, environnements
+% analogie, limite, encadre (titre optionnel), \citation{...}, figures dans figures/, \chapter{...} par contribution.
+\documentclass[11pt,twoside,openright]{book}
+
+% ---------------------------------------------------------------- polices et langue
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[p,osf]{cochineal}
+\usepackage[cochineal,vvarbb]{newtxmath}
+\usepackage[scale=0.9,semibold]{sourcesanspro}
+\usepackage[final,tracking=true,kerning=true,spacing=true]{microtype}
+\linespread{1.07}
+
+% ---------------------------------------------------------------- page : papier ivoire, grandes marges
+\usepackage[paperwidth=19.5cm,paperheight=26cm,inner=2.1cm,textwidth=11.4cm,marginparsep=0.6cm,
+  marginparwidth=4.4cm,top=2.7cm,bottom=3.1cm,headsep=0.9cm,footskip=1.3cm,headheight=14pt]{geometry}
+\usepackage[dvipsnames]{xcolor}
+\definecolor{ivoire}{HTML}{FAF6EC}
+\definecolor{encre}{HTML}{2B2A26}
+% Okabe--Ito, palette lisible par les daltoniens
+\definecolor{okorange}{HTML}{E69F00}
+\definecolor{okciel}{HTML}{56B4E9}
+\definecolor{okvert}{HTML}{009E73}
+\definecolor{okjaune}{HTML}{F0E442}
+\definecolor{okbleu}{HTML}{0072B2}
+\definecolor{okvermillon}{HTML}{D55E00}
+\definecolor{okpourpre}{HTML}{CC79A7}
+\colorlet{accent}{okbleu}
+\AtBeginDocument{\pagecolor{ivoire}\color{encre}}
+
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{amsmath}
+\usepackage{etoolbox}
+\usepackage{emptypage}
+\usepackage[strict]{changepage}
+\usepackage{booktabs,tabularx,array}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=4pt,leftmargin=1.4em}
+\setlist[itemize]{label={\color{accent}\textbullet}}
+\usepackage{marginnote}
+\renewcommand*{\raggedleftmarginnote}{\raggedright}
+\renewcommand*{\raggedrightmarginnote}{\raggedright}
+\usepackage{caption}
+\captionsetup{font={small,it},labelfont={sf,up,color=accent},labelsep=period,justification=raggedright,
+  singlelinecheck=false}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usetikzlibrary{babel,calc,positioning,arrows.meta,shapes.geometric}
+\usepackage{titlesec,titletoc}
+\usepackage{fancyhdr}
+\usepackage[hyphens]{url}
+\usepackage[hidelinks,pdfusetitle,bookmarksnumbered]{hyperref}
+\hypersetup{pdftitle={Le journal des découvertes},pdfauthor={Xavier Callens (SocrateAI Lab)}}
+\emergencystretch=2.5em
+\setlength{\parindent}{1.2em}
+\frenchsetup{ItemLabels=\textbullet,AutoSpacePunctuation=false}
+
+\newlength{\largeurpleine}
+\setlength{\largeurpleine}{\dimexpr\textwidth+\marginparsep+\marginparwidth\relax}
+% Bloc qui déborde dans la marge extérieure (tableaux, figures larges)
+\newenvironment{pleinelargeur}{\begin{adjustwidth*}{0pt}{-\dimexpr\marginparsep+\marginparwidth\relax}}{\end{adjustwidth*}}
+
+% ---------------------------------------------------------------- interface partagée (STYLE.md)
+% \niveau{A|L|C|X|As} : pastille du niveau de confiance Elenchus.
+\newcommand{\pastille}[3]{% #1 couleur, #2 texte, #3 plein (1) ou contour (0)
+  \ifnum#3=1
+    \tcbox[on line,colback=#1,colframe=#1,coltext=white,boxrule=0.6pt,arc=2.5pt,boxsep=0pt,
+      left=3pt,right=3pt,top=1.2pt,bottom=1.2pt,tcbox raise base]{\sffamily\scriptsize\bfseries\lfstyle #2}%
+  \else
+    \tcbox[on line,colback=ivoire,colframe=#1,coltext=#1,boxrule=0.8pt,arc=2.5pt,boxsep=0pt,
+      left=3pt,right=3pt,top=1pt,bottom=1pt,tcbox raise base]{\sffamily\scriptsize\bfseries\lfstyle #2}%
+  \fi}
+\makeatletter
+\newcommand{\niveau@A}{\pastille{okvert}{Niveau A}{1}}
+\newcommand{\niveau@As}{\pastille{okvert}{Niveau A, sans rejeu}{0}}
+\newcommand{\niveau@L}{\pastille{okbleu}{Niveau L}{1}}
+\newcommand{\niveau@C}{\pastille{okorange}{Niveau C}{1}}
+\newcommand{\niveau@X}{\pastille{okpourpre}{Niveau X}{1}}
+\DeclareRobustCommand{\niveau}[1]{%
+  \ifcsname niveau@#1\endcsname\csname niveau@#1\endcsname
+  \else\PackageError{journal}{Niveau inconnu : #1 (A, As, L, C ou X)}{}\fi}
+\newcommand{\niveaupetit}[1]{\niveau{#1}}
+\newcommand{\lettreniv}[2]{{\sffamily\bfseries\large\color{#1}#2}\enspace}
+\makeatother
+
+% \reference{...} : note dans la marge extérieure (dates, DOI). Sûre dans les boîtes et les titres.
+\newif\ifreferenceactive \referenceactivetrue
+\DeclareRobustCommand{\reference}[1]{%
+  \ifreferenceactive\marginnote{%
+    \begingroup\sffamily\NoAutoSpacing\footnotesize\lfstyle\color{encre!80}\hyphenpenalty=10000
+    {\color{accent}\rule[0.4ex]{1.4em}{1.1pt}}\par\nobreak #1\par\endgroup}%
+  \fi}
+\newcommand{\doi}[1]{\href{https://doi.org/#1}{\NoAutoSpacing\lfstyle doi\,\nolinkurl{#1}}}
+
+% analogie, limite, encadre : boîtes sécables, titre optionnel.
+\tcbset{journal/.style={enhanced,breakable,sharp corners,boxrule=0pt,leftrule=2.4pt,
+  left=9pt,right=8pt,top=6pt,bottom=7pt,before skip=10pt,after skip=12pt,
+  fonttitle=\sffamily\bfseries\footnotesize,attach title to upper,
+  title after break={}, colupper=encre}}
+\newtcolorbox{analogie}[1][Une image]{journal,colback=okorange!9!ivoire,colframe=okorange,
+  title={\textcolor{okorange!70!black}{\MakeUppercase{#1}}\par\smallskip}}
+\newtcolorbox{limite}[1][Ce que ça ne dit pas]{journal,colback=okvermillon!7!ivoire,colframe=okvermillon,
+  title={\textcolor{okvermillon!80!black}{\MakeUppercase{#1}}\par\smallskip}}
+\newtcolorbox{encadre}[1][]{journal,colback=okciel!12!ivoire,colframe=okbleu,
+  title={\ifstrempty{#1}{}{\textcolor{okbleu!85!black}{\MakeUppercase{#1}}\par\smallskip}}}
+% \citationcourte{...} : courte citation, en italique, avec un guillemet de couleur
+% (\citation est une commande du noyau LaTeX, d'où ce nom).
+\newcommand{\citationcourte}[1]{\par\medskip
+  \begin{adjustwidth}{1.4em}{1em}\noindent\llap{\textcolor{accent}{\fontsize{26}{26}\selectfont «}\hspace{3pt}}%
+  {\itshape #1}\end{adjustwidth}\medskip\par}
+
+% ---------------------------------------------------------------- titres
+\setcounter{secnumdepth}{0}
+\setcounter{tocdepth}{0}
+\makeatletter
+\gdef\rangcourant{}\gdef\domainecourant{}\gdef\labelcourant{}
+\newcommand{\posechapitre}{%
+  \ifx\labelcourant\@empty\else\label{\labelcourant}\global\let\labelcourant\@empty\fi}
+\newcommand{\rangaffiche}{%
+  \ifx\rangcourant\@empty\else
+    \textls[80]{\MakeUppercase{Contribution n°\,\rangcourant\ sur 20}}%
+    \ifx\domainecourant\@empty\else\enspace{\color{encre!45}·}\enspace\textls[80]{\MakeUppercase{\domainecourant}}\fi
+  \fi}
+\makeatother
+\titleformat{\chapter}[display]
+  {\normalfont\color{encre}}
+  {\sffamily\footnotesize\bfseries\color{accent}\textls[120]{\MakeUppercase{Chapitre}}\ \thechapter\hfill\rangaffiche}
+  {14pt}
+  {\fontsize{25}{30}\selectfont\raggedright}
+  [\vspace{8pt}{\color{accent}\rule{2.6cm}{1.4pt}}\posechapitre]
+\titleformat{name=\chapter,numberless}[display]
+  {\normalfont\color{encre}}{}{0pt}
+  {\fontsize{25}{30}\selectfont\raggedright}
+  [\vspace{8pt}{\color{accent}\rule{2.6cm}{1.4pt}}]
+\titlespacing*{\chapter}{0pt}{18pt}{34pt}
+\titleformat{\section}{\normalfont\Large\raggedright\color{encre}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{20pt plus 4pt minus 2pt}{8pt plus 2pt}
+\titleformat{\subsection}{\normalfont\sffamily\bfseries\normalsize\raggedright\color{accent}}{}{0pt}{}
+\titlespacing*{\subsection}{0pt}{14pt plus 3pt minus 2pt}{5pt plus 1pt}
+\titleformat{\subsubsection}{\normalfont\itshape\large\raggedright}{}{0pt}{}
+\titleformat{\paragraph}[runin]{\normalfont\sffamily\bfseries\small\color{accent}}{}{0pt}{}[.\enspace]
+\titlespacing*{\paragraph}{0pt}{8pt plus 2pt}{0pt}
+
+% table des matières
+\titlecontents{part}[0pt]{\addvspace{13pt}\sffamily\bfseries\small\color{okbleu}}
+  {\textls[100]{\MakeUppercase{Partie}}\ \thecontentslabel\enspace·\enspace}{}{\hfill\contentspage}[\addvspace{3pt}]
+\titlecontents{chapter}[2.4em]{\addvspace{2.5pt}\normalfont}
+  {\contentslabel{2.4em}}{\hspace*{-2.4em}}{\titlerule*[0.7pc]{\color{encre!35}.}\contentspage}
+
+% ---------------------------------------------------------------- titres courants
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyhfoffset[LE,RO]{\dimexpr\marginparsep+\marginparwidth\relax}
+\newcommand{\entete}[1]{{\referenceactivefalse\normalfont\small #1}}
+\fancyhead[LE]{\entete{{\sffamily\footnotesize\bfseries\color{accent}\lfstyle\thepage}\hspace{1.2em}{\itshape\leftmark}}}
+\fancyhead[RO]{\entete{{\itshape\rightmark}\hspace{1.2em}{\sffamily\footnotesize\bfseries\color{accent}\lfstyle\thepage}}}
+\renewcommand{\chaptermark}[1]{\markboth{#1}{#1}}
+\renewcommand{\sectionmark}[1]{\markright{#1}}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[LE,RO]{\entete{\sffamily\footnotesize\color{accent}\lfstyle\thepage}}}
+
+% ---------------------------------------------------------------- parties
+% \partie{numéro romain ou vide}{titre}{couleur}{introduction}{liste de clés cNN, ou vide}
+\makeatletter
+\newcommand{\partie}[5]{%
+  \cleardoublepage
+  \xglobal\colorlet{accent}{#3}%
+  \thispagestyle{empty}%
+  \ifstrempty{#1}{\phantomsection\addcontentsline{toc}{part}{#2}}%
+    {\refstepcounter{part}\addcontentsline{toc}{part}{\protect\numberline{#1}#2}}%
+  \markboth{#2}{#2}%
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[#3!13!ivoire] (current page.north west) rectangle ([yshift=-8.6cm]current page.north east);
+    \foreach \i in {0,...,11}{%
+      \pgfmathsetmacro{\op}{1-\i/12}
+      \node[regular polygon,regular polygon sides=6,minimum size=1.05cm,draw=ivoire,line width=1pt,
+        fill=#3,fill opacity=\op,rotate=30] at ([xshift={1.6cm+\i*0.91cm},yshift=-8.6cm]current page.north west) {};}
+  \end{tikzpicture}%
+  \vspace*{1.2cm}%
+  {\sffamily\bfseries\small\color{#3!75!black}\textls[160]{\ifstrempty{#1}{\MakeUppercase{#2}}{PARTIE}}}\par
+  \vspace{6pt}%
+  \ifstrempty{#1}{}{{\fontsize{60}{60}\selectfont\color{#3}#1}\par\vspace{10pt}%
+    {\fontsize{24}{29}\selectfont\raggedright #2\par}}%
+  \vspace*{\fill}%
+  \begingroup\small\noindent #4\par\endgroup
+  \ifstrempty{#5}{}{%
+    \vspace{14pt}{\color{#3}\rule{\linewidth}{0.6pt}}\par\vspace{6pt}%
+    \@for\cle:=#5\do{\noindent\hangindent=3.4em\hangafter=1\makebox[3.4em][l]{\sffamily\footnotesize\bfseries\color{#3}\lfstyle
+      n°\,\csname rang@\cle\endcsname}{\small\csname titre@\cle\endcsname}\par\vspace{2pt}}}%
+  \vspace*{1.2cm}%
+  \cleardoublepage
+  \ifstrempty{#5}{}{\@for\cle:=#5\do{\contribution{\cle}}}%
+}
+% \contribution{cNN} : rang affiché dans l'ouverture du chapitre, étiquette ch:cNN, chapitre en attente si absent.
+\newcommand{\contribution}[1]{%
+  \xdef\rangcourant{\csname rang@#1\endcsname}%
+  \xdef\domainecourant{\csname domaine@#1\endcsname}%
+  \xdef\labelcourant{ch:#1}%
+  \IfFileExists{chapters/#1.tex}{\input{chapters/#1.tex}}%
+    {\chapter{\csname titre@#1\endcsname}\enpreparation}%
+  \global\let\rangcourant\@empty\global\let\domainecourant\@empty}
+\newcommand{\definircontribution}[5]{%
+  \expandafter\gdef\csname rang@#1\endcsname{#2}%
+  \expandafter\gdef\csname titre@#1\endcsname{#3}%
+  \expandafter\gdef\csname domaine@#1\endcsname{#4}%
+  \expandafter\gdef\csname id@#1\endcsname{#5}}
+\makeatother
+\input{gen/titres.tex}
+\newcommand{\enpreparation}{%
+  \begin{encadre}[En préparation]
+  Ce chapitre est en cours d'écriture. Il suivra le même plan que les dix-neuf autres : l'idée en une image, ce qui a
+  été fait, comment on s'est assuré que ce n'est pas faux, ce que ça ne dit pas, et pour aller plus loin.
+  \end{encadre}}
+\newcommand{\cleartoverso}{\clearpage\ifodd\value{page}\thispagestyle{empty}\hbox{}\clearpage\fi}
+
+% ================================================================ document
+\begin{document}
+\frontmatter
+\pagestyle{empty}
+\input{cadre/couverture.tex}
+\input{cadre/dedicace.tex}
+\pagestyle{fancy}
+\begingroup\referenceactivefalse
+\renewcommand{\contentsname}{Sommaire}
+\tableofcontents
+\endgroup
+\input{cadre/prologue.tex}
+
+\mainmatter
+\partie{}{Ouverture}{okvert}{%
+  Avant de raconter les vingt contributions, il faut dire comment on les a jugées. Ce chapitre explique la
+  méthode, avec des images de tous les jours : un procès, une inspection de pont, une recette goûtée par quelqu'un
+  qui n'est pas le cuisinier.}{}
+\input{cadre/elenchus.tex}
+
+\partie{I}{L'atelier et ses garde-fous}{okorange}{%
+  Les instruments et les garde-fous de l'année : un solveur de calcul, un établi qui s'est audité lui-même, une
+  porte qui sait dire non, et une rechute corrigée deux jours plus tard. Les chapitres suivent l'ordre des dates.}%
+  {c17,c19,c18,c20}
+
+\partie{II}{Le réseau triangulaire}{okbleu}{%
+  Une IA a publié une preuve vérifiée par ordinateur : la disposition en triangles est la plus économe en énergie
+  pour toute une famille de forces répulsives. Nous en tirons des conséquences, un manuel, et trois applications
+  physiques. Tout ce qui suit dépend de ce théorème amont, produit par une IA et non relu par des pairs.}%
+  {c16,c03,c08,c09,c04,c10}
+
+\partie{III}{Quand le quantique dit non}{okpourpre}{%
+  Trois résultats où la nature, ou le calcul, contredit ce que l'on espérait : une formule du projet réfutée par
+  les données de l'hélium, puis une idée naturelle sur le monde quantique, réfutée d'abord par le calcul, ensuite
+  par un certificat : le réseau triangulaire n'est plus le meilleur dès qu'on tient compte de l'agitation
+  quantique.}{c05,c12,c11}
+
+\partie{IV}{Vérifier les preuves des autres}{okvert}{%
+  Avant de bâtir sur une preuve produite par une IA, on la refait, on la rejoue, on la compare à l'énoncé
+  officiel. Trois chapitres, et aucun ne prétend démontrer ce que les auteurs d'origine n'ont pas démontré.}%
+  {c13,c14,c15}
+
+\partie{V}{Du ciel au vivant}{okciel}{%
+  La même méthode quitte le réseau : elle encadre des distances entre galaxies, met la tension de Hubble en
+  inégalité, puis passe à la génétique des populations et à l'évolution sur un réseau.}{c01,c02,c06,c07}
+
+\partie{}{Finale}{okorange}{%
+  Ce que dessinent les vingt contributions, mises bout à bout : un chemin vers une science neuro-symbolique, où
+  l'IA propose, le calcul explore, la preuve juge et l'humain décide du sens. Puis une lettre.}{}
+\input{cadre/neurosymbolique.tex}
+\input{cadre/lettre.tex}
+
+\backmatter
+\xglobal\colorlet{accent}{okbleu}
+\input{cadre/dictionnaire.tex}
+\input{cadre/fabrication.tex}
+\input{cadre/retraits.tex}
+\input{cadre/bibliographie.tex}
+\input{cadre/images_cachees.tex}
+\end{document}

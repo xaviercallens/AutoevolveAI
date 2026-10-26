@@ -1,0 +1,285 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,
+  frame=single,framesep=3pt,xleftmargin=4pt,xrightmargin=4pt,upquote=true,aboveskip=4pt,belowskip=2pt}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tA}{\tier{A}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\tCh}{\tier{C-human}}
+\newcommand{\tCb}{\textcolor{blue!60!black}{\textsf{[C-ball]}}}
+\newcommand{\lean}[1]{\texttt{#1}}
+\newcommand{\Ezp}{E_{\mathrm{zp}}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\hess}{\operatorname{Hess}}
+\newcommand{\Ulin}{U_{\mathrm{lin}}}
+
+\title{The triangular lattice is not a local minimum of the harmonic zero-point energy for planar Yukawa potentials $\kappa=1,2$:\\
+classically optimal (H2, conditional), not zero-point optimal --- a certified partial result via a moving comparison matrix with exact curvature;\\
+Riesz $s=3$ and dipolar potentials not certified}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-26}
+\hypersetup{pdftitle={The triangular lattice is not a local minimum of the harmonic zero-point energy for planar Yukawa potentials},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure.} This preprint, its Lean code, its Python code and its claim ledger were
+produced by AI agents (Claude, Anthropic) under the author's direction. The author is responsible for the content. No human
+has audited the Lean statements for adequacy, and no human referee has checked the hand arguments. \textbf{This paper has been independently audited by an AI agent} (producer $\neq$ verifier; verdict ACCEPT\_WITH\_CORRECTIONS, no blocking item; report \texttt{AUDIT.md}), and this version applies its corrections (\texttt{REVISION.md}). \textbf{No human has audited it}, and no statement lock exists.
+
+\begin{abstract}
+For the planar Yukawa pair potentials $V_\kappa(r)=e^{-\kappa r}/r$ with $\kappa=1$ and $\kappa=2$ and unit-covolume Bravais lattices, let $E(t)$ be the harmonic zero-point energy per particle ($\hbar=m=1$) along the symmetric shear $L_t=P_tL_\rho$, $P_t=\bigl(\begin{smallmatrix}1&t\\t&1+t^2\end{smallmatrix}\bigr)$, starting at the triangular lattice $L_\rho$.
+We show $E(t)<E(0)$ for every $0<|t|\le10^{-5}$, so \textbf{the triangular lattice is not a local minimum of the zero-point energy over lattice shapes}, although it is the classical (static) energy minimiser for these potentials~\tL\ (H2, itself conditional on an upstream Lean theorem and not re-checked here). The linear-response majorant of the earlier Gaussian result (B2) cannot give this: its curvature $\Ulin''(0)$ is certified positive here ($[2.393,2.464]$ and $[2.688,2.723]$). We replace the fixed comparison matrix by a moving one, $X_t=D_0^{1/2}+tY$ with $XY+YX=D_0'$; the resulting majorant $U_2$ satisfies $U_2\ge E$, $U_2(0)=E(0)$ and $U_2''(0)=E''(0)$ exactly, and a window bound gives $U_2''\le M_{hi}<0$ with $M_{hi}=-2.03704$ ($\kappa=1$) and $-1.86854$ ($\kappa=2$).
+
+\textbf{Per potential} (details in Section~\ref{sec:table}); two of the six preregistered potentials are certified.
+\begin{center}\footnotesize\setlength{\tabcolsep}{3pt}\begin{tabular}{p{3.0cm}p{2.2cm}p{9.2cm}}\toprule
+potential & N2 result & bound or obstacle\\\midrule
+Yukawa $e^{-r}/r$ & \textbf{certified} & $M\in[-4.16483,-2.03704]$, $M_{hi}<0$ \tCb\,\tA\\
+Yukawa $e^{-2r}/r$ & \textbf{certified} & $M\in[-3.21751,-1.86854]$, $M_{hi}<0$ \tCb\,\tA\\
+dipolar $d=0.1$, $d=0.5$ & not certified & $r^{-3}$ lattice-sum tail: annulus bound $\approx6800/R_c$ vs.\ margin $\approx3.8$ (\tX); Ewald remedy scoped, not attempted\\
+Riesz $r^{-3}$ & not certified & same obstacle\\
+Riesz $r^{-4}$ & not attempted & \tX{} evidence only: finite-difference $E''(0)=+2.754$ along the shear (cutoff 40/100) suggests $\rho$ is a local minimum; not certified in either direction\\
+\bottomrule\end{tabular}\end{center}
+
+\textbf{Tier split.} \tA: the Lean~4.34.1 kernel checks the logic, the 1D calculus step (a window lemma), and the signs of the rational certificates; axioms within $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$; planted-\lean{sorry}, planted-axiom and a false Gaussian $a=2$ certificate are caught or rejected. \tCb: the Brillouin-zone integrals, lattice sums and tails are Arb ball-arithmetic enclosures (86,581 cells for the two Yukawa runs, 0 failed), \emph{not} kernel-checked. \tCh: the glue (majorant inequality after integration, $U_2''(0)=E''(0)$, differentiation under the integral, mirror symmetry, identification with the earlier $\Ezp$). The headline is therefore Tier~C overall. A side result $\mathrm{Lap}\,\Ezp(\rho)\in[-2.0824,-1.0185]$ ($\kappa=1$) and $[-1.6088,-0.9343]$ ($\kappa=2$) is conditional on $C^2$ hypotheses and is \tCh.
+\end{abstract}
+
+\paragraph{Tiers and markers.} \tA: kernel-checked Lean, axioms within the allowlist, controls caught. \tL: a cited source, taken as stated and not re-checked here. \tCb: rigorous ball arithmetic, outward rounded, executed but not kernel-checked. \tCh: a written mathematical argument, not machine-checked. \tX: floating point, supporting nothing by itself. Identifiers \texttt{PZP-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json} (Section~\ref{sec:ledger}); in the ledger both C flavours are Tier~C and the flavour is the \texttt{subtier} field of the evidence blob. A Tier~A tag attaches to the Lean statement, never to its physical gloss.
+
+%=====================================================================
+\section{Setting, predecessors and what was preregistered}\label{sec:setting}
+The lineage is: P2~\cite{p2} found numerically (\tX) that the triangular lattice is not the minimiser of the harmonic zero-point energy $\Ezp$ for several completely monotone potentials; H2~\cite{h2} proves (conditionally on an upstream Lean theorem, \tL\ here) that the triangular lattice \emph{is} the classical energy minimiser for planar Yukawa potentials at every density; B2~\cite{b2} certified ``not a local minimum'' for the single Gaussian $e^{-\pi r^2}$. The present item asks whether the physically relevant potentials (screened Coulomb, dipolar excitons, Riesz) can be treated the same way. For Yukawa the answer is yes, and the title's contrast is the point: \emph{classically optimal (H2, conditional) but not zero-point optimal}. ``Planar Yukawa'' means, as in H2, the 3D-screened Coulomb potential $e^{-\kappa r}/r$ between particles confined to a plane; it is \emph{not} the 2D Debye--H\"uckel Green function $K_0(\kappa r)$, which is not treated.
+
+\paragraph{The functional.} Let $L_\rho=c\mathbb Z(1,0)+c\mathbb Z(\tfrac12,\tfrac{\sqrt3}2)$, $c^2=2/\sqrt3$, and $R_n(t)=P_tR_n(0)$ for integer labels $n=(m,l)$. Put $H_n(t)=\hess V(R_n(t))$ and, at reduced zone coordinate $\kappa\in[-\tfrac12,\tfrac12]^2$ (here $\kappa$ is the \emph{zone coordinate}; the Yukawa screening parameter is written $\kappa_Y\in\{1,2\}$ only where needed),
+\[D_t(\kappa)=\sum_{n\ne0}\bigl(1-\cos2\pi\kappa\!\cdot\! n\bigr)H_n(t),\qquad E(t)=\tfrac12\int\tr D_t(\kappa)^{1/2}\,d\kappa .\]
+Labels and $\kappa$ are held fixed as $t$ varies (strain frame, no rotation); $\det P_t=1$; the lattice shape is $\tau(t)=\rho+\sqrt3\,t+O(t^2)$. \tCh{} For a radial $V=g(|R|^2)$ one has $H=2g'(q)I+4g''(q)RR^{\mathsf T}$, $q=|R|^2$.
+
+\paragraph{Preregistration.} Item N2 of \texttt{results/proposal3/2026-10-26/preregistration.json}: ``for each potential refuted numerically in P2, extend B2's linear-response majorant certificate (with rigorous lattice-sum tails for algebraic decay) to certify $\Ezp(L_t)<\Ezp(L_\rho)$ for small shears; negative control: a potential where P2 found the triangular lattice a local minimum (e.g.\ Riesz $s=6$ or Gaussian $a=2$) must not certify''. Priors: $0.5$ per potential, $0.3$ for all six. Kill rule: ``report per potential; slowly decaying tails (Riesz 3, dipolar) may defeat the certificate: report the obstacle''. Six potentials were listed: Yukawa $\kappa=1,2$, dipolar $d=0.1,0.5$, Riesz $s=3,4$.
+\textbf{Deviations, stated up front.} (i)~The method is \emph{not} B2's linear-response majorant but a moving-matrix one, because B2's fails (Section~\ref{sec:human}, Step~1). (ii)~Riesz $s=4$ was not attempted because \tX{} evidence suggests the local statement is false (Section~\ref{sec:riesz4}). (iii)~The negative control is Gaussian $a=2$ (an allowed choice in the text), not Riesz $6$. (iv)~Two of six potentials are certified, so the ``all six'' prior ($0.3$) did not materialise; the per-potential prior ($0.5$) was met for two of the six.
+
+%=====================================================================
+\section{Result per potential}\label{sec:table}
+\begin{center}\small\setlength{\tabcolsep}{4pt}\begin{tabular}{p{2.6cm}p{1.6cm}p{2.3cm}p{1.9cm}p{5.6cm}}\toprule
+potential & P2 verdict & Tier~\tX{} $E''(0)$ & $\Ulin''(0)$ (B2) & N2 result\\\midrule
+Yukawa $e^{-r}/r$ & local max & $-3.107$ & $[2.393,2.464]$ \tCb & \textbf{certified} \tCb\,\tA: $M\in[-4.16483,-2.03704]$, $M_{hi}=-\tfrac{1018521206953}{5\cdot10^{11}}<0$\\
+Yukawa $e^{-2r}/r$ & local max & $-2.549$ & $[2.688,2.723]$ \tCb & \textbf{certified} \tCb\,\tA: $M\in[-3.21751,-1.86854]$, $M_{hi}=-\tfrac{1868541510831}{10^{12}}<0$\\
+dipolar $d=0.1$ & local max & $-2.616$ & $+16.6$ \tX & not certified: $r^{-3}$ tail obstacle\\
+dipolar $d=0.5$ & local max & $-4.767$ & $+9.26$ \tX & not certified: $r^{-3}$ tail obstacle\\
+Riesz $r^{-3}$ & local max & $-2.439$ & $+17.1$ \tX & not certified: $r^{-3}$ tail obstacle\\
+Riesz $r^{-4}$ & refuted only by far competitor; local \emph{min} (\tX) & $+2.754$ & $+33.2$ \tX & not attempted: \tX{} evidence suggests the local statement is false; not certified either way\\
+\midrule
+Gauss $a=1$ (+ctl) & --- & $-7.699$ & $[-1.94,-1.91]$ & certified, $M\in[-8.23325,-7.15778]$ \tCb\,\tA\\
+Gauss $a=2$ ($-$ctl) & strict local min & $+3.944$ & $[12.71,12.74]$ & $M\in[+3.44960,+4.46308]$: rejected by three gates\\
+\bottomrule\end{tabular}\end{center}
+The Tier~\tX{} column is a finite-difference evaluation with real-space cutoff 40 (for Riesz 3, 4 and dipolar also 100, unchanged to the digits shown: \texttt{data/tierx\_scan\_rc40.txt}, \texttt{rc100.txt}). It says where a certificate \emph{could} exist; it supports no claim (\texttt{PZP-X-0001}). For the dipolar potential ``$d$'' is the dipole parameter in P2's normalisation, in which $V=r^{-3}+O(d^2r^{-5})$.
+
+%=====================================================================
+\section{Step-by-step human demonstration, with the matching Lean statements}\label{sec:human}
+Throughout, $X=D_0(\kappa)^{1/2}$, $D'=\partial_tD_t|_{t=0}$, $D''=\partial_t^2D_t|_{t=0}$, and $S_t=D_t^{1/2}$. Lean listings are transliterated to ASCII (full text in \texttt{data/lean/}).
+
+\paragraph{Step 1: B2's linear-response majorant cannot work here \tCb{} (\texttt{PZP-C-0004}).} B2 bounds $E$ above by the \emph{fixed}-matrix majorant
+\[\Ulin(t)=\tfrac14\int\bigl[\tr X+\tr(X^{-1}D_t)\bigr]d\kappa,\qquad \Ulin''(0)=\tfrac14\int\tr(X^{-1}D'')\,d\kappa .\]
+It is affine in $D_t$, which made it computable, and it works when $\Ulin''(0)<0$ (the Gaussian $a=1$ case: $-1.92$). Here it does not: the Arb enclosures are $\Ulin''(0)\in[2.39298,2.46426]$ ($\kappa_Y=1$) and $[2.68830,2.72310]$ ($\kappa_Y=2$), strictly positive, while the floating-point $E''(0)$ is negative ($-3.107$, $-2.549$). Because $\Ulin''(0)>0$ is a property of $\Ulin$ itself, no choice of window constant can rescue it; it also holds for all six physical potentials at Tier~\tX{} (positive $+2.4$ to $+33.2$). The gap is exactly the relaxation term of Step~3: $\Ulin''(0)-E''(0)=\tfrac12\int\tr(X^{-1}Y^2)\,d\kappa\ge0$.
+
+\paragraph{Step 2: the moving comparison matrix \tCh{} (\texttt{PZP-C-0007}).} The idea is to let the comparison matrix follow $S_t$ to first order. Differentiating $S_t^2=D_t$ gives $XS_0'+S_0'X=D'$, so $S_0'=Y$ is the unique symmetric solution of the $2\times2$ Sylvester equation
+\[XY+YX=D',\]
+a linear $3\times3$ system for the entries of $Y$, uniquely solvable because the eigenvalues of $Y\mapsto XY+YX$ are $\lambda_i+\lambda_j>0$ for $X\succ0$ (solved by Cramer's rule in the code).
+Put $X_t=X+tY$. Where $X_t$ is positive definite (\tCb\ check on every cell and every $|u|\le10^{-5}$, \texttt{PZP-C-0003}; margins $q_{lo}=0.6633$ and $0.5739$), the pointwise inequality of B2's Lean lemma applies with $X:=X_t$, $S:=S_t$:
+\[2\tr D_t^{1/2}\le \tr X_t+\tr(X_t^{-1}D_t)=:f_\kappa(t),\qquad\text{equality at }t=0 .\]
+Integrating, $E(t)\le U_2(t):=\tfrac14\int f_\kappa(t)\,d\kappa$ and $U_2(0)=E(0)$. In Lean the pointwise inequality is B2's \lean{ProgZeroPointCert.two\_trace\_le\_of\_inverse}, a $2\times2$ trace inequality (\tA, \texttt{CZP-A-0001} of B2). The lemma is imported by N2's module, but \emph{no Lean theorem applies it here}: in \texttt{Basic.lean} the resulting inequality $E\le U_2$ on the window is only the hypothesis \lean{hEU}, discharged by this lemma plus the positivity checks and the integration, i.e.\ \tCb\ and \tCh, not \tA:
+\begin{lstlisting}
+theorem two_trace_le_of_inverse (x11 x12 x22 p11 p12 p22 s11 s12 s22 : R) (hp : 0 < p11)
+    (hdet : 0 <= p11*p22 - p12^2) (h11 : ...) (h12 : ...) (h21 : ...) (h22 : ...) :
+    2*(s11+s22) <= (x11+x22) + (p11*(s11^2+s12^2) + 2*p12*(s12*(s11+s22)) + p22*(s12^2+s22^2))
+\end{lstlisting}
+The integration over $\kappa$ and the identification $S_t=D_t^{1/2}$ are glue.
+
+\paragraph{Step 3: the curvature is exact, $U_2''(0)=E''(0)$ \tCh{} (\texttt{PZP-C-0008}).} Since $S_t=X+tY+O(t^2)$, we have $S_t-X_t=O(t^2)$. The pointwise gap is
+\[f_\kappa(t)-2\tr S_t=\tr\bigl(X_t^{-1}(S_t-X_t)^2\bigr)=O(t^4)\]
+(expand $\tr(P(S-X)^2)=\tr(PS^2)-2\tr S+\tr X$, $P=X_t^{-1}$, as in B2's proof of the lemma). So $f_\kappa$ and $2\tr S_t$ agree to third order at $t=0$. Explicitly,
+\[f_\kappa''(0)=\tr(X^{-1}D'')-2\tr(X^{-1}Y^2)=2\tr S_0'',\]
+where the second equality uses $D''=S''X+2Y^2+XS''$ and cyclicity of the trace. Hence $U_2''(0)=\tfrac12\int\tr S_0''\,d\kappa=E''(0)$. Compare the fixed-matrix majorant, whose second derivative lacks the term $-2\tr(X^{-1}Y^2)$: $\Ulin''(0)-U_2''(0)=\tfrac12\int\tr(X^{-1}Y^2)\,d\kappa$, the relaxation term of Step~1 (about $5.5$ for $\kappa_Y=1$ by Tier~\tX{} values: $2.43-(-3.107)$). \emph{The majorant loses nothing at second order.} Near $\Gamma$ all of this is done with the Duffy scaling $D=s^2B$ of B2 so that the integrands are regular; that integral version is part of the \tCh{} glue.
+
+\paragraph{Step 4: isotropy, so the shear direction loses nothing \tCh{} (\texttt{PZP-C-0011}).} The Hessian of $\Ezp$ over lattice shapes at $\rho$ is isotropic because $\rho$ has an order-3 stabiliser in $SL_2(\mathbb Z)$ (P2 section~3.1, itself Tier~C). Therefore $E''(0)$ does not depend on the strain direction, and since $U_2''(0)=E''(0)$ the shear path of B2 is as good as any other for every potential (assuming $\Ezp$ is $C^2$ at $\rho$, for paths with equal $|\tau'(0)|$; not used by the headline). B2's frame dependence was a property of $\Ulin$ only.
+
+\paragraph{Step 5: the Taylor window lemma \tA{} (\texttt{PZP-A-0001}).} We need a bound on $U_2(t)+U_2(-t)-2U_2(0)$ over the whole window, not just at $0$. If $f$ is twice differentiable on $[-t,t]$ with $f''\le K$ there, then $f(t)+f(-t)-2f(0)\le t^2K$. \emph{Proof.} Put $\varphi(u)=f'(u)-f'(-u)-2Ku$; then $\varphi'(u)=f''(u)+f''(-u)-2K\le0$ and $\varphi(0)=0$, so $\varphi\le0$ on $[0,t]$. Put $\psi(u)=f(u)+f(-u)-Ku^2$; then $\psi'=\varphi\le0$, so $\psi(t)\le\psi(0)$, i.e.\ $f(t)+f(-t)-Kt^2\le2f(0)$. $\square$ In Lean (\texttt{Taylor.lean}, two applications of \lean{antitoneOn\_of\_deriv\_nonpos}):
+\begin{lstlisting}
+theorem second_diff_le_of_deriv2_le {f f1 f2 : R -> R} {t K : R} (ht : 0 <= t)
+    (h1 : forall u in Set.Icc (-t) t, HasDerivAt f (f1 u) u)
+    (h2 : forall u in Set.Icc (-t) t, HasDerivAt f1 (f2 u) u)
+    (hK : forall u in Set.Icc (-t) t, f2 u <= K) :
+    f t + f (-t) - 2 * f 0 <= t ^ 2 * K
+\end{lstlisting}
+This replaces B2's cruder esum perturbation bound by a single uniform second-derivative bound.
+
+\paragraph{Step 6: the window enclosure \tCb{} (\texttt{PZP-C-0001, -0002}).} Let $M(u)=\tfrac14\int f_\kappa''(u)\,d\kappa=U_2''(u)$ \tCh{} (differentiation under the integral sign, \texttt{PZP-C-0009}: the integrand and its first two $t$-derivatives are bounded on cells times window, which the Arb run bounds). The certifier encloses $M(u)$ with $u$ a \emph{ball} $[-t_0,t_0]$, $t_0=10^{-5}$: for every fixed $|u|\le t_0$ the cell sum encloses $M(u)$, and the reported $M$ is an enclosure valid for all such $u$ at once (quantifier order: $\sup_u\int$, not $\int\sup_u$; this corrects the docstring of the code, Section~\ref{sec:lim}). Results: $M\in[-4.16483,-2.03704]$ ($\kappa_Y=1$), $M\in[-3.21751,-1.86854]$ ($\kappa_Y=2$). The Lean hypotheses \lean{hd1}, \lean{hd2} at the endpoints $u=\pm t_0$ need $U_2$ to be differentiable on a neighbourhood of $\pm t_0$, while the positivity checks cover only the closed window $|u|\le t_0$; the gap is closed by continuity because the margins are strict, an argument stated here and not separately certified (\texttt{PZP-C-0009}). Both upper endpoints are negative; $E''(0)=U_2''(0)$ lies in the same interval, and the Tier~\tX{} values $-3.107$ and $-2.549$ are inside.
+
+\paragraph{Step 7: logic and assembly \tA{} (\texttt{PZP-A-0002 to -0004}).} With $M\le M_{hi}<0$: for $0<t\le t_0$, $E(t)+E(-t)\le U_2(t)+U_2(-t)\le2U_2(0)+t^2M<2E(0)$, so some one of $E(\pm t)$ is below $E(0)$, hence $0$ is not a local minimum; with the mirror symmetry $E(-t)=E(t)$ (any radial $V$: $\sigma=\mathrm{diag}(1,-1)$ preserves $L_\rho$ and $\sigma P_t\sigma=P_{-t}$; \tCh{}, \texttt{PZP-C-0010}) both are. Lean (\texttt{Basic.lean}, which imports B2's \lean{Programmes.ZeroPointCert.Basic}):
+\begin{lstlisting}
+theorem window_of_deriv2 (U U1 U2pp : R -> R) (t0 M : R)
+    (hd1 : forall u, |u| <= t0 -> HasDerivAt U (U1 u) u)
+    (hd2 : forall u, |u| <= t0 -> HasDerivAt U1 (U2pp u) u)
+    (hK : forall u, |u| <= t0 -> U2pp u <= M) :
+    forall t, 0 < t -> t <= t0 -> U t + U (-t) - 2 * U 0 <= t ^ 2 * M
+theorem not_localMin_of_deriv_cert (E U U1 U2pp : R -> R) (t0 M M_hi : R) (ht0 : 0 < t0)
+    (hneg : M_hi < 0) (hM : M <= M_hi) (hEU : forall t, |t| <= t0 -> E t <= U t) (h0 : U 0 = E 0)
+    (hd1 : ...) (hd2 : ...) (hK : forall u, |u| <= t0 -> U2pp u <= M) (hsym : forall t, E (-t) = E t) :
+    Not (IsLocalMin E 0) /\ forall t, 0 < t -> t <= t0 -> E t < E 0
+def yuk2_M_hi : R := -1868541510831 / 1000000000000
+theorem yuk2_cert : yuk2_M_hi < 0 /\ 0 < yuk2_lmin_lo /\ 0 < yuk2_lminu_lo /\ 0 < yuk2_qpd_lo
+theorem yukawa2_not_localMin_of_certificate (E U U1 U2pp : R -> R) (M : R) (hEU : ...) (h0 : ...)
+    (hd1 : ...) (hd2 : ...) (hK : ...) (hM : M <= yuk2_M_hi) (hsym : ...) :
+    Not (IsLocalMin E 0) /\ forall t, 0 < t -> t <= t0 -> E t < E 0
+\end{lstlisting}
+The hypotheses of the two \lean{yukawa*\_not\_localMin\_of\_certificate} theorems are \emph{exactly} the non-kernel-checked inputs: $E\le U$ on the window (Step~2, \tCb+\tCh), $U(0)=E(0)$ (\lean{two\_trace\_eq\_of\_eq}, B2), the two derivatives of $U$ (Step~6), $U''\le M\le M_{hi}$ (\tCb) and the mirror symmetry (\tCh). The positivity rationals \lean{yuk*\_lmin\_lo}, \lean{yuk*\_lminu\_lo}, \lean{yuk*\_qpd\_lo} are proved positive in \lean{yuk*\_cert} but are \emph{unused}: the two \lean{*\_not\_localMin\_of\_certificate} theorems consume only \lean{yuk*\_cert.1} ($M_{hi}<0$), and positivity enters only through the hypothesis \lean{hEU}. The kernel proves the implication and the signs of the rational endpoints (\lean{yuk1\_M\_hi}$=-\tfrac{1018521206953}{500000000000}$, \lean{yuk2\_M\_hi}$=-\tfrac{1868541510831}{10^{12}}$), not the physics.
+
+\paragraph{Step 8: why this excludes a local minimum of the shape problem \tCh{} (\texttt{PZP-C-0010}).} As in B2: $\tau(t)=\rho+\sqrt3\,t+O(t^2)$, so small $t\ne0$ give unit-covolume lattices of shape $\ne\rho$ (mod $SL_2(\mathbb Z)$) arbitrarily close to $\rho$ with strictly smaller $\Ezp$. No criticality or isotropy is needed for this step (isotropy enters only in Step~4's remark and in the side result of Section~\ref{sec:lap}).
+
+\paragraph{Headline \tier{C} (\texttt{PZP-C-0012}).} Assembling Steps 2--8: for $V_\kappa=e^{-\kappa_Yr}/r$, $\kappa_Y\in\{1,2\}$, $E(t)<E(0)$ for $0<|t|\le10^{-5}$; $0$ is not a local minimum of $E$; the triangular lattice is not a local minimum of $\Ezp$ over lattice shapes (harmonic approximation, Bravais, 2D, one path, local window).
+
+%=====================================================================
+\section{The certifier, briefly}\label{sec:engine}
+Everything in this section is \tCb{} and lives in \texttt{data/code/n2\_certify.py} (sha256 below); it is not kernel-checked.
+\begin{itemize}\itemsep=1pt
+\item \textbf{Potential and derivatives.} $V=g(q)$, $q=|R|^2$; $H$, $H'$, $H''$ along $R(t)=P_tR_0$ from $g',\dots,g''''$ (sympy, evaluated in Arb); closed-form $H'$, $H''$ against finite differences: max error $3\times10^{-8}$, $2\times10^{-7}$ \tX{} (\texttt{data/code/n2\_selfcheck.py}).
+\item \textbf{Duffy coordinates.} The reduced square is split into four triangles with apex $\Gamma$, $\kappa=s\,v(t')$, and $D_t=s^2B_t$, so that $B_t$, $B'_t$, $B''_t$ are regular at $s=0$. With $Q=B_0^{1/2}$, $QY_t+Y_tQ=B_0'$ and $Q_i=(Q+uY_t)^{-1}$, the integrand is $s^2\varphi/8$ with $\varphi=2\tr(Q_iY_tQ_iY_tQ_iB_u)-2\tr(Q_iY_tQ_iB_u')+\tr(Q_iB_u'')$, the formula for $f_\kappa''(u)$ above.
+\item \textbf{Second-order cell rule.} $\int_{\rm cell}g=|{\rm cell}|(g(c)+R)$ with $|R|\le\tfrac{h^2}{24}(\sup|g_{ss}|+\sup|g_{tt}|)+\tfrac{h^2}{16}\sup|g_{st}|$ (Taylor with Lagrange remainder; the linear term integrates to zero), with second-order jets in $(s,t')$ computed in forward mode. B2's first-order rule gave widths $10$--$100\times$ larger and would not close.
+\item \textbf{The function $f(x)=(1-\cos x)/x^2$} (the cell phases) is enclosed by monotonicity on $[0,2\pi]$ ($f'<0$ there), with $f',f''$ by series, closed form, or global bounds $\sup|f'|\le0.13804$; a float sample check found 0 violations (\texttt{n2\_dbg2.py}).
+\item \textbf{Tails.} The lattice sum is exact over $m^2+ml+l^2\le Q_{\max}$ ($650$ for $\kappa_Y=1$, $150$ for $\kappa_Y=2$). Beyond it, shells of width $\tfrac12$ with point count $\le\pi(r+\tfrac12+\rho_V)^2-\pi(r-\rho_V)^2$ (Voronoi hexagon radius $\rho_V$) and $|g^{(j)}|$ decreasing in $q$ (complete monotonicity); beyond $r_K=r_{\rm tail}+200$ an explicit decay majorant and a geometric series with computed ratio ($0.639$, $0.389$) are used. Tails enter as balls on every entry and every partial derivative (values in the \texttt{tails} field of each run file).
+\item \textbf{Positivity.} On every cell and every $|u|\le t_0$: $\det B_u>0$, $\tr B_u>0$ ($\lambda_{\min}$ lower bound $\mathrm{lminu}_{lo}$) and $\det(Q+uY_t)>0$, $\tr>0$ ($\mathrm{qpd}_{lo}$): the strained lattices are dynamically stable and $X_u$ is positive definite. These three lower bounds pass through floating-point \texttt{float()} in the certifier (\texttt{n2\_certify.py}, lines 695 and 759--761), so they are rounded to nearest, not outward; with margins $\ge0.57$ this is harmless,; as noted in Step~7, no Lean theorem uses them.
+\end{itemize}
+
+%=====================================================================
+\section{Numbers and controls}\label{sec:numbers}
+All values are outward-rounded ball endpoints (python-flint~0.6.0, 80 bits), $t_0=1/100000$, one certifier version for all runs (script sha256 in Section~\ref{sec:repro}). \tCb
+\begin{center}\footnotesize\setlength{\tabcolsep}{1.5pt}\begin{tabular}{p{1.8cm}p{1.0cm}p{2.0cm}p{0.9cm}p{3.1cm}p{3.1cm}p{2.7cm}}\toprule
+run & pairs & cells (refined) & sec. & $M$ (window bound) & $E(0)$ enclosure & $\mathrm{lmin}/\mathrm{lminu}/\mathrm{qpd}$ lower\\\midrule
+Yukawa 1 & 1173 & 59867 (17225) & 7098 & $[-4.16483,-2.03704]$ & $[1.765657,1.766136]$ & $0.8776/0.8748/0.6633$\\
+Yukawa 2 & 273 & 26714 (6174) & 650 & $[-3.21751,-1.86854]$ & $[1.459124,1.459391]$ & $0.6769/0.6753/0.5739$\\
+Gauss 1 (+) & 42 & 17414 (3074) & 73 & $[-8.23325,-7.15778]$ & $[1.503147,1.503478]$ & $0.8901/0.8896/0.6764$\\
+Gauss 2 ($-$) & 42 & 16682 (2830) & 104 & $[+3.44960,+4.46308]$ & $[0.541863,0.541967]$ & $0.1427/0.1427/0.2668$\\
+\bottomrule\end{tabular}\end{center}
+The Yukawa~1 run is the exact merge (\texttt{n2\_merge.py}) of two runs over disjoint $s$-index ranges $0$--$11$ and $12$--$63$ computed on two cores (7098 CPU-seconds, 4918 s wall), settings $N=64$, depth 2, tolerance 1.0, $Q_{\max}=650$; Yukawa~2 uses $N=64$, depth 1, tolerance 0.5, $Q_{\max}=150$. P2's spectral $\Ezp$ lies inside every $E(0)$ enclosure ($1.7658983$, $1.4592747$, $1.50335235$, $0.5419325$).
+
+\paragraph{Controls.}
+\begin{center}\small\begin{tabular}{p{4.3cm}p{8.5cm}p{1.6cm}}\toprule
+control & result & tier\\\midrule
+(+) Gaussian $a=1$, new code & certified, $M_{hi}=-7.15778$; LeanFlow \emph{verified}; \lean{gauss1\_cert}; Tier~\tX{} $E''(0)=-7.699$ inside $M$ & \tCb\,\tA\\
+(+) $\Ulin''(0)$ against B2's independent code & $[-1.93965,-1.90847]\subset[-1.94771,-1.90017]$ ($a=1$); $[12.7109,12.7393]\subset[12.69365,12.75701]$ ($a=2$) & \tCb\\
+(+) $E(0)$ against P2's spectral values & contained in all four enclosures & \tCb\\
+(+) closed-form $H',H''$ vs finite differences; $f,f'$ vs float samples & max $3\times10^{-8}$, $2\times10^{-7}$; 0 violations & \tX\\
+($-$) Gaussian $a=2$ (P2: strict local min) & $M\in[+3.44960,+4.46308]$: not certified by the certifier; LeanFlow \emph{rejected} (\texttt{false-statement}, \texttt{cert\_0}); \texttt{RejectGauss2.lean} rc~1, goal \lean{False}; \lean{gauss2\_not\_certifiable} (standard axioms): the last three are arithmetic sanity checks & \tCb\,\tA\\
+($-$) planted \lean{sorry} / planted axiom & \texttt{Controls.lean} rc~0, but \lean{\#print axioms} shows \lean{sorryAx} (\lean{ctl\_sorry}) and \lean{ProgZeroPointPhysCtl.ctl\_cheat} (\lean{ctl\_axiom}): caught by the axiom gate, not the exit code & \tA\\
+($-$) first Yukawa~1 attempt ($Q_{\max}=450$, depth 1) & $M\in[-15.80,+9.60]$: correctly \emph{not} certified (cell widths near $\Gamma$); kept in \texttt{runs/o2\_y1\_N64.json}. A single-core retry ($Q_{\max}=650$, depth 2, tolerance 0.3) was stopped after 33 minutes (no result, log kept); the certified run is the split one & \tCb\\
+\bottomrule\end{tabular}\end{center}
+The substantive negative control is the certifier run ($M_{lo}>0$, not certified). The Lean and LeanFlow rejections are arithmetic sanity checks only: \lean{gauss2\_not\_certifiable} concludes $\neg\,M<0$ from $M\ge$ a positive rational, \texttt{RejectGauss2.lean} shows that \lean{norm\_num} cannot prove a false rational inequality, and LeanFlow's \lean{decide} refutes the same false numeric claim. The $a=2$ run is the method's falsification test; it shows the certifier does not always say ``not a minimum'', not that it is complete. A reader should also note that the Gaussian controls reproduce B2's setting, so they test the machinery but not the algebraic-tail case.
+
+%=====================================================================
+\section{The obstacle for Riesz \texorpdfstring{$r^{-3}$}{1/r**3} and the dipolar potentials}\label{sec:obstacle}
+Tier~\tX{} says a certificate should exist: $E''(0)=-2.439$ (Riesz 3), $-2.616$ ($d=0.1$), $-4.767$ ($d=0.5$), unchanged from real-space cutoff 40 to 100, and $U_2''(0)=E''(0)$ by Step~3. The obstruction is rigorous control of $D$:
+\begin{itemize}\itemsep=1pt
+\item $\hess r^{-3}\sim r^{-5}$. Near $\Gamma$, $B=D/s^2$ is the elastic sum $\sum\theta_n^2fH_n\sim\sum r^2r^{-5}$, whose real-space tail decays only like $1/R_c$ because $D$ has a non-analytic $|k|^3$ term. The shell bound that works for Yukawa, applied to $r^{-3}$ (\texttt{n2\_riesz3\_tail.py}, \texttt{PZP-X-0002}), gives for the annulus $[R_c,2R_c)$ \emph{alone}:
+\begin{center}\small\begin{tabular}{lccccc}\toprule
+$R_c$ & 10 & 25 & 50 & 100 & 200\\\midrule
+tail bound on entries of $B$ & 818 & 291 & 140 & 68.6 & 34.0\\\bottomrule\end{tabular}\end{center}
+i.e.\ about $6800/R_c$, against $\lambda_{\min}(B)\gtrsim(2\pi)^2\times0.39\times\tfrac14\approx3.8$ (\tX). A certificate would need $R_c\sim10^5$, about $3\times10^{10}$ lattice points per cell evaluation: infeasible. (These numbers are floating-point evaluations of a bound, \tX, so they show an obstacle, they do not prove impossibility of any method.)
+\item The partial $s$-derivatives that the cell rule uses are worse: $\sum\theta^3f'H\sim\sum r^3r^{-5}$ diverges logarithmically termwise near $s=0$.
+\end{itemize}
+\textbf{Scoped remedy (not attempted, no claim).} In P2's normalisation the dipolar potential is $r^{-3}+O(d^2r^{-5})$, so one Ewald / Gaussian-mixture treatment of $r^{-3}$, $r^{-3}=\tfrac{\pi^{3/2}}{\Gamma(3/2)}\int_0^\infty a^{1/2}e^{-\pi ar^2}da$, split at $a^*$ into a short-range part $\Gamma(\tfrac32,\pi a^*r^2)/(\Gamma(\tfrac32)r^3)$ in real space and a long-range part in reciprocal space with incomplete-gamma transforms, with the remainder (Hessian $\sim r^{-7}$) in real space, would cover Riesz~3 and both dipolar cases. That needs reciprocal-space jets in $(s,t',t)$ and a cancellation-free form of $[F(G-\xi)+F(G+\xi)-2F(G)]/s^2$ for $G\ne0$. It was estimated at 2--3 hours of development and not attempted within the budget. Nothing is claimed for these three potentials, in either direction.
+
+%=====================================================================
+\section{Deviation from the preregistration: Riesz \texorpdfstring{$r^{-4}$}{1/r**4}, Tier X evidence of a local minimum}\label{sec:riesz4}
+The preregistered list contains Riesz $s=4$ because P2 reports the claim ``the triangular lattice is not the zero-point minimiser'' as refuted for $s=4$. That refutation, however, is \emph{global}: it uses the finite competitor $\tau=0.3+0.954i$, not a local direction. \tX{} evidence (finite-difference $E''(0)=+2.754$ along the shear, real-space cutoff 40 and 100; and $\Ulin''(0)=+33.2$) is that $\rho$ is a local minimum of $\Ezp$ for $s=4$. This is a one-path floating-point curvature: it is not certified in either direction. If it is right, the local statement ``not a local minimum'' that this method certifies is false there, and there is nothing to certify. The preregistered item appears to conflate global and local refutation (``each potential refuted in P2''). Riesz~6 ($E''(0)=+27.2$, $\Ulin''=+89.2$) was therefore not run through the certifier as a negative control; Gaussian $a=2$ (an allowed control) was used instead. A certified \emph{global} comparison (the far competitor at $s=4$) is outside this paper's scope and remains \tX{}.
+
+%=====================================================================
+\section{Side result: the Laplacian of \texorpdfstring{$\Ezp$ at $\rho$}{Ezp at rho} (conditional)}\label{sec:lap}
+$M$ encloses $U_2''(u)$ for every $|u|\le t_0$, in particular $E''(0)=U_2''(0)$, \emph{two-sidedly} (B2's method gave one side only). If $E$ is $C^2$ at $0$, $\Ezp$ is $C^2$ near $\rho$, $\rho$ is critical with isotropic Hessian (order-3 stabiliser, P2 3.1) and $|\tau'(0)|^2/y^2=4$, then $\mathrm{Lap}\,\Ezp(\rho)=E''(0)/2$ and \tCh{} (\texttt{PZP-C-0013}):
+\begin{center}\small\begin{tabular}{lcc}\toprule
+potential & $\mathrm{Lap}\,\Ezp(\rho)$ enclosure & P2 Tier~\tX{} value\\\midrule
+Yukawa $\kappa_Y=1$ & $[-2.0824,-1.0185]$ & $E''/2=-1.554$ (\tX), inside\\
+Yukawa $\kappa_Y=2$ & $[-1.6088,-0.9343]$ & $E''/2=-1.275$ (\tX), inside\\
+Gauss $a=1$ & $[-4.1166,-3.5789]$ & $E''/2=-3.8495$ (\tX; P2: $-3.848$), inside\\
+Gauss $a=2$ & $[+1.7248,+2.2315]$ & $E''/2=+1.97$ (\tX), inside\\\bottomrule\end{tabular}\end{center}
+The comparison column uses only this paper's Tier~\tX{} values $E''(0)/2$. An earlier draft compared with P2's coefficient $c$ ($-0.39$, $-0.32$) through a conversion factor of about $3.97$ that was asserted, not derived (the normalisation of $c$ is P2's and is not re-derived here); that comparison is dropped. This is not kernel-checked and depends on hypotheses the paper does not discharge. For $a=2$ it is a two-sided \emph{positive} curvature, which is the consistent counterpart of the failed negative certificate.
+
+%=====================================================================
+\section{Lean formalisation and LeanFlow}\label{sec:lean}
+\paragraph{Modules.} \path{formal_cert/Programmes/ZeroPointPhys/}: \texttt{Taylor.lean} (Mathlib submodules only), \texttt{Basic.lean} (imports \lean{Programmes.ZeroPointCert.Basic} of B2 and \lean{Taylor}), \texttt{Controls.lean}, \texttt{RejectGauss2.lean}; never \lean{import Mathlib}, no \lean{sorry}. Pinned Lean~4.34.1 via \texttt{scripts/certified\_numerics/lean\_pinned.py}: \texttt{Taylor.lean} rc~0 (116.7~s), \texttt{Basic.lean} rc~0 (10.4~s), \texttt{Controls.lean} rc~0 (11.2~s, with the planted \lean{sorry}/axiom), \texttt{RejectGauss2.lean} rc~1 (11.2~s, \lean{unsolved goals ... |- False}, as required). Every declaration printed depends on exactly $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$: \lean{second\_diff\_le\_of\_deriv2\_le}, \lean{not\_localMin\_of\_window\_cert}, \lean{not\_certifiable\_of\_lo\_pos}, \lean{window\_of\_deriv2}, \lean{not\_localMin\_of\_deriv\_cert}, \lean{yuk1\_cert}, \lean{yukawa1\_not\_localMin\_of\_certificate}, \lean{yuk2\_cert}, \lean{yukawa2\_not\_localMin\_of\_certificate}, \lean{gauss1\_cert}, \lean{gauss1\_not\_localMin\_of\_certificate}, \lean{gauss2\_not\_certifiable} (\texttt{data/lean\_*.json}).
+\paragraph{Hashes (sha256).}
+\begin{itemize}\scriptsize\itemsep=0pt
+\item \texttt{Taylor.lean}: \texttt{157fb5512a1a28c31b3e47cfd361bcdab85daff0a68a2d8cd2a208bee97f30dc}
+\item \texttt{Basic.lean}: \texttt{13b8a1c6970a0f9fdcef12e90d79ce65a34f7d6ff77fb5ccae8507f45777de91}
+\item \texttt{Controls.lean}: \texttt{6b8b5b33e8b1afed5ac0ebbf3f61cb9dc084fda86ccf4624072ac8d2559b18cb}
+\item \texttt{RejectGauss2.lean}: \texttt{716226afb76fc533cfca18f8f917a0ed5296b4958de47e813db0afdd65e540e9}
+\end{itemize}
+\paragraph{LeanFlow.} The unmodified \lean{lean.certify} tool renders the claims $M.hi<0$, $\mathrm{lmin}.lo>0$, $\mathrm{lminu}.lo>0$, $\mathrm{qpd}.lo>0$ into integer statements discharged by \lean{decide}: Yukawa~1, Yukawa~2 and Gaussian~1 \emph{verified} (tier~\tA\ for the arithmetic statement only, empty axiom lists), Gaussian~2 \emph{rejected}, an arithmetic sanity check (\texttt{false-statement}, \lean{cert\_0}: \lean{decide} proves the claim $4463084749303/10^{12}<0$ false, and that certificate's axiom report is \lean{sorryAx}, which is why it is not accepted) (\texttt{PZP-A-0007}; the verified certificates' axiom lines are quoted verbatim in the ledger evidence: ``does not depend on any axioms'' for all four assertions of each). LeanFlow certifies the statement about the stated numbers, not their provenance.
+\paragraph{What Tier~A certifies.} The window lemma, the logic, the rational signs, the conditional assembly. \emph{It does not certify} that $E$ and $U_2$ are the stated integrals, any enclosure, the identification with P2's $\Ezp$, or any statement about Laplacians.
+\paragraph{Kernel replay.} Kernel replay (\texttt{leanchecker}, Lean~4.34.1, auditor run): \lean{Programmes.ZeroPointPhys.Taylor} rc~0, \lean{Programmes.ZeroPointPhys.Basic} rc~0, \lean{Programmes.ZeroPointCert.Basic} rc~0 (\texttt{data/leanchecker\_replay.json}). Replay does not check axioms; the \lean{\#print axioms} audit above does.
+
+%=====================================================================
+\section{Claim ledger}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files 24 claims: 8 at Tier~A (\texttt{PZP-A-0001}--\texttt{0008}), 13 at C (6 \tCb: \texttt{C-0001}--\texttt{0006}; 7 \tCh\ including the headline \texttt{C-0012} and the conditional \texttt{C-0013}) and 3 at X (\texttt{X-0001} curvature scan, \texttt{X-0002} Riesz~3 tail numbers, \texttt{X-0003} repository guards). Each has a content-addressed evidence blob in \texttt{ledger/evidence/}. The tier discipline of the gate forces the headline to Tier~C because it rests on C-ball and C-human rows; the Lean rows stay at A.
+The gate (\texttt{tools/ledger.py ledger.json -{}-evidence-dir evidence}; verbatim in \texttt{ledger/gate\_output.txt}) exits with code~\textbf{1}: \textbf{0 blocking findings and 8 flags} (\texttt{LEDGER\_UNAUDITED\_TIER\_A}, one for each Tier~A row: no \emph{person} has certified that the Lean statements mean what their glosses say). The paper has since been independently AI-audited (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS); as for B2, this is recorded in the \texttt{ai\_audit} field of each Tier~A row and the \texttt{audit} field stays null, because the flag asks for a \emph{person}. There is no statement lock. The gate was re-run after the audit field was filled: exit code~\textbf{1}, unchanged. Exit code~1 is the honest state, not a failure to be cleared by editing.
+
+%=====================================================================
+\section{Limitations}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item \textbf{Two of six.} Only the two Yukawa potentials are certified. Riesz~3 and the dipolar cases are blocked by the tail obstacle (Section~\ref{sec:obstacle}); for Riesz~4 there is \tX{} evidence of a local minimum, uncertified (Section~\ref{sec:riesz4}). Nothing is claimed for those four.
+\item \textbf{Mostly Tier~C.} Only the logic, the window lemma and the rational arithmetic are kernel-checked. The cell bounds, Duffy map, tails and positivity are executed code, not proofs; the interchange of differentiation and integration, $E\le U_2$ after integration, the identification with P2's $\Ezp$, and the shape statement are written arguments checked by no machine and no human referee.
+\item \textbf{Window and scope.} $|t|\le10^{-5}$, one path, harmonic approximation, Bravais lattices, two dimensions, $\hbar=m=1$. The theorem is local. P2's finite competitors remain \tX. ``Classically optimal'' is H2's conditional result, cited and not re-checked here (\tL). The result concerns $\Ezp$ alone. The classical energy has positive curvature at $\rho$, so nothing follows for $E_{\mathrm{cl}}+\hbar\Ezp$ at small $\hbar$, and no structural transition is claimed.
+\item \textbf{AI-audited, not human-audited; not statement-locked.} An independent AI audit (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS, no blocking item) was run and its corrections are applied in this version. No human has audited anything, and no statement lock has been made.
+\item \textbf{Repository guards fail for pre-existing reasons.} \texttt{python antigravity\_guard.py} rc~1 and \texttt{python test\_rigor\_guard.py} rc~1 (hollow tests in \texttt{tests/test\_k3\_anse\_improvements.py}, \texttt{tests/test\_scientific\_rigor\_v14.py}; hallucinated-import reports for packages not installed in the venv, and for \texttt{flint}); \texttt{pytest tests/} rc~2 with 28 collection errors. All in files this paper does not touch; verbatim in \texttt{data/guard\_*.txt}, \texttt{data/pytest\_tests.txt}. ``Guards pass'' is not claimed.
+\item \textbf{Errata of the code comments (found while writing, from \texttt{CERTIFICATES.md}).} (a) The docstring of \texttt{n2\_certify.py} writes $\int\sup_uf''$; what is computed is $\sup_u\int f''$ enclosed uniformly in $u$, and the certificate uses the latter (Step~6). (b) The docstring gives the polynomial degree of the tail factor as $\le9$; it is $\le1+4+6=11$, and the code uses 12, so results are unaffected. (c) The audit adds that the docstring of \texttt{tail\_bounds} (\texttt{n2\_certify.py}, line 455, ``1 + 4 + 4 = 9'') carries the same erratum as (b). The code is pinned by its hash and was not edited after the runs (hash below).
+\item \textbf{python-flint location.} python-flint~0.6.0 is not in the project venv (installed with \texttt{pip -{}-target} under \texttt{.scratchpad/b2\_pylib}); re-running needs that version.
+\item \textbf{Exploratory runs} (\texttt{explore\_*}, \texttt{o2\_g1\_N32*}, \texttt{o2\_g1\_N64.*}, \texttt{o2\_y2\_N32.log}) used earlier code versions (first-order cell rule or before the $f$-enclosure fixes) and support nothing; they are not part of this bundle except the first Yukawa~1 attempt, which is reported as a non-certification.
+\item \textbf{Not novelty-checked.} No literature search was made for prior certified results on zero-point lattice energies of screened potentials; no novelty is claimed.
+\end{itemize}
+
+%=====================================================================
+\section{Reproducibility}\label{sec:repro}
+Repository AutoevolveAI, branch \texttt{worktree-openai-math-discovery}; HEAD when this paper was written: \texttt{d852079433670163545bc8efa9e8533463544152} (the N2 producer commit). Nothing was pushed or published. Copies of the inputs are in \texttt{data/} (\texttt{data/code/} holds the scripts, \texttt{data/runs/} the run files and logs). Commands (cores 6,7; from the repository root, the N2 result directory \texttt{results/proposal3/2026-10-26/N2}):
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+python -I code/n2_explore.py POT PARAM 32 40                      # Tier X scan (rc 40; also rc 100)
+python -I code/n2_selfcheck.py ; python -I code/n2_dbg2.py
+N2_MAX_DEPTH=1 N2_REFINE_TOL=0.5 python -I code/n2_certify.py yukawa 2 64 1/100000 150 runs/o2_y2_N64.json
+N2_MAX_DEPTH=2 N2_REFINE_TOL=1.0 python -I code/n2_certify_part.py yukawa 1 64 1/100000 650 0,1 0 12 runs/y1_partA.json    # core 6
+N2_MAX_DEPTH=2 N2_REFINE_TOL=1.0 python -I code/n2_certify_part.py yukawa 1 64 1/100000 650 0,1 12 64 runs/y1_partB.json   # core 7
+python -I code/n2_merge.py runs/o2_y1_merged.json runs/y1_partA.json runs/y1_partB.json
+N2_MAX_DEPTH=1 N2_REFINE_TOL=0.5 python -I code/n2_certify.py gauss 1 64 1/100000 21 runs/o2_g1_N64d1.json   # positive control
+N2_MAX_DEPTH=1 N2_REFINE_TOL=0.5 python -I code/n2_certify.py gauss 2 64 1/100000 21 runs/negctl_g2_N64.json # negative control
+python -I code/n2_leanflow.py runs/o2_y2_N64.json n2_yukawa2 leanflow_claim_yuk2.json leanflow_cert_yuk2.json   # etc.
+python -I code/n2_riesz3_tail.py
+python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/ZeroPointPhys/Taylor.lean --olean Programmes.ZeroPointPhys.Taylor
+python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/ZeroPointPhys/Basic.lean --olean Programmes.ZeroPointPhys.Basic
+python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/ZeroPointPhys/Controls.lean        # rc 0; #print axioms shows sorryAx / ctl_cheat
+python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/ZeroPointPhys/RejectGauss2.lean    # must fail
+python -I ledger/build_ledger.py ; python -I ledger/run_gate.py     # gate: exit 1 = 0 blocking, 8 flags
+\end{lstlisting}
+Certifier hash for all reported runs: \texttt{n2\_certify.py} sha256 \\\path{6fa38af9e1043473cc60a2ca7c9bb27b8030c1d64135ec8c320d9f086f9fa0f6} (recorded in every run JSON; the Yukawa~1 parts go through the wrapper \texttt{n2\_certify\_part.py}, which imports it unchanged). Long runs: Yukawa~2 650~s; Yukawa~1 7098 CPU-seconds on two cores.
+
+%=====================================================================
+\begin{thebibliography}{9}\small
+\bibitem{p2} X.~Callens, \emph{Does the triangular lattice minimise the harmonic zero-point energy? A numerical counterexample for completely monotone potentials, with kernel-checked curvature identities}, Zenodo, doi:10.5281/zenodo.23653833 (2026). Own preprint, referred to as P2; its Tier~\tX{} values and the isotropy argument are used; not peer reviewed.
+\bibitem{b2} X.~Callens, \emph{The triangular lattice is not a local minimum of the harmonic zero-point energy for $\exp(-\pi r^2)$: a certified linear-response majorant along a symmetric shear}, Zenodo, doi:10.5281/zenodo.23655392 (2026). Own preprint (B2), the predecessor of this paper; its Lean module \texttt{Programmes.ZeroPointCert.Basic} is imported; not peer reviewed.
+\bibitem{h2} X.~Callens, \emph{The triangular lattice minimises the planar Yukawa energy at every density and for every finite mixture of screening lengths: kernel-checked corollaries of planar universal optimality, a human proof, and an exact-potential CVODE consistency study}, Zenodo, doi:10.5281/zenodo.23646105 (2026). Own preprint (H2), source of the classical optimality (\tL), itself conditional on an upstream Lean theorem; not re-checked here; not peer reviewed.
+\bibitem{arb} F.~Johansson, \emph{Arb: efficient arbitrary-precision midpoint-radius interval arithmetic}, arXiv:1611.02831 (2016); cited for the instrument only.
+\bibitem{mathlib} The mathlib Community, \emph{The Lean mathematical library}, arXiv:1910.09336 (2019), doi:10.1145/3372885.3373824 (CPP 2020); cited for the library only.
+\end{thebibliography}
+\end{document}

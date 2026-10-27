@@ -21,10 +21,21 @@ TOOLCHAIN = ("Lean 4.34.1 + Mathlib d13f23b7 through scripts/certified_numerics/
              "Mathlib.Tactic and Mathlib.Algebra.BigOperators.Fin; no import Mathlib)")
 ALLOW = ["propext", "Classical.choice", "Quot.sound"]
 STATUS = ("producer-checked by the M3 lane; leanchecker replay rc 0 for Basic, Shells, Chains, LemmaA5, Lemma61 "
-          "(data/logs/leanchecker.json, run by the producer); NO independent audit exists at writing (producer != "
-          "verifier clean recompile pending); no human audit of statement adequacy; no statement lock")
-SRC_COMMIT = "e5f38b289314c730ed4960104c91a2902b88f8ef"
-ADEQ = "not audited by a human; no independent AI audit at writing"
+          "(data/logs/leanchecker.json, run by the producer); independent AI audit 2026-10-27 (AUDIT.md, ACCEPT_WITH_CORRECTIONS, "
+          "no blocking item): private rebuild of the five modules rc 0, oleans byte-identical to the producer's, leanchecker replay "
+          "rc 0 on all five (data/leanchecker_replay_audit.json), all 138 declarations print only propext, Classical.choice, "
+          "Quot.sound; no human audit of statement adequacy; no statement lock")
+AI_AUDIT = {"auditor": "independent AI audit agent (producer != verifier), 2026-10-27", "human": False,
+            "report": "papers/p4_yukawa_bcc_fcc_check/AUDIT.md", "verdict": "ACCEPT_WITH_CORRECTIONS",
+            "kernel_replay": "papers/p4_yukawa_bcc_fcc_check/data/leanchecker_replay_audit.json (Basic 59.3 s, Shells 168.1 s, "
+                             "Chains 89.7 s, LemmaA5 1091.2 s, Lemma61 55.7 s, all rc 0)",
+            "revision": "papers/p4_yukawa_bcc_fcc_check/REVISION.md",
+            "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no "
+                    "statement lock"}
+SRC_COMMIT = "e5f38b289314c730ed4960104c91a2902b88f8ef (+ uncommitted revision working tree)"
+ADEQ = ("not audited by a human; the independent AI audit (AUDIT.md, Faithfulness) compared every exported statement with the printed one: "
+        "faithful except the statements listed as weaker in the paper (lemma61_exp_fcc_21, lemma61_prop41_bracket, lemma61_tail_*, "
+        "lemmaA5_* via box counts)")
 
 
 def sha(b: bytes) -> str:
@@ -44,8 +55,11 @@ def fref(p: Path) -> dict:
 
 
 def rec(cid: str, tier: str, kind: str, statement: str, depends: list[str], ev: dict) -> dict:
-    return {"schema_version": 1, "id": cid, "statement": statement, "tier": tier, "kind": kind,
-            "depends_on": depends, "evidence": blob(ev), "audit": None}
+    r = {"schema_version": 1, "id": cid, "statement": statement, "tier": tier, "kind": kind,
+         "depends_on": depends, "evidence": blob(ev), "audit": None}
+    if tier == "A":
+        r["ai_audit"] = AI_AUDIT
+    return r
 
 
 def axioms_from(path: Path, names: list[str]) -> list[str]:
@@ -66,7 +80,9 @@ def lean_ev(names: list[str], srcs: list[str]) -> dict:
             "axiom_output": axioms_from(LOGS / "lean_axioms.json", ["YukawaBccFcc." + n for n in names]),
             "allowlist": ALLOW, "compile_transcript": fref(LOGS / "lean_axioms.json"),
             "sources": [fref(LEAN / s) for s in srcs],
-            "leanchecker_replay": fref(LOGS / "leanchecker.json"), "status": STATUS, "statement_adequacy": ADEQ}
+            "leanchecker_replay": fref(LOGS / "leanchecker.json"),
+            "leanchecker_replay_audit": fref(DATA / "leanchecker_replay_audit.json"),
+            "status": STATUS, "statement_adequacy": ADEQ}
 
 
 def cite(source: str, where: str, text: str) -> dict:
@@ -157,7 +173,10 @@ def main() -> int:
             "kappa* reproduced three independent ways: (E) Ewald split in Arb at 320 bits: [1.717921868469903864250874 +/- 1.67e-25]; (D) direct "
             "real-space Arb sum over about 4000 shells with a rigorous integral tail: bracket "
             "[1.717921868469903864248480 +/- 2.6e-25, 1.717921868469903864252817 +/- 4.5e-25]; (Q) mpmath quadrature of the paper's integral equation (1.4) "
-            "at 40 digits: 1.71792186846990386425087416661. Agreement to about 22 digits; the printed 1.71792186846990 and the (A.9) enclosure are reproduced. "
+            "at 40 digits: 1.71792186846990386425087416661. (E) and (Q) agree to all 25 printed digits and (D)'s interval (width ~4e-24) contains both; the printed 1.71792186846990 and the (A.9) enclosure are reproduced. "
+            "Independent AI audit (AUDIT.md item 3), classical eta-split Yukawa Ewald in mpmath at 70 digits (eta = 1 and 1.3 agree to < 5e-70; matches a direct sum at kappa = 6): "
+            "kappa* = 1.71792186846990386425087416660628171879468538; its independent python-flint 0.9.0 ball run reproduces both Lemma A.6 signs "
+            "(G(...903) = [-1.35362654688e-19 +/- 3.3e-31], G(...904) = [2.12616065470e-20 +/- 5e-33]). "
             "Ball arithmetic and quadrature are not kernel-checked.",
             ["YBC-L-0001"], arg("C-ball", "arb_results.json (kappa_star_bracket_ewald/direct), float_results.json (kappa_star_eq14_mpmath)",
                                 [arb, flt], "python-flint 0.6.0 (Arb), mpmath; code/m3_arb.py, code/m3_float.py")),
@@ -180,9 +199,10 @@ def main() -> int:
             "arithmetic: sum n_j = 84,043 and 1118 + 193 + 86 + 5828 = 7225.",
             ["YBC-L-0001", "YBC-A-0007"], arg("C-ball", "extra_results.json A3_*, A4_*", [extra], "python-flint 0.6.0; code/m3_extra.py")),
         rec("YBC-C-0006", "C", "argument",
-            "Observation for a human reader, not a discrepancy: in Lemma A.3 (A.4) the three exponential bounds hold only by margins of about 2e-16 "
-            "(the endpoints look like double-rounded logarithms, so the bounds hold or fail depending on rounding direction); the Arb check at 320 bits "
-            "shows they hold. It is the tightest margin in the appendix that we could check.",
+            "Lemma A.3 (A.4): the three exponential bounds hold by about 2e-16. The endpoints are outward-rounded: their numerators lie 4.2, 1.05 and 2.5 "
+            "units of the dyadic denominator beyond the exact logarithms, in the safe direction (independent AI audit, AUDIT.md NONBLOCKING 1). For alpha_1 and "
+            "alpha_2 the rationals 11/25 and 147/1000 are themselves intermediate (the proof of Prop. 3.1 has slack of about 3e-3 and 5e-4), so only the bound "
+            "for beta is tight. These are the tightest margins we met in the appendix; at 320 bits all three hold, and we do not call them an error.",
             ["YBC-C-0005"], arg("C-ball", "extra_results.json A4_e^alpha1 - 11/25 etc.", [extra], "python-flint 0.6.0; code/m3_extra.py")),
         rec("YBC-C-0007", "C", "argument",
             "Shell bounds N_n < 30n for n <= 2100 and M_l < 30 l (and M_l <= 18 l) for l <= 4200 hold on the enumerated range, by brute-force enumeration "
@@ -205,8 +225,9 @@ def main() -> int:
             arg("C-assembly", "Assembly of the rows above as in Section 8 of the paper.", [res, d / "RESULT.md"], "none")),
         # ------------------------------------------------------------------ X
         rec("YBC-X-0001", "X", "numeric",
-            "An IEEE-double direct sum reproduces kappa* to only 11 digits (1.7179218684625486) because of cancellation (dG/dkappa about 1.57e-4); "
-            "double precision alone cannot reproduce the 13-digit printed value, so it is not used as a control.",
+            "The producer's IEEE-double direct sum reproduces kappa* to 11 digits (1.7179218684625486) because of cancellation (dG/dkappa about 1.57e-4); "
+            "this describes the producer's method: the audit's float64 Ewald reaches about 12 digits (errors 5e-13 to 4e-12 depending on eta), the intrinsic "
+            "limit being about eps*|S|/G' ~ 1e-12. Double precision cannot resolve the 1e-15-wide enclosure (A.9), so it is not used as a control.",
             [], num([flt], "kappa_star_double_direct; information only")),
         rec("YBC-X-0002", "X", "numeric",
             "Repository guards were run and FAIL for reasons in files this paper's lane did not touch: antigravity_guard.py rc 1 (103 findings in other "

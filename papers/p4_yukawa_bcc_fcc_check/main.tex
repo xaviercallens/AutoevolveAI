@@ -26,7 +26,7 @@
 \newcommand{\ks}{\kappa_*}
 
 \title{An independent partial check of the three-dimensional Yukawa bcc-to-fcc threshold of Luo and Wei:\\
-the threshold reproduced three ways, seventeen finite statements kernel-checked, and what remains open}
+the threshold reproduced three ways, seventeen Lean statements kernel-checked, and what remains open}
 \author{Xavier Callens (SocrateAI Lab)}
 \date{Preprint v1, 2026-10-27}
 \hypersetup{pdftitle={An independent partial check of the three-dimensional Yukawa bcc-to-fcc threshold of Luo and Wei},
@@ -39,8 +39,9 @@ the threshold reproduced three ways, seventeen finite statements kernel-checked,
 \noindent\textbf{AI-assistance disclosure.} This preprint, its Lean code, its Python code and its claim ledger were
 produced by AI agents (Claude, Anthropic) under the author's direction. The author is responsible for the content. No human
 has audited the Lean statements for adequacy, and no human referee has checked the hand arguments.
-\textbf{No independent audit of any kind (human or AI) exists at the time of writing}; the producer-is-not-verifier clean recompile
-is pending, and no statement lock exists.
+An independent AI audit (\texttt{AUDIT.md}, verdict ACCEPT\_WITH\_CORRECTIONS, no blocking item) rebuilt the five main Lean modules from source into a private olean
+directory and replayed them with \texttt{leanchecker} (rc~0 on all five, \texttt{data/leanchecker\_replay\_audit.json}; its oleans are byte-identical to the producer's); this revision applies its corrections
+(\texttt{REVISION.md}). \textbf{No human audit and no statement lock exist.}
 
 \medskip
 \noindent\textbf{Credit.} The result discussed here is due to Senping Luo and Juncheng Wei, \emph{On exact solutions to
@@ -56,17 +57,22 @@ lattice for $\kappa>\ks$, and that $\ks\approx 1.7179218684699$. Their proof lea
 part of them independently. \textbf{We found no discrepancy; every printed number and inequality that we checked holds.}
 Tier split.
 \tA{} (Lean~4.34.1, pinned Mathlib; axioms within $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$; \texttt{leanchecker}
-replay rc~0 on \lean{Basic}, \lean{Shells}, \lean{Chains}, \lean{LemmaA5}, \lean{Lemma61}, run by the producer; no statement lock; no independent
-recompile yet): \emph{seventeen finite statements}: the FCC shell multiplicities $N_1,\dots,N_{12}$ and the 17 nonzero BCC multiplicities $M_\ell$
-($\ell\le48$), proved equal to the count over all of $\mathbb Z^3$; Lemma~A.5 (A.6), (A.7) and (A.8) as real-number statements over \lean{Real.pi}
+replay rc~0 on \lean{Basic}, \lean{Shells}, \lean{Chains}, \lean{LemmaA5}, \lean{Lemma61}, run by the producer and again by the independent AI audit on privately rebuilt,
+byte-identical oleans; all 138 declarations of the five modules print only these axioms; no human audit; no statement lock):
+\emph{seventeen Lean theorems} (ten substantive; seven are one-line rational facts or bridge lemmas, and one of them,
+\lean{lemma61\_prop41\_bracket}, is a for-all-$x$ inequality, not a finite statement): the FCC shell multiplicities $N_1,\dots,N_{12}$ and the BCC multiplicities $M_\ell$ at the
+17 nonzero indices $\ell\le48$, proved equal to the count over all of $\mathbb Z^3$; Lemma~A.5 (A.6), (A.7) and (A.8) as real-number statements over \lean{Real.pi}
 and \lean{Real.exp}; the constants of the proof of Lemma~6.1; the tail rational of the proof of Lemma~A.6; and the rational step of Lemma~A.1.
+Several Lean statements are weaker than the printed ones (Table~\ref{tab:weaker}).
 \tL{}: the paper's own statements, taken as stated.
 \tC{}: Arb ball arithmetic (Lemma~A.6 for $G=2(E_B-E_F)$ at $\kappa\in\{1.717921868469903,\,1.717921868469904\}$ and at neighbouring controls;
 the Lemma~A.5 minimum slacks $7.52\times10^{-4}$ and $7.65\times10^{-5}$; Lemmas~A.1 and A.3) and \emph{three independent reproductions of $\ks$}
-(Ewald sums in Arb at 320 bits; a direct real-space Arb sum; mpmath quadrature of the paper's integral equation (1.4) at 40 digits), agreeing to about 22 digits
-(IEEE double alone reaches only 11 digits).
+(Ewald sums in Arb at 320 bits; a direct real-space Arb sum; mpmath quadrature of the paper's integral equation (1.4) at 40 digits): (E) and (Q) agree to all 25 printed digits and the
+interval of (D), of width $4\times10^{-24}$, contains both. The audit added a fourth, structurally different value (classical Ewald split with a free splitting parameter, mpmath, 70 digits,
+independent of that parameter), $\ks=1.71792186846990386425087416660628171879468538$, and an independent ball-arithmetic run (python-flint 0.9.0) that reproduces both signs of Lemma~A.6.
+(Our IEEE-double direct sum reaches 11 digits; double precision cannot resolve the $10^{-15}$-wide enclosure (A.9), since rounding at $10^{-16}$ in sums of order one moves $\ks$ by about $10^{-12}$.)
 \textbf{Not done:} the assembly of Lemma~6.1 (theta functions as lattice sums, Poisson summation for $D(1)=0$, $N_n<30n$ for all $n$);
-Lemma~A.4 (5\,828 rectangles: the partition data is not public and arXiv lists no ancillary files) and Lemma~A.2; and Lemma~A.6 in Lean (the pinned Mathlib has no \lean{erfc}).
+Lemma~A.4 (5\,828 rectangles: the partition data is not public and arXiv lists no ancillary files; we intend to ask the authors for it) and Lemma~A.2; and Lemma~A.6 in Lean (the pinned Mathlib has no \lean{erfc}).
 Every claim in the text carries a tier tag and a ledger identifier (\texttt{YBC-$\cdot$-nnnn}).
 
 \medskip
@@ -162,7 +168,7 @@ The statement for \emph{every partial sum} is what we proved; passing to the inf
 \section{Anatomy of the Lean development}\label{sec:leandev}
 The Lean modules are in \path{formal_cert/Programmes/YukawaBccFcc/} (copies in \texttt{data/lean/}). They import \lean{Mathlib.Tactic} and \lean{Mathlib.Algebra.BigOperators.Fin}; never \lean{import Mathlib}.
 They were compiled through \texttt{scripts/certified\_numerics/lean\_pinned.py} (Lean~4.34.1, Mathlib \texttt{d13f23b7}) and not through \texttt{anse/formal/lean\_runner.py}, a deviation from the repository's usual route that was
-inherited from earlier lanes.
+inherited from earlier lanes; the equivalent checks were rerun by the independent audit (\texttt{AUDIT.md}).
 \begin{table}[ht]\centering\small
 \begin{tabular}{@{}lp{8.6cm}rl@{}}\toprule
 Module & Content & compile (s) & leanchecker\\\midrule
@@ -174,7 +180,7 @@ Module & Content & compile (s) & leanchecker\\\midrule
 \lean{Axioms}, \lean{Statements} & \lean{\#print axioms} and \lean{\#check} of the exported theorems & 15, 12 & ---\\
 \lean{Controls}, \lean{Reject*} & planted and tampered controls (never imported) & 12--32 & ---\\\bottomrule
 \end{tabular}
-\caption{The development. Times are wall-clock on a shared core, from the compile logs; \texttt{leanchecker} replays were run by the producer.}
+\caption{The development. Times are the producer's wall-clock on a shared core, from the compile logs. \texttt{leanchecker} replays were run by the producer and independently by the audit (rc 0 on all five; audit compile times 13.5, 119.9, 76.1, 959.6, 11.7~s and replay times 59.3, 168.1, 89.7, 1091.2, 55.7~s for \lean{Basic}, \lean{Shells}, \lean{Chains}, \lean{LemmaA5}, \lean{Lemma61}, on two other cores).}
 \end{table}
 \paragraph{The tables that the kernel does not trust.} The dyadic tables for $e^{-\pi a_2(1+k/10^4)}$, $e^{-\pi b_2(1+k/10^4)}$ and the two grids with step $1/2000$ are produced by a script. The kernel never accepts a table as given: each entry
 must lie between the lower and upper rational enclosures obtained from the previous one, and the first entry and the step constant are checked against certified Taylor enclosures. A wrong table entry makes the chain check evaluate to \lean{false}, which is what the control in Section~\ref{sec:controls} shows.
@@ -191,6 +197,21 @@ The sum $N_1+\dots+N_{12}$ and these entries are the values printed in the proof
 \paragraph{How to read a Tier~A line.} \lean{lemmaA5\_A7} says: for the specific real numbers named, with the Mathlib constant $\pi$ and the Mathlib exponential, the displayed inequality holds for every $j<2000$. It does \emph{not} say that the lemma is used correctly in the paper's proof, that
 the shell tables encode the right lattices (that is the gloss, which a person must compare with the paper's definitions), or anything about physics. The ledger flags this explicitly (\texttt{LEDGER\_UNAUDITED\_TIER\_A}).
 
+\paragraph{Lean statements that are weaker than the printed ones.} The independent audit compared every exported statement with the printed one. All are non-vacuous; the following are weaker or linked to the paper only through a lemma.
+\begin{table}[ht]\centering\small
+\begin{tabular}{@{}l p{4.0cm} p{6.0cm}@{}}\toprule
+Lean theorem & What Lean states & What the paper states or uses\\\midrule
+\lean{lemma61\_exp\_fcc\_21} & $e^{-\pi a^2 t}<1/128$ at $t=21/10$ only & the proof of Lemma~6.1 uses it for all $t\ge 21/10$ (trivially extendable by monotonicity)\\
+\lean{lemma61\_prop41\_bracket} & the rational bracket $12+30((1-x)^{-2}-1)<25/2$ for $0\le x\le1/128$ & the bound $\Theta(t,\LF)-1<x\,(12+30(\dots))$ (Prop.~4.1 with $N_n<30n$) is not in Lean\\
+\lean{lemma61\_tail\_fcc}, \lean{lemma61\_tail\_bcc} & every partial sum of the rational majorants $30\sum n\,49^{-n}$ and $\tfrac{75}{2}\sum \ell^2(3/10)^\ell$ & the shell sums $\sum N_ne^{-\pi a^2nt}$ (needs $N_n<30n$ for all $n$, $t\ge1$) and the passage to the infinite series are not in Lean\\
+\lean{lemmaA5\_A6}, \lean{lemmaA5\_A7}, \lean{lemmaA5\_A8} & sums over the \emph{box counts} \lean{Nc}, \lean{Mc} & the shell multiplicities $N_n$, $M_\ell$; equal to them only through \lean{Nc\_eq\_ncard} ($2n<36$, i.e.\ $n\le12$) and \lean{Mc\_eq\_ncard} ($\ell<49$, i.e.\ $\ell\le48$)\\
+\lean{lemmaA6\_tail} & the printed rational $<7\times10^{-21}$ & faithful, but it does not certify that this rational bounds the Ewald tail (checked by hand by the audit, Tier~C)\\
+\lean{lemmaA1\_rational} & $55995/10^6<7/125$ & faithful and trivial; the substantive parts of Lemma~A.1 are Tier~C\\\bottomrule
+\end{tabular}
+\caption{Lean statements weaker than, or only linked to, the printed ones.}\label{tab:weaker}
+\end{table}
+The theorems not listed (\lean{fcc\_multiplicities}, \lean{bcc\_multiplicities}, \lean{lemma61\_exp\_fcc}, \lean{lemma61\_exp\_bcc}, \lean{lemma61\_pb\_lt}, \lean{lemma61\_a2\_gt}) state exactly the printed tables and constants (at $t=1$ for the exponentials). The Lean runs were not routed through \texttt{anse/formal/lean\_runner.py} (see above); the equivalent checks (compile, \lean{\#print axioms}, \lean{sorryAx} rejected, axiom whitelist) were rerun by the independent audit (\texttt{AUDIT.md}) on all 138 declarations of the five modules.
+
 %=====================================================================
 \section{Results at a glance}\label{sec:results}
 \begin{table}[h]\centering\small
@@ -202,17 +223,20 @@ Tier & Ledger & Statement & Where\\\midrule
 \tA & A-0007 & A.6 tail rational $<7\times10^{-21}$; A.1 rational step & Lean\\
 \tA & A-0008 & controls: tampered N7, table entry, cell bound rejected; planted \lean{sorry}/axiom caught & Lean\\
 \tL & L-0001/2 & Luo--Wei statements, Sections~2--5, taken as stated & paper\\
-\tC & C-0001 & $\ks$ three ways, 22 digits & Arb, mpmath\\
+\tC & C-0001 & $\ks$ three ways: (E), (Q) agree to 25 digits, (D) contains both; audit: fourth value, 70 digits & Arb, mpmath\\
 \tC & C-0002/3 & Lemma~A.6 signs (full sums and paper's truncation) & Arb\\
 \tC & C-0004/5 & Lemma~A.5 re-run; Lemma~A.1; Lemma~A.3 endpoints & Arb\\
 \tC & C-0007/8 & $N_n<30n$ on $n\le2100$ only; Lemma~6.1 assembly not formalised & enum., reading\\
-\tX & X-0001/2 & IEEE double reaches 11 digits; repository guards fail (other lanes) & float, logs\\\bottomrule
+\tX & X-0001/2 & IEEE-double direct sum reaches 11 digits (a float64 Ewald reaches about 12); repository guards fail (other lanes) & float, logs\\\bottomrule
 \end{tabular}
 \end{table}
-Seventeen statements are kernel-checked: the \lean{\#print axioms} output of each of the following is exactly $[$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$]$
+Seventeen Lean theorems are kernel-checked, of which ten are substantive (the two multiplicity tables, \lean{lemmaA5\_A6/A7/A8}, \lean{lemma61\_exp\_fcc}, \lean{lemma61\_exp\_bcc}, \lean{lemma61\_exp\_fcc\_21} and the two partial-sum tails) and seven are bridge lemmas or one-line rational facts
+(\lean{Nc\_eq\_ncard}, \lean{Mc\_eq\_ncard}, \lean{lemmaA1\_rational}, \lean{lemma61\_pb\_lt}, \lean{lemma61\_a2\_gt}, \lean{lemma61\_prop41\_bracket}, \lean{lemmaA6\_tail}). Note that \lean{lemma61\_prop41\_bracket} is a for-all-$x$ statement, not a finite one, and that the ``17'' here is unrelated to the 17 nonzero BCC multiplicity indices.
+The \lean{\#print axioms} output of each of the seventeen is exactly $[$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$]$
 (\texttt{data/logs/lean\_axioms.json}): \lean{Nc\_eq\_ncard}, \lean{Mc\_eq\_ncard}, \lean{fcc\_multiplicities}, \lean{bcc\_multiplicities}, \lean{lemmaA5\_A6}, \lean{lemmaA5\_A7}, \lean{lemmaA5\_A8},
 \lean{lemma61\_exp\_fcc}, \lean{lemma61\_exp\_bcc}, \lean{lemma61\_pb\_lt}, \lean{lemma61\_a2\_gt}, \lean{lemma61\_exp\_fcc\_21}, \lean{lemma61\_prop41\_bracket}, \lean{lemma61\_tail\_fcc}, \lean{lemma61\_tail\_bcc}, \lean{lemmaA6\_tail}, \lean{lemmaA1\_rational}.
-A scan of the five sources for \lean{skipKernelTC}, \lean{addDecl}, \lean{native\_decide}, \lean{implemented\_by}, \lean{sorry} and \lean{axiom} has a single hit, a doc comment in \texttt{Shells.lean} saying there is no \lean{sorry} and no \lean{native\_decide}.
+The audit extended the axiom print to \emph{every} declaration of the five modules (138): 127 print $[$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$]$, two print $[$\lean{propext}, \lean{Quot.sound}$]$, one prints $[$\lean{propext}$]$ and eight print no axiom; nothing lies outside the whitelist.
+A scan of the five sources for \lean{skipKernelTC}, \lean{addDecl}, \lean{native\_decide}, \lean{implemented\_by}, \lean{sorry} and \lean{axiom} has a single hit, a doc comment in \texttt{Shells.lean} saying there is no \lean{sorry} and no \lean{native\_decide}; the audit's wider scan (adding \lean{admit}, \lean{unsafe}, \lean{opaque}, \lean{extern}, \lean{csimp}, \lean{macro}, \lean{elab}, \lean{set\_option}) adds only four harmless \lean{set\_option maxRecDepth 100000 in} lines on the table definitions of \texttt{Chains.lean}, an elaboration setting that is not a kernel or trust setting.
 
 %=====================================================================
 \section{The threshold \texorpdfstring{$\ks$}{kappa*} reproduced three ways, and Lemma A.6}\label{sec:kappa}
@@ -227,8 +251,12 @@ A scan of the five sources for \lean{skipKernelTC}, \lean{addDecl}, \lean{native
 (F) IEEE double (information) & $1.7179218684625486$ \tX{}\\
 printed (Thm.~6.1; (A.9)) & $1.71792186846990$; $1.717921868469903<$ $\ks<1.717921868469904$\\\bottomrule
 \end{tabular}\end{center}
-(E), (D), (Q) agree to about 22 digits and sit inside the printed enclosure. The double-precision direct sum agrees to only 11 digits because of cancellation at $G'(\ks)\approx1.566\times10^{-4}$; it cannot serve as a 13-digit control, so
-the float control of the preregistration was replaced by (Q).
+(E) and (Q) agree to all 25 printed digits; (D) is limited only by its interval width of about $4\times10^{-24}$ and contains both. All three sit inside the printed enclosure. Our IEEE-double direct sum agrees to 11 digits because of cancellation at $G'(\ks)\approx1.566\times10^{-4}$; 11 digits describes the producer's method, not an intrinsic limit: the audit's float64 Ewald reaches about 12 digits (errors $5\times10^{-13}$ to $4\times10^{-12}$ depending on the splitting parameter), and the intrinsic limit is about $\varepsilon|S|/G'(\ks)\sim10^{-12}$.
+Double precision cannot resolve the $10^{-15}$-wide enclosure (A.9), so the float control of the preregistration was replaced by (Q).
+\paragraph{A fourth value, from the audit (\tC).} The independent audit computed $\ks$ by the classical Yukawa Ewald split with a free splitting parameter $\eta$ (complementary-error-function real-space kernel, reciprocal-space sum, self term), mpmath at 70 digits, with all lattice constants carried at 70 digits:
+\[\ks=1.71792186846990386425087416660628171879468538.\]
+The values for $\eta=1$ and $\eta=1.3$ agree to $<5\times10^{-70}$, and the method matches a direct real-space sum at $\kappa=6$ to $<1.1\times10^{-40}$. It agrees with (E) and (Q) in every printed digit and lies in (D)'s interval and in (A.9); $G'(\ks)=1.566242612\times10^{-4}$.
+An independent ball-arithmetic run (python-flint 0.9.0, 300 bits, the same Ewald split, rigorous tails) gives $G(1.717921868469903)=[-1.35362654688\times10^{-19}\pm3.3\times10^{-31}]<-10^{-19}$ and $G(1.717921868469904)=[2.12616065470\times10^{-20}\pm5\times10^{-33}]>10^{-20}$, so the two signs of Lemma~A.6 are reproduced; the controls $\ldots902$ and $\ldots905$ give $-2.92\times10^{-19}$ and $+1.78\times10^{-19}$.
 
 \paragraph{Lemma~A.6 (\texttt{YBC-C-0002}, \tC).} With full Ewald sums, Arb gives (radius about $10^{-49}$):
 \begin{center}\small\begin{tabular}{@{}lr@{}}\toprule
@@ -246,10 +274,11 @@ $2.12615782\times10^{-20}$, so the slacks are $2.84\times10^{-20}$ (lower side) 
 All 1\,000 + 2\,000 cells hold with no failure; the minimum slacks are $7.52\times10^{-4}$ ((A.6), $j=999$) and $7.65\times10^{-5}$ ((A.7), $j=0$), and (A.8) has slack $0.143$. Lemma~A.1: $P(\LF,0)=0.0558589\ldots<0.055995<7/125=0.056<I(16/25,0)=0.0561634\ldots$.
 Printed counts add up: $\sum n_j=84\,043$ and $1118+193+86+5828=7225$.
 
-\paragraph{Worth a human look, not a discrepancy (\texttt{YBC-C-0006}).} In Lemma~A.3 (A.4), three exponential bounds hold, but only by about $2\times10^{-16}$:
-$e^{\alpha_1}=0.44-2.05\times10^{-16}\le11/25$, $e^{\alpha_2}=0.147-1.37\times10^{-16}\le147/1000$, $e^{\beta}=4/3+1.87\times10^{-16}\ge4/3$. The dyadic endpoints look like double-rounded
-logarithms, so whether the bounds hold depends on the rounding direction. At 320 bits they hold. We flag this as the tightest margin in the appendix we could check, and a place where a reader implementing the lemma in double precision
-could be misled; we do not call it an error.
+\paragraph{The Lemma~A.3 endpoints are outward-rounded, not a near-tie (\texttt{YBC-C-0006}).} In Lemma~A.3 (A.4), three exponential bounds hold by about $2\times10^{-16}$:
+$e^{\alpha_1}=0.44-2.05\times10^{-16}\le11/25$, $e^{\alpha_2}=0.147-1.37\times10^{-16}\le147/1000$, $e^{\beta}=4/3+1.87\times10^{-16}\ge4/3$. The endpoints are outward-rounded: their numerators lie
+4.2, 1.05 and 2.5 units of the dyadic denominator beyond the exact logarithms, in the safe direction. For $\alpha_1$ and $\alpha_2$ the rationals
+$11/25$ and $147/1000$ are themselves intermediate (the proof of Proposition~3.1 has slack of about $3\times10^{-3}$ and $5\times10^{-4}$), so only the bound for
+$\beta$ is tight. These are the tightest margins we met in the appendix; at 320 bits all three hold, and we do not call them an error.
 
 %=====================================================================
 \section{Controls}\label{sec:controls}
@@ -261,7 +290,7 @@ against the $r_3$ shortcut; the mirror of every Lean check in exact \lean{Fracti
 \item \textbf{Planted wrong multiplicity} $N_7=46$ (the true value is $48$), \texttt{RejectN7.lean}: fails to compile, rc~1, with a kernel error (\emph{application type mismatch}).
 \item \textbf{Tampered table entry}, \lean{C1[500]} multiplied by $1.01$ (\texttt{RejectChain.lean}): rc~1. \textbf{Tampered cell bound}, the (A.7) margin raised to $1/1000$ (\texttt{RejectCell.lean}): rc~1.
 For these two the error text is the elaborator's ``\lean{decide} failed, reduction got stuck at the \lean{Decidable} instance'', which by itself would not distinguish ``false'' from ``stuck''. The decisive evidence is
-\texttt{RejectWitness.lean} (rc~0): the theorems \lean{cellA7bad\_0\_false : cellA7bad 0 = false}, \lean{bad\_chain\_false : chainLo s1 C1bad = false}, \lean{N7\_is\_48 : Nc 7 = 48} and \lean{N7\_ne\_46} are kernel-checked, so the kernel evaluates the tampered checks to \lean{false} and $N_7$ to $48$ (\texttt{YBC-A-0008}, \tA{}).
+\texttt{RejectWitness.lean} (rc~0): the theorems \lean{cellA7bad\_0\_false : cellA7bad 0 = false}, \lean{bad\_chain\_false : chainLo s1 C1bad = false}, \lean{N7\_is\_48 : Nc 7 = 48} and \lean{N7\_ne\_46} are kernel-checked, so the kernel evaluates the tampered checks to \lean{false} and $N_7$ to $48$ (\texttt{YBC-A-0008}, \tA{}). The independent audit reran all of these controls with the same outcomes (rc 1, 1, 1, 0), diffed the tampered definitions against the \texttt{Reject*} files (textually identical bodies) and agreed that \texttt{RejectWitness} is decisive.
 \item \textbf{Planted \lean{sorry} and planted axiom} (\texttt{Controls.lean}): the file compiles with rc~0, which a compile exit code alone would accept; \lean{\#print axioms} reports
 \lean{[propext, sorryAx, Classical.choice, Quot.sound]} for \lean{ctl\_sorry} and \lean{[propext, Classical.choice, Quot.sound, ctl\_cheat]} for \lean{ctl\_axiom}. Both are caught by the axiom audit.
 \item \textbf{Tampered rectangle} (Lemma~A.4): not applicable, since no partition data exists to tamper with.
@@ -271,25 +300,25 @@ For these two the error text is the elaborator's ``\lean{decide} failed, reducti
 \section{What remains open}\label{sec:open}
 \begin{itemize}\itemsep=1pt
 \item \textbf{Lemma~6.1 is not in Lean} (\texttt{YBC-C-0008}, \tC). Its finite inputs are \tA; the assembly needs $\Theta$ as a \lean{tsum} over $\mathbb Z^3$, three-dimensional Poisson summation for $D(1)=0$ with $\LB=\LF^*$, the argument on cells for $D'$ and $D$, and $N_n<30n$, $M_\ell<30\ell$ for all $n,\ell$. We read the paper's proof and checked $N_n<30n$ ($n\le2100$) and $M_\ell<30\ell$ ($\ell\le4200$) by enumeration only (\texttt{YBC-C-0007}). We did not open a second kernel budget for this; it is a separate, large lift.
-\item \textbf{Lemma~A.4 and Lemma~A.2} were not re-run (\tC{} aim M3c). Lemma~A.4 is a finite computation on a dyadic partition of 7\,225 rectangles, of which 5\,828 need the (a)/(b)/(c) alternatives. The paper says the partition data accompany the manuscript, but arXiv lists no ancillary files, and rebuilding Section~5 was outside the budget. This is the largest unchecked part of the computer-assisted proof.
+\item \textbf{Lemma~A.4 and Lemma~A.2} were not re-run (\tC{} aim M3c). Lemma~A.4 is a finite computation on a dyadic partition of 7\,225 rectangles, of which 5\,828 need the (a)/(b)/(c) alternatives. The paper itself (p.~4: ``the complete interval computations and exact partitions accompany the manuscript'') says the partition data exist, but the arXiv abstract page (checked by the audit on 2026-10-27) shows v1 only and no ancillary-file section, and rebuilding Section~5 was outside the budget. We intend to ask the authors for the data; that is the route to M3c. This is the largest unchecked part of the computer-assisted proof.
 \item \textbf{Lemma~A.6 is not in Lean}: no \lean{erfc} in the pinned Mathlib. A kernel proof would need either that theory or thousands of certified $\sqrt{\cdot}$ and $\exp$ enclosures at $10^{-21}$.
 \item The analytic reductions of Sections~2--5, Theorems~5.1 and 6.1, and the uniqueness of $\ks$ are taken as stated (\tL{}, \texttt{YBC-L-0002}).
-\item An independent clean recompile (producer $\ne$ verifier) of the Lean modules and an audit of statement adequacy are owed.
+\item The independent clean recompile (producer $\ne$ verifier) has been done by the AI audit (rc~0, byte-identical oleans). Still owed: a \emph{human} audit of statement adequacy (whether the Lean statements mean what their glosses say), and a statement lock.
 \end{itemize}
 
 %=====================================================================
 \section{Claim ledger}\label{sec:ledger}
 \texttt{ledger/build\_ledger.py} files $21$ claims: $8$ at Tier~A (\texttt{YBC-A-0001..0008}), $2$ at L, $9$ at C (\texttt{YBC-C-0001..0009}, the last being the headline) and $2$ at X.
 Each has a content-addressed evidence blob in \texttt{ledger/evidence/}. The Elenchus gate (\texttt{tools/ledger.py ledger.json -{}-evidence-dir evidence}; verbatim in \texttt{ledger/gate\_output.txt}) exits with code~\textbf{1}:
-\textbf{0 blocking findings and 8 flags} (\texttt{LEDGER\_UNAUDITED\_TIER\_A}, one per Tier~A row: no \emph{person} has certified that the Lean statements mean what their glosses say). Exit code~1 is the honest state at writing, not a failure to be cleared by editing. There is no AI audit and no statement lock.
+\textbf{0 blocking findings and 8 flags} (\texttt{LEDGER\_UNAUDITED\_TIER\_A}, one per Tier~A row: no \emph{person} has certified that the Lean statements mean what their glosses say). Exit code~1 is the honest state at writing, not a failure to be cleared by editing. An independent AI audit exists (\texttt{AUDIT.md}; verdict ACCEPT\_WITH\_CORRECTIONS; no blocking item); it reran the gate and obtained the identical result (exit 1, 0 blocking, 8 flags). The flags are kept because they correctly say that no \emph{person} has certified the glosses; the ledger rows' \texttt{audit} field records the AI audit, not a human one. There is no human audit and no statement lock.
 
 %=====================================================================
 \section{Limitations}\label{sec:lim}
 \begin{itemize}\itemsep=1pt
 \item \textbf{Partial.} See Section~\ref{sec:open}. We do not claim that Theorem~1.1, 5.1 or 6.1 is verified. Tier~A certifies Lean statements about the stated model quantities (unit-covolume shell sums with \lean{Real.pi}, \lean{Real.exp}), nothing more.
-\item \textbf{Deviations from the preregistration.} (1) A.6 is Tier~C for a reason other than the kill text gives (no \lean{erfc}). (2) Lemma~6.1 is not kernel-checked, so even the fallback ``kernel-check Lemma~6.1 only'' was not fully met. (3) The two omitted-tail series are bounded on every partial sum; the monotone limit is not in Lean. (4) The IEEE-double control reaches 11 digits, so the 13-digit float control became mpmath at 40 digits. (5) M3c was blocked, so the tampered-rectangle control is N/A.
+\item \textbf{Deviations from the preregistration.} (1) A.6 is Tier~C for a reason other than the kill text gives (no \lean{erfc}). (2) Lemma~6.1 is not kernel-checked, so even the fallback ``kernel-check Lemma~6.1 only'' was not fully met. (3) The two omitted-tail series are bounded on every partial sum; the monotone limit is not in Lean. (4) The producer's IEEE-double direct-sum control reaches 11 digits (a float64 Ewald reaches about 12), too few for the 13-digit printed value, so the 13-digit float control became mpmath at 40 digits. (5) M3c was blocked, so the tampered-rectangle control is N/A.
 \item \textbf{Compute and process.} The Lean runs were on core~6, which another agent's process also used. Two earlier monolithic compiles of \lean{LemmaA5} were killed with signal~9, unattributed, probably memory pressure from about four 5.7~GB Lean processes of other lanes; the file was then split into four modules with 100-cell blocks. The emitter was re-run once after the oleans were built, to regenerate \lean{Lemma61} only (it is deterministic); \texttt{Statements.lean} prints the olean types of the five main theorems and they match the sources. \texttt{m3\_arb.py} was re-annotated after its first run and re-run with identical key numbers.
-\item \textbf{The leanchecker replay was run by the producer}, so it is not an independent recompile. No statement lock was registered.
+\item \textbf{Verifier status.} The producer's \texttt{leanchecker} replay is not independent; the audit's is (private olean directory, the producer's shared olean directory removed from the library path, oleans byte-identical to the producer's, rc~0 on all five modules). The audit is an AI audit; no human has audited the paper or the Lean statements, and no statement lock was registered.
 \item \textbf{Repository guards fail, for pre-existing reasons in other lanes' files.} \texttt{antigravity\_guard.py} rc~1 (103 findings, hallucinated-import findings in other lanes); \texttt{test\_rigor\_guard.py} rc~1 (tests with no assertions in other modules); \texttt{pytest tests/} rc~2 (28 collection errors; no test ran). None lies in this lane's files; this lane added no tests. We report the outputs as they came (\texttt{data/logs/guard\_*.txt}, \texttt{pytest\_tests.txt}) and do not call the repository gate passed.
 \item Interpreter and shell lapses of the producer: the Lean wrapper and guards ran under system \texttt{python3} without \texttt{-I}; a few wait loops were used in background shells. Neither touched git.
 \item \textbf{The paper text is not redistributed.} The 27-page text extraction used for reading is not included here, since we did not establish its licence; the paper is cited.
@@ -297,15 +326,24 @@ Each has a content-addressed evidence blob in \texttt{ledger/evidence/}. The Ele
 
 %=====================================================================
 \section{Reproducibility}\label{sec:repro}
-Repository AutoevolveAI, branch \texttt{worktree-openai-math-discovery}; HEAD when this paper was written: \texttt{e5f38b289314c730ed4960104c91a2902b88f8ef}. Nothing was pushed or published by this paper's lane. Copies in \texttt{data/}: \texttt{code/} (scripts), \texttt{lean/} (the twelve Lean sources), \texttt{logs/}, \texttt{arb\_results.json}, \texttt{extra\_results.json}, \texttt{float\_results.json}, \texttt{shells\_k4200.json}, \texttt{RESULT.md}, \texttt{result.json} (sha256 of all inputs). Lean compile times on core~6: \lean{Basic} 17.8~s, \lean{Shells} 657~s, \lean{Chains} 162~s, \lean{LemmaA5} 2009~s, \lean{Lemma61} 23~s; \texttt{leanchecker}: 112, 278, 131, 1601 and 85~s, all rc~0, empty output. Commands (repository root):
+Repository AutoevolveAI, branch \texttt{worktree-openai-math-discovery}; HEAD when this paper was written: \texttt{e5f38b289314c730ed4960104c91a2902b88f8ef}. Nothing was pushed or published by this paper's lane. Copies in \texttt{data/}: \texttt{code/} (scripts), \texttt{lean/} (the twelve Lean sources), \texttt{logs/}, \texttt{arb\_results.json}, \texttt{extra\_results.json}, \texttt{float\_results.json}, \texttt{shells\_k4200.json}, \texttt{RESULT.md}, \texttt{result.json} (sha256 of all inputs). Lean compile times on core~6: \lean{Basic} 17.8~s, \lean{Shells} 657~s, \lean{Chains} 162~s, \lean{LemmaA5} 2009~s, \lean{Lemma61} 23~s; \texttt{leanchecker}: 112, 278, 131, 1601 and 85~s, all rc~0, empty output (producer). The independent audit's \texttt{leanchecker} replays on its privately built oleans: 59.3, 168.1, 89.7, 1091.2 and 55.7~s, all rc~0, empty output (\texttt{data/leanchecker\_replay\_audit.json}). Commands (repository root):
 \begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
-.venv/bin/python -I code/m3_shells.py ; .venv/bin/python -I code/m3_arb.py     # kappa* (E), (D); Lemma A.5, A.6
-.venv/bin/python -I code/m3_float.py ; .venv/bin/python -I code/m3_extra.py    # (Q) eq. (1.4); A.1, A.3, truncation
-.venv/bin/python -I code/emit_lemmaA5.py                                       # proposes Chains/LemmaA5/Lemma61 tables
-python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/YukawaBccFcc/Basic.lean   # then Shells, Chains, LemmaA5, Lemma61, Axioms
-python -I ledger/build_ledger.py ; python -I ledger/run_gate.py                # gate: exit 1 = 0 blocking, 8 flags
+# every script takes positional arguments; /tmp/m3 must exist; code dir = papers/p4_yukawa_bcc_fcc_check/data/code
+.venv/bin/python -I papers/p4_yukawa_bcc_fcc_check/data/code/m3_shells.py 4200 /tmp/m3/shells.json
+.venv/bin/python -I papers/p4_yukawa_bcc_fcc_check/data/code/with_flint.py .scratchpad/b2_pylib papers/p4_yukawa_bcc_fcc_check/data/code/m3_arb.py /tmp/m3/shells.json /tmp/m3/arb.json
+.venv/bin/python -I papers/p4_yukawa_bcc_fcc_check/data/code/m3_float.py /tmp/m3/shells.json /tmp/m3/float.json
+.venv/bin/python -I papers/p4_yukawa_bcc_fcc_check/data/code/with_flint.py .scratchpad/b2_pylib papers/p4_yukawa_bcc_fcc_check/data/code/m3_extra.py /tmp/m3/shells.json /tmp/m3/extra.json
+.venv/bin/python -I papers/p4_yukawa_bcc_fcc_check/data/code/emit_lemmaA5.py /tmp/m3/lean_emit     # OUT is a directory
+python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/YukawaBccFcc/Basic.lean --olean Programmes.YukawaBccFcc.Basic
+                                                # then Shells, Chains, LemmaA5, Lemma61, Axioms (same form)
+python -I papers/p4_yukawa_bcc_fcc_check/ledger/build_ledger.py ; python -I papers/p4_yukawa_bcc_fcc_check/ledger/run_gate.py  # exit 1 = 0 blocking, 8 flags
 \end{lstlisting}
-sha256 of the Lean sources (\texttt{data/lean/}) are in \texttt{ledger/evidence/} and \texttt{data/result.json}. Toolchain: Lean 4.34.1, Mathlib \texttt{d13f23b7}, python-flint 0.6.0, mpmath.
+Run times: shells 0.3~s, Arb 4~s, extra within the two-minute tool limit (not timed separately), mpmath (\texttt{m3\_float.py}) several minutes, emitter seconds. \texttt{m3\_arb.py} and \texttt{m3\_extra.py} need python-flint, which the repository venv does not contain. Under \texttt{python -I} neither \texttt{PYTHONPATH} nor the user site is read, so
+the launcher \texttt{with\_flint.py} (added in this revision; it only extends \texttt{sys.path}) takes the directory holding the \texttt{flint} package as its first argument. The producer used python-flint 0.6.0 from \path{.scratchpad/b2_pylib}
+(a local, untracked directory); the audit used python-flint 0.9.0 from \texttt{\string~/.local/lib/python3.10/site-packages} with the system \texttt{python3 -I} (nothing was installed). The path hard-wired inside \texttt{m3\_arb.py}
+(\texttt{parents[5]/.scratchpad/b2\_pylib}) is right only from the original \texttt{results/proposal4/2026-10-27/M3/code/} and is ignored here; the scripts were left unmodified so that the hashes in \texttt{data/result.json} remain valid.
+In this revision the shell, Arb, mpmath, extra and emitter commands (not the Lean compiles, which were not rerun) were tested from a scratch copy of the code directory with the repository venv, and the Arb run also with the system \texttt{python3 -I} and python-flint 0.9.0 (flint directory \texttt{\string~/.local/lib/python3.10/site-packages}).
+sha256 of the Lean sources (\texttt{data/lean/}) are in \texttt{ledger/evidence/} and \texttt{data/result.json}. Toolchain: Lean 4.34.1, Mathlib \texttt{d13f23b7}, python-flint 0.6.0 (producer) and 0.9.0 (audit), mpmath.
 
 %=====================================================================
 \begin{thebibliography}{99}\small

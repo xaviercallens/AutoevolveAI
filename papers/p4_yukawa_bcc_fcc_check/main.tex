@@ -1,0 +1,318 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,
+  frame=single,framesep=3pt,xleftmargin=4pt,xrightmargin=4pt,upquote=true,aboveskip=4pt,belowskip=2pt}
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tA}{\tier{A}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\lean}[1]{\texttt{#1}}
+\newcommand{\LF}{L_{\mathrm F}}
+\newcommand{\LB}{L_{\mathrm B}}
+\newcommand{\ks}{\kappa_*}
+
+\title{An independent partial check of the three-dimensional Yukawa bcc-to-fcc threshold of Luo and Wei:\\
+the threshold reproduced three ways, seventeen finite statements kernel-checked, and what remains open}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-27}
+\hypersetup{pdftitle={An independent partial check of the three-dimensional Yukawa bcc-to-fcc threshold of Luo and Wei},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure.} This preprint, its Lean code, its Python code and its claim ledger were
+produced by AI agents (Claude, Anthropic) under the author's direction. The author is responsible for the content. No human
+has audited the Lean statements for adequacy, and no human referee has checked the hand arguments.
+\textbf{No independent audit of any kind (human or AI) exists at the time of writing}; the producer-is-not-verifier clean recompile
+is pending, and no statement lock exists.
+
+\medskip
+\noindent\textbf{Credit.} The result discussed here is due to Senping Luo and Juncheng Wei, \emph{On exact solutions to
+three-dimensional Yukawa lattice model and BCC to FCC phase transitions}, arXiv:2610.31456v1 [math.AP], 22 October 2026~\cite{lw}.
+They determine the global minimisers of the Yukawa lattice energy at every screening and prove a single bcc-to-fcc transition at
+$\ks\approx1.7179218684699$. The credit for that result belongs to them. This note is a \emph{check} of part of their proof, not a
+refutation: \textbf{every printed number and inequality that we could check holds, and we found no discrepancy.}
+
+\begin{abstract}
+For unit-density point charges that repel through the screened Coulomb (Yukawa) potential $e^{-\kappa r}/r$, Luo and Wei prove that the
+body-centred cubic (BCC) lattice has the lowest energy among all three-dimensional lattices for $\kappa<\ks$, the face-centred cubic (FCC)
+lattice for $\kappa>\ks$, and that $\ks\approx 1.7179218684699$. Their proof leans on finite, computer-assisted inequalities. We checked
+part of them independently. \textbf{We found no discrepancy; every printed number and inequality that we checked holds.}
+Tier split.
+\tA{} (Lean~4.34.1, pinned Mathlib; axioms within $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$; \texttt{leanchecker}
+replay rc~0 on \lean{Basic}, \lean{Shells}, \lean{Chains}, \lean{LemmaA5}, \lean{Lemma61}, run by the producer; no statement lock; no independent
+recompile yet): \emph{seventeen finite statements}: the FCC shell multiplicities $N_1,\dots,N_{12}$ and the 17 nonzero BCC multiplicities $M_\ell$
+($\ell\le48$), proved equal to the count over all of $\mathbb Z^3$; Lemma~A.5 (A.6), (A.7) and (A.8) as real-number statements over \lean{Real.pi}
+and \lean{Real.exp}; the constants of the proof of Lemma~6.1; the tail rational of the proof of Lemma~A.6; and the rational step of Lemma~A.1.
+\tL{}: the paper's own statements, taken as stated.
+\tC{}: Arb ball arithmetic (Lemma~A.6 for $G=2(E_B-E_F)$ at $\kappa\in\{1.717921868469903,\,1.717921868469904\}$ and at neighbouring controls;
+the Lemma~A.5 minimum slacks $7.52\times10^{-4}$ and $7.65\times10^{-5}$; Lemmas~A.1 and A.3) and \emph{three independent reproductions of $\ks$}
+(Ewald sums in Arb at 320 bits; a direct real-space Arb sum; mpmath quadrature of the paper's integral equation (1.4) at 40 digits), agreeing to about 22 digits
+(IEEE double alone reaches only 11 digits).
+\textbf{Not done:} the assembly of Lemma~6.1 (theta functions as lattice sums, Poisson summation for $D(1)=0$, $N_n<30n$ for all $n$);
+Lemma~A.4 (5\,828 rectangles: the partition data is not public and arXiv lists no ancillary files) and Lemma~A.2; and Lemma~A.6 in Lean (the pinned Mathlib has no \lean{erfc}).
+Every claim in the text carries a tier tag and a ledger identifier (\texttt{YBC-$\cdot$-nnnn}).
+
+\medskip
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{What this is NOT.} This concerns the \emph{stated mathematical model} of point
+charges with screened Coulomb repulsion on a lattice at zero temperature. It makes \textbf{no claim about any real material}, plasma, colloid or
+crystal. It is not a verification of Theorem~1.1 of Luo and Wei, and not a refutation of it.}}
+\end{abstract}
+
+\paragraph{Markers and ledger.} \tA{}: kernel-checked Lean, axioms within the allowlist, controls caught. \tL{}: a cited source, taken as stated.
+\tC{}: executed code with an argument written down but not machine-checked in Lean (here: interval/ball arithmetic and quadrature). \tX{}: floating
+point, supporting nothing by itself. A \tA{} tag attaches to the Lean statement, never to its physical gloss.
+Identifiers \texttt{YBC-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json} (Section~\ref{sec:ledger}).
+
+%=====================================================================
+\section{Setting and scope}\label{sec:setting}
+This is item M3 of a computational programme (Proposal~4, preregistered 2026-10-27 in \texttt{results/proposal4/2026-10-27/preregistration.json};
+the file was not edited). The preregistered aims were: (M3a) kernel-check Lemma~A.5 and Lemma~6.1; (M3b) kernel-check the two signed bounds of Lemma~A.6;
+(M3c) re-run Lemma~A.4 (5\,828 rectangles) and Lemma~A.2 in ball arithmetic. The kill rule said: if rational exp enclosures at the $10^{-20}$ margin were too
+slow in the kernel, kernel-check Lemma~6.1 only and report A.6 as Tier~C. The outcome is the preregistered \emph{reduced} one, with two differences set out in
+Section~\ref{sec:lim}: A.6 went to Tier~C because Mathlib lacks \lean{erfc}, not because the kernel was too slow, and Lemma~6.1 itself is \emph{not} in Lean, only its finite inputs.
+Overall status: \textbf{PARTIAL}. The prior assigned before any attempt was $0.45$ for the headline.
+
+We never write ``Luo and Wei is verified''. We say which finite statements were checked, at which tier, and which parts were not touched.
+Had a discrepancy appeared, the protocol was to re-check it a second time and tell the authors before saying anything public.
+
+%=====================================================================
+\section{A step-by-step account for non-specialists}\label{sec:human}
+Each step ends with the Lean statement that corresponds to it, when there is one. Lean statements are transcribed in ASCII; the sources are in
+\texttt{data/lean/}.
+
+\paragraph{Step 1: the question.}\tL{} Put point charges at the points of a lattice (a regular 3D grid generated by three vectors) with one point per unit volume. If
+the charges repel as $1/r$ (Coulomb), the lowest-energy lattice is BCC: a cube with a point at each corner and one at the centre. If the repulsion is
+\emph{screened}, $e^{-\kappa r}/r$ (Yukawa), with screening $\kappa>0$, strong screening makes the interaction short-ranged, and nearest-neighbour geometry wins: FCC, a
+cube with points at the corners and face centres, packs the nearest neighbours better. The energy per particle is $E_\kappa(L)=\tfrac12\sum_{v\in L\setminus\{0\}}e^{-\kappa|v|}/|v|$.
+Luo and Wei prove that among \emph{all} lattices of unit covolume the minimiser is BCC for $\kappa<\ks$ and FCC for $\kappa>\ks$.
+
+\paragraph{Step 2: what a ``certified threshold'' means.}\tL{} The threshold $\ks$ is the unique $\kappa$ with $E_\kappa(\LB)=E_\kappa(\LF)$. A
+\emph{certified} enclosure of $\ks$ means this: evaluate $G(\kappa)=2(E_\kappa(\LB)-E_\kappa(\LF))$ at two rational values $\kappa_1<\kappa_2$ and show rigorously that
+$G(\kappa_1)<0<G(\kappa_2)$. Because $G$ has a single sign change, $\ks\in(\kappa_1,\kappa_2)$. Lemma~A.6 does this with
+$\kappa_1=1717921868469903/10^{15}$ and $\kappa_2=1717921868469904/10^{15}$, claiming $G(\kappa_1)<-10^{-19}$ and $G(\kappa_2)>10^{-20}$.
+The numbers are small because $G'(\ks)\approx1.57\times10^{-4}$: one unit in the fifteenth decimal moves $G$ by about $1.6\times10^{-19}$. \tC{}
+
+\paragraph{Step 3: shell multiplicities.}\tL{} The FCC lattice $\LF$ and its dual BCC lattice $\LB=\LF^*$ have squared lengths $2^{1/3}n$ (with $N_n$ vectors) and
+$2^{-4/3}\ell$ (with $M_\ell$ vectors). Concretely $N_n=\#\{m\in\mathbb Z^3:|m|^2=2n\}$ and $M_\ell=\#\{m\in\mathbb Z^3:|m|^2=\ell,\ m_1\equiv m_2\equiv m_3 \bmod 2\}$.
+Everything below uses the printed tables. We recounted them in the kernel, over a finite box, \emph{and} proved that the box count equals the count over all of $\mathbb Z^3$:
+\begin{lstlisting}
+theorem Nc_eq_ncard (n : N) (hn : 2*n < 36) :
+    Nc n = Set.ncard {m : Z x Z x Z | normSq m = 2*n}
+theorem Mc_eq_ncard (l : N) (hl : l < 49) :
+    Mc l = Set.ncard {m : Z x Z x Z | normSq m = l /\ sameParity m}
+theorem fcc_multiplicities :
+    (List.range 12).map (fun i => Nc (i+1)) = [12,6,24,12,24,8,48,6,36,24,24,24]
+theorem bcc_multiplicities :  -- 17 nonzero M_l, l <= 48
+    filter (Mc l /= 0) [1..48] = [3,4,8,11,12,16,19,20,24,27,32,35,36,40,43,44,48] /\
+    map Mc [3,4,8,...,48] = [8,6,12,24,8,6,24,24,24,32,12,48,30,24,24,24,8]
+\end{lstlisting}
+\tA{} (\texttt{YBC-A-0001}, \texttt{YBC-A-0002}). The box sizes (radius 5 and 6) are justified by the first lemma: any vector of squared length below $(R+1)^2$ has all coordinates in $[-R,R]$.
+
+\paragraph{Step 4: a finite inequality becomes a statement about real numbers.}\tL{} Lemma~A.5 compares two sums of exponentials on a grid of $1000+2000$ cells. Here is (A.7):
+for every integer $0\le j<2000$, $\sum_{\ell\le48}M_\ell e^{-\pi 2^{-4/3}\ell\,(11/10+(j+1)/2000)}-\sum_{n\le12}N_n e^{-\pi2^{1/3}n\,(11/10+j/2000)}-10^{-18}>10^{-4}$.
+In Lean, over the reals with \lean{Real.pi}, \lean{Real.exp}, $a_2=2^{1/3}$ and $b_2=2^{-4/3}$:
+\begin{lstlisting}
+theorem lemmaA5_A7 (j : N) (hj : j < 2000) :
+  sum l in Icc 1 48, (Mc l : R) * exp (-(pi*b2) * l * (11/10 + (j+1)/2000))
+  - sum n in Icc 1 12, (Nc n : R) * exp (-(pi*a2) * n * (11/10 + j/2000))
+  - 1/10^18 > 1/10000
+\end{lstlisting}
+\tA{} (\texttt{YBC-A-0004}); (A.6) is \lean{lemmaA5\_A6} for $j<1000$ with margin $3/1000$ (\texttt{YBC-A-0003}), and (A.8) is
+\lean{8 * exp((pi*a2 - 3*(pi*b2)) * (21/10)) > 25/2} (\lean{lemmaA5\_A8}, \texttt{YBC-A-0005}).
+
+\paragraph{Step 5: how the kernel checks 3\,000 exponential inequalities.}\tA{} The kernel cannot evaluate $e^x$, so we reduce each cell to rational arithmetic. (i) $\pi$ is
+bracketed by Mathlib's \lean{Real.pi\_gt\_d20} and \lean{pi\_lt\_d20}; $2^{1/3}$ and $2^{-4/3}$ are bracketed through their cubes. (ii) For a rational $z$, $e^z=(e^{z/8})^8$ and
+\lean{Real.exp\_bound} gives a rational enclosure from a Taylor polynomial. (iii) The values $e^{-\pi a_2(1+k/10^4)}$ and three similar sequences are supplied as lists of
+dyadic rationals (denominator $2^{52}$) by an \emph{untrusted} script; the kernel checks that each entry follows the previous one within a certified enclosure
+(\lean{chainLo}, \lean{chainHi}), and the chain is lifted by induction to the real sequence. Because shell sums are monotone in the exponential, one table entry per cell suffices. (iv) Each of the 3\,000 cell inequalities is a rational
+comparison decided by \lean{decide +kernel}, in blocks of 100 cells. An emitter script mirrors every kernel check in exact \lean{Fraction} arithmetic before Lean runs; its slacks, $7.5214\times10^{-4}$ for (A.6) and $7.6459\times10^{-5}$ for (A.7), match the Arb values. The untrusted tables
+cannot make a false statement pass: a tampered entry fails (Section~\ref{sec:controls}).
+
+\paragraph{Step 6: the proof of Lemma~6.1, as far as it is finite.}\tL{} Lemma~6.1 says $D(t)=\Theta(t,\LB)-\Theta(t,\LF)$ satisfies $D(1)=0$ and $D(t)>0$ for $t>1$, where
+$\Theta(t,L)=\sum_{v\in L}e^{-\pi t|v|^2}$. The printed proof uses Poisson summation (for $D(1)=0$, since $\LB=\LF^*$), then, for $t\ge1$, bounds the shells beyond $n=13$ and $\ell=49$ using $N_n<30n$, $M_\ell<30\ell$ and a few
+numerical constants. Those constants are \tA{} (\texttt{YBC-A-0006}), for example
+\begin{lstlisting}
+theorem lemma61_exp_fcc : exp (-(pi*a2)) < 1/49
+theorem lemma61_exp_bcc : exp (-(pi*b2)) < 3/10
+theorem lemma61_tail_fcc (K : N) :
+  30 * sum k in range K, (13+k) * (1/49)^(13+k) < 1/10^18
+\end{lstlisting}
+The statement for \emph{every partial sum} is what we proved; passing to the infinite series is not written in Lean. The assembly is Section~\ref{sec:open}.
+
+\paragraph{Step 7: Lemma~A.6 and why it is in Ball arithmetic, not Lean.}\tC{} $E_\kappa$ is not a finite sum. The paper (eqs.\ 2.3, 2.4) rewrites it by an Ewald split into rapidly convergent sums over $\LF$ and $\LB$ (truncated at $n\le12$, $\ell\le48$) whose terms involve an incomplete integral $I(q,c)=\int_1^\infty t^{-1/2}e^{-\pi qt-c/t}dt$, a complementary error function in closed form. The pinned Mathlib has no \lean{erfc}, hence no certified enclosure for $I$ in Lean without building that theory. We therefore verify Lemma~A.6 in Arb (Section~\ref{sec:kappa}). The rational tail, $60(1/49)^{13}/(1-1/49)+60(3/10)^{49}/(7/10)<7\times10^{-21}$ (exact value $6.5267\times10^{-21}$), is \tA{} (\lean{lemmaA6\_tail}, \texttt{YBC-A-0007}); so is the rational step $55995/10^6<7/125$ of Lemma~A.1 (\lean{lemmaA1\_rational}).
+
+%=====================================================================
+\section{Anatomy of the Lean development}\label{sec:leandev}
+The Lean modules are in \path{formal_cert/Programmes/YukawaBccFcc/} (copies in \texttt{data/lean/}). They import \lean{Mathlib.Tactic} and \lean{Mathlib.Algebra.BigOperators.Fin}; never \lean{import Mathlib}.
+They were compiled through \texttt{scripts/certified\_numerics/lean\_pinned.py} (Lean~4.34.1, Mathlib \texttt{d13f23b7}) and not through \texttt{anse/formal/lean\_runner.py}, a deviation from the repository's usual route that was
+inherited from earlier lanes.
+\begin{table}[ht]\centering\small
+\begin{tabular}{@{}lp{8.6cm}rl@{}}\toprule
+Module & Content & compile (s) & leanchecker\\\midrule
+\lean{Basic} & box counts and their \lean{ncard} equality; $\pi$, $2^{1/3}$, $2^{-4/3}$ brackets; \lean{exp} enclosure; chain lifting; monotone shell polynomials; geometric tail lemma & 17.8 & rc 0\\
+\lean{Shells} & \lean{decide +kernel} enumerations; \lean{fcc\_multiplicities}, \lean{bcc\_multiplicities} & 657 & rc 0\\
+\lean{Chains} & four untrusted dyadic tables (denominator $2^{52}$), each step kernel-checked & 162 & rc 0\\
+\lean{LemmaA5} & 3\,000 cell checks in 30 blocks of 100; \lean{lemmaA5\_A6}, \lean{lemmaA5\_A7} & 2\,009 & rc 0\\
+\lean{Lemma61} & (A.8), the Lemma~6.1 constants and tails, the A.6 tail, the A.1 rational step & 23 & rc 0\\
+\lean{Axioms}, \lean{Statements} & \lean{\#print axioms} and \lean{\#check} of the exported theorems & 15, 12 & ---\\
+\lean{Controls}, \lean{Reject*} & planted and tampered controls (never imported) & 12--32 & ---\\\bottomrule
+\end{tabular}
+\caption{The development. Times are wall-clock on a shared core, from the compile logs; \texttt{leanchecker} replays were run by the producer.}
+\end{table}
+\paragraph{The tables that the kernel does not trust.} The dyadic tables for $e^{-\pi a_2(1+k/10^4)}$, $e^{-\pi b_2(1+k/10^4)}$ and the two grids with step $1/2000$ are produced by a script. The kernel never accepts a table as given: each entry
+must lie between the lower and upper rational enclosures obtained from the previous one, and the first entry and the step constant are checked against certified Taylor enclosures. A wrong table entry makes the chain check evaluate to \lean{false}, which is what the control in Section~\ref{sec:controls} shows.
+\paragraph{The multiplicities.} For reference, the values proved (Step~3) are
+\begin{center}\small\begin{tabular}{@{}l|cccccccccccc@{}}
+$n$ & 1&2&3&4&5&6&7&8&9&10&11&12\\\hline
+$N_n$ & 12&6&24&12&24&8&48&6&36&24&24&24
+\end{tabular}\\[4pt]
+\begin{tabular}{@{}l|ccccccccccccccccc@{}}
+$\ell$ & 3&4&8&11&12&16&19&20&24&27&32&35&36&40&43&44&48\\\hline
+$M_\ell$ & 8&6&12&24&8&6&24&24&24&32&12&48&30&24&24&24&8
+\end{tabular}\end{center}
+The sum $N_1+\dots+N_{12}$ and these entries are the values printed in the proof of Lemma~A.5; we enumerated them independently (\texttt{code/m3\_shells.py}) rather than reading them from the paper, and the kernel reproduced them.
+\paragraph{How to read a Tier~A line.} \lean{lemmaA5\_A7} says: for the specific real numbers named, with the Mathlib constant $\pi$ and the Mathlib exponential, the displayed inequality holds for every $j<2000$. It does \emph{not} say that the lemma is used correctly in the paper's proof, that
+the shell tables encode the right lattices (that is the gloss, which a person must compare with the paper's definitions), or anything about physics. The ledger flags this explicitly (\texttt{LEDGER\_UNAUDITED\_TIER\_A}).
+
+%=====================================================================
+\section{Results at a glance}\label{sec:results}
+\begin{table}[h]\centering\small
+\begin{tabular}{@{}llp{8.4cm}l@{}}\toprule
+Tier & Ledger & Statement & Where\\\midrule
+\tA & A-0001/2 & $N_1..N_{12}$, 17 nonzero $M_\ell$ ($\ell\le48$); box count = count over $\mathbb Z^3$ & Lean\\
+\tA & A-0003/4/5 & Lemma~A.5 (A.6) $j<1000$, (A.7) $j<2000$, (A.8) over $\mathbb R$ & Lean\\
+\tA & A-0006 & constants of the proof of Lemma~6.1 (8 theorems) & Lean\\
+\tA & A-0007 & A.6 tail rational $<7\times10^{-21}$; A.1 rational step & Lean\\
+\tA & A-0008 & controls: tampered N7, table entry, cell bound rejected; planted \lean{sorry}/axiom caught & Lean\\
+\tL & L-0001/2 & Luo--Wei statements, Sections~2--5, taken as stated & paper\\
+\tC & C-0001 & $\ks$ three ways, 22 digits & Arb, mpmath\\
+\tC & C-0002/3 & Lemma~A.6 signs (full sums and paper's truncation) & Arb\\
+\tC & C-0004/5 & Lemma~A.5 re-run; Lemma~A.1; Lemma~A.3 endpoints & Arb\\
+\tC & C-0007/8 & $N_n<30n$ on $n\le2100$ only; Lemma~6.1 assembly not formalised & enum., reading\\
+\tX & X-0001/2 & IEEE double reaches 11 digits; repository guards fail (other lanes) & float, logs\\\bottomrule
+\end{tabular}
+\end{table}
+Seventeen statements are kernel-checked: the \lean{\#print axioms} output of each of the following is exactly $[$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$]$
+(\texttt{data/logs/lean\_axioms.json}): \lean{Nc\_eq\_ncard}, \lean{Mc\_eq\_ncard}, \lean{fcc\_multiplicities}, \lean{bcc\_multiplicities}, \lean{lemmaA5\_A6}, \lean{lemmaA5\_A7}, \lean{lemmaA5\_A8},
+\lean{lemma61\_exp\_fcc}, \lean{lemma61\_exp\_bcc}, \lean{lemma61\_pb\_lt}, \lean{lemma61\_a2\_gt}, \lean{lemma61\_exp\_fcc\_21}, \lean{lemma61\_prop41\_bracket}, \lean{lemma61\_tail\_fcc}, \lean{lemma61\_tail\_bcc}, \lean{lemmaA6\_tail}, \lean{lemmaA1\_rational}.
+A scan of the five sources for \lean{skipKernelTC}, \lean{addDecl}, \lean{native\_decide}, \lean{implemented\_by}, \lean{sorry} and \lean{axiom} has a single hit, a doc comment in \texttt{Shells.lean} saying there is no \lean{sorry} and no \lean{native\_decide}.
+
+%=====================================================================
+\section{The threshold \texorpdfstring{$\ks$}{kappa*} reproduced three ways, and Lemma A.6}\label{sec:kappa}
+\paragraph{Three independent implementations of $G(\kappa)=2(E_\kappa(\LB)-E_\kappa(\LF))$ (\texttt{YBC-C-0001}, \tC).}
+(E) The Ewald split in Arb (python-flint 0.6.0, 320 bits) with closed-form $I$ and $J=e^{-\pi q-c}/(\pi q+c)$, keeping $n\le60$, $\ell\le240$, with a rigorous geometric tail.
+(D) A direct real-space sum $\sum e^{-\kappa r}/r$ in Arb over about 4\,000 shells (integer norms up to 3\,800 for FCC and 4\,100 for BCC), with a rigorous integral tail from $r_3(k)\le2(2\sqrt k+1)^2$.
+(Q) The paper's own characterisation (1.4), $\int_1^\infty D(t)\,[t^{-1/2}e^{-c/t}-e^{-ct}]\,dt=0$, by mpmath quadrature at 40 digits with a secant solver. The shell counts entering (D) and (E) were enumerated here, not copied.
+\begin{center}\small\begin{tabular}{@{}lp{8.2cm}@{}}\toprule
+(E) Ewald, Arb & $[1.717921868469903864250874\pm1.67\times10^{-25}]$\\
+(D) direct sum, Arb & $[1.717921868469903864248480,$ $1.717921868469903864252817]$ (radii $\le4.5\times10^{-25}$)\\
+(Q) eq.~(1.4), mpmath & $1.71792186846990386425087416661$\\
+(F) IEEE double (information) & $1.7179218684625486$ \tX{}\\
+printed (Thm.~6.1; (A.9)) & $1.71792186846990$; $1.717921868469903<$ $\ks<1.717921868469904$\\\bottomrule
+\end{tabular}\end{center}
+(E), (D), (Q) agree to about 22 digits and sit inside the printed enclosure. The double-precision direct sum agrees to only 11 digits because of cancellation at $G'(\ks)\approx1.566\times10^{-4}$; it cannot serve as a 13-digit control, so
+the float control of the preregistration was replaced by (Q).
+
+\paragraph{Lemma~A.6 (\texttt{YBC-C-0002}, \tC).} With full Ewald sums, Arb gives (radius about $10^{-49}$):
+\begin{center}\small\begin{tabular}{@{}lr@{}}\toprule
+$\kappa$ ($\times10^{-15}$ in the last digits) & $G(\kappa)$\\\midrule
+$1.717921868469902$ (negative control) & $-2.91987\times10^{-19}$\\
+$1.717921868469903$ (Lemma~A.6 lower) & $-1.35363\times10^{-19}<-10^{-19}$\\
+$1.717921868469904$ (Lemma~A.6 upper) & $+2.12616\times10^{-20}>10^{-20}$\\
+$1.717921868469905$ (negative control) & $+1.77886\times10^{-19}$\\
+$1$ / $3$ (far from $\ks$) & $-1.0745\times10^{-4}$ / $+1.5771\times10^{-4}$\\\bottomrule
+\end{tabular}\end{center}
+The direct sum (D) agrees within its balls at every $\kappa$. Under the paper's own truncation (FCC $n\le12$, BCC $\ell\le48$) plus its printed tail $7\times10^{-21}$ (\texttt{YBC-C-0003}), $G_{\mathrm{trunc}}=-1.35362683\times10^{-19}$ and
+$2.12615782\times10^{-20}$, so the slacks are $2.84\times10^{-20}$ (lower side) and $4.26\times10^{-21}$ (upper side); the omitted tail is actually $2.83\times10^{-26}$, five orders below the printed bound. The identity $G=$ eq.~(1.4) integral was also checked at both $\kappa$ (mpmath: $-1.353626547\times10^{-19}$, $+2.126160655\times10^{-20}$).
+
+\paragraph{Lemma~A.5 in Arb (\texttt{YBC-C-0004}, \tC) and Lemmas A.1, A.3 (\texttt{YBC-C-0005}, \tC).}
+All 1\,000 + 2\,000 cells hold with no failure; the minimum slacks are $7.52\times10^{-4}$ ((A.6), $j=999$) and $7.65\times10^{-5}$ ((A.7), $j=0$), and (A.8) has slack $0.143$. Lemma~A.1: $P(\LF,0)=0.0558589\ldots<0.055995<7/125=0.056<I(16/25,0)=0.0561634\ldots$.
+Printed counts add up: $\sum n_j=84\,043$ and $1118+193+86+5828=7225$.
+
+\paragraph{Worth a human look, not a discrepancy (\texttt{YBC-C-0006}).} In Lemma~A.3 (A.4), three exponential bounds hold, but only by about $2\times10^{-16}$:
+$e^{\alpha_1}=0.44-2.05\times10^{-16}\le11/25$, $e^{\alpha_2}=0.147-1.37\times10^{-16}\le147/1000$, $e^{\beta}=4/3+1.87\times10^{-16}\ge4/3$. The dyadic endpoints look like double-rounded
+logarithms, so whether the bounds hold depends on the rounding direction. At 320 bits they hold. We flag this as the tightest margin in the appendix we could check, and a place where a reader implementing the lemma in double precision
+could be misled; we do not call it an error.
+
+%=====================================================================
+\section{Controls}\label{sec:controls}
+\paragraph{Positive controls (all met).} $\ks$ by three independent implementations (above); the printed digits and the (A.9) enclosure are reproduced; shell counts re-enumerated by brute force up to $k=4200$ and cross-checked
+against the $r_3$ shortcut; the mirror of every Lean check in exact \lean{Fraction} arithmetic reproduces the Arb slacks.
+\paragraph{Negative controls (all rejected as intended).}
+\begin{itemize}\itemsep=0pt
+\item $\kappa=1.717921868469902$ and $\ldots905$ give the expected signs ($G<0$, $G>0$).
+\item \textbf{Planted wrong multiplicity} $N_7=46$ (the true value is $48$), \texttt{RejectN7.lean}: fails to compile, rc~1, with a kernel error (\emph{application type mismatch}).
+\item \textbf{Tampered table entry}, \lean{C1[500]} multiplied by $1.01$ (\texttt{RejectChain.lean}): rc~1. \textbf{Tampered cell bound}, the (A.7) margin raised to $1/1000$ (\texttt{RejectCell.lean}): rc~1.
+For these two the error text is the elaborator's ``\lean{decide} failed, reduction got stuck at the \lean{Decidable} instance'', which by itself would not distinguish ``false'' from ``stuck''. The decisive evidence is
+\texttt{RejectWitness.lean} (rc~0): the theorems \lean{cellA7bad\_0\_false : cellA7bad 0 = false}, \lean{bad\_chain\_false : chainLo s1 C1bad = false}, \lean{N7\_is\_48 : Nc 7 = 48} and \lean{N7\_ne\_46} are kernel-checked, so the kernel evaluates the tampered checks to \lean{false} and $N_7$ to $48$ (\texttt{YBC-A-0008}, \tA{}).
+\item \textbf{Planted \lean{sorry} and planted axiom} (\texttt{Controls.lean}): the file compiles with rc~0, which a compile exit code alone would accept; \lean{\#print axioms} reports
+\lean{[propext, sorryAx, Classical.choice, Quot.sound]} for \lean{ctl\_sorry} and \lean{[propext, Classical.choice, Quot.sound, ctl\_cheat]} for \lean{ctl\_axiom}. Both are caught by the axiom audit.
+\item \textbf{Tampered rectangle} (Lemma~A.4): not applicable, since no partition data exists to tamper with.
+\end{itemize}
+
+%=====================================================================
+\section{What remains open}\label{sec:open}
+\begin{itemize}\itemsep=1pt
+\item \textbf{Lemma~6.1 is not in Lean} (\texttt{YBC-C-0008}, \tC). Its finite inputs are \tA; the assembly needs $\Theta$ as a \lean{tsum} over $\mathbb Z^3$, three-dimensional Poisson summation for $D(1)=0$ with $\LB=\LF^*$, the argument on cells for $D'$ and $D$, and $N_n<30n$, $M_\ell<30\ell$ for all $n,\ell$. We read the paper's proof and checked $N_n<30n$ ($n\le2100$) and $M_\ell<30\ell$ ($\ell\le4200$) by enumeration only (\texttt{YBC-C-0007}). We did not open a second kernel budget for this; it is a separate, large lift.
+\item \textbf{Lemma~A.4 and Lemma~A.2} were not re-run (\tC{} aim M3c). Lemma~A.4 is a finite computation on a dyadic partition of 7\,225 rectangles, of which 5\,828 need the (a)/(b)/(c) alternatives. The paper says the partition data accompany the manuscript, but arXiv lists no ancillary files, and rebuilding Section~5 was outside the budget. This is the largest unchecked part of the computer-assisted proof.
+\item \textbf{Lemma~A.6 is not in Lean}: no \lean{erfc} in the pinned Mathlib. A kernel proof would need either that theory or thousands of certified $\sqrt{\cdot}$ and $\exp$ enclosures at $10^{-21}$.
+\item The analytic reductions of Sections~2--5, Theorems~5.1 and 6.1, and the uniqueness of $\ks$ are taken as stated (\tL{}, \texttt{YBC-L-0002}).
+\item An independent clean recompile (producer $\ne$ verifier) of the Lean modules and an audit of statement adequacy are owed.
+\end{itemize}
+
+%=====================================================================
+\section{Claim ledger}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files $21$ claims: $8$ at Tier~A (\texttt{YBC-A-0001..0008}), $2$ at L, $9$ at C (\texttt{YBC-C-0001..0009}, the last being the headline) and $2$ at X.
+Each has a content-addressed evidence blob in \texttt{ledger/evidence/}. The Elenchus gate (\texttt{tools/ledger.py ledger.json -{}-evidence-dir evidence}; verbatim in \texttt{ledger/gate\_output.txt}) exits with code~\textbf{1}:
+\textbf{0 blocking findings and 8 flags} (\texttt{LEDGER\_UNAUDITED\_TIER\_A}, one per Tier~A row: no \emph{person} has certified that the Lean statements mean what their glosses say). Exit code~1 is the honest state at writing, not a failure to be cleared by editing. There is no AI audit and no statement lock.
+
+%=====================================================================
+\section{Limitations}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item \textbf{Partial.} See Section~\ref{sec:open}. We do not claim that Theorem~1.1, 5.1 or 6.1 is verified. Tier~A certifies Lean statements about the stated model quantities (unit-covolume shell sums with \lean{Real.pi}, \lean{Real.exp}), nothing more.
+\item \textbf{Deviations from the preregistration.} (1) A.6 is Tier~C for a reason other than the kill text gives (no \lean{erfc}). (2) Lemma~6.1 is not kernel-checked, so even the fallback ``kernel-check Lemma~6.1 only'' was not fully met. (3) The two omitted-tail series are bounded on every partial sum; the monotone limit is not in Lean. (4) The IEEE-double control reaches 11 digits, so the 13-digit float control became mpmath at 40 digits. (5) M3c was blocked, so the tampered-rectangle control is N/A.
+\item \textbf{Compute and process.} The Lean runs were on core~6, which another agent's process also used. Two earlier monolithic compiles of \lean{LemmaA5} were killed with signal~9, unattributed, probably memory pressure from about four 5.7~GB Lean processes of other lanes; the file was then split into four modules with 100-cell blocks. The emitter was re-run once after the oleans were built, to regenerate \lean{Lemma61} only (it is deterministic); \texttt{Statements.lean} prints the olean types of the five main theorems and they match the sources. \texttt{m3\_arb.py} was re-annotated after its first run and re-run with identical key numbers.
+\item \textbf{The leanchecker replay was run by the producer}, so it is not an independent recompile. No statement lock was registered.
+\item \textbf{Repository guards fail, for pre-existing reasons in other lanes' files.} \texttt{antigravity\_guard.py} rc~1 (103 findings, hallucinated-import findings in other lanes); \texttt{test\_rigor\_guard.py} rc~1 (tests with no assertions in other modules); \texttt{pytest tests/} rc~2 (28 collection errors; no test ran). None lies in this lane's files; this lane added no tests. We report the outputs as they came (\texttt{data/logs/guard\_*.txt}, \texttt{pytest\_tests.txt}) and do not call the repository gate passed.
+\item Interpreter and shell lapses of the producer: the Lean wrapper and guards ran under system \texttt{python3} without \texttt{-I}; a few wait loops were used in background shells. Neither touched git.
+\item \textbf{The paper text is not redistributed.} The 27-page text extraction used for reading is not included here, since we did not establish its licence; the paper is cited.
+\end{itemize}
+
+%=====================================================================
+\section{Reproducibility}\label{sec:repro}
+Repository AutoevolveAI, branch \texttt{worktree-openai-math-discovery}; HEAD when this paper was written: \texttt{e5f38b289314c730ed4960104c91a2902b88f8ef}. Nothing was pushed or published by this paper's lane. Copies in \texttt{data/}: \texttt{code/} (scripts), \texttt{lean/} (the twelve Lean sources), \texttt{logs/}, \texttt{arb\_results.json}, \texttt{extra\_results.json}, \texttt{float\_results.json}, \texttt{shells\_k4200.json}, \texttt{RESULT.md}, \texttt{result.json} (sha256 of all inputs). Lean compile times on core~6: \lean{Basic} 17.8~s, \lean{Shells} 657~s, \lean{Chains} 162~s, \lean{LemmaA5} 2009~s, \lean{Lemma61} 23~s; \texttt{leanchecker}: 112, 278, 131, 1601 and 85~s, all rc~0, empty output. Commands (repository root):
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+.venv/bin/python -I code/m3_shells.py ; .venv/bin/python -I code/m3_arb.py     # kappa* (E), (D); Lemma A.5, A.6
+.venv/bin/python -I code/m3_float.py ; .venv/bin/python -I code/m3_extra.py    # (Q) eq. (1.4); A.1, A.3, truncation
+.venv/bin/python -I code/emit_lemmaA5.py                                       # proposes Chains/LemmaA5/Lemma61 tables
+python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/YukawaBccFcc/Basic.lean   # then Shells, Chains, LemmaA5, Lemma61, Axioms
+python -I ledger/build_ledger.py ; python -I ledger/run_gate.py                # gate: exit 1 = 0 blocking, 8 flags
+\end{lstlisting}
+sha256 of the Lean sources (\texttt{data/lean/}) are in \texttt{ledger/evidence/} and \texttt{data/result.json}. Toolchain: Lean 4.34.1, Mathlib \texttt{d13f23b7}, python-flint 0.6.0, mpmath.
+
+%=====================================================================
+\begin{thebibliography}{99}\small
+\bibitem{lw} S.~Luo, J.~Wei, \emph{On exact solutions to three-dimensional Yukawa lattice model and BCC to FCC phase transitions}, arXiv:2610.31456v1 [math.AP], 22 Oct 2026. The source of every statement checked here (\tL).
+\bibitem{amp} X.~Callens, \emph{No connected graph with at most ten vertices is an unweighted death-Birth amplifier of weak selection} (papers/p4\_amplifier\_census), own preprint in this programme, format and ledger model; not peer reviewed.
+\bibitem{zp} X.~Callens, \emph{Triangular lattice minimises the planar Yukawa energy}, doi:10.5281/zenodo.23646105 (2026), own preprint; the planar (two-dimensional) Yukawa lattice setting, with the same tier conventions. Not peer reviewed. The present note concerns the three-dimensional problem and does not extend that one.
+\bibitem{mathlib} The mathlib Community, \emph{The Lean mathematical library}, arXiv:1910.09336 (2019); cited for the library only.
+\bibitem{arb} F.~Johansson, \emph{Arb: efficient arbitrary-precision midpoint-radius interval arithmetic}, IEEE Trans.\ Comput.\ 66 (2017) 1281--1292; used through python-flint 0.6.0.
+\end{thebibliography}
+\end{document}

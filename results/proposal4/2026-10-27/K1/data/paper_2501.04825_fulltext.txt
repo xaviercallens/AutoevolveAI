@@ -1,0 +1,1379 @@
+Intrinsic Direct Air Capture
+Austin McDannald,
+∗,†,‡ 
+Daniel W. Siderius,
+¶,§ 
+Brian DeCost,
+†,∥ 
+Kamal
+Choudhary,
+⊥,# 
+and Diana L. Ortiz-Montalvo
+†,@
+†Materials Measurement Science Division, National Institute of Standards and Technology,
+Gaithersburg MD, USA
+‡ORCID: 0000-0002-3767-926X
+¶Chemical Sciences Division, National Institute of Standards and Technology, Gaithersburg
+MD, USA
+§ORCID: 0000-0002-6260-7727
+∥ORCID: 0000-0002-3459-5888
+⊥Materials Science and Engineering Division, National Institute of Standards and
+Technology, Gaithersburg MD, USA
+#ORCID: 0000-0001-9737-8074
+@ORCID: 0000-0001-7293-4476
+E-mail: austin.mcdannald@nist.gov
+Abstract
+We present new metrics to evaluate solid sorbent materials for Direct Air Capture
+(DAC). These new metrics provide a theoretical upper bound on CO
+2 
+captured per
+energy as well as a theoretical upper limit on the purity of the captured CO
+2
+. These
+new metrics are based entirely on intrinsic material properties and are therefore agnos-
+tic to the design of the DAC system. These metrics apply to any adsorption-refresh
+cycle design. In this work we demonstrate the use of these metrics with the exam-
+ple of temperature-pressure swing refresh cycles. The main requirement for applying
+1
+arXiv:2501.04825v1 [cond-mat.mtrl-sci] 8 Jan 2025
+
+these metrics is to describe the equilibrium uptake (along with a few other materials
+properties) of each species in terms of the thermodynamic variables (e.g. temperature,
+pressure). We derive these metrics from thermodynamic energy balances. To apply
+these metrics on a set of examples, we first generated approximations of the necessary
+materials properties for 11 660 metal-organic framework materials (MOFs). We find
+that the performance of the sorbents is highly dependent on the path through thermo-
+dynamic parameter space. These metrics allow for: 1) finding the optimum materials
+given a particular refresh cycle, and 2) finding the optimum refresh cycles given a par-
+ticular sorbent. Applying these metrics to the database of MOFs lead to the following
+insights: 1) start cold – the equilibrium uptake of CO
+2 
+diverges from that of N
+2 
+at
+lower temperatures, and 2) selectivity of CO
+2 
+vs other gases at any one point in the
+cycle does not matter – what matters is the relative change in uptake along the cycle.
+Introduction
+There is already too much carbon in the atmosphere.
+1 
+Even if future CO
+2 
+emissions were
+avoided, there is still a need to remove the CO
+2 
+currently present to avoid the worst effects
+of climate change.
+1 
+One developing strategy is to use sorbents to directly capture the CO
+2
+from the atmosphere for their subsequent sequestration and storage, known as direct air
+capture (DAC).
+There are pilot DAC facilities, such as ClimeWorks, Carbon Engineering, and Global
+Thermostat, that have recently started operations.
+2 
+However, there is still a need to drasti-
+cally scale this technology to have the necessary impact. At the facility scale, the performance
+metrics and design considerations of DAC are well defined. These include:
+• The CO
+2 
+Capture Efficiency: How much CO
+2 
+is captured per energy used.
+• The CO
+2 
+Capture Output: How much CO
+2 
+is captured in a given length of time.
+• The Refresh Cycle Time: The time it takes to perform one refresh cycle.
+2
+
+• The Purity of the Captured CO
+2
+: The concentration of the CO
+2 
+in the output.
+• The Sorbent Stability: The structural stability - especially (for DAC applications) in
+the presence of water vapor.
+• The Sorbent Synthesizability: The ease and economic viablity of synthesizing the sor-
+bent on an industrial scale.
+• The Sorbent Longevity: The time or number of refresh cycles the sorbent can experi-
+ence before degrading to the point of needing to be replaced.
+However, many of these performance metrics are difficult to calculate or predict without
+detailed simulations of a particular process or the construction of a pilot plant. It can often
+be unclear what sorbent material properties will lead to good facility performance. In the
+synthesis of solid sorbents, much emphasis was put on achieving the synthesis of materials
+with high gravimetric or volumetric surface areas.
+3,4 
+The motivation for this seems to be
+that higher surface areas should allow for more interactions, since the sorbent interacts
+with the sorbate (gas to be adsorbed) at the surface. But these purely geometric measures
+incorporate no information about the interaction between the sorbent and sorbate. Another
+popular characteristic for comparing sorbents is working capacity. This is the difference
+in equilibrium uptake gas between two conditions - the amount of gas adsorbed and then
+desorbed on one refresh cycle. Working capacity does provide some information about the
+interaction between the sorbent and the sorbate, but working capacity is not enough to
+determine if a material will perform well as a sorbent. A sorbent with a small working
+capacity - but with little energy needed to cycle, or that could be cycled quickly - could
+be much better in a DAC facility than one with a large working capacity. Furthermore,
+working capacity is typically presented for conditions with a single sorbate (e.g. a pure CO
+2
+environment at different partial pressures). Air, however, is a mixed gas. Therefore, the
+mixed gas adsorption behavior must be considered in DAC applications.
+3
+
+There have been efforts to develop performance indicators for sorbents. Jain et al.
+5 
+devel-
+oped a set of heuristics based on parameters such as particle size and time in the adsorption
+bed to aid in the design of pressure swing adsorption systems. Neumann et al.
+6 
+use a detailed
+model of the adsorption process in a gas separation column to calculate performance metrics
+for the sorbent. Similarly, Young et al.
+7 
+developed a machine learning model as a surrogate
+for detailed simulations of adsorption columns which allows them to screen many materials
+for that process, and provide insights into the sorbent and process design. While these can
+provide an accurate estimate of the performance metrics for that process, it depends on
+particular design choices of the adsorption process - such as the feed gas velocity, adsorp-
+tion column design, and packing density. Ajenifuja et al.,
+8 
+created a model for screening
+sorbents for temperature swing based adsorption. While this model is more directly rele-
+vant than using the selectivity or working capacity, it assumes that the adsorption system
+is a packed powder bed and, therefore, depends on extrinsic parameters such as the pack-
+ing density. It further assumes that the refresh cycle is purely a temperature swing, which
+limits the generalizability to other thermodynamic spaces and can therefore not account for
+different paths through those spaces during refresh cycles, such as the increasingly popu-
+lar temperature-vacuum swing adsorption cycles,
+9 
+or to electro-swing adsorption cycles.
+10
+Recently, Charalambous et al.
+11 
+developed a holistic platform for evaluating carbon cap-
+ture systems. They do this by not only considering some of the aforementioned traditional
+sorbent performance indicators, but also additionally considering performance indicators of
+the process, a techno-economic assessment, and a life-cycle assessment. At the materials
+level, they primarily use the ratio of Henry’s constants to indicate the performance, then
+feed the materials properties information into detailed simulations of an adsorption column
+process. The performance metrics we present in this work could readily be included into the
+platform developed by Charalambous et al.
+11 
+at the materials level to provide more infor-
+mative sorbent performance indicators, and aid in the design of the processes - without the
+need to perform detailed process simulations. In general, the previous methods evaluating
+4
+
+the performance of adsorption systems depend on extrinsic factors (such as the design of
+the gas separation column and consequential fluid dynamics). Furthermore, these previous
+methods typically only apply to a particular choice of refresh cycle - they would be difficult
+to generalize to other choices of refresh cycle, or even to other choices of process parameters.
+In this work, we develop sorbent performance metrics based on intrinsic material prop-
+erties. These metrics directly generalize to any gas adsorption process when described in
+terms of thermodynamic parameters. Specifically, we develop the theoretical upper limit on
+the amount of CO
+2 
+captured per unit energy (which we term the Capture Efficiency) and
+the purity of the captured CO
+2
+. For illustrative purposes, we derive this model using the
+example of temperature vacuum swing adsorption cycle, which we visualize with an ideal-
+ized piston. While this model is not how DAC facilities are likely to operate in practice, this
+framing of the problem elucidates all the relevant thermodynamic terms. Much in the same
+way the Carnot cycle is a theoretical upper limit on the efficiencies of heat engines, these
+metrics are the theoretical upper limit of the capture efficiency and purity for gas separation
+processes based on adsorption. Inverting the capture efficiency is equivalent to estimating
+the theoretical lower limit of the energy cost needed to capture an amount of CO
+2
+. For the
+purposes of this work, we will approximate air as 400 μmol/mol of CO
+2 
+with the balance of
+N
+2
+. While this will not capture the true behavior of the materials in air, especially the effects
+of H
+2
+O, the analysis shown here on the binary approximation could be easily extended to
+additional components if provided a source of adsorption data. The rest of this document
+is organized into two parts: generating the necessary materials data needed for the analysis,
+and the thermodynamic analysis of an intrinsic DAC cycle.
+Generating the Data
+The goal of the metrics we develop in these works is provide a fair comparison between sorbent
+materials, and between thermodynamic refresh cycles. As such the thermodynamic analysis
+5
+
+we use is based on intrinsic materials properties. Chief among those is the equilibrium uptake
+of each of the gas species in the mixture. The heat of adsorption for each gas species is needed
+to keep track of the heat requirements. Because many refresh cycles include a temperature
+swing, in order to determine the energy requirements to change the temperature, the heat
+capacities (C
+V 
+) of sorbent materials are also needed. As a set of example materials, we
+generate all the needed materials property data for the 11 660 metal-organic framework
+materials (MOFs) in the Cambridge Structural Database (CSD) database.
+12 
+It is worth
+noting that while we apply these metrics to MOFs, they could just as easily be applied to
+zeolites, covalent-organic framework materials, hybrid systems, or any other solid sorbent
+system.
+Equilibrium Uptake
+The equilibrium uptake of CO
+2 
+in a sorbent is a function not only of temperature (T ) and the
+partial pressure of CO
+2 
+(P
+CO
+2 
+), but also the partial pressure of the other gasses - in this case
+the partial pressure of N
+2 
+(P
+N
+2 
+). That is n
+CO
+2 
+(T, P
+CO
+2 
+, P
+N
+2 
+), and similarly n
+N
+2 
+(T, P
+CO
+2 
+, P
+N
+2 
+).
+However, there is very little mixed gas adsorption data,
+13 
+and even single component
+adsorption measurements for most sorbents are not repeatable.
+14 
+We therefore turn to sim-
+ulations to find the equilibrium uptake. Since we are screening 11 600 materials, we ap-
+proximate the equilibrium uptake by first calculating single component Henry’s constant
+isotherms with Grand Canonical Monte Carlo (GCMC) simulations, extrapolating those to
+the relevant temperatures, and then using Ideal Adsorbed Solution Theory (IAST) to obtain
+the mixed gas equilibrium uptake.
+Since the typical pressures for DAC are so low (near atmospheric or lower), we can ap-
+proximate the isotherms for many sorbents with a simple Henry’s law constant (K
+H 
+). We
+can calculate K
+H 
+by performing the GCMC simulation at P = 0. We use Free Energy
+and Advanced Sampling Simulation Toolkit (FEASST) to implement all of our GCMC cal-
+culations,
+15 
+which was recently updated.
+16 
+The K
+H 
+s can be found by always rejecting the
+6
+
+Monte Carlo move and simply recording the interaction energies. As an approximation to
+atmospheric conditions, we will consider an input total pressure of 101.3 kPa (1 atm) with
+a CO
+2 
+concentration of 400 μmol/mol (400 ppm) with the balance of N
+2
+. For each sorbent
+considered, we therefore perform 2 GCMC calculations to find both K
+H,CO
+2 
+, and K
+H,N
+2 
+. Un-
+der this approximation of atmospheric conditions the partial pressure of CO
+2 
+is likely well
+within the linear regime of the isotherm, whereas most of the total pressure is due to the
+balance of N
+2
+. Even in the case of a pure N
+2 
+atmosphere, we expect that for many sorbents
+even 101.3 kPa is in the linear regime of the isotherm, and can therefore be approximated
+well by K
+H,N
+2 
+. In order to verify that K
+H,N
+2 
+is a good approximation, after we calculate the
+K
+H,N
+2 
+of each sorbent, we then perform a another GCMC calculation to directly predict the
+uptake at P
+N
+2 
+= 101.3 kPa, and compare the predicted uptakes. The K
+H,N
+2 
+was considered
+a good approximation when ±10 % of the uptake from that was within the 95 % confidence
+interval of the direct GCMC calculation. Those materials where these two predictions do not
+agree will require more sophisticated approximations, and should be the subject of future
+studies.
+These K
+H 
+s can be extrapolated in inverse temperature (β = 
+1
+k
+B 
+T 
+, where k
+B 
+is Boltzmann’s
+constant) to give the temperature dependence of the adsorption behavior.
+17 
+The GCMC
+simulations for the K
+H 
+s were performed at sufficient statistics to confidently populate an
+order-20 polynomial in β. By construction of these GCMC simulations, the K
+H 
+will mono-
+tonically decrease with increasing temperature. We therefore truncate the thermodynamic
+extrapolations to the temperature where this order-20 polynomial becomes non-monotonic.
+To determine a lower limit for this extrapolation we compare the extrapolated K
+H 
+to the
+saturation adsorption. Since CO
+2 
+will reach saturation at higher temperatures than N
+2
+,
+we consider the adsorption saturation of CO
+2
+. To determine the adsorption saturation, we
+perform a fourth GCMC simulation at increasing fugacity until the equilibrium uptake of
+CO
+2 
+converges. We truncate the extrapolation to temperatures above where K
+H 
+∗ P
+CO
+2 
+ex-
+ceeds the saturation uptake, n
+sat,CO
+2 
+. This allows us to extrapolate the K
+H 
+with uncertainty
+7
+
+to arbitrary temperatures, covering the temperature swings we will consider for the refresh
+cycles.
+With the temperature dependence of the K
+H 
+s, we can now use IAST to obtain the
+mixed gas equilibrium uptake at arbitrary temperatures and partial pressures of each gas.
+In this low pressure limit of linear K
+H 
+isotherms, IAST can be solved analytically. In
+the supplemental material we show the derivation of the equilibrium uptake along the des-
+orption path in Step 2 of the intrinsic refresh cycle. We show this derivation for three
+cases: analytically solving IAST for the binary mixture of CO
+2 
+and N
+2
+, a correction for
+finite volume of the desorption chamber, and the generic case of non-linear adsorption be-
+havior in multi-component gas mixtures (given the known functions n
+A
+(T, P
+A
+, P
+B 
+, P
+C 
+, ...),
+n
+B 
+(T, P
+A
+, P
+B 
+, P
+C 
+, ...), n
+C 
+(T, P
+A
+, P
+B 
+, P
+C 
+, ...), where A, B, C, ... refer to arbitrary gas species).
+This procedure allows us to determine both n
+CO
+2 
+(T, P
+CO
+2 
+, P
+N
+2 
+) and n
+N
+2 
+(T, P
+CO
+2 
+, P
+N
+2 
+).
+Furthermore, the derivative of the order-20 polynomial of K
+H 
+(β) provides heat of adsorption
+at infinite dilution (q
+∞
+ads
+).
+Sorbent Heat Capacity
+In Ref. 18, Moosavi et al. trained machine learning models, specifically XGBoost
+19 
+models,
+to predict the C
+V 
+of MOFs and zeolites. These models were trained against a computa-
+tional workflow that involved density functional theory calculations and molecular dynamics
+simulations for the force of atom displacements, phonon modes of the material, and sub-
+sequent calculations of the C
+V 
+s. The computational workflow allows for the integration of
+the phonon modes across temperature to obtain the temperature dependence of the C
+V 
+s. In
+their work, Moosavi et al. used separate ensembles of XGBoost models to predict the C
+V 
+s
+at several different temperatures (250 K to 400 K in 25 K increments). In this work, we use
+the pre-trained ensembles of 100 XGBoost models for each temperature from Ref. 18 and
+their code repository
+20 
+for the predictions and uncertainties of the C
+V 
+s.
+To interpolate and extrapolate the C
+V 
+predictions to arbitrary temperatures, we use a
+8
+
+heteroscedastic Gaussian Process regressor (hGPR), implemented using Ref. 21. This hGPR
+propagates the uncertainties from the C
+V 
+predictions from the XGBoost model to make new
+predictions of the C
+V 
+with quantifiable uncertainty at arbitrary temperatures. This hGPR
+model therefore allows us to predict the C
+V 
+of the MOF sorbents at each step of the refresh
+path discussed in the next section.
+Thermodynamic Model
+Model
+Figure 1: a) A diagram of a piston model for adsorption process. This diagram shows
+an example temperature swing adsorption cycle. The diagonal hashed rectangles represent
+perfectly insulative walls. The valves are labeled V1 to V4. The steps 1 to 3 are steps
+of the example temperature swing adsorption cycle, starting at temperature T
+1
+, ending at
+temperature T
+2
+, at pressure P
+1
+. The blue-to-red color scheme represents the low-to-high
+temperature. b) A sketch of the example temperature swing refresh path in temperature
+and equilibrium uptake space. The steps 1 to 3 correspond to those in part a).
+In order to envision all the thermodynamic terms, it is helpful to consider a model. For
+this, we will use an idealized piston in Figure 1.
+This idealized piston system allows for the visualization of all of the terms in the energy
+and mass balances. Real DAC systems are typically packed columns of sorbent, and the
+9
+
+performance of these systems depends on many extrinsic factors such as the column diameter,
+the flow rate, and the packing density in the column. By considering this idealized piston
+system, we avoid those factors and instead depend on intrinsic material properties. This
+idealized piston makes three strong assumptions: 1. the system reaches thermodynamic
+equilibrium at each step in the process, 2. the system does not consider any extrinsic factors
+like sorbent particle packing fraction, 3. as the gas is desorbed it leaves the system through
+a zero-volume check-valve as discussed in more detail below (see supplemental material for
+correction terms for this). With those assumptions, this system will find the theoretical
+upper limit on the capture efficiency as well as the purity of the captured gas. The utility
+of this work then is twofold. The intrinsic refresh analysis can first be used to find optimal
+materials for a given thermodynamic process. Secondly, this intrinsic refresh analysis can
+be used to find optimal thermodynamic processes for a material. In the derivations in the
+next section we show how this work could be extended to consider real-world extrinsic design
+considerations such as packing fraction and waste heat recovery.
+The surfaces of the piston chamber are assumed to be perfectly insulative; the piston is
+assumed to be mass-less, and the valves and check-valves are assumed to have no volume.
+The refresh cycle proceeds as follows:
+Step 1: Valve 1 is closed and Valve 2 is opened, exposing the gas to the sorbent. The
+sorbent isothermally reaches the equilibrium uptake.
+Step 2: Valve 2 is closed, Valve 3 is opened. The temperature and pressure are changed
+along a specified path through this thermodynamic space. The desorbed gas leaves
+through the outlet check-valve, Valve 4.
+Step 3: Valve 3 is closed, Valve 1 is opened, and the piston is drawn back. The system
+returns to the initial temperature and pressure.
+To approximate atmospheric gas, we consider a binary mixture of N
+2 
+and CO
+2
+. It is
+important to clarify that, for the purpose of all the subsequent analyses in this work, the
+10
+
+model will use absolute adsorption as the thermodynamically relevant measure. Absolute
+adsorption includes not only the molecules of gas interacting with the surface of the sorbent,
+but also the molecules of gas in the pores of the sorbent. For a more in-depth discussion of
+the measures of adsorption, see Ref. 22.
+Energy Balance
+During Step 1, the (refreshed) sorbent is exposed to the new gas. For DAC this would be
+exposing it to the atmosphere, at ambient or slightly above ambient pressure. The sorbent
+adsorbs gas until it reaches equilibrium with the gas in the inlet source. Since adsorbing gas
+is exothermic, energy will be spent cooling the system to maintain the isothermal condition
+during adsorption. The gas being adsorbed changes the volume of the system. There is a
+work term associated with this gas contracting. Therefore the energy balance for Step 1
+(assuming ideal gas behavior) is:
+E
+1 
+= Q
+ads,CO
+2 
++ Q
+ads,N
+2 
+− W
+1
+E
+1 
+= ∆n
+CO
+2 
+q
+ads,CO
+2 
+(T
+1
+) + ∆n
+N
+2 
+q
+ads,N
+2 
+(T
+1
+) + ∆n
+CO
+2 
+− P
+1
+∆V
+E
+1 
+= ∆n
+CO
+2 
+(q
+ads,CO
+2 
+(T
+1
+) + RT
+1
+) + ∆n
+N
+2 
+(q
+ads,N
+2 
+(T
+1
+) + RT
+1
+)
+(1)
+Where E
+1 
+is the energy balance of Step 1, Q
+ads 
+is the heat of adsorption, W
+1 
+is the work
+of the gas contracting, P
+1 
+is the inlet pressure, ∆V is the change in volume of the gas,
+∆n is the change in equilibrium uptake of the gas (i.e. the working capacity of that gas),
+q
+ads 
+is the molar heat of adsorption, T
+1 
+is the initial temperature, and R is the ideal gas
+constant. Note that we know the initial conditions (T
+1
+, P
+1,CO
+2 
+, P
+1,N
+2 
+) and can measure or
+predict q
+ads
+(T ) (as seen in the previous section), but do not yet know the ∆n terms. We
+can get the initial equilibrium uptake (n
+1,CO
+2 
+and n
+1,N
+2 
+) from the initial conditions, but the
+equilibrium uptakes at the end of the cycle (n
+end,CO
+2 
+, and n
+end,N
+2 
+) depend on the path taken
+during the desorption in Step 2. This is because, while the total pressure P
+end 
+can be chosen,
+11
+
+the composition of the desorbing gas changes throughout the refresh cycle since (under our
+modeling assumptions) it maintains equilibrium with the sorbent and remaining sorbate. As
+we describe in more detail below, the composition of the captured gas at the end of the
+refresh cycle is determined by the integral over these small changes and is, therefore, highly
+path-dependent.
+During Step 2, the system is now isolated from the atmosphere, and the temperature and
+pressure are changed, causing gas to desorb from the sorbent. This desorption is endothermic,
+requiring energy to be put into the system. There is a work term associated with the gas
+expanding. Energy is required to heat the gas in the system and the sorbent. Finally, there is
+the energy required to change the pressure. The total energy balance for Step 2 is therefore:
+E
+2 
+= Q
+ads,CO
+2 
++ Q
+ads,N
+2 
+− W
+2,CO
+2 
+− W
+2,N
+2
++ E
+heat,CO
+2 
++ E
+heat,N
+2 
++ E
+heat,sorb 
++ E
+∆P
+(2)
+If we define a path s through (T, P )-space, then we can define the desorption or refresh cycle
+as:
+T (s) | ∀s, 0 ≤ 
+dT
+ds 
+∈ R
+P (s) | ∀s, 0 ≥ 
+dP
+ds 
+∈ R
+(3)
+Meaning that T and P are both functions of the path s, under the constraint that for all s
+the change in T with respect to s is a non-negative Real number and the change in P with
+respect to s is a non-positive Real number. Then we can use Eq. 3 to define any temperature-
+swing, pressure-swing (including vacuum swing), or combinations thereof refresh cycles for
+12
+
+the desorption. Under this definition of the desorption path, Eq. 2 becomes:
+E
+2 
+=
+s
+end
+Z
+s
+1
+
+q
+ads,CO
+2 
+(s)n
+CO
+2 
+(s) + q
+ads,N
+2 
+(s)n
+N
+2 
+(s)
+− RT (s)n
+CO
+2 
+(s) − RT (s)n
+N
+2 
+(s)
++ 
+9
+2
+RT (s)n
+CO
+2 
+(s) + 
+7
+2
+RT (s)n
+N
+2 
+(s) + C
+V,sorb
+(s)T (s)
++ 
+
+n
+N
+2 
+(s) + n
+CO
+2 
+(s)
+
+RT (s)log
+
+P (s)
+
+
+ds
+(4)
+where C
+V,sorb
+(s) is the molar heat capacity at constant volume of the sorbent as a function
+of s. Note that here we assume that there is no change in volume of the sorbent with T , P ,
+or as gas is adsorbed/desorbed. We approximate the heat capacity of the adsorbed CO
+2 
+and
+N
+2 
+with the ideal gas theory approximation for triatomic and diatomic gases, respectively.
+During Step 3, the system returns from T
+end
+, and P
+end 
+to T
+1 
+and P
+1
+. Since the aim of this
+work is to develop performance metrics that depend on the intrinsic properties of materials
+in order to directly compare potential sorbent materials, we assume no energy recovery.
+Therefore the energy balance for Step 3 is:
+E
+3 
+= 0 (5)
+However, real DAC systems will be able to recover energy from the hot output gas cooling
+and the total pressure equilibrating. A simple example of this is using heat exchangers for
+the hot gas on the output of one gas separation column to warm another column. Since
+those terms are system design dependent, we will ignore them for this analysis.
+The total energy balance for the refresh cycle is then simply the sum of the energies of
+each step:
+E
+T otal 
+= E
+1 
++ E
+2 
++ E
+3 
+(6)
+We can then define our performance metrics for this intrinsic refresh cycle using the terms
+13
+
+defined above. The purity of CO
+2 
+in the output is the mole fraction:
+x
+end,CO
+2 
+= 
+∆n
+CO
+2
+∆n
+CO
+2 
++ ∆n
+N
+2
+(7)
+The intrinsic capture efficiency is how much CO
+2 
+was captured per unit energy:
+ξ = 
+∆n
+CO
+2
+E
+T otal
+(8)
+Alternatively, the inverse of ξ is the energy cost to capture an amount of CO
+2
+:
+C = 
+1
+ξ 
+= 
+E
+T otal
+∆n
+CO
+2
+(9)
+Note that in order to calculate x
+end,CO
+2 
+and ξ we must first specify s, then determine
+n(s) and q
+ads
+(s) for each gas species, as well as C
+V,sorb
+(s), which were shown in the previous
+section.
+Results and Discussion
+For ideal gases the enthalpy of mixing is zero - meaning that it takes zero work to separate
+ideal gases. This would mean that it would take zero work to capture the CO
+2 
+from the
+atmosphere. This would therefore imply that there is no upper limit on how much CO
+2
+could be captured per energy. However, the Gibb’s free energy of mixing for ideal gases is
+negative, which means that the mixed gasses in atmosphere will not spontaneously separate.
+What we are modeling with the idealized piston described above is a way to keep track of all
+the thermodynamic terms for an adsorption based process. Indeed, if we recovered all the
+waste heat in Step 3 - if we replace Eq. 5 to perfectly recover all the waste heat - then the
+total in Eq. 6 would necessarily sum to zero. Real-world systems would likely employ some
+waste heat recovery and therefore have non-zero (but not perfectly efficient) E
+3 
+terms, and
+14
+
+could therefore exceed our stated upper limit of capture efficiency. Since real-world waste
+heat recovery systems are not perfectly efficient and would depend on the process design
+rather than materials properties, for the goal of comparing materials based on their intrinsic
+properties we ignore any heat recovery. Therefore, this method provides an idealized upper
+bound on the purity and capture efficiency of sorbent based gas separations, in the absence
+of heat recovery - all of which is based off of intrinsic material properties.
+The most critical information for this analysis is the equilibrium uptake of each com-
+ponent gas as a function of temperature and the other component gases. Unfortunately
+there is very little data on adsorption behavior in mixed gases.
+13 
+For the purposes of this
+initial work, we used thermodynamic extrapolation of K
+H 
+isotherms and IAST to obtain
+the equilibrium uptakes. These simplifying assumptions allowed us to screen through 11 660
+MOF materials found in the CSD database. However, the analysis here could just as easily
+be applied to sorbents with strongly non-linear isotherms calculated from higher levels of
+theory or from experimental measurements. All that is needed is a way to describe the
+equilibrium uptake of each gas species as a function of temperature and each partial pres-
+sure. However, as mentioned earlier, there is a significant lack of experimental measurements
+of mixed gas adsorption,
+13,14 
+and a lack of non-linear adsorption models that account for
+temperature dependence (extrapolating in temperature from isotherms). This work further
+assumes the volume of the sorbent does not change with adsorption. Many MOF sorbents
+being considered for DAC applications are flexible and/or have nearly step-wise isotherms.
+To accurately consider these materials, the work associated with the sorbent volume change
+would need to be accounted for in the energy balance and specific heat calculations in Eqs.
+1 and 4.
+That being said, linear, non-interacting isotherms are good approximations for most MOF
+sorbents. For this study we considered the MOFs from the CSD.
+12 
+Out of the 11 600 materials
+studied in this work, there were 8 759 materials where the K
+H 
+are good approximations of
+the isotherms. This was determined by comparing the equilibrium uptake of N
+2 
+at 101.3 kPa
+15
+
+(1 atm.) and 300 K using the K
+H,N
+2 
+versus a direct GCMC calculation. A table categorizing
+all the completion mechanisms of our analysis is given in the supplemental material.
+Figure 2: a) A plot of 3 paths through (T, P )-space for the refresh cycle. b) The performance
+metrics of the sorbent (LETQAE01 ion b) along each of the 3 paths.
+The performance of the sorbent depends on the path through thermodynamic space
+during the refresh cycle. Figure 2a shows three example paths through (T, P )-space during
+Step 2. Each of these paths has the same starting and ending conditions, but take different
+paths through (T, P )-space to get there: heating first then pulling vacuum (Path 1, blue
+line), heating and pulling vacuum simultaneously (Path 2, orange line), and pulling vacuum
+first then heating (Path 3, green line). In Figure 2b, we show the purity of the captured CO
+2
+and the intrinsic capture efficiency for one sorbent material, LETQAE01 ion b, for each of
+these paths. For this material, the performance in both metrics is optimized by heating first
+then pulling vacuum. The reason that the performance is path dependent is that, as the
+gas desorbs at one infinitesimal point along the path it is in equilibrium with the gas that
+desorbed at the previous infinitesimal point in the path.
+Figure 3a shows each of the terms in the energy balance from Eq. 4 along the progress
+of Step 2 for Path 2 in Figure 2a. The heat of adsorption of N
+2 
+decreases as the cycle
+progresses, while the heat of adsorption of CO
+2 
+increases as the cycle progresses. By far,
+16
+
+Figure 3: A plot of each term in the energy balance (a), and the equilibrium uptake (b) for
+the sorbent LETQAE01 ion b for Step 2 of the refresh cycle along path 2 from Figure 2a.
+Q CO2 and Q N2 are the heats of adsorption of CO
+2 
+and N
+2
+, W CO2 and W N2 are the
+work associated with the change in volume of the desorbed CO
+2 
+and N
+2
+, E CO2 and E N2
+are the energies required to heat the adsorbed CO
+2 
+and N
+2
+, E sorb is the energy required to
+heat the sorbent, and E P is the energy required to change the pressure.
+the largest term in this energy balance is the energy required to heat the sorbent. Figure
+3b shows the equilibrium uptake of both CO
+2 
+and N
+2 
+along this refresh cycle, analogous
+to the diagram in Figure 1b. The equilibrium uptake along Step 1 is the vertical portion,
+while the equilibrium uptake along Step 3 is the horizontal portion. The working capacities
+are differences between equilibrium uptakes at the start and end of Step 2 (equivalently, the
+length of the vertical portion for Step 1).
+We then consider a single path for the refresh cycle and examine the intrinsic refresh for
+all of the MOF materials in the CSD. This path is the same as Path 1 from Figure 2a - which
+starts at 250 K and 101325 Pa, warms isobarically to 350 K, then pulls vacuum isothermally
+to 40530 Pa. The 2D histogram of the performance metrics of all of the sorbents considering
+this path is shown in Figure 4a. While there is a high density of sorbents that perform poorly
+by both metrics (toward the bottom left), there are still some sorbents that have impressive
+performance (toward the top right). Figure 4b shows the Pareto front of all the sorbents
+when considering this particular refresh path, which are also detailed in Table 1.
+17
+
+Figure 4: a) A 2D histogram of the performance metrics of each MOF sorbent. b) A plot
+showing the Pareto front of all the sorbents given the specific path.
+Table 1: Table of the Pareto optimal materials given a single path (specifically Path 1 from
+Figure 2a). With intrinsic capture efficiency ξ in (μmol/J), purity of the captured CO
+2 
+x
+end
+,
+and working capacity ∆n in (mol/kg). Note that the number in the parenthesis represents
+the uncertainty in the previous two digits of the nominal value.
+Name ξ x
+end 
+∆n
+CO
+2 
+∆n
+N
+2
+jacs.6b06759 ja6b06759 si 003 clean 8.191(99) 0.9554(51) 13.7(17) 0.632(10)
+ja5b02999 si 002 clean 7.93(20) 0.962(11) 12.6(32) 0.4641(17)
+RAVXIX clean 7.37(18) 0.9657(97) 33.2(70) 1.115(16)
+PUPXII01 clean 5.39(37) 0.9664(61) 1.58(26) 0.0534(13)
+ZADDAJ clean 4.86(21) 0.9737(26) 1.42(14) 0.03802(92)
+VAXHOR clean 4.59(35) 0.99539(74) 1.05(17) 0.00473(16)
+BOMCUB charged 2.54(30) 0.999839(29) 0.326(53) 0.0000511(19)
+18
+
+Figure 5: a) A 2D histogram of the performance metrics of each MOF sorbent after finding
+the Pareto optimal paths. b) A plot showing the Pareto front of part (a).
+Next, we consider optimizing the path for each material. The refresh path need only
+be monotonic in temperature and total pressure. However, to simplify the parametrization
+of the path for the purposes of this study, we narrow the search space to only consider
+linear paths between starting point (T
+1
+, P
+1
+) and ending point (T
+end
+, P
+end
+). To enforce the
+monotonic paths we use the priors:
+T
+1 
+∼ U nif orm(200, 400)
+T
+end 
+= T
+1 
++ ∆T | ∆T ∼ U nif orm(0, 200)
+P
+1 
+∼ U nif orm(1.1 ∗ 101325, 101325)
+P
+end 
+= P
+1 
++ ∆P | ∆P ∼ U nif orm(−101225, 0)
+(10)
+with T in Kelvin, and P in Pascal. We search for Pareto optimal refresh paths (Pareto
+optimal T
+1
+, ∆T , P
+1
+, and ∆P ), for each material in the database. Figure 5a shows a 2D
+histogram of the performance metrics of all the MOFs after finding the Pareto optimal
+paths. The best performing materials are those in the top right of this figure. Despite the
+optimization there is high concentration of materials that do not perform well by either
+19
+
+metric, which shows that these materials are likely poor candidates for DAC. However, in
+comparison to Figure 4a, there is a much higher density of sorbents that perform well.
+This shows the utility of optimizing the refresh path for each sorbent. Figure 5b shows the
+Pareto front of these materials and their corresponding paths, which are also summarized
+in Table 2. It is interesting to note that for many materials, refresh paths can be optimized
+to capture nearly pure CO
+2
+. Furthermore, the capture efficiencies achieved after the path
+optimization are much higher than those seen in the single path considered in Figure 4. There
+are a few sorbents with intrinsic capture efficiencies above 1.0 × 10
+5 
+mol/J for their Pareto
+optimal paths. To put some of the capture efficiency values in perspective, the average CO
+2
+emissions by the US grid is about 2.46 × 10
+−6 
+mol/J according to the US Energy Information
+Administration
+23 
+- meaning at these idealized performances, many sorbents could potentially
+enable net-negative emissions with systems powered by the US grid. Of course these idealized
+efficiencies do not account for the real-world efficiencies of DAC systems - which would incur
+losses due to friction and other non-idealities, but could also include waste heat recovery.
+McQueen et al.
+2 
+states example systems currently operating with capture efficiencies of
+2.27 × 10
+−6 
+mol/J. However, that system was mostly powered by natural gas, which results
+in net positive emissions. In any case, this analysis provides an idealized upper limit on the
+capture efficiency which shows that real-world systems have potential for efficiency gains.
+Figure 6: A histogram of the starting temperature (T
+1
+) of the Pareto optimal refresh paths.
+One of the main conclusions from this analysis is that it is greatly beneficial to start cold.
+20
+
+Table 2: Table of the Pareto optimal materials and their Pareto optimal paths. With intrinsic
+capture efficiency ξ in (μmol/J), purity of the captured CO
+2 
+x
+end
+, working capacity ∆n in
+(mol/kg), temperature T in (K), and pressure P in (Pa). Note that the number in the
+parenthesis represents the uncertainty in the previous two digits of the nominal value.
+Name ξ x
+end 
+∆n
+CO
+2 
+∆n
+N
+2 
+T
+1 
+T
+end 
+P
+1 
+P
+end
+VANNIK clean 11.259(38) 0.9392(27) 29.1(11) 1.878(50) 200.7 384.3 101950 60838
+VANNIK clean 11.223(41) 0.9392(29) 30.0(13) 1.935(55) 200.9 371.2 106080 29443
+LETQAE01 ion b 11.22(18) 0.9827(33) 137(24) 2.346(30) 200.2 391.2 101786 61381
+BEVQID clean 9.186(66) 0.99287(37) 3.17(13) 0.02273(65) 210.5 308.7 100868 10036
+BEVQID clean 9.156(68) 0.99409(29) 3.75(16) 0.02224(67) 210.2 338.9 97326 7838
+FASJAL clean 8.186(69) 0.99517(36) 4.20(29) 0.02032(58) 236.6 316.7 99144 2432
+FASJAL clean 8.148(62) 0.99594(23) 4.64(25) 0.01890(51) 235.3 344.9 87503 4609
+FASJAL clean 8.028(69) 0.99623(22) 4.78(24) 0.01804(44) 235.0 364.1 82466 3243
+IFUDAO charged 7.26(29) 0.999715(46) 1.61(22) 0.000450(19) 217.7 307.3 100360 9733
+IFUDAO charged 7.00(28) 0.999767(31) 2.02(24) 0.000463(18) 217.7 345.7 102382 14448
+MAXHEA clean 6.84(36) 0.9999511(83) 0.99(15) 0.0000471(26) 213.1 300.3 110012 12457
+MAXHOK clean 6.56(41) 0.9999731(52) 0.93(15) 0.0000243(12) 212.9 302.5 93225 9613
+MAXHOK clean 6.26(52) 0.9999739(63) 1.04(20) 0.0000259(12) 213.8 331.7 101126 17833
+PARFOF clean h 6.12(52) 0.9999911(19) 1.14(21) 0.00000974(45) 203.6 311.7 102499 8995
+Figure 7: a) The Pareto optimal refresh paths for LETQAE01 ion b. The legend labels the
+paths with the intrinsic capture efficiency (mol/J) and purity of captured CO
+2
+, respectively.
+b) The temperature dependence of the Henry’s constant (K
+H 
+) for CO
+2 
+and N
+2
+. The shaded
+region shows two standard deviations from the mean.
+21
+
+Figure 6 shows a histogram of all the starting temperatures of all the Pareto optimal paths for
+all the materials considered. Most of the materials’ adsorption performance were optimized
+by lowering the start temperature below ambient. For this study we chose the lower limit of
+200 K for the starting temperature to be somewhat outside of what many DAC systems would
+be designed to operate at, so as to not impose any undue restrictions. Yet the performance
+optimizations for many materials were hampered by this hard constraint. We can gain some
+insight as to why the performance is optimized at low starting temperatures by inspecting
+the Pareto optimal paths of one material, LETQAE01 ion b.
+ Figure 7a shows the Pareto
+optimal paths for this material, while Figure 7b, shows the temperature dependence of the
+Henry’s constants for the relevant temperature ranges. There is a dramatic increase in the
+K
+H,CO
+2 
+as the temperature is lowered below 250 K, while the K
+H,N
+2 
+remains comparatively
+constant. From inspection of Eq. 7, the purity is optimized when n
+N
+2 
+(s) = Constant or
+equivalently ∆n
+N
+2 
+= 0. From inspection of Eqs. 1 and 4, if n
+N
+2 
+(s) = Constant then the
+terms associated with the heat of adsorption of and work of adsorption of N
+2 
+tend toward
+zero, leaving only the small energy penalty associated with heating the adsorbed N
+2
+. This
+means that if n
+N
+2 
+(s) = Constant then only CO
+2 
+is adsorbed or released, and some of
+the energy costs are eliminated. The implication of this is that selectivity for CO
+2 
+at any
+one point in the adsorption cycle is grossly incomplete information. Nor is the working
+capacity of CO
+2 
+sufficiently informative of the performance. This is evident in Table 2
+where the working capacity of CO
+2 
+spans more than three orders of magnitude between the
+Pareto optimal materials despite fairly similar performance. The purity of the captured CO
+2
+depends on the working capacity of CO
+2 
+and, crucially, the working capacity of N
+2
+. Since
+the dominant term in the energy balance is typically the heating of the sorbent material (as
+seen in Figure 3), the capture efficiency is optimized by increasing the working capacity of
+CO
+2 
+and/or lowering the C
+V,sorb
+.
+22
+
+Conclusion
+In this work we developed performance metrics for sorbents for DAC based on intrinsic
+materials properties. These metrics provide an idealized upper limit on the capture efficiency
+and the purity of the captured CO
+2
+. In order to evaluate these metrics the main information
+required is the equilibrium uptake of each of the gas species being considered as a function
+of the thermodynamic parameters (which include each independent partial pressure and
+temperature). In order to complete the energy balance, the sorbent materials properties
+that affect the relevant terms are needed. The most important of these - for refresh cycles
+involving temperature swings - is the sorbent heat capacity, which is typically the dominant
+contribution to the energy balance. In order to evaluate these metrics on the majority
+of the 11 660 MOF materials found in the CSD database, we estimated the equilibrium
+uptake using IAST and GCMC calculated Henry’s constants. We approximated atmospheric
+conditions with 400 μmol/mol CO
+2 
+with the balance of N
+2
+. We obtained estimates of the
+sorbent heat capacity at specific temperatures using pre-trained XGBoost from Ref. 18.
+We then interpolated and extrapolated these estimates to arbitrary temperatures using a
+heteroscedastic Gaussian Process regressor. These metrics can be used to find Pareto optimal
+sorbents for a given DAC refresh cycle - which could be useful in optimizing sorbent materials
+for existing DAC systems. Alternatively, these metrics could be used to find the Pareto
+optimal DAC refresh cycle for particular sorbents - which could be used to design DAC
+systems to take advantage of available sorbents. We used our simplified model to find the
+(linearly constrained) Pareto optimal refresh paths through (T, P )-space for the majority of
+the MOFs in the CSD database. With these results and an inspection of the energy balance
+it is clear that neither the selectivity at any one point along the cycle, nor the working
+capacity for CO
+2 
+are sufficient to describe the performance of the sorbent for DAC. We also
+show that due to the rapid change in the equilibrium uptake of CO
+2 
+at lower temperatures,
+it is beneficial to start the refresh cycles at lower temperatures. Many Pareto optimal refresh
+cycles start cold. We demonstrate the evaluation of these metrics for temperature-pressure
+23
+
+swing refresh cycles, in a binary approximation of atmospheric conditions, and no waste heat
+recovery. However, it would be straightforward to include terms (in Eqs. 1 and 4) for other
+refresh paths (e.g. electro-swing), for additional gas species (e.g. H
+2
+O, O
+2
+, as is shown in the
+supplemental material), or for energy recovery systems in real-world facilities (by adjusting
+Eq. 5). Furthermore, while we used some simplified linear isotherms, many promising
+sorbents for DAC have highly non-linear (sometimes step-wise) adsorption curves.
+24 
+As we
+show in the derivation presented in the supplemental material, these non-linear sorbents
+could be easily evaluated with the metrics we develop here if the mixed-gas temperature-
+dependent adsorption behavior is well described, but unfortunately that data is not currently
+available for most materials. This work, therefore, highlights the need for further studies on
+the equilibrium uptake as a function of temperature and in mixed gas environments.
+Disclaimer
+Any mention of commercial products in this report is for information only; it does not imply
+recommendation or endorsement by NIST.
+Author Contributions
+AM initially conceptualized the study, developed the thermodynamic models and derived
+the metrics, developed the Julia code base for those metrics, ran GCMC and Intrinsic DAC
+cycle analysis calculations, and wrote the initial draft. DWS wrote the FEASST scripts for
+the GCMC calculations, provided feedback on the equilibrium uptake and thermodynamic
+models and derivations, and provided insight into the interpretation of the results. BD helped
+develop the Julia code base. KC and DLOM helped refine and guide the development of
+the study as part of the team led by DLOM. All authors contributed to the editing of the
+manuscript.
+24
+
+Supporting Information Available
+The supplemental information shows a derivation of the equilibrium uptake along the refresh
+path for linear isotherms and IAST, a correction for the real-world case of finite volume of the
+desorption chamber, and the generic case for non-linear adsorption curves. The code used
+to implement the intrinsic DAC cycle analysis is available as a Julia package at: https:
+//github.com/usnistgov/IntrinsicDACCycle The results of the GCMC calculations and
+intrinsic DAC cycle calculations used in this study are available at https://doi.org/10.
+5281/zenodo.14452152.
+References
+(1) Calvin, K. et al. IPCC, 2023: Climate Change 2023: Synthesis Report. Contribution of
+Working Groups I, II and III to the Sixth Assessment Report of the Intergovernmental
+Panel on Climate Change [core writing team, H. Lee and J. Romero (eds.)]. IPCC,
+Geneva, Switzerland ; 2023.
+(2) McQueen, N.; Gomes, K. V.; McCormick, C.; Blumanthal, K.; Pisciotta, M.; Wilcox, J.
+A review of direct air capture (DAC): scaling up commercial technologies and innovating
+for the future. Progress in Energy 2021, 3, 032001.
+(3) Farha, O. K.; Eryazici, I.; Jeong, N. C.; Hauser, B. G.; Wilmer, C. E.; Sarjeant, A. A.;
+Snurr, R. Q.; Nguyen, S. T.; Yazaydin, A. 
+¨
+O.; Hupp, J. T. Metal-organic framework
+materials with ultrahigh surface areas: Is the sky the limit? Journal of the American
+Chemical Society 2012, 134, 15016–15021.
+(4) Martin, R. L.; Haranczyk, M. Exploring frontiers of high surface area metal–organic
+frameworks. Chemical Science 2013, 4, 1781–1785.
+(5) Jain, S.; Moharir, A. S.; Li, P.; Wozny, G. Heuristic design of pressure swing adsorption:
+a preliminary study. Separation and Purification Technology 2003, 33, 25–43.
+25
+
+(6) Neumann Barros Ferreira, R.; O Conchuir, B.; Elengikal, T.; Luan, B.; Ohta, R. L.;
+Lopes Oliveira, F.; Mhadeshwar, A.; Kalyanaraman, J.; Sundaram, A.; Falkowski, J.;
+Rodrigues Szlachta, J.; Joshi, Y.; Steiner, M. Cloud-Based, High-Throughput, End-To-
+End Computational Screening of Solid Sorbent Materials for Carbon Capture. Proceed-
+ings of the 16th Greenhouse Gas Control Technologies Conference (GHGT-16) 23-24
+Oct 2022 2022,
+(7) Young, J.; Mcilwaine, F.; Smit, B.; Garcia, S.; van der Spek, M. Process-informed
+adsorbent design guidelines for direct air capture. Chemical Engineering Journal 2023,
+456, 141035.
+(8) Ajenifuja, A.; Joss, L.; Jobson, M. A New Equilibrium Shortcut Temperature Swing
+Adsorption Model for Fast Adsorbent Screening. Industrial & Engineering Chemistry
+Research 2020, 59, 3485–3497.
+(9) Zhu, X.; Xie, W.; Wu, J.; Miao, Y.; Xiang, C.; Chen, C.; Ge, B.; Gan, Z.; Yang, F.;
+Zhang, M.; O’Hare, D.; Li, J.; Ge, T.; Wang, R. Recent advances in direct air capture
+by adsorption. Chem. Soc. Rev. 2022, 51, 6574–6651.
+(10) Zhao, R.; Liu, L.; Zhao, L.; Deng, S.; Li, H. Thermodynamic analysis on carbon dioxide
+capture by Electric Swing Adsorption (ESA) technology. Journal of CO2 Utilization
+2018, 26, 388–396.
+(11) Charalambous, C. et al. A holistic platform for accelerating sorbent-based carbon cap-
+ture. Nature 2024, 632, 89–94.
+(12) Moghadam, P. Z.; Li, A.; Wiggin, S. B.; Tao, A.; Maloney, A. G. P.; Wood, P. A.;
+Ward, S. C.; Fairen-Jimenez, D. Development of a Cambridge Structural Database
+Subset: A Collection of Metal–Organic Frameworks for Past, Present, and Future.
+Chemistry of Materials 2017, 29, 2618–2625.
+26
+
+(13) Shade, D.; Bout, B. W. S.; Sholl, D. S.; Walton, K. S. Opening the Toolbox: 18 Experi-
+mental Techniques for Measurement of Mixed Gas Adsorption. Industrial & Engineering
+Chemistry Research 2022, 61, 2367–2391.
+(14) Park, J.; Howe, J. D.; Sholl, D. S. How Reproducible Are Isotherm Measurements in
+Metal–Organic Frameworks? Chemistry of Materials 2017, 29, 10487–10495.
+(15) Hatch, H. W.; Mahynski, N. A.; Shen, V. K. FEASST: Free energy and advanced
+sampling simulation toolkit. Journal of Research of the National Institute of Standards
+and Technology 2018, 123, 1–3.
+(16) Hatch, H. W.; Siderius, D. W.; Shen, V. K. Monte Carlo molecular simulations with
+FEASST version 0.25.1. Journal of Chemical Physics 2024, 161, 0–19.
+(17) Siderius, D. W.; Hatch, H. W.; Shen, V. K. Temperature Extrapolation of Henry’s
+Law Constants and the Isosteric Heat of Adsorption. Journal of Physical Chemistry B
+2022, 126, 7999–8009.
+(18) Moosavi, S. M.; Novotny, B. 
+´
+A.; Ongari, D.; Moubarak, E.; Asgari, M.; Kadioglu, 
+¨
+O.;
+Charalambous, C.; Ortega-Guerrero, A.; Farmahini, A. H.; Sarkisov, L.; Garcia, S.;
+No´e, F.; Smit, B. A data-science approach to predict the heat capacity of nanoporous
+materials. Nature Materials 2022, 21, 1419–1425.
+(19) Chen, T.; Guestrin, C. XGBoost. Proceedings of the 22nd ACM SIGKDD International
+Conference on Knowledge Discovery and Data Mining. New York, NY, USA, 2016; pp
+785–794.
+(20) Moosavi, S. M. tools-cp-porousmat. https://github.com/SeyedMohamadMoosavi/
+tools-cp-porousmat/tree/main, 2022.
+(21) Fairbrother, J.; Nemeth, C.; Rischard, M.; Brea, J.; Pinder, T. GaussianProcesses. jl:
+27
+
+A Nonparametric Bayes Package for the Julia Language. Journal of Statistical Software
+2022, 102, 1–36.
+(22) Brandani, S. Net , excess and absolute adsorption and adsorption of helium. Adsorption
+2016, 22, 261–276.
+(23) How much carbon dioxide is produced per kilowatthour of U.S. electricity generation?
+https://www.eia.gov/tools/faqs/faq.php?id=74.
+(24) McDonald, T. M. et al. Cooperative insertion of CO2 in diamine-appended metal-
+organic frameworks. Nature 2015, 519, 303–308.
+28

@@ -1,0 +1,1052 @@
+{
+ "date": "2026-10-27",
+ "proposal": {
+  "path": "docs/proposals/NEXT_STEPS_PROPOSAL_5_MATHEMATICS_2026-10-27.md",
+  "sha256": "a9d66812c251d37b2ba101ab254c2cb09de68263e94126a8132f13764dae4929",
+  "commit": null,
+  "note": "uncommitted at preregistration time; the owner commits. sha256 computed last, after all content was fixed.",
+  "title": "Proposal 5: new, true, checkable mathematics on one machine (2026-10-27)",
+  "companion_reading_log": "docs/studies/MATH_SCOUT_2026-10-27.md (19 sources opened, 'seen but not read' list)"
+ },
+ "status": "preregistered; nothing attempted",
+ "user_request": "continue finding more real mathematics breakthroughs (verbatim from the proposal)",
+ "reading_of_request": "We never claim breakthroughs. The aim is new, true, checkable mathematical statements, found by a disciplined, preregistered search with positive and negative controls, audited independently, with negative results published. Every item is small; most close a finite case that someone else has explicitly left open.",
+ "method": "Elenchus tiers. A = kernel-checked Lean through anse/formal/lean_runner.py, axioms limited to {propext, Classical.choice, Quot.sound}, no sorry, statement locked, leanchecker replay. L = literature pinned to a page. C = human or AI argument, exhaustive enumeration with certified decision rule, or ball arithmetic not replayed in Lean. X = floating point. Tier C enumerations are not Lean proofs; only single certificates (witnesses, coverings, counterexamples) are promoted to Tier A, only through lean_runner.py with a kernel replay.",
+ "scales": {
+  "prior_p": "probability that a NEW statement survives its gate within the time box; document says range 0.05 to 0.4, deliberately sceptical",
+  "value_v": "1-5: how much a correct result would matter to the people who posed the question",
+  "feasibility_f": "0-1: chance we can run the method on this machine at the stated cost",
+  "score": "p x v x f; all three numbers are our estimates, not measurements"
+ },
+ "global_rules": [
+  "Claims are written before the test: each item needs its own preregistration (statement, controls, kill criterion and priors hashed before the first run) before it starts; this proposal itself is not a preregistration.",
+  "Every positive and negative control runs and is reported BEFORE any headline number. A failing gate is reported, not hidden.",
+  "Producer != verifier: independent audit by Opus, never cheaper than the producer; LR-IND's implementer must not read the S-T repository.",
+  "Negative results and null boxes are published with the same care.",
+  "No 'breakthrough': each result is a finite case, a bound, an independent check, or a null box, and is said that way in the title. Upper bounds on gamma_sh are not exact values; a computational range is not an answer to a 'for all n' question; an independent re-run is not a new theorem.",
+  "Same-day arXiv re-search of the exact case before any item is written up or published (the lonely runner area moves weekly).",
+  "Read vs not read: a source is read only if opened in the session (alphaXiv PDF page text or local file); search snippets or references inside other papers are 'not read' and nothing load-bearing rests on them.",
+  "Each elementary-attack pass (10-15 minutes of trying for an elementary resolution) must be repeated in each item's own preregistration.",
+  "Public data only; no third-party full texts; the repository is PUBLIC, so no third-party full texts, private-repository summaries or dataset files are committed (sha256 and licences recorded instead).",
+  "Lean verification only through anse/formal/lean_runner.py; never `import Mathlib` (LL section 3); Lean 4.34.1 pinned, partial Mathlib.",
+  "No simulated agents. A stage that cannot run reports BLOCKED.",
+  "Each passing item gets a short paper (statement, certificate, controls, code with sha256); independent AI audit before any Zenodo DOI.",
+  "The LR-Q84 elementary answer is a remark for the author, not a result of this programme; it will not be counted or titled as a discovery. Do not publish it."
+ ],
+ "machine_and_cores_note": {
+  "observed_utc": "21:23 UTC (2026-10-27)",
+  "load_average": "13.2 on 8 cores, every core busy",
+  "cores_in_use": {
+   "core 2": "C1b census",
+   "cores 0, 1, 4": "Lean or leanchecker jobs",
+   "core 5": "Ollama prover",
+   "cores 3, 6, 7": "Proposal 4 lanes"
+  },
+  "rule": "Nothing below starts until Proposal 4 lanes release cores. Costs assume 1-2 cores per item. No item needs the GPU. Core numbers in the first-wave table are placeholders to fix at launch. (Document wording; repo CPU budget note: up to 8 cores, pin disjoint core sets.)",
+  "toolchain": {
+   "system_python3": "python-flint 0.9.0 (Arb), cypari2 2.1.2, mpmath 1.3.0, networkx 3.4.2",
+   "venv": "scipy 1.17.1 (LP/MILP via HiGHS), sympy 1.14.0, z3-solver 5.1.0",
+   "also_present": "gp, Sage 9.5, GAP, nauty (nauty-geng, nauty-genbg, nauty-shortg, dreadnaut)",
+   "absent": "no SAT solver binary (cadical, kissat, minisat), no SDP solver (no cvxopt), no plantri",
+   "lean": "4.34.1 pinned, partial Mathlib"
+  }
+ },
+ "model_tiers": {
+  "search_code_and_drivers": "sonnet",
+  "proofs_lean_certificate_assembly_and_independent_audit": "opus",
+  "note": "as in Proposal 4; producer is never the verifier"
+ },
+ "items": [
+  {
+   "id": "SLR-18",
+   "rank": 1,
+   "doc_section": "2.1",
+   "title": "The shifted lonely runner conjecture fails for every n with 18 <= n <= 94, so it fails for every n >= 5",
+   "statement": "For every n with 18 <= n <= 94 there are distinct positive integers v_1, ..., v_n and shifts s in (Q/Z)^n such that max_t min_i ||s_i + v_i t|| < 1/(n+1). Equivalently, Gamma(n) < 1/(n+1) in Zhang's notation.",
+   "sources_read": [
+    {
+     "title": "Coloopless zonotopes and counterexamples to the Shifted Lonely Runner Conjecture",
+     "authors": "Blanco, Criado, Santos",
+     "id": "arXiv 2603.24784 v4",
+     "date": "2026-10-24",
+     "depth": "read (full text or selected pages, alphaXiv PDF text)",
+     "relevant": "gamma_sh(1,...,5) = 15/94 < 1/6; 'the shifted LRC is false for n in {5,...,17}'; Table 2 exact gamma_sh(1,...,n) for n <= 15, e.g. gamma_sh(1,...,15) = 1/18; 'whenever a vector of size n exists with gamma_sh(v) <= 1/(n+2), it produces infinitely many sLRC counterexamples for n + 1'"
+    },
+    {
+     "title": "More (shifted) runners, less loneliness",
+     "authors": "Poliakova",
+     "id": "arXiv 2609.23952 v1",
+     "date": "2026-09-20",
+     "depth": "read (full text or selected pages, alphaXiv PDF text)",
+     "relevant": "E_n >= floor(n/287) and E_n >= 1 for n >= 95 through a local uniform rule with L = 192; Proposition 4: a rule of gain g whose largest velocity is L gives E_n >= g for n >= L/2 - g; 'finding counterexamples for the remaining 18 <= n <= 94 would establish that SLR is false for all n >= 5'"
+    },
+    {
+     "title": "Tight instances of the Lonely Runner Conjecture: one-entry modifications and the growth of speeds",
+     "authors": "Zhang",
+     "id": "arXiv 2608.13599 v3",
+     "date": "2026-10-18",
+     "depth": "read (full text or selected pages, alphaXiv PDF text)",
+     "relevant": "'Question 8.5 ... is therefore open only for 18 <= n <= 94'"
+    },
+    {
+     "title": "Fourteen and fifteen lonely runners",
+     "authors": "Allikvere",
+     "id": "arXiv 2609.02604 v2",
+     "date": "2026-09-24",
+     "depth": "read (full text or selected pages, alphaXiv PDF text)",
+     "relevant": "LRC(14) (fifteen runners), used in a negative control (Tier L)"
+    }
+   ],
+   "sources_not_yet_read": [
+    {
+     "source": "Criado's public repository and its verify_solution.py",
+     "must_be_read": "cross-check only, after our own evaluator exists",
+     "why": "cross-check only; our own exact gamma(v;s) evaluator is written independently"
+    }
+   ],
+   "verifiable_core": "For each n, a certificate (v, s, delta = 1/(n+1)). Check: the open bad arcs {t : ||s_i + v_i t|| < delta} cover R/Z, so the continuous min_i ||.|| is < delta everywhere and its maximum is < delta. All endpoints (k +- delta - s_i)/v_i are rational; scale by a common denominator and check the covering with integers. Lean `decide` over at most sum v_i ~ n^2/2 <= 4,500 integer intervals at n = 94 on the pinned stack. Two independent checkers: Python fractions and a C integer checker.",
+   "tier": "A feasible per n (Lean decide, optional, later); Tier C until replayed",
+   "method": [
+    "(i) Port the exact gamma(v;s) evaluator, written by us; Criado's verify_solution.py (not read) serves only as a cross-check.",
+    "(ii) For v = [n], search over s: seed with structured s (periodic patterns extrapolated from exact optima at n <= 15; the s for n = 5 is printed in the paper); local search or LP over fixed combinatorics (for a fixed assignment of runners to arcs, min delta is a linear program in (s, delta); scipy HiGHS solves it; round to rationals and re-check exactly).",
+    "(iii) If [n] fails, search for a uniform rule in Poliakova's sense with L <= 38, or for modified velocity sets.",
+    "(iv) Chain: one vector with gamma_sh <= 1/(m+1+k) covers sizes m+1,...,m+k after adding runners; strictness at the last step checked on the explicit vector, not assumed.",
+    "No lower bound on gamma_sh is attempted (hard direction)."
+   ],
+   "positive_controls": [
+    "Reproduce gamma(1..5; s) = 15/94 at s = (0,46,38,47,72)/94",
+    "Reproduce gamma_sh(2,3,4,5,6,8) <= 2/15 with s = (0,29,17,0,16,22)/30",
+    "Certify < 1/(n+1) for [n], n = 5..17, using our own s (Blanco et al. report all of these as counterexamples)"
+   ],
+   "negative_controls": [
+    "s = 0 for [n] gives exactly 1/(n+1); it must NOT certify strict <, because arcs are open and tangencies matter",
+    "Perturbing one shift by 1/(10*sum v) in a certified case must break the covering",
+    "Unshifted LRC holds up to 14 speeds (Allikvere, arXiv 2609.02604, LRC(14), i.e. fifteen runners; Tier L), so no s = 0 instance with <= 14 distinct speeds may ever certify"
+   ],
+   "kill_criterion": "After 30 core-hours of search, stop and report the certified sub-range, e.g. 'n in [18, N] closed'. Any certificate that fails either independent checker kills that n until the bug is found.",
+   "cost": "about 10-30 core-hours of search, under 1 core-hour of checking, about 20-80 core-hours of Lean replay on the Lean lane (optional, later)",
+   "prior_p": 0.35,
+   "prior_note": "0.35 for the full range; about 0.6 for a non-empty sub-range [18, N]",
+   "value_v": 4,
+   "feasibility_f": 0.9,
+   "score_document": 1.26,
+   "novelty_check": "alphaXiv sweep (recency) for 'shifted lonely runner conjecture' returned nothing after 2609.23952 except Zhang v3; Zhang v3 (2026-10-18) calls the range open. WebSearch for the range returned only the same papers. Scoop risk is real (groups active, Criado's code public). Before publishing, re-search arXiv the same day.",
+   "over_claim_risks": [
+    "finishes the disproof of a conjecture already disproved; not a breakthrough",
+    "says nothing about the unshifted LRC",
+    "gives no exact Gamma(n), only upper bounds",
+    "velocities must be distinct positive integers; the trivial counterexample with repeated velocities must not be used"
+   ],
+   "elementary_attack_pass": "nothing elementary found: the 'add a runner' lemma moves only one size at a time and no closed-form family of shifts came to mind; the pass must be repeated in the item's own preregistration",
+   "model_tier": {
+    "search_code_and_drivers": "sonnet",
+    "lean_certificate_assembly_and_independent_audit": "opus"
+   },
+   "wave": 1,
+   "lane": "W1-a",
+   "shared_kernel": "exact ML(v)/gamma(v;s) kernel shared with LR-Q84 and LR-SPEC (not independent bets; separate controls; each certificate checked by a second implementation)",
+   "score_recomputed": 1.26,
+   "score_check": "matches document at 2 decimals"
+  },
+  {
+   "id": "LR-IND",
+   "rank": 2,
+   "doc_section": "2.3",
+   "title": "An independent reimplementation of the computer-assisted proof of the lonely runner conjecture for 11 runners (k = 10)",
+   "statement": "Re-derive, with independently written code, J(10, p) = empty for every prime p in Sungkawichai-Trakulthongchai's set P_10 (127 <= p <= 467, 61 primes, sum ln p > 342 > ln B_10).",
+   "sources_read": [
+    {
+     "title": "Eleven, twelve, and thirteen lonely runners",
+     "authors": "Sungkawichai, Trakulthongchai",
+     "id": "arXiv 2604.23906 v2",
+     "date": "2026-09-01",
+     "depth": "read (full text or selected pages, alphaXiv PDF text)",
+     "relevant": "k = 10 'in 45 minutes on a 10-core Apple M4 processor'; k = 11 is about 40 hours; Proposition 1.4 (polynomial method) handles (1, 2, ..., k); they tested against [16] on smaller cases only"
+    },
+    {
+     "title": "Fourteen and fifteen lonely runners",
+     "authors": "Allikvere",
+     "id": "arXiv 2609.02604 v2",
+     "date": "2026-09-24",
+     "depth": "read (full text or selected pages, alphaXiv PDF text)",
+     "relevant": "'The full computation has not been independently reimplemented or formally verified.'; their check of the LRC(12) input re-used the snapshot from [11], not new code; confirms orbit counts at three primes for k = 13 only"
+    }
+   ],
+   "sources_not_yet_read": [
+    {
+     "source": "Sungkawichai-Trakulthongchai repository",
+     "must_be_read": "only AFTER our independent implementation is complete",
+     "why": "used afterwards for count-level comparison only; the implementer must NOT read it before writing the code"
+    }
+   ],
+   "verifiable_core": "Tier C: an exhaustive modular enumeration with exact integer witnesses. Tier A for the scalar inputs: B_k, the log-prime sum, and the lemma bounds checked in Lean. A formal replay of the enumeration is out of scope. Not a new statement: class (d) verification of a recently claimed computer-checkable reduction, the M3 pattern from Proposal 4.",
+   "tier": "C (enumeration); A (scalar inputs)",
+   "method": [
+    "Our own C implementation of I(k, p, 1), binary lifting and backward projection, written from the paper's definitions only.",
+    "A separate agent writes it without reading their repository; the repository is used afterwards for count-level comparison only.",
+    "Proposition 1.4 is re-proved, or audited as Tier C."
+   ],
+   "positive_controls": [
+    "Reproduce LRC(7) and LRC(8) (seconds) and their per-prime retained-tuple counts where printed"
+   ],
+   "negative_controls": [
+    "planting a deliberately wrong witness rule (strict < replaced by <=) must change the counts",
+    "k = 10 at a prime where (1,...,10) is known to survive without the Proposition 1.4 step must report a survivor"
+   ],
+   "kill_criterion": "Throughput measured at p = 127 first. If the projected total exceeds 40 core-hours, stop and report the verified primes. A disagreement on any prime is reported to the authors before anything else, after a second check.",
+   "cost": "about 8-40 core-hours for k = 10; k = 11 (about 400 core-hours) declined for now",
+   "prior_p": 0.35,
+   "prior_note": "0.35 that the independent run completes; a discrepancy is very unlikely (< 0.05) and is not a goal",
+   "value_v": 2,
+   "feasibility_f": 0.7,
+   "score_document": 0.49,
+   "novelty_check": "S-T paper says they tested against [16] on smaller cases only; Allikvere confirms orbit counts at three primes for k = 13 only and says the full computation was not independently reimplemented.",
+   "over_claim_risks": [
+    "do not call it 'a new proof'; do not claim novelty for LRC(10)",
+    "say exactly which primes and which lemmas were re-checked"
+   ],
+   "model_tier": {
+    "implementation_blind_to_ST_code": "sonnet (separate agent, producer)",
+    "proof_audit_and_independent_verification": "opus"
+   },
+   "wave": 1,
+   "lane": "W1-b",
+   "score_recomputed": 0.49,
+   "score_check": "matches document at 2 decimals"
+  },
+  {
+   "id": "EG-CB68",
+   "rank": 3,
+   "doc_section": "2.4",
+   "title": "Erdos-Gyarfas for cubic bipartite graphs up to 68 vertices",
+   "statement": "Every simple cubic bipartite graph on at most 68 vertices contains a cycle of length 4, 8 or 16. Hence a cubic bipartite counterexample to the Erdos-Gyarfas conjecture has at least 70 vertices.",
+   "sources_read": [
+    {
+     "title": "A 60-Vertex Lower Bound for Cubic Bipartite Counterexamples to the Erdos-Gyarfas Conjecture",
+     "authors": "Tranquilli",
+     "id": "arXiv 2608.02675 v1",
+     "date": "2026-08-02",
+     "depth": "read (full text or selected pages, alphaXiv PDF text)",
+     "relevant": "(<= 58) Moore-bound reduction forces a C6 below 62 vertices; triangle-rooted restricted-growth search over linear v3-configurations with C8/C16 pruning; full cap-29 tree has 21,493 states and 1,762,368 attempted proposals; 'The computation does not examine side size 30'"
+    },
+    {
+     "title": "Towards a more structured search for Erdos-Gyarfas counter-examples",
+     "authors": "Ducoffe, Dumitru",
+     "id": "arXiv 2609.28594 v1",
+     "date": "2026-09-23",
+     "depth": "read (full text or selected pages, alphaXiv PDF text)",
+     "relevant": "'every bipartite graph of order at most 66' by SAT modulo symmetries, about 30 core-days, 'The solver was not asked to produce a resolution proof.'"
+    }
+   ],
+   "sources_not_yet_read": [
+    {
+     "source": "O'Keefe-Wong 1980 (the (3,10)-cage has 70 vertices)",
+     "must_be_read": "must be pinned before the item starts",
+     "why": "a C4- and C8-free bipartite cubic graph has girth 6 or >= 10 and a cubic graph of girth >= 10 has at least 70 vertices; must be pinned"
+    }
+   ],
+   "verifiable_core": "Tier C: exhaustive search with a witness-stream certificate checked by a separate streaming checker, as in Tranquilli. The reduction lemma (Moore or cage bound, incidence translation) is Tier C, Lean formalisation optional. At 70 vertices the girth-10 graphs are exactly the (3,10)-cages; checking them for C16 is a stretch goal. Growth per cap step is unknown: main risk.",
+   "tier": "C",
+   "method": [
+    "Reimplement the restricted-growth search from the paper, with two different C16 oracles (DFS paths, and half-path joins).",
+    "Run caps 29 (control), 30, 31, ..., 34. For side size v <= 34 the triangle-rooted search is still complete."
+   ],
+   "positive_controls": [
+    "reproduce Tranquilli's cap-29 counters (21,493 states; 0 completions) and their v <= 13 configuration counts (1, 1, 3, 10, 31, 229, 2,036), which agree with genbg and Betten-Brinkmann-Pisanski",
+    "with the C16 filter switched off, the search must find completions (e.g. the 19_3 configurations)"
+   ],
+   "negative_controls": [
+    "switching off the C8 filter must produce completions",
+    "the Heawood graph has C8, so it must be rejected by the C8 test"
+   ],
+   "kill_criterion": "Measure the cap-30 and cap-31 growth factors. If the cap-34 projection exceeds 48 core-hours on 2 cores, report the largest completed cap as a partial result ('>= 62', '>= 64' and so on, where new). Orders up to 66 are not new as bounds (Ducoffe-Dumitru) but are an independent, certificate-producing re-check of an uncertified SAT run.",
+   "cost": "time-boxed at 48 core-hours",
+   "prior_p": 0.3,
+   "prior_note": "0.3 that order 68 is closed",
+   "value_v": 2.5,
+   "feasibility_f": 0.6,
+   "score_document": 0.45,
+   "novelty_check": "WebSearch for 'Erdos-Gyarfas cubic bipartite ... 62 vertices' finds only these two papers and Wikipedia's 60; the alphaXiv graph-enumeration sweep found nothing newer.",
+   "over_claim_risks": [
+    "a finite bound, not progress on the conjecture",
+    "say 'cubic bipartite' every time"
+   ],
+   "elementary_attack_pass": "the C6-forcing argument reduces it to a finite search but does not finish it",
+   "model_tier": {
+    "search_code": "sonnet",
+    "reduction_lemmas_and_independent_audit": "opus"
+   },
+   "wave": 1,
+   "lane": "W1-c",
+   "score_recomputed": 0.45,
+   "score_check": "matches document at 2 decimals"
+  },
+  {
+   "id": "DH-Psi2",
+   "rank": 4,
+   "doc_section": "2.5",
+   "title": "Our own C* = 3 conjecture: Psi = H + 3|T| <= 3 for all sign inputs at resolution 2",
+   "statement": "For all sign inputs F in {+-1}^48 at resolution 2, Psi(F) = H(F) + 3|T(F)| <= 3, where Psi <= 3 iff Phi <= 3 for sign inputs. (Conjecture in the paper: H + 3|T| <= 3 prod_v ||F_v||_3.)",
+   "sources_read": [
+    {
+     "title": "Dyadic triangular Hilbert transform paper (our own, local file lines 255-300)",
+     "authors": "Callens (SocrateAI Lab)",
+     "id": "papers/dyadic_triangular_hilbert/dyadic_triangular_hilbert.tex; Zenodo 10.5281/zenodo.23232389",
+     "date": "published",
+     "depth": "read (local)",
+     "relevant": "Resolution 1 is a theorem. At resolution 2 only max R = 2 was computed exhaustively; Psi was only hill-climbed. TODO 31 in docs/OPENAI_MATH_HYPOTHESES.md."
+    }
+   ],
+   "sources_not_yet_read": [],
+   "verifiable_core": "Tier C: exhaustive enumeration with the same F_2 reduction as the R run (for fixed coefficient vectors c_t and d, max over F_2 of sum_t |<c_t,F_2>| + 3|<d,F_2>| = max over signs of an l1 norm). A violation is a single exact input, Tier A by decide. Cannot be scooped (our own conjecture). Either outcome is a result: a violation refutes our published conjecture and must be reported as an erratum.",
+   "tier": "C (enumeration); A (single violation)",
+   "method": [
+    "Extend the existing scripts/openai_math/hypotheses/tensor/ evaluator to Psi",
+    "run the second evaluator h5_exact.py on every argmax"
+   ],
+   "positive_controls": [
+    "reproduce max R = 2",
+    "Psi = 3 at the seed g (H = 3/2, T = 1/2) and at the constant input"
+   ],
+   "negative_controls": [
+    "the Haar-free form must give N + 1 = 3 for R and must exceed 3 for Psi where expected",
+    "a planted factor 4 in place of 3 must find violations"
+   ],
+   "kill_criterion": "More than 60 core-hours projected after a 1% sample.",
+   "cost": "about 20-60 core-hours",
+   "prior_p": 0.4,
+   "prior_note": "Value is low: sign inputs only, real inputs untouched",
+   "value_v": 1.2,
+   "feasibility_f": 0.9,
+   "score_document": 0.43,
+   "novelty_check": "none needed: the conjecture is ours and cannot be scooped",
+   "over_claim_risks": [
+    "say 'sign inputs, resolution 2'",
+    "says nothing about C* for real inputs"
+   ],
+   "elementary_attack_pass": "the resolution-1 proof does not tensorise, because of the even/odd coupling the paper describes",
+   "model_tier": {
+    "evaluator_extension": "sonnet",
+    "independent_evaluator_and_audit": "opus"
+   },
+   "wave": 1,
+   "lane": "W1-d",
+   "score_recomputed": 0.432,
+   "score_check": "matches document at 2 decimals; document rounds 0.432000 to 0.43"
+  },
+  {
+   "id": "LR-Q84",
+   "rank": 5,
+   "doc_section": "2.2",
+   "title": "Zhang's Question 8.4: deletion values of [n-1] (REMARK ONLY, not a paper)",
+   "statement": "Is LR([n-1] \\ {r}) > 1/(n-1) for all n >= 5 and all r <= n-2, where LR(V) = max_t min_{v in V} ||vt||?",
+   "sources_read": [
+    {
+     "title": "Tight instances of the Lonely Runner Conjecture: one-entry modifications and the growth of speeds",
+     "authors": "Zhang",
+     "id": "arXiv 2608.13599 v3",
+     "date": "2026-10-18",
+     "depth": "read (full text or selected pages, alphaXiv PDF text)",
+     "relevant": "Question 8.4: 'it can fail only for r > n - 2 - 2 sqrt(n)'; settled when some D in [n+r, 2n-3] is coprime to r (Theorem 2.9: rational witness t = a/D); Corollary 2.10 covers r <= n-2-2 sqrt(n); Lemma 5.3 uses t = 1/r; Theorem 2.11: LR([n-1]\\{2}) = 2/(2 floor(n/2)+3)"
+    }
+   ],
+   "sources_not_yet_read": [
+    {
+     "source": "Liu, Taiwanese J. Math. 2008 (LR = 2/D_r formula, as quoted by Zhang)",
+     "must_be_read": "formula used only as quoted; direct exact computation mandatory",
+     "why": "the n <= 21 finite check must ALSO be done by direct exact ML computation, not only through Liu's formula"
+    }
+   ],
+   "status": "Tier C until audited (elementary argument found during scouting, checked by hand once)",
+   "scouting_argument": {
+    "claim": "If (n-1)/2 < r <= n-2, then LR([n-1]\\{r}) >= 1/r >= 1/(n-2) > 1/(n-1).",
+    "proof": "Take t = 1/r. For 1 <= v < r: ||v/r|| = min(v, r-v)/r >= 1/r. For r < v <= n-1: since 2r >= n, 1 < v/r < 2, so ||v/r|| = min(v-r, 2r-v)/r >= 1/r, because v-r >= 1 and 2r-v >= 2r-(n-1) >= 1. This is the time used in Zhang's Lemma 5.3.",
+    "remaining_finite_set": "Corollary 2.10 covers r <= n-2-2 sqrt(n); a gap remains only when n-2-2 sqrt(n) < (n-1)/2, i.e. n-3 < 4 sqrt(n), i.e. n <= 21 (at n = 21 only r = 10 is left; at n = 22, 19 > 4 sqrt(22) ~ 18.76). In that gap r <= (n-1)/2, so Liu's exact formula LR = 2/D_r applies, D_r the least integer >= n+r coprime to r (as quoted by Zhang); reduces to D_r <= 2n-3 for finitely many (n, r): a few dozen pairs, by hand or a one-minute script plus an exact ML scan as independent second check."
+   },
+   "verifiable_core": "The one-line witness argument (Lean-formalisable in a few lines, ||.|| on rationals); the finite table for n <= 21, Tier A by decide.",
+   "tier": "C until audited; A for witness lemma and n <= 21 table if formalised",
+   "method": [
+    "n <= 21 table",
+    "second check with an exact ML scan",
+    "then the Lean witness lemma",
+    "if it passes, write to the author; do not publish"
+   ],
+   "positive_controls": [
+    "Liu's case LR([n-1]\\{2}) = 2/(2 floor(n/2)+3) (Zhang, Theorem 2.11)"
+   ],
+   "negative_controls": [
+    "r = n-1, i.e. the set [n-2], must give exactly 1/(n-1) and must fail the strict test"
+   ],
+   "kill_criterion": "A single (n, r) with n <= 21 that fails the strict inequality. That would be a counterexample and is reported, after a second check, as the real finding.",
+   "cost": "minutes; needs no lane (done in the preregistration session)",
+   "prior_p": 0.8,
+   "prior_note": "0.8 that the question is answered 'yes' in full",
+   "value_v": 0.5,
+   "feasibility_f": 1.0,
+   "score_document": 0.4,
+   "novelty_check": "The question appears in v3 of arXiv 2608.13599 (2026-10-18). The alphaXiv lonely-runner sweep found no answer. The author may have overlooked t = 1/r, or the question may intend something we misread. Ask before claiming.",
+   "over_claim_risks": [
+    "do not present it as a paper or a discovery",
+    "do not publish before the author has been contacted and the n <= 21 table is checked independently"
+   ],
+   "why_listed": "If the finite check passes, it answers a question posed eight days before the study (document wording); a short remark to send to the author, not a result to publish on its own.",
+   "model_tier": {
+    "witness_lemma_and_audit": "opus",
+    "table_script": "sonnet"
+   },
+   "wave": "remark-only (no lane)",
+   "shared_kernel": "exact ML kernel shared with SLR-18 and LR-SPEC",
+   "score_recomputed": 0.4,
+   "score_check": "matches document at 2 decimals"
+  },
+  {
+   "id": "N1-ext",
+   "rank": 6,
+   "doc_section": "2.6",
+   "title": "Completing the Gaussian zero-point sign classification below a = 0.425",
+   "statement": "Certify the sign of c(a) = F(a, 0)/8, the exact second variation of the harmonic zero-point energy at the triangular lattice for the Gaussian e^{-pi a r^2}, on [0.1, 0.425]; enclose the sign change near 0.123 reported by P2. Together with N1 this would give the sign on [0.1, 4] with three enclosed roots.",
+   "sources_read": [
+    {
+     "title": "N1 record (our own, local file lines 50-125)",
+     "authors": "Callens (SocrateAI Lab)",
+     "id": "results/proposal3/2026-10-26/N1/CLASSIFICATION.md; Zenodo 10.5281/zenodo.23667863",
+     "date": "2026-10-26",
+     "depth": "read (local)",
+     "relevant": "'The unrestricted iff for all a > 0 is false: P2 finds another sign change near a ~ 0.123'; cost driver: small a needs many lattice terms and a nearly singular B near Gamma; published with range [0.425, 4] only"
+    }
+   ],
+   "sources_not_yet_read": [
+    {
+     "source": "N3 LITERATURE.md (literature scan)",
+     "must_be_read": "before the attempt",
+     "why": "not re-read on 2026-10-27; internal open item, no external literature known"
+    }
+   ],
+   "verifiable_core": "As N1: Tier A for the logic and the rationals; Tier C-ball for the integrals (N1/N2 precedent). Per-point certificates at thin points where intervals fail.",
+   "tier": "A (logic, rationals) / C-ball (integrals) / X (third root if uncertified)",
+   "method": [
+    "extended N1 engine on [0.1, 0.425]",
+    "per-point certificates where intervals fail"
+   ],
+   "positive_controls": [
+    "reproduce N1's certified points at a = 0.425 and 0.45 with the extended engine"
+   ],
+   "negative_controls": [
+    "a tampered tail bound must be rejected by the kernel, as lean_reject_tampered.json was"
+   ],
+   "kill_criterion": "det B > 0 cannot be certified on cells at a <= 0.15 after two budgets. Report the certified part; the third root may then remain Tier X.",
+   "cost": "about 50-150 core-hours; QMAX grows like 20/a; slowest item",
+   "prior_p": 0.3,
+   "value_v": 2,
+   "feasibility_f": 0.6,
+   "score_document": 0.36,
+   "novelty_check": "Internal open item. P2 is our own number; no external literature known for the Gaussian zero-point problem. N3's LITERATURE.md holds the scan; not re-read today.",
+   "over_claim_risks": [
+    "harmonic, Bravais, 2D, local only, exactly as N1"
+   ],
+   "model_tier": {
+    "certificate_design_lean_and_audit": "opus",
+    "numerics": "sonnet"
+   },
+   "wave": 2,
+   "score_recomputed": 0.36,
+   "score_check": "matches document at 2 decimals"
+  },
+  {
+   "id": "LR-SPEC",
+   "rank": 7,
+   "doc_section": "2.7",
+   "title": "Counterexample search for the amended Lonely Runner Spectrum conjecture (Fan-Sun)",
+   "statement": "Find a near-tight tuple of 7 or 8 distinct speeds whose loneliness ML = p/q (lowest terms, below 1/n) has k = q - np > n, which would refute Fan-Sun; or show there is none in an extended box. Secondary: Cordella's Conjecture 6.2 (odd denominator for six speeds) beyond speed 110; Question 6.6 (max v_i < 3q for near-tight sextuples).",
+   "sources_read": [
+    {
+     "title": "Odd denominators in the Lonely Runner spectrum for six speeds",
+     "authors": "Cordella",
+     "id": "arXiv 2609.03444 v2",
+     "date": "2026-09-08",
+     "depth": "read (full text or selected pages, alphaXiv PDF text)",
+     "relevant": "searches covered 4 speeds <= 200, 5 <= 130, 6 <= 110, 7 <= 50 (three tuples with k = 2), 8 <= 40; 'For seven speeds the method is blocked by the missing classification of the tight sextuples'; even k already occurs for 4 and 7 speeds (section 6.3)"
+    }
+   ],
+   "sources_not_yet_read": [
+    {
+     "source": "Fan-Sun, Amending the Lonely Runner Spectrum Conjecture (Electron. J. Combin. 2026)",
+     "must_be_read": "must be pinned before the item starts",
+     "why": "the statement '1 <= k <= n' and the convention k = q - np (p/q lowest terms, n number of speeds) are Cordella's paraphrase; must be obtained and the exact statement pinned, or the item is killed"
+    }
+   ],
+   "verifiable_core": "The exact ML of one tuple by a finite breakpoint scan. A counterexample is Tier A (decide). A null box is Tier C.",
+   "tier": "A (counterexample) / C (null box)",
+   "method": [
+    "fast exact kernel in C, cross-checked against Cordella's MIT code on random tuples (their kernel agreed with a Python version on hundreds of tuples)",
+    "fast rejection with small-denominator witness times"
+   ],
+   "positive_controls": [
+    "reproduce Cordella's counts: 348 near-tight primitive sextuples <= 110; the 3 septuples with k = 2 <= 50; the 29 octuples <= 40, all with k = 1"
+   ],
+   "negative_controls": [
+    "corrupting the strictness of the band test must change the counts"
+   ],
+   "kill_criterion": "Box 7 speeds <= 80 and 8 <= 60, or 60 core-hours, whichever comes first.",
+   "cost": "30-60 core-hours",
+   "prior_p": 0.1,
+   "prior_note": "if found, of real interest to people working on the spectrum",
+   "value_v": 3.5,
+   "feasibility_f": 0.9,
+   "score_document": 0.32,
+   "novelty_check": "Cordella's v2 (2026-09-08) is the latest search found in the alphaXiv lonely-runner sweeps; no later search at 7 or 8 speeds found.",
+   "over_claim_risks": [
+    "a null box is not a proof of anything"
+   ],
+   "elementary_attack_pass": "no structural argument found",
+   "model_tier": {
+    "kernel_and_search_code": "sonnet",
+    "audit": "opus"
+   },
+   "wave": 2,
+   "shared_kernel": "exact ML kernel shared with SLR-18 and LR-Q84",
+   "score_recomputed": 0.315,
+   "score_check": "matches document at 2 decimals; document rounds 0.315000 to 0.32"
+  },
+  {
+   "id": "LR-2E",
+   "rank": 8,
+   "doc_section": "2.8",
+   "title": "Tight multi-entry modifications beyond Goddyn-Wong",
+   "statement": "Find a tight set ([n-1] \\ R) u W, with |R| = |W| = 2 or 3, that does not arise from Goddyn-Wong's Theorem 5.1 (Zhang Question 8.3); or extend the exact census (n <= 140, w <= 8n, Theorem 6.10) to n <= 300 or w <= 16n.",
+   "sources_read": [
+    {
+     "title": "Tight instances of the Lonely Runner Conjecture: one-entry modifications and the growth of speeds",
+     "authors": "Zhang",
+     "id": "arXiv 2608.13599 v3",
+     "date": "2026-10-18",
+     "depth": "read (full text or selected pages, alphaXiv PDF text)",
+     "relevant": "sections 6-8 and Table 1: 821,305 cases, '0 unexpected tight sets'; the converse of Theorem 5.1 'already fails in general'; no general bound on inserted speeds known (Question 8.2); window w <= 8n is 'a pragmatic window'"
+    }
+   ],
+   "sources_not_yet_read": [
+    {
+     "source": "Goddyn-Wong 2006",
+     "must_be_read": "before the attempt",
+     "why": "Theorem 5.1 criterion must be checked before calling any new set 'not of Goddyn-Wong type'"
+    }
+   ],
+   "verifiable_core": "Tightness is an exact finite test: a covering condition plus one witness. A new tight set is Tier A by decide.",
+   "tier": "A (new tight set) / C (null extension)",
+   "method": [
+    "reimplement the 'remaining-region' test, the third of Zhang's three methods (no component structure)",
+    "extend to n <= 300 with w <= 8n, and to n <= 140 with w <= 16n, using his edge-reach masks to prune",
+    "re-check every survivor exactly"
+   ],
+   "positive_controls": [
+    "recover {1,4,5,6,7,11,13} (n = 8) and the n = 74 Goddyn-Wong set"
+   ],
+   "negative_controls": [
+    "a perturbed inserted speed must fail"
+   ],
+   "kill_criterion": "20 core-hours.",
+   "cost": "at most 20 core-hours; shares the exact-ML kernel with SLR-18 and LR-SPEC",
+   "prior_p": 0.08,
+   "prior_note": "a null extension has little value; only a new set counts as a result",
+   "value_v": 3,
+   "feasibility_f": 0.8,
+   "score_document": 0.19,
+   "novelty_check": "Zhang v3 (2026-10-18) is the latest census found; no other two-entry census appeared in the sweeps.",
+   "over_claim_risks": [
+    "a null box does not answer Question 8.1, 8.2 or 8.3",
+    "a new tight set must be checked against Theorem 5.1's criterion before calling it 'not of Goddyn-Wong type'"
+   ],
+   "elementary_attack_pass": "no structural argument found",
+   "model_tier": {
+    "census_code": "sonnet",
+    "audit": "opus"
+   },
+   "wave": 3,
+   "shared_kernel": "exact ML kernel shared with SLR-18 and LR-SPEC",
+   "score_recomputed": 0.192,
+   "score_check": "matches document at 2 decimals; document rounds 0.192000 to 0.19"
+  },
+  {
+   "id": "GR-11",
+   "rank": 9,
+   "doc_section": "2.9",
+   "title": "Open spectral Graffiti conjectures on all 11-vertex graphs",
+   "statement": "For each open, NP-hard-free spectral Graffiti conjecture in Roucairol-Cazenave's Table 1 (e.g. 20, 21, 39, 40, 129, 143, 154, 195, 198, 252, 254, 262, 698, 712, 714, and the class-restricted 219, 284, 290, 292, 295, 322), decide whether a connected graph on <= 11 vertices refutes it. The graph class must be respected.",
+   "sources_read": [
+    {
+     "title": "Refutation of Spectral Graph Theory Conjectures with Search Algorithms",
+     "authors": "Roucairol, Cazenave",
+     "id": "arXiv 2409.18626 v1",
+     "date": "2024-09-27",
+     "depth": "read (full text or selected pages, alphaXiv PDF text)",
+     "relevant": "'we were unable to refute conjectures that were open except one'; warn about erroneous definitions ('range', 'harmonic', 'gravity') in the Aouchiche-Hansen survey"
+    }
+   ],
+   "sources_not_yet_read": [
+    {
+     "source": "Written on the Wall (primary statement source)",
+     "must_be_read": "must be pinned before the item starts",
+     "why": "definition errors are the dominant risk; must be obtained and pinned or item is killed"
+    },
+    {
+     "source": "Aouchiche-Hansen 2010 survey",
+     "must_be_read": "must be pinned before the item starts",
+     "why": "must be obtained and pinned or item is killed"
+    },
+    {
+     "source": "AutoGraphForge, arXiv 2609.03478 (title only seen)",
+     "must_be_read": "must be read before starting",
+     "why": "in case it already ran exhaustive small-n checks"
+    }
+   ],
+   "verifiable_core": "Tier X screening with float eigenvalues, then exact re-check of any near-tie or violation (characteristic polynomial via flint, Sturm sequences). A refuting graph is Tier A-checkable for algebraic invariants; Tier C if the invariant needs a numeric eigenvalue bound.",
+   "tier": "X screening; A or C for a refutation",
+   "method": [
+    "own `nauty-geng -c 11` stream, 1,006,700,565 graphs, run in res/mod parts (C1b's code is not modified, because C1b is preregistered)",
+    "numpy eigenvalues of A, L, Q and D plus needed invariants (harmonic, temperatures, gravity per the pinned definitions)",
+    "flag anything within 1e-6 of violating and re-check it exactly"
+   ],
+   "positive_controls": [
+    "re-refute already-refuted Graffiti 29 (7 vertices), 166 and 711 (5 vertices)"
+   ],
+   "negative_controls": [
+    "a known theorem, e.g. lambda_1 >= average degree, must never fire"
+   ],
+   "kill_criterion": "The definitions cannot be pinned from a primary source, or the run exceeds 20 core-hours.",
+   "cost": "about 10-20 core-hours (geng alone takes core-hours plus eigenvalue cost)",
+   "prior_p": 0.08,
+   "value_v": 2.5,
+   "feasibility_f": 0.7,
+   "score_document": 0.14,
+   "novelty_check": "Roucairol-Cazenave 2024 is the latest systematic attempt found. AutoGraphForge (arXiv 2609.03478) seen only as a title, not read; must be read before starting. Their searches are heuristic (50 or 100 vertices); most Graffiti conjectures were checked by the authors on small-graph databases, so the prior is low.",
+   "over_claim_risks": [
+    "a refutation under a misread definition is worthless; report the definition source next to every result",
+    "'No counterexample on <= 11 vertices' is weak evidence and must be worded that way"
+   ],
+   "model_tier": {
+    "pipeline": "sonnet",
+    "definition_pinning_and_audit": "opus"
+   },
+   "wave": 3,
+   "score_recomputed": 0.14,
+   "score_check": "matches document at 2 decimals"
+  },
+  {
+   "id": "S8-ALL",
+   "rank": 10,
+   "doc_section": "2.10",
+   "title": "Lean replay of the eight-point 'all s >= 0' certificate",
+   "statement": "The square antiprism X(a_s) uniquely minimises the Riesz s-energy of 8 points on S^2 for all s >= 0.",
+   "sources_read": [
+    {
+     "title": "Energy minimization for eight points on the sphere",
+     "authors": "Kryvonos, Liehr, Taylor",
+     "id": "arXiv 2609.22077 v1",
+     "date": "2026-09-18",
+     "depth": "read (full text or selected pages, alphaXiv PDF text)",
+     "relevant": "s in {0, 1} and large s are Lean-verified; the all-s computer-assisted proof is in the repository but 'not included in the main article, as Lean verification is one of our standards'; they 'expect that it will now be entirely possible ... to complete the Lean verification'"
+    }
+   ],
+   "sources_not_yet_read": [
+    {
+     "source": "github.com/lukasliehr/Energy-Minimization-8-Points",
+     "must_be_read": "must be read before the attempt",
+     "why": "must be read before S8-ALL starts; check for a newer Lean release; Lean/Mathlib version not checked (version mismatch likely, the LT_CMP lesson)"
+    }
+   ],
+   "verifiable_core": "A kernel replay (Tier A) of the published certificates on our pinned Lean 4.34.1 stack after porting their Lean development. An independent check, not a new statement. We hold no SDP machinery to regenerate certificates, only to replay them. Certificate size not stated.",
+   "tier": "A (replay)",
+   "method": [
+    "read their repository",
+    "run their Python checkers",
+    "port the s in {0,1} Lean development first as a control, then attempt the all-s certificates"
+   ],
+   "positive_controls": [
+    "their s = 0 and s = 1 theorems replay under our pin with axioms in the whitelist"
+   ],
+   "negative_controls": [
+    "a tampered certificate entry must be rejected"
+   ],
+   "kill_criterion": "The s in {0,1} port is not achieved within 40 core-hours, or the all-s certificate size makes the replay exceed 200 core-hours.",
+   "cost": "40-200+ core-hours, unknown until the repository is read",
+   "prior_p": 0.15,
+   "value_v": 2,
+   "feasibility_f": 0.3,
+   "score_document": 0.09,
+   "novelty_check": "The paper (2026-09-18) states the authors' own plan to do this (high scoop risk). Before starting, check their repository for a newer Lean release.",
+   "over_claim_risks": [
+    "a replay of someone else's proof: never call it ours, never call it new"
+   ],
+   "model_tier": {
+    "port_and_certificate_assembly": "opus",
+    "drivers": "sonnet"
+   },
+   "wave": 3,
+   "score_recomputed": 0.09,
+   "score_check": "matches document at 2 decimals"
+  }
+ ],
+ "ranking": [
+  {
+   "rank": 1,
+   "id": "SLR-18",
+   "prior": 0.35,
+   "value": 4,
+   "feasibility": 0.9,
+   "score_document": 1.26,
+   "score_recomputed": 1.26,
+   "check": "matches document at 2 decimals"
+  },
+  {
+   "rank": 2,
+   "id": "LR-IND",
+   "prior": 0.35,
+   "value": 2,
+   "feasibility": 0.7,
+   "score_document": 0.49,
+   "score_recomputed": 0.49,
+   "check": "matches document at 2 decimals"
+  },
+  {
+   "rank": 3,
+   "id": "EG-CB68",
+   "prior": 0.3,
+   "value": 2.5,
+   "feasibility": 0.6,
+   "score_document": 0.45,
+   "score_recomputed": 0.45,
+   "check": "matches document at 2 decimals"
+  },
+  {
+   "rank": 4,
+   "id": "DH-Psi2",
+   "prior": 0.4,
+   "value": 1.2,
+   "feasibility": 0.9,
+   "score_document": 0.43,
+   "score_recomputed": 0.432,
+   "check": "matches document at 2 decimals; document rounds 0.432000 to 0.43"
+  },
+  {
+   "rank": 5,
+   "id": "LR-Q84",
+   "prior": 0.8,
+   "value": 0.5,
+   "feasibility": 1.0,
+   "score_document": 0.4,
+   "score_recomputed": 0.4,
+   "check": "matches document at 2 decimals"
+  },
+  {
+   "rank": 6,
+   "id": "N1-ext",
+   "prior": 0.3,
+   "value": 2,
+   "feasibility": 0.6,
+   "score_document": 0.36,
+   "score_recomputed": 0.36,
+   "check": "matches document at 2 decimals"
+  },
+  {
+   "rank": 7,
+   "id": "LR-SPEC",
+   "prior": 0.1,
+   "value": 3.5,
+   "feasibility": 0.9,
+   "score_document": 0.32,
+   "score_recomputed": 0.315,
+   "check": "matches document at 2 decimals; document rounds 0.315000 to 0.32"
+  },
+  {
+   "rank": 8,
+   "id": "LR-2E",
+   "prior": 0.08,
+   "value": 3,
+   "feasibility": 0.8,
+   "score_document": 0.19,
+   "score_recomputed": 0.192,
+   "check": "matches document at 2 decimals; document rounds 0.192000 to 0.19"
+  },
+  {
+   "rank": 9,
+   "id": "GR-11",
+   "prior": 0.08,
+   "value": 2.5,
+   "feasibility": 0.7,
+   "score_document": 0.14,
+   "score_recomputed": 0.14,
+   "check": "matches document at 2 decimals"
+  },
+  {
+   "rank": 10,
+   "id": "S8-ALL",
+   "prior": 0.15,
+   "value": 2,
+   "feasibility": 0.3,
+   "score_document": 0.09,
+   "score_recomputed": 0.09,
+   "check": "matches document at 2 decimals"
+  }
+ ],
+ "ranking_order_consistent_with_recomputed_scores": true,
+ "first_wave": {
+  "items": [
+   "SLR-18",
+   "LR-IND",
+   "EG-CB68",
+   "DH-Psi2"
+  ],
+  "conditions": "every lane is CPU-only; needs neither GPU nor the A1 Lean scheduler; Lean used only at the end for small decide certificates on the Lean lane; cores assigned when Proposal 4 releases them",
+  "lanes": [
+   {
+    "lane": "W1-a",
+    "item": "SLR-18",
+    "cores": 1,
+    "budget": "30 core-h search + optional Lean",
+    "code_base": "exact gamma(v;s) kernel (Python + C)",
+    "independent_checker": "second integer checker; Lean decide per n",
+    "early_kill_measure": "search hours"
+   },
+   {
+    "lane": "W1-b",
+    "item": "LR-IND (k = 10)",
+    "cores": 1,
+    "budget": "40 core-h",
+    "code_base": "new C modular sieve, written blind to S-T code",
+    "independent_checker": "count comparison with S-T logs afterwards",
+    "early_kill_measure": "p = 127 throughput"
+   },
+   {
+    "lane": "W1-c",
+    "item": "EG-CB68",
+    "cores": 2,
+    "budget": "48 core-h, time-boxed",
+    "code_base": "new C restricted-growth search",
+    "independent_checker": "streaming certificate checker (separate program)",
+    "early_kill_measure": "cap-30/31 growth"
+   },
+   {
+    "lane": "W1-d",
+    "item": "DH-Psi2",
+    "cores": 1,
+    "budget": "60 core-h, gated on a 1% sample",
+    "code_base": "existing scripts/openai_math/hypotheses/tensor/ evaluator extended to Psi",
+    "independent_checker": "second evaluator h5_exact.py on every argmax",
+    "early_kill_measure": "1% sample"
+   }
+  ],
+  "why": "the four highest scores; four different code bases with no shared kernel (exact rational covering, modular sieve, configuration search, tensor sign enumeration) so a common-mode bug cannot hit two lanes; DH-Psi2 cannot be scooped; each has an early-measured kill criterion",
+  "cores_worst_case": 5,
+  "can_run_alongside": "C1b (core 2) once Proposal 4 lanes finish"
+ },
+ "remark_only_item": {
+  "id": "LR-Q84",
+  "status": "Tier C until audited",
+  "needs_lane": false,
+  "procedure": "Do the n <= 21 table, then a second check with an exact ML scan, then the Lean witness lemma (minutes, in the preregistration session). If it passes, write to the author. Do not publish it.",
+  "demoted": "from rank 2 to rank 5 and rescored as a remark after the elementary-attack pass"
+ },
+ "later_waves": {
+  "second_wave": [
+   "N1-ext",
+   "LR-SPEC"
+  ],
+  "third_wave": [
+   "LR-2E",
+   "GR-11",
+   "S8-ALL"
+  ],
+  "third_wave_condition": "only if a first-wave item leaves a reason to continue"
+ },
+ "declined": [
+  {
+   "item": "Brouwer's Laplacian conjecture, n = 11",
+   "why": "Proved for all graphs by Kothari-Tudose (arXiv 2606.12197, read); Lew's two refinements also proved (Lu-Yang, arXiv 2607.08452, read); a census would restate a theorem"
+  },
+  {
+   "item": "LRC for 16 runners",
+   "why": "needs a new finite-checking bound and prime computations whose cost grows roughly as p^6 (Allikvere, read); S-T estimate LRC(13) at '15 years on our original machine' (read)"
+  },
+  {
+   "item": "Erdos-Gyarfas balanced colourings, r = 6",
+   "why": "r = 5 needed 12,296 SAT cells and 5.5 TB of DRAT proofs on a 96-thread cluster (Xia-Szeider, arXiv 2610.24484, read); no SAT solver"
+  },
+  {
+   "item": "Erdos-Gyarfas for general graphs > 40, cubic > 48",
+   "why": "SAT modulo symmetries, about 30 core-days already spent (Ducoffe-Dumitru, read); no SAT solver"
+  },
+  {
+   "item": "Ramsey numbers, Erdos-Szekeres, Keller-type, Schur numbers, Hadamard maximal determinants, Golomb rulers, graceful trees, graph reconstruction at 14 vertices",
+   "why": "massive SAT or enumeration compute"
+  },
+  {
+   "item": "Autocorrelation constant C_6.2 and the Erdos minimum-overlap constant",
+   "why": "crowded (AlphaEvolve, Together AI, Stanford dual-agent SDP, Kim-Pilanci arXiv 2606.31182, read: lower bounds 1.2937 and 0.37912); lower bounds need SDP certificates and we have no SDP solver; constructions are an arms race of 1e-6 improvements"
+  },
+  {
+   "item": "Thomson N = 7, Tammes N >= 15, new sphere energy cases",
+   "why": "three-point SDP bounds (as for N = 8 by Kryvonos-Liehr-Taylor, read); no SDP solver; heavy recent AI-assisted activity"
+  },
+  {
+   "item": "3D Gaussian/Epstein lattice minimisation (fcc/bcc), 2D Lennard-Jones lattice thresholds",
+   "why": "Luo-Wei have the 3D Yukawa result (arXiv 2610.31456, read) and cite arXiv 2609.17356 and JEMS 2025 Lennard-Jones exact solutions (both NOT read); the Yukawa check is already Proposal 4 M3"
+  },
+  {
+   "item": "The OEIS Open set (492 conjectures)",
+   "why": "about 30% resolved by generic LMs at $50 each (Adamczewski, arXiv 2608.11941, read); authors say conjectures are 'of uncertain mathematical significance'; heavily mined"
+  },
+  {
+   "item": "Erdos-problems database (FrontierMath Erdos, 68 open)",
+   "why": "famous, heavily attacked by frontier labs; finite cases left are rarely decidable by our compute"
+  },
+  {
+   "item": "'Verify up to a larger bound' number theory (Erdos-Mollin-Walsh, Erdos ternary digits, ...)",
+   "why": "only a restatement with a larger number; low value per core-hour"
+  },
+  {
+   "item": "Graffiti or Wagner-style RL refutations at large n",
+   "why": "search-based groups do this faster (Roucairol-Cazenave, read); only the exhaustive n = 11 niche (GR-11) is kept"
+  },
+  {
+   "item": "Polyhedral Schurian graphs at 17 vertices",
+   "why": "needs plantri, not installed; nothing is installed for a scouting study"
+  },
+  {
+   "item": "Anything framed as solving a famous conjecture (Cohn-Kumar in 2D, Kakeya, Navier-Stokes, ETH, Sendov, Hadwiger-Nelson, the full LRC)",
+   "why": "out of scope by our code of conduct; our corollary-level work on these is already published and scoped"
+  }
+ ],
+ "not_claimed": [
+  "no breakthrough",
+  "upper bounds on gamma_sh are not exact values",
+  "a computational range is not an answer to a 'for all n' question",
+  "an independent re-run is not a new theorem",
+  "the LR-Q84 argument is a remark for the author, not a discovery",
+  "Tier C enumerations are not Lean proofs"
+ ],
+ "ethics": [
+  "public data only; licences recorded",
+  "the repository is PUBLIC: no third-party full texts committed; sha256 and licences recorded in papers instead",
+  "AI disclosure: the proposal was drafted by an AI agent (Claude) as a scouting study; no person has reviewed it"
+ ],
+ "audit_notes_from_preregistration_writer": {
+  "arithmetic_mismatches": [],
+  "arithmetic_note": "all ten scores reproduce at two decimals; DH-Psi2 is 0.432 (document 0.43), LR-SPEC 0.315 (document 0.32, rounded half up), LR-2E 0.192 (0.19)",
+  "document_inconsistencies_flagged": [
+   "Section 0 states prior p ranges 0.05 to 0.4, but LR-Q84 has p = 0.8 and the SLR-18 sub-range prior is 0.6",
+   "Value scale is stated 1-5, but LR-Q84 has v = 0.5 and DH-Psi2 has v = 1.2 (below the scale minimum)",
+   "LR-Q84 text says the question was posed 'eight days before this study'; Zhang v3 is dated 2026-10-18 and the study 2026-10-27 (nine days)",
+   "Sections 2.1-2.10 are in discussion order, not rank order (2.2 is rank 5), as the document itself notes",
+   "Document header says 'Nothing in it has been attempted'; the LR-Q84 argument was checked by hand once (Tier C until audited)"
+  ],
+  "all_values_copied_from_document": true
+ },
+ "reading_log_pointer": "docs/studies/MATH_SCOUT_2026-10-27.md",
+ "sources_read_summary": [
+  {
+   "title": "Coloopless zonotopes and counterexamples to the Shifted Lonely Runner Conjecture",
+   "authors": "Blanco, Criado, Santos",
+   "id": "arXiv 2603.24784 v4",
+   "date": "2026-10-24",
+   "depth": "read (full text or selected pages, alphaXiv PDF text)"
+  },
+  {
+   "title": "More (shifted) runners, less loneliness",
+   "authors": "Poliakova",
+   "id": "arXiv 2609.23952 v1",
+   "date": "2026-09-20",
+   "depth": "read (full text or selected pages, alphaXiv PDF text)"
+  },
+  {
+   "title": "Tight instances of the Lonely Runner Conjecture: one-entry modifications and the growth of speeds",
+   "authors": "Zhang",
+   "id": "arXiv 2608.13599 v3",
+   "date": "2026-10-18",
+   "depth": "read (full text or selected pages, alphaXiv PDF text)"
+  },
+  {
+   "title": "Fourteen and fifteen lonely runners",
+   "authors": "Allikvere",
+   "id": "arXiv 2609.02604 v2",
+   "date": "2026-09-24",
+   "depth": "read (full text or selected pages, alphaXiv PDF text)"
+  },
+  {
+   "title": "Eleven, twelve, and thirteen lonely runners",
+   "authors": "Sungkawichai, Trakulthongchai",
+   "id": "arXiv 2604.23906 v2",
+   "date": "2026-09-01",
+   "depth": "read (full text or selected pages, alphaXiv PDF text)"
+  },
+  {
+   "title": "A 60-Vertex Lower Bound for Cubic Bipartite Counterexamples to the Erdos-Gyarfas Conjecture",
+   "authors": "Tranquilli",
+   "id": "arXiv 2608.02675 v1",
+   "date": "2026-08-02",
+   "depth": "read (full text or selected pages, alphaXiv PDF text)"
+  },
+  {
+   "title": "Towards a more structured search for Erdos-Gyarfas counter-examples",
+   "authors": "Ducoffe, Dumitru",
+   "id": "arXiv 2609.28594 v1",
+   "date": "2026-09-23",
+   "depth": "read (full text or selected pages, alphaXiv PDF text)"
+  },
+  {
+   "title": "Odd denominators in the Lonely Runner spectrum for six speeds",
+   "authors": "Cordella",
+   "id": "arXiv 2609.03444 v2",
+   "date": "2026-09-08",
+   "depth": "read (full text or selected pages, alphaXiv PDF text)"
+  },
+  {
+   "title": "Energy minimization for eight points on the sphere",
+   "authors": "Kryvonos, Liehr, Taylor",
+   "id": "arXiv 2609.22077 v1",
+   "date": "2026-09-18",
+   "depth": "read (full text or selected pages, alphaXiv PDF text)"
+  },
+  {
+   "title": "Refutation of Spectral Graph Theory Conjectures with Search Algorithms",
+   "authors": "Roucairol, Cazenave",
+   "id": "arXiv 2409.18626 v1",
+   "date": "2024-09-27",
+   "depth": "read (full text or selected pages, alphaXiv PDF text)"
+  },
+  {
+   "title": "Dyadic triangular Hilbert transform paper (our own, local file lines 255-300)",
+   "authors": "Callens (SocrateAI Lab)",
+   "id": "papers/dyadic_triangular_hilbert/dyadic_triangular_hilbert.tex; Zenodo 10.5281/zenodo.23232389",
+   "date": "published",
+   "depth": "read (local)"
+  },
+  {
+   "title": "N1 record (our own, local file lines 50-125)",
+   "authors": "Callens (SocrateAI Lab)",
+   "id": "results/proposal3/2026-10-26/N1/CLASSIFICATION.md; Zenodo 10.5281/zenodo.23667863",
+   "date": "2026-10-26",
+   "depth": "read (local)"
+  }
+ ],
+ "seen_but_not_read": [
+  "AlphaEvolve problem list (Georgiev, Gomez-Serrano, Tao, Wagner, arXiv 2511.02864)",
+  "Luo-Wei, On Sarnak-Stroembergsson conjecture, arXiv 2609.17356",
+  "Luo-Wei, Lennard-Jones exact solutions (JEMS 2025)",
+  "Muratov-Novaga, arXiv 2610.29732",
+  "Fan-Sun, Amending the Lonely Runner Spectrum Conjecture (EJC 2026): must be pinned before LR-SPEC",
+  "Goddyn-Wong 2006",
+  "Liu 2008 survey (used as quoted by Zhang in LR-Q84; direct exact check mandatory)",
+  "AutoGraphForge, arXiv 2609.03478: must be read before GR-11",
+  "Kryvonos-Liehr-Taylor repository: must be read before S8-ALL",
+  "Malikiosis-Santos-Schymura (FMS 2025)",
+  "Criado's repository and verify_solution.py",
+  "O'Keefe-Wong 1980: must be pinned before EG-CB68",
+  "Garcia, arXiv 2609.04686",
+  "Written on the Wall and the Aouchiche-Hansen 2010 survey: must be pinned before GR-11",
+  "Wikipedia on the Erdos-Gyarfas conjecture",
+  "Quanta Magazine, 2026-03-06, lonely runner",
+  "Kirchweger-Szeider SMS",
+  "FrontierMath Erdos, arXiv 2609.25050",
+  "Erdos-Mollin-Walsh check, arXiv 2609.25011"
+ ]
+}

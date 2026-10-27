@@ -29,6 +29,22 @@ SECRET = re.compile(r"ghp_[A-Za-z0-9]{30}|github_pat_[A-Za-z0-9_]{20}|hf_[A-Za-z
 DRY = "--dry-run" in sys.argv
 
 
+def load_token():
+    """Use GH_TOKEN from the environment, else a least-privilege GH_PR_TOKEN from ~/.token_workflow_token (never printed)."""
+    if os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN"):
+        return True
+    path = os.path.expanduser("~/.token_workflow_token")
+    try:
+        for line in open(path):
+            m = re.match(r"\s*(?:export\s+)?GH_PR_TOKEN\s*[=:]\s*[\"']?([A-Za-z0-9_]+)", line)
+            if m:
+                os.environ["GH_TOKEN"] = m.group(1)
+                return True
+    except OSError:
+        pass
+    return False
+
+
 def gh(*args, check=False):
     r = subprocess.run(["gh", *args], capture_output=True, text=True, timeout=300)
     if check and r.returncode != 0:
@@ -124,6 +140,9 @@ def process(repo):
 def main():
     if os.path.exists(os.path.join(OPS, "PAUSE")):
         log(action="paused", reason="~/ops/PAUSE exists")
+        return
+    if not load_token():
+        log(action="no-auth", reason="no GH_TOKEN and no GH_PR_TOKEN in ~/.token_workflow_token: add a fine-grained token (pull requests: write, contents: read) scoped to the two repos")
         return
     for repo in REPOS:
         try:

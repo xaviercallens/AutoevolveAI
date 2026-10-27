@@ -19,9 +19,14 @@ LEAN = DATA / "lean"
 TOOLCHAIN = ("Lean 4.34.1 + Mathlib d13f23b7 through scripts/certified_numerics/lean_pinned.py (modules import "
              "Mathlib.Tactic and Mathlib.Algebra.BigOperators.Fin; no import Mathlib)")
 ALLOW = ["propext", "Classical.choice", "Quot.sound"]
-STATUS = ("producer-checked by the C1 lane; leanchecker replay rc 0 for Richter11 and Controls "
-          "(data/logs/leanchecker_replay.json); NO independent audit exists at writing (producer != verifier recompile "
-          "pending); no human audit of statement adequacy; no statement lock")
+STATUS = ("producer-checked by the C1 lane; independent AI-agent audit (papers/p4_amplifier_census/AUDIT.md, ACCEPT_WITH_CORRECTIONS) recorded; "
+          "producer leanchecker replay rc 0 for Richter11 and Controls (data/logs/leanchecker_replay.json); auditor replay rc 0 for "
+          "Core, DataR11, DataP11, Richter11 and Controls (data/leanchecker_replay_audit.json); no human audit of statement adequacy; "
+          "no statement lock")
+AI_AUDIT = {"auditor": "independent AI audit agent (producer != verifier), 2026-10-27", "human": False,
+            "report": "papers/p4_amplifier_census/AUDIT.md", "verdict": "ACCEPT_WITH_CORRECTIONS",
+            "kernel_replay": "papers/p4_amplifier_census/data/leanchecker_replay_audit.json (Core, DataR11, DataP11, Richter11, Controls: rc 0)",
+            "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"}
 SRC_COMMIT = "25eacb7c37b7ebb54b53792cae13283a493e7bdf"
 
 
@@ -42,8 +47,11 @@ def fref(p: Path) -> dict:
 
 
 def rec(cid: str, tier: str, kind: str, statement: str, depends: list[str], ev: dict) -> dict:
-    return {"schema_version": 1, "id": cid, "statement": statement, "tier": tier, "kind": kind,
-            "depends_on": depends, "evidence": blob(ev), "audit": None}
+    r = {"schema_version": 1, "id": cid, "statement": statement, "tier": tier, "kind": kind,
+         "depends_on": depends, "evidence": blob(ev), "audit": None}
+    if tier == "A":
+        r["ai_audit"] = AI_AUDIT
+    return r
 
 
 def axioms_from(path: Path, names: list[str]) -> list[str]:
@@ -63,8 +71,9 @@ def lean_ev(names: list[str], transcript: str, srcs: list[str]) -> dict:
     return {"kind": "lean_axioms", "toolchain": TOOLCHAIN,
             "axiom_output": axioms_from(DATA / "logs" / transcript, names), "allowlist": ALLOW,
             "compile_transcript": fref(DATA / "logs" / transcript), "sources": [fref(LEAN / s) for s in srcs],
-            "leanchecker_replay": fref(DATA / "logs" / "leanchecker_replay.json"), "status": STATUS,
-            "statement_adequacy": "not audited by a human; no independent AI audit at writing"}
+            "leanchecker_replay": fref(DATA / "logs" / "leanchecker_replay.json"),
+            "leanchecker_replay_audit": fref(DATA / "leanchecker_replay_audit.json"), "status": STATUS,
+            "statement_adequacy": "not audited by a human; independent AI audit (AUDIT.md, ACCEPT_WITH_CORRECTIONS) read the statements"}
 
 
 def cite(source: str, where: str, text: str) -> dict:
@@ -123,14 +132,15 @@ def main() -> int:
                  "allowlist": ALLOW, "compile_transcript": fref(DATA / "logs" / "lean_controls.json"),
                  "rejections": [fref(DATA / "logs" / "lean_controls_mustfail.json")],
                  "sources": [fref(LEAN / "Controls.lean"), fref(LEAN / "ControlsMustFail.lean")],
-                 "status": STATUS, "statement_adequacy": "not audited by a human; no independent AI audit at writing"}),
+                 "leanchecker_replay_audit": fref(DATA / "leanchecker_replay_audit.json"), "status": STATUS,
+                 "statement_adequacy": "not audited by a human; independent AI audit (AUDIT.md, ACCEPT_WITH_CORRECTIONS) read the statements"}),
         # ------------------------------------------------------------------ L
         rec("AMC-L-0001", "L", "citation",
             "Allen et al. (arXiv 1906.01036v1 = PLoS Comput. Biol. 16(1):e1007529): model (connected undirected "
             "unweighted graph without loops, death-Birth updating, one mutant at a uniformly random vertex, fitness "
             "r = 1 + delta), coalescence-time equations (5), remeeting times (6), identity (7), N_eff = sum pi_i tau_i "
             "(9), and the definition: G is an amplifier of weak selection iff N_eff > N, a suppressor iff N_eff < N.",
-            [], cite("arXiv:1906.01036v1", "pp. 5, 7-8",
+            [], cite("arXiv:1906.01036v1", "definitions on v1 pp. 6 and 8 (published PLoS version pp. 4-6; eqs. (5)-(9) and the definitions identical, checked by the auditor)",
                      "Criterion pinned from the primary source in the C1 session (RESULT.md, Method)")),
         rec("AMC-L-0002", "L", "citation",
             "Allen et al. eq. (8): rho_G(1+delta) = 1/N + delta (N_eff - 2)/(2N) + O(delta^2); hence N_eff > N implies "
@@ -153,7 +163,7 @@ def main() -> int:
             "integer system 2 k_i k_j * eq. (5); inverse of I - M is non-negative so the residual bounds the error "
             "(|tau - t/2^30| <= eps tau_max); exclusion only if N_eff_hat + eps tau_max < N in exact integers; every "
             "non-excluded graph (exactly the regular graphs) solved with Fractions. Largest eps 5.9e-8; smallest "
-            "certified gap among non-regular graphs 0.0174 (N = 9). NOT kernel-checked.",
+            "certified gap among non-regular graphs at least 0.0173 (N = 9; exactly 13/748). NOT kernel-checked. Independent AI-audit recheck (exact modular Gauss-Jordan + CRT, no floats): all graphs N = 3..9 and a 20,177-graph sample at N = 10 agree on every count. The enclosure script now asserts finiteness and |t| < 2^50 (added after the run, audit item 11).",
             ["AMC-C-0001", "AMC-L-0001"],
             arg("C-exact-integer", "Enclosure argument is a hand proof implemented in Python (code/census_enclosure.py, "
                 "code/finish_candidates.py).", census_files, "Python 3.11 integer/Fraction arithmetic, numpy LAPACK as proposer")),
@@ -173,22 +183,24 @@ def main() -> int:
             "Nearest non-regular graphs: for N = 4..10 the non-regular graph with the smallest certified gap N - N_eff "
             "is nearly complete (even N: K_N minus one edge; odd N: K_N minus a maximum matching; e.g. 173/45 at N = 4, "
             "291/49 at N = 6, 2653/333 at N = 8, 719/146 at N = 5, 5038/723 at N = 7); the certified lower bounds on "
-            "the gap are 0.1556, 0.0753, 0.0612, 0.0318, 0.0330, 0.0174, 0.0207. Observation for N <= 10; no proof "
-            "for general N. The N_eff values of the odd/even cases at N = 9, 10 are floating-point readings "
+            "the gap (rounded down) are 0.1555 (7/45), 0.0753, 0.0612, 0.0318, 0.0330, 0.0173 (13/748), 0.0207 (13/627). Observation for N <= 10; no proof "
+            "for general N. The exact N_eff values at N = 9, 10 are 6719/748 and 6257/627 (audit recheck); the census files hold floating-point readings "
             "(8.98262, 9.97927).",
             ["AMC-C-0002"], arg("C-exact-integer", "nonregular_nearest_to_N in each census file (field gap_upper is a lower "
                                 "bound on N - N_eff; the name is a misnomer).", census_files, "Python census_enclosure.py")),
         rec("AMC-C-0006", "C", "argument",
             "Exact-chain slope control: d rho/dr at r = 1 of the exact 2^N-2 state death-Birth chain equals "
-            "(N_eff - 2)/(2N) on every connected graph with N = 3..6 and on every 40th graph with N = 7 (163 graphs); "
+            "(N_eff - 2)/(2N) on every connected graph with N = 3..6 and on 22 graphs (every 40th) at N = 7, i.e. on 163 graphs in total (141 with N = 3..6 plus 22); "
             "the edge identity N_eff = 1 + (1/m) sum_{ij in E} tau_ij and Allen eq. (7) hold on all 994 connected graphs "
             "with 3 <= N <= 7. This checks the transcription of the criterion, not eq. (8) itself for larger N.",
             ["AMC-L-0002"], arg("C-exact-fraction", "controls.json entries", [d / "controls.json"], "code/dbcore.py, code/controls.py")),
         rec("AMC-C-0007", "C", "argument",
             "Allen eq. (3) as printed in arXiv v1 (cycle fixation probability with r^{-(N-1)}) disagrees with the exact "
             "chain in 25 of 25 cases; three other sources (Kaveh et al. eq. (20) at d = 1, Hindersin-Traulsen SI eq. "
-            "(18), Richter eq. (12): 2(r-1)/(3r-1+(r-3)r^{2-N})) agree with the chain. Presented neutrally; not "
-            "confirmed with the authors; the criterion eq. (9) used here does not depend on eq. (3).",
+            "(18), Richter eq. (12): 2(r-1)/(3r-1+(r-3)r^{2-N})) agree with the chain. arXiv v1 misprints the exponent; "
+            "the published version (PLoS Comput. Biol. 16(1):e1007529, Eq. (3)) prints r^{-(N-3)} and agrees with the exact "
+            "chain (independent AI audit: C4, C5, C6 at r = 5/4 and 3/4, 6/6 cases). Not an open discrepancy; the "
+            "criterion eq. (9) used here does not depend on eq. (3).",
             [], arg("C-exact-fraction", "controls.json: cycle formula entries", [d / "controls.json"], "code/dbcore.py, code/controls.py")),
         rec("AMC-C-0008", "C", "argument",
             "Other controls (positive): K_N and C_N have N_eff = N; star S_n has N_eff = 4n/(n+1) for n = 2..9; dB and Bd "
@@ -210,22 +222,26 @@ def main() -> int:
         rec("AMC-C-0010", "C", "argument",
             "Unexplained discrepancy: Richter prints tau_max = 17.6997 for the N = 11 parent and 18.2911 for the N = 12 "
             "cubic example; the exact values here are 10066/569 = 17.69069 and 23648139127685/1292664631282 = 18.29410. "
-            "The N_eff values agree to the printed digits. Could be a typo or a convention difference; not raised with "
-            "the author; no second independent check.",
+            "The N_eff values agree to the printed digits. Independent AI audit confirmed the parent values (10066/569 at vertex 9; "
+            "18.294102) and ruled out that Richter printed the perturbed graph's value (max tau_i = 20.158191 on R11, 22.067125 on the "
+            "N = 12 amplifier). Cause still unexplained; not raised with the author.",
             ["AMC-C-0009"], arg("C-exact-fraction", "richter_reproduction.json (tau_max fields)", [d / "richter_reproduction.json"],
                                 "code/richter.py")),
         rec("AMC-C-0011", "C", "argument",
             "Finite-r signs on the N = 11 graph (J?ouPjI[@i?) against K_11 via exact-rational a-posteriori residual "
             "bounds on the 2046-state chain: rho_G - rho_K > 0 at r = 10001/10000 and 2501/2500; < 0 at 2499/2500 and "
             "1001/1000; error bound <= 3.3e-14 against differences of 3e-9 to 2e-8; T_max <= 242.43. The method was "
-            "validated on the star S_5 at r = 5/4 and 1001/1000. Python Fractions, not kernel-checked.",
+            "validated on the star S_5 at r = 5/4 and 1001/1000. Python Fractions, not kernel-checked. Independent AI audit "
+            "reproduced the signs with its own 2046-state exact chain (error bounds <= 7.4e-28), and certified (+) also at r = 1251/1250 "
+            "(7.826e-10) and 16013/16000.",
             ["AMC-A-0002"], arg("C-exact-rational", "fixation_cert_richter_n11.json", [d / "fixation_cert_richter_n11.json"],
                                 "code/fixation_cert.py (Python Fractions; python-flint not installed)")),
         rec("AMC-C-0012", "C", "argument",
             "Bisection of the sign of rho_G - rho_K between r = 1.0007 (positive) and r = 1.00085 (negative) gives a "
-            "certified sign change in [10248431/10240000, 4099373/4096000] = [1.00082334, 1.00082349]; the signs along "
+            "certified sign change in [10248431/10240000, 4099373/4096000] = [1.00082333, 1.00082349] (decimals rounded outward; the exact lower end is 1.000823339844); the signs along "
             "the bisection are alternately positive and negative, each certified. Existence of at least one change in "
-            "the bracket is certified; uniqueness of the crossing is not shown.",
+            "the bracket is certified; uniqueness of the crossing is not shown. Richter states r_max about 1.00075 (text p. 8 and Fig. 1 caption), "
+            "the same crossing; the certified (+) signs at 1.0007-1.0008125 and this bracket contradict that value (cause not investigated).",
             ["AMC-C-0011"], arg("C-exact-rational", "window_richter_n11.json", [d / "window_richter_n11.json"], "code/window_bisect.py")),
         rec("AMC-C-0013", "C", "argument",
             "For all 212 connected non-complete regular graphs with 4 <= N <= 10, rho_G(r) < rho_{K_N}(r) is certified "
@@ -246,8 +262,8 @@ def main() -> int:
         # ------------------------------------------------------------------ X
         rec("AMC-X-0001", "X", "numeric",
             "Floating-point ratios rho_G/rho_K - 1 of order 1e-8 to 1e-10 at the evaluated r, and the reading that G is "
-            "above K on (1, about 1.0008) and below it for r slightly larger; Richter reads r_max about 1.00075 off a "
-            "figure. Extrapolation between certified points; supports nothing by itself.",
+            "above K on (1, about 1.0008) and below it for r slightly larger; Richter states r_max about 1.00075, which is inconsistent with the certified bracket (AMC-C-0012). "
+            " Extrapolation between certified points; supports nothing by itself.",
             [], num([d / "window_richter_n11.json"], "ratio_hat fields of the bisection steps; not a certificate")),
         rec("AMC-X-0002", "X", "numeric",
             "Repository guards were NOT run for this paper (antigravity_guard.py, test_rigor_guard.py, pytest tests/): "

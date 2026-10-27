@@ -84,7 +84,10 @@ def process(adj: np.ndarray, n: int, pairs: list[tuple[int, int]], qj: np.ndarra
     a = a[:, :, :npairs]
     rhs = 2 * ki * kj
     x = np.linalg.solve(a.astype(np.float64), rhs.astype(np.float64)[:, :, None])[:, :, 0]
+    # Added in the audit revision, after the census run (see REVISION.md): precondition of the int64 residual (audit item 11).
+    assert np.isfinite(x).all() and np.abs(x).max() * float(1 << SCALE_BITS) < float(1 << 50), "non-finite or huge proposal: int64 residual unsafe"
     t = np.rint(x * float(1 << SCALE_BITS)).astype(np.int64)
+    assert np.abs(t).max() < (1 << 50)
     res = (rhs << SCALE_BITS) - np.einsum("bpq,bq->bp", a, t)
     e_int = np.abs(res).max(axis=1)
     x_int = t.max(axis=1)

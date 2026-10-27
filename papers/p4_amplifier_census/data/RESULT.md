@@ -25,8 +25,8 @@ tissue graph was studied in this run.
    and at r = 2501/2500. ρ_G(r) < ρ_{K_11}(r) holds at r = 2499/2500 and at r = 1001/1000. Each sign
    comes from an exact-rational residual bound on the 2046-state chain, with error ≤ 3.3e-14 against
    differences of 3e-9 to 2e-8.
-   - A certified sign change of ρ_G − ρ_K lies in r ∈ [1.00082334, 1.00082349].
-   - Richter reads "r_max ≈ 1.00075" off his figure.
+   - A certified sign change of ρ_G − ρ_K lies in r ∈ [1.00082333, 1.00082349] (decimals rounded outward in the audit revision; exact [10248431/10240000, 4099373/4096000]).
+   - Richter states "r_max ≈ 1.00075" (text p. 8 and Fig. 1 caption). The certified (+) signs at 1.0007-1.0008125 contradict it (audit revision; cause not investigated).
    - We certify signs only at the evaluated points, not that there is exactly one crossing.
 
 ## Method
@@ -104,7 +104,7 @@ tissue graph was studied in this run.
   https://oeis.org/A005177/list in this session, so none was missing.
 - **Star S_n, n = 2..9.** N_eff = 4n/(n+1) exactly (Allen p. 9).
 - **Eq. (8) slope check.** dρ/dr at r = 1 from the exact 2^N-state chain equals (N_eff − 2)/(2N). This
-  holds on every connected graph with N = 3..6 and on every 40th graph with N = 7 (163 graphs), and it
+  holds on every connected graph with N = 3..6 and on 22 graphs (every 40th) at N = 7, i.e. on 163 graphs in total (141 with N = 3..6 plus 22) [corrected in the audit revision; the original text attached 163 to N = 7 alone], and it
   validates our transcription of the criterion independently.
 - **Closed forms vs the exact chain.** Checked at r ∈ {3/4, 5/4, 3/2, 7/4, 1001/1000} for N = 3..7:
   - dB and Bd on K_N;
@@ -198,7 +198,7 @@ consistent with these graphs being reducers near r = 1, but it is **not** a proo
 | N_eff > N ⇒ ρ_G > ρ_K for r ∈ (1, b) and ρ_G < ρ_K for r ∈ (a, 1) (Allen eq. 8 + p. 8–9) | L (arXiv 1906.01036v1 pp. 8–9, 32–34); C evidence: exact-chain slope control |
 | Census N ≤ 10: no N_eff > N; regular ⇔ N_eff = N | C (depends on geng completeness + OEIS count check + Python exact-integer enclosure; NOT kernel-checked) |
 | Smallest dB amplifier of weak selection has N = 11 | C (inherits the census' Tier C) + A (existence at 11) |
-| Transient amplification of R11 at r = 1.0001, 1.0004; suppression at 0.9996, 1.001; sign change in [1.00082334, 1.00082349] | C (exact-rational residual bounds in Python, outside the kernel) |
+| Transient amplification of R11 at r = 1.0001, 1.0004; suppression at 0.9996, 1.001; sign change in [1.00082333, 1.00082349] | C (exact-rational residual bounds in Python, outside the kernel) |
 | Regular graphs N ≤ 10 below K_N at r = 0.999, 1.001 | C |
 | Allen eq. (3) cycle formula as printed in arXiv v1 is a misprint (3 concordant sources + exact chain) | C; not confirmed with the authors |
 | Richter 2020 τ_max values (17.6997, 18.2911) differ from our exact 17.69069, 18.29406 (unexplained discrepancy; N_eff agrees) | C; no second independent check yet |
@@ -287,7 +287,7 @@ consistent with these graphs being reducers near r = 1, but it is **not** a proo
   Nothing here transfers to it.
 - Only unweighted, undirected and simple graphs were studied. The weighted transient amplifiers of Allen
   et al. (Fans, Separated Hubs) are out of scope.
-- No human or independent-agent audit has been done yet. The producer ≠ verifier recompile is pending.
+- [Updated in the audit revision] An independent AI audit (AUDIT.md, ACCEPT_WITH_CORRECTIONS) and a producer ≠ verifier recompile and kernel replay (data/leanchecker_replay_audit.json, rc 0 on five modules) now exist. There is still no human audit and no statement lock.
 
 ## What is NOT claimed
 

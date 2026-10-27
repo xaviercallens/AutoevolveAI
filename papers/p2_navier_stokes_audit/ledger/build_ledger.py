@@ -224,7 +224,9 @@ def main() -> int:
             "are a second driver of one kernel, not an independent kernel; (ii) Mathlib 85e3a25e and its dependencies were reused and trusted, neither "
             "rebuilt nor replayed; (iii) the diff of the challenge file against google-deepmind/formal-conjectures@8bf45ed (and whether the pinned "
             "openai/NavierStokesAndEuler@8937a8f referred to by the upstream index equals f9e8bc5b) was not done; (iv) the mathematics of the proof "
-            "was not refereed by people by us, and the natural-language papers were not checked; (v) the Lean kernel and toolchain are trusted; "
+            "was not refereed by people by us, and the natural-language papers were not checked; statement identity is checked against the corpus's "
+            "challenge file and statement fidelity is judged against Fefferman's text, not against OpenAI's natural-language papers, and no claim "
+            "is made that the Lean statements or development match those papers (clarified in v1.2); (v) the Lean kernel and toolchain are trusted; "
             "(vi) statement fidelity is a human judgement, made here by AI agents, and no person has audited any statement.",
             ["P2NS-A-0001", "P2NS-A-0002", "P2NS-A-0003", "P2NS-A-0004"],
             arg([A2 / "REBUILD.md", A2 / "SOUNDNESS_SCAN.md", A2 / "AXIOMS.md"], "Trust base sections of REBUILD.md, SOUNDNESS_SCAN.md and AXIOMS.md.")),

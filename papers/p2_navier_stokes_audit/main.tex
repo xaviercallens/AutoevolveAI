@@ -34,13 +34,13 @@
 \texttt{openai/NavierStokesAndEuler} breakdown theorems\\[2pt]
 {\large (independently rebuilt and audited; this is \emph{not} a claim that a Clay problem is solved)}}
 \author{Xavier Callens (SocrateAI Lab)}
-\date{Preprint v1, 2026-10-26 \quad (not peer reviewed; no person has audited any statement)}
+\date{Preprint v1.2 (clarification only), 2026-10-27; v1 2026-10-26 \quad (not peer reviewed; no person has audited any statement)}
 \hypersetup{pdftitle={An independent rebuild, kernel replay and statement audit of the openai/NavierStokesAndEuler breakdown theorems},
   pdfauthor={Xavier Callens}}
 
 \begin{document}
 \maketitle
-\begin{center}\small doi:10.5281/zenodo.23661381 \quad (not peer reviewed)\end{center}
+\begin{center}\small New version of doi:10.5281/zenodo.23661381 (v1.2, clarification only; no result changed) \quad (not peer reviewed)\end{center}
 
 
 \noindent\textbf{AI-assistance disclosure.} This preprint, the scripts, scans and Lean probe files it reports on, and the claim ledger were
@@ -73,6 +73,11 @@ it agrees with H9 on every row \tg{X}{0010}. \textbf{Not established:} Comparato
 not re-checked; the diff of the challenge file against \texttt{formal-conjectures@8bf45ed} is open; the proof's mathematics was not refereed by people; the Lean kernel
 and toolchain are trusted; statement fidelity is a human judgement, made here by AI agents \tg{C}{0007}. Conditionally on fidelity and on the soundness of Lean and
 Mathlib, the formal object proves Fefferman's alternative~(C); that is not a Clay determination \tg{C}{0005}.
+\textbf{Scope (clarified in v1.2).} The Navier--Stokes theorems audited are the forced breakdown alternative~(C) and, with the errata's periodic-pressure
+condition, (D); they do not address the unforced alternatives (A) or (B). Statement identity is checked against the corpus's own challenge file and
+statement fidelity is judged against Fefferman's text; neither is compared with OpenAI's natural-language papers, and we make no claim that the Lean
+statements or the Lean development match those papers. A preprint that compares the development with the Navier--Stokes paper at the commit audited here~\cite{bch}
+reports lemma-level mismatches (for example Lean estimates requiring $m+5$ input derivatives where the paper uses $m+4$) and makes no claim about the top-level statements either way \tg{C}{0007}.
 \end{abstract}
 
 \paragraph{Tiers.} Claims carry the Elenchus tiers: \tg{A}{}\,a Lean statement that is kernel-checked with axioms in
@@ -297,6 +302,7 @@ supplementary statement & \lean{exists\_compact\_smooth\_euler\_singularity}: no
 
 \paragraph{Caveat on (D): periodic pressure \tg{C}{0003}.} Requiring the pressure to be 1-periodic restricts the admissible solutions, which makes the nonexistence claim \emph{weaker} than nonexistence read against the main text of Clay's (D), where $p$ is unrestricted. The weakening is substantive: without periodic pressure a pressure
 $p=-g(t)\cdot x$ with a spatially constant flow is a classical non-uniqueness device. The Clay errata itself asks for exactly the condition (``should be made explicit in Eqn (8)''), so the Lean statement follows the official corrected statement. The errata attaches it to (8), the data hypotheses, though $p$ is an unknown; reading it as a condition on accepted solutions is the only coherent reading we found, and it is the Lean's.
+``Weaker'' here is meant only relative to a main-text-only reading of (D), because of the errata's periodic-pressure condition; against the errata-corrected (D) the Lean statement matches. It is unrelated to the lemma-level sense in which~\cite{bch} (Section~3.1) calls some Lean estimates weaker than those of OpenAI's natural-language paper.
 
 \paragraph{The (C) witness: zero data, nonzero force \tg{C}{0002}.} The proof's witness takes zero initial data and a nonzero (rescaled) force. Fefferman's (C) explicitly allows a smooth $f$ satisfying (5), so this is admissible. It also means that (C) is not the negation of (A): (A) takes $f\equiv0$. Criticism that the result is ``forced, not unforced'' is therefore not a fidelity defect against (C) as Clay states it (it would bear on (A)/(B)); that is our reading of the PDF, not a claim about the corpus's mathematics.
 
@@ -313,8 +319,9 @@ Our statement-identity test and kernel replay are different implementations of t
 \item \textbf{The kernel replay and \texttt{leanchecker} are one kernel.} They would not detect a bug in the Lean 4.34.0-rc2 kernel or toolchain, which are trusted.
 \item \textbf{Mathlib 85e3a25e and its dependencies are trusted, not re-checked.} Their oleans were reused (provenance inferred from timestamps, Section~\ref{sec:rebuild}); neither rebuilt nor replayed. Replaying Mathlib (hours, single-threaded) was not attempted.
 \item \textbf{The diff against \texttt{formal-conjectures@8bf45ed} is open.} The challenge file declares itself copied from that commit; we did not diff it. H9 reports that upstream has since renamed the directory (\texttt{Millenium} to \texttt{Millennium}) and links to \texttt{openai/NavierStokesAndEuler@8937a8f}; whether that revision equals the audited \texttt{f9e8bc5b} was not checked.
-\item \textbf{The mathematics of the proof has not been refereed by people}, by us or, to our knowledge, by anyone we could cite. We read neither of the corpus authors' papers, so nothing here compares the natural-language argument with the Lean development. H9 reports a 2026-10-06 preprint (Bastounis, Circelli, Hansen, arXiv:2610.08144) that, according to its alphaXiv text, finds intermediate Lean lemmas that differ from the natural-language paper
-(for example a derivative-count of $m+5$ against $m+4$) and does not claim the top-level statements misstate the Clay problem; we did not read it ourselves and cite it only as relayed.
+\item \textbf{The mathematics of the proof has not been refereed by people}, by us or, to our knowledge, by anyone we could cite. We read neither of the corpus authors' papers, so nothing here compares the natural-language argument with the Lean development.
+\item \textbf{Fidelity is not measured against OpenAI's natural-language papers} (clarified in v1.2) \tg{C}{0007}. Statement identity (Section~\ref{sec:ident}) is checked against the corpus's challenge file, and statement fidelity (Section~\ref{sec:fid}) is judged against Fefferman's text~\cite{fef}. We make no claim that the Lean statements or the Lean development match OpenAI's natural-language papers, so a report that the Lean verifies a weaker assertion than the natural-language paper is neither confirmed nor refuted here.
+\item \textbf{A direct reading of Bastounis, Circelli and Hansen~\cite{bch}} (read for v1.2 in the full text of v1, figures not read; v1 relayed it only through H9). It cites the corpus at commit \texttt{f9e8bc5}, the commit audited here. Section~3.1 (Example~3.1, Remark~3.2) finds Lean estimates that require $m+5$ input derivatives where Lemma~8.6 of OpenAI's Navier--Stokes paper uses $m+4$, so the Lean estimate is ``strictly weaker'' than the paper's (8.19) (a footnote adds that some such Lean results are incomparable with it). Section~3.2 (Example~3.3) finds a pressure-flux bound proved in Lean as a different bound by a different argument. Remark~3.4 says the two examples are not exhaustive. Section~3.3 does not examine the Euler formalisation but predicts that ``the likelihood of substantial mistranslations is very high'' there. The preprint makes no claim about the correctness of OpenAI's natural-language proof; its framing (Section~1, autoformalisation of type~(i); Section~3.4) takes the theorem statement as already faithfully translated, it does not examine the top-level Lean statement, and it does not discuss forcing for Navier--Stokes or Fefferman's alternatives (A)--(D). None of this bears on the rebuild, the replay or the identity test, and none of it is a top-level statement defect. Its Section~5.1 notes that AI-performed semantic verification failed in another autoformalisation project; our fidelity reading is also by AI agents (next item).
 \item \textbf{Statement fidelity is a human judgement.} Both audits are by AI agents; no person has certified that the Lean statements mean what Clay's text means. The gate flags each Tier~A row for this (Section~\ref{sec:ledger}).
 \item \textbf{\lean{leanchecker --fresh} was not run.} Re-checking the reused Mathlib subset (about 775k constants) from an empty environment was estimated at hours and attempted neither by the producer nor by the auditor.
 \item \textbf{The planted controls do not exhaust the escape space.} Each layer caught the defects planted for it; this does not show that no other kind of escape exists.
@@ -381,6 +388,7 @@ The L rows are verbatim lines of the saved extraction of the PDF; \texttt{citati
 \bibitem{corpus} OpenAI, \emph{Finite time blowup for Navier--Stokes and Euler equations}, Lean~4 formalizations, \url{https://github.com/openai/NavierStokesAndEuler} (audited commit \texttt{f9e8bc5b38b6e212696e8a30e3e91517af887bbd}); README links the authors' papers. AI-generated; to our knowledge not refereed \tg{L}{0004}.
 \bibitem{fef} C.~L.~Fefferman, \emph{Existence and smoothness of the Navier--Stokes equation}, Clay Mathematics Institute problem description (with errata), \url{https://www.claymath.org/wp-content/uploads/2022/06/navierstokes.pdf}, sha256 \texttt{c1b5f27b\ldots} \tg{L}{0001}\tg{L}{0002}\tg{L}{0003}.
 \bibitem{h9} X.~Callens (AI-assisted), \emph{H9: does the Lean statement match the Clay problem? Fefferman (C)/(D) against \texttt{navier\_stokes\_breakdown\_R3} and \texttt{\_periodic}}, AutoevolveAI \texttt{results/autoresearch/2026-10-25/H9/AUDIT.md} (2026-10-25), verdict FAITHFUL\_WITH\_CAVEATS; first statement audit, a text-only reading.
+\bibitem{bch} A.~Bastounis, F.~Circelli and A.~C.~Hansen, \emph{Navier--Stokes lost in translation -- why Lean verification of AI autoformalisation does not guarantee correct natural language proofs}, arXiv:2610.08144v1 [math.AP], 6~Oct 2026 (read directly for v1.2, text of v1; figures not read).
 \bibitem{fc} Google DeepMind, \texttt{formal-conjectures}, \url{https://github.com/google-deepmind/formal-conjectures}, commit \texttt{8bf45ed70d48b2b2a501de9c00b26bfa38c573ee}, file \texttt{FormalConjectures/Millenium/NavierStokes.lean} (as named in the corpus header; not diffed here).
 \bibitem{comparator} Lean FRO / leanprover, \emph{Comparator}, \url{https://github.com/leanprover/comparator} (the tool the corpus's \texttt{ComparatorChallenges} are written for; not run here).
 \bibitem{lean} L.~de Moura and S.~Ullrich, \emph{The Lean 4 theorem prover and programming language}, CADE-28, 2021; toolchain v4.34.0-rc2 used here.

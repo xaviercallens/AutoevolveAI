@@ -1,0 +1,66 @@
+{
+ "title": "No connected graph with at most ten vertices is an unweighted death-Birth amplifier of weak selection: an exhaustive census, and a Lean check that Richter's eleven-vertex graph is one",
+ "version": "v1",
+ "description": "<p>For death-Birth (dB) updating on a connected, simple, unweighted graph with N vertices, Allen et al. showed that the fixation probability of a single mutant of fitness 1 + &delta; is 1/N + &delta;(N<sub>eff</sub> &minus; 2)/(2N) + O(&delta;<sup>2</sup>), and called the graph an <i>amplifier of weak selection</i> if N<sub>eff</sub> &gt; N. We enumerated every connected graph with 3 &le; N &le; 10 (2, 6, 21, 112, 853, 11,117, 261,080 and 11,716,571 graphs) with nauty <code>geng</code> (counts equal to OEIS A001349) and found <b>none</b> with N<sub>eff</sub> &gt; N: every regular graph has N<sub>eff</sub> = N exactly and every other graph has N<sub>eff</sub> &lt; N; the closest non-regular graph at N = 10 lies at least 0.0207 below N, and the closest graphs are always nearly complete (K<sub>N</sub> minus an edge, or minus a maximum matching). In Lean 4 we check that on Richter's eleven-vertex graph every rational solution of Allen's coalescence system has N<sub>eff</sub> = 2668552698098/242579025123 &asymp; 11.000756 &gt; 11. Within the weak-selection criterion for unweighted graphs, the smallest dB amplifier therefore has exactly 11 vertices. The paper includes a step-by-step account for readers outside evolutionary graph theory.</p><p><b>Tier split.</b> <b>Tier A</b> (Lean 4.34.1, Mathlib; axioms within propext, Classical.choice, Quot.sound): the theorem <code>R11_amplifier</code>, the uniqueness theorem <code>eq5_unique</code> (a positive solution of the system is the only solution), the isothermal control <code>P11_isothermal</code> (N<sub>eff</sub> = 11 on the quartic parent), and kernel-decided negative controls (a perturbed certificate and a wrong graph are rejected; a planted sorry and a planted axiom are caught by the axiom audit). <b>Tier L</b>: Allen's criterion and coalescence equations, and the step from N<sub>eff</sub> &gt; N to amplification near r = 1 (their eq. (8)); taken as stated, not re-proved. <b>Tier C</b>: the census (enumeration completeness rests on geng and the OEIS count; floating-point proposals are decided by an exact integer residual bound that uses the non-negativity of the inverse of I &minus; M; the regular graphs are solved exactly with rational arithmetic) and exact-rational sign certificates for the fixation-probability difference against K<sub>11</sub> at four values of r (and a certified sign change in [1.00082334, 1.00082349]); the census is <i>not</i> kernel-checked. <b>Tier X</b>: finite-r numerics beyond the certified points.</p><p><b>Controls.</b> Positive: complete graphs, cycles and all 1, 2, 2, 5, 4, 17, 22, 167 connected regular graphs (counts equal OEIS A005177) have N<sub>eff</sub> = N; stars have N<sub>eff</sub> = 4n/(n+1); the exact-chain slope equals (N<sub>eff</sub> &minus; 2)/(2N) on all graphs with N &le; 6; Richter's N = 11 and cubic N = 12 values reproduced to the printed digits. Negative: Allen's printed eq. (3) for the cycle disagrees with the exact chain in 25 of 25 cases while three other sources agree with the chain (reported neutrally; not confirmed with the authors); a planted wrong random walk and the complete graph are rejected. An unexplained discrepancy remains in Richter's printed &tau;<sub>max</sub> values (17.6997 vs 17.69069 here), while N<sub>eff</sub> agrees.</p><p><b>What this is NOT.</b> This is mathematics of graphs and of fixation probabilities in a Moran-type model. It is <b>not</b> a statement about real tumours, tissues, patients or any medical application, and nothing here bears on diagnosis or treatment.</p><p><b>Limitations.</b> Novelty of the exhaustive statement is unchecked beyond the papers read (Allen et al., Richter 2020 and 2022, Tkadlec et al., Hindersin &amp; Traulsen, Kaveh et al., and for novelty only Svoboda et al. and Brewster et al.); unweighted graphs, dB updating, uniform initialisation and the first-order criterion only; the finite-r checks are not a proof for all r near 1; no independent audit (human or AI) exists, no statement lock; repository guards were not run; the tissue-like (r, d) plane of the preregistration was not attempted.</p><p><b>Status.</b> Produced by AI agents (Claude) under the author's direction; the author is responsible for the content. The Elenchus ledger gate exits with code 1 (0 blocking findings, 4 flags LEDGER_UNAUDITED_TIER_A, one per Tier A row).</p>",
+ "keywords": [
+  "evolutionary graph theory",
+  "death-Birth updating",
+  "amplifier of weak selection",
+  "fixation probability",
+  "exhaustive graph census",
+  "nauty geng",
+  "exact integer residual bound",
+  "Lean 4",
+  "formal verification",
+  "epistemic tiers",
+  "AI-assisted research"
+ ],
+ "notes": "Preprint v1 (2026-10-27). Proposal 4, item C1; continues the isothermal-theorem paper (doi:10.5281/zenodo.23660071). Lean: AutoevolveAI formal_cert/Programmes/AmplifierCensus/{Core,DataR11,DataP11,Richter11,Controls,ControlsMustFail}.lean (sha256 hashes in the paper), Lean 4.34.1 with the pinned toolchain via lean_pinned.py; leanchecker replay of Richter11 and Controls rc 0. Branch worktree-openai-math-discovery, HEAD at writing 25eacb7c37b7ebb54b53792cae13283a493e7bdf; the C1 outputs and this paper were uncommitted working-tree files; nothing pushed. Ledger gate: exit code 1, 0 blocking, 4 flags (papers/p4_amplifier_census/ledger/gate_output.txt). 9 pages. Limitations stated in the paper: census is Tier C, novelty unchecked beyond the papers named, scope (unweighted, dB, weak selection, uniform initialisation), finite-r checks not proofs for all r near 1, no independent audit, no statement lock, repository guards not run, C1x not attempted. Not a medical or biological claim. The graph6 files of the N <= 10 census are not bundled (sha256 in data/result.json).",
+ "related_identifiers": [
+  {
+   "identifier": "10.5281/zenodo.23660071",
+   "relation": "continues",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "arXiv:1906.01036",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:2008.01446",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:2204.12861",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:1906.02785",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:1504.03832",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:1411.4556",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:2401.14914",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:1910.09336",
+   "relation": "references",
+   "scheme": "arxiv"
+  }
+ ]
+}

@@ -20,11 +20,16 @@ TOOLCHAIN = ("Lean 4.34.1 + Mathlib through scripts/certified_numerics/lean_pinn
              "Programmes.ZeroPointPhys.Basic; no import Mathlib)")
 ALLOW = ["propext", "Classical.choice", "Quot.sound"]
 STATUS = ("producer-checked by the M1 lane; leanchecker replay rc 0 for Programmes.ZeroPointDipolar.Basic (data/replay.json, run by the "
-          "producer, default mode, imports trusted); NO independent audit (AI or human) exists at writing; independent kernel replay "
-          "and independent re-run of the certificates owed; no statement lock")
-ADEQ = ("not audited by anyone other than the producer; the final theorems are conditional on the non-kernel inputs (hEU, h0, hd1, hd2, hK, hM, hsym), "
+          "producer, default mode, imports trusted); an independent AI audit (separate agent instance, producer != verifier, AUDIT.md, ACCEPT_WITH_CORRECTIONS) re-ran the kernel replay (leanchecker rc 0, five modules) "
+          "and recomputed E(0), E''(0) by two independent Tier X methods but did NOT independently re-derive the M enclosures; no human audit exists; no statement lock")
+ADEQ = ("AI-audited (AUDIT.md) but not by any person; the final theorems are conditional on the non-kernel inputs (hEU, h0, hd1, hd2, hK, hM, hsym), "
         "which are the Tier C inputs of the paper")
-SRC_COMMIT = "28a1ac0b8d53e59d489b8e5821c956c395ff0729 (M1 results and Lean files uncommitted in the tree)"
+SRC_COMMIT = "28a1ac0b8d53e59d489b8e5821c956c395ff0729 (contains the 46 M1 result/code files and the three Lean files; paper committed later in 4094011)"
+AI_AUDIT = {"auditor": "independent AI audit agent (separate instance, producer != verifier), 2026-10-28", "human": False,
+            "report": "papers/p4_zero_point_dipolar/AUDIT.md", "verdict": "ACCEPT_WITH_CORRECTIONS",
+            "scope": "own brute-force and Ewald numerics (Tier X) agree with all seven enclosures; own Lean rebuild, leanchecker rc 0 on five modules; escape-hatch grep",
+            "not_scope": "did NOT independently re-derive the M enclosures (producer Tier C-ball, depends on N2 certifier)",
+            "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"}
 CERT_SHA = "360ebbcbb9b958ee6eefbc3a03f07856800b1a88dfb9984c4ade8edc2811b929"
 
 
@@ -45,8 +50,12 @@ def fref(p: Path) -> dict:
 
 
 def rec(cid: str, tier: str, kind: str, statement: str, depends: list[str], ev: dict) -> dict:
-    return {"schema_version": 1, "id": cid, "statement": statement, "tier": tier, "kind": kind,
-            "depends_on": depends, "evidence": blob(ev), "audit": None}
+    r = {"schema_version": 1, "id": cid, "statement": statement, "tier": tier, "kind": kind,
+         "depends_on": depends, "evidence": blob(ev), "audit": None}
+    if tier == "A":
+        r["ai_audit"] = AI_AUDIT
+    return r
+
 
 
 def axioms_from(path: Path, names: list[str]) -> list[str]:
@@ -148,9 +157,9 @@ def main() -> int:
         rec("ZPD-C-0002", "C", "argument",
             "The Ewald split certificate: r^-3 and the dipole as Gaussian mixtures split at alpha = 1/10 (the dipole mixture split as a whole). Short part in real space "
             "with incomplete-gamma closed forms (completely monotone, majorant C_j exp(-alpha q), q >= 1) and N2's shell tail lemma at Qmax 300 (r_tail 18.64, 537 half-lattice pairs; tail balls about 4e-11 on B, 1.1e-3 on the worst second partial). "
-            "Long part in reciprocal space with the exact transform Vh_3(x) = 4 sqrt(pi alpha) exp(-x^2/(4 alpha)) - 2 pi x erfc(x/(2 sqrt alpha)); dipole series truncated at m = 6 with Cramer-Hermite remainder at most 6.8e-25 (d=1/10) and 4.3e-15 (d=1/2); "
+            "Long part in reciprocal space with the exact transform Vh_3(x) = 4 sqrt(pi alpha) exp(-x^2/(4 alpha)) - 2 pi x erfc(x/(2 sqrt alpha)); dipole series truncated at m = 6 with Cramer-Hermite remainder at most 6.8e-25 (d=1/10) and 4.3e-15 (d=1/2), 1.2e-14 (d=5373/10000); "
             "G0 = 0 term and (for s >= 1/4) the first shell exact; the rest by Cauchy-estimate balls on a polydisc (1/20, 1/20, 1/100), pairs summed to Q <= 400, balls at most 1.6e-10 on any entry or partial (recip_crude). "
-            "Not kernel-checked; the reciprocal-space code has no negative control of its own.",
+            "Not kernel-checked; the producer run had no negative control of the reciprocal-space code (the independent AI audit added one, AUDIT.md).",
             ["ZPD-L-0001"], arg("C-ball", "tails and recip_crude fields of the run JSONs", runs, "python-flint 0.6.0 (Arb); data/code/m1_certify.py")),
         rec("ZPD-C-0003", "C", "argument",
             "E(0) enclosures contain the Tier X E_zp (N2 tierx scan, N = 32 Gauss-Legendre, rc 100): Riesz 3 [4.244723,4.245148] contains 4.2449758; d=1/10 [4.209378,4.209801] contains 4.2096272; "

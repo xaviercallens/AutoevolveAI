@@ -2,7 +2,8 @@
 
 Modelled on papers/p4_amplifier_census/ledger/build_ledger.py. Tier discipline (tools/ledger.py): a claim may not
 be filed above anything in its depends_on, and the kind caps the tier (lean_axioms A, citation L, argument C, numeric X).
-No audit of any kind exists for this paper (producer only): there is no ai_audit field and the gate field audit is null.
+An independent AI audit exists (AUDIT.md, ACCEPT_WITH_CORRECTIONS, not a person): Tier A rows carry an ai_audit field and the gate field audit stays null,
+so LEDGER_UNAUDITED_TIER_A remains open (exit 1 is the honest state).
 Run:  /home/callensxavier_gmail_com/AutoevolveAI/.venv/bin/python -I build_ledger.py
 """
 from __future__ import annotations
@@ -21,9 +22,15 @@ LOGS = DATA / "logs"
 TOOLCHAIN = ("Lean 4.34.1 + Mathlib d13f23b7 through scripts/certified_numerics/lean_pinned.py (modules import "
              "Mathlib.Tactic and Mathlib.Algebra.BigOperators.Fin; no import Mathlib)")
 ALLOW = ["propext", "Classical.choice", "Quot.sound"]
-STATUS = ("producer-checked only (C1b lane); producer leanchecker replay rc 0 on DataA1, DataA2, DataA3, Amplifiers11 and "
-          "ControlsC1b (data/logs/leanchecker_replay.json); NO recompile by a different agent, NO independent audit of any kind, "
-          "NO human audit of statement adequacy, NO statement lock")
+STATUS = ("AI-audited (AUDIT.md, a different AI agent instance, not a person); producer leanchecker replay rc 0 on DataA1, DataA2, DataA3, "
+          "Amplifiers11 and ControlsC1b (data/logs/leanchecker_replay.json); the auditor recompiled and replayed through a clone of the "
+          "lean_pinned.py compile path (not lean_pinned.py itself); NO human audit of statement adequacy, NO statement lock")
+AI_AUDIT = {"auditor": "independent AI audit agent (separate instance, producer != verifier), 2026-10-28", "human": False,
+            "report": "papers/p4_amplifier_census_n11/AUDIT.md", "verdict": "ACCEPT_WITH_CORRECTIONS",
+            "scope": "own Lean rebuild (clone of the lean_pinned.py compile path, not lean_pinned.py itself), leanchecker replay, axiom audit, "
+                     "escape-hatch grep; independent re-derivation of the decision rule; own N <= 10 census and 7,272,490 N = 11 graphs; C port rebuilt and rerun on two parts",
+            "not_scope": "no line-by-line audit of the C implementation; statement adequacy (Lean statement means what its gloss says) not certified by a person",
+            "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"}
 SRC_COMMIT = "583284ffeeee645e3c4e7f9c7afd45ccd5855991"
 
 
@@ -44,8 +51,11 @@ def fref(p: Path) -> dict:
 
 
 def rec(cid: str, tier: str, kind: str, statement: str, depends: list[str], ev: dict) -> dict:
-    return {"schema_version": 1, "id": cid, "statement": statement, "tier": tier, "kind": kind,
-            "depends_on": depends, "evidence": blob(ev), "audit": None}
+    r = {"schema_version": 1, "id": cid, "statement": statement, "tier": tier, "kind": kind,
+         "depends_on": depends, "evidence": blob(ev), "audit": None}
+    if tier == "A":
+        r["ai_audit"] = AI_AUDIT
+    return r
 
 
 def axioms_from(path: Path, names: list[str]) -> list[str]:
@@ -140,11 +150,12 @@ def main() -> int:
                                  "taken as stated; this is the step from the exact N_eff to amplification")),
         rec("AMN-L-0003", "L", "citation",
             "Richter, arXiv:2204.12861v1, p. 8, Fig. 1: four non-isomorphic N = 11 transient amplifiers (a)-(d) printed with "
-            "N_eff 11.0008, 11.0128, 11.0056, 11.0952 and mean degrees 3.8182, 2.9091, 3.0909, 2.9091; the caption states that all four have "
-            "maximum degree 4, and the text states that (b), at 11.0128, has the highest N_eff.",
+            "N_eff 11.0008, 11.0128, 11.0056, 11.0952 and mean degrees 3.8182, 2.9091, 3.0909, 2.9091; the caption and the text (p. 8) state that "
+            "all four have maximum degree 4, and the text (p. 8, p. 10, caption of Fig. 2(b)) states that (b), at 11.0128, has the highest N_eff; p. 10 prints the mean degree of "
+            "(b) and (d) as 2.0991 against 2.9091 in the caption. Minimum degrees 3, 2, 2, 2 and normalized-Laplacian lambda_2 0.0567, 0.0399, 0.0451, 0.0481 are printed for (a)-(d).",
             [], cite("arXiv:2204.12861v1", "p. 8, Fig. 1 and caption",
-                     "As recorded in the C1b run note (RESULT.md, section Discrepancies) from a reading with alphaXiv in the C1b session",
-                     "second-hand for this writing step: transcribed from the run note, not re-opened when the paper was written")),
+                     "Re-read in arXiv:2204.12861v1 and in the J. Math. Biol. 87(1):3 (2023) version (doi:10.1007/s00285-023-01937-1) by the independent AI auditor (AUDIT.md section 3); first recorded in the C1b run note",
+                     "confirmed by the independent AI auditor against the PDF and the journal version")),
         # ------------------------------------------------------------------ C
         rec("AMN-C-0001", "C", "argument",
             "Enumeration: nauty geng 2.7r3, geng -c 11 res/256 for res = 0..255, each part piped into the checker; the per-part "
@@ -204,8 +215,8 @@ def main() -> int:
                 [d / "census_n11_final.json"], "aggregate_census.py")),
         rec("AMN-C-0007", "C", "argument",
             "Match with Richter 2022 Fig. 1: the four amplifiers correspond to (a)-(d) by printed N_eff (11.0008, 11.0128, 11.0056, 11.0952; "
-            "ours 11.000756, 11.012785, 11.005561, 11.095159), mean degree (2m/11 = 3.8182, 2.9091, 3.0909, 2.9091 from edge counts 21, 16, 17, 16) "
-            "and minimum degree. Drawings were NOT compared. So the four graphs are not new; the exhaustiveness at N = 11 is what the census adds, to our knowledge.",
+            "ours 11.000756, 11.012785, 11.005561, 11.095159), mean degree (2m/11 = 3.8182, 2.9091, 3.0909, 2.9091 from edge counts 21, 16, 17, 16), "
+            "minimum degree (3, 2, 2, 2) and normalized-Laplacian lambda_2 (0.0567, 0.0399, 0.0451, 0.0481 for R11, A2, A3, A1; AUDIT.md C3). Drawings were NOT compared. So the four graphs are not new; the exhaustiveness at N = 11 is what the census adds, to our knowledge.",
             ["AMN-C-0005", "AMN-L-0003"],
             arg("C-observation", "amplifiers_n11_described.json (degrees, edges) against the printed values of AMN-L-0003",
                 [d / "amplifiers_n11_described.json"], "describe_amplifiers.py")),
@@ -226,9 +237,10 @@ def main() -> int:
             ["AMN-C-0002"],
             arg("C-exact-fraction", "controls_c1b.json, controls.json", [d / "controls_c1b.json", d / "controls.json"], "controls_c1b.py, controls_c1.py")),
         rec("AMN-C-0010", "C", "argument",
-            "Two internal inconsistencies in Richter 2022 Fig. 1 (observations): (1) the caption says all four graphs have maximum degree 4, but our A1 "
+            "Three internal inconsistencies in Richter 2022 Fig. 1 (observations): (1) the caption and the text of p. 8 say all four graphs have maximum degree 4, but our A1 "
             "(his (d), 11.0952) has maximum degree 3: it is A3 with the edge between A3's two degree-4 vertices removed (the graph6 strings differ in one bit), "
-            "which fits his own remark that (d) is (c) minus the red edge; (2) the text says (b), at 11.0128, has the highest N_eff, but (d) has 11.0952. "
+            "which fits his own remark that (d) is (c) minus the red edge; (2) the text (p. 8, p. 10, caption of Fig. 2(b)) says (b), at 11.0128, has the highest N_eff, but (d) has 11.0952; "
+            "(3) p. 10 prints the mean degree of (b) and (d) as 2.0991, against 2.9091 in the caption of Fig. 1. "
             "Neither affects the census; neither has been raised with the author.",
             ["AMN-C-0007"],
             arg("C-observation", "degrees and graph6 strings in amplifiers_n11_described.json", [d / "amplifiers_n11_described.json"], "describe_amplifiers.py")),

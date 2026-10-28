@@ -27,15 +27,16 @@
 \title{No connected graph with at most ten vertices is an unweighted death-Birth amplifier of weak selection:\\
 an exhaustive census, and a Lean check that Richter's eleven-vertex graph is one}
 \author{Xavier Callens (SocrateAI Lab)}
-\date{Preprint v1, 2026-10-27}
+\date{Preprint v1.1, 2026-10-28 (v1: 2026-10-27)}
 \hypersetup{pdftitle={No connected graph with at most ten vertices is an unweighted death-Birth amplifier of weak selection},
   pdfauthor={Xavier Callens}}
 
 \begin{document}
 \maketitle
-\begin{center}\small doi:10.5281/zenodo.23704563 \quad (not peer reviewed)\end{center}
+\begin{center}\small Version v1: doi:10.5281/zenodo.23704563. This version v1.1 is a new version of that record; its own DOI is assigned on release \quad (not peer reviewed)\end{center}
 
-\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+\medskip
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{v1.1 correction.} Version v1 (doi:10.5281/zenodo.23704563) presented Richter's graph R11 as \emph{the} eleven-vertex example. Richter (2022, p.~8, Fig.~1) in fact shows \textbf{four} non-isomorphic $N=11$ transient amplifiers, with printed $\Neff$ $11.0008$, $11.0128$, $11.0056$, $11.0952$; the graph treated here is the first of them (the one with the smallest $\Neff$). The companion exhaustive census at $N=11$ (C1b, a separate preprint that continues this one) finds that these four are the only ones. This version changes only that presentation: no count, no headline statement, no Lean statement and no Lean file changed. The edits follow \texttt{ERRATUM\_C1.md} of the C1b paper, whose items were checked against this file by the independent AI audit of C1b (AI, not a person).}}
 
 \noindent\textbf{AI-assistance disclosure.} This preprint, its Lean code, its Python code and its claim ledger were
 produced by AI agents (Claude, Anthropic) under the author's direction. The author is responsible for the content. No human
@@ -50,13 +51,13 @@ statement lock exists.}
 \begin{abstract}
 For death-Birth (dB) updating on a connected, simple, unweighted graph $G$ with $N$ vertices, Allen et al.\ showed that
 $\rho_G(1+\delta)=\tfrac1N+\delta\,\tfrac{\Neff-2}{2N}+O(\delta^2)$, with $\Neff$ an effective population size computed
-from coalescence times of random walks, and called $G$ an \emph{amplifier of weak selection} if $\Neff>N$. Richter (2020)
-exhibited an eleven-vertex example. We enumerated \emph{every} connected graph with $3\le N\le10$ (2, 6, 21, 112, 853, 11\,117,
+from coalescence times of random walks, and called $G$ an \emph{amplifier of weak selection} if $\Neff>N$. Richter (2020, 2022)
+exhibited eleven-vertex examples (four in the 2022 paper). We enumerated \emph{every} connected graph with $3\le N\le10$ (2, 6, 21, 112, 853, 11\,117,
 261\,080 and 11\,716\,571 graphs) and found \textbf{none} with $\Neff>N$: every regular graph has $\Neff=N$ exactly and
 every other graph has $\Neff<N$, the closest non-regular graph at $N=10$ lying at least $0.0207$ below $N$. In Lean~4 we check
 that on Richter's graph \emph{every} rational solution of Allen's coalescence system has
 $\Neff=2668552698098/242579025123\approx11.000756>11$. Together, \emph{within the weak-selection criterion for unweighted
-graphs}, the smallest dB amplifier has exactly $11$ vertices.
+graphs}, the smallest dB amplifier has exactly $11$ vertices. (A companion exhaustive census at $N=11$ finds exactly four such graphs, those of Richter's Fig.~1.)
 
 \textbf{Tier split.}
 \tA{} (Lean~4.34.1, axioms within $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$): the theorem
@@ -91,9 +92,9 @@ population on an isothermal graph (equal column and row sums of the replacement 
 every fitness $r$. For death-Birth updating the analogous statement is only first order: regular graphs tie with the complete
 graph at order $\delta$, and the question becomes which graphs do \emph{better} (amplifiers) or \emph{worse} (suppressors) than a
 well-mixed population when selection is weak. Allen et al.~\cite{allen} gave an exact first-order criterion; Richter~\cite{rich20,rich22}
-and Svoboda et al.~\cite{svo} describe the eleven-vertex example. Svoboda et al.\ (p.~5) call it ``the smallest known unweighted dB-amplifier'';
+and Svoboda et al.~\cite{svo} describe eleven-vertex examples. Svoboda et al.\ (p.~5) call the quartic-minus-an-edge graph ``the smallest known unweighted dB-amplifier'';
 Richter (2020, p.~6) writes that ``the smallest graph for which $N_{\mathrm{eff}}>N$ was found is the quartic graph with size $N=11$'', meaning within his
-regular-input search, and Richter (2022, p.~8) reports that no transient amplifier was found for regular graphs with $N\le10$ using his method. None of these is an
+regular-input search; Richter (2022, p.~8) reports that no transient amplifier was found for regular graphs with $N\le10$ using his method, and shows (Fig.~1, same page) four non-isomorphic $N=11$ transient amplifiers, with $N_{\mathrm{eff}}$ printed as 11.0008, 11.0128, 11.0056 and 11.0952. The graph treated below is the first of these. None of these is an
 exhaustive statement over all graphs. The preregistered item C1b asked: \emph{either no connected unweighted graph with $N\le10$ has $\Neff>N$, or the
 exact list of those that do}. The kill rules were: if the $N=10$ census exceeds two budgets, report $N\le9$; if the criterion's hypotheses
 cannot be pinned from the primary source, the census stays Tier~X. Neither fired: the $N=10$ enclosure took $1237$ s of one core (plus the candidate solves), and
@@ -215,7 +216,7 @@ structures (cliques joined through bottlenecks) that Richter~\cite{rich22} ident
 descriptions are read from the graph6 strings of the data files, not proved by a separate argument.
 
 \subsection{Richter's eleven-vertex graph}
-Graph6 \verb+J?ouPjI[@i?+: the unique quartic ($4$-regular) graph on $11$ vertices (among $265$) from which an \emph{amplifier constructor} edge removal works, minus one edge at the argmax-remeeting vertex. It has $21$ edges and degrees $3,4,\dots,4,3$ (the two degree-3 vertices are non-adjacent). All four edge removals at that vertex give isomorphic graphs.
+Graph6 \verb+J?ouPjI[@i?+: the unique quartic ($4$-regular) graph on $11$ vertices (among $265$) from which an \emph{amplifier constructor} edge removal works, minus one edge at the argmax-remeeting vertex. This is one of four $N=11$ amplifiers shown in Richter's 2022 Fig.~1 (the one with printed $N_{\mathrm{eff}}=11.0008$); it has the smallest $N_{\mathrm{eff}}$ of the four. It is not claimed to be the only $N=11$ amplifier; ``unique'' in the first sentence refers to a single edge removal (Richter 2022 obtains amplifiers from 5 of the 265 quartic graphs by repeated removals). It has $21$ edges and degrees $3,4,\dots,4,3$ (the two degree-3 vertices are non-adjacent). All four edge removals at that vertex give isomorphic graphs.
 
 \begin{table}[h]\centering\small
 \caption{Richter's $N=11$ graph and the cubic $N=12$ example (\tC{} except the Lean row; \texttt{AMC-A-0002}, \texttt{AMC-C-0009}, \texttt{-0010}).}
@@ -282,7 +283,7 @@ Any rational solution of Eq5 on $G_{R11}$ has $\Neff=2668552698098/242579025123>
 A positive solution of Eq5 is the only solution & \tA & \lean{eq5\_unique} (\texttt{AMC-A-0001})\\
 Quartic parent has $\Neff=11$ & \tA & \lean{P11\_isothermal}\\
 No connected graph with $3\le N\le10$ has $\Neff>N$; regular $\Leftrightarrow\Neff=N$ & \tC & geng + OEIS counts + integer enclosure (\texttt{AMC-C-0001..0004})\\
-\textbf{The smallest connected unweighted dB amplifier of weak selection has exactly 11 vertices} & \tC & census (C) $+$ Lean existence (A) $+$ criterion (L) (\texttt{AMC-C-0014})\\
+\textbf{The smallest connected unweighted dB amplifier of weak selection has exactly 11 vertices} & \tC & census (C) $+$ Lean existence (A) $+$ criterion (L) (\texttt{AMC-C-0014}); at $N=11$ there are exactly four, see the companion census\\
 Sign pattern of $\rho_G-\rho_{K_{11}}$ at four $r$, and a sign change in $[1.00082333,1.00082349]$ & \tC & exact-rational residual bounds (\texttt{AMC-C-0011}, \texttt{-0012})\\
 Extrapolation of windows; floating ratios & \tX & \texttt{AMC-X-0001}\\\bottomrule
 \end{tabular}\end{center}
@@ -340,7 +341,7 @@ content-addressed evidence blob in \texttt{ledger/evidence/}. In the data, some 
 %=====================================================================
 \section{Limitations}\label{sec:lim}
 \begin{itemize}\itemsep=1pt
-\item \textbf{Novelty of the exhaustive statement is established only to our knowledge (a literature search, not a proof of absence).} We read Allen et al.\ (arXiv 1906.01036v1), Richter (2008.01446v1; 2204.12861v1, in pages), Tkadlec et al.\ (1906.02785v1), Hindersin \& Traulsen (1504.03832v2), Kaveh et al.\ (1411.4556v1), and, for novelty only, Svoboda et al.\ (2401.14914v1) and Brewster et al.\ (2605.26411v3, Bd only), plus OEIS A001349 and A005177. Richter~\cite{rich22} (p.~8) reports only that his iterative \emph{regular-input} procedure found none with $N\le10$; Svoboda et al.\ (p.~5) call Richter's graph ``the smallest known''. The independent auditor identified Richter's ref.~[6] as Allen et al.~\cite{allen21} (PLoS Comput.\ Biol.\ 17:e1008695, 2021), whose exhaustive analysis of all connected graphs up to size $10$ is for \emph{Birth-death} updating only (read via the article page, not in full); the related Alcalde Cuesta et al.~\cite{alc17} database of all graphs of order $\le10$ and its companion ``Suppressors of selection'' (PLoS ONE 12:e0180549, 2017) are likewise Birth-death only (the chapter could not be opened). To our knowledge there is no prior exhaustive $N\le10$ death-Birth weak-selection statement: the auditor's alphaXiv searches and its reading of ten papers (Allen 2019/2020 and 2021, Richter 2020 and 2022, Tkadlec 2019, Hindersin--Traulsen, Kaveh et al., Svoboda et al., Brewster et al.\ 2026 and arXiv:2512.11164) found none. Hindersin--Traulsen classified random graphs on an $r$ grid, which is not an exhaustive weak-selection census. This is a search result, not a proof of absence, and nothing here should be read as a priority claim.
+\item \textbf{Novelty of the exhaustive statement is established only to our knowledge (a literature search, not a proof of absence).} We read Allen et al.\ (arXiv 1906.01036v1), Richter (2008.01446v1; 2204.12861v1, in pages), Tkadlec et al.\ (1906.02785v1), Hindersin \& Traulsen (1504.03832v2), Kaveh et al.\ (1411.4556v1), and, for novelty only, Svoboda et al.\ (2401.14914v1) and Brewster et al.\ (2605.26411v3, Bd only), plus OEIS A001349 and A005177. Richter~\cite{rich22} (p.~8) reports that his iterative \emph{regular-input} procedure found none with $N\le10$, and shows four $N=11$ examples in his Fig.~1; Svoboda et al.\ (p.~5) call the graph treated here ``the smallest known''. The independent auditor identified Richter's ref.~[6] as Allen et al.~\cite{allen21} (PLoS Comput.\ Biol.\ 17:e1008695, 2021), whose exhaustive analysis of all connected graphs up to size $10$ is for \emph{Birth-death} updating only (read via the article page, not in full); the related Alcalde Cuesta et al.~\cite{alc17} database of all graphs of order $\le10$ and its companion ``Suppressors of selection'' (PLoS ONE 12:e0180549, 2017) are likewise Birth-death only (the chapter could not be opened). To our knowledge there is no prior exhaustive $N\le10$ death-Birth weak-selection statement: the auditor's alphaXiv searches and its reading of ten papers (Allen 2019/2020 and 2021, Richter 2020 and 2022, Tkadlec 2019, Hindersin--Traulsen, Kaveh et al., Svoboda et al., Brewster et al.\ 2026 and arXiv:2512.11164) found none. Hindersin--Traulsen classified random graphs on an $r$ grid, which is not an exhaustive weak-selection census. This is a search result, not a proof of absence, and nothing here should be read as a priority claim.
 \item \textbf{The census is Tier~C, not Lean.} Completeness depends on nauty \texttt{geng} (2.7r3, Debian, Apache-2.0) and on the match with OEIS A001349; the enclosure argument is a hand proof implemented in Python; the Lean theorems cover only the $N=11$ linear system.
 \item \textbf{Scope of the statement.} Unweighted, undirected, simple, connected graphs; death-Birth updating; uniform initialisation (one mutant at a uniformly random vertex); the weak-selection criterion $\Neff>N$ at first order in $\delta$. Temperature or mutation-at-birth initialisation can change the classification (Hindersin \& Traulsen, Richter 2022) and nothing transfers. Weighted transient amplifiers (Allen's Fans, Separated Hubs) are out of scope. A weak-selection amplifier is not an amplifier at finite $r$ and not a universal amplifier (Tkadlec et al., Thm.~1, as recorded in the run note, forbids that for non-complete graphs).
 \item \textbf{Finite-$r$ checks are not proofs for all $r$ near 1.} The four signs, the bisection and the 212 regular graphs are certified only at the listed $r$; uniqueness of the crossing is not shown; whether regular graphs are reducers for all $r$ near $1$ remains open.

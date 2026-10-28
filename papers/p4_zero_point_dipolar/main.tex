@@ -1,0 +1,246 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,
+  frame=single,framesep=3pt,xleftmargin=4pt,xrightmargin=4pt,upquote=true,aboveskip=4pt,belowskip=2pt}
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tA}{\tier{A}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tCb}{\tier{C-ball}}
+\newcommand{\tCh}{\tier{C-human}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\lean}[1]{\texttt{#1}}
+\newcommand{\Ezp}{E_{\mathrm{zp}}}
+\newcommand{\Ulin}{U_{\mathrm{lin}}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\hess}{\operatorname{Hess}}
+
+\title{Closing the long-range gap: the triangular lattice is not a local minimum of the harmonic zero-point energy for Riesz $s=3$ and dipolar potentials, certified with an Ewald split}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-28}
+\hypersetup{pdftitle={Closing the long-range gap: the triangular lattice is not a local minimum of the harmonic zero-point energy for Riesz s=3 and dipolar potentials},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its Lean code, its Python code and its claim ledger were
+produced by AI agents (Claude, Anthropic) under the author's direction. The author is responsible for the content. No human
+has audited the Lean statements for adequacy, and no human referee has checked the hand arguments.
+\textbf{At the time of writing no independent audit of this work exists, by an AI or by a person}, and the independent kernel replay
+and independent re-run of the certificates are still owed: every replay reported below (\texttt{leanchecker} rc~0) was run by the producer itself. No statement lock exists.
+
+\medskip
+\noindent\textbf{Credit.} This paper continues two earlier preprints of the same author: N2 (planar Yukawa, doi:10.5281/zenodo.23663551~\cite{n2}), whose certifier,
+shell tail lemma and Lean window lemmas are reused \emph{unchanged}, and which left Riesz $s=3$ and the dipolar potentials open; and B2 (the Gaussian case,
+doi:10.5281/zenodo.23655392~\cite{b2}), whose linear-response majorant and Lean module \lean{Programmes.ZeroPointCert.Basic} are reached through N2. N1~\cite{n1} is cited for context.
+
+\begin{abstract}
+For a radial pair potential $V$ and unit-covolume planar Bravais lattices, let $E(t)$ be the harmonic zero-point energy per particle ($\hbar=m=1$) along the symmetric shear
+$L_t=P_tL_\rho$, $P_t=\bigl(\begin{smallmatrix}1&t\\t&1+t^2\end{smallmatrix}\bigr)$, which starts at the triangular lattice $L_\rho$.
+N2 certified $E(t)<E(0)$ for two Yukawa potentials but could not treat $r^{-3}$ tails, because the real-space lattice sums converge too slowly (a cutoff near $10^5$ would be needed).
+Here an \emph{Ewald split} removes that obstacle. We certify $E(t)<E(0)$ for every $0<|t|\le10^{-5}$ for \textbf{seven potentials}: Riesz $r^{-3}$; the bilayer point dipole
+$2(1/r-1/\sqrt{r^2+d^2})/d^2$ at $d=1/10$ and $d=1/2$ (N2's covolume units); and the same dipole at the four preregistered ratios $d/a=0.06,\,0.09,\,0.1,\,0.5$ ($a=1.07457$ the lattice constant).
+So \textbf{the triangular lattice is not a local minimum of the model's harmonic zero-point energy over lattice shapes} for all seven.
+\textbf{The hoped-for first certified \emph{positive} (``local minimum'') statement for an $r^{-3}$ potential did not happen: all seven signs are negative.}
+\textbf{What this is not:} not a statement about real excitons, bilayers or devices; not a phase transition or melting claim; not a global statement. It concerns the harmonic zero-point energy of a model crystal in model units.
+
+\textbf{Tier split.}
+\tA: the Lean 4.34.1 theorems of \lean{Programmes.ZeroPointDipolar.Basic} (the logic and the signs of the rational endpoints; the generic window lemmas are N2's \lean{ProgZeroPointPhys} and are reused, not reproved), with axioms within $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$; verbatim, for example,
+\lean{'ProgZeroPointDipolar.riesz3\_not\_localMin\_of\_certificate' depends on axioms: [propext, Classical.choice, Quot.sound]}; \texttt{leanchecker} replay rc~0 (producer-run); the final theorems are \emph{conditional} on the non-kernel inputs listed below.
+\tCb: Arb enclosures $M$ of the window curvature (Riesz 3 $[-3.17029,-1.66310]$, $d=1/10$ $[-3.33620,-1.85185]$, $d=1/2$ $[-5.38812,-4.11598]$, and $[-3.23699,-1.74649]$, $[-3.32496,-1.84069]$, $[-3.36115,-1.88023]$, $[-5.49473,-4.24958]$ for $d/a=0.06,0.09,0.1,0.5$), each containing the Tier~\tX{} value $E''(0)$;
+and the Ewald-split certificate: short part in real space with incomplete-gamma closed forms and N2's shell tail lemma at $Q_{\max}=300$; long part in reciprocal space with the exact transform $\hat V_3(x)=4\sqrt{\pi\alpha}\,e^{-x^2/(4\alpha)}-2\pi x\,\mathrm{erfc}(x/(2\sqrt\alpha))$, the $k=0$ term and the first shell exact, and the rest by rigorous Cauchy-estimate balls of at most $1.6\times10^{-10}$; the dipole mixture is split as a whole (a first design that split $V_d-r^{-3}$ was dropped).
+\tCh: the written glue inherited from N2 (the majorant $E\le U_2$ integrated, differentiation under the integral, mirror symmetry) plus the new Ewald items (mixture representation, Poisson summation, Cauchy estimates, Voronoi integral lemmas).
+\tX: floating-point scans and Lindemann ratios in model units (no melting or transition claim).
+\textbf{Controls.} Positive: Gaussian $a=1$ $[-8.23325,-7.15778]$ and Gaussian $a=2$ and Yukawa $\kappa=2$ bit-identical to N2; Yukawa $\kappa=1$ $[-4.16485,-2.03702]$ contains N2's $[-4.16483,-2.03704]$ but is \emph{not} bit-identical; Ewald-specific point checks against an independent direct float sum. Negative: Gaussian $a=2$ ($M\in[+3.4496,+4.4631]$) not certified; $r^{-3}$ without the split refused by the tail lemma; a false Lean claim fails to compile; planted \lean{sorry} and axiom caught. \textbf{Weakness:} the reciprocal-space code has no negative control of its own; it is validated only by the other checks.
+\end{abstract}
+
+\paragraph{Tiers and markers.} \tA: kernel-checked Lean, axioms within the allowlist, controls caught. \tL: a cited source, taken as stated. \tCb: rigorous ball arithmetic (Arb through python-flint 0.6.0, 80 bits, outward rounding), executed but not kernel-checked. \tCh: a written mathematical argument, not machine-checked. \tX: floating point, supporting nothing by itself. Identifiers \texttt{ZPD-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json} (Section~\ref{sec:ledger}). A Tier~A tag attaches to the Lean statement, never to its physical gloss.
+
+%=====================================================================
+\section{Setting, predecessors, preregistration}\label{sec:setting}
+For a radial potential $V(R)$, a unit-covolume lattice $L$ and reduced zone coordinate $\kappa\in[-\tfrac12,\tfrac12]^2$, the dynamical matrix is
+$D_t(\kappa)=\sum_{n\ne0}(1-\cos2\pi\kappa\!\cdot\! n)\,\hess V(R_n(t))$ and the harmonic zero-point energy per particle is $E(t)=\tfrac12\int\tr D_t(\kappa)^{1/2}d\kappa$, with $R_n(t)=P_tR_n(0)$ and labels held fixed (strain frame). $\det P_t=1$ and the lattice shape is $\tau(t)=\rho+\sqrt3\,t+O(t^2)$ \tCh. The triangular lattice $L_\rho$ has $a^2=2/\sqrt3$.
+
+N2~\cite{n2} proved (Tier~\tA{} logic, \tCb{} enclosures, \tCh{} glue) that $E(t)<E(0)$ on $0<|t|\le10^{-5}$ for Yukawa $e^{-\kappa_Yr}/r$, $\kappa_Y=1,2$, by a moving comparison matrix and a window bound on a majorant $U_2$ with $U_2''(0)=E''(0)$. It reported an \emph{obstacle} for Riesz $r^{-3}$ and the dipolar potentials (Step~1 of Section~\ref{sec:human}) and scoped, without attempting it, an Ewald remedy. The present paper executes that remedy. Setting, logic, hypotheses, cell rule, window lemma and positivity checks are N2's; \texttt{n2\_certify.py} (sha256 \texttt{6fa38af9\dots}) is imported unchanged and only the lattice-sum back end is replaced.
+
+\paragraph{Preregistration.} Item M1 of \texttt{results/proposal4/2026-10-27/preregistration.json} (not edited): ``certified sign of the harmonic zero-point second variation at the triangular lattice for the bilayer point-dipole potential $2(1/r-1/\sqrt{r^2+d^2})$ with Ewald-split $r^{-3}$ tails, $d/a\in\{0.06,0.09,0.1,0.5\}$''; prior $0.45$ per value, $0.4$ for the headline ``all four certified (either sign)''; kill rule ``Ewald tail bound cannot reach the needed width after two budgets: report the obstacle''; controls: Gaussian $a=1$ and Yukawa $\kappa=1$ recovered, Gaussian $a=2$ must not certify, truncated tail rejected by the tail lemma; and the stated hope that ``local minimum'' would be the first certified positive zero-point statement for a long-range physical potential. The headline was met (all four certified, negative sign); the kill rule did not trigger (Section~\ref{sec:dev}); the hope for a positive statement was not met.
+
+%=====================================================================
+\section{Result per potential}\label{sec:table}
+\begin{center}\footnotesize\setlength{\tabcolsep}{2.5pt}\begin{tabular}{p{2.4cm}p{1.0cm}p{1.45cm}p{3.0cm}p{3.0cm}p{3.2cm}}\toprule
+potential & $d/a$ & \tX{} $E''(0)$ & $M$ (\tCb) & $E(0)$ enclosure (\tCb) & $M_{hi}$ in Lean (\tA, signs only)\\\midrule
+Riesz $r^{-3}$ & --- & $-2.439$ & $[-3.17029,-1.66310]$ & $[4.244723,4.245148]$ & $-\tfrac{1663096717477}{10^{12}}$\\
+dipole $d=\tfrac1{10}$ & $0.0931$ & $-2.616$ & $[-3.33620,-1.85185]$ & $[4.209378,4.209801]$ & $-\tfrac{925923850457}{5\cdot10^{11}}$\\
+dipole $d=\tfrac12$ & $0.4653$ & $-4.767$ & $[-5.38812,-4.11598]$ & $[3.528270,3.528669]$ & $-\tfrac{4115980950373}{10^{12}}$\\
+dipole $d=\tfrac{129}{2000}$ & $0.0600$ & $-2.51419$ & $[-3.23699,-1.74649]$ & $[4.229936,4.230360]$ & $-\tfrac{1746491883211}{10^{12}}$\\
+dipole $d=\tfrac{967}{10000}$ & $0.0900$ & $-2.60506$ & $[-3.32496,-1.84069]$ & $[4.211652,4.212075]$ & $-\tfrac{1840689150179}{10^{12}}$\\
+dipole $d=\tfrac{1075}{10000}$ & $0.1000$ & $-2.64284$ & $[-3.36115,-1.88023]$ & $[4.203939,4.204361]$ & $-\tfrac{1880226507233}{10^{12}}$\\
+dipole $d=\tfrac{5373}{10000}$ & $0.5000$ & $-4.88677$ & $[-5.49473,-4.24958]$ & $[3.441988,3.442382]$ & $-\tfrac{2124789210489}{5\cdot10^{11}}$\\
+\bottomrule\end{tabular}\end{center}
+All seven are certified (\texttt{ZPD-C-0001}, \texttt{ZPD-A-0001..0003}). The Tier~\tX{} value $E''(0)$ lies inside each enclosure $M$ (it is not an input of the certificate). The Tier~\tX{} value $E_{\rm zp}$ lies inside each $E(0)$ enclosure (reference values $4.2449758$, $4.2096272$, $3.5284909$, $4.2301863$, $4.2119010$, $4.2041875$, $3.4422047$; midpoints within $4\times10^{-5}$; \texttt{ZPD-C-0003}). Positivity (the strained lattices are dynamically stable and the comparison matrix is positive definite) passed on every cell for every $|u|\le10^{-5}$, with no failed cell; the smallest certified lower bounds are $\lambda_{\min}(B)\ge4.244$ and $q_{\rm pd}\ge1.529$ (the $d=1/2$ run).
+The potentials are in P2/N2 normalisation: the dipole is $V_d(r)=2\,(1/r-1/\sqrt{r^2+d^2})/d^2=r^{-3}+O(d^2r^{-5})$ and the covolume of the lattice is $1$. The brief of this lane named N2's $d=0.1,0.5$, which are in covolume units ($d/a=0.0931,0.4653$); the preregistration names $d/a$. Both sets were run, with rational $d$ at the preregistered ratios because $a$ is irrational (Section~\ref{sec:dev}).
+
+\paragraph{What the certified statement says.} For each potential, with the hypotheses of Section~\ref{sec:lean}: $E(t)<E(0)$ for $0<|t|\le10^{-5}$ and $0$ is not a local minimum of $E$; since $\tau(t)=\rho+\sqrt3\,t+O(t^2)$, there are lattices of shape $\ne\rho$ arbitrarily close to $\rho$ with strictly smaller $\Ezp$ \tCh. It is the same sign as N2. It is \emph{not} that the triangular crystal is unstable, melts or transforms.
+
+%=====================================================================
+\section{A step-by-step demonstration, with the Lean statements beside each step}\label{sec:human}
+\paragraph{Step 0: what has to be bounded.} The argument of N2 reduces everything to one number. Let $U_2(t)$ be a majorant of $E(t)$ with $U_2(0)=E(0)$. If a rigorous bound $U_2''(u)\le M<0$ holds for all $|u|\le t_0$, then $E(t)+E(-t)\le U_2(t)+U_2(-t)\le 2E(0)+t^2M<2E(0)$, and by the mirror symmetry $E(-t)=E(t)$ we get $E(t)<E(0)$ for $0<t\le t_0$. The Lean kernel proves exactly this implication (Step~6). What remains is to \emph{enclose $M$}, and $M$ is an integral over the Brillouin zone of lattice sums of $\hess V$ and its first two derivatives along the shear. For Yukawa these lattice sums converge exponentially and a finite sum plus a tail bound suffices. For $r^{-3}$ they do not.
+
+\paragraph{Step 1: why $r^{-3}$ defeated N2's real-space tail bound \tX{} (N2, \texttt{riesz3\_tail\_obstacle.txt}).} Near the zone centre one needs $B=D/s^2$ with $\kappa=s\,v$, an elastic sum $\sum_n\theta_n^2f\,H_n\sim\sum r^2\cdot r^{-5}$. Its tail beyond radius $R_c$ is only $O(1/R_c)$, and N2's shell lemma gave about $6800/R_c$ against a margin near $3.8$, so a cutoff $R_c\sim10^5$ (about $3\times10^{10}$ lattice points per cell evaluation) would be needed; the partial $s$-derivatives diverge termwise. The negative control of the present paper makes this concrete (Section~\ref{sec:controls}): applied to $r^{-3}$ \emph{without} a split, the tail lemma returns an infinite ball for every $s$- and $t'$-partial, and tail balls $226$, $1885$, $24127$ for $B$ and its first two $t$-derivatives, against $\lambda_{\min}(B)\ge6.5$ in the certified run.
+
+\paragraph{Step 2: the Ewald idea.} A slowly decaying interaction is a sum of Gaussians of all widths. Split it at a width $\alpha$ into a part that decays fast in real space (the narrow Gaussians) and a part that is \emph{smooth in Fourier space} (the wide Gaussians, whose transforms are narrow). Sum the first in real space, where it needs few terms, and the second in reciprocal space, where it needs few terms. Neither sum has a slow tail. Concretely (\tCh),
+\[r^{-3}=\tfrac{2}{\sqrt\pi}\int_0^\infty u^{1/2}e^{-ur^2}du,\qquad V_d(r)=\int_0^\infty w_d(u)e^{-ur^2}du,\quad w_d(u)=\tfrac{2}{\sqrt\pi}u^{-1/2}\tfrac{1-e^{-ud^2}}{d^2},\]
+and $0\le w_d\le w_3$. The split is at $u=\alpha=1/10$. The \emph{short} part ($u>\alpha$) is, with $q=r^2$ and for Riesz,
+$g_S^{(j)}(q)=(-1)^j\tfrac{2}{\sqrt\pi}\Gamma(j+\tfrac32,\alpha q)\,q^{-(j+3/2)}$ (incomplete-gamma closed forms; the dipole has the difference of two such terms, evaluated in mean-value form on wide balls because the difference cancels to $O(d^2)$). Every derivative is completely monotone with an explicit majorant $C_je^{-\alpha q}$ for $q\ge1$, so \emph{N2's shell tail lemma applies unchanged}: $Q_{\max}=300$, tail radius $r_{\rm tail}=18.64$, 537 half-lattice pairs, tail balls about $4\times10^{-11}$ on $B$ and $1.1\times10^{-3}$ on the worst second partial. No cutoff near $10^5$ is needed: the real-space radius is under $20$.
+
+\paragraph{Step 3: the exact transform of the long part \tCh/\tCb.} The long part ($u<\alpha$) has the two-dimensional Fourier transform
+\[\hat V_3(x)=\int_0^\alpha 2\sqrt\pi\,u^{-1/2}e^{-x^2/(4u)}du=4\sqrt{\pi\alpha}\,e^{-x^2/(4\alpha)}-2\pi x\,\mathrm{erfc}\!\Bigl(\frac{x}{2\sqrt\alpha}\Bigr),\]
+which contains the non-analytic term $-2\pi|k|$ \emph{exactly}; this term is why real-space sums converge slowly. (At $x=0$ it equals $4\sqrt{\pi\alpha}$, matching the integral.) For the dipole, $\hat V_d=\sum_m\tfrac{(-d^2)^m}{(m+1)!}\,2\sqrt\pi\,J_{m-1/2}$ with $J_a(x)=\int_0^\alpha u^ae^{-x^2/4u}du$ computed by an exact recursion from $J_{-1/2}$, truncated at $m=6$ with a rigorous remainder (Cram\'er's Hermite bound, \tCh): at most $6.8\times10^{-25}$ for $d=1/10$ and $4.3\times10^{-15}$ for $d=1/2$. All derivatives to order $4$ come from \texttt{arb\_series}; the closed forms are entire in $x$ with no division by $x$.
+
+\paragraph{Step 4: Poisson summation on the strained lattice \tCh/\tCb.} Since $\det P_t=1$, the reciprocal lattice of $L_t$ is $P_t^{-1}L^*$, and the long-part contribution is
+$D_{L,t}(k_0)=\sum_{G_0}\bigl[F(P_t^{-1}(G_0+k_0))-F(P_t^{-1}G_0)\bigr]$, $F(q)=q\,q^{\mathsf T}\hat V(|q|)$. The $G_0=0$ term and, for cells with $s\ge1/4$, the first shell $|G_0|=6.75$ are evaluated exactly per cell ($B=ww^{\mathsf T}\hat V(s|w|)$ with $w=P_t^{-1}e(t')$; the shell as $[F(g+s\epsilon)+F(g-s\epsilon)-2F(g)]/s^2$, no cancellation since $s^2\ge1/16$). Everything else is bounded by Cauchy estimates on a complex polydisc (radii $1/20$, $1/20$, $1/100$ in $s$, $t'$, $t$): pairs are summed explicitly up to $Q=m^2+n^2-mn\le400$, and the remainder uses an exponential majorant and a Voronoi integral lemma on $L^*$ (for the dipole the Riesz weight dominates). The resulting balls are at most $1.6\times10^{-10}$ on any entry or partial (field \texttt{recip\_crude} of every run file).
+
+\paragraph{Step 5: the window enclosure \tCb.} With short and long parts as balls on all 18 lattice sums $B^{(k)}$ ($k=0,1,2$ $t$-derivatives, at $t=0$ and over the window, each with first and second partials in $(s,t')$), N2's certifier integrates $U_2''$ over Duffy cells with the second-order cell rule and encloses $M$ for all $|u|\le t_0=10^{-5}$ at once. Settings of every production run: $N=64$, depth $2$, refine tolerance $0.5$, $Q_{\max}=300$, $\alpha=1/10$, $80$ bits, one certifier hash \texttt{360ebbcb\dots}. The widths of the enclosures (about $1.5$ for $M$ at $d/a\le0.1$) are set by the cell rule, not by the Ewald balls ($\le1.6\times10^{-10}$ and about $10^{-3}$): the preregistered kill criterion ``the tail bound cannot reach the needed width'' did not trigger.
+
+\paragraph{Step 6: logic and assembly \tA.} The Lean kernel checks the implication of Step~0 (N2's window lemma, reused) and the signs of the rational endpoints. For Riesz 3, verbatim from \lean{Basic.lean}:
+\begin{lstlisting}
+def riesz3_M_hi : R := -1663096717477 / 1000000000000
+theorem riesz3_cert : riesz3_M_hi < 0 /\ 0 < riesz3_lmin_lo /\ 0 < riesz3_lminu_lo /\ 0 < riesz3_qpd_lo
+theorem riesz3_not_localMin_of_certificate (E U U1 U2pp : R -> R) (M : R)
+    (hEU : forall t, |t| <= t0 -> E t <= U t) (h0 : U 0 = E 0)
+    (hd1 : forall u, |u| <= t0 -> HasDerivAt U (U1 u) u)
+    (hd2 : forall u, |u| <= t0 -> HasDerivAt U1 (U2pp u) u)
+    (hK : forall u, |u| <= t0 -> U2pp u <= M) (hM : M <= riesz3_M_hi)
+    (hsym : forall t, E (-t) = E t) :
+    Not (IsLocalMin E 0) /\ forall t, 0 < t -> t <= t0 -> E t < E 0
+\end{lstlisting}
+The hypotheses are \emph{exactly} the non-kernel-checked inputs: $E\le U$ on the window (positivity checks \tCb, the $2\times2$ trace inequality of B2, integration \tCh), $U(0)=E(0)$, the two derivatives of $U$ with $U''=\tfrac14\!\int f''$ (differentiation under the integral, \tCh), $U''\le M\le M_{hi}$ (the Arb enclosure, \tCb), and mirror symmetry (\tCh). The proof term is \lean{not\_localMin\_of\_deriv\_cert E U U1 U2pp t0 M riesz3\_M\_hi t0\_pos riesz3\_cert.1 hM hEU h0 hd1 hd2 hK hsym}, N2's lemma. The positivity rationals in \lean{*\_cert} are proved positive but, as in N2, only \lean{*\_cert.1} is consumed by the final theorem; positivity enters through \lean{hEU}. There is one such pair per potential: \lean{riesz3}, \lean{dip01}/\lean{dipolar01}, \lean{dip05}/\lean{dipolar05}, \lean{dipA006}, \lean{dipA009}, \lean{dipA01}, \lean{dipA05} (the suffix \lean{A} marks the preregistered $d/a$ runs).
+
+\paragraph{Step 7: what a negative curvature bound means for the lattice shear.} $P_t$ deforms the triangular lattice into a nearby lattice of the same density by a shear; $t$ is a coordinate of its shape. $M<0$ says that, along this path, $E$ bends \emph{downwards} on both sides of $t=0$: the triangular lattice has strictly higher zero-point energy than its sheared neighbours. By the isotropy of the Hessian at $\rho$ (N2, \tCh), the path loses nothing, but we do not use that for the headline. This is the harmonic zero-point energy of a model with unit coupling; Section~\ref{sec:m1x} says what it does not imply.
+
+%=====================================================================
+\section{Numbers and controls}\label{sec:controls}
+\paragraph{Production runs} (core 7, shared, \tCb): Riesz 3: 47\,222 cells (13\,010 refined), 3994~s; $d=1/10$: 49\,277 (13\,695), 4166~s; $d=1/2$: 57\,692 (16\,500), 4643~s; $d/a=0.06$: 49\,118, 3866~s; $0.09$: 49\,274, 5023~s; $0.1$: 49\,352, 4204~s; $0.5$: 58\,823, 4395~s. Lower bounds $\lambda_{\min}(B)$/$\lambda_{\min}$ (strained)/$q_{\rm pd}$: Riesz $6.5092/6.5049/1.8785$; $d=1/10$ $6.3847/6.3804/1.8507$; $d=1/2$ $4.2441/4.2411/1.5290$. $U_{\rm lin}''(0)$ (B2's fixed-matrix majorant) is enclosed as $[17.1055,17.1565]$, $[16.6205,16.6720]$, $[9.2313,9.2797]$, containing the Tier~\tX{} values $17.131$, $16.646$, $9.256$ (it is positive, so B2's method alone could not work; N2's moving matrix is what gives the negative sign).
+
+\begin{center}\small\setlength{\tabcolsep}{3pt}\begin{tabular}{p{4.6cm}p{6.6cm}p{1.5cm}}\toprule
+control & outcome & tier\\\midrule
+(+) Gaussian $a=1$ through the new certifier & $M\in[-8.23325,-7.15778]$; three enclosures bit-identical rationals to N2; 17\,414 cells & \tCb\\
+(+) Gaussian $a=2$ ($M$) and Yukawa $\kappa=2$ & bit-identical to N2 (Yukawa 2: 26\,714 cells) & \tCb\\
+(+) Yukawa $\kappa=1$ (single run, $Q_{\max}=650$) & $[-4.16485,-2.03702]$, same 59\,867 cells, certified; contains N2's $[-4.16483,-2.03704]$; \textbf{not} bit-identical (endpoints differ by $\le3\times10^{-5}$; N2 merged two part runs, so the ball summation order differs) & \tCb\\
+(+) Ewald split vs an independent direct real-space float sum ($Q_{\max}=300$, continuum tail), $B,B_1,B_2$ at $6$ points on both triangles & $B$ agrees to $\le10^{-6}$; $B_1,B_2$ differ from finite differences with $h=10^{-3}$ by up to $8\times10^{-3}$, and a step-size study converges to the ball values as $h\to0$ (e.g.\ $B_{1,11}$: $-15.9402$ vs ball $-15.94016$) & \tX\\
+(+) $\alpha=1/10$ vs $1/6$, same points & $B$ identical to 6 decimals & \tX\\
+(+) series path vs closed form (Riesz, $M=0$) & identical & \tX\\
+(+) $E''(0)$, $E(0)$, $U_{\rm lin}''(0)$ against Tier~\tX{} & contained in all enclosures (Section~\ref{sec:table}) & \tCb/\tX\\
+($-$) Gaussian $a=2$ (strict local minimum) & $M\in[+3.44960,+4.46308]$: not certified; bit-identical to N2; Lean \lean{m1\_gauss2\_not\_certifiable} (standard axioms) & \tCb\,\tA\\
+($-$) $r^{-3}$ \emph{without} the split (real-space power-law Voronoi tail lemma, $Q_{\max}=300$) & \textbf{refused}: infinite ball for every $s$-, $t'$-, $ss$-, $st$-, $tt$-partial (exponent $\ge-2$) and $B$-tails $226/1885/24127$ ($k=0,1,2$) vs $\lambda_{\min}(B)\ge6.5$; no integration attempted & \tCb\\
+($-$) a false Lean certificate: claim $M_{hi}(\text{Gauss }2)<0$ & \texttt{RejectGauss2.lean} fails, rc~1, \lean{unsolved goals |- False} & \tA\\
+($-$) planted \lean{sorry}, planted axiom & see Section~\ref{sec:lean} & \tA\\
+\bottomrule\end{tabular}\end{center}
+\textbf{Weakness of the controls.} The Gaussian, Yukawa and $a=2$ controls run with the reciprocal part switched off, so they validate the refactor of N2's certifier, \emph{not} the Ewald split. The split is validated only indirectly, by the direct-sum point checks, the finite-difference convergence, the $\alpha$-independence, the agreement of $E(0)$ and $U_{\rm lin}''(0)$ with Tier~\tX, and $M$ containing $E''(0)$. The reciprocal-space code has no negative control of its own. The Gaussian $a=2$ control is also arithmetic in Lean (the kernel concludes $\neg M<0$ from a positive lower endpoint); the substantive negative control is the certifier run.
+
+%=====================================================================
+\section{Lean formalisation}\label{sec:lean}
+\texttt{formal\_cert/Programmes/ZeroPointDipolar/Basic.lean} (181 lines) is generated from the run JSONs by \texttt{m1\_lean\_gen.py} (no hand transcription); it imports N2's \lean{Programmes.ZeroPointPhys.Basic} and \lean{Mathlib.Tactic} (no \lean{import Mathlib}), pinned Lean 4.34.1 + Mathlib through \texttt{scripts/certified\_numerics/lean\_pinned.py}, core 7. It compiled with rc~0 in 8.8~s. \lean{\#print axioms}, verbatim (the first and last of the 14 lines; all 14 are in \texttt{data/lean\_basic.json}):
+\begin{lstlisting}
+'ProgZeroPointDipolar.riesz3_cert' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ProgZeroPointDipolar.riesz3_not_localMin_of_certificate' depends on axioms: [propext, Classical.choice, Quot.sound]
+  ... (the d = 1/10, d = 1/2 and four d/a pairs follow, each with the same list)
+'ProgZeroPointDipolar.dipA05_cert' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ProgZeroPointDipolar.dipolarA05_not_localMin_of_certificate' depends on axioms: [propext, Classical.choice, Quot.sound]
+\end{lstlisting}
+(In the raw output the lines for \lean{dipolarA006} and \lean{dipolarA009} are wrapped over several lines; the list is the same.) All 14 print only the allowlist.
+
+\paragraph{Controls} (\texttt{Controls.lean}, separate module, rc~0 with the warning ``declaration uses \lean{sorry}''), verbatim:
+\begin{lstlisting}
+'ProgZeroPointDipolarCtl.m1_gauss2_not_certifiable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ProgZeroPointDipolarCtl.ctl_sorry' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
+'ProgZeroPointDipolarCtl.ctl_axiom' depends on axioms: [propext, Classical.choice, ProgZeroPointDipolarCtl.ctl_cheat, Quot.sound]
+\end{lstlisting}
+so the axiom gate catches the planted \lean{sorry} (\lean{sorryAx}) and the planted axiom (\lean{ctl\_cheat}) although the exit code is 0. \texttt{RejectGauss2.lean} ($M_{hi}(\text{Gauss }2)=\tfrac{4463084749303}{10^{12}}<0$) fails: rc~1.
+
+\paragraph{Replay and grep.} \texttt{leanchecker Programmes.ZeroPointDipolar.Basic}: rc~0, 46.3~s, empty output, fresh olean, default mode (imports trusted), \textbf{run by the producer}. A grep of the three files for \lean{skipKernelTC}, \lean{addDecl}, \lean{native\_decide}, \lean{implemented\_by}, \lean{implementedBy}: 0 hits. The Lean runs were not routed through \texttt{anse/formal/lean\_runner.py}; the equivalent checks (compile, \lean{\#print axioms}, \lean{sorryAx} rejected, allowlist) are those above. No LeanFlow certificate was produced for M1 (N2 had one; Section~\ref{sec:dev}).
+
+\paragraph{What the kernel does not know.} The final theorems are \emph{conditional}: the kernel proves the implication ``window bound and symmetry $\Rightarrow$ not a local minimum'' and that the endpoints have the claimed signs. That the numbers $M_{hi}$ bound a specific physical functional rests entirely on the \tCb{} and \tCh{} inputs of Sections~\ref{sec:human} and \ref{sec:glue}.
+
+%=====================================================================
+\section{The glue, and what is human-argued}\label{sec:glue}
+\tCh{} items, none machine-checked, with the Ewald additions marked new:
+(i) inherited from N2: the majorant $E\le U_2$ after integration over $\kappa$, $U_2''(0)=E''(0)$, differentiation under the integral sign, mirror symmetry $E(-t)=E(t)$, the shape statement $\tau(t)=\rho+\sqrt3\,t+O(t^2)$, the cell rule's Lagrange remainder;
+(ii) new: the Gaussian-mixture representations of $r^{-3}$ and $V_d$ and the split at $\alpha$; Poisson summation for the long part on $L_t$ (including that it holds with the non-analytic $-2\pi|k|$ term and the $G_0=0$ regularisation); complete monotonicity of the short part and its majorant $C_je^{-\alpha q}$; the Voronoi integral lemmas; the Cauchy-estimate argument including the monotonicity conditions it asserts numerically; Cram\'er's Hermite bound used in the dipole remainder.
+A referee would need to check (ii) first; it is where an error would most plausibly hide, and the only independent evidence for it is the set of cross-checks in Section~\ref{sec:controls}.
+
+%=====================================================================
+\section{Lindemann ratios in model units (M1x, \tX)}\label{sec:m1x}
+\texttt{m1x\_lindemann.py} computes, in the harmonic approximation at $T=0$ and model units ($\hbar=m=1$, amplitude $1$, no moir\'e confinement), the Lindemann ratio $\eta=\sqrt{\langle u^2\rangle}/a$ and the nearest-neighbour ratio $\eta_m=\sqrt{\langle(u_n-u_0)^2\rangle}/a$ ($N=48$, real-space cutoff $100$):
+\begin{center}\small\begin{tabular}{lcccccc}\toprule
+potential & Riesz 3 & $d/a=0.06$ & $0.09$ & $0.1$ & $0.5$\\\midrule
+$\eta$ & 0.534 & 0.535 & 0.536 & 0.537 & 0.598\\
+$\eta_m$ & 0.661 & 0.662 & 0.664 & 0.664 & 0.740\\
+\bottomrule\end{tabular}\end{center}
+These ratios are large because the unit coupling is a strongly quantum regime: in the harmonic approximation $\eta$ scales as $(mV_0a^2/\hbar^2)^{-1/4}$, so a physical comparison needs the real mass, dipole strength and lattice constant, none of which is part of M1. (The lane notes quote a critical $\eta_c^{(m)}\approx0.31$ attributed to Zhou, Tang and Yu; we did not re-read that source and rely on none of it.) The curvature scale $|E''(0)|/E(0)$ is about $0.57$ (Riesz 3) to $1.4$ ($d/a=0.5$) per unit strain squared. A negative harmonic zero-point curvature is not a structural transition (the lesson of ED-21): \textbf{no melting, no transition, no instability claim is made.}
+
+\paragraph{Side result (\tCh, conditional).} If $\Ezp$ is $C^2$ near $\rho$, $\rho$ is critical with isotropic Hessian, then $\mathrm{Lap}\,\Ezp(\rho)=E''(0)/2$ lies in $[-1.5852,-0.8316]$ (Riesz 3), $[-1.6681,-0.9259]$ ($d=1/10$), $[-2.6941,-2.0580]$ ($d=1/2$). Not kernel-checked.
+
+%=====================================================================
+\section{Deviations from the plan and the brief}\label{sec:dev}
+\begin{itemize}\itemsep=1pt
+\item \textbf{$d$ values.} The brief named $d=0.1$ and $0.5$ in N2's covolume units; the preregistration names $d/a$. Both sets were run (seven potentials in all). The headline is judged on the preregistered ratios, which are all certified.
+\item \textbf{Design change.} The first dipolar design (Ewald for $r^{-3}$ plus $W_d=V_d-r^{-3}$ in real space with a power-law tail) gave cells $10$--$100\times$ too wide (the $W_d$ tail ball is about $0.1$ at $Q_{\max}=300$ for $d=1/2$; a cell probe, not a result). It was replaced, before any production run, by splitting the whole dipole mixture. The mean-value form of the short part was also added before any production run.
+\item \textbf{Yukawa $\kappa=1$ not bit-identical} to N2 (Section~\ref{sec:controls}); it contains N2's interval.
+\item \textbf{No LeanFlow certificate.} N2 also ran LeanFlow \lean{lean.certify}; it was not used here. The kernel gate (compile, axioms, \texttt{leanchecker}, grep) is the gate that was run.
+\item \textbf{Guard rules.} The brief forbids shell variables, loops, heredocs and compound commands. In the certificate lane, shell \texttt{until} wait loops were used about 25 times, one heredoc patched \texttt{m1\_certify.py}, one \texttt{cat > file <<EOF} attempt was refused by the guard, and several \texttt{cd DIR \&\& \dots} compounds were used. From the mid-session review on, waits used \texttt{m1\_wait.py} and \texttt{m1\_chain.py}. No certifier logic was run through a heredoc.
+\item \textbf{Compute.} All certifier jobs ran sequentially on one shared core (load 9--11 on 8 vCPU), about 13~h wall. The second budget was not needed.
+\item \textbf{Stale development files} that support nothing: \texttt{explore\_r3\_N16d0.json}, \texttt{selfcheck\_riesz3\_rc600.json}.
+\end{itemize}
+
+%=====================================================================
+\section{Claim ledger}\label{sec:ledger}
+\texttt{ledger/ledger.json} (built by \texttt{build\_ledger.py}, 15 claims, evidence blobs in \texttt{ledger/evidence/}) was run through the Elenchus gate \texttt{tools/ledger.py} by \texttt{run\_gate.py}; the verbatim output and exit code are in \texttt{ledger/gate\_output.txt}. Result: \textbf{0 blocking findings and 4 flags} (\texttt{LEDGER\_UNAUDITED\_TIER\_A}, one per Tier~A row \texttt{ZPD-A-0001..0004}: no person has certified that the Lean statements mean what their glosses say), \textbf{exit code~1}. Exit code~1 is the honest state at writing, not a failure to be cleared by editing; the rows' \texttt{audit} fields are null because no audit of any kind exists. The ledger has 4 Tier~A, 1 Tier~L, 7 Tier~C and 3 Tier~X rows; the headline \texttt{ZPD-C-0007} is filed Tier~C because it rests on ball enclosures and human glue. Every claim in the paper carries its tier tag, and the \tX{} rows (point checks, Lindemann ratios, guard outputs) support nothing by themselves.
+
+%=====================================================================
+\section{Limitations}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item \textbf{No independent audit.} No AI or human audit exists at writing. The \texttt{leanchecker} replay is the producer's, not independent. The independent kernel replay and an independent re-run of the certificates (producer $\ne$ verifier) are owed. No statement lock.
+\item \textbf{Conditional Tier~A.} The Lean theorems carry the non-kernel inputs as hypotheses; the headline is Tier~\tC.
+\item \textbf{Tier~\tCh{} glue} (Section~\ref{sec:glue}), including the new Ewald items, is read by no one but the producer.
+\item \textbf{Controls.} The Ewald reciprocal-space code has no negative control of its own (Section~\ref{sec:controls}); Yukawa $\kappa=1$ is not bit-identical to N2.
+\item \textbf{Scope.} Local window $0<|t|\le10^{-5}$ along one path (the shear); harmonic approximation; 2D Bravais lattices; point-dipole limit ($r_0=0$); no moir\'e confinement ($\gamma=0$); the numbers are properties of potentials in P2/N2 normalisation.
+\item \textbf{Repository guards fail for reasons outside this work.} \texttt{antigravity\_guard.py} rc~1 (``hallucinated import'' findings in pre-existing files of \texttt{anse/}, \texttt{scripts/}, \texttt{tests/}, \texttt{papers/}); \texttt{test\_rigor\_guard.py} rc~1 (hollow tests in pre-existing \texttt{tests/test\_k3\_anse\_improvements.py} and \texttt{tests/test\_scientific\_rigor\_v14.py}); \texttt{pytest tests/} rc~1, ``73 failed, 1674 passed, 50 skipped, 35 warnings, 19 errors in 709.85s'' (pre-existing suites, e.g.\ \texttt{tests/web/test\_ascd\_playwright\_e2e.py}). M1 adds no tests and touches no file those checks cite. We report this state; we have not made them pass.
+\item \textbf{Not claimed.} Anything about real excitons, real bilayers, moir\'e devices or any material; melting or a structural transition; a global statement; ``the triangular crystal is unstable''; any positive (``local minimum'') statement.
+\end{itemize}
+
+%=====================================================================
+\section{Reproducibility}\label{sec:repro}
+Repository AutoevolveAI, branch \texttt{worktree-openai-math-discovery}; HEAD when this paper was written: \texttt{28a1ac0b8d53e59d489b8e5821c956c395ff0729}; the M1 results and Lean files were untracked or uncommitted in that tree. Nothing was pushed or published by this paper's lane. Copies in \texttt{data/}: \texttt{code/} (scripts), \texttt{data/} (run JSONs, selfchecks, Tier~\tX{} outputs), \texttt{logs/}, \texttt{lean/} (the three Lean sources), \texttt{lean\_*.json}, \texttt{replay.json}, \texttt{grep.json}, \texttt{RESULT.md}, \texttt{result.json} (sha256 of all inputs). Certifier \texttt{m1\_certify.py} sha256 \texttt{360ebbcbb9b958ee6eefbc3a03f07856800b1a88dfb9984c4ade8edc2811b929}. Toolchain: Lean 4.34.1 with the pinned Mathlib, python-flint 0.6.0 (Arb), 80 bits. Commands (repository root, producer's cores 7):
+\begin{lstlisting}
+.venv/bin/python -I results/proposal4/2026-10-27/M1/code/m1_driver.py   # production + control runs
+.venv/bin/python -I results/proposal4/2026-10-27/M1/code/m1_lean_gen.py # Basic.lean from the run JSONs
+.venv/bin/python -I results/proposal4/2026-10-27/M1/code/m1_replay.py   # leanchecker replay
+.venv/bin/python -I papers/p4_zero_point_dipolar/ledger/build_ledger.py
+.venv/bin/python -I papers/p4_zero_point_dipolar/ledger/run_gate.py
+\end{lstlisting}
+(Arguments of the driver are in its header; the production run took about 13~h.)
+
+\begin{thebibliography}{9}
+\bibitem{n2} X.~Callens, \emph{The triangular lattice is not a local minimum of the harmonic zero-point energy for planar Yukawa potentials $\kappa=1,2$: classically optimal (H2, conditional), not zero-point optimal --- a certified partial result via a moving comparison matrix with exact curvature; Riesz $s=3$ and dipolar potentials not certified}, Zenodo, doi:10.5281/zenodo.23663551 (2026). Own preprint (N2), the predecessor of this paper; its certifier, tail lemma and Lean module \texttt{Programmes.ZeroPointPhys.Basic} are reused unchanged; not peer reviewed.
+\bibitem{b2} X.~Callens, \emph{The triangular lattice is not a local minimum of the harmonic zero-point energy for $\exp(-\pi r^2)$: a certified linear-response majorant along a symmetric shear}, Zenodo, doi:10.5281/zenodo.23655392 (2026). Own preprint (B2), reached through N2 (\texttt{Programmes.ZeroPointCert.Basic}); not peer reviewed.
+\bibitem{n1} X.~Callens, \emph{Certified sign classification of the second variation of the harmonic zero-point energy for Gaussian interactions on $a\in[0.425,4]$} (a partial result), Zenodo, doi:10.5281/zenodo.23667863 (2026). Own preprint, cited for context only; not used here; not peer reviewed.
+\bibitem{arb} F.~Johansson, \emph{Arb: efficient arbitrary-precision midpoint-radius interval arithmetic}, arXiv:1611.02831 (2016); cited for the instrument only.
+\bibitem{mathlib} The mathlib Community, \emph{The Lean mathematical library}, arXiv:1910.09336 (2019); cited for the library only.
+\end{thebibliography}
+\end{document}

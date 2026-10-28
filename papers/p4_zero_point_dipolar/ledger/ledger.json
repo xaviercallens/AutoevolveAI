@@ -1,0 +1,175 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "ZPD-A-0001",
+   "statement": "ProgZeroPointDipolar.riesz3_cert: riesz3_M_hi = -1663096717477/10^12 < 0 and the three positivity rationals are > 0; ProgZeroPointDipolar.riesz3_not_localMin_of_certificate: for any E, U, U1, U2pp, M with E <= U and U(0) = E(0) on |t| <= t0, U'' = U2pp <= M <= riesz3_M_hi and E(-t) = E(t), E is not a local minimum at 0 and E t < E 0 for 0 < t <= t0 (conditional on those hypotheses, which are the non-kernel inputs). Reuses N2's not_localMin_of_deriv_cert.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:4db0fdebd8fd8f98e687bc42961090ae7b9094751ecb48e082208beef7e0662f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZPD-A-0002",
+   "statement": "The same two statements for the bilayer point dipole at d = 1/10 (dip01_M_hi = -925923850457/(5*10^11)) and d = 1/2 (dip05_M_hi = -4115980950373/10^12): dip01_cert, dipolar01_not_localMin_of_certificate, dip05_cert, dipolar05_not_localMin_of_certificate.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:5fa7b12cc330ce99f4c2cb023f04b517caaa50b44d2c15bca6564b35aefac118",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZPD-A-0003",
+   "statement": "The same two statements for the four preregistered ratios d/a = 0.06, 0.09, 0.1, 0.5 (rational d = 129/2000, 967/10000, 1075/10000, 5373/10000): dipA006, dipA009, dipA01, dipA05 _cert and dipolarA006, dipolarA009, dipolarA01, dipolarA05 _not_localMin_of_certificate.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:ef97a753ac9eacd81c078a0512f9efd0b62b9e6759b6dbbd660fc11885fd24dc",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZPD-A-0004",
+   "statement": "Lean controls: Controls.lean compiles with rc 0 (warning: declaration uses sorry); m1_gauss2_not_certifiable prints only the allowlist; the planted ctl_sorry prints sorryAx and the planted ctl_axiom prints ProgZeroPointDipolarCtl.ctl_cheat in #print axioms, so the axiom gate catches both. RejectGauss2.lean (claim M_hi(Gaussian a=2) = 4463084749303/10^12 < 0) fails to compile, rc 1, unsolved goals False. leanchecker Programmes.ZeroPointDipolar.Basic rc 0 (producer-run). Grep for skipKernelTC|addDecl|native_decide|implemented_by|implementedBy: 0 hits.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:95aa30dc8bb02285a77110016641522b840320ae36ce776277771d29d90661d1",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZPD-L-0001",
+   "statement": "N2 (doi:10.5281/zenodo.23663551): the setting (E(t) along P_t L_rho, unit covolume), the moving comparison matrix and majorant U2 with U2''(0) = E''(0), the Duffy-cell certifier n2_certify.py (sha256 6fa38af9...), the shell tail lemma, the Lean window lemmas of Programmes.ZeroPointPhys.Basic, the glue (E <= U2 integrated, differentiation under the integral, mirror symmetry), and the report that Riesz s=3 and the dipolar potentials were not certified because of the r^-3 real-space tail. B2 (doi:10.5281/zenodo.23655392): the 2x2 trace inequality and Programmes.ZeroPointCert.Basic.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:f4334ff8cb58ab225fc8b89117394cfd8b74a45d2081a03d92f89fc3b9ebc611",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZPD-C-0001",
+   "statement": "Arb enclosures of the window curvature M (python-flint 0.6.0, 80 bits, N 64, depth 2, tol 0.5, Qmax 300, alpha 1/10, t0 1e-5) for seven potentials, all with M_hi < 0 and no failed cell: Riesz r^-3 [-3.17029,-1.66310]; dipole d=1/10 [-3.33620,-1.85185]; d=1/2 [-5.38812,-4.11598]; d=129/2000 (d/a 0.06) [-3.23699,-1.74649]; d=967/10000 (0.09) [-3.32496,-1.84069]; d=1075/10000 (0.1) [-3.36115,-1.88023]; d=5373/10000 (0.5) [-5.49473,-4.24958]. The Tier X E''(0) (-2.439, -2.616, -4.767, -2.51419, -2.60506, -2.64284, -4.88677) lies inside each. Positivity (det B_u > 0, X_u positive definite) passed on every cell. Not kernel-checked.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "ZPD-L-0001",
+    "ZPD-C-0002"
+   ],
+   "evidence": "sha256:ef310b75dca42c9da7595853a965e8e0e0e2d17a5a7189ef4d83fd67c62857ee",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZPD-C-0002",
+   "statement": "The Ewald split certificate: r^-3 and the dipole as Gaussian mixtures split at alpha = 1/10 (the dipole mixture split as a whole). Short part in real space with incomplete-gamma closed forms (completely monotone, majorant C_j exp(-alpha q), q >= 1) and N2's shell tail lemma at Qmax 300 (r_tail 18.64, 537 half-lattice pairs; tail balls about 4e-11 on B, 1.1e-3 on the worst second partial). Long part in reciprocal space with the exact transform Vh_3(x) = 4 sqrt(pi alpha) exp(-x^2/(4 alpha)) - 2 pi x erfc(x/(2 sqrt alpha)); dipole series truncated at m = 6 with Cramer-Hermite remainder at most 6.8e-25 (d=1/10) and 4.3e-15 (d=1/2); G0 = 0 term and (for s >= 1/4) the first shell exact; the rest by Cauchy-estimate balls on a polydisc (1/20, 1/20, 1/100), pairs summed to Q <= 400, balls at most 1.6e-10 on any entry or partial (recip_crude). Not kernel-checked; the reciprocal-space code has no negative control of its own.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "ZPD-L-0001"
+   ],
+   "evidence": "sha256:7e78df39ad49767dac0e2fdb15241494e4ccffbc82879f0a0f50c89e0b086e16",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZPD-C-0003",
+   "statement": "E(0) enclosures contain the Tier X E_zp (N2 tierx scan, N = 32 Gauss-Legendre, rc 100): Riesz 3 [4.244723,4.245148] contains 4.2449758; d=1/10 [4.209378,4.209801] contains 4.2096272; d=1/2 [3.528270,3.528669] contains 3.5284909; d/a 0.06 [4.229936,4.230360] contains 4.2301863; 0.09 [4.211652,4.212075] contains 4.2119010; 0.1 [4.203939,4.204361] contains 4.2041875; 0.5 [3.441988,3.442382] contains 3.4422047 (midpoints within 4e-5). U_lin''(0) (B2 majorant) enclosures [17.1055,17.1565], [16.6205,16.6720], [9.2313,9.2797] contain Tier X 17.131, 16.646, 9.256.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "ZPD-C-0001"
+   ],
+   "evidence": "sha256:8e2ac2e262f8b57c8789fba2fce51860796af2d5f0a2001322c895c3d3888c7c",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZPD-C-0004",
+   "statement": "Positive controls through the new certifier (certifier hash identical in all runs): Gaussian a=1 M in [-8.23325,-7.15778], Gaussian a=2 and Yukawa kappa=2 bit-identical rationals to N2; Yukawa kappa=1 (single run, same 59867 cells) [-4.16485,-2.03702] contains N2's [-4.16483,-2.03704] and is NOT bit-identical (endpoints differ by <= 3e-5; N2 merged two part runs, so the ball summation order differs). These run with the reciprocal part switched off: they validate the refactor, not the Ewald split.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "ZPD-L-0001"
+   ],
+   "evidence": "sha256:c03575091738ec8833c672c22e56a01841f344a66a19e8e1b8c5aae1136101ee",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZPD-C-0005",
+   "statement": "Negative controls in the certifier: Gaussian a=2 gives M in [+3.44960,+4.46308] (M_lo > 0), not certified, bit-identical to N2. r^-3 without the split (riesz3direct, Qmax 300): the power-law Voronoi tail lemma returns +inf for every s-, t'-, ss-, st-, tt-partial (exponent >= -2) and B-tails 226 / 1885 / 24127 (k = 0,1,2) against lambda_min(B) >= 6.5 in the certified run; refused, no integration attempted.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "ZPD-L-0001"
+   ],
+   "evidence": "sha256:cc550209413732ae12b403b841f1ccda44e9878dccb0621989c50551051b1a94",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZPD-C-0006",
+   "statement": "Written glue, none machine-checked. Inherited from N2: E <= U2 after integration over kappa, U2''(0) = E''(0), differentiation under the integral sign, mirror symmetry E(-t) = E(t), tau(t) = rho + sqrt3 t + O(t^2), the cell rule remainder. New: the Gaussian-mixture representations and the split at alpha; Poisson summation for the long part on L_t including the non-analytic -2 pi |k| term; complete monotonicity and majorants of the short part; the Voronoi integral lemmas; the Cauchy-estimate argument with its numerically asserted monotonicity conditions; Cramer's Hermite bound for the dipole remainder. Read only by the producer.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "ZPD-L-0001"
+   ],
+   "evidence": "sha256:ea497d193dea92afab938515c4117016b9002d63677b33766747943efbfe8fb9",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZPD-C-0007",
+   "statement": "HEADLINE. For each of seven potentials (Riesz r^-3; dipole d = 1/10, 1/2; dipole d/a = 0.06, 0.09, 0.1, 0.5) E(t) < E(0) for 0 < |t| <= 1e-5 along P_t L_rho, so the triangular lattice is NOT a local minimum of the model's harmonic zero-point energy over lattice shapes (harmonic approximation, 2D Bravais, one path, local window, model units). The sign is negative for all seven: the hoped-for first certified positive (local minimum) statement for an r^-3 potential did NOT happen. Filed C because it combines Tier A logic with Tier C-ball enclosures and Tier C-human glue. NOT claimed: real excitons, devices, melting, a structural transition, instability of the crystal, any global statement.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "ZPD-A-0001",
+    "ZPD-A-0002",
+    "ZPD-A-0003",
+    "ZPD-C-0001",
+    "ZPD-C-0002",
+    "ZPD-C-0006"
+   ],
+   "evidence": "sha256:8566ca241b2756a3db757849577d840fa670b7563eef2d435cd4f43f6feb61c7",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZPD-X-0001",
+   "statement": "Ewald-specific point checks (not a certificate): B from the Ewald balls agrees with an independent direct real-space float sum (Qmax 300, continuum tail) to <= 1e-6 at 6 points on both triangles; B1 and B2 differ from h = 1e-3 finite differences by up to 8e-3 and converge to the ball values as h -> 0; alpha = 1/10 and 1/6 give the same B to 6 decimals; the series path equals the closed form for Riesz 3.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:fb1c7d15e712b0b5c85c03fff5671ecd1942ddd8d9fd1fbad6966082617b341a",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZPD-X-0002",
+   "statement": "Lindemann ratios in model units (hbar = m = 1, amplitude 1, harmonic, T = 0, N 48, rc 100): eta / eta_m = 0.534 / 0.661 (Riesz 3), 0.535 / 0.662 (d/a 0.06), 0.536 / 0.664 (0.09), 0.537 / 0.664 (0.1), 0.598 / 0.740 (0.5). Model units only: no melting or transition claim.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:5de1c6837ce262771256777e904f78caa56aebe108ee60cd9f84e332c5d02c7f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "ZPD-X-0003",
+   "statement": "Repository guards were run and FAIL for reasons in files this lane did not touch: antigravity_guard.py rc 1 (hallucinated-import findings in pre-existing anse/, scripts/, tests/, papers/), test_rigor_guard.py rc 1 (hollow tests in pre-existing test files), pytest tests/ rc 1 (73 failed, 1674 passed, 50 skipped, 19 errors). Recorded so the state is explicit; none of these outputs supports a claim.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:b5b0f2044567d4dab419401d09e2a71c8396e318a3d8e126d1da9d546403567b",
+   "audit": null
+  }
+ ]
+}

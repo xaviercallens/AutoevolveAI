@@ -1,0 +1,253 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,
+  frame=single,framesep=3pt,xleftmargin=4pt,xrightmargin=4pt,upquote=true,aboveskip=4pt,belowskip=2pt}
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tA}{\tier{A}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\lean}[1]{\texttt{#1}}
+\newcommand{\Neff}{N_{\mathrm{eff}}}
+
+\title{Exactly four unweighted death-Birth amplifiers of weak selection on eleven vertices:\\
+an exhaustive census of all 1\,006\,700\,565 connected graphs}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-28}
+\hypersetup{pdftitle={Exactly four unweighted death-Birth amplifiers of weak selection on eleven vertices},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed; continues doi:10.5281/zenodo.23704563)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its Lean code, its Python and C code and its claim ledger were
+produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{This version is a producer's draft. No independent audit of any kind has been made}: the Lean modules have not been recompiled by a different agent, no statement lock exists, and no human has read the Lean statements or the hand argument of the decision rule. These three
+are owed (Section~\ref{sec:lim}).
+
+\begin{abstract}
+For death-Birth (dB) updating on a connected, simple, unweighted graph $G$ with $N$ vertices, Allen et al.\ showed that the fixation probability
+of a single mutant of fitness $1+\delta$ is $\tfrac1N+\delta\,\tfrac{\Neff-2}{2N}+O(\delta^2)$, and called $G$ an \emph{amplifier of weak selection} if $\Neff>N$.
+An earlier preprint of ours found by exhaustive enumeration that no connected graph with $N\le10$ is one~\cite{c1}. Here we enumerate \emph{all}
+$1\,006\,700\,565$ connected graphs on $N=11$ vertices with nauty \texttt{geng} (the count equals OEIS A001349(11)) and decide each by an exact rule.
+\textbf{Exactly four graphs have $\Neff>11$}, with exact rational $\Neff\approx11.095159,\ 11.012785,\ 11.005561$ and $11.000756$; \textbf{539 graphs tie} at $\Neff=11$, all regular, and $539$ equals OEIS A005177(11), so they are all the connected regular graphs on $11$ vertices;
+the remaining $1\,006\,700\,022$ graphs have $\Neff<11$, each certified.
+\textbf{The four graphs are not new.} They are, by printed $\Neff$, edge count and degrees (we did not compare the drawings), the four $N=11$ graphs shown by
+Richter in arXiv:2204.12861v1, p.~8, Fig.~1. What is new, to our knowledge, is that \emph{they are all of them} at $N=11$: no other connected unweighted graph on $11$ vertices amplifies weak selection under dB.
+Our previous preprint presented Richter's graph as the $N=11$ example; the corresponding corrections are listed in \texttt{ERRATUM\_C1.md}.
+
+\textbf{Tier split.}
+\tA{} (Lean~4.34.1, axioms within $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$): for three of the four graphs, \lean{A1\_amplifier}, \lean{A2\_amplifier}, \lean{A3\_amplifier}: every rational solution of Allen's coalescence system has the stated exact $\Neff>11$ (the fourth graph is Richter's, certified in \lean{R11\_amplifier} of the earlier preprint).
+\tL{} (literature, not re-proved): the criterion $\Neff>N$ and the step from $\Neff>N$ to $\rho_G>\rho_{K_N}$ for $r$ slightly above~$1$.
+\tC{}: the census count (enumeration plus a certified exact-integer decision rule, run with a C port validated against the Python code of the earlier preprint) and exact-rational sign certificates of $\rho_G-\rho_{K_{11}}$ at three values of $r$ for each of the three new graphs. The census is \emph{not} kernel-checked.
+Every claim carries a ledger identifier (\texttt{AMN-$\cdot$-nnnn}).
+
+\medskip
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{What this is NOT.} This is mathematics of graphs and of fixation probabilities in a Moran-type model with the single-mutant, weak-selection criterion of Allen et al. It is
+\textbf{not} a statement about real tumours, tissues, patients or any medical application: no biological structure was studied, no data were used, and nothing here bears on diagnosis, treatment, dose or schedule.
+It is not a statement about weighted or directed graphs, other update rules, or selection of finite strength, and it does \textbf{not} claim new graphs.}}
+\end{abstract}
+
+\paragraph{Markers.} \tA{}: kernel-checked Lean, axioms within the allowlist, controls caught. \tL{}: a cited source, taken as stated. \tC{}: executed code with an argument written down but not machine-checked. \tX{}: a recorded absence or floating point, supporting nothing by itself. A \tA{} tag attaches to the Lean statement, never to its biological gloss. Identifiers refer to \texttt{ledger/ledger.json} (Section~\ref{sec:ledger}).
+
+%=====================================================================
+\section{Setting and question}\label{sec:setting}
+The model, the coalescence-time system and the effective size $\Neff$ are those of Allen et al.~\cite{allen}; a step-by-step account for non-specialists (Steps~1--7) is in Section~2 of our earlier preprint~\cite{c1} and is not repeated.
+In short: $\tau_{ij}$ solves $\tau_{ij}=1+\tfrac12\sum_k(p_{ik}\tau_{jk}+p_{jk}\tau_{ik})$ for $i\ne j$ with $\tau_{ii}=0$ and $p_{ik}=1/k_i$ on edges (eq.~(5)), $\tau_i=1+\sum_jp_{ij}\tau_{ij}$ (eq.~(6)), and $\Neff=\sum_i\pi_i\tau_i$ with $\pi_i=k_i/2m$ (eq.~(9)); $\rho_G(1+\delta)-\rho_{K_N}(1+\delta)=\delta(\Neff-N)/(2N)+O(\delta^2)$ (eq.~(8)); regular graphs tie ($\Neff=N$).
+
+The earlier preprint~\cite{c1} showed that no connected graph with $N\le10$ has $\Neff>N$, and checked in Lean that Richter's eleven-vertex graph does. It did not ask whether that graph is the only one at $N=11$. The preregistered question of this item (C1b, addendum~2 to Proposal~4, \texttt{docs/proposals/PROPOSAL\_4\_ADDENDUM\_2\_C1B\_2026-10-27.md}, sha256 \texttt{a5e5909d\dots}, equal to the value recorded in the run files; the file was not edited) was: among the $1\,006\,700\,565$ connected graphs on $11$ vertices, (i) exactly how many have $\Neff>N$, and (ii) is Richter's graph the unique one up to isomorphism, and what are the others, if any? The recorded priors were $0.5$ that the census completes within budget, $0.25$ that it finds a graph other than Richter's, and $0.6$ that Richter's graph is the only one; the first held, the other two did not (three further graphs were found). The kill criterion (stop if the measured throughput projects to more than $24$~h on two cores) did not fire.
+
+%=====================================================================
+\section{Method}\label{sec:method}
+\paragraph{Enumeration.}\tC{} \texttt{nauty-geng -c 11 res/256}, $\mathrm{res}=0..255$, nauty 2.7r3, one part per run; each part was piped straight into the checker, so no graph6 data are stored. geng was run without \texttt{-q}, so its line ``\texttt{>Z k graphs generated}'' is in each part log (\texttt{data/logs/parts/}); the driver checks that $k$ equals the number of graphs decided and that no input line was malformed. The $256$ parts sum to $1\,006\,700\,565$, equal to OEIS A001349(11) (\texttt{AMN-C-0001}). geng emits one graph per isomorphism class.
+
+\paragraph{Decision rule.}\tC{} The rule is that of the earlier preprint~\cite{c1}: floating point only proposes, exact integer arithmetic decides. Multiply eq.~(5) by $2k_ik_j$ to obtain an integer system $(I-M)\tau=\mathbf 1$ with $M\ge0$ and $(I-M)^{-1}\ge0$. A float64 solution $x$ is rounded to $t=\mathrm{rint}(2^{30}x)$ (and only accepted if it is finite and $|x|2^{30}<2^{50}$; otherwise the graph is a candidate); its residual $E$ is formed exactly in 128-bit integers, $\varepsilon=E/2^{31}$; since the inverse is non-negative, $|\Neff-\hat N_{\mathrm{eff}}|\le\varepsilon\,\tau_{\max}\le\varepsilon\tilde\tau_{\max}/(1-\varepsilon)$ by the edge identity $\Neff=1+\frac1m\sum_{ij\in E}\tau_{ij}$. A graph is certified \emph{excluded} ($\Neff<11$) only if the resulting upper bound is below $11$ in exact integers and the graph is non-regular. Every graph not excluded (the $539$ regular graphs and the $4$ amplifiers, $543$ in all) is solved exactly with Python \texttt{Fraction}s using C1's \texttt{dbcore.neff\_exact}; the four amplifiers were solved a second time by C1's \texttt{exact\_census.py}, a pure-\texttt{Fraction} Gauss--Jordan on eqs.~(5), (6), (9) that does not use the edge identity, giving the same four graphs and the same maximum. A bad float proposal can only block an exclusion; it cannot produce a wrong one. Over the whole census the guards never fired (\texttt{guard\_fail}$\,=0$, \texttt{chol\_fail}$\,=0$) and the largest $\varepsilon$ was $7.45\times10^{-8}$. The smallest certified gap $11-\Neff$ over all excluded graphs is $0.0020643$; no excluded graph had a certified upper bound within $10^{-3}$ of $11$ (\texttt{AMN-C-0002}, \texttt{-0006}). The correctness of the bound is the hand proof of C1 (audited there); here it is again \tC{}.
+
+\paragraph{A C port, validated before use, and a bug it had.}\tC{} The Python implementation of C1 projected $21.4$~h on two cores for $N=11$ (measured on a $10^7$-graph sample: $6\,527$ graphs/s per core). We therefore wrote \texttt{census\_fast.c}, a C port of the same rule (Cholesky instead of LAPACK LU for the proposal, which is allowed since the scaled matrix is symmetric positive definite and correctness does not depend on the proposer; the inequality is C1's multiplied by $2$): $21\,925$ graphs/s per core, projected $6.4$~h; the actual run took $5$~h $10$~min of wall time on two workers (CPU sum $35\,950$~s). It was validated before any $N=11$ result was used (\texttt{AMN-C-0003}):
+\begin{itemize}\itemsep=0pt
+\item At $N=3..10$, on C1's own geng files (sha256 equal to C1's recorded hashes), the C code gives identical graph counts, identical excluded counts and identical candidate sets as C1's outputs. Per graph, against the guarded Python functions: all graphs at $N=3..9$ and a $10^6$-graph stride sample at $N=10$ (every $11$th line): same graph order, $0$ verdict mismatches, the two certified intervals intersect on every graph, $\max|\Delta\hat N_{\mathrm{eff}}|=1.1\times10^{-10}$.
+\item After the exact finish, $N=3..10$ reproduce C1: $0$ amplifiers; ties $1,2,2,5,4,17,22,167$ (all regular, equal to A005177); counts equal A001349.
+\item On a $10^7$-graph $N=11$ sample the Python and C codes agree on every count ($9\,999\,998$ excluded) and on the candidate set (two regular graphs), and name the same nearest non-amplifier.
+\end{itemize}
+\textbf{A bug was found and fixed before this validation.} graph6 uses the characters with codes $63..126$, which include the backslash; the first build of the C code did not escape it when writing JSON. The fix touches output formatting only. The $10^7$-graph throughput run used that first build; its output happened to parse and its decisions are unaffected. Validation, controls and the census used the fixed build (sha256 \texttt{6f658a78\dots}, \texttt{data/result.json}). The C implementation was validated against C1 but has not been independently audited.
+
+\paragraph{Isomorphism.}\tC{} Canonical forms from \texttt{nauty-labelg}, cross-checked by networkx \texttt{is\_isomorphic}: the four amplifiers have four distinct canonical forms and are pairwise non-isomorphic; only \texttt{JCQRRQodIU?} is isomorphic to Richter's \texttt{J?ouPjI[@i?}.
+
+\paragraph{Lean.}\tA{} As for \lean{R11\_amplifier} in C1: \lean{eq5\_unique} (a positive rational solution of eq.~(5) is the only solution) and \lean{neff\_of\_cert} from \texttt{Core.lean}, with integer certificate data \texttt{DataA1/A2/A3.lean} proposed by the untrusted \texttt{gen\_lean.py} and re-checked by the kernel with \lean{decide +kernel}; \lean{Amplifiers11.lean} holds the three theorems and the symmetry, looplessness and degree lemmas. See Section~\ref{sec:lean}.
+
+%=====================================================================
+\section{Results}\label{sec:results}
+\subsection{The census}
+\begin{center}\small\begin{tabular}{lr}\toprule
+class & graphs\\\midrule
+connected graphs on $11$ vertices (A001349(11)) & 1\,006\,700\,565\\
+$\Neff>11$ (amplifiers of weak selection) & \textbf{4}\\
+$\Neff=11$ (all regular; A005177(11)) & 539\\
+$\Neff<11$, each certified & 1\,006\,700\,022\\\bottomrule
+\end{tabular}\end{center}
+No non-regular graph ties (\texttt{AMN-C-0004}). The $543$ non-excluded graphs are exactly the $539$ regular graphs plus the $4$ amplifiers (\tC, \texttt{AMN-C-0002}).
+
+\subsection{The four amplifiers}
+\begin{table}[h]\centering\small
+\caption{The four graphs with $\Neff>11$ (exact rational values, Fraction solves; A1--A3 also in Lean). Last column: the panel of Richter's Fig.~1 whose printed $\Neff$ matches (\texttt{AMN-C-0005}, \texttt{-0007}).}
+\begin{tabular}{llrlrrl}\toprule
+name & graph6 (geng form) & edges & degrees & exact $\Neff$ & $\approx$ & Richter Fig.~1\\\midrule
+A1 & \verb+J?`@`eoRAW?+ & 16 & $2,3^{10}$ & $\tfrac{328435957}{29601736}$ & 11.095159 & (d), 11.0952\\
+A2 & \verb+J?`CP_p[C[?+ & 16 & $2,2,3^8,4$ & $\tfrac{2890154941667179019}{262436329991601232}$ & 11.012785 & (b), 11.0128\\
+A3 & \verb+J?`@`eoRAW_+ & 17 & $2,3^8,4,4$ & $\tfrac{88175846355074579}{8011935789939084}$ & 11.005561 & (c), 11.0056\\
+R11 & \verb+JCQRRQodIU?+ & 21 & $3,3,4^9$ & $\tfrac{2668552698098}{242579025123}$ & 11.000756 & (a), 11.0008\\\bottomrule
+\end{tabular}
+\end{table}
+\noindent Here $d^k$ means $k$ vertices of degree $d$. R11 is \texttt{JCQRRQodIU?}$\,\cong\,$\texttt{J?ouPjI[@i?}, Richter's graph of the earlier preprint (a quartic graph minus one edge); it has the smallest $\Neff$ of the four. Tier of the exact values: \tA{} for A1--A3 (\lean{A1\_amplifier} etc., \texttt{AMN-A-0001..0003}); for R11 the Tier~\tA{} statement is \lean{R11\_amplifier} of the earlier preprint, not re-checked in this ledger (\texttt{AMN-C-0005} files it \tC).
+
+\paragraph{The four are not new graphs.}\tC{} Richter~\cite{rich22} (p.~8, Fig.~1) shows four non-isomorphic $N=11$ transient amplifiers with printed $\Neff$ $11.0008$, $11.0128$, $11.0056$, $11.0952$ and mean degrees $3.8182$, $2.9091$, $3.0909$, $2.9091$. Our edge counts $21,16,17,16$ give $2m/11=3.8182,2.9091,3.0909,2.9091$, and the $\Neff$ values agree to every printed digit (table above). We found our three graphs by an exhaustive census, whereas Richter's come from guided edge removals; the match is by $\Neff$, edge count and degrees, and \emph{we did not compare drawings}. We read the match as an identification, but it is an inference from numbers, not a graph-by-graph comparison with the figure (\texttt{AMN-C-0007}).
+
+\paragraph{What the census adds.}\tC{} Completeness. No other connected unweighted graph on $11$ vertices has $\Neff>11$. Together with the earlier preprint ($N\le10$: none), the smallest size of an unweighted dB amplifier of weak selection is $11$, and at $N=11$ there are exactly four. To our knowledge this exhaustive statement for $N=11$ had not been made (see Section~\ref{sec:lim} on what that means). The earlier preprint cited Svoboda et al.~\cite{svo} calling Richter's graph ``the smallest known'' amplifier; the present result does not contradict that wording but shows that the picture at $N=11$ is four graphs, not one.
+
+\subsection{Nearest non-amplifiers}
+\begin{table}[h]\centering\small
+\caption{The non-regular graphs with the smallest certified gap below $11$ (exact Fractions, \tC, \texttt{AMN-C-0006}; the full ten are in \texttt{nearest\_nonamplifiers\_exact} of \texttt{data/census\_n11\_final.json}).}
+\begin{tabular}{llrr}\toprule
+graph6 & edges; degrees & exact $\Neff$ & $\approx$\\\midrule
+\verb+J?`bJaWeJK?+ & 20; $3^4,4^7$ & $\tfrac{345273648427163}{31394406114960}$ & 10.997935\\
+\verb+JCQbQqcUTH?+ & 21; $3,3,4^9$ & $\tfrac{138694248925}{12616654687}$ & 10.992950\\
+\verb+J]~v~z~~v~_+ & 50; $9^{10},10$ & $\tfrac{59396}{5405}$ & 10.989084\\
+\verb+J]~v~z~~v~?+ & 49; $8,9^{10}$ & $\tfrac{25531262}{2323433}$ & 10.988594\\
+\verb+J?`CPbGL@a?+ & 15; $2^3,3^8$ & $\tfrac{17519919103998569985353}{1595137711726027096740}$ & 10.983327\\\bottomrule
+\end{tabular}
+\end{table}
+Nearly complete graphs (e.g.\ $K_{11}$ minus an edge, $\Neff=4514/411\approx10.982968$) are also close; at $N\le10$ the nearest misses were all nearly complete~\cite{c1}, whereas at $N=11$ the list also contains graphs with $15$--$21$ edges. The smallest certified gap over all excluded graphs is $0.0020643$.
+
+\subsection{Finite $r$ for the three new graphs}
+\tC{} For each of A1--A3 we certified the sign of $\rho_G(r)-\rho_{K_{11}}(r)$ on the exact $2046$-state dB chain, with the device of C1 (float LU proposal, exact-rational residual bound; total error $\le3.9\times10^{-14}$, against differences of $10^{-8}$ to $10^{-6}$; \texttt{AMN-C-0008}):
+\begin{table}[h]\centering\small
+\caption{Certified $\rho_G-\rho_{K_{11}}$ (value of the certified interval, rounded to $5$ digits).}
+\begin{tabular}{lccc}\toprule
+graph & $r=1001/1000$ & $r=999/1000$ & $r=10001/10000$\\\midrule
+A1 & $+4.2836\times10^{-6}$ & $-4.3668\times10^{-6}$ & $+4.3212\times10^{-7}$\\
+A2 & $+5.2504\times10^{-7}$ & $-6.3683\times10^{-7}$ & $+5.7556\times10^{-8}$\\
+A3 & $+2.0120\times10^{-7}$ & $-3.0395\times10^{-7}$ & $+2.4762\times10^{-8}$\\\bottomrule
+\end{tabular}
+\end{table}
+All three show the sign pattern predicted by $\Neff>N$ (above $K_{11}$ just above $r=1$, below it just below). At $r=1.0001$ the values match the first-order prediction $\delta(\Neff-N)/(2N)$ (for A1: $4.325\times10^{-7}$ predicted, $4.321\times10^{-7}$ measured). These are certificates at three values of $r$; no $r_{\max}$ is computed for A1--A3, and the step to ``amplifier for all $r$ in a neighbourhood of $1$'' is the literature statement \tL{} (eq.~(8)). This check is independent of Allen's equations: it uses the chain, not eq.~(5).
+
+%=====================================================================
+\section{Headline and tiers}\label{sec:head}
+\begin{center}\small\begin{tabular}{p{7.2cm}p{0.9cm}p{5.1cm}}\toprule
+statement & tier & basis\\\midrule
+Criterion $\Neff>N$, expansion \eqref{eq:exp} (Allen eq.~(8)) & \tL & Allen et al.\ (\texttt{AMN-L-0001}, \texttt{-0002})\\
+Any rational solution of Eq5 on $G_{A1},G_{A2},G_{A3}$ has the stated exact $\Neff>11$ & \tA & \lean{A1\_amplifier}, \lean{A2\_amplifier}, \lean{A3\_amplifier} (\texttt{AMN-A-0001..0003})\\
+Exact $\Neff$ of R11 & \tA{} in C1; \tC{} here & \lean{R11\_amplifier} of C1; Fraction solve here\\
+Amplification step from $\Neff>N$ & \tL & Allen eq.~(8)\\
+Exactly $4/539/1\,006\,700\,022$ graphs with $\Neff>11\,/=11\,/<11$ & \tC & geng + A001349 + certified decision rule, C port validated (\texttt{AMN-C-0001..0004})\\
+\textbf{These four are all the unweighted dB weak-selection amplifiers on $11$ vertices; they are the four graphs of Richter's Fig.~1 (by $\Neff$, edges, degrees)} & \tC & census $+$ Lean $+$ criterion $+$ printed values (\texttt{AMN-C-0011}, \texttt{-0007})\\
+Signs at $r\in\{1001/1000,999/1000,10001/10000\}$ for A1--A3 & \tC & exact-rational residual bounds (\texttt{AMN-C-0008})\\\bottomrule
+\end{tabular}\end{center}
+\begin{equation}\label{eq:exp}\rho_G(1+\delta)=\tfrac1N+\delta\,\tfrac{\Neff-2}{2N}+O(\delta^2).\end{equation}
+The headline is filed Tier~C because its census half is: the count is not kernel-checked, and the Lean theorems say nothing about ``there are no others''.
+
+%=====================================================================
+\section{Controls}\label{sec:controls}
+All controls were run before any $N=11$ census number was used (\texttt{data/controls\_c1b.json}, \texttt{data/controls.json}; \texttt{AMN-C-0009}, \texttt{AMN-A-0004}).
+\paragraph{Positive.}
+\begin{itemize}\itemsep=0pt
+\item $K_{11}$ and $C_{11}$ are not excluded and have exact $\Neff=11$.
+\item Richter's graph is not excluded and has the exact value above; its quartic parent has exactly $11$.
+\item Enumeration level: all $4\,721$ connected graphs with degrees in $[3,4]$ and $21$ edges (\texttt{geng -c -d3 -D4 11 21:21}) were run through the pipeline; exactly one is a candidate, \texttt{JCQRRQodIU?}, whose canonical form equals that of \texttt{J?ouPjI[@i?}.
+\item C1's $14$ controls were re-run from a copy (all met): $K_N$ and $C_N$, stars, eq.~(7), the exact-chain slope, closed forms, Hindersin--Traulsen, and the arXiv-v1 misprint of Allen eq.~(3) which must disagree with the exact chain and does.
+\item The C port reproduces the C1 census for $N=3..10$ (Section~\ref{sec:method}).
+\end{itemize}
+\paragraph{Negative.}
+\begin{itemize}\itemsep=0pt
+\item Corrupted criterion: setting $\pi_i=1/N$ in place of $k_i/2m$, through the same certified path, produces $9$ new candidates at $N=10$ (for example \texttt{I?`CP`ce\_} with corrupted value $10.0193>10$ against the correct $9.6643$); regular graphs are unaffected, as expected.
+\item The strict test $\Neff>N$ rejects $K_{11}$, $C_{11}$ and Richter's parent.
+\item C1's planted wrong random walk and the Antal approximation are rejected as intended.
+\item Lean (kernel decides the right way): \lean{ctlb\_perturbed\_vector\_rejected} ($\tau$ changed by $1/D$), \lean{ctlb\_wrong\_graph\_rejected} (A1's certificate on A3, the graph with one extra edge) and \lean{ctlb\_wrong\_value\_rejected}.
+\item Lean (axiom audit): the planted \lean{ctlb\_sorry} reports \lean{sorryAx} and the planted \lean{ctlb\_axiom} reports \lean{AmplifierCensusControlsC1b.ctlb\_cheat}; a compile exit code alone would accept both.
+\end{itemize}
+
+%=====================================================================
+\section{Observations on Richter's Fig.~1}\label{sec:rich}
+\tC{} Two inconsistencies, recorded neutrally as observations, within the figure and caption of~\cite{rich22} as transcribed in our run note (\texttt{AMN-C-0010}, \texttt{AMN-L-0003}):
+\begin{enumerate}\itemsep=0pt
+\item \emph{Maximum degree.} The caption states that all four graphs have maximum degree $\Delta(G)=4$. Our A1 (his (d), $\Neff=11.0952$) has maximum degree $3$. It is A3 with the edge between A3's two degree-$4$ vertices removed (the two graph6 strings differ in one bit), which fits his own remark that (d) is (c) minus the red edge. Removing that edge lowers both endpoints from degree $4$ to degree $3$, leaving maximum degree $3$.
+\item \emph{Which is highest.} The text says that (b), with $11.0128$, has the highest $\Neff$, whereas (d) has $11.0952$ in the same figure.
+\end{enumerate}
+Neither affects the census or the identification by $\Neff$ and edge count. Neither has been raised with the author; they may be typographical. (The two further open discrepancies with Richter recorded in the earlier preprint, his printed $\tau_{\max}$ values and his $r_{\max}\approx1.00075$, are not examined here.)
+
+%=====================================================================
+\section{Lean formalisation}\label{sec:lean}
+Modules in \path{formal_cert/Programmes/AmplifierCensus/} (copies in \texttt{data/lean/}): \texttt{Core.lean} (shared with C1: \lean{Eq5}, \lean{neff}, \lean{eq5\_unique}, \lean{neff\_of\_cert}), \texttt{DataA1/A2/A3.lean} (integer certificates from the untrusted \texttt{gen\_lean.py}), \texttt{Amplifiers11.lean} (\lean{A1\_amplifier}, \lean{A2\_amplifier}, \lean{A3\_amplifier} and the lemmas \lean{GAk\_symm}, \lean{GAk\_loopless}, \lean{GAk\_deg}, \lean{tauAk\_eq5}, \lean{tauAk\_pos}, \lean{neff\_tauAk}, all by \lean{decide +kernel}) and \texttt{ControlsC1b.lean} (imported by nothing). Each theorem has the form
+\[\forall\tau,\ \text{Eq5}\ G\ \tau\Rightarrow \Neff(G,\tau)=q\ \wedge\ 11<\Neff(G,\tau),\]
+with $q=328435957/29601736$, $2890154941667179019/262436329991601232$, $88175846355074579/8011935789939084$ for A1, A2, A3. Imports are \lean{Mathlib.Tactic} and \lean{Mathlib.Algebra.BigOperators.Fin}; never \lean{import Mathlib}. Compiled through \texttt{scripts/certified\_numerics/lean\_pinned.py} (Lean~4.34.1, Mathlib \texttt{d13f23b7}): rc~$0$; \lean{\#print axioms} gives exactly $[$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$]$ for all three (\texttt{data/logs/lean\_Amplifiers11.json}). The producer's \texttt{leanchecker} replay returns rc~$0$ on \lean{DataA1}, \lean{DataA2}, \lean{DataA3}, \lean{Amplifiers11} and \lean{ControlsC1b} (\texttt{data/logs/leanchecker\_replay.json}); replay does not check axioms, the \lean{\#print axioms} output does. A scan for \lean{skipKernelTC}, \lean{debug.}, \lean{addDecl}, \lean{\#exit}, \lean{implemented\_by}, \lean{native\_decide}, \lean{set\_option}, \lean{extern}, \lean{unsafe} and \lean{opaque} is clean; the only \lean{sorry}/\lean{axiom} hits are the planted ones in \texttt{ControlsC1b.lean}. This used the pinned wrapper and not \texttt{anse/formal/lean\_runner.py}. sha256 of the files:
+\begin{itemize}\scriptsize\itemsep=0pt
+\item \texttt{Core.lean}: \texttt{df9e30617ec88468cb18d986c2606665612bc528d19335fd10db07528f75b336}
+\item \texttt{DataA1.lean}: \texttt{f78c8a5e8531bf8e86a5c21a4faf9a28886cc15e4e6b10b63f0218025007ff4a}
+\item \texttt{DataA2.lean}: \texttt{6ca84f2b8d7819299a3bd790cbb0711d6f28c3e0051d516e110e3e2aa9fc0726}
+\item \texttt{DataA3.lean}: \texttt{bad7d07a194b8b801c9af924e6ed9fc3efd25704636a291373b3f54d0a610b96}
+\item \texttt{Amplifiers11.lean}: \texttt{3e75496f87a655320e531cb0070e3869f94566b530d5153b2a76c52ccd80ad14}
+\item \texttt{ControlsC1b.lean}: \texttt{9dac556034578b372b4b8ba51972928d048923b90317b8273dbeaaad3ed0a1dd}
+\end{itemize}
+\textbf{What Tier~A certifies:} the stated linear-system theorems on three explicit adjacencies. \textbf{It does not certify} that eqs.~(5), (6), (9) are Allen's as printed, that $\Neff>N$ implies amplification (\tL), the enumeration, or that there are no other amplifiers.
+
+%=====================================================================
+\section{Claim ledger}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files $19$ claims: $4$ at Tier~A (\texttt{AMN-A-0001..0004}), $3$ at L (\texttt{AMN-L-0001..0003}), $11$ at C (\texttt{AMN-C-0001..0011}, the last being the headline) and $1$ at X (\texttt{AMN-X-0001}, recording that the repository guards were not run). Each has a content-addressed evidence blob in \texttt{ledger/evidence/}. The gate (\texttt{tools/ledger.py ledger.json -{}-evidence-dir evidence}; verbatim in \texttt{ledger/gate\_output.txt}) exits with code~\textbf{1}: \textbf{0 blocking findings and 4 flags} \texttt{LEDGER\_UNAUDITED\_TIER\_A}, one per Tier~A row: no person has certified that the Lean statements mean what their glosses say. Exit code~1 is the honest state. Unlike the earlier preprint, there is no \texttt{ai\_audit} field on any row, because no audit has been made. \texttt{AMN-L-0003} (Richter's Fig.~1 values and caption) is transcribed from the run note of the C1b session and was not re-opened when this paper was written.
+
+%=====================================================================
+\section{Limitations}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item \textbf{Producer only; audit owed.} No independent agent has recompiled the Lean modules, replayed the kernel on them, rechecked the census by a different method, or held a statement lock; no human has audited the Lean statements or the hand argument. The earlier preprint was audited (ACCEPT\_WITH\_CORRECTIONS); this one has not been. A recompile by a different agent and a statement lock are owed before any stronger wording.
+\item \textbf{The census is Tier~C, not Lean.} Completeness rests on nauty \texttt{geng} (2.7r3), the exact A001349(11) count, the hand proof of the enclosure bound (audited in C1, not in Lean) and the C implementation, validated against C1 but not independently audited. The Lean theorems cover only the linear system on four explicit adjacencies and say nothing about ``there are no others''.
+\item \textbf{Novelty, to our knowledge.} ``The first exhaustive statement that these four are all of them at $N=11$'' is the result of a literature search made for the earlier preprint (Allen et al., Richter 2020 and 2022, Tkadlec et al., Hindersin--Traulsen, Kaveh et al., Svoboda et al., Brewster et al., the exhaustive Birth-death analyses of Allen et al.~2021 and Alcalde Cuesta et al.\ for $N\le10$ which are not dB) and of the reading of Richter~2022 and Allen et al.\ in the C1b session; it is a search result, not a proof of absence, and nothing here is a priority claim. We have not established what, if anything, Richter claims about completeness at $N=11$.
+\item \textbf{The four graphs are not new}, and the identification with Richter's Fig.~1 is by printed $\Neff$, edge count and degrees, not by the drawings.
+\item \textbf{Scope.} Unweighted, undirected, simple, connected graphs; death-Birth updating; uniform initialisation; the first-order criterion $\Neff>N$. Temperature or mutation-at-birth initialisation can change the classification; weighted transient amplifiers are out of scope. A weak-selection amplifier is not an amplifier at finite~$r$.
+\item \textbf{Finite-$r$ statements} hold only at the three listed $r$ for A1--A3 (Python \texttt{Fraction}s, Tier~C); no $r_{\max}$ is computed.
+\item \textbf{Repository guards were not run} (\texttt{antigravity\_guard.py}, \texttt{test\_rigor\_guard.py}, \texttt{pytest tests/}); no guard output is claimed.
+\item \textbf{Deviations from the preregistration and the brief.} (1) A C port of the decision rule was used instead of the Python code, with the Cholesky proposer; validated as above. (2) The first C build had the backslash-escape bug (fixed, decisions unaffected). (3) The throughput sample is the first $10^7$ graphs of geng parts $0$ and $1$ of $100$, not a random sample. (4) During the throughput measurement an unrelated process shared a core, so that timing includes contention. (5) The Lean gate used \texttt{lean\_pinned.py}; no producer $\ne$ verifier recompile, no statement lock. (6) Process accounting: at most two CPU-busy processes except idle wrappers; a few shell-guard lapses occurred (chained commands, two \texttt{sed -i} edits, one read-only git status); nothing was committed, staged or pushed by the run.
+\item \textbf{Open discrepancies with Richter} listed in Section~\ref{sec:rich}; not raised with the author.
+\item Not a medical or biological claim of any kind.
+\end{itemize}
+
+%=====================================================================
+\section{Reproducibility}\label{sec:repro}
+Repository AutoevolveAI, branch \texttt{worktree-openai-math-discovery}; HEAD when this paper was written: \texttt{583284ffeeee645e3c4e7f9c7afd45ccd5855991}; the C1b outputs and this paper are uncommitted working-tree files at that time. Copies of the inputs are in \texttt{data/} (\texttt{data/code/}, \texttt{data/lean/}, \texttt{data/logs/}, \texttt{data/parts/} the $256$ per-part JSON files, \texttt{data/RESULT.md} and \texttt{data/result.json} the run note with sha256 of every file). The graph6 files of the census ($10^9$ graphs) are not stored; geng regenerates them. Commands (paths relative to the repository root; the scripts expect their original C1b layout, see \texttt{data/result.json}; this paper's copies were \emph{not} re-run from the bundle):
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+gcc -O3 -march=native -Wall -Wextra -o census_fast code/census_fast.c -lm        # sha256 of the binary in data/result.json
+python -I code/run_census.py start .scratchpad/C1b/census_fast 256 2             # 256 geng parts, 2 workers (taskset -c 2,3)
+python -I code/aggregate_census.py ...                                           # exact finish and census_n11_final.json
+python -I code/validate_fast.py ; python -I code/reproduce_c1.py                 # validation against C1
+python -I code/controls_c1b.py ; python -I code/controls_c1.py                   # controls
+python -I code/fixation_cert.py amp1_n11.g6 fc.json 1001/1000 999/1000 10001/10000   # finite-r signs
+python -I code/gen_lean.py amp1_n11.g6 A1 DataA1.lean                            # proposes the Lean data module
+python -I scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/AmplifierCensus/Amplifiers11.lean
+python -I papers/p4_amplifier_census_n11/ledger/build_ledger.py ; python -I papers/p4_amplifier_census_n11/ledger/run_gate.py
+\end{lstlisting}
+The census ran from 2026-10-27 21:58:34 to 2026-10-28 03:08:56 UTC (the run note gives the time of day only; dates inferred from the file times), with sha256 of the 256 part files recorded in \texttt{data/result.json}. The command lines above are summarised from the run note and the code headers; they were not re-executed in the paper bundle.
+
+%=====================================================================
+\begin{thebibliography}{99}\small
+\bibitem{c1} X.~Callens, \emph{No connected graph with at most ten vertices is an unweighted death-Birth amplifier of weak selection: an exhaustive census, and a Lean check that Richter's eleven-vertex graph is one}, Zenodo, doi:10.5281/zenodo.23704563 (2026). Own preprint, the predecessor of this one; not peer reviewed.
+\bibitem{allen} B.~Allen, C.~Sample, R.~Jencks, J.~Withers, P.~Steinhagen, L.~Brizuela, J.~Kolodny, D.~Parke, G.~Lippner, Y.~A.~Dementieva, \emph{Transient amplifiers of selection and reducers of fixation for death-Birth updating on graphs}, PLoS Comput.\ Biol.\ 16(1):e1007529 (2020), arXiv:1906.01036. Source of the criterion $\Neff>N$ (\tL).
+\bibitem{rich22} H.~Richter, \emph{Spectral dynamics of guided edge removals and identifying transient amplifiers for death-Birth updating}, arXiv:2204.12861 (2022, v1 p.~8, Fig.~1); cited by Svoboda et al.\ as J.\ Math.\ Biol.\ 87(1):3 (2023).
+\bibitem{svo} J.~Svoboda, S.~Joshi, J.~Tkadlec, K.~Chatterjee, \emph{Amplifiers of selection for the Moran process with both Birth-death and death-Birth updating}, PLoS Comput.\ Biol.\ 20(3):e1012008 (2024), arXiv:2401.14914; read for novelty only (in the earlier preprint).
+\bibitem{nauty} B.~D.~McKay, A.~Piperno, \emph{Practical graph isomorphism, II}, J.\ Symb.\ Comput.\ 60 (2014) 94--112; nauty/\texttt{geng} 2.7r3 used.
+\bibitem{oeis} OEIS Foundation, sequences A001349 (connected graphs on $n$ nodes) and A005177 (connected regular graphs), \url{https://oeis.org}, read 2026-10-27.
+\bibitem{mathlib} The mathlib Community, \emph{The Lean mathematical library}, arXiv:1910.09336 (2019); cited for the library only.
+\end{thebibliography}
+\end{document}

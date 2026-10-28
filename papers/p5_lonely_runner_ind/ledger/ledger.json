@@ -1,0 +1,186 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "LRI-A-0001",
+   "statement": "LonelyRunnerInd.ScalarInputs: P10 (typed from Table 1, row k = 10, of arXiv 2604.23906 v2) has length 61 (P10_length), no duplicates (P10_nodup), every entry is prime (P10_prime) and > 110 = 10^2 + 10 (P10_gt_k2k); 11 is prime (k_succ_prime); C(11,2) = 55 (choose_11_2); 55^90 <= 10^10 * prod P10 in N (B10_le_prod_nat, kernel decide) and ((C(11,2))^9 / 10)^10 <= prod P10 in Q (B10_le_prod), i.e. B_10 <= prod P10; 55^90 <= 10^10 * (prod P10 / 467) is false (B10_not_le_prod_without_467). These are statements about a list of numbers; they do not formalise J(10, p), Lemma 2.6, Proposition 2.7 or LRC(9).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:b55f84ebc25c485913792243f31275f6a52c5536929df1b42b6a6db5430a64bb",
+   "audit": null,
+   "ai_audit": {
+    "auditor": "independent AI audit agent (separate instance, producer != verifier), 2026-10-28",
+    "human": false,
+    "report": "papers/p5_lonely_runner_ind/AUDIT.md",
+    "verdict": "ACCEPT_WITH_CORRECTIONS",
+    "scope": "own compile of a /tmp copy of ScalarInputs.lean with #print axioms appended, own olean + leanchecker replay, escape-hatch grep, comparison of the Lean P10 list with Table 1 of arXiv 2604.23906 v2 and with all primes in [127, 467]",
+    "not_scope": "statement adequacy (the Lean statements about scalar inputs mean what their gloss says) not certified by a person; nothing beyond scalar inputs is formalised",
+    "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"
+   }
+  },
+  {
+   "schema_version": 1,
+   "id": "LRI-A-0002",
+   "statement": "Lean controls: ControlsMustFail.lean (P10.length = 60, and the bound without 467 stated as holding) is rejected by the kernel (rc 1, logs/lean_ctl_mustfail.json); ControlsSorry.lean compiles with rc 0 but its axiom audit reports sorryAx for LonelyRunnerInd.ctl_cheat (logs/lean_ctl_sorry.json), which a compile exit code alone would accept.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:39e259a299977791713f15d4d4c86bec92d506c49676949def7bf7c113b18f74",
+   "audit": null,
+   "ai_audit": {
+    "auditor": "independent AI audit agent (separate instance, producer != verifier), 2026-10-28",
+    "human": false,
+    "report": "papers/p5_lonely_runner_ind/AUDIT.md",
+    "verdict": "ACCEPT_WITH_CORRECTIONS",
+    "scope": "own compile of a /tmp copy of ScalarInputs.lean with #print axioms appended, own olean + leanchecker replay, escape-hatch grep, comparison of the Lean P10 list with Table 1 of arXiv 2604.23906 v2 and with all primes in [127, 467]",
+    "not_scope": "statement adequacy (the Lean statements about scalar inputs mean what their gloss says) not certified by a person; nothing beyond scalar inputs is formalised",
+    "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"
+   }
+  },
+  {
+   "schema_version": 1,
+   "id": "LRI-L-0001",
+   "statement": "Sungkawichai-Trakulthongchai (S-T), arXiv 2604.23906 v2, Defs. 2.1 and 2.3: Z_{p,l} = {x in Z_{lp} : x not = 0 mod p}; v in Z_{p,l}^k is (k,p,l)-proper iff some i has gcd(l, v_j : j != i) > 1 or some t in (1/(lp))Z has ||t v_i|| >= 1/(k+1) for all i; I(k,p,l) = improper tuples; J(k,p) = v in Z_{p,1}^k with v in pi_{lp -> p} I(k,p,l) for every l. Table 1, row k = 10: P_10 = the 61 primes 127..467.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:0f4276d50a2fd0ac5147c7bf786127d67a0cf172be3b87d5c9e7f5803d10dc1e",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LRI-L-0002",
+   "statement": "S-T results used: Lemma 2.4 (J = empty iff I(k,p,l) = empty for some l); Corollary 2.5 (if LRC(k-1) holds and J(k,p) = empty then p divides u_1...u_k for every counterexample u); Proposition 2.7 (if LRC(k-1) holds, J(k,p) = empty for all p in P and prod P >= B_k then LRC(k) holds); Lemma 2.2 (pre-jump); Remark 3.2 and Section 5.2 (the k = 10 plan x2 x2 x2 /8 leaves only the class of (1..10)); Propositions 1.4/4.1/4.4 and Lemma 4.3 (the identity fibre at level k+1 = 11).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [
+    "LRI-L-0001"
+   ],
+   "evidence": "sha256:1f92f06658a655bff5e89c548e1eb92b3e2edd363b6761009f06136c0bb66e65",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LRI-L-0003",
+   "statement": "Premises of the chain to LRC(10) (the conjecture for 11 runners): LRC(9) (10 runners), Trakulthongchai, Electron. J. Combin. 33(2) P2.46; Lemma 2.6 = Malikiosis-Santos-Schymura Theorem A in the form of Rosenfeld arXiv 2509.14111 Corollary 3: a counterexample has prod u_i < B_k with B_k = (C(k+1,2)^(k-1) / k)^k, division by k and not k! (confirmed in three texts: Rosenfeld Cor. 3, Trakulthongchai arXiv 2511.22427 C_k, Allikvere arXiv 2609.02604). With the computation J(10,p) = empty (Tier C) and prod P_10 >= B_10 (Tier A) the chain gives LRC(10), which is S-T's Theorem 1.3 for k = 10: NOT a new result.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [
+    "LRI-L-0002"
+   ],
+   "evidence": "sha256:b6239ada63d534a4773a8b0127111e134b48e346afe7cc71d5ab52a91042cb63",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LRI-C-0001",
+   "statement": "Soundness of the producer's own pruning in phase 1 (set-canonical supports; capacity bound; hitting-set branching with sibling exclusion): every class of I(k,p,1) has a set-canonical member; for distinct x, y in a set-canonical U, fold(y/x) >= u_2; multiplicities travel with the support; the capacity bound is a valid relaxation. Re-derived by the AI auditor (AUDIT.md section 2b) and checked empirically by three-mode agreement on 56 (k,p) cases and by the auditor's pairwise-lemma-free runs at p = 127, 137.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:fc9d1f6b7b4e61c77ca5058a901f03fd237749b066c0bf3315fce8eebb3a3211",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LRI-C-0002",
+   "statement": "Phase 1 and lifts (plan 2,2,2,/) for k = 10 at all 61 primes of P_10 end with exactly one class, the canonical (1,...,10) (only_identity true, identity_survives true); |S_1| (classes of I(10,p,1)) ranges from 1 to 58,087 (max at p = 137); main pass 3,963 core-s; the unpruned second pass agrees with the main pass at class-hash level for 33 of 61 primes (127..307) and was stopped. Own-algorithm re-computation by the auditor at p = 127, 137, 263 only; the other 58 primes (incl. 467) rest on the producer's code.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "LRI-C-0001",
+    "LRI-L-0001"
+   ],
+   "evidence": "sha256:e09de6e944de8475f4404ea2794b8d94b24e1adc6b5ec1be73a6439b2737a46b",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LRI-C-0003",
+   "statement": "The level-11 fibre over (1,...,10) is (10,p,11)-proper at all 61 primes of P_10: fiber_check enumerates all 2,593,742,461 vectors w in (Z_11)^10 up to Z_11^* scaling, 0 improper at each prime (158,218,290,121 vectors in all); cross-check by the generic x11 lift at p = 127 (25,937,424,601 lifts, 0 survivors). Together with LRI-C-0002 this gives J(10,p) = empty without Proposition 1.4. Independent: the auditor's own fibre program at p = 127, 137, 263, 467 (0 improper), exhaustive S-T Prop. 4.1 for k = 10 (15,937,424,600 vectors, 0 failures) and the Lemma 4.3 inclusion at all 61 primes.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "LRI-C-0002"
+   ],
+   "evidence": "sha256:1c3d96e449b8f302e308bbe4d1acd9d3a95492fbf158f59cd2cf419ac3f08f81",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LRI-C-0004",
+   "statement": "What the independent AI auditor recomputed with its own code and different algorithms: phase 1 + lifts at p = 127, 137, 263 (identical class counts and hashes at every level, S1 = 8,228 / 58,087 / 17; unpruned at 127 and 137); all 214 positive-control cases k = 3..8, with and without the pairwise lemma (214/214 identical); level-11 fibre at p = 127, 137, 263, 467 (+53, 97): 0 improper; S-T Prop. 4.1 exhaustive; Lemma 4.3 at all 61 primes; no-symmetry brute force I(4,13,5) = empty over 12,960,000 ordered tuples. NOT done: its own phase 1 at the other 58 primes (p = 467 infeasible, stopped at 1,898 s).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "LRI-C-0003"
+   ],
+   "evidence": "sha256:2c2021c0bbd31072241c8a89deaf2e9a0004cce4a56cbf655480817f28f548e9",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LRI-C-0005",
+   "statement": "Controls, run before the headline: positive, per-prime verdict patterns for k = 3..8 against Rosenfeld and Trakulthongchai (column 'I(k,p,l_final) = empty at the tested level'; k = 4, p = 13 flag withdrawn: Rosenfeld section 7 is hedged and makes no claim about 13, brute force I(4,13,5) = empty, controls_ok true); negative, planted mutations MUT=1 ('<' to '<=') and MUT=2 (floor for ceil) change the counts at k = 7, 8 and MUT=2 removes the identity at k = 10, both inert at the level-11 step, which has no mutation switch; the strict '>' control at p = 127, L = 11 flags exactly the identity orbit w = -(1..10); nonzero fibre counts agree in two independent programs (p = 13: 54,976; p = 23: 7,210); L = 5, 7 survivor control.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "LRI-C-0002"
+   ],
+   "evidence": "sha256:c1db519f0676ab33b61654b3df9e7e8fd56a32aa9ed41dce8918765866363255",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LRI-C-0006",
+   "statement": "Comparison with the S-T logs (github.com/vzsky/13-lonely-runners, results/result_11), opened by the auditor only after its own counts at p = 127 and 137: S-T 'Step 1 (l=1): S size' equals the producer's S1_classes at all 61 primes, 0 disagreements; their log reports 'Subproof Mod p Done' for all 61. Later sizes are not comparable (S-T remove the identity before lifting). The producer did not read the repository (attestation, not verifiable by the auditor).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "LRI-C-0002"
+   ],
+   "evidence": "sha256:13bf7b030f7195cd31c7f0f98e61946c2312d4b85c479e42dfa212dc4ec48672",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LRI-C-0007",
+   "statement": "Optional premise re-run (a check, not a derivation): lr_sieve 9 p 2,5 gives an empty final set at all 47 primes of Trakulthongchai's S_9 (137..401), 214 core-seconds. LRC(9) remains a literature premise; the re-run was not audited.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:e753e588190466e81bbe3d660beadb99ae2bba0bf9a989297430926cefd08ed5",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LRI-C-0008",
+   "statement": "HEADLINE. J(10,p) = empty for every one of the 61 primes p in P_10 = {127,...,467} (exact integer arithmetic, exhaustive enumeration; the Proposition 1.4 step of S-T is replaced by a direct level-11 fibre computation), by an independently written implementation, independently AI-audited. This is a replication of S-T's computational input for k = 10, NOT a new theorem. With the Tier L premises LRC(9), the MSS/Rosenfeld bound B_k and S-T Cor. 2.5 / Prop. 2.7, and prod P_10 >= B_10 (Tier A, LRI-A-0001), the chain gives LRC(10), the conjecture for 11 runners (k = 10 moving speeds plus the stationary runner), i.e. S-T's Theorem 1.3 for k = 10; the lonely runner conjecture in general is open. Filed C because the enumeration is not kernel-checked.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "LRI-C-0002",
+    "LRI-C-0003",
+    "LRI-C-0005",
+    "LRI-A-0001",
+    "LRI-L-0001",
+    "LRI-L-0002",
+    "LRI-L-0003"
+   ],
+   "evidence": "sha256:16912a697050daa45e43ee506208b93223b14d4307e1e30d04f989fcf99143b7",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LRI-X-0001",
+   "statement": "NOT run or not complete: pytest tests/ (not run); the repository guards antigravity_guard.py and test_rigor_guard.py exit 1 on pre-existing files elsewhere in the repository and flag no LR-IND file (logs/guard_*.txt); the unpruned producer pass (33 of 61 primes); the auditor's own phase 1 at 58 of 61 primes; any formalisation of J(10,p) = empty. Recorded so the absences are explicit.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:c327aaa87264512efe902e2b8f2256f6b5143782bc43bf1a7ba6ef5c9d4b34c5",
+   "audit": null
+  }
+ ]
+}

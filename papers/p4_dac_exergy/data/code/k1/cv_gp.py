@@ -1,7 +1,11 @@
 """Python re-fit of MOF_Cv_Extrapolate.jl: GP with zero mean, kernel SE(ell, sf) + Const(sc), fixed
 heteroscedastic observation noise sigma_Cv (noise=false in GaussianProcesses.optimize!), kernel log-parameters
 fitted by maximising the log marginal likelihood from the Julia initial point (log 10, log 100, log 500).
-Returns the latent mean, as predict_f does. Validated against the stored Cv arrays (see run_k1.py)."""
+Returns the latent mean, as predict_f does. Validated against the stored Cv arrays (see run_pc.py).
+
+Change notice (NIST software licence): derived from NIST IntrinsicDACCycle v0.0.2, src/MOF_Cv_Extrapolate.jl
+(NIST-developed software; NIST is acknowledged as the source; notice in NIST_NOTICE.txt). Modified work: translated
+from Julia to Python by an AI agent on 2026-10-27; no change of the fitted model intended."""
 
 from __future__ import annotations
 

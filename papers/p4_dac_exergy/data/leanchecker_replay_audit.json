@@ -1,0 +1,24 @@
+{
+ "auditor": "independent adversarial auditor of K1 (producer != verifier), AI agent, 2026-10-27",
+ "toolchain": "Lean 4.34.1 (/mnt/disks/disk-socrateai-local-1/callensxavier_home_data/elan/toolchains/leanprover--lean4---v4.34.1/bin) + pinned Mathlib via scripts/certified_numerics/lean_pinned.py lean_path()",
+ "method": "Core.lean recompiled from source by the auditor (taskset -c 7 python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/DacExergy/Core.lean --olean Programmes.DacExergy.Core), then leanchecker Programmes.DacExergy.Core with the same LEAN_PATH (recipe of .scratchpad/famille_leanchecker.py, re-written as /tmp/k1audit/scripts/replay.py). Controls.lean compiled separately (never imported by Core).",
+ "deviation": "The --olean flag writes into the SHARED olean dir formal_cert/.olean_out -> /mnt/disks/disk-socrateai-local-1/callensxavier_home_data/certified_numerics_olean. The auditor's rebuild overwrote the producer's Programmes/DacExergy/Core.olean there (same source sha256), so the producer's olean hash could not be compared afterwards. The replay therefore checks the auditor's own build of the unchanged source.",
+ "source_sha256": {
+  "Core.lean": "4bfa4f7ebd979d53e8e98847369610339f5bc3530dbd7f43f983fbbfe1a6833c",
+  "Controls.lean": "25017505f1fd76b08024326b9debd03664179602272e025d1d4d1d4f0448aac8",
+  "data/lean copies": "identical (same two hashes)"
+ },
+ "auditor_olean_sha256": {"Programmes.DacExergy.Core": "d2b2a11d0cb086bb844fd0a39875ca2067411d45fa2750fb4b3372065c61df01"},
+ "compile": {
+  "Core": {"rc": 0, "seconds": 18.9, "warnings": ["unused variable h0 in refrig_weight_lt_one (Core.lean:38)"],
+           "print_axioms": "all 12 theorems: [propext, Classical.choice, Quot.sound] exactly"},
+  "Controls": {"rc": 0, "seconds": 16.2,
+               "print_axioms": {"DacExergy.ctl_sorry": "[propext, sorryAx, Classical.choice, Quot.sound]",
+                                "DacExergy.ctl_axiom": "[propext, Classical.choice, DacExergy.ctl_cheat, Quot.sound]"},
+               "caught": true}
+ },
+ "grep_core": "no skipKernelTC, addDecl, native_decide, implemented_by, sorry, axiom, unsafe, extern, opaque, set_option, macro, elab in Core.lean",
+ "replay": [
+  {"module": "Programmes.DacExergy.Core", "rc": 0, "seconds": 118.3, "output": ""}
+ ]
+}

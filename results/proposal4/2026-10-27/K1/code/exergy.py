@@ -3,7 +3,9 @@
 Convention change tested (and only this one): every HEAT is weighted by its Carnot factor relative to an explicit
 ambient temperature T0; every WORK term (W_ads, W_des, E_P, including the abs() in E_P) is kept exactly as
 published. Step 3 (return from T_end to T1), which the paper sets to E3 = 0, is given an explicit sensible-heat
-ledger entry computed by an independent quadrature of Cv(T) (trapezoid on the path grid), not copied from step 2.
+ledger entry computed from Cv(T) on the path grid. Revision 2026-10-27 (audit B1): the default step-3 quadrature is
+now the right-point rule of the published step 2 (closure-consistent); the v1 trapezoid is kept as step3="trapezoid"
+because, divided by tiny working capacities, its O(dCv/dT * dT) mismatch produced spurious G3 flags.
 
 Weights for a heat Q > 0 crossing the boundary at temperature T:
   heat IN  at T: signed cost (1 - T0/T)      no-credit cost max(0, 1 - T0/T)
@@ -44,7 +46,7 @@ class Ledger:
     Pend: float = 0.0
     P1: float = 0.0
     sorb_heat_step2: float = 0.0  # as published (right-point rule)
-    sorb_heat_step3: float = 0.0  # independent trapezoid
+    sorb_heat_step3: float = 0.0  # step-3 quadrature (right-point by default; trapezoid in v1)
 
 
 def _add(heats: list[HeatFlow], label: str, step: int, T: float, signed_in: float) -> None:
@@ -54,7 +56,25 @@ def _add(heats: list[HeatFlow], label: str, step: int, T: float, signed_in: floa
     heats.append(HeatFlow(label, step, "in" if signed_in > 0 else "out", float(T), float(abs(signed_in))))
 
 
-def build_ledger(t: Terms) -> Ledger:
+STEP3_RULES = ("right", "trapezoid")
+
+
+def step3_quadrature(c: np.ndarray, ts: np.ndarray, rule: str = "right") -> np.ndarray:
+    """Per-interval sensible heat [J/kg] released in the step-3 return, interval i = [ts[i], ts[i+1]].
+
+    "right" (default since the 2026-10-27 revision): c[i+1] * (ts[i+1] - ts[i]), the same right-point rule the
+    published step 2 uses for E_heat_sorb (cv[i] * dT_i), so the sorbent heating/cooling loop closes exactly.
+    "trapezoid": the rule of the first version (v1), kept only to reproduce the retracted H2 flags.
+    """
+    dt = ts[1:] - ts[:-1]
+    if rule == "right":
+        return c[1:] * dt
+    if rule == "trapezoid":
+        return 0.5 * (c[1:] + c[:-1]) * dt
+    raise ValueError(f"unknown step-3 rule {rule!r}; expected one of {STEP3_RULES}")
+
+
+def build_ledger(t: Terms, step3: str = "right") -> Ledger:
     L = Ledger(dn_co2=t.dn_co2, dn_n2=t.dn_n2, T1=float(t.ts[0]), Tend=float(t.ts[-1]), P1=float(t.ps[0]),
                Pend=float(t.ps[-1]))
     # Step 1: heat of adsorption released at T1 and removed by cooling ("energy will be spent cooling").
@@ -70,8 +90,8 @@ def build_ledger(t: Terms) -> Ledger:
     gas_c = 4.5 * R * t.n_co2[-1] + 3.5 * R * t.n_n2[-1]
     ts = t.ts
     c_tot = t.cv + gas_c
-    q3 = 0.5 * (c_tot[1:] + c_tot[:-1]) * (ts[1:] - ts[:-1])  # per interval, heat OUT
-    L.sorb_heat_step3 = float(np.sum(0.5 * (t.cv[1:] + t.cv[:-1]) * (ts[1:] - ts[:-1])))
+    q3 = step3_quadrature(c_tot, ts, step3)  # per interval, heat OUT
+    L.sorb_heat_step3 = float(np.sum(step3_quadrature(np.asarray(t.cv, dtype=float), ts, step3)))
     for i in range(len(q3)):
         _add(L.heats, f"step3_{i}", 3, tmid[i], -q3[i])
     L.works = {
@@ -142,7 +162,8 @@ def consistency_gate(L: Ledger, T0: float, xi_reported_umol_per_J: float | None 
 
     G1 uniqueness: every (step, label) heat flow appears once.
     G2 cyclic sensible closure: sorbent heat absorbed in step 2 (published right-point rule) equals sorbent heat
-       released in step 3 (independent trapezoid) within 2 %.
+       released in step 3 within 2 % (exact by construction with the default right-point step-3 rule; the check
+       still catches a double-counted or dropped sensible term).
     G3 second law: the signed reversible cost B(r=1) per mol CO2 is >= W_min at the delivered purity and at the
        lowest delivery pressure of the path (the most permissive W_min); a violation means the inputs are
        thermodynamically inconsistent.

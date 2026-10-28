@@ -1,0 +1,30 @@
+[08:34:31] == auxiliary certified facts
+[08:34:31]   gamma monotone in t on (0,1]: True (11 leaves)
+[08:34:31]   S-factor positivity: {'BH_S_low_positive': True, 'BH_S_high_positive': True, 'Wang_S_1e-9_400_positive': True, 'Wang_S_400_700_positive': True, 'Wang_S_700_10000_positive': True}
+[08:34:31] == E1b/E1c p-11B
+[08:34:31]   building certified Wang reactivity grid on [50,500] keV, ratio 1.0005
+[08:40:27]   grid built: 4608 certified integrals
+[08:40:27]  fit NS: max R at T_e = T_i over T in [50,500], x in [0.05,0.5]
+[08:40:50]    {'L': 0.42139374697580934, 'U': 0.4255629354156559, 'certified_below_1': True, 'witness_above_1': False, 'argmax': (201.9162055126495, 0.100482177734375), 'iters': 100001}
+[08:41:03]    WH mix: {'L': 0.39016039902344346, 'U': 0.3923986349254851, 'certified_below_1': True, 'witness_above_1': False, 'argmax': (204.52812263781956, 0.16666666666666666), 'iters': 100001}
+[08:59:17]   [NS box] theta* in [0.42228233528137205, 0.4308142066001892]: maxR(theta_hi) <= 1.000000; R(witness (243.48376258293155, 0.0921875), theta_lo) >= 1.007728
+[08:59:50]   [NS WH mix] theta* in [0.3752508773803711, 0.3828326182365418]: maxR(theta_hi) <= 0.999994; R(witness (243.48376258293155, 0.16666666666666666), theta_lo) >= 1.008235
+[08:59:50]  fit Wang2026: max R at T_e = T_i over T in [50,500], x in [0.05,0.5]
+Traceback (most recent call last):
+  File "/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/openai-math-discovery/results/proposal4/2026-10-27/E1/code/e1_certify.py", line 410, in <module>
+    main()
+  File "/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/openai-math-discovery/results/proposal4/2026-10-27/E1/code/e1_certify.py", line 366, in main
+    pb[f"{fit}_theta1_box"] = max_R(arb(1), sv, K, E, arb(1), ("50", "500"), ("0.05", "0.5"), rtol=rt, max_iter=100000, min_rel=mr)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/openai-math-discovery/results/proposal4/2026-10-27/E1/code/e1_certify.py", line 193, in max_R
+    r = cellR(T0, T1, x0, x1)
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/openai-math-discovery/results/proposal4/2026-10-27/E1/code/e1_certify.py", line 184, in cellR
+    return pb_ratio(iv(Ta, Tb), theta, iv(xa, xb), sv, K, E, cbf)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/openai-math-discovery/results/proposal4/2026-10-27/E1/code/e1_model.py", line 140, in pb_ratio
+    num = x * (1 - x) * sv(T) * E_keV * K
+                        ^^^^^
+  File "/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/openai-math-discovery/results/proposal4/2026-10-27/E1/code/e1_model.py", line 284, in __call__
+    raise ValueError("T outside grid")
+ValueError: T outside grid

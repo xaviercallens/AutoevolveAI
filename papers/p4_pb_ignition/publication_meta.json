@@ -1,0 +1,29 @@
+{
+ "title": "Ideal ignition windows for p-11B in a 0-D power balance: no window at Te = Ti and thresholds on Te/Ti, with two reactivity fits",
+ "version": "v1",
+ "description": "<p>In an ideal 0-D power-balance model of the Wurzel&ndash;Hsu type (arXiv:2105.10954), with two proton&ndash;boron-11 reactivity fits &mdash; Nevins&ndash;Swain as transcribed from the Wurzel&ndash;Hsu public code (MIT licence, commit 4ae563bf) and the updated S-factor of Wang et al. (arXiv:2601.00241) &mdash; in the box T<sub>i</sub> &isin; [50, 500] keV, boron fraction x &isin; [0.05, 0.5], we report interval-arithmetic enclosures (Arb ball arithmetic, Tier C, not replayed in Lean). <b>There is no ignition window at T<sub>e</sub> = T<sub>i</sub></b>: the certified maximum of P<sub>c</sub>/P<sub>B</sub> is in [0.4214, 0.4256] (Nevins&ndash;Swain) and [0.4287, 0.4326] (Wang). A window needs T<sub>e</sub>/T<sub>i</sub> below thresholds &theta;* certified only for &theta; &le; 1: Nevins&ndash;Swain [0.4223, 0.4308] over the box and [0.3753, 0.3828] at x = 1/6; Wang [0.4381, 0.4470] and [0.396, 0.402]. These thresholds hold for these fits and this bremsstrahlung only: a uniform reactivity factor of 1.1/1.2/1.32 moves the threshold to 0.477/0.524/0.579 (auditor, float).</p><p><b>Positive control.</b> The D-T ideal-ignition temperature of Wurzel&ndash;Hsu is reproduced ([4.2989514, 4.2989523] keV) together with their Table II/III values, for the model the authors' code ran; the gate model was chosen after a float run, and the most literal reading of the text prints 3.0&times;10<sup>21</sup> instead of 2.9&times;10<sup>21</sup> for the triple-product minimum (T<sub>ign</sub> in [4.3071225, 4.3071227] keV; auditor, Tier X). The D-T gate does not discriminate for the p-<sup>11</sup>B conclusion; the p-<sup>11</sup>B pipeline's discrimination is shown by the &theta;* witnesses, a check at &theta; = 1/3 and a no-bremsstrahlung control. A remark on their Fig. 28: the certified threshold at their own mix is 0.375&ndash;0.383, so P<sub>c</sub> exceeds P<sub>B</sub> by about 11% at T<sub>e</sub> = T<sub>i</sub>/3 (float check, 1.113 Nevins&ndash;Swain, 1.161 Wang); this sharpens a figure reading and does not contradict their conclusions.</p><p><b>Tier split.</b> <b>Tier A pending a statement lock</b> (Lean 4.34.1, Mathlib; axioms within propext, Classical.choice, Quot.sound): 20x(1&minus;x) &le; (1+4x)<sup>2</sup> and 1 + 2.2t + 3t<sup>2</sup> &minus; 4.375t<sup>2.5</sup> &gt; 0 on [0, 1], kernel-checked, independently recompiled and replayed with leanchecker (rc 0) by the auditor, with kernel-rejected planted controls; no statement-lock entry exists. <b>Tier L</b>: the model and the fits as cited. <b>Tier C</b>: all enclosures. <b>Tier X</b>: float checks, including the auditor's Wang-side numbers.</p><p><b>What this is NOT.</b> Every statement concerns an idealised 0-D power-balance model with the stated fitted formulas. It makes no claim about any reactor, device, feasibility, climate or economics, does not say that p-<sup>11</sup>B fusion is possible or impossible, and does not say that T<sub>e</sub> &lt; T<sub>i</sub> can be maintained. Not in the model: synchrotron radiation, transport and conduction, ion&ndash;electron coupling mechanisms, alpha heating of electrons, ash, non-Maxwellian or kinetic effects, and the uncertainties of the fits.</p><p><b>Limitations.</b> Independently audited by a different AI agent instance (AUDIT.md, ACCEPT_WITH_CORRECTIONS, nine corrections applied); the auditor's Wang-side and D-T minimiser values are float only; no human audit and no statement lock (owed). <b>The Bosch&ndash;Hale (1992) and Nevins&ndash;Swain (2000) coefficients could not be obtained from the primary papers by the producer or the auditor and are not verified</b>; this matters most for &theta;*. result.json, logs/sha256.json and RESULT.md list data/papers and data/downloads files that are no longer in the repository (third-party material moved out). The Elenchus ledger gate exits with code 1 (0 blocking findings, 2 flags LEDGER_UNAUDITED_TIER_A, one per Tier A row).</p>",
+ "keywords": [
+  "p-11B fusion",
+  "ideal ignition",
+  "power balance",
+  "bremsstrahlung",
+  "certified interval arithmetic",
+  "Arb",
+  "Lean 4",
+  "epistemic tiers",
+  "AI-assisted research"
+ ],
+ "notes": "Preprint v1 (2026-10-28), independently AI-audited (AUDIT.md), not human-audited. Proposal 4, item E1 (preregistered 2026-10-27 with addendum). Lean: AutoevolveAI formal_cert/Programmes/PbIgnition/{Core,Controls}.lean (copies in data/lean, sha256 in the paper), Lean 4.34.1 with the pinned toolchain via lean_pinned.py; auditor leanchecker replay rc 0 reported in AUDIT.md (transcript not shipped). Branch worktree-openai-math-discovery, HEAD at writing bdd3e02b174fe4a2c1751431e0d5b573a86d3dc9; the paper is an uncommitted working-tree directory; nothing pushed. Ledger gate: exit code 1, 0 blocking, 2 flags (ledger/gate_output.txt). Owed: statement lock, human audit, primary-paper check of the Bosch-Hale and Nevins-Swain coefficients. data/RESULT.md and data/result.json are the producer's pre-audit text (hashes recorded); the paper supersedes them on the audit's nine corrections. Third-party material (Wurzel-Hsu full text and code, paywall pages) is not included; no PDFs of others.",
+ "related_identifiers": [
+  {
+   "identifier": "arXiv:2105.10954",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:2601.00241",
+   "relation": "references",
+   "scheme": "arxiv"
+  }
+ ]
+}

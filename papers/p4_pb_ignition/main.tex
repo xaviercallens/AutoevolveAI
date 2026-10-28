@@ -1,0 +1,222 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,
+  frame=single,framesep=3pt,xleftmargin=4pt,xrightmargin=4pt,upquote=true,aboveskip=4pt,belowskip=2pt}
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tA}{\tier{A}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\lean}[1]{\texttt{#1}}
+\newcommand{\Te}{T_{\mathrm e}}
+\newcommand{\Ti}{T_{\mathrm i}}
+\newcommand{\pB}{p\text{-}{}^{11}\mathrm{B}}
+\newcommand{\Pc}{P_{\mathrm c}}
+\newcommand{\PB}{P_{\mathrm B}}
+
+\title{Ideal ignition windows for $\pB$ in a 0-D power balance:\\
+no window at $\Te=\Ti$ and thresholds on $\Te/\Ti$,\\ with two reactivity fits\\
+{\large (interval-arithmetic enclosures of a model statement; not a statement about any device)}}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-28}
+\hypersetup{pdftitle={Ideal ignition windows for p-11B in a 0-D power balance: no window at Te=Ti and thresholds on Te/Ti, with two reactivity fits},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its Python and Lean code and its claim ledger were
+produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{This version was independently audited by a different AI agent instance (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.}
+The audit's nine corrections are applied in this text (Section~\ref{sec:corr}). The auditor's own recomputation was interval arithmetic for the Nevins--Swain and D-T quantities and \emph{float only} (Tier~\tX{}) for everything on the Wang side and for the D-T minimisers of the gate model. No human audit and no statement lock exist; both are owed (Section~\ref{sec:lim}).
+
+\begin{abstract}
+We study the ideal-ignition criterion $\Pc\ge\PB$ (fusion power against bremsstrahlung, no transport loss) of the $0$-D power-balance model of Wurzel and Hsu~\cite{wh} for proton--boron-11, with two reactivity fits: Nevins--Swain~\cite{ns}, as transcribed from the Wurzel--Hsu public code (MIT licence, commit \texttt{4ae563bf}), and the updated S-factor of Wang et al.~\cite{wang}. In the box $\Ti\in[50,500]$~keV, boron fraction $x\in[0.05,0.5]$, interval-arithmetic enclosures (Arb balls, Tier~\tC{}, not replayed in Lean) give:
+\textbf{there is no ignition window at $\Te=\Ti$}: the certified maximum of $\Pc/\PB$ is in $[0.4214,0.4256]$ (Nevins--Swain) and $[0.4287,0.4326]$ (Wang). A window requires $\Te/\Ti$ below a threshold $\theta^\ast$, certified only for $\theta\le1$: Nevins--Swain $[0.4223,0.4308]$ over the box and $[0.3753,0.3828]$ at $x=1/6$; Wang $[0.4381,0.4470]$ and $[0.396,0.402]$. These thresholds hold for \emph{these fits and this bremsstrahlung only}: a uniform factor $1.1/1.2/1.32$ on the reactivity moves the threshold to $0.477/0.524/0.579$ (auditor, float). The ``no window at $\Te=\Ti$'' statement is more robust: it survives any reactivity up to $2.349$ times the Nevins--Swain fit (certified).
+As a positive control the D-T ideal-ignition temperature and the Table~II/III minima of~\cite{wh} are reproduced to the printed digits \emph{for the model the authors' code ran}; the gate model was chosen after a float run, and the most literal text reading of the paper prints $3.0\times10^{21}$ instead of $2.9\times10^{21}$ for the triple-product minimum.
+The Bosch--Hale and Nevins--Swain coefficients \textbf{could not be obtained from the primary papers by the producer or by the auditor} and are \textbf{not verified}; this matters most for $\theta^\ast$.
+Two small Lean facts ($20x(1-x)\le(1+4x)^2$ and $1+2.2t+3t^2-4.375t^{2.5}>0$ on $[0,1]$) are kernel-checked, independently recompiled and replayed by the auditor, and are Tier~\tA{} once a statement-lock entry exists (none yet).
+
+\medskip
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{What this is NOT.} Every statement concerns an \emph{idealised $0$-D power-balance model with the stated fitted formulas}. It is \textbf{not} a statement about any reactor, device, cost, climate or economics, \textbf{not} a claim that $\pB$ fusion is possible or impossible, \textbf{not} a claim that $\Te<\Ti$ can be maintained, and \textbf{not} a discovery beyond the model. Not in the model: synchrotron radiation, transport and conduction losses, any ion--electron coupling mechanism, $\alpha$ heating of electrons, ash and impurities, non-Maxwellian or kinetic effects, and the uncertainties of the fits.}}
+\end{abstract}
+
+\paragraph{Markers.} \tA{}: kernel-checked Lean, axioms within $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$, controls caught. \tL{}: a cited source, taken as stated. \tC{}: executed code with an argument written down but not machine-checked (here: Arb interval arithmetic). \tX{}: a float check or a recorded absence, supporting nothing by itself. Identifiers \texttt{PBI-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+%=====================================================================
+\section{Model and question}\label{sec:model}
+\paragraph{The model (Tier \tL{}; \texttt{PBI-L-0001}).} As in Wurzel and Hsu~\cite{wh} (eqs.~(6)--(8), (16), (22), (41), (D1)--(D5)): the fusion power density is $S_c=f_c\,n_1n_2\langle\sigma v\rangle E_F$ and the bremsstrahlung loss is $S_B=C_B\,n_e^2\sqrt{\Te}\,\gamma(Z_{\rm eff})$ with $C_B=5.34\times10^{-37}$~W\,m$^3$\,keV$^{-1/2}$ and the relativistic bracket
+$$\gamma=Z_{\rm eff}\bigl(1+1.78\,t^{1.34}\bigr)+2.12\,t\bigl(1+1.1\,t+t^2-1.25\,t^{2.5}\bigr),\qquad t=\Te/m_ec^2,$$
+(their eq.~(D2), equal to eq.~(14) of Ochs and Fisch~\cite{of}, which includes the $x^2$ term). Ideal ignition means $\Pc\ge\PB$, with ideal confinement and no conduction loss. For $\pB$: $f_c=1$, $E=8.68$--$8.70$~MeV, boron fraction $x=n_B/n_i$, $n_e=(1+4x)n_i$, $Z_{\rm eff}=(1+24x)/(1+4x)$. The ratio $R=\Pc/\PB$ does not depend on density. The Wurzel--Hsu optimal mix is $x=1/6$ ($Z_{\rm eff}=3$; their eqs.~(D3)--(D4), footnote~138). The temperature ratio $\theta=\Te/\Ti$ is a \emph{free parameter}; no mechanism that would keep $\Te<\Ti$ is modelled.
+
+\paragraph{The question (preregistered; \texttt{docs/proposals/NEXT\_STEPS\_PROPOSAL\_4\_2026-10-27.md} and the addendum of the same date, item E1).} (a) Reproduce the D-T ideal-ignition numbers of~\cite{wh} as a positive control, with a gate fixed before the certified run. (b) For $\pB$ in the box $\Ti\in[50,500]$~keV, $x\in[0.05,0.5]$: certify the threshold $\theta^\ast$ above which $\Pc<\PB$ everywhere. (c) Certify whether any window exists at $\Te=\Ti$, under the older fit and under an updated fit. The preregistration asked for Tier~\tA{} inequalities and for coefficients pinned from the primary papers; neither was achieved (Section~\ref{sec:lim}, Deviations~1 and~3).
+
+%=====================================================================
+\section{Fits and what could not be verified}\label{sec:fits}
+\paragraph{Reactivity fits.} (i) \emph{Nevins--Swain~\cite{ns}}: the high-temperature fit, valid $50$--$500$~keV, with coefficients $P_1,\dots,P_7$, $E_G$, $M_rc^2$ and a resonant term, as transcribed in the Wurzel--Hsu public code at commit \texttt{4ae563bf} (MIT licence; the commit is dated after the 2022 paper). (ii) \emph{Wang et al.~\cite{wang}}: an updated S-factor in three segments (Table~I of that paper), made a reactivity by the Maxwellian integral $\langle\sigma v\rangle=(8/\pi)^{1/2}\mu^{-1/2}T^{-3/2}\!\int_0^\infty\sigma E\,e^{-E/T}dE$, with $\sigma:=0$ above $10$~MeV (their stated fit range). The first Wang segment reprints the Nevins--Swain low-energy coefficients, which independently corroborates that part of the transcription. All coefficients are decimal strings in \texttt{data/fits.json} with per-block provenance.
+
+\paragraph{Not verified against the primary papers (Tier \tL{}, \texttt{PBI-L-0003}; audit correction C9).} \textbf{Neither the producer nor the independent auditor could obtain Bosch--Hale (1992)~\cite{bh} or Nevins--Swain (2000)~\cite{ns}} (closed access or bot-challenged). The Bosch--Hale (D-T) and Nevins--Swain ($\pB$) coefficients are therefore \emph{secondary}: they are the values in the authors' code. The only checks are indirect: the transcribed Nevins--Swain fit divided by the Maxwellian integral of the transcribed Nevins--Swain S-factor is $0.985$--$0.996$ for $\Ti=50$--$200$~keV, $0.976$ and $0.965$ at $250$ and $300$~keV, $0.940$ at $400$ and $0.917$ at $500$~keV (producer; reproduced by the auditor; Tier~\tX{}). This excludes gross transcription errors but cannot detect an error of a few per cent, and the high-temperature drift is unexplained. The auditor's agreement with recalled Bosch--Hale values is memory, not a pinned source. \textbf{Because $\theta^\ast$ moves roughly in proportion to the reactivity, it inherits any error in the unverified digits directly}; the $\Te=\Ti$ exclusion has a margin of about $2.35$ and does not.
+
+\paragraph{Other sources.} Read in full: Wang et al.\ (2601.00241) and Ochs--Fisch (2310.18508), via alphaXiv. Read in part: Wurzel--Hsu (physics sections and Appendices C/D; data tables not read). Sikora--Weller~\cite{sw} (J.\ Fusion Energy 35, 538) was read but gives no reactivity fit and is not used as one. Putvinski et al.\ (2019) was seen only through OCR summaries (bremsstrahlung eq.~(7) is consistent with the two texts read). Tentori--Belloni (2023) could not be accessed. Third-party full texts, the Wurzel--Hsu code and the paywall pages are \emph{not} in this bundle (Section~\ref{sec:corr}, C7).
+
+%=====================================================================
+\section{Method}\label{sec:method}
+\paragraph{Arb enclosures (Tier \tC{}; \texttt{PBI-C-0001}).} \texttt{data/code/e1\_model.py} implements the model with python-flint~0.6.0 Arb balls at $128$ bits; every coefficient is a decimal string. For a cross-section fit the Maxwellian integral is a rigorous \texttt{acb.integral} on each analytic segment plus a bound on $(0,1]$~keV; a reactivity enclosure over a temperature interval $[a,b]$ follows from point integrals by $\langle\sigma v\rangle(a)(a/b)^{3/2}\le\langle\sigma v\rangle(T)\le\langle\sigma v\rangle(b)(b/a)^{3/2}$, valid because $\sigma\ge0$ (certified). The $\pB$ reduced mass is enclosed in $\mu c^2\in[859500,859650]$~keV. The ignition temperature is a bisection plus certified signs on the outer intervals; minima use an upper bound at the float minimiser and certified lower bounds elsewhere; $\max R$ over $(\Ti,x)$ boxes is a best-first branch and bound with outward rounding; $\theta^\ast$ is a bisection with a two-sided certificate (certified $\max R<1$ at $\theta_{\rm hi}$, and a point witness $R>1$ at $\theta_{\rm lo}$).
+\paragraph{From the face $\theta_{\rm hi}$ to all $\theta\in[\theta_{\rm hi},1]$.} $\PB\propto\sqrt{\Te}\,\gamma(\Te/m_ec^2)$ is increasing in $\Te$ for $\Te\le500$~keV$<m_ec^2$: the $Z_{\rm eff}$ term is increasing, and the derivative of the electron--electron term $t(1+1.1t+t^2-1.25t^{2.5})$ is $1+2.2t+3t^2-4.375t^{2.5}>0$ on $[0,1]$, certified twice, by Arb subdivision and by the Lean lemma of Section~\ref{sec:lean}. The step ``positive derivative implies monotone'' is not formalised (Tier~\tC{}). Hence a certified $\max R<1$ at $\theta_{\rm hi}$ gives $R<1$ for every $\theta\in[\theta_{\rm hi},1]$. \textbf{We certify nothing for $\theta>1$} (there $\Te$ can leave the $500$~keV box toward $m_ec^2$ where the fit and the argument stop; Deviation~4).
+\paragraph{Independent float code.} \texttt{e1\_float\_indep.py} is a separate float implementation (scipy \texttt{quad}, \texttt{brentq}, text constants); it lies inside every certified enclosure (Tier~\tX{}, \texttt{PBI-X-0001}).
+\paragraph{Run history.} Runs~1 and~2 of the D-T stage and two $\pB$ stage runs were aborted (hang, too wide, a grid edge rounding below $50$~keV); run~3 failed G4 only, for the constant-hull reason. The final hashed \texttt{e1\_certify.py} was rerun end to end (\texttt{logs/certify.json}, \texttt{logs/certify\_final\_stdout.txt}) and reproduces every gate verdict and enclosure quoted here; earlier logs are kept as history. In \emph{decide} mode an early-exit bug could return ``undecided'' but not a false certificate; Wang at $x=1/6$ is certified by the explicit scan \texttt{e1\_wang\_mix.py}, because the stopping order of \texttt{theta\_threshold} (rtol test before the decide test) is still unfixed in the hashed code, so that the hashed code is exactly what ran.
+
+%=====================================================================
+\section{Positive control: D-T (Tier \tC{}; \texttt{PBI-C-0002})}\label{sec:dt}
+The gate (\texttt{e1\_gate.py}) was written before the certified run but \emph{after a first float run} (Deviation~6). \textbf{It passes for the model the authors' code ran}: the \texttt{integrated} path (Maxwellian average of the Bosch--Hale cross section over $E\in[0.5,4700]$~keV, certified with Arb), the Putvinski relativistic bracket with $Z_{\rm eff}=1$, $f_c=0.2$, $E=17.6$~MeV and $C_B$ from the NRL value $1.69\times10^{-32}$. (Paper source: github.com/swurzel/lawson-criterion-paper at \texttt{4ae563b}; the paper's Fig.~4 caption says the D-T reactivities come from the integrated cross sections.)
+
+\begin{center}\small\begin{tabular}{p{3.8cm}p{2.8cm}p{4.4cm}p{3.6cm}}\toprule
+quantity & W--H printed & certified, authors' code model & constant hull\\\midrule
+ideal ignition $T$ (eq.~8, Fig.~6) & 4.3 keV & [4.2989514, 4.2989523] & [4.2608, 4.3468]\\
+argmin $n_iT\tau_E$, $Q=\infty$ (Tab.~III) & 14 keV & [14.128, 14.442] & corners [14.127, 14.448]\\
+min $n_iT\tau_E$ & $2.9\times10^{21}$ & [2.94410, 2.94502]$\times10^{21}$ & [2.94400, 2.96351]$\times10^{21}$\\
+argmin $n_i\tau_E$ (Tab.~II) & 26 keV & [25.590, 26.212] & corners [25.590, 26.214]\\
+min $n_i\tau_E$ & $1.6\times10^{20}$ & [1.55227, 1.55279]$\times10^{20}$ & [1.55224, 1.56219]$\times10^{20}$\\\bottomrule
+\end{tabular}\end{center}
+The constant hull combines $C_B$ and the keV-to-joule conversion from the Wurzel--Hsu text ($5.34\times10^{-37}$; $1.6\times10^{-16}$~J/keV), from the code (NRL, $6.24\times10^{18}$ or $6.242\times10^{18}$~eV/J, CODATA), and the Ochs--Fisch prefactor, together with $f_c\in[3.5/17.6,0.2]$; the minima are evaluated at the corners of the hull, valid because the triple-product minimum is monotone in $f_c$ and in the bremsstrahlung constant.
+
+\paragraph{Other certified readings, relabelled per audit correction C1.} The variants formerly called ``text constants'' use the text's $C_B$ and keV-to-joule conversion but the \emph{code's} $f_c=0.2$; they are labelled accordingly.
+\begin{center}\small\begin{tabular}{p{6.4cm}p{2.6cm}p{2.8cm}p{2.4cm}}\toprule
+variant & $T_{\rm ign}$ (keV) & min $n_iT\tau_E$ ($10^{21}$) & prints\\\midrule
+parameterized $\sigma v$, non-rel., text $C_B$/J, code $f_c=0.2$ & [4.29959, 4.29959] & [2.94923, 2.95056], straddles the 2.95 edge & 2.9 or 3.0\\
+parameterized, relativistic, code constants & [4.32619, 4.32620] & [2.96275, 2.96409] & 3.0\\
+integrated, non-rel., text $C_B$/J, code $f_c=0.2$ & --- & [2.93077, 2.93168] & 2.9\\
+integrated, relativistic, code constants (the gate model) & --- & [2.94410, 2.94502] & 2.9\\
+\textbf{pure text} (all text constants incl.\ $f_c=3.5/17.6$), parameterized, non-rel.\ (auditor, \tX{}) & [4.3071225, 4.3071227] & $\ge2.95$ everywhere, value $2.96846$ at $14.2486$~keV; so in $[2.95,2.96846]$ & \textbf{3.0}\\\bottomrule
+\end{tabular}\end{center}
+Every variant gives $4.3$~keV, $14$~keV, $26$~keV and $1.6\times10^{20}$; only the second significant digit of the Table~III minimum depends on the reading. The last row was computed by the auditor with \texttt{mpmath.iv} (interval arithmetic for $T_{\rm ign}$ and for the lower bound $2.95\times10^{21}$ and the value at $14.2486$~keV; the minimiser and the LP minimum $1.567\times10^{20}$ at $25.98$~keV are float). It is \emph{not} certified by the producer's pipeline, and the auditor's scratch code is not shipped, so it is filed Tier~\tX{} here (\texttt{PBI-X-0001}).
+
+\paragraph{Honest status of the gate.} The reproduction ``to the printed digits'' holds for the model the authors' code ran, not for every reading of the text. The gate window for G2 is $[2.85,2.95)\times10^{21}$, fixed after the float run showed that another reading rounds to $3.0\times10^{21}$ (Deviation~6, disclosed). The Table~III minimum sits $0.17\%$ below the rounding edge $2.95\times10^{21}$.
+
+%=====================================================================
+\section{Results for $\pB$ (Tier \tC{})}\label{sec:pb}
+\subsection{No ignition window at $\Te=\Ti$ (\texttt{PBI-C-0003})}
+\begin{center}\small\begin{tabular}{p{5.2cm}p{3.6cm}p{3.4cm}p{2.2cm}}\toprule
+fit, region & certified $\max\Pc/\PB$ & argmax $(\Ti,x)$ & $m^\ast$\\\midrule
+Nevins--Swain, box & [0.42139, 0.42556] & (202 keV, 0.100) & [2.350, 2.373]\\
+Wang, box & [0.42869, 0.43260] & (208.5 keV, 0.101) & [2.312, 2.333]\\
+Nevins--Swain, $x=1/6$ & [0.39016, 0.39240] & (204.5 keV) & [2.548, 2.563]\\
+Wang, $x=1/6$ & [0.39732, 0.40083] & (211.4 keV) & [2.495, 2.517]\\\bottomrule
+\end{tabular}\end{center}
+So $\Pc<\PB$ everywhere on the box under both fits: no ideal-ignition window at $\Te=\Ti$ in this ideal $0$-D model (no synchrotron, no transport, Maxwellian, no mechanism maintaining $\Te<\Ti$), for $\Ti\in[50,500]$~keV and $x\in[0.05,0.5]$ (audit correction C5). The maximum is interior (about $202$~keV, $x\approx0.10$) and widening the box ($x\in[0.005,0.95]$; for Wang also $\Ti\in[20,1000]$~keV) leaves it unchanged (auditor, float). The multiplier $m^\ast$ is a certified statement that needs no updated fit: $R$ is linear in $\langle\sigma v\rangle$, so any reactivity with $\langle\sigma v\rangle(T)\le2.349\times$ (Nevins--Swain)$(T)$ on $[50,500]$~keV gives $\Pc<\PB$ on the whole box at $\Te=\Ti$.
+
+\paragraph{Caveat on comparing the two fits.} Wang is an \emph{integrated} S-factor; Nevins--Swain is a \emph{fitted} reactivity. The Nevins--Swain fit lies $2.4$--$3.5\%$ below the Maxwellian integral of the Nevins--Swain S-factor at $250$--$300$~keV, where $\theta^\ast$ is set, and $8\%$ below at $500$~keV, so part of the Wang/Nevins--Swain difference in $\theta^\ast$ is method mismatch, not new data. The certified ratio Wang/NS of the reactivity is $1.016,\ 1.000,\ 1.005,\ 1.016,\ 1.070,\ 1.154,\ 1.262$ at $50,100,150,200,300,400,500$~keV (point enclosures of relative radius below $10^{-4}$); at $500$~keV the Wang fit includes the new $4.7$~MeV resonance. The $\Te=\Ti$ exclusion does not depend on this (margin about $2.3$ either way). Wang et al.\ themselves state, with Rider's bremsstrahlung, that with $\Te=T$ the bremsstrahlung exceeds the fusion power over the whole temperature range (Tier~\tL{}, \texttt{PBI-L-0002}); this agrees with, and is not an independent check of, the Putvinski-bremsstrahlung result here.
+
+\subsection{Thresholds on $\Te/\Ti$ (\texttt{PBI-C-0004})}
+\begin{center}\small\begin{tabular}{p{4.2cm}p{3.0cm}p{6.8cm}}\toprule
+fit, region & certified $\theta^\ast$ & witness at $\theta_{\rm lo}$\\\midrule
+NS, full box & [0.4223, 0.4308] & $\Ti=243.5$~keV, $x=0.0922$, $R\ge1.0077$ at $\theta=0.4223$\\
+NS, $x=1/6$ & [0.3753, 0.3828] & $243.5$~keV, $R\ge1.0082$ at $\theta=0.3753$\\
+Wang, full box & [0.4381, 0.4470] & $243.5$~keV, $x=0.092$, $R\ge1.0082$ at $\theta_{\rm lo}$\\
+Wang, $x=1/6$ & [0.396, 0.402] & $\mathbf{261.65}$~keV, $x=1/6$, $R\ge1.00037$ at $\theta=0.396$ (thin margin; audit C8)\\\bottomrule
+\end{tabular}\end{center}
+At $\theta_{\rm hi}$ the certified $\max R$ is below $1$ (for example $\le0.99999999$ for Wang over the box and $\le0.99995$ for Wang at $x=1/6$, $\theta=0.402$). The Wang value at $x=1/6$ comes from the explicit $\theta$ scan \texttt{e1\_wang\_mix.py} (\texttt{logs/certify\_wang\_mix.json}): at $\theta=0.398$ and $0.400$ neither a witness nor a certificate exists, at $0.402$ the certificate does. The auditor's float checks put the thresholds at $0.4287$, $0.3811$, $0.4451$, $0.3988$, each inside the certified interval; the auditor's witness for Wang at $x=1/6$ gives $R=1.0015$ (float) against the producer's certified lower bound $1.00037$. Interval arithmetic certifies the NS upper side and the NS witnesses on the auditor's side; the Wang side is float there.
+
+\paragraph{Scope, with the audit's qualification (C4, C5).} Under these two fits and Putvinski's bremsstrahlung, a window needs $\Te/\Ti$ below about $0.42$--$0.45$ (box) or $0.375$--$0.402$ ($x=1/6$). \textbf{$\theta^\ast$ is not a property of $\pB$; it is a property of the chosen reactivity and bremsstrahlung fits.} Auditor sensitivities (float, Tier~\tX{}): uniform reactivity $\times1.1/1.2/1.32$ gives $\theta_c=0.477/0.524/0.579$ (the factor $1.32$ is an illustrative product of ``$+20\%$ cross section, $+10\%$ kinetic'', not a pinned value); Rider's bremsstrahlung moves $\theta_c$ by about $+1\%$ (to $0.434$ NS, $0.452$ Wang) and raises $\max R$ at $\theta=1$ to $0.438$ and $0.447$; $E=8.682$~MeV gives $0.4277$; removing Wang's $4.7$~MeV resonance moves $0.4451$ to $0.4450$. The maximum over the box for $\theta<1$ lies at $\Ti\approx235$--$259$~keV, $x\approx0.093$.
+
+\subsection{Remark on Fig.~28 of Wurzel--Hsu}
+The caption of Fig.~28 of~\cite{wh} reads ``$\PB$ always exceeds $\Pc$ when $\Te\gtrsim\Ti/3$'', with the parameterized Nevins--Swain reactivity and the $x=1/6$ mix. In the same model the certified threshold is $[0.3753,0.3828]$, not $1/3$; so for $\Te/\Ti$ between $1/3$ and about $0.375$ there are temperatures, near $\Ti\approx243$--$248$~keV, with $\Pc>\PB$. By float check at $\Te=\Ti/3$, $x=1/6$: $\max\Pc/\PB=1.113$ at $248.3$~keV (Nevins--Swain) and $1.161$ at $268.5$~keV (Wang) (\texttt{logs/third\_check.txt}; the auditor finds $1.1132$ and $1.1606$; Tier~\tX{}). This \textbf{sharpens a figure reading and does not contradict their conclusions}: the caption's ``$\gtrsim$'' makes it a rough reading of a plotted curve, and their statement that $\pB$ is not ignitable at $\Te=\Ti$ is what we also find.
+
+%=====================================================================
+\section{Controls}\label{sec:controls}
+\begin{center}\small\begin{tabular}{p{2.0cm}p{5.4cm}p{8.0cm}}\toprule
+control & expectation & outcome\\\midrule
+P1 D-T & gate PASS & PASS (G1, G2, G2b, G3, G4 true), for the authors' code model\\
+P2 float & inside the certified hull & inside: $T_{\rm ign}=4.29959$, TP min $2.94518\times10^{21}$, LP min $1.55284\times10^{20}$ (separate scipy code; text $C_B$/J, \emph{code} $f_c=0.2$, relabelled per C1)\\
+P3 & W--H Tables II/III ``--'' for $\pB$ (NS, $\Te=\Ti$, $x=1/6$) & certified $\max R\le0.39222$\\
+P4 float vs $\pB$ & float inside the certified intervals & inside, all six quantities (Section~\ref{sec:pb})\\
+N1 & reactivity $\times0.5$: gate FAIL & FAIL: $T_{\rm ign}=5.3724$~keV, TP min $6.285\times10^{21}$, LP min $3.230\times10^{20}$\\
+N2 & bremsstrahlung removed: conclusion flips, gate FAIL & FAIL: no ignition temperature (every $T$ has $S_c>S_B$), TP min $2.758\times10^{21}$; the $\pB$ ratio is infinite\\
+N3 Lean & each planted statement fails to elaborate & rc~1, errors at three declarations (Section~\ref{sec:lean})\\
+S positivity & needed for the $T$-interval bound & certified for both Bosch--Hale pieces and the three Wang segments\\\bottomrule
+\end{tabular}\end{center}
+\paragraph{What the D-T gate does and does not show (audit C6).} \textbf{The D-T gate G3 does not discriminate for the $\pB$ conclusion}: it still passes under N1, because halving the reactivity only strengthens an exclusion. The $\pB$ pipeline's ability to \emph{find} a window is shown instead by the $\theta^\ast$ witnesses ($R>1$ at $\theta_{\rm lo}$), by the check at $\theta=1/3$ ($R\approx1.11$) and by N2. The auditor read the recorded check vectors of N1 and N2 in \texttt{logs/certify.json}; the gate code itself was not re-run by the auditor (\texttt{PBI-C-0005}).
+
+%=====================================================================
+\section{Lean (Tier \tA{} pending a statement lock)}\label{sec:lean}
+Module \texttt{formal\_cert/Programmes/PbIgnition/Core.lean} (copy in \texttt{data/lean/}), \texttt{import Mathlib.Tactic} and \texttt{Mathlib.Analysis.SpecialFunctions.Pow.Real} (never \texttt{import Mathlib}), Lean~4.34.1, Mathlib \texttt{d13f23b7}, through \texttt{scripts/certified\_numerics/lean\_pinned.py}, rc~$0$, no \texttt{sorry}, no warnings. Theorems:
+\lean{optimal\_mix} ($20x(1-x)\le(1+4x)^2$ for all real $x$; with $x=n_B/n_i$ this is $n_pn_B/n_e^2\le1/20$), \lean{optimal\_mix\_eq} (equality iff $x=1/6$; W--H footnote~138), \lean{rpow\_25\_le\_sq} ($t^{2.5}\le t^2$ on $[0,1]$) and \lean{ee\_term\_deriv\_pos} ($0<1+2.2t+3t^2-4.375t^{2.5}$ on $[0,1]$; $4.375=3.5\times1.25$ is the exact coefficient of the derivative of $t(1+1.1t+t^2-1.25t^{2.5})$). \texttt{\#print axioms} for all four: \lean{propext}, \lean{Classical.choice}, \lean{Quot.sound} (\texttt{logs/lean\_core.json}); the binding \texttt{anse/formal/lean\_runner.py} \texttt{verify\_file} gate, with \texttt{lean\_cmd} pointed at the pinned toolchain, gives the same (\texttt{logs/lean\_runner\_core.json}; the main \texttt{formal/} build lacks \texttt{Mathlib/Tactic.olean}, so its default command fails before any proof is checked). Escape grep (\texttt{sorry}, \texttt{admit}, \texttt{native\_decide}, \texttt{axiom}, \texttt{set\_option}, \texttt{\#exit}, \texttt{skipKernelTC}, \texttt{addDecl}, \texttt{implemented\_by}, \texttt{unsafe}, \texttt{opaque}, \texttt{macro}, \texttt{decide}, \dots): no code hit (the word ``elaborate'' in a docstring of \texttt{Controls.lean} only).
+\paragraph{Independent verification (audit C3).} The auditor recompiled a byte-identical copy with \texttt{lean\_pinned.py compile} (rc~$0$, $5.5$~s), built its own olean and ran \texttt{leanchecker PbIgnition.Core} (rc~$0$, $40.2$~s); a nonexistent module gives rc~$1$ (negative control), so the rc~$0$ is a real replay. \textbf{The leanchecker transcript is in the auditor's scratch and is not shipped;} it is reported in \texttt{AUDIT.md}\,\S5 only. The binding \texttt{lean\_runner} gate was run by the producer, not re-run by the auditor. \textbf{No statement-lock entry exists}; so the two facts are \emph{kernel-checked, independently recompiled and leanchecker-replayed, and become Tier~\tA{} once a statement-lock entry exists}. In the ledger they are filed as Tier~\tA{} with an \texttt{ai\_audit} field and the gate field \texttt{audit} left null, exactly as in the sibling papers, so the gate flags them.
+\paragraph{Controls.} \texttt{Controls.lean} (tampered optimum $1/21$ with the same proof script; tampered coefficient $7$ instead of $4.375$; the derivative bound claimed on $[0,2]$) is rejected, rc~$1$, with errors at lines $23$, $28$, $32$, $33$ (\texttt{logs/lean\_controls.json}). The auditor checked that each planted statement is actually false (at $x=1/6$: $21\cdot5/36=2.917>25/9$; at $t=1$: $1+2.2+3-7=-0.8$; at $t=2$: about $-7.35$), so no proof exists, not merely that the script fails (\texttt{PBI-A-0002}).
+\paragraph{What the Lean says, and only this.} Two elementary real inequalities used by the model: the optimum of the proton--boron mix, and the sign of the derivative of the electron--electron bremsstrahlung term on $[0,1]$. \textbf{No interval enclosure, no reactivity, no ignition statement is in Lean}; neither is the monotonicity step. The enclosures of Sections~\ref{sec:dt}--\ref{sec:pb} are Tier~\tC{}.
+\begin{itemize}\scriptsize\itemsep=0pt
+\item \texttt{Core.lean}: \texttt{34c301362049496f\dots} (full sha256 in \texttt{ledger/evidence/}, \texttt{data/logs/sha256.json})
+\item \texttt{Controls.lean}: \texttt{d95715aa7324ca55\dots}
+\end{itemize}
+
+%=====================================================================
+\section{Audit corrections applied}\label{sec:corr}
+The independent audit (\texttt{AUDIT.md}\,\S8, a different AI agent instance, not a person) required nine corrections to the producer's report. Where the producer's \texttt{RESULT.md} and \texttt{result.json} (copied unchanged into \texttt{data/}) differ, \textbf{this paper supersedes them}.
+\begin{enumerate}\itemsep=1pt
+\item[C1.] The D-T ``pure text'' variants are relabelled ``text $C_B$/J, code $f_c=0.2$'' (they use the code's $f_c$, \texttt{FC\_CODE} in \texttt{e1\_certify.py}); the true pure-text row ($f_c=3.5/17.6$) is added: $T_{\rm ign}\in[4.3071225,4.3071227]$~keV and the triple-product minimum in $[2.95\times10^{21},2.96846\times10^{21}]$, printing $3.0\times10^{21}$ (auditor, interval for $T_{\rm ign}$ and for the lower bound; Tier~\tX{} here, not certified by the producer pipeline). Control~P2 is relabelled likewise.
+\item[C2.] Gate status: ``passes for the model the authors' code ran (the gate model was chosen after a float run, Deviation~6)''; the most literal text reading prints $3.0\times10^{21}$.
+\item[C3.] Lean: ``kernel-checked, independently recompiled and leanchecker-replayed by the auditor; Tier~\tA{} once a statement-lock entry exists''. Only the statement lock is missing. (\texttt{result.json}\,$\to$\,\texttt{tiers.lean\_lemmas} still reads ``A pending independent verification''; this paper supersedes it.)
+\item[C4.] The robustness sentence now reads ``under these two fits and Putvinski's bremsstrahlung, a window needs $\Te/\Ti$ below about $0.42$--$0.45$'', with the reactivity scaling ($\times1.2$ gives $0.52$) and Rider's bremsstrahlung ($+1\%$).
+\item[C5.] The no-window statement carries its model qualifiers (no synchrotron, no transport, Maxwellian, no $\Te$-maintaining mechanism; box $\Ti\in[50,500]$~keV, $x\in[0.05,0.5]$; interior maximum; widening the box changes nothing, float).
+\item[C6.] The D-T gate does not discriminate for the $\pB$ conclusion (Section~\ref{sec:controls}).
+\item[C7.] \textbf{Third-party material is not in the repository or in this bundle}: the Wurzel--Hsu full text and code at \texttt{4ae563bf}, and the paywall and challenge pages, were moved out of the repository on 2026-10-28 and can be re-fetched from the sources in \texttt{data/fits.json}. \texttt{result.json}, \texttt{logs/sha256.json} and \texttt{RESULT.md}\,\S10 still list \texttt{data/papers/*} and \texttt{data/downloads/*} entries and hashes: \textbf{those files are no longer in the repository} (the hashes identify them; the auditor verified that three match the moved copies). \texttt{code/e1\_hashes.py} lines 32--34 still point at the removed \texttt{data/downloads} path and would fail if re-run; the script is shipped unmodified so that its recorded hash stays valid.
+\item[C8.] The Wang $x=1/6$ witness is recorded: $\Ti=261.6496$~keV, $x=1/6$, certified $R\ge1.00037$ at $\theta=0.396$ (\texttt{logs/certify\_wang\_mix.json}); the margin is thin, the auditor's float value is $1.0015$.
+\item[C9.] Neither producer nor auditor obtained Bosch--Hale 1992 or Nevins--Swain 2000; the coefficients remain secondary (author code only) (Section~\ref{sec:fits}).
+\end{enumerate}
+
+%=====================================================================
+\section{Claim ledger}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files $14$ claims: $2$ at Tier~\tA{} (\texttt{PBI-A-0001}, \texttt{-0002}), $3$ at \tL{} (\texttt{PBI-L-0001..0003}; \texttt{-0003} is the unverified coefficients), $7$ at \tC{} (\texttt{PBI-C-0001..0007}, the last being the headline) and $2$ at \tX{} (\texttt{PBI-X-0001}: float checks and the auditor's float and pure-text values; \texttt{PBI-X-0002}: what was not run). Each carries a content-addressed evidence blob in \texttt{ledger/evidence/}; each Tier~\tA{} claim also carries an \texttt{ai\_audit} field. The gate field \texttt{audit} is left null: the audit was done by an AI agent, not a person, so the Elenchus gate keeps \texttt{LEDGER\_UNAUDITED\_TIER\_A} open. The gate (\texttt{tools/ledger.py ledger.json -{}-evidence-dir evidence}; verbatim in \texttt{ledger/gate\_output.txt}) exits with code~\texttt{1}: $0$ blocking findings and $2$ flags, one per Tier~\tA{} row. That is the honest state.
+
+%=====================================================================
+\section{Limitations}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item \textbf{Model, fits and box.} Every statement is about an idealised $0$-D power balance with the stated fits in $\Ti\in[50,500]$~keV, $x\in[0.05,0.5]$. Ideal ignition only: no conduction and no confinement time; it is not reactor breakeven, which is a different and weaker condition (Ochs--Fisch~\cite{of}; their breakeven and ignition-time figures come from a four-species optimisation not reproduced here).
+\item \textbf{Not in the model:} synchrotron radiation (it would only make every window smaller); transport and conduction losses; any mechanism maintaining $\Te<\Ti$, that is the ion--electron collisional coupling a self-consistent $\Te$ would need; $\alpha$ heating of electrons; ash and impurities; non-Maxwellian or kinetic enhancement (bounded only through $m^\ast$); the uncertainties of the fits (Wang quote $\pm3$--$10\%$ on the $0.6$~MeV resonance; the Nevins--Swain errors are not propagated).
+\item \textbf{The $\theta^\ast$ results do not say that $\Te<\Ti$ is achievable}, and are a property of the chosen fits (Section~\ref{sec:pb}).
+\item \textbf{Coefficients not verified against primary papers} (Bosch--Hale 1992, Nevins--Swain 2000; Section~\ref{sec:fits}); the Putvinski bremsstrahlung equation was seen only through OCR; Tentori--Belloni and Sikora--Weller were not used as fits. ``Updated fit'' means Wang 2026 only.
+\item \textbf{Tier~\tC{}, not Tier~\tA{}.} The enclosures are Arb ball arithmetic not replayed in Lean (the preregistration asked for Tier~\tA{}); the monotonicity step is not formalised. No human audit; AI audit only. The auditor's Wang-side numbers are float, not rigorous; its D-T minimisers of the gate model are float; the producer's Arb integrals were not re-run by the auditor.
+\item \textbf{Lean:} two small facts only; recompilation and replay by the auditor; no statement lock; the auditor's leanchecker transcript is not shipped.
+\item \textbf{Deviations from the preregistration} (\texttt{preregistration.json} was not edited): (1) sources: coefficients from the Wurzel--Hsu code (the listed fallback), so the kill criterion's wording ``pinned from primary sources'' is not met; (2) the updated fit is Wang 2026, not Sikora--Weller or Putvinski; (3) Tier~\tC{} instead of~\tA{} for the inequalities; (4) $\theta$ is certified on $[\theta_{\rm hi},1]$ only, not for $\theta>1$; (5) E1c is answered twice, as an exclusion under both fits and as the multiplier $m^\ast$; (6) the gate was written after a first float run and tests the code path that produced Table~III; (7) certification-method changes between runs, with run logs kept, and the early-exit bug and unfixed stopping order described in Section~\ref{sec:method}; (8) not done: the CVODE transient (optional) and a synchrotron or kinetic sensitivity.
+\item \textbf{Repository guards.} \texttt{antigravity\_guard.py} (38 findings, none in E1 files) and \texttt{test\_rigor\_guard.py} exit~1 on pre-existing files elsewhere; \texttt{pytest tests/} was not run (E1 adds no tests) (\texttt{data/logs/guard\_*.txt}).
+\item \textbf{Novelty.} No priority claim; to our knowledge nobody has published these enclosures, but this was not searched systematically.
+\item Public data only; no inertial-confinement, burn or yield content. Not a statement about any device, plant, climate or economics.
+\end{itemize}
+
+%=====================================================================
+\section{Reproducibility}\label{sec:repro}
+Repository AutoevolveAI, branch \texttt{worktree-openai-math-discovery}; HEAD when this paper was written: \texttt{bdd3e02b174fe4a2c1751431e0d5b573a86d3dc9}. Copies of the inputs are in \texttt{data/} (\texttt{RESULT.md}, \texttt{result.json}, \texttt{AUDIT.md}, \texttt{fits.json}, \texttt{code/}, \texttt{logs/}, \texttt{lean/}); every file is below $5$~MB. The Wurzel--Hsu code and papers are not included; to re-run, fetch them as described in \texttt{fits.json} and restore \texttt{data/downloads/} (the Arb model reads only \texttt{fits.json}). The command lines below are summarised from the run note and code headers; they were not re-executed in the paper bundle.
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+taskset -c 6,7 python code/e1_certify.py            # gates, D-T variants, pB stages (python-flint 0.6.0, Arb 128 bit)
+python code/e1_wang_mix.py                           # Wang theta* at x = 1/6 (explicit scan)
+python code/e1_float_indep.py ; python code/e1_ns_consistency.py ; python code/e1_third_check.py   # Tier X
+python -I scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/PbIgnition/Core.lean
+python -I papers/p4_pb_ignition/ledger/build_ledger.py ; python -I papers/p4_pb_ignition/ledger/run_gate.py
+\end{lstlisting}
+
+%=====================================================================
+\begin{thebibliography}{99}\small
+\bibitem{wh} S.~E.~Wurzel, S.~C.~Hsu, \emph{Progress toward fusion energy breakeven and gain as measured against the Lawson criterion}, arXiv:2105.10954 (v4). The model, Tables II/III, Fig.~28 and the public code at github.com/swurzel/lawson-criterion-paper, commit \texttt{4ae563bf} (MIT licence) (\tL).
+\bibitem{wang} Wang, Li, Wu, Cui, \emph{Revisiting p-$^{11}$B Fusion: Updated Cross-sections, Reactivity, and Energy Balance}, arXiv:2601.00241 (v1, 2026). S-factor, Table~I, eqs.~(1)--(6), Fig.~8 text (\tL).
+\bibitem{of} I.~E.~Ochs, N.~J.~Fisch, arXiv:2310.18508 (v1, 2023), eq.~(14) (bremsstrahlung with the $x^2$ term); breakeven and ignition-time figures out of scope (\tL).
+\bibitem{bh} H.-S.~Bosch, G.~M.~Hale, \emph{Improved formulas for fusion cross-sections and thermal reactivities}, Nucl.\ Fusion 32, 611 (1992). \textbf{Not obtained by producer or auditor}; coefficients via the Wurzel--Hsu code.
+\bibitem{ns} W.~M.~Nevins, R.~Swain, \emph{The thermonuclear fusion rate coefficient for p-$^{11}$B reactions}, Nucl.\ Fusion 40, 865 (2000). \textbf{Abstract only; not obtained}; coefficients via the Wurzel--Hsu code.
+\bibitem{sw} M.~H.~Sikora, H.~R.~Weller, J.\ Fusion Energy 35, 538 (2016); read, not used as a fit.
+\bibitem{mathlib} The mathlib Community, \emph{The Lean mathematical library}, arXiv:1910.09336 (2019); cited for the library only.
+\end{thebibliography}
+\end{document}

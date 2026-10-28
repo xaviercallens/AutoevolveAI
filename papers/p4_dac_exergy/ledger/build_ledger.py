@@ -27,16 +27,18 @@ STATUS = ("producer compile rc 0; independent AI audit 2026-10-27 (papers/p4_dac
           "Programmes.DacExergy.Core rc 0 (118 s, data/leanchecker_replay_audit.json), hypothesis sets shown satisfiable; "
           "three of the twelve theorems are bare identities (ring, ring, norm_num); no human audit of statement adequacy; "
           "no statement lock")
-AI_AUDIT = {"auditor": "independent AI audit agent (producer != verifier), 2026-10-27", "human": False,
+AI_AUDIT = {"auditor": "independent AI audit agent (producer != verifier; a separate AI agent instance), v1 2026-10-27, v2 2026-10-28", "human": False,
             "report": "papers/p4_dac_exergy/AUDIT.md", "verdict": "ACCEPT_WITH_CORRECTIONS",
             "kernel_replay": "papers/p4_dac_exergy/data/leanchecker_replay_audit.json (Programmes.DacExergy.Core: rc 0, "
                              "118.3 s; Controls compiled rc 0, plants exposed)",
-            "revision": "papers/p4_dac_exergy/REVISION.md (producer's v2; the new feed-air scenario family is not "
-                        "independently re-checked)",
+            "revision": "papers/p4_dac_exergy/REVISION.md (producer's v2)",
+            "report_v2": "papers/p4_dac_exergy/AUDIT_v2.md (2026-10-28, a separate AI agent instance; ACCEPT_WITH_CORRECTIONS, "
+                         "corrections applied; independent re-check of the v2 feed-air scenario family, B1 retraction, "
+                         "vacuity count and H1 negative control; no human review)",
             "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no "
                     "statement lock"}
 # HEAD when the v2 revision was written; the revision itself is an UNCOMMITTED working-tree change on top of it.
-SRC_COMMIT = "754df91f5694d7001517083d97247b23214a67bd (+ uncommitted v2 revision working tree)"
+SRC_COMMIT = "4f3c940 (v2 revision, committed and pushed) + v2-audit corrections as working-tree changes"
 
 
 def sha(b: bytes) -> str:
@@ -316,32 +318,31 @@ def main() -> int:
             "236.75 K in 14/14 rows in all 9 informative variants (the 9 purity-constrained variants are vacuous), and "
             "the cold-start benefit shrinks (face value 10 to 818 -> r = 0 3.5 to 129 -> r = 1 1.29 to 6.6) but stays "
             "above 1; (b) with the chilling of the feed air priced (eps = 0, capture fraction 1, T0 = 298.15 K) a cold "
-            "start still wins in 14/14 rows at r = 0 but at 254 to 288 K (ratio 1.46 to 8.0), and at r = 1 the optimum "
+            "start still wins in 14/14 rows at r = 0 but at about 254 to 290 K (ratio 1.46 to 8.0; grid-dependent by one or two cells; FASJAL 8.186 at the 10 K boundary), and at r = 1 the optimum "
             "moves to ambient (297.25 to 297.75 K on a 0.25 K grid, advantage 0.07 to 0.35 %) in 11/14 rows; a start "
             ">= 10 K below ambient then loses unless eps > 0.91 to 0.96. H1 as preregistered (T1* >= T0 in > 50 % of rows "
             "at T0 = 298.15 K, r = 0) is refuted in both accountings (0/14); outside that setting the priced scenarios do "
             "not refute it for 11/14 rows at r = 1. The cold start's size, and at full recovery its existence, depend on "
             "how the feed-air chilling is priced. Thermodynamic limits of the published model only; the new scenario "
-            "family is producer-computed, agrees with the auditor's numbers on 3 overlapping rows within stated "
-            "tolerances, and awaits an independent re-check.",
+            "family was computed by the producer and independently re-checked on all 14 rows by a separate AI agent "
+            "instance on 2026-10-28 (AUDIT_v2.md, ACCEPT_WITH_CORRECTIONS, corrections applied; no human review).",
             ["DAC-X-0001", "DAC-X-0003", "DAC-X-0004", "DAC-X-0008", "DAC-X-0013", "DAC-X-0014", "DAC-L-0001"],
             num([L / "rev" / "analysis.json", L / "rev" / "scenario_summary.json", L / "rev" / "refine_ambient.json",
                  DATA / "RESULT.md"], "v2 joint grid and scenario families, Tier X by construction")),
         rec("DAC-X-0012", "X", "numeric",
             "Absences recorded so they are explicit: the supplement of arXiv:2501.04825 was not obtained and not read; no "
             "human audit of this paper, code or Lean statements exists (the independent audit was by an AI agent; its "
-            "report is AUDIT.md); the v2 feed-air scenario family, the H1 negative control and the full-record H2 rerun "
-            "are not independently re-checked; the advisor review of the original K1 lane timed out; the repository "
+            "reports are AUDIT.md for v1 and AUDIT_v2.md for v2); the advisor review of the original K1 lane timed out; the repository "
             "guards (antigravity_guard.py, test_rigor_guard.py, pytest tests/) were not run; GATE-1 statement-adequacy "
             "checks were not run; no statement lock; no author contact was made. No output of any of these exists and "
             "none is claimed.",
-            [], num([DATA / "RESULT.md", PAPER / "AUDIT.md", PAPER / "REVISION.md"],
-                    "RESULT.md Deviations and Limits; AUDIT.md; REVISION.md; no guard output exists")),
+            [], num([DATA / "RESULT.md", PAPER / "AUDIT.md", PAPER / "AUDIT_v2.md", PAPER / "REVISION.md"],
+                    "RESULT.md Deviations and Limits; AUDIT.md; AUDIT_v2.md; REVISION.md; no guard output exists")),
         rec("DAC-X-0013", "X", "numeric",
             "Feed-air scenario family (new in v2): n_air = dn_CO2 / x with x = 400e-6 (run_optimize_intrinsic_dac.jl:15; "
             "2,500 mol air per mol CO2 at capture fraction f = 1, the case most favourable to a cold start), ideal "
             "chilling exergy n_air c_p [T0 ln(T0/T1) - (T0 - T1)] with c_p = 7/2 R, unrecovered share (1 - eps)/f added "
-            "to B(r). At T0 = 298.15 K, eps = 0, ideal machines: r = 0 T1* 254 to 288 K, cold in 14/14; r = 0.5 T1* 268 "
+            "to B(r). At T0 = 298.15 K, eps = 0, ideal machines: r = 0 T1* about 254 to 290 K (grid-dependent), cold in 14/14 (FASJAL 8.186 at the 10 K boundary); r = 0.5 T1* 268 "
             "to 290 K; r = 1 T1* at ambient (coarse grid: the 298.0 K cell; refined: 297.25 to 297.75 K, advantage over "
             "T1 >= T0 0.07 to 0.35 %) in 11/14 rows, VANNIK x2 (288 K) and LETQAE01 (284 K) cold for every eps. Recuperator "
             "threshold at r = 1 (cold = T1 <= T0 - 10 K): 0.91 to 0.96 in the 11 rows; auditor's split (T1 <= 290 K vs "

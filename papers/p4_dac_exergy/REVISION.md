@@ -4,9 +4,9 @@
 **Audit:** an independent AI audit (not a person), verdict ACCEPT_WITH_CORRECTIONS, with four BLOCKING items.
 
 **State of the revision**
-- Not committed, not pushed, not published.
-- HEAD when written: `754df91f5694d7001517083d97247b23214a67bd`. The revision is an uncommitted working-tree change on
-  top of it.
+- Committed as `4f3c940` and pushed to `origin/worktree-openai-math-discovery`; not published on Zenodo.
+- HEAD when written: `754df91f5694d7001517083d97247b23214a67bd`.
+- v2 audit corrections (AUDIT_v2.md, 2026-10-28) are applied afterwards as working-tree changes, not yet committed.
 - The auditor's scratch scripts in `/tmp/k1audit/` were read but not executed or modified. Only their JSON outputs
   were used, for the side-by-side comparison.
 
@@ -14,7 +14,7 @@
 - Every new number in v2 was computed by the producer with its own code (`data/code/k1/rev_*.py`). The code ran on
   cores 6–7, with at most 2 compute processes.
 - Where these numbers overlap the auditor's own numbers (three rows), they agree within the tolerances stated under B3.
-- **An independent re-check of the new feed-air scenario family is pending.**
+- **The new feed-air scenario family was independently re-checked on 2026-10-28 by a separate AI agent instance (AUDIT_v2.md, ACCEPT_WITH_CORRECTIONS, corrections applied; no human review).**
 
 ## BLOCKING
 
@@ -26,7 +26,7 @@ skipped W_min(low P) < 0, is fixed. Output: `data/logs/rev/h2_rules.json`.
 
 | rule | low-P floor, T0 = 273.15 / 298.15 / 313.15 K | P0 floor | materials |
 |---|---|---|---|
-| v1 trapezoid | 14 / 18 / 21 | 16 / 22 / 25 (63) | low-P 3 / 5 / 7; P0 10 in all |
+| v1 trapezoid | 14 / 18 / 21 | 16 / 22 / 25 (63) | low-P 3 / 5 / 7; P0 3 / 8 / 10 per T0 (10 distinct) |
 | right-point (published Step-2 rule) | **0 / 0 / 0** | **0 / 0 / 0** | none |
 
 - **G2 closure.** The maximum over all paths is 4.4e-16 with the right-point rule (exact by construction) and 7.9e-4
@@ -171,7 +171,7 @@ Likely causes of the differences: the auditor interpolated C_V and did not refit
   `publication_meta.json` and ledger X-0011, plus the new X-0013.
 - The headline stays at **Tier X**.
 - The paper states that the revised numbers were checked by the producer, that the auditor's numbers agree where they
-  overlap, and that an independent re-check is pending (title-page status, abstract and §3.5).
+  overlap, and that an independent re-check was pending at v2 time; it was done on 2026-10-28 (AUDIT_v2.md) and the text now says so.
 
 ### B4. Vacuous variants: CHECKED ON ALL 14 ROWS, and an H1 negative control ADDED
 

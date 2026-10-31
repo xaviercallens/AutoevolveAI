@@ -15,7 +15,7 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-Yoshida-4 symplectic integration achieves 85.1\% lower Carter constant drift than RK4 at matched timestep. The Kerr Hamiltonian separability in $(r, \theta)$ makes symplectic methods the natural choice, as proven by the exact Carter constant formula.
+The earlier 85.1\% figure is withdrawn: it was a ratio of integration times, not of methods. The RK4 arm ran to $T=1.5$ and the Yoshida arm to $T=0.6$, and the drift grows as $T^{2.04}$, giving $\text{drift}_Y/\text{drift}_{RK4}=0.149$. At equal total time, or at matched step size, both drifts are 0.2853 (ratio 1.000), and they do not change as the step is refined from $0.005$ to $0.0005$: the drift belongs to the integrated equations, which do not conserve the Carter constant, not to either integrator. A test on the true Kerr geodesic Hamiltonian is open.
 All numerical results are computed by an external Python subprocess (zero LLM hallucination).
 The governing mathematics is formally verified using Lean~4 with Mathlib4 (theorem \texttt{k3_09_carter_drift}).
 Domain decomposition: physical energy $E$ is the optimization metric.
@@ -27,7 +27,7 @@ Domain decomposition: physical energy $E$ is the optimization metric.
 \begin{tcolorbox}[colback=blue!6, colframe=blue!40, title=\textbf{Epistemic Disclaimer (Mandatory)}]
 \begin{itemize}
 \item \textbf{Formally Verified (Lean~4, zero \texttt{sorry}):} Theorem \texttt{k3_09_carter_drift} — Relative Carter drift \(|K(t)-K_0|/K_0 < 1\) when \(\mathrm{tol} < K_0\).
-\item \textbf{Numerically Computed (external Python subprocess):} \textbf{Baseline}: $E = 285264.686056$ \quad\textbf{Improved}: $E = 42500.42762$ \quad$\Delta E/E_0 = -85.1\%$
+\item \textbf{Numerically Computed (external Python subprocess):} \textbf{Comparison withdrawn} (unequal step sizes; non-Hamiltonian right-hand side)
 \item \textbf{Physical Hypothesis / Conjecture:} The ANSE energy-based selection correctly identifies the superior algorithm. This is an empirical claim verified by simulation, not a formal theorem.
 \end{itemize}
 \end{tcolorbox}
@@ -68,7 +68,7 @@ Formal invariants are verified via Lean~4 (\texttt{lake build ANSE.K3\_Scientifi
 %% =========================================================
 \section{Novel Algorithmic Contribution}
 %% =========================================================
-Yoshida-4 symplectic integration achieves 85.1\% lower Carter constant drift than RK4 at matched timestep. The Kerr Hamiltonian separability in $(r, \theta)$ makes symplectic methods the natural choice, as proven by the exact Carter constant formula.
+The earlier 85.1\% figure is withdrawn: it was a ratio of integration times, not of methods. The RK4 arm ran to $T=1.5$ and the Yoshida arm to $T=0.6$, and the drift grows as $T^{2.04}$, giving $\text{drift}_Y/\text{drift}_{RK4}=0.149$. At equal total time, or at matched step size, both drifts are 0.2853 (ratio 1.000), and they do not change as the step is refined from $0.005$ to $0.0005$: the drift belongs to the integrated equations, which do not conserve the Carter constant, not to either integrator. A test on the true Kerr geodesic Hamiltonian is open.
 
 %% =========================================================
 \section{Lean 4 Verification Dossier}
@@ -98,7 +98,7 @@ theorem k3_09_carter_drift (K0 K tol : \u211d)
 \toprule
 \textbf{Method} & \textbf{Baseline} & \textbf{Improved (ANSE)} \\
 \midrule
-$E = 285264.686056$  & $E = 42500.42762$  & $\Delta E/E_0 = -85.1\%$\\
+withdrawn  & withdrawn  & ---\\
 \bottomrule
 \end{tabular}
 \end{table}

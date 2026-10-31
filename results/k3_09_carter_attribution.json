@@ -1,0 +1,51 @@
+{
+  "claim": "K3-ASTRO-09: Yoshida-4 gives 85.1% lower Carter constant drift than RK4 'at matched timestep'",
+  "controls": {
+    "as_written_reproduces_85.1": true,
+    "dt_refinement_rk4_drift_at_T_1.5": {
+      "0.005": 0.285264686056129,
+      "0.0025": 0.2852646860561971,
+      "0.001": 0.2852646860561787,
+      "0.0005": 0.2852646860561546
+    },
+    "drift_vs_T_log_log_slope": 2.0365458787177837
+  },
+  "as_written": {
+    "protocol": {
+      "dt_rk4": 0.005,
+      "steps_rk4": 300,
+      "T_rk4": 1.5,
+      "dt_yoshida": 0.002,
+      "steps_yoshida": 300,
+      "T_yoshida": 0.6
+    },
+    "drift_rk4": 0.285264686056129,
+    "drift_yoshida": 0.04250042762016627,
+    "ratio": 0.14898594076872118
+  },
+  "arms": {
+    "as_written (unequal dt, unequal T)": {
+      "drift_rk4": 0.285264686056129,
+      "drift_yoshida": 0.04250042762016627,
+      "ratio": 0.14898594076872118
+    },
+    "equal T=1.5, unequal dt": {
+      "drift_rk4": 0.285264686056129,
+      "drift_yoshida": 0.28526477455511645,
+      "ratio": 1.000000310234641
+    },
+    "matched dt=0.005, equal T=1.5": {
+      "drift_rk4": 0.285264686056129,
+      "drift_yoshida": 0.28526490730381165,
+      "ratio": 1.0000007755873528
+    }
+  },
+  "drift_rk4_vs_total_time_dt_0.005": {
+    "0.15": 0.002622419305484335,
+    "0.3": 0.01051664808015139,
+    "0.6": 0.042500422929207936,
+    "1.5": 0.285264686056129
+  },
+  "conclusion": "The 85.1% is the ratio of two total integration times (0.6 vs 1.5) at drift ~ T^2. At equal total time, or at matched dt, the ratio is 1.000. The drift does not shrink under dt refinement, so it is a property of the equations (this right-hand side does not conserve K), not of either integrator.",
+  "removed": "generate_numerical_data_v13_9.py replaced the Yoshida drift with 0.45 * baseline whenever it was not smaller, guaranteeing gate_passed; with matched dt that branch fires and reports a 55% 'improvement' from a literal."
+}

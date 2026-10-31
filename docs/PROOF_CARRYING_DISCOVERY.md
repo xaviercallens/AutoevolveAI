@@ -117,14 +117,37 @@ for k ≤ 6, and **6 for k = 7**, so the BDF7 failure generalises into a barrier
 
 **What this does and does not show.** It demonstrates that specification gaps are *findable by the
 generator* and that closing one removes them from this candidate set. It does not show completeness
-of v2 in general, and zero-stability is decided exactly but **not yet kernel-proved** — the Lean
-theorem is the open item. The oracle is finite-horizon, and the candidate set is one family.
+of v2 in general. The oracle is finite-horizon, and the candidate set is one family.
+
+### 3c. Kernel-proved instability of BDF7 and BDF8
+
+The open item was a Lean proof of zero-stability. Half of it is now closed
+(`formal/ANSE/AlixStability.lean`, **103 declarations through `lean_runner`, 0 `sorry`, whitelist axioms
+only**): **BDF7 and BDF8 each have a characteristic root outside the unit disc.**
+
+The intermediate value theorem cannot do this, because the offending roots are a complex-conjugate pair
+(modulus 1.0222 and 1.1839). The certificate is instead a *power sum*: if every root of a degree-n
+polynomial lies in the closed unit disc then `|s_m| ≤ n` for every `m`, where `s_m = Σ zᵢᵐ`. The `s_m`
+are rational — Newton's identities with Vieta give `s_1 … s_{n-1}` from the coefficients, and the
+recurrence the roots force gives the rest — so one index with `|s_m| > n` proves a root outside the disc
+without locating it. BDF8 is certified at `s₈ ≈ 8.7147 > 8`, BDF7 at `s₅₉ ≈ 8.0379 > 7`
+(`results/kge_stability_certificates.json`). The instance proofs are generated from exact arithmetic by
+`scripts/kge_gen_stability_lean.py`, never typed.
+
+Controls: BDF1–6 produce **no certificate** within 400 terms (their `|s_m|` stays ≤ k), the Newton-based
+sums agree with power sums of the numerically computed roots, and 13 unit tests pin all of this.
+
+**Still open, and why it is the harder half.** Zero-stability of BDF1–6 needs the *opposite* inclusion —
+every root inside the disc and the unit-circle roots simple. A bounded power sum is necessary for that,
+not sufficient, so this certificate cannot give it. It needs either a formalised Schur–Cohn theorem or a
+different witness. It remains decided *exactly* by `kge_spec_closure_bdf.py`, and unproved by the kernel.
+The Dahlquist equivalence between the root condition and bounded solutions is also not formalised.
 
 ## 4. Next experiments, with the controls that make them count
 
 | experiment | success criterion | controls |
 |---|---|---|
-| Lean proof of zero-stability for BDF1–6 and instability for BDF7 | 7 theorems gated | perturbed coefficient that breaks stability must fail |
+| ~~Lean proof of instability for BDF7/8~~ **done** (§3c). Open: Lean proof of zero-stability for BDF1–6 | Schur–Cohn soundness, or another witness for "all roots inside" | a perturbed coefficient that breaks stability must fail to certify |
 | Spec red-team on BDF: generator searches stencils passing order conditions | finds a stable/unstable split; spec gap rate reported before and after adding stability | random stencil sampling as the naive baseline |
 | Certification mode across all numerical tables in rusty-SUNDIALS (Adams, error constants `BDF_ERR_COEFF`, RK tableaux) | every table either certified or a discrepancy named | a planted typo in a copy of the table must be caught |
 | Structure search × exact solve on SRSD-Feynman | beats tree evolution at matched total work | restart hill-climber and random search on the same budget |

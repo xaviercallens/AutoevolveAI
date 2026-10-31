@@ -1,0 +1,59 @@
+{
+ "item": "M2",
+ "written_utc": "2026-10-31T16:30Z",
+ "written_before_any_attempt": true,
+ "parent_preregistration": "results/proposal4/2026-10-27/preregistration.json (not edited)",
+ "question": "Across all JARVIS-DFT dft_3d entries that carry a full 6x6 elastic tensor: (Q1) how many are certifiably NOT positive definite when the stored decimals are read as exact rationals; (Q2) how many are ambiguous when each printed value may vary within +-1/2 unit in its last printed decimal place; (Q3) how many pass the incorrect linear orthorhombic criterion of Wu et al. 2007 (Mouhat-Coudert Eq. 19) but fail exact positive definiteness; (Q4) where do float pipelines (numpy eigvalsh with/without tolerance) disagree with the exact verdict; (Q5) where do the crystal-system-specific Born conditions of Mouhat-Coudert 2014 disagree with the exact verdict.",
+ "dataset": {
+  "name": "JARVIS-DFT 3D dataset, figshare article 6815699 (file jdft_3d-9-24-2025.json.zip; fallback jdft_3d-12-12-2022.json.zip)",
+  "licence_check": "figshare API metadata for article 6815699 reports licence 'CC BY 4.0' (https://creativecommons.org/licenses/by/4.0/); checked 2026-10-31 BEFORE download. CC BY 4.0 permits redistribution with attribution, but only summaries/counts and code are published here (no bulk redistribution). Attribution: Choudhary et al., npj Comput. Mater. 6, 173 (2020), arXiv 2007.01831; data DOI 10.6084/m9.figshare.6815699.",
+  "download_dir": "/home/callensxavier_gmail_com/m2_thirdparty/ (outside the repo)",
+  "field": "elastic_tensor (6x6, as stored; units as stored, GPa per JARVIS documentation, to be confirmed from the data)",
+  "not_used": "Materials Project (API key, licence unverified)"
+ },
+ "method": {
+  "reading": "Each stored float is converted to the exact rational of its shortest round-trip decimal representation (Python repr -> Fraction(str)). This is an interpretation: the stored decimals are treated as exact numbers; it says nothing about the physical material, only about the printed tensor.",
+  "symmetry": "The energy quadratic form is x^T C x; it depends only on the symmetric part S=(C+C^T)/2 (exact). Verdicts use S. The number of entries whose stored tensor is not exactly symmetric is reported separately.",
+  "exact_test": "LDL^T without pivoting over Fractions on S. PD iff all pivots > 0 (equivalent to all leading principal minors > 0, Sylvester). Class NOT_PD: first pivot d_k <= 0 gives an exact rational witness x (solve L^T x = e_k) with x^T S x = d_k <= 0 (d_k = 0 reported as BOUNDARY, still not PD). Class PD: positive pivots. Independent second implementation: sympy leading-principal-minor determinants on the same rationals; the two must agree on every entry.",
+  "interval_test": "Each of the 36 stored entries is replaced by an interval [c - u/2, c + u/2], u = 10^(-p), p = number of printed decimal places of that entry (shortest repr). ROBUST_PD: exact rational lower bound t on lambda_min(S) (largest dyadic t with S - tI passing the exact LDL^T PD test, by bisection) satisfies t > sqrt(sum of squared half-widths of S entries) (Frobenius bound on the perturbation spectral norm). ROBUST_NOT_PD: nominal witness x gives x^T S x + sum_ij |x_i||x_j| h_ij < 0 exactly. Otherwise AMBIGUOUS. Classified exactly, never by float.",
+  "linear_orthorhombic": "Eq. 19 of Mouhat-Coudert (Wu et al.): Cii>0 (i=1..6), Cii+Cjj-2Cij>0 for i<j<=3, C11+C22+C33+2(C12+C13+C23)>0, evaluated exactly on S. Q3 counts entries PASS_linear and exact NOT_PD.",
+  "born_cross_check": "Mouhat-Coudert 2014 closed-form conditions per Laue class evaluated exactly on the stored entries using the space-group number stored in JARVIS (spg_number). JARVIS tensors are Cartesian-frame DFT output with noise and need not have the exact zero pattern of the class; any disagreement with the full-tensor PD verdict is reported as a frame/noise artefact candidate and NEVER as a database error. Implemented only for the classes whose formulae are in the paper text we read (arXiv 1410.0065); coverage reported.",
+  "float_pipelines": "F0: numpy.linalg.eigvalsh(S).min() > 0. F1: lambda_min > -1e-8 (absolute). F2: lambda_min > -1e-6*lambda_max (relative). Disagreement = float verdict != exact verdict. Float results are Tier X.",
+  "dft_uncertainty_context": "Tier X only: margin lambda_min_lower/||S||_F reported with thresholds 1%,2%,5%,10%,20% as an illustrative stand-in for DFT finite-difference uncertainty (no uncertainty is stored in the dataset; the thresholds are not a statement about JARVIS accuracy).",
+  "dataset_flags": "Report factually: entries with non-finite or 'na' tensors, non-symmetric tensors, all-zero tensors, duplicate jid, any stored stability field. No contact with dataset authors; discrepancies are the owner's to forward.",
+  "lean": "Stretch component. Via scripts/certified_numerics/lean_pinned.py (pinned imports, no import Mathlib, axioms within {propext, Classical.choice, Quot.sound}): (a) positive control footnote-26 witness x^T C x < 0; (b) a PD LDL^T certificate for a diamond-type control; (c) a tampered certificate that must be REJECTED; (d) if time, a few dataset NOT_PD witnesses. Anything not kernel-checked stays Tier C."
+ },
+ "controls": {
+  "positive": [
+   "textbook cubic crystals from literature values (Cu: C11=168.4,C12=121.4,C44=75.4 GPa; Si: 165.7,63.9,79.6; diamond: 1079,124,578) must be PD in exact and float, with cubic Born conditions agreeing",
+   "Mouhat-Coudert footnote 26: C11=1/2, C22=C33=1, C12=-1, C13=C23=0 (shear constants not stated in the footnote; set C44=C55=C66=1, labelled) must PASS the linear Wu criterion and FAIL exact PD with a rational witness",
+   "known-unstable cubic tensor (C11<|C12| or C44<0) must be NOT_PD",
+   "pipeline internal: exact LDL^T verdict equals sympy leading-minor verdict on random rational matrices"
+  ],
+  "negative": [
+   "sign flip of C11 on each stable control flips verdict to NOT_PD",
+   "symmetry-breaking: a non-symmetric corruption of a stable control is detected as non-symmetric and its symmetrised verdict reported",
+   "rounding-boundary control: a singular tensor perturbed by +-1/2 unit must give AMBIGUOUS",
+   "tampered Lean certificate (wrong witness/LDL factor) rejected by the kernel (if Lean stretch executed)"
+  ],
+  "rule": "All controls are run and logged before any dataset number is reported; a failing control stops the dataset run and is reported."
+ },
+ "kill_criterion": "KILL if the elastic tensors are unavailable, or any positive/negative control fails and cannot be repaired without changing the prereg (a repair is a logged deviation). Licence is CC BY 4.0, so the licence kill does not trigger; nonetheless only counts, code and per-class summaries are published, no per-entry bulk table.",
+ "outcome_rule": {
+  "KEEP": "all controls pass, whole dataset classified with exact verdicts agreeing between two implementations, and (certified NOT_PD fraction >= 1% of full-tensor entries OR certified exact 'none'), Lean control certificates kernel-checked",
+  "PARTIAL": "controls pass and classification complete but the nontrivial-count condition fails (0 < fraction < 1%) or the Lean stretch is not completed",
+  "KILL": "as above"
+ },
+ "tiers": {
+  "C": "exact rational results on the stored decimals (not Lean-checked)",
+  "A": "only statements about specific tensors/witnesses kernel-checked in Lean",
+  "X": "float pipelines, DFT-uncertainty margins, correlation with other fields"
+ },
+ "not_claimed": [
+  "no claim that any material is synthesisable, stable or unstable in a laboratory; a DFT tensor is a calculation, not the material's tensor",
+  "no claim that JARVIS-DFT is wrong; entries that fail are entries needing care (finite-difference noise, unconverged cells)",
+  "novelty only 'to our knowledge'; never 'breakthrough'"
+ ],
+ "resources": "cores 4,5 only (taskset -c 4,5), time box ~4 agent-hours",
+ "ethics": "public data only, licence recorded before download, no human-subject data, no contact with dataset authors"
+}

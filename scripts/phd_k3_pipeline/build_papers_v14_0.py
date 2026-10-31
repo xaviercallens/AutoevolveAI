@@ -202,7 +202,7 @@ PAPERS = [
         "hamiltonian": r"\mathcal{H}_{\mathrm{Kerr}} = \frac{1}{2\mu}\left(\frac{\Delta}{\Sigma} p_r^2 + \frac{1}{\Sigma} p_\theta^2 + \frac{\Sigma}{\Delta} p_t^2 + \frac{1}{\Sigma \sin^2\!\theta} p_\phi^2\right)",
         "pde": r"K = p_\theta^2 + \cos^2\!\theta\!\left(a^2(\mu^2 - E^2) + \frac{L_z^2}{\sin^2\!\theta}\right) = \mathrm{const}",
         "energy_def": r"E[\mathrm{traj}] = \max_{t} \frac{|K(t) - K_0|}{|K_0|} \times 10^6",
-        "novel": "The earlier 85.1\\% figure is withdrawn: the two arms used unequal step sizes ($0.005$ versus $0.002$) and the integrated right-hand side is not Hamiltonian, so a symplectic splitting does not apply to it. A matched test on the Kerr geodesic Hamiltonian is open.",
+        "novel": "The earlier 85.1\\% figure is withdrawn: it was a ratio of integration times, not of methods. The RK4 arm ran to $T=1.5$ and the Yoshida arm to $T=0.6$, and the drift grows as $T^{2.04}$, giving $\\text{drift}_Y/\\text{drift}_{RK4}=0.149$. At equal total time, or at matched step size, both drifts are 0.2853 (ratio 1.000), and they do not change as the step is refined from $0.005$ to $0.0005$: the drift belongs to the integrated equations, which do not conserve the Carter constant, not to either integrator. A test on the true Kerr geodesic Hamiltonian is open.",
         "refs": ["carter1968", "yoshida1990"],
     },
     {

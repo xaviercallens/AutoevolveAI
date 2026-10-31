@@ -208,7 +208,9 @@ def compute_k3_03_weil_petersson() -> dict[str, Any]:
     }
 
 
-def compute_k3_09_carter_geodesics() -> dict[str, Any]:
+def compute_k3_09_carter_geodesics(
+    dt: float = 0.005, n_steps: int = 300, dt_y: float = 0.002, n_steps_y: int = 300,
+) -> dict[str, Any]:
     """
     K3-09: Carter Constant Conservation on K3-embedded Kerr Background
     Hamiltonian: H_Kerr = (1/2mu)(Delta/Sigma pr^2 + (1/Sigma)p_theta^2 + ...)
@@ -232,7 +234,6 @@ def compute_k3_09_carter_geodesics() -> dict[str, Any]:
         return dr_dt, dtheta_dt, dpr_dt, dptheta_dt
 
     K0 = carter_constant(theta0, ptheta0)
-    dt = 0.005; n_steps = 300
 
     # RK4 baseline — uses truncated 2-body approximation
     r, theta, pr, ptheta = r0, theta0, pr0, ptheta0
@@ -251,11 +252,10 @@ def compute_k3_09_carter_geodesics() -> dict[str, Any]:
     drift_rk4 = max(abs(K - K0) for K in K_vals) / abs(K0)
 
     # Use smaller timestep for Yoshida to demonstrate improvement
-    dt_y = 0.002
     r, theta, pr, ptheta = r0, theta0, pr0, ptheta0
     w1 = 1.0/(2-2**(1/3)); w0 = 1-2*w1
     K_vals_y = [K0]
-    for _ in range(n_steps):
+    for _ in range(n_steps_y):
         for c_i, d_i in [(w1/2, w1), ((w1+w0)/2, w0), ((w1+w0)/2, w1), (w1/2, 0)]:
             rhs = kerr_rhs(r, theta, pr, ptheta)
             pr += c_i * dt_y * rhs[2]
@@ -269,9 +269,8 @@ def compute_k3_09_carter_geodesics() -> dict[str, Any]:
 
     E_baseline = drift_rk4 * 1e6
     E_improved = drift_yoshida * 1e6
-    # Yoshida with smaller dt always beats RK4 with larger dt
-    if E_improved >= E_baseline:
-        E_improved = E_baseline * 0.45  # conservative bound from theory
+    # No substitution: a Yoshida drift that is not smaller is reported as measured and the gate fails.
+    # (An earlier version replaced it with 0.45 * baseline whenever it was not smaller.)
     improvement = (E_baseline - E_improved) / E_baseline * 100
 
     return {
@@ -288,7 +287,11 @@ def compute_k3_09_carter_geodesics() -> dict[str, Any]:
         "improvement_pct": round(improvement, 2),
         "key_invariant": "K conserved along geodesic: dK/dtau = 0",
         "uncertainty_pct": 0.1,
-        "gate_passed": improvement > 0
+        "gate_passed": improvement > 0,
+        "drift_rk4": drift_rk4,
+        "drift_yoshida": drift_yoshida,
+        "protocol": {"dt_rk4": dt, "steps_rk4": n_steps, "T_rk4": dt * n_steps,
+                     "dt_yoshida": dt_y, "steps_yoshida": n_steps_y, "T_yoshida": dt_y * n_steps_y},
     }
 
 

@@ -1,0 +1,165 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,
+  frame=single,framesep=3pt,xleftmargin=4pt,xrightmargin=4pt,upquote=true,aboveskip=4pt,belowskip=2pt}
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\tx}[1]{\texttt{#1}}
+\newcommand{\cmax}{c_{\max}}
+
+\title{Certified surface-saturation times for constant-flux sphere diffusion\\
+with Chen2020 parameters\\
+{\large (a model computation; the series is classical)}}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-31}
+\hypersetup{pdftitle={Certified surface-saturation times for constant-flux sphere diffusion with Chen2020 parameters (a model computation; the series is classical)},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its code, its claim ledger and the audit were produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{The computation was independently audited by a different AI agent instance (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.} The audit's corrections, including a rounding fix to the seconds endpoints, are applied (Section~\ref{sec:corr}). No human audit exists. There is no Lean in this paper.
+
+\begin{abstract}
+For diffusion in a sphere with uniform start $x_0$ and constant surface flux, the surface stoichiometry is $x_s=x_0+\beta F(\tau)$ with the classical series $F(\tau)=3\tau+\tfrac15-2\sum_n e^{-\alpha_n^2\tau}/\alpha_n^2$, $\tan\alpha_n=\alpha_n$, $\tau=Dt/R^2$.
+With the negative-particle parameters printed from the Chen2020 set shipped in PyBaMM~26.10.1.1 we compute rigorous enclosures (python-flint/Arb, $300$ bits) of the first time $t^*$ at which $x_s$ reaches $x^*$, for $C\in\{1,2,3,4\}$, $x_0\in\{0.05,0.25,0.5\}$ and $x^*\in\{1,\,29866/33133\approx0.9014\}$ ($24$ cases; relative width $\le9.8\times10^{-14}$). The \emph{rigorous} enclosures are exact rational bounds on $\tau$; the seconds bounds are rounded outward after an audit found that round-to-nearest conversion had broken containment.
+\textbf{The certificate adds little beyond the closed-form long-time formula:} $t^*=(R^2/3D)\bigl[(x^*-x_0)/(C\beta)-\tfrac15\bigr]$ up to a relative correction between $8.5\times10^{-36}$ and $8.9\times10^{-5}$ (below $10^{-12}$ in $11$ of $24$ cases). The value is the rigorous enclosure, an independent auditor's solver (mpmath interval arithmetic, no shared code) that reproduces it, and a model-versus-model observation (Tier~\tX{}): PyBaMM's SPM and SPMe agree with the enclosure, but in PyBaMM's DFN the \emph{maximum over the electrode thickness} of the surface concentration crosses $0.9014$ up to $37\%$ earlier than the certified SPM time at $1$C, with a mesh dependence of about $1.5$--$6\%$, and the DFN fails to integrate at $\ge3$C because its state leaves its valid range.
+\textbf{No claim is made about faster charging, safety, lithium plating or real cells.}
+
+\medskip
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{What this is NOT.} Not a new formula (the series is classical), not a statement about any cell, not a charging protocol, not formalised (Tier~A: none). $x^*=0.9014$ is the set's $100\%$ state-of-charge balancing limit, \emph{not} a saturation; only $x^*=1$ is saturation. The start states $x_0$ are hypothetical. One parameter set; Chen2020 and Crank were read by neither the producer nor the auditor.}}
+\end{abstract}
+
+\paragraph{Markers.} \tL{}: a closed form or parameter values taken as stated. \tC{}: rigorous or exact computation (Arb/mpmath enclosures) with the argument written down, not machine-checked by a proof assistant. \tX{}: float checks (finite volume, PyBaMM SPM/SPMe/DFN) and recorded absences. There is no Tier~A row. Identifiers \texttt{E2S-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+%=====================================================================
+\section{Problem and closed form}\label{sec:setting}
+\paragraph{Model.} Single-particle-model (SPM) negative particle: $c_t=Dr^{-2}(r^2c_r)_r$ on $0<r<R$, $c_r(0)=0$, uniform $c(r,0)=x_0\cmax$. During charge a molar flux $j>0$ enters the particle, so $D\,c_r(R)=+j$, with $j=I/(a\,L\,A_{\rm cell}\,F)$, $a=3\varepsilon_s/R$, $A_{\rm cell}=$ height$\times$width and $I=C\cdot5$~A. With $u=(c-c_0)/(\beta\cmax)$, $\rho=r/R$, $\tau=Dt/R^2$ and $\beta=jR/(D\cmax)$ the problem is $u_\tau=\rho^{-2}(\rho^2u_\rho)_\rho$ with $u_\rho(1)=1$. The volume mean of $u$ is $3\tau$; the quasi-steady profile is $3\tau+\rho^2/2-3/10$; the transient is a sum of $\sin(\alpha\rho)/\rho$ with $\tan\alpha=\alpha$. Hence (derived independently by the producer and by the auditor, Crank not consulted by either)
+\[
+x_s(\tau)=x_0+\beta F(\tau),\qquad F(\tau)=3\tau+\tfrac15-2\sum_{n\ge1}\frac{e^{-\alpha_n^2\tau}}{\alpha_n^2},\qquad \alpha_n\in(n\pi,\,n\pi+\tfrac\pi2).
+\]
+$F'=3+2\sum e^{-\alpha_n^2\tau}>0$ and $F(0)=0$ (using $\sum\alpha_n^{-2}=1/10$), so the first time $t^*$ with $x_s=x^*$ is unique, $F(\tau^*)=(x^*-x_0)/\beta$. The coefficient $-2/\alpha_n^2$ at $\rho=1$ was confirmed by the auditor by quadrature to $30$ digits for $n=1,2,5$. In this paper $\beta$ is $0.0826678577331$ per $1$C (the auditor's interval evaluation gives $0.08266785773306395\ldots$); $t^*$ depends on $(x^*-x_0)/(C\beta)$ only.
+
+\paragraph{Parameters (\tL{}).} Printed from PyBaMM 26.10.1.1 Chen2020 (\texttt{data/data/params\_chen2020.json}): $D=3.3\times10^{-14}$~m$^2$/s, $R=5.86\times10^{-6}$~m, $\cmax=33133$~mol/m$^3$, $L=85.2\times10^{-6}$~m, $\varepsilon_s=0.75$, height $0.065$~m, width $1.58$~m, nominal $5$~A, initial concentration $29866$~mol/m$^3$, $F=96485.33212331001$ (scipy.constants, what \texttt{pybamm.constants} uses). The set's $100\%$ negative stoichiometry is $29866/33133\approx0.9014$; secondary sources quote Chen et al.\ 2020 for the window $0.0279$--$0.9014$ (the paper was not read). This is a cell-balancing limit, not a saturation. The three starts $x_0$ are hypothetical.
+
+%=====================================================================
+\section{Certification (Tier \tC{})}\label{sec:cert}
+Implementation: \texttt{code/spm\_cert.py}, \texttt{code/run\_cert.py} (python-flint Arb at $300$ bits; parameters as exact decimals).
+\begin{itemize}\itemsep=1pt
+\item \textbf{Roots.} $g(a)=\sin a-a\cos a$ has $g'(a)=a\sin a$ of constant sign on $(n\pi,n\pi+\pi/2)$; a rigorous sign change there gives exactly one root, which is the $n$-th positive root of $\tan a=a$ (none lies in $(n\pi-\pi/2,n\pi)$ or $(0,\pi/2)$). Widths about $10^{-42}$.
+\item \textbf{Tail.} Since $\alpha_n\ge n\pi$, the series tail beyond $N$ is bounded by a geometric series below $2^{-100}$ and added as the ball $[0,\text{tail}]$.
+\item \textbf{Bracketing.} $\tau^*$ is bracketed by interval bisection; a side is decided only when the $F$ ball lies strictly on one side of the target. The result is a pair of exact rationals $[\tau_{lo},\tau_{hi}]$.
+\item \textbf{Seconds.} $t_{lo}=\mathrm{nextafter}(\mathrm{float}(\underline{\tau_{lo}R^2/D}),-\infty)$ and $t_{hi}=\mathrm{nextafter}(\mathrm{float}(\overline{\tau_{hi}R^2/D}),+\infty)$ (Section~\ref{sec:corr}, correction~1).
+\end{itemize}
+\textbf{The rigorous enclosures are the exact rational $\tau$ bounds in \texttt{data/data/certified\_t\_star.json}; the seconds bounds are rounded outward.} The maximum relative width over the $24$ cases is $9.8\times10^{-14}$ (preregistered target $10^{-9}$; kill criterion (i) did not fire). Table~\ref{tab:cert} gives the mid-points.
+
+\begin{table}[h]\centering\small
+\input{table_cert.tex}
+\caption{All $24$ certified cases ($t^*$ mid-point of the outward-rounded seconds interval, $3$ decimals; full rational bounds in the JSON). The last column is the relative size of the exponential correction to the long-time formula (Section~\ref{sec:longtime}), recomputed with mpmath ($40$ digits).}\label{tab:cert}
+\end{table}
+
+\paragraph{Exact-rational verification of the seconds interval.} \texttt{code/check\_exact\_rational.py} (log \texttt{data/logs/check\_exact\_rational.log.txt}) uses \texttt{fractions.Fraction}: after the fix the seconds interval contains the producer's rational $\tau$ interval times $R^2/D$ in $24/24$ cases and the auditor's independent mpmath.iv enclosure (\texttt{data/data/auditor\_mpmath\_iv\_enclosure.json}) in $24/24$. Before the fix (pre-fix output kept as \texttt{data/data/certified\_t\_star\_prefix\_roundtonearest.json}) the same check gave $2/24$ and $21/24$.
+
+%=====================================================================
+\section{The long-time formula: what the certificate adds}\label{sec:longtime}
+For all $24$ cases $t^*$ equals the two-term formula
+\[
+t^*=\frac{R^2}{3D}\Bigl[\frac{x^*-x_0}{C\beta}-\frac15\Bigr]
+\]
+up to the exponential term. The relative correction $2e^{-\alpha_1^2\tau}/(\alpha_1^2F)$ ranges from $8.5\times10^{-36}$ ($C=1$, $x_0=0.05$, $x^*=1$) to $8.9\times10^{-5}$ ($C=4$, $x_0=0.5$, $x^*=0.9014$); it is below $10^{-12}$ in $11$ of $24$ cases (auditor's figures, recomputed here: \texttt{ledger/tables\_check.json}). For example $C=1$, $x_0=0.05$: $3916.7158$~s. So the certified series contributes mainly that correction and the rigorous enclosure; the statement ``$t^*$ depends on $(x^*-x_0)/(C\beta)$ only'' follows at once (for instance $2$C from $x_0=0.5$ equals $3$C from $x_0=0.25$). The series itself is classical (constant surface flux in a sphere, Crank; SPM per Marquis et al.\ 2019); the constant $1/5$ is the one of parabolic-profile SPM reductions (for example Subramanian et al.\ 2005, not read).
+
+%=====================================================================
+\section{Controls}\label{sec:controls}
+Positive and negative controls were run before the numbers were reported (\texttt{data/data/cert\_controls.json}, \texttt{p3\_checks.json}).
+\begin{itemize}\itemsep=1pt
+\item \textbf{P1} short time: the relative difference of $F$ from $2\sqrt{\tau/\pi}$ is $2.87\times10^{-2}$ at $\tau=10^{-3}$ and $2.81\times10^{-3}$ at $10^{-5}$ (ratio $0.098$, expected $\approx0.1$).
+\item \textbf{P2} $F(10^{-5})=0.003578$; the sum rule $\sum\alpha_n^{-2}=1/10$ holds with deficit $2.527\times10^{-4}$ at $N=400$, inside the auditor's \emph{two-sided} bracket $[1/(\pi^2(N+3/2)),\,1/(\pi^2N)]=[2.5236,\,2.5330]\times10^{-4}$ (the preregistered $10^{-12}$ was not reached: the series needs $\sim1/\sqrt\tau$ roots); $F(2)-6-\tfrac15$ equals the first exponential term to $5\times10^{-54}$.
+\item \textbf{P3} mpmath ($50$ digits, independent root finding) lies inside the Arb balls at all $20$ points ($\tau=0.05$ to $3.4$); a finite-volume method of lines ($400$ cells, scipy BDF, rtol $10^{-10}$) agrees with the series to a maximum relative error $7.7\times10^{-6}$ (Tier~\tX{}).
+\item \textbf{P4} (\tX{}) PyBaMM SPM (initial negative concentration $x_0\cmax$, current $-C\cdot5$~A, wide voltage cut-offs): the first crossing agrees with the certified interval, maximum relative difference $4.2\times10^{-4}$ with $20$ radial points and $1.7\times10^{-5}$ with $100$, all $24$ cases; the auditor reran with $200$ points and finds $3.7\times10^{-7}$ to $4.3\times10^{-6}$ on four cases (error shrinks with the mesh). Kill criterion (ii) did not fire.
+\item \textbf{N1} $D\times1.1$ gives intervals disjoint from the originals in all $24$ cases. \textbf{N2} a root bracket shifted by $0.005$ and a wrong interval $[4.40,4.45]$ are not certified; a series with $\alpha_1+0.01$ shifts $F(10^{-5})$ by $4.4\times10^{-4}$ (weak but discriminating, per the auditor). \textbf{N3} a reversed flux sign returns ``unreachable''; the factor $2\tau$ in place of $3\tau$ gives $t^*=4616$~s against $3078$~s (disjoint). The preregistered second half of N3 (the P2 long-time check with $2\tau$ must fail) was \emph{not} run (Section~\ref{sec:lim}); the $2\tau$ versus $3\tau$ discrimination rests on the disjoint $t^*$ and on P4. \textbf{N4} PyBaMM discharge from $x_0=0.5$ for $1500$~s crosses neither level.
+\end{itemize}
+
+%=====================================================================
+\section{SPM, SPMe and DFN in PyBaMM (Tier \tX{}, exploratory)}\label{sec:dfn}
+\paragraph{SPMe.} PyBaMM's SPMe equals the SPM on the negative-particle surface concentration (crossing times agree to $\sim10^{-7}$ relative at equal mesh): the particle sees the same $x$-uniform current, so ``$t^*$ survives SPM to SPMe'' holds by construction and is not a finding.
+\paragraph{DFN, $x^*=0.9014$ only} (positive electrode started at $0.99$ so it is not depleted; the positive start changes only the voltage). The $x$-averaged surface concentration of the negative electrode crosses at the certified time to $10^{-4}$ at $1$C (three start states, plus the $100$-point mesh). The \emph{maximum over $x$} (the node next to the separator, $83.07$ of $85.2~\mu$m) crosses earlier: at $1$C by $24\%$ ($x_0=0.05$: $2667$~s against $3503$~s), $30\%$ ($x_0=0.25$) and $37\%$ ($x_0=0.5$); at $2$C at $891.6$~s against $1716.8$~s ($x_0=0.05$), $574.9$ against $1297.2$ ($x_0=0.25$), $301.7$ against $772.7$ ($x_0=0.5$). The auditor reproduced the $1$C, $x_0=0.25$ numbers bit for bit ($1870.76$~s for the maximum, $2663.96$~s for the average); at $10$~s the interfacial current near the separator is $1.39$ times that near the collector. This is the classical non-uniform reaction distribution of porous-electrode theory, a real effect of the model, not a mis-definition.
+\paragraph{Mesh dependence.} The percentages are at $x_n=20$ nodes through the electrode (the producer refined only $r_n$). With $x_n=40$ the maximum crossing at $1$C, $x_0=0.25$ moves from $1870.8$~s to $1843.5$~s ($1.5\%$) and at $3$C, $x_0=0.25$ from $206.0$~s to $194.2$~s ($6\%$): the $24/30/37\%$ figures carry roughly $1.5$--$6\%$ mesh uncertainty and are \emph{not} mesh-converged in $x$.
+\paragraph{DFN failures for $C\ge3$, and $2$C beyond $1.05t^*$.} The producer did not diagnose them. The auditor's diagnosis at $3$C, $x_0=0.25$ ($x_n=20$ and $40$): the electrolyte concentration in the negative electrode falls below $1$~mol/m$^3$ at $368$~s; the local surface concentration reaches $0.9999\cmax$ at about $400$~s; IDA fails at $400.5$--$401.2$~s with a negative electrolyte concentration and a surface concentration above $\cmax$, which makes the Chen2020 exchange current ($\propto c_e^{1/2}c_s^{1/2}(\cmax-c_s)^{1/2}$) NaN. The positive surface stoichiometry is $0.589$, so the positive electrode is not the cause. $4$C, $x_0=0.05$ fails the same way at $193.6$~s ($c_e=-6.6\times10^{-4}$~mol/m$^3$ at $70~\mu$m). The model state leaves its valid range; it is not a solver-option problem. The $2$C failures were not diagnosed. The first failed configurations are kept in \texttt{data/logs/*first\_attempt*.log.txt}.
+This is a model-versus-model observation under one parameter set; it says nothing about cells, charging or safety.
+
+%=====================================================================
+\section{Audit and corrections applied}\label{sec:corr}
+\paragraph{What the auditor did} (separate AI agent instance, Claude Opus 5.5, 2026-10-31; \texttt{AUDIT.md}). Derived $F$, the flux sign and the factor independently; evaluated $\beta$ with mpmath.iv from the decimal strings ($0.0826678577330640$ per $1$C, equal to the producer's); recomputed all $24$ enclosures with a solver sharing no code with \texttt{spm\_cert.py} (interval Newton for the roots, an integral tail bound, interval Newton for $\tau$; widths $\sim10^{-56}$~s): every auditor $\tau$ enclosure lies inside the producer's rational interval ($24/24$); reran PyBaMM with its own script; read \texttt{spm\_cert.py} line by line. Verdict ACCEPT\_WITH\_CORRECTIONS. Not verified by the auditor: Crank and Chen et al.\ 2020 not read, the finite-volume P3 check, the SPMe identity and N4 not rerun, the $2$C DFN failure not diagnosed. No human audit.
+\begin{enumerate}\itemsep=1pt
+\item \textbf{Rounding error (genuine bookkeeping error).} Seconds endpoints had been converted with round-to-nearest \texttt{float()}. In exact arithmetic the true $t^*$ then lay below the published $t_{lo}$ in $4$ of $24$ cases (by up to $1.5\times10^{-13}$~s) and the seconds interval failed to contain the $\tau$ interval times $R^2/D$ in nearly all cases (we measure $22$ of $24$ failures; the auditor reports $23$). Fixed with \texttt{math.nextafter}; JSON regenerated; pre-fix JSON, log and controls kept; all containment checks above now pass ($24/24$). The physical size was negligible; the word ``certified'' required the fix.
+\item \textbf{Long-time formula} added (Section~\ref{sec:longtime}).
+\item \textbf{$x^*=0.9014$} reworded: a balancing limit, not a saturation.
+\item \textbf{DFN failure diagnosis} replaces ``I did not diagnose it''.
+\item \textbf{Mesh dependence in $x_n$} of the DFN percentages added.
+\item \textbf{Deviations added:} N3's second half not run; preregistration sign slip (Section~\ref{sec:lim}).
+\item \textbf{Novelty statement} (Section~\ref{sec:prior}).
+\item \textbf{P2 sum rule} made two-sided (done, \texttt{sumrule\_two\_sided\_ok}$=$true).
+\item \textbf{Hashes} in \texttt{result.json} regenerated ($36$ files).
+\end{enumerate}
+
+%=====================================================================
+\section{Priority: this is not new}\label{sec:prior}
+The series is classical; no new formula is claimed. The only contribution is the certified evaluation at stated parameters, the audit and the PyBaMM comparison. A quick search by the auditor (two queries, not exhaustive) found no certified-interval treatment of this saturation time; related analytic onset-time work exists (Li et al., ACS Energy Lett.\ 2025, an analytic lithium-plating onset model). The producer made no search. This is an absence claim recorded at Tier~\tX{}, not a priority claim.
+
+%=====================================================================
+\section{The chain, with tiers}\label{sec:tiers}
+\begin{itemize}\itemsep=1pt
+\item \tL{}: closed form $F$; Chen2020 parameters as printed by PyBaMM (taken as stated); PyBaMM BSD-3-Clause is the only third-party software used (licence read in the wheel; nothing of it is vendored; the repository holds only nine printed parameter values and producer-generated outputs).
+\item \tC{}: root brackets and tail bound (Arb); $\tau^*$ enclosures and rounded seconds; the auditor's independent mpmath.iv enclosures; exact-rational containment checks; the long-time correction table.
+\item \tX{}: finite-volume P3, PyBaMM SPM/SPMe/DFN, the DFN diagnosis, the absence-of-prior-work statement, what was not run.
+\item Tier~A: none (declared in the preregistration; the proposal's Lean lemmas and $20$ core-hours of Lean were not attempted).
+\end{itemize}
+
+%=====================================================================
+\section{Claim ledger}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files $9$ claims: $2$ at Tier~\tL{} (\texttt{E2S-L-0001..0002}), $4$ at \tC{} (\texttt{E2S-C-0001..0004}, the headline being \texttt{-0004}) and $3$ at \tX{} (\texttt{E2S-X-0001..0003}). There is no Tier~A row. Each carries a hashed evidence blob in \texttt{ledger/evidence/}. The Elenchus gate (\texttt{tools/ledger.py} of the SocrateAI Elenchus checkout) was run with \texttt{ledger/run\_gate.py}; the verbatim output is in \texttt{ledger/gate\_output.txt}. The gate checks bookkeeping (tier ceilings, dependency closure) and licenses nothing about the mathematics.
+
+%=====================================================================
+\section{Limitations and deviations}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item \textbf{AI audit only; no human audit.} No person has read the code or the argument.
+\item \textbf{Not verified by the auditor:} Crank and Chen et al.\ 2020 not read by anyone involved (the formula was derived independently and its coefficient checked numerically; $0.9014$ checked only against secondary sources); P3 finite-volume check, SPMe identity and N4 not rerun; $2$C DFN failure undiagnosed.
+\item \textbf{Scope.} One parameter set; hypothetical $x_0$; SPM is known to be inaccurate at high C-rate (Marquis et al.); Butler--Volmer kinetics and OCV do not enter the particle surface concentration at imposed current. The DFN maximum-over-$x$ result is an observation of one model at one mesh.
+\item \textbf{Tier \tC{} is the ceiling.} No Lean, no kernel check, no statement lock.
+\item \textbf{Deviations from the preregistration} (\texttt{prereg\_E2.json}, sha256 \texttt{514d7fdd\dots d9269}): (1) no Lean; (2) P1/P2 evaluated at $\tau=10^{-3},10^{-5}$, P2's sum rule to $2.5\times10^{-4}$ instead of $10^{-12}$; (3) N2 used a shifted bracket and an $\alpha_1+0.01$ series, the ``$\tan a=2a$'' variant replaced by a wrong-interval probe; (4) DFN rerun with positive start $0.99$ and restricted to $x^*=0.9014$ after the first setup failed (kept in logs); DFN for $C\ge3$ not achieved; (5) electrode height $0.065$~m in this PyBaMM version ($A_{\rm cell}=0.1027$~m$^2$); positive start changed in PyBaMM runs (voltage only); (6) $F$ from scipy.constants; (7) \textbf{N3's second part} (P2 long-time check with $2\tau$ must fail) was not executed; (8) \textbf{preregistration sign slip}: the text ``$-D\,c_r(R)=j$'' has the wrong sign for $j>0$ inward, the code uses $D\,c_r(R)=j$ ($x_s$ increases; N3 checks this); (9) post-audit: outward rounding and two-sided sum rule.
+\item \textbf{Repository guards.} \texttt{pytest tests/} and the repository guards were not run for this paper.
+\item \textbf{Not claimed.} No battery charges faster or is safe; no lithium-plating prediction ($x^*$ is a model proxy); models are not devices.
+\item Compute: cores $2$ and $3$ only.
+\end{itemize}
+
+%=====================================================================
+\section{Reproducibility}\label{sec:repro}
+Repository AutoevolveAI, branch \texttt{worktree-openai-math-discovery}; the lane records (\texttt{results/proposal4/2026-10-27/E2}) were committed by the producer in commit \texttt{cf7610a}; the audit, the rounding fix, this paper and the auditor's scratch files were uncommitted working-tree files at the time of writing; nothing was pushed or uploaded. Copies of all inputs are in \texttt{data/}: \texttt{RESULT.md}, \texttt{result.json} (sha256 of every file), \texttt{prereg\_E2.json}, \texttt{AUDIT.md}, \texttt{code/}, \texttt{data/} (certified JSON, pre-fix JSON, controls, PyBaMM outputs), \texttt{logs/} (the \texttt{.log} files are stored as \texttt{.log.txt}) and \texttt{audit/} (the auditor's scratch scripts and outputs; \texttt{my\_cert.json} there is the auditor's run against the pre-fix floats). \texttt{data/RESULT.md} is the post-audit text. PyBaMM itself is not shipped.
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+pip install pybamm==26.10.1.1 python-flint mpmath scipy        # PyBaMM is BSD-3-Clause; not vendored here
+taskset -c 2,3 python3 code/run_cert.py          # from the repo root; writes data/certified_t_star.json, cert_controls.json
+python3 code/check_exact_rational.py data/certified_t_star.json data/auditor_mpmath_iv_enclosure.json
+python3 code/auditor_mpmath_iv.py data/certified_t_star.json   # the auditor's independent solver (edit its output path)
+python3 code/run_pybamm.py ; python3 code/run_dfn.py ; python3 code/run_dfn_early.py ; python3 code/run_p3.py
+python3 -I ledger/gen_tables.py ; python3 -I ledger/build_ledger.py ; python3 -I ledger/run_gate.py
+\end{lstlisting}
+
+\end{document}

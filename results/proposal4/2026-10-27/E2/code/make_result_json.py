@@ -16,7 +16,7 @@ for root, _, fs in os.walk(BASE):
 out = dict(
     item="E2",
     outcome="PARTIAL",
-    producer="Sonnet 5.5 (unaudited)",
+    producer="Sonnet 5.5 (audited by separate AI agent: ACCEPT_WITH_CORRECTIONS, applied)",
     date="2026-10-31",
     headline="Certified t*(C) enclosures (relative width <= 1e-13) for C=1..4, x0 in {0.05,0.25,0.5}, x* in {1.0,0.9014}; "
              "PyBaMM SPM agrees to 4.2e-4 (r_n=20) and 1.7e-5 (r_n=100); SPMe identical to SPM; DFN local max-over-x "

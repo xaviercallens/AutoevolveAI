@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import math
 import sys
 
 from flint import arb, fmpq
@@ -57,8 +58,8 @@ def main() -> None:
                 tlo, thi, lo, hi, b = r
                 # certified: F(lo) < T < F(hi) was checked inside enclose_tau; bounds in seconds are the
                 # lower end of the lower ball and upper end of the upper ball
-                t_lo = float(tlo.lower())
-                t_hi = float(thi.upper())
+                t_lo = math.nextafter(float(tlo.lower()), -math.inf)  # outward rounding (audit correction)
+                t_hi = math.nextafter(float(thi.upper()), math.inf)  # outward rounding (audit correction)
                 res.append(dict(C=C, x0=x0, x_star=name, beta=b.str(12), tau_lo=str(lo.p) + "/" + str(lo.q),
                                 tau_hi=str(hi.p) + "/" + str(hi.q), t_lo_s=repr(t_lo), t_hi_s=repr(t_hi),
                                 rel_width=repr((t_hi - t_lo) / t_lo)))
@@ -84,8 +85,12 @@ def main() -> None:
     tail = arb(1) / (S.PI**2 * N)  # sum_{n>N} 1/(n pi)^2 <= 1/(pi^2 N); true tail lies in (n pi)^2..((n+1/2)pi)^2
     # sum rule: sum_{n<=N} + tail_true = 1/10 ; tail_true in [0, 1/(pi^2 N)]
     dev = arb(1) / 10 - s
+    # two-sided bracket (audit item 8): deficit in [1/(pi^2 (N+3/2)), 1/(pi^2 N)]
+    tail_lo = arb(1) / (S.PI**2 * (N + arb(3) / 2))
+    two_sided = bool(dev.lower() >= tail_lo.lower() and dev.upper() <= tail.upper())
     ctrl["P2"] = dict(F_at_1e_5=str(f0.mid()), F_small_ok=bool(abs(float(f0.mid())) < 0.01),
-                      sumrule_deficit=str(dev.mid()), sumrule_ok=bool(dev.lower() >= 0 and dev.upper() <= tail.upper()))
+                      sumrule_deficit=str(dev.mid()), sumrule_ok=bool(dev.lower() >= 0 and dev.upper() <= tail.upper()),
+                      sumrule_two_sided_bracket=[str(tail_lo.mid()), str(tail.mid())], sumrule_two_sided_ok=two_sided)
     tau = arb(2)
     longdiff = S.F_ball(tau) - (3 * tau + arb(1) / 5)
     ctrl["P2"]["long_time_dev"] = str(longdiff.mid())

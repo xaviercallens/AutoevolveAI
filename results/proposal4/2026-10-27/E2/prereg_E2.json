@@ -1,0 +1,43 @@
+{
+ "item": "E2",
+ "date": "2026-10-31",
+ "parent_preregistration": "results/proposal4/2026-10-27/preregistration.json (sha256 7f7d5ac1b2ba2987860542bcb6acec4bf5b68bbdabce183433d9d2135e65b438, unchanged)",
+ "written_before_any_attempt": true,
+ "setup_done_before_this_file": "only: read proposal E2 section; installed PyBaMM 26.10.1.1 (BSD-3, Copyright 2018 the PyBaMM team) into /home/callensxavier_gmail_com/e2_thirdparty/venv; listed the Chen2020 parameter names and values shipped in it (D=3.3e-14 m2/s, R=5.86e-6 m, cmax=33133 mol/m3, L=85.2e-6 m, eps_s=0.75, height 0.065 m, width 1.58 m, 5 A nominal, initial conc 29866 mol/m3). No t* was computed.",
+ "resources": "cores 2,3 only (taskset -c 2,3); time box about 4 agent-hours",
+ "question": "SPM negative-particle model: c_t = D r^-2 (r^2 c_r)_r on 0<r<R, c_r(0)=0, -D c_r(R) = j (constant, inward under charge), uniform c(r,0)=x0*cmax. j = I/(a*L*A_cell*F), a = 3*eps_s/R, A_cell = height*width, I = C*5 A, all from the PyBaMM Chen2020 set. Define tau = D t/R^2, beta = j R/(D cmax). Surface stoichiometry x_s(tau) = x0 + beta*F(tau). Find a certified interval for t*(C) = first time x_s = x*, for C in {1,2,3,4}, x0 in {0.05, 0.25, 0.50} (hypothetical start states, NOT taken from Chen2020, which does not ship a 0 percent stoichiometry), x* in {1.0 (full saturation), 0.9014 (= 29866/33133, the 100 percent state of the set)}. Cases where the target is unreachable are reported as not applicable. Secondary (X): does the certified SPM t* survive replacing SPM by SPMe, and by DFN, in PyBaMM.",
+ "closed_form": "F(tau) = 3 tau + 1/5 - 2 sum_{n>=1} exp(-alpha_n^2 tau)/alpha_n^2, alpha_n the positive roots of tan(alpha)=alpha (alpha_n in (n pi, n pi + pi/2)). F is strictly increasing (F' = 3 + 2 sum exp(-alpha_n^2 tau) > 0), F(0)=0 (uses sum 1/alpha_n^2 = 1/10), so t* is unique.",
+ "method": "python-flint (Arb) ball arithmetic. Roots: bracket in (n pi, n pi + pi/2) by sign change of g(a)=sin a - a cos a at arb-evaluated endpoints (g monotone there, opposite endpoint signs), bisect to width <1e-40; keep the enclosure. Tail for n>N: alpha_n >= n pi so tail <= sum_{n>N} exp(-n^2 pi^2 tau)/(n^2 pi^2), bounded by a geometric series; N chosen per tau so the tail is below 1e-30. t* enclosed by bisection on tau with F evaluated as a ball and decided only when the F ball is strictly on one side of the target. Parameters used as exact decimal rationals as printed in the PyBaMM set (float repr of the stored values, recorded). Result: closed interval [tau_lo, tau_hi] and [t_lo, t_hi] in seconds, target relative width <= 1e-9.",
+ "positive_controls": [
+  "P1: short-time asymptotics: F(tau) = 2 sqrt(tau/pi) + O(tau); the ball for F at tau=1e-6 and 1e-4 agrees with 2 sqrt(tau/pi) up to a relative difference that shrinks like sqrt(tau) (ratio of relative differences between tau=1e-4 and 1e-6 within a factor 2 of 10)",
+  "P2: F(0)=0 (ball at tau=1e-12 below 1e-5) and the sum rule sum 1/alpha_n^2 = 1/10 reproduced by the certified roots plus an analytic tail to 1e-12; long-time F(tau) - 3tau - 1/5 below 1e-30 at tau=2",
+  "P3: independent implementation: mpmath (findroot roots, 50 digits) series gives F inside the Arb ball at 20 points; and a separate method-of-lines finite-volume solution (scipy BDF, 400 cells, rtol 1e-10) of the dimensionless PDE gives x_s(tau) within 1e-4 relative of the series at 20 points (float, Tier X)",
+  "P4: PyBaMM 26.10.1.1 SPM (Chen2020, initial concentration set to x0*cmax, constant charge current C*5 A, wide voltage cut-offs): the time at which Negative particle surface concentration first reaches x*cmax lies within 1 percent of the certified interval at each applicable (C,x0,x*), and the difference shrinks (or stays below 1 percent) when the particle mesh is refined from 20 to 100 points. Tier X."
+ ],
+ "negative_controls": [
+  "N1: D multiplied by 1.1: the recomputed t* interval must be disjoint from the original at every applicable case",
+  "N2: a planted wrong root (alpha_1 = 4.4934 + 0.01, or the root of tan a = 2a instead) must be rejected by the sign-change certificate, and a series built with it must put F(1e-12) outside the P2 tolerance",
+  "N3: wrong boundary sign (flux outward, i.e. discharge, -beta): no first time exists and the code must report 'unreachable', never a number; wrong factor (3 tau replaced by 2 tau): the t* interval must be disjoint from the original and the P2 long-time check must fail",
+  "N4: PyBaMM with the current sign reversed (discharge) must not produce a crossing of x*"
+ ],
+ "kill_criterion": "(i) the tail bound cannot be made rigorous at relative width 1e-9 for the needed tau (stop, report); or (ii) PyBaMM SPM disagrees with the certified SPM by more than 1 percent in t* at the finest mesh, in a way not explained by mesh error: then the disagreement is the finding (report it, with the diagnosis attempted within the box); or (iii) any P control fails unexplained: no numbers count. If the closed form is textbook (Crank; Newman/Doyle porous-electrode literature) the claim is only a certified evaluation, not a new formula: stated as such.",
+ "outcomes": {
+  "KEEP": "P1-P4 pass, N1-N4 caught, enclosures at all applicable cases, SPM vs SPMe vs DFN comparison reported (SPM and SPMe expected to coincide on particle quantities if the x-averaged particle flux is uniform in both; DFN differs: to be measured, not assumed)",
+  "PARTIAL": "enclosures pass but PyBaMM cross-check only partly (mesh, solver or option problems) or comparison incomplete",
+  "KILL": "kill criterion (i) fires, or P1-P3 fail unexplained"
+ },
+ "lean": "Not attempted in this box (declared before any attempt). The proposal's Tier A Lean lemmas (F strictly increasing, unique root) are not formalised here, so no Tier A claim. Enclosures are Tier C (ball arithmetic, not replayed in Lean).",
+ "tiers": {
+  "C": "Arb enclosures of the roots, F, and t*(C), given the stated closed form and exact parameter decimals",
+  "X": "floats, mpmath/scipy/PyBaMM comparisons, SPMe/DFN",
+  "L": "closed-form series and the PyBaMM parameter values, as literature/software"
+ },
+ "literature": "To our knowledge the series is classical (Crank, Mathematics of Diffusion, constant surface flux in a sphere; Marquis et al. 2019 arXiv 1905.12553 SPM). Neither Crank nor the Chen et al. 2020 paper is read here; parameter values are taken from the shipped PyBaMM set only, with the source paper cited via the package docstring (Chen et al., J. Electrochem. Soc. 167, 080534, 2020) and not independently checked against the paper.",
+ "not_claimed": [
+  "no statement that any battery charges faster, is safe, or that lithium plating occurs at t*",
+  "t* is a property of a one-parameter-set SPM with constant D and constant flux, a model proxy; the SPM is known to be inaccurate at high C-rate",
+  "x0 values are hypothetical start states; x* = 1 is a model saturation, not a plating criterion",
+  "Butler-Volmer kinetics and open-circuit voltage are not used in the particle surface concentration under imposed constant current"
+ ],
+ "licences": "PyBaMM BSD-3-Clause (LICENSE shipped in the wheel, read); python-flint, mpmath, scipy permissive; nothing downloaded other than the PyBaMM wheel and its dependencies into /home/callensxavier_gmail_com/e2_thirdparty/"
+}

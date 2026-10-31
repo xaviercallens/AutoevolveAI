@@ -1,0 +1,197 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,
+  frame=single,framesep=3pt,xleftmargin=4pt,xrightmargin=4pt,upquote=true,aboveskip=4pt,belowskip=2pt}
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tA}{\tier{A}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\ones}{\mathbf 1}
+
+\title{An exhaustive check of the sharp Hilbert-form conjecture\\
+$\Psi=H+3|T|\le3$ over all $2^{48}$ sign inputs at resolution~2\\
+{\large (our own conjecture, a finite case; not progress on $C^\ast$)}}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-31}
+\hypersetup{pdftitle={An exhaustive check of the sharp Hilbert-form conjecture Psi = H + 3|T| <= 3 over all 2^48 sign inputs at resolution 2},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its C and Python code and its claim ledger were
+produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{This version was independently audited by a separate AI agent instance (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.}
+The audit's corrections are applied in this text (Section~\ref{sec:corr}). No human audit exists; it is owed (Section~\ref{sec:lim}).
+
+\begin{abstract}
+In an earlier preprint~\cite{dh} we conjectured (Conjecture~7.1) that the functional $\Psi(F)=H(F)+3|T(F)|$ of the dyadic triangular Hilbert form
+satisfies $\Psi\le3\prod_v\|F_v\|_3$ for all real inputs, which would give $C^\ast=3$. Here we check the \emph{sign-input, resolution-2} case exhaustively.
+Over all $2^{48}$ sign inputs $F\in\{\pm1\}^{48}$ at resolution $N=2$ we find $\Psi\le3$, with maximum exactly $3$ (in the integer units of $1/64$ used throughout: $S=192$), and $0$ violations.
+The enumeration runs over $2^{30}$ reduced pairs $(F_0,F_1)$; $4\,608$ of them attain $3$. (The independent auditor found, as a by-product, that $36\,864$ of the $2^{48}$ inputs attain $\Psi=3$.)
+Three enumerations agree: two producer implementations (a Python float32 kernel under an exactness guard, and an integer-only C program) that \emph{share} two reductions (a sign fix and an $\ell_1$ reduction over $F_2$), and the auditor's own enumeration, which uses neither reduction (an exact diagonal sign gauge, with a literal maximum over all $2^{16}$ choices of $F_2$) and reproduces the producer's histogram bin by bin, times $512$, in all five modes.
+Controls: the earlier $\max R=2$ is reproduced; the Haar-free form reaches $N+1=3$ for $R$ and $5$ for $\Psi$ (7\,356\,928 pairs above $3$); a planted weight $4$ in place of $3$ produces $741\,888$ violating pairs.
+\textbf{This is our own conjecture; an exhaustive check at $N=2$ for sign inputs (two producer enumerations plus an independent auditor enumeration); not progress on $C^\ast$; Tier~\tC{}.}
+
+\medskip
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{What this is NOT.} It says nothing about real-valued inputs, nothing about resolutions $N\ge3$, and nothing about the value of $C^\ast$. There is no Lean or other proof object for the $2^{48}$ statement. The compiler and hardware are trusted, not checked (all runs were on one machine). No erratum for the earlier preprint is needed.}}
+\end{abstract}
+
+\paragraph{Markers.} \tL{}: a cited source, taken as stated (here only our own earlier preprint). \tC{}: executed code with an argument written down but not machine-checked. \tX{}: a recorded absence, supporting nothing by itself. There is no Tier~A (no Lean) in this paper. Identifiers \texttt{DHP-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+%=====================================================================
+\section{Setting and question}\label{sec:setting}
+Let $\Lambda$ be the dyadic triangular Hilbert form of~\cite{oai} and $C^\ast$ the best constant in $\Lambda(F)\le C^\ast\prod_v\|F_v\|_{L^3(\R_+^2)}$. Our earlier preprint~\cite{dh} proves $C^\ast\ge3$ and conjectures $C^\ast=3$ through the sharper statement (Conjecture~7.1, label \texttt{conj:psi} there):
+\[
+H(F)+3|T(F)|\ \le\ 3\prod_v\|F_v\|_3\qquad\text{for all real step inputs.}
+\]
+Write $\Psi(F)=H(F)+3|T(F)|$. For \emph{sign} inputs ($F_v[i,j]\in\{\pm1\}$, every $\|F_v\|_3=1$), the claim is $\Psi(F)\le3$.
+
+\paragraph{Definitions (Tier \tL{}, from~\cite{dh}; \texttt{DHP-L-0001}).} At resolution $N$ let $n=2^N$ and $F_v$ be the $n\times n$ matrix of the step values on $[0,1)^2$. The top term is $T(F)=n^{-3}\sum_{i,j,k}F_0[i,j]F_1[j,k]F_2[k,i]$. The remaining part is $H(F)=\sum_{l=0}^{N-1}\sum_{I\in A_{-l}}|L_I(F)|$, where at level $l$ there are $2^l$ dyadic intervals of $b=n/2^l$ cells and the triple $(p,q,p\oplus q)$ contributes (eq.~(trace) of~\cite{dh})
+\[
+L_I=2^{l}n^{-3}\,\tr\!\big(S F_0^{pq}\,S F_1^{q,p\oplus q}\,S F_2^{p\oplus q,p}\big),\qquad S=\operatorname{diag}(\text{Haar signs}).
+\]
+The preprint proves $\Lambda=|T|+H$, $C_1=1$ at resolution 1 and, at resolution $N$, $|T|+|L_{000}|\le1$ and $\sum_{\text{level }l}|L_I|\le1$ per level (Proposition~\texttt{prop:level}), so $\Psi\le2+2|T|\le4$ at $N=2$; it computed $\max R=2$ at $N=2$ (night lane of 2026-10-07).
+
+\paragraph{The question.} Closing the gap from $4$ to $3$ at $N=2$ for sign inputs is a finite problem with $2^{48}$ inputs ($F_0,F_1,F_2\in\{\pm1\}^{4\times4}$). The preregistration (\texttt{data/preregistration.json}, sha256 \texttt{140a28ad\dots ae9be}, item DH-Psi2, lane W1-d) asked for an exhaustive check at $N=2$, with a kill criterion of $60$ core-hours projected after a $1\%$ sample. The answer is that $\Psi\le3$ holds.
+
+%=====================================================================
+\section{Method}\label{sec:method}
+\paragraph{Integer form at $N=2$ ($n=4$), in units of $1/64$ (\texttt{DHP-C-0001}).}
+\[
+S_w(F)=w\,|T|+|L_0|+2\sum_{(p,q)\in\{(0,0),(0,1),(1,0),(1,1)\}}|L_{1,pq}|,
+\]
+with $T=\sum_{ijk}F_0[i,j]F_1[j,k]F_2[k,i]$ (an integer, no normalisation), level~0 (one interval, triple $(0,0,0)$) carrying the Haar sign $h=+1$ on cells $0,1$ and $-1$ on cells $2,3$, and level~1 (two intervals of two cells, prefactor $2$, the four admissible triples $(p,q,p\oplus q)$ having XOR~$0$) carrying $h_1=+1$ on the even cell and $-1$ on the odd cell. Scales $k\ge1$ sum to $|T|$ and scales $k\le-2$ vanish. Then $\Psi\le3\iff S_3\le192$. Five \emph{modes} are run: \texttt{PSI} ($w=3$), \texttt{R} ($w=1$), \texttt{PLANT4} ($w=4$, a planted wrong weight), \texttt{HF\_R} and \texttt{HF\_PSI} (the same with all Haar signs replaced by $+1$). The orientation of $h_1$ is immaterial: swapping the two cells inside one half interval in one coordinate flips the sign of every affected $L_I$ and leaves $|L_I|$ unchanged ($200/200$ random inputs unchanged).
+
+\paragraph{Two reductions shared by both producer enumerations (\texttt{DHP-C-0002}).} Both are exact identities; AUDIT.md section~3 proves them.
+\begin{enumerate}\itemsep=0pt
+\item \emph{Sign fix.} $T$ and every $L_I$ are trilinear in $(F_0,F_1,F_2)$, so $F_0\to-F_0$ and $F_1\to-F_1$ negate every term and preserve every $|{\rm term}|$ and every maximum over $F_2$. Fixing $F_0[0,0]=F_1[0,0]=+1$ loses nothing and leaves $2^{15}\cdot2^{15}=2^{30}$ pairs.
+\item \emph{$\ell_1$ reduction over $F_2$.} For fixed $(F_0,F_1)$ each of the six terms ($T$, the level-0 triple, the four level-1 triples) is a linear form $\langle c_t,F_2\rangle$ with positive weights absorbed in $c_t$. Using $|a|=\max_{s=\pm1}sa$ and swapping the two finite maxima,
+\[
+\max_{F_2\in\{\pm1\}^{16}}\sum_t|\langle c_t,F_2\rangle|=\max_{s\in\{\pm1\}^6}\max_{F_2}\Big\langle\sum_ts_tc_t,F_2\Big\rangle=\max_{s\in\{\pm1\}^6,\,s_0=+1}\Big\|\sum_ts_tc_t\Big\|_1 ,
+\]
+since $s\to-s$ leaves the norm unchanged.
+\end{enumerate}
+
+\paragraph{Enumeration 1: Python (\texttt{data/code/psi\_exhaust.py}).} A parameterised re-implementation of the night-lane kernel (the pinned file \texttt{h5\_multiscale.py} was not edited). int64 coefficients, then a float32 matrix product that is exact because a guard checks every partial sum is below $2^{24}$. $160$ chunks (32 per mode), contiguous coverage of $F_0\in[0,32768)$. Every per-$F_0$ argmax ($32\,768$ per mode) was rechecked by an independent block-slicing evaluator (\texttt{direct\_value}) and by the independently authored \texttt{h5\_exact.py}; all agree in every mode.
+
+\paragraph{Enumeration 2: C (\texttt{data/code/psi\_exhaust.c}).} Written from eq.~(trace) with no floating point; Gray-code order over the $32$ sign patterns; the argmax recomputed by a literal triple sum.
+
+\paragraph{Enumeration 3: the auditor's (\texttt{data/audit/gauge\_enum.c}).} It shares neither reduction. The map $(F_0,F_1,F_2)\mapsto(D_0F_0D_1,\;D_1F_1D_2,\;D_2F_2D_0)$ with $D_v$ diagonal $\pm1$ leaves every term $\sum F_0[i,j]F_1[j,k]F_2[k,i]\,w(i,j,k)$ invariant for any weight $w$, because $d_i^2e_j^2g_k^2=1$. On $(F_0,F_1)$ the induced action has order $2^{11}$, kernel $\pm(I,I,I)$, and is free. Canonical representatives ($F_0$ with row~0 and column~0 all $+1$: $2^9$ choices; $F_1$ with row~0 all $+1$: $2^{12}$ choices) give $2^{21}$ pairs, one per orbit. The producer's set $\{F_0[0,0]=F_1[0,0]=+1\}$ meets each orbit in exactly $2^9=512$ pairs, so the prediction is that the producer's histogram equals $512\times$ the auditor's. For each representative the program takes a \emph{literal} maximum over all $2^{16}$ choices of $F_2$ (Gray-code order, six integer accumulators, no float) and counts the maximisers. About $0.8$ core-hours for all five modes.
+
+%=====================================================================
+\section{Results}\label{sec:results}
+\begin{center}\small\begin{tabular}{lrrrrr}\toprule
+mode & max $S$ & max value & pairs $>192$ & pairs at max & auditor: at max $\times512$\\\midrule
+\texttt{PSI} ($w=3$) & 192 & $3$ & 0 & 4\,608 & $9\times512$\\
+\texttt{R} ($w=1$) & 128 & $2$ & 0 & 4\,096 & $8\times512$\\
+\texttt{PLANT4} ($w=4$) & 256 & $4$ & 741\,888 & 512 & $1\times512$\\
+\texttt{HF\_R} (Haar-free) & 192 & $3$ & 0 & 512 & $1\times512$\\
+\texttt{HF\_PSI} (Haar-free) & 320 & $5$ & 7\,356\,928 & 512 & $1\times512$\\\bottomrule
+\end{tabular}\end{center}
+Each row is over all $2^{30}$ reduced pairs. The Python and C histograms of $\max_{F_2}S$ over the $2^{30}$ pairs are identical in every mode (\texttt{summary.json}: \texttt{hist\_identical}, \texttt{max\_identical}, \texttt{violations\_identical} all true), and $512\times$ the auditor's histogram equals both, bin by bin, in all five modes (\texttt{data/audit/rerun\_compare\_hashcheck\_output.txt}; \texttt{DHP-C-0003}, \texttt{DHP-C-0004}).
+
+\paragraph{The \texttt{PSI} histogram.} The maximum over $F_2$ of $S_3$ takes only the values below over the $2^{30}$ pairs (sum of counts $1\,073\,741\,824=2^{30}$).
+\begin{center}\scriptsize\setlength{\tabcolsep}{4pt}\begin{tabular}{lrrrrrrrr}\toprule
+$S$ & 64&72&80&88&96&104&112&120\\
+count & 231\,936 & 1\,179\,648 & 13\,803\,520 & 50\,659\,328 & 137\,048\,064 & 234\,127\,360 & 301\,187\,072 & 200\,409\,088\\\midrule
+$S$ & 128&136&144&152&160&168&192&\\
+count & 91\,788\,288 & 30\,867\,456 & 10\,264\,576 & 1\,638\,400 & 368\,640 & 163\,840 & 4\,608&\\\bottomrule\end{tabular}\end{center}
+The largest value below the maximum is $168$ ($\Psi=21/8$): every one of the $2^{30}-4\,608$ reduced pairs that does not attain $3$ has $\max_{F_2}\Psi\le21/8$. (The histogram is of the per-pair maximum over $F_2$; it does not give the distribution of $\Psi$ over all inputs.)
+
+\paragraph{The maximisers.} The constant input is among them ($T=1$, $H=0$, $\Psi=3$) and so is the seed $g$ of~\cite{dh} ($H=\tfrac32$, $T=\tfrac12$, $R=2$, $\Psi=3$). The auditor's enumeration finds $9$ canonical pairs at the maximum with $18$ maximising $F_2$ summed over them; hence exactly $9\times2\times2^{11}=36\,864$ of the $2^{48}$ sign inputs attain $\Psi=3$ (\texttt{DHP-C-0007}; a fact not claimed by the producer).
+
+\paragraph{Reduction-free slices.} For $F_0$ codes $0,1,7000,12345,21845,30000,32767$ in the producer's encoding, the auditor took all $2^{15}$ values of $F_1$ with $F_1[0,0]=+1$ and a literal maximum over all $2^{16}$ values of $F_2$, without the $\ell_1$ reduction (the $F_1[0,0]=+1$ fix is still applied): the per-slice histograms equal the producer binary's in $35$ of $35$ (code, mode) cases, including non-constant $F_0$ with \texttt{PLANT4} violations (code~1: $344$ pairs above $192$). This is reported in AUDIT.md section~2; the slice output was not saved as a separate file.
+
+\paragraph{Rebuild and rerun.} The auditor rebuilt \texttt{psi\_exhaust.c} with \texttt{gcc -O3 -march=native} and reran both C halves: every output file is byte-identical to \texttt{data/c\_enum/} and matches the recorded sha256, with $\max S=192$ and $0$ violating pairs for \texttt{PSI}. The Python float32 kernel was \emph{not} rerun by the auditor; it is cross-checked through its histograms.
+
+\section{Controls}\label{sec:controls}
+All run before the \texttt{PSI} numbers were counted (\texttt{DHP-C-0005}).
+\begin{center}\small\begin{tabular}{p{4.4cm}p{3.2cm}p{6.0cm}}\toprule
+control & expected & obtained\\\midrule
+positive: exhaustive $\max R$ & $2$ & $2$ ($4\,096$ maximising pairs)\\
+positive: $\Psi$(constant) & $3$ & $3$\\
+positive: seed $g$ & $H=\tfrac32,T=\tfrac12,R=2,\Psi=3$ & the same (Python evaluators; the C code does not evaluate $g$)\\
+negative: Haar-free $\max R$ & $N+1=3$ & $3$ (the bound of Proposition~\texttt{prop:level} is attained)\\
+negative: Haar-free $\Psi$ exceeds $3$ & $>3$ & max $5$; $7\,356\,928$ pairs $>3$\\
+negative: planted $w=4$ finds violations & yes & max $4$ at the constant; $741\,888$ pairs $>3$ in $7\,360$ values of $F_0$, including values strictly between $3$ and $4$ ($49/16\dots7/2$)\\
+evaluator agreement on random inputs & all agree & $2000/2000$ ($w=1,3,4$), producer; $3000/3000$ auditor\\\bottomrule
+\end{tabular}\end{center}
+The planted control shows the search finds violations away from the constant input; a search that silently under-maximised would have been caught. The auditor's mutation test adds power on the definitions side: replacing the level-1 weight by $1$, using the odd XOR class, or using the coarse Haar function at level~1 makes its evaluator disagree with \texttt{direct\_value} on $181$, $155$ and $148$ of $200$ random inputs respectively, so the $3000/3000$ agreement is not vacuous. Other auditor checks: $N=1$ exhaustively ($2^{12}$ inputs) gives $\max R=1$ and $\max\Psi=3$ (the preprint's theorem); gauge invariance of $T$ and $H$ on $200/200$ random gauges.
+
+\paragraph{Kill criterion and cost (\texttt{DHP-C-0006}).} A $1\%$ sample ($F_0\in[0,328)$, \texttt{PSI}) took $40.89$ s, projecting $40.89\times32768/328/3600=1.135$ core-hours ($1.136$ in the file, a rounding difference) for \texttt{PSI} and about $5.7$ for all five Python modes, against the preregistered $60$: the criterion did not fire. Actual cost: Python $25\,964$ s summed over $160$ chunks (cores 4 and 5, shared with the C run), C about $80$ minutes wall on the same two cores; about $10$ core-hours or less in total. The producer's session was cut off by a spend limit after the C enumeration (2026-10-28 18:29 UTC) and aggregation resumed on 2026-10-31; chunk writes are atomic and every mode has contiguous coverage. The preregistration hash is unchanged at start and end.
+
+\paragraph{Elementary-attack pass.} Proposition~\texttt{prop:level} gives $\Psi\le2+2|T|\le4$ at $N=2$. Closing the gap from $4$ to $3$ needs the even/odd coupling between $T$ and the fine level, which does not tensorise. No short proof was found, and none is claimed.
+
+%=====================================================================
+\section{Tiers}\label{sec:tiers}
+\begin{itemize}\itemsep=1pt
+\item \tL{}: the definitions and Conjecture~7.1, from our own preprint~\cite{dh}, taken as stated (\texttt{DHP-L-0001}).
+\item \tC{}: the headline (\texttt{DHP-C-0008}) rests on the exhaustive enumerations, the proofs of the two reductions and the audit; each enumeration is executed code, none is machine-checked. The first producer enumeration uses float32 that is exact under the stated $2^{24}$ guard; the second is pure-integer C; the auditor's is pure-integer C with a different reduction.
+\item Tier~\tA{}: nothing. Lean was not called for, since there is no violation, and a $2^{48}$ enumeration is not a \texttt{decide} target.
+\item \tX{}: absences recorded in \texttt{DHP-X-0001}.
+\end{itemize}
+
+\section{Audit corrections applied}\label{sec:corr}
+The audit (AUDIT.md; a separate AI agent instance; producer $\ne$ verifier) accepts the mathematical claim and corrects wording and bookkeeping only; no correction changes a number. All six are applied here (the producer's \texttt{data/RESULT.md} and \texttt{data/result.json} are kept verbatim, as pre-audit records whose hashes are recorded, and this text supersedes them):
+\begin{enumerate}\itemsep=1pt
+\item \emph{Which conjecture.} The producer's note said ``Conjecture~1''; the paper numbers it \textbf{Conjecture~7.1} (\texttt{conj:psi}). We state: the sign-input, resolution-2 case of Conjecture~7.1 of~\cite{dh} holds (finite exhaustive check).
+\item \emph{Independence.} ``Two independent full enumerations'' is replaced by: two full enumerations that are independent implementations but \emph{share} the $F_0[0,0]=F_1[0,0]=+1$ sign fix and the $\ell_1$ reduction over $F_2$; a third enumeration, by the auditor, uses neither and reproduces $512\times$ its histogram bin by bin in all five modes (Section~\ref{sec:results}).
+\item \emph{Tier wording.} ``Two independent implementations agreeing on full histograms'' becomes: two producer implementations plus an auditor enumeration with a different reduction, agreeing on full histograms.
+\item \emph{Untracked binary.} \texttt{result.json} lists \texttt{code/psi\_exhaust}, a machine-specific \texttt{-march=native} build artifact not tracked by git; a fresh clone would report it missing. It is not shipped here. Of the $199$ entries of \texttt{files\_sha256}, $198$ match the shipped copies (script files travel as \texttt{.sh.txt}); the one that cannot be checked is that binary (\texttt{ledger/hash\_check\_paper\_copy.txt}). The auditor checked all $199$ against the lane directory.
+\item \emph{Residual common-mode risk.} The producer's sentence on a residual common-mode risk is replaced by: both shared reductions are exact identities (proved in AUDIT.md section~3) and were confirmed by an enumeration that uses neither. The parity convention of $h_1$ is immaterial (Section~\ref{sec:method}).
+\item \emph{Wording kept everywhere.} \emph{Our own conjecture; exhaustive check at $N=2$ for sign inputs (two producer enumerations plus an independent auditor enumeration); not progress on $C^\ast$; Tier~\tC{}.} The auditor's optional new fact, that $36\,864$ of the $2^{48}$ sign inputs attain $\Psi=3$, is included.
+\end{enumerate}
+
+\section{Claim ledger}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files $10$ claims: $1$ at Tier~\tL{} (\texttt{DHP-L-0001}), $8$ at \tC{} (\texttt{DHP-C-0001..0008}, the last being the headline) and $1$ at \tX{} (\texttt{DHP-X-0001}, recording what was not done). Each carries a content-addressed evidence blob in \texttt{ledger/evidence/}. There is no Tier~\tA{} row (no Lean), so the flag \texttt{LEDGER\_UNAUDITED\_TIER\_A} cannot arise. The gate (\texttt{tools/ledger.py ledger.json -{}-evidence-dir evidence}; verbatim in \texttt{ledger/gate\_output.txt}) reports $10$ claims checked, no findings, exit code~\texttt{0}. That says the bookkeeping holds; it licenses nothing about truth.
+
+%=====================================================================
+\section{Limitations}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item \textbf{Scope.} Sign inputs, resolution $N=2$ only. Nothing for real-valued inputs, for $N\ge3$ (where $2^{3\cdot4^N}$ makes the same method infeasible), or for $C^\ast$. A violation at higher resolution, or for non-sign inputs, is not excluded. This is a finite verification of our own conjecture in a special case, nothing more.
+\item \textbf{No proof object.} No Lean or kernel certificate for the $2^{48}$ statement; Tier~\tC{}.
+\item \textbf{AI audit only.} The audit is by a different AI agent instance; there is no human audit (owed).
+\item \textbf{Trusted base.} The compiler and the hardware are trusted, not checked. All three enumerations ran on the same machine: two through gcc, one through numpy/BLAS.
+\item \textbf{Not rerun.} The Python float32 kernel was not rerun by the auditor (only compared through histograms). The reduction-free slices ($35/35$) are reported in AUDIT.md and were not saved as a file. The auditor's scratch directory was \texttt{/tmp}; the shipped copies are in \texttt{data/audit/} and refer to \texttt{/tmp/dhaudit} paths inside the scripts.
+\item \textbf{Deviations from the preregistration.} (1) The preregistration names the \texttt{tensor/} evaluator; the exhaustive $F_2$-reduction kernel lives in \texttt{night/h5\_multiscale.py}, which was not modified (a parameterised copy is \texttt{psi\_exhaust.py}, and \texttt{h5\_exact.py} was imported read-only). (2) An independent integer-only C enumeration and rechecks of every per-$F_0$ argmax were added. (3) Lane W1-d was budgeted for one core; cores 4 and 5 were used, as assigned.
+\item \textbf{Novelty.} The conjecture is ours~\cite{dh}; to our knowledge it has not been addressed elsewhere. No novelty search was preregistered (``none needed'').
+\item Not a physical claim of any kind.
+\end{itemize}
+
+%=====================================================================
+\section{Reproducibility}\label{sec:repro}
+Repository AutoevolveAI, branch \texttt{worktree-openai-math-discovery}; HEAD when this paper was written: \texttt{1e29c538f2ceacd0e644fc990cfba32ce45fa0d7}; the DH-Psi2 outputs and this paper are uncommitted working-tree files at that time. Inputs are in \texttt{data/}: \texttt{code/} (\texttt{psi\_exhaust.c} and \texttt{.c.txt}, \texttt{psi\_exhaust.py}, drivers; the compiled binary is not shipped), \texttt{chunks/} ($160$), \texttt{c\_enum/}, \texttt{summary.json}, \texttt{controls.json}, \texttt{logs/}, \texttt{audit/} (the auditor's \texttt{gauge\_enum.c}, \texttt{aud\_eval.py}, its histograms), \texttt{RESULT.md} and \texttt{result.json} (the producer's pre-audit text), \texttt{preregistration.json}. The command lines are summarised from the code headers.
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+gcc -O3 -march=native -o psi_exhaust code/psi_exhaust.c        # usage: psi_exhaust WT HAAR F0_LO F0_HI [bruteforce_pairs]
+./psi_exhaust 3 1 0 16384 ; ./psi_exhaust 3 1 16384 32768       # PSI mode (WT=3, Haar) in two halves; code/c_runs.sh.txt runs all five modes
+gcc -O3 -march=native -o gauge_enum audit/gauge_enum.c ; ./gauge_enum 1 ; ./gauge_enum 0   # auditor: Haar / Haar-free
+python -I audit/compare.py                                      # 512 x auditor histogram vs producer histograms
+python -I ledger/build_ledger.py ; python -I ledger/run_gate.py
+\end{lstlisting}
+
+%=====================================================================
+\begin{thebibliography}{99}\small
+\bibitem{dh} X.~Callens, \emph{The sharp constant of the absolute dyadic triangular Hilbert sum is at least~3}, preprint v1, 2026-10-08, Zenodo doi:10.5281/zenodo.23232389 (our own work; Conjecture~7.1, Proposition on levels, eq.~(trace)) (\tL).
+\bibitem{oai} OpenAI, \emph{An $L^3$ bound for the dyadic triangular Hilbert form}, preprint, 5 October 2026, \texttt{github.com/openai/math}, as cited in~\cite{dh}: the bound $\Lambda\le40\prod_v\|F_v\|_3$.
+\end{thebibliography}
+\end{document}

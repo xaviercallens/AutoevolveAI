@@ -34,22 +34,21 @@ LR-IND. See `docs/journal/` and the NewDiscoveries addendum (PR #3, awaiting mer
 ## In flight
 | Lane | Area | State |
 |---|---|---|
-| SLR-18 | mathematics (Sandier-Serfaty certificates) | producer finishing verification |
-| EG-CB68 | mathematics | producer running (cores 2,3) |
-| DH-Psi2 | mathematics | producer running (cores 4,5) |
+| E3 | energy (Lean/interval check of a low-dissipation monotonicity) | producer running (cores 2,3) |
 | A1 | Lean Sandier-Serfaty port | scheduler on core 0 (nothing proved) |
 
 ## Queue (ranked; Proposal 4 section 3, Proposal 5)
 | Id | Area | Question | Status |
 |---|---|---|---|
-| K2 | carbon | certified CO2 uptake per unit alkalinity (OAE, acidic-soil EW), front-delay bounds | next |
-| M2 | materials | exact Born-stability audit of JARVIS-DFT elastic tensors | next |
-| K3 | carbon/climate models | CM impulse responses: monotone decay after cessation; one peak -> two peaks? | queued |
-| E2 | energy | certified surface-saturation time in SPM battery model under fast charge | queued |
-| E3 | energy | kernel-check the zeta-monotonicity behind the low-dissipation efficiency-power bound | queued |
 | C2, C3 | cancer (math models only) | LQ fractionation in Lean; containment vs MTD comparison | **deferred: needs owner + human wording reader** |
-| LR-Q84, N1-ext, LR-SPEC, LR-2E, GR-11, S8-ALL | mathematics | Proposal 5 items 5-10 | queued behind first wave |
-| B-lane | biology | to be preregistered from the scout: audits of published mathematical-biology claims on public data | to define |
+| LR-Q84, N1-ext, LR-SPEC, LR-2E, GR-11, S8-ALL | mathematics | Proposal 5 items 5-10 | next (cores free) |
+| SLR-18 follow-up | mathematics | n = 39..94 (30 core-h cap reached), statement lock for the Lean covering statements | next |
+| B-lane | biology | preregistered audits of published mathematical-biology claims on public data | to define |
+| Proposal 6 | all | write after the scout of the week | to do |
+
+## Published (Zenodo), as of 2026-10-31
+Textbooks FR/EN, journal FR/EN, N1, N2, A2 v1.2, C1 v1.1, C1b, M3, M1, K1, E1, LR-IND, SLR-18, DH-Psi2, M2,
+EG-CB68, E2, K3, K2. Details and DOIs: `docs/journal/2026-10-31.md` and the NewDiscoveries addendum.
 
 ## Foundation being leveraged
 Lean 4.34.1 pinned runner + leanchecker replay; Arb/mpmath ball arithmetic; nauty; exact rational solvers;

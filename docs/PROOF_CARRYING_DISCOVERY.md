@@ -137,11 +137,39 @@ without locating it. BDF8 is certified at `s₈ ≈ 8.7147 > 8`, BDF7 at `s₅�
 Controls: BDF1–6 produce **no certificate** within 400 terms (their `|s_m|` stays ≤ k), the Newton-based
 sums agree with power sums of the numerically computed roots, and 13 unit tests pin all of this.
 
-**Still open, and why it is the harder half.** Zero-stability of BDF1–6 needs the *opposite* inclusion —
-every root inside the disc and the unit-circle roots simple. A bounded power sum is necessary for that,
-not sufficient, so this certificate cannot give it. It needs either a formalised Schur–Cohn theorem or a
-different witness. It remains decided *exactly* by `kge_spec_closure_bdf.py`, and unproved by the kernel.
-The Dahlquist equivalence between the root condition and bounded solutions is also not formalised.
+### 3c-bis. Kernel-proved root condition for BDF1–6
+
+The harder half is now closed too (`formal/ANSE/AlixStabilityInside.lean`, **23 declarations through
+`lean_runner`, 0 `sorry`, whitelist axioms only**). A bounded power sum cannot show that *every* root is
+inside the disc, so this uses a different witness — a **Lyapunov certificate**, made elementary:
+
+* Deflate ρ = (z − 1)·q; q is monic of degree d = k − 1 and its roots should lie strictly inside.
+* Solve CᵀPC − P = −I **exactly over ℚ** for the companion matrix C of q. P is positive definite, certified
+  by an exact sum of squares P = Σ dᵢ uᵢuᵢᵀ with every dᵢ > 0, arranged so the first square is the pure
+  coordinate v₀ = 1.
+* For a root z of q, with w = z̄, Lean proves the polynomial identity
+  `Σᵢ<d (z w)ⁱ = (1 − z w) · Pform(z, w)` by `linear_combination` (the multipliers are explicit and were first
+  checked symbolically). Since `z w = |z|²`, `Pform ≥ d₀ > 0` and the left side is `≥ 1`, it follows that
+  `1 − |z|² > 0`.
+
+Per k = 1…6 Lean proves: every root of ρ is `z = 1` or has `‖z‖ < 1` (`bdf{k}_roots`), and the root at 1 is
+simple (`bdf{k}_root_one_simple`: ρ′(1) ≠ 0). That is exactly the Dahlquist root condition. Together with §3c:
+
+| k | root condition | by |
+|---|---|---|
+| 1–6 | **holds** (kernel-proved) | exact Lyapunov certificate |
+| 7, 8 | **fails** (kernel-proved) | exact power-sum certificate |
+
+**Controls** (`tests/unit/test_lyapunov_certificates.py`, 13 tests): the Lyapunov equation holds *exactly*
+and the SOS rebuilds P; for BDF7 and BDF8 a P exists but is **not** positive definite, so no certificate can
+be issued — agreeing independently with the power-sum proof that they are unstable; a slightly perturbed
+polynomial breaks the Lyapunov equation; and the polynomial identity is re-verified symbolically.
+
+**Still not proved.** (1) The Dahlquist equivalence between the root condition and boundedness of solutions of
+the recurrence — "root condition" is the statement proved, which is the standard definition of
+zero-stability. (2) k ≥ 9: BDF is unstable there, but only k = 7 and 8 were certified. (3) That the
+characteristic polynomials are the right ones is established by construction (the same exactly-solved
+coefficients as `AlixBDF.lean`), not by a Lean link between the files.
 
 ### 3d. Certifying the rest of rusty-SUNDIALS' tables — scope, and a clean result
 
@@ -167,7 +195,7 @@ a separate matter and is not claimed.
 
 | experiment | success criterion | controls |
 |---|---|---|
-| ~~Lean proof of instability for BDF7/8~~ **done** (§3c). Open: Lean proof of zero-stability for BDF1–6 | Schur–Cohn soundness, or another witness for "all roots inside" | a perturbed coefficient that breaks stability must fail to certify |
+| ~~Lean proof of the root condition for BDF1–6 and its failure for BDF7/8~~ **done** (§3c, §3c-bis) | 23 + 103 declarations gated | no certificate exists for BDF7/8; a perturbed q breaks the Lyapunov equation — both done |
 | Spec red-team on BDF: generator searches stencils passing order conditions | finds a stable/unstable split; spec gap rate reported before and after adding stability | random stencil sampling as the naive baseline |
 | ~~Certification mode across rusty-SUNDIALS' tables~~ **done for the two that exist** (§3d: `BDF_L`, `BDF_ERR_COEFF`; no Adams or RK table is present). Still open: run it on tables elsewhere in your repositories | every table either certified or a discrepancy named | a planted typo in a copy of the table must be caught — done (6 tests) |
 | Structure search × exact solve on SRSD-Feynman | beats tree evolution at matched total work | restart hill-climber and random search on the same budget |

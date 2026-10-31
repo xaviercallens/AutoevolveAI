@@ -1,0 +1,184 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "SLR-A-0001",
+   "statement": "Lean covering statements, re-run by us for the sample n = 18 and n = 38 (SLRN18.lean, SLRN38.lean; Programmes/SLR18): for the typed v : Fin n -> N and s : Fin n -> Q (the certificate's a_i/D), v is injective (v_injective), positive (v_pos) and for every real t there are i and an integer k with |s_i + v_i t - k| < 1/(n+1) (cover), i.e. the negation of the conclusion of BCS Conj. 1.1(ii) for this (v, s). Gates: lean_pinned.py compile with olean rc 0; anse/formal/lean_runner.py verify_file (lean_cmd = pinned toolchain) clean for all 3 theorems at both n; leanchecker rc 0 on both modules. Axioms: cover, v_injective use propext, Classical.choice, Quot.sound; v_pos uses propext. The statement says nothing about gamma, compactness or the literature.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:0fd0f9614b676f8321447a190213ec0dff5ea23985144afa20c6daa35fa72a0c",
+   "audit": null,
+   "ai_audit": {
+    "auditor": "independent AI audit agent (separate instance, producer != verifier), 2026-10-31",
+    "human": false,
+    "report": "papers/p5_shifted_lonely_runner/AUDIT.md",
+    "verdict": "ACCEPT_WITH_CORRECTIONS",
+    "scope": "own generator gen_lean.py (untrusted) + own compile of all 34 files with lean_pinned.py and #print axioms; escape-token grep; positive control (n=5) and tampered control (rc 1)",
+    "not_scope": "anse/formal/lean_runner.py and a statement lock were NOT run by the auditor; statement adequacy (the Lean statement means the BCS Conj. 1.1(ii) counterexample its gloss claims) not certified by a person",
+    "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"
+   }
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR-A-0002",
+   "statement": "The same covering statement for all 34 certificates n = 5..38 (21 new: n = 18..38; 13 controls: n = 5..17), compiled by the AUDITOR (not by us, except n = 18 and 38 in SLR-A-0001): 34/34 rc 0, no banned token, cover and v_injective depend on propext, Classical.choice, Quot.sound and v_pos on propext (3456 s on one core). Only the pinned lean_pinned.py compile plus manual #print axioms; NOT anse/formal/lean_runner.py, NOT a statement lock.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "SLR-A-0001"
+   ],
+   "evidence": "sha256:b893b9666fbdafc6b124def91ac91d14225201731a0037aea1ea795450d0c568",
+   "audit": null,
+   "ai_audit": {
+    "auditor": "independent AI audit agent (separate instance, producer != verifier), 2026-10-31",
+    "human": false,
+    "report": "papers/p5_shifted_lonely_runner/AUDIT.md",
+    "verdict": "ACCEPT_WITH_CORRECTIONS",
+    "scope": "own generator gen_lean.py (untrusted) + own compile of all 34 files with lean_pinned.py and #print axioms; escape-token grep; positive control (n=5) and tampered control (rc 1)",
+    "not_scope": "anse/formal/lean_runner.py and a statement lock were NOT run by the auditor; statement adequacy (the Lean statement means the BCS Conj. 1.1(ii) counterexample its gloss claims) not certified by a person",
+    "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"
+   }
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR-A-0003",
+   "statement": "Lean controls: the positive control SLRP1.lean (n = 5, v = (1..5), s = (0,46,38,47,72)/94, delta = 1/6) compiles rc 0 with standard axioms through the same gates (lean_pinned.py, lean_runner file-mode, leanchecker); the tampered file SLRP1neg.lean (delta = 15/94 = the exact gamma, so no cover) is rejected by the kernel (rc non-zero, linarith fails), as it must be.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:dd11f57c68d7489209e8c4eaca6b2e902313e537b7d5bf829856a699ac6d1ccb",
+   "audit": null,
+   "ai_audit": {
+    "auditor": "independent AI audit agent (separate instance, producer != verifier), 2026-10-31",
+    "human": false,
+    "report": "papers/p5_shifted_lonely_runner/AUDIT.md",
+    "verdict": "ACCEPT_WITH_CORRECTIONS",
+    "scope": "own generator gen_lean.py (untrusted) + own compile of all 34 files with lean_pinned.py and #print axioms; escape-token grep; positive control (n=5) and tampered control (rc 1)",
+    "not_scope": "anse/formal/lean_runner.py and a statement lock were NOT run by the auditor; statement adequacy (the Lean statement means the BCS Conj. 1.1(ii) counterexample its gloss claims) not certified by a person",
+    "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"
+   }
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR-L-0001",
+   "statement": "Definition of the shifted lonely runner conjecture as pinned by the auditor from the sources: BCS arXiv 2603.24784 v4 Conj. 1.1(ii) (for distinct |v_i| and every s there is t with dist(s_i + v_i t, Z) >= 1/(n+1) for all i) and Def. 1.3 (gamma, gamma_sh); Zhang arXiv 2608.13599 v3 App. A and Question 8.5; Poliakova arXiv 2609.23952 v1 Sec. 1 (1/(n+1+E_n) = inf gamma). Consequence: gamma(v;s) < 1/(n+1) iff the OPEN arcs cover the circle (maximum attained); integer positive v and rational s lose no generality for counterexamples.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:dc36bfc40bf8dc0d8f5e0e7fe1979d8e8ecc9fea8fd4c7d71ab769ad90840b9f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR-L-0002",
+   "statement": "Prior results: the shifted conjecture is proved for n <= 4 (Alcantara-Criado-Santos; BCS Remark 1.2); it fails for n = 5..17 (BCS Prop. 5.14, as cited by the producer; BCS Table 2 gives exact gamma_sh(1..n) for n <= 15) and for every n >= 95 (Poliakova Thm 2, E_n >= 1); Zhang and Poliakova call 18 <= n <= 94 open (v3 of 18 Oct 2026; v1); BCS v4 (24 Oct 2026) states failure only for n = 5..17. Hence, with this paper, failure is known for n in 5..38 and n >= 95; n in 39..94 is open.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [
+    "SLR-L-0001"
+   ],
+   "evidence": "sha256:e4ee49d32ec91d5b4cb7e88c81fed83ac6ef994fedbc00ab238c615d28b57636",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR-C-0001",
+   "statement": "The producer's two checkers accept all 34 certificates n = 5..38 (re-checked from the stored JSON by verify_all.py): checker 1 (slr_exact.py, Python integers, greedy sweep of open integer intervals) and checker 2 (check_cover.c, __int128, every arc right endpoint strictly inside another arc). Different criteria and languages, SAME author: not independent in authorship.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "SLR-L-0001"
+   ],
+   "evidence": "sha256:39708a84f6485e6af75a95ac19c63c040999a19bd8aa7660fc572121d40ace86",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR-C-0002",
+   "statement": "The auditor's third checker (audit_check.py, written from scratch, standard library; exact Fractions) accepts all 34 certificates by two methods: A = exact interval subtraction of all open arcs from [0,1] (nothing left), B = exact gamma(v;s) over all pairwise-crossing and single-peak candidates, gamma < 1/(n+1). Re-run by us: 34/34 valid, both methods COVERED, gamma values identical to the auditor's table. Exact margins 1/gamma - (n+1) lie in [0.0961, 0.1098] for n = 18..38 (min n = 30, max n = 25), so E_n >= 0.096 (Poliakova's notation) and Gamma(n) < 1/(n+1) for these n; upper bounds only.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "SLR-L-0001"
+   ],
+   "evidence": "sha256:b775417fc3bb39cda46dd5153ac417845f5734eba74c3c7301f8c6cd74db3351",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR-C-0003",
+   "statement": "Controls. Producer: P1/P2 reproduce the published exact gamma 15/94 and 2/15; own shifts for [n], n = 5..17, certified; tangency at delta = gamma rejected; [n] with s = 0 never certified (n = 2..94); <= 14 speeds with s = 0 never certified (3005 instances); single-shift perturbation breaks 0/10 and 0/12 at the published deltas (reported, not hidden) and 4-10 per certificate on new ones. Auditor: [n], s = 0, n = 2..40, 0/39 covered; BCS gammas 15/94, 2/15, 9/67 reproduced; tangency at n = 5, 18, 29, 38 rejected at gamma and gamma - 1e-12, covered at gamma + 1e-12; invalid inputs flagged; delta/2 perturbations break 36/36 at n = 18 and 72/76 at n = 38; 0 disagreements between methods A and B; fuzz 400 x 4, 0 mismatches.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "SLR-C-0001",
+    "SLR-C-0002"
+   ],
+   "evidence": "sha256:ad243c4562b7ccf1d9070b5ddbd3847ebfbda7100cf6021380ae93da171cd774",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR-C-0004",
+   "statement": "The 34 generated Lean files are about the certificates: for each n = 5..38 the typed literals v and s equal the certificate JSON (s_i = a_i/D), the cover statement is the template with only n substituted (delta = 1/(n+1)), v_injective and v_pos are present, the only import is Mathlib.Tactic and no sorry/admit/native_decide/axiom/unsafe/implemented_by occurs. A text check, not a proof; the kernel is the judge of cover.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "SLR-A-0002"
+   ],
+   "evidence": "sha256:725bdaa92f91ac4222147bba375e95c8f22ba8f665ce51cc373560d4662bb227",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR-C-0005",
+   "statement": "HEADLINE. For every n in 18..38 there is an explicit exact certificate (distinct positive integers v_1..v_n, rationals s_i = a_i/D) that is a counterexample of size n to the shifted lonely runner conjecture (BCS Conj. 1.1(ii)): the open arcs of radius 1/(n+1) cover the circle, gamma(v;s) < 1/(n+1) exactly. Together with the literature the conjecture is known to fail for n in 5..38 and n >= 95; n in 39..94 stays open. Upper bounds only (Gamma(n) < 1/(n+1); E_n >= 0.096); nothing about the unshifted conjecture; NOT 'fails for all n >= 5'. Rests on: the Lean covering statements (Tier A pending a statement lock), the definition (L), three exact checkers (two same-author, one independent). Filed C because an assembly argument is capped at C.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "SLR-A-0001",
+    "SLR-A-0002",
+    "SLR-L-0001",
+    "SLR-L-0002",
+    "SLR-C-0001",
+    "SLR-C-0002",
+    "SLR-C-0003",
+    "SLR-C-0004"
+   ],
+   "evidence": "sha256:4eac68419d410c484cbbb35b1c7ed4b7318f8020e98e534f1596f477015d5069",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR-X-0001",
+   "statement": "Floating-point search and its absences: the search (cover_ls.py, cover_ls_fast.c) found certificates n <= 38 and none for n = 39..60 within 29.75 of the 30 core-hour cap (attempts: n=39 0/23, n=40 0/15, n=41..59 0/12 each, n=60 0/11; n = 61..94 never attempted). This supports no claim about n >= 39. The 333 raw scratch files logs/fast_tmp/*.txt are omitted from the bundle (not in the hash list of result.json).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:9a70cbda95a52aba615af755231fe2b2ac63cd7e5116ada186da8cfdd04aec10",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR-X-0002",
+   "statement": "Scoop check, a recorded search and not a proof of absence: alphaXiv (several recency windows up to published_after 2026-10-24) and web search on 2026-10-28 (producer) and 2026-10-31 (auditor) found no source settling any n in 18..94; residual risk: arXiv listings after the alphaXiv index, unpublished BCS/Criado computations, private communications. The cited authors have not been contacted.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:8c07a282ff0ef6ca0096d9332a6afea5bbc2ff531089ec657cc0a5e684ccb138",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR-X-0003",
+   "statement": "NOT run: anse/formal/lean_runner.py and a statement lock on the 32 files other than n = 18 and n = 38 (the auditor ran lean_pinned.py only); no human audit; pytest tests/ and the repository guards were not run for this paper. Recorded so the absences are explicit.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:3ba5ea32cd6a0455a96e4b5c5f49bd27184f4232d08407e707674f60e51141e1",
+   "audit": null
+  }
+ ]
+}

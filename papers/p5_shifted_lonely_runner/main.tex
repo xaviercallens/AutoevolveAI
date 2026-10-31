@@ -1,0 +1,242 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,
+  frame=single,framesep=3pt,xleftmargin=4pt,xrightmargin=4pt,upquote=true,aboveskip=4pt,belowskip=2pt,
+  literate={∀}{{$\forall$}}1 {∃}{{$\exists$}}1 {ℝ}{{$\mathbb R$}}1 {ℚ}{{$\mathbb Q$}}1 {ℕ}{{$\mathbb N$}}1 {ℤ}{{$\mathbb Z$}}1 {→}{{$\to$}}1 {⌊}{{$\lfloor$}}1 {⌋}{{$\rfloor$}}1}
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tA}{\tier{A}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\lean}[1]{\texttt{#1}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\dist}{\operatorname{dist}}
+
+\title{Exact counterexample certificates to the shifted lonely runner conjecture\\
+for $18\le n\le 38$}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-31}
+\hypersetup{pdftitle={Exact counterexample certificates to the shifted lonely runner conjecture for 18 <= n <= 38},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its search and checking code, its Lean code and its claim ledger were
+produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{This version was independently audited by a different AI agent instance (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.}
+The audit's eight corrections are applied in this text (Section~\ref{sec:corr}). No human audit exists, and the repository's statement lock and \texttt{lean\_runner} gate for the full set of Lean files are still owed (Section~\ref{sec:lim}); the Lean tier below is therefore \emph{Tier~A pending a statement lock}.
+
+\begin{abstract}
+The \emph{shifted} lonely runner conjecture (Blanco--Criado--Santos, arXiv:2603.24784, Conjecture~1.1(ii)) says: for distinct positive integer velocities $v_1,\dots,v_n$ and any real shifts $s_1,\dots,s_n$ there is a time $t$ with $\dist(s_i+v_it,\Z)\ge\frac1{n+1}$ for all $i$. It is known to fail for $5\le n\le17$ (Blanco--Criado--Santos) and for every $n\ge95$ (Poliakova, arXiv:2609.23952); Zhang (arXiv:2608.13599) asks about the range $18\le n\le94$.
+\textbf{We give explicit exact certificates that it fails for every $n$ with $18\le n\le 38$}: distinct positive integers $v_i$ and rational shifts $s_i=a_i/D$ for which the $n$ open arcs of radius $\frac1{n+1}$ cover the circle. For $n\le28$ the velocities are $\{1,\dots,n\}$; for $29\le n\le38$ they are sets with smooth numbers up to $76$. The exact value of $\gamma(v;s)=\max_t\min_i\|s_i+v_it\|$ is $<\frac1{n+1}$ in every case, with $1/\gamma-(n+1)\in[0.0961,\,0.1098]$, hence $E_n\ge0.096$ in Poliakova's notation for $n=18,\dots,38$.
+Each certificate was accepted by two checkers of the producer (different criteria and languages, \emph{same author}) and by an independent auditor's third checker (two exact methods), and the exact covering statement was kernel-checked in Lean by the auditor for all $34$ certificates $n=5,\dots,38$ (Tier~\tA{} \emph{pending a statement lock}); we re-ran the Lean gates for $n=18$ and $n=38$.
+\textbf{For $39\le n\le94$ no certificate was found within a $30$ core-hour budget and the question stays open.} Together with the literature, the conjecture is known to fail for $5\le n\le38$ and $n\ge95$. These are upper bounds $\Gamma(n)<\frac1{n+1}$ only. \textbf{Nothing is said about the unshifted lonely runner conjecture, and the statement ``the shifted conjecture fails for all $n\ge5$'' is not supported by this work.}
+\end{abstract}
+
+\paragraph{Markers.} \tA{}: kernel-checked Lean, axioms within $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$, controls caught. \tL{}: a cited source, taken as stated. \tC{}: executed code with an argument written down but not machine-checked. \tX{}: floating-point search output or a recorded absence, supporting nothing by itself. Identifiers \texttt{SLR-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+%=====================================================================
+\section{Setting and the definition as pinned}\label{sec:setting}
+The definition was pinned by the auditor from the sources themselves (read on alphaXiv), not taken from the producer (\texttt{AUDIT.md} \S1):
+\begin{itemize}\itemsep=0pt
+\item \textbf{BCS} \cite{bcs} (arXiv:2603.24784 v4, 24 Oct 2026), p.~2, Conjecture~1.1(ii): for non-zero real $v_1,\dots,v_n$ with all $|v_i|$ different and every $s_1,\dots,s_n\in\R$ there is $t\in\R$ with $\dist(s_i+v_it,\Z)\ge\frac1{n+1}$ for all $i$. Def.~1.3: $\gamma(v;s)=\sup_t\min_i\dist(s_i+v_it,\Z)$ and $\gamma_{\rm sh}(v)=\min_{s}\gamma(v;s)$. Integer $v$ is no loss of generality (p.~3). With repeated velocities the conjecture fails trivially ($v_i$ all equal, $s_i=i/n$), so distinctness is essential.
+\item \textbf{Zhang} \cite{zhang} (arXiv:2608.13599 v3), App.~A: distinct positive integers, $s\in[0,1)^n$, $\gamma=\max_t\min_i\|s_i+v_it\|$, $\Gamma(n)=\min_{|v|=n}\gamma_{\min}(v)$; Question~8.5 asks whether $\Gamma(n)<\frac1{n+1}$ for every $n\ge5$; p.~19: ``open only for $18\le n\le94$''.
+\item \textbf{Poliakova} \cite{pol} (arXiv:2609.23952 v1), \S1: distinct positive integer velocities, shifts in $\R/\Z$, $\frac1{n+1+E_n}=\inf_{v,s}\max_t\min_i\|s_i+v_it\|$; Theorem~2 ($E_n\ge1$) covers only $n\ge95$; p.~3: finding counterexamples for the remaining $18\le n\le94$ ``would establish that SLR is false for all $n\ge5$''.
+\end{itemize}
+Consequences used in this paper (all \tL{}, \texttt{SLR-L-0001}):
+\begin{enumerate}\itemsep=0pt
+\item A counterexample of size $n$ is $n$ runners with pairwise distinct positive integer velocities, real shifts and $\gamma(v;s)<\frac1{n+1}$.
+\item For integer $v$ the function $t\mapsto\min_i\|s_i+v_it\|$ is $1$-periodic, so $t\in\R/\Z$. Its maximum is attained, so $\gamma<\delta$ iff for every $t$ some $i$ has $\|s_i+v_it\|<\delta$ iff the \emph{open} arcs $\{t:\|s_i+v_it\|<\delta\}$ cover the circle. Tangency (a single uncovered point) is therefore \emph{not} a cover. This is the criterion all checkers use with $\delta=\frac1{n+1}$.
+\item Shifts matter mod $1$ and rational shifts are a special case of real ones; positive velocities suffice.
+\item A certificate gives upper bounds only: $\gamma_{\rm sh}(v)\le\gamma(v;s)<\frac1{n+1}$, hence $\Gamma(n)<\frac1{n+1}$ and $E_n>0$. With the exact value, $E_n\ge1/\gamma(v;s)-(n+1)$.
+\end{enumerate}
+
+%=====================================================================
+\section{Result}\label{sec:results}
+\paragraph{Certificates.} For every $n$ with $5\le n\le38$ the file \texttt{data/certificates/cert\_nNNN.json} holds $v$ (distinct positive integers, $\#v=n$), integers $a_1,\dots,a_n$ and $D$, with $s_i=a_i/D$ and $\delta=\frac1{n+1}$. The $13$ cases $n=5,\dots,17$ are known (BCS) and serve as positive controls with our own shifts; the $21$ cases $n=18,\dots,38$ are the result. The table gives, for these, the exact $\gamma(v;s)$ computed by the auditor's checker (method~B, exact integer arithmetic; re-run by us, \texttt{data/logs/auditor\_checker\_rerun.jsonl}) and the resulting margin.
+\input{table_certs.tex}
+For $n\le28$ the velocities are $\{1,\dots,n\}$. For $n\ge29$ they are \emph{not} $[n]$: the search swaps velocities (all $\le2n+2$) and most of those sets drop large primes and add smooth numbers; all velocities are distinct positive integers and the trivial repeated-velocity cover is never used (both producer checkers and the auditor's checker reject repeated velocities).
+
+\paragraph{Margins.} The exact margins $1/\gamma(v;s)-(n+1)$ lie in $[0.0961,\,0.1098]$ for $n=18,\dots,38$ (minimum at $n=30$, maximum at $n=25$; \texttt{AUDIT.md} \S2a, correction~6), so $E_n\ge0.096$ for these $n$. (The value $0.125$ that appears in the producer's text is the search \emph{target} radius $\delta^\ast=\frac1{n+1}-\frac1{8(n+1)^2}$, not an achieved margin.) The margins are too small to chain from one $n$ to the next, and no uniform rule was found; each $n$ was searched separately.
+
+\paragraph{Where the conjecture is known to fail.} With the cited literature (\tL{}): $n=5,\dots,17$ \cite{bcs} (Prop.~5.14, as cited by the producer); $n=18,\dots,38$ this paper (to our knowledge the first published certificates; see Section~\ref{sec:scoop}); $n\ge95$ \cite{pol}. \textbf{$n=39,\dots,94$ remains open.}
+
+\paragraph{What was searched for $n\ge39$.} The search stopped because the total CPU budget ($29.75$ core-hours of the $30$-core-hour cap) was reached. Attempts per $n$ at the frontier (producer's driver logs, \texttt{data/RESULT.md}): $n=39$: $0/23$ attempts ($6900$ CPU-s); $n=40$: $0/15$ ($4170$ CPU-s); $n=41,\dots,59$: $0/12$ each ($3600$ CPU-s each, i.e.\ $12$ attempts of $300$ s); $n=60$: $0/11$ ($3301$ CPU-s); \textbf{$n=61,\dots,94$ were never attempted.} For comparison the successes at the frontier took $1/20$ attempts at $n=36$, $1/8$ at $n=37$, $1/15$ at $n=38$. Failure to find a certificate for $n\ge39$ says nothing about whether certificates exist.
+
+%=====================================================================
+\section{Method}\label{sec:method}
+Producer code is in \texttt{data/code/} (Python and C; the C sources are also stored as \texttt{.c.txt} because the bundler keeps only listed suffixes; compiled binaries are not shipped).
+\paragraph{Search (untrusted, Tier \tX{}).} Floating-point coordinate moves on the uncovered measure at a fixed radius $\delta^\ast$: for runner $i$ the set not covered by the others is folded mod $\frac1{v_i}$ and the best window position is found exactly among the breakpoints (\texttt{cover\_ls.py}, ported to C as \texttt{cover\_ls\_fast.c} with velocity swaps, restarts and an init file). Earlier calibration tools (chain-LP min-max descent, continuation in $n$, a smooth surrogate, a deletion probe) reached the published optima at $n=5,6,8$ but failed at $n=9,10,12$ and could not get below $\frac1{n+1}$ for $12\le n\le30$; they are kept in \texttt{data/code/} as superseded. The C search was rebuilt several times during the run, so certificates $27,\dots,38$ come from different binary versions; this does not affect validity, since only the checkers are trusted. Each float solution is rounded to $s_i=a_i/D$ with $D\ge2/(\frac1{n+1}-\delta^\ast)$ and is then passed to the checkers. What worked at the frontier was repeated short restarts (for example $n=36$ failed $17$ times at $200$ s and then succeeded in the third attempt of a $300$-s batch); chain-LP polishing, a gap-repair LP, larger velocity pools and slack changes did not.
+\paragraph{Producer's checkers (Tier \tC{}; same author).} \emph{Checker~1} (\texttt{slr\_exact.py}, Python integers): every arc endpoint $(k-s_i\mp\delta)/v_i$ is scaled by $M=\operatorname{lcm}(v)\,D\,(n+1)$ to an integer and a greedy sweep decides whether the open integer intervals cover $[0,M]$. \emph{Checker~2} (\texttt{check\_cover.c}, \texttt{\_\_int128}): the open arcs cover the circle iff every right endpoint of every arc lies strictly inside another arc, tested by cross-multiplication per runner pair; it parses the JSON itself. The two use different criteria and different languages, but \textbf{they were written by the same agent and are not independent in authorship}. All certificates were re-checked from the stored JSON alone by \texttt{verify\_all.py} (\texttt{data/logs/verify\_all.json}).
+\paragraph{The auditor's third checker (Tier \tC{}, independent of the producer).} Written from scratch by the auditor, who read none of the producer's checkers (\texttt{data/code\_auditor/audit\_check.py}, standard library only). \emph{Method~A}: exact interval subtraction with \texttt{fractions.Fraction}; start from the closed set $[0,1]$ and remove every integer translate of every open arc; the arcs cover if nothing is left, single points count as uncovered. \emph{Method~B}: the exact value $\gamma(v;s)$ in integer arithmetic, evaluating $f(t)=\min_i\|s_i+v_it\|$ at every candidate maximiser (all pairwise crossings $s_i+v_it=\pm(s_j+v_jt)\bmod1$ and all single-runner peaks); the arcs cover iff $\gamma<\delta$. Both methods say COVERED for all $34$ certificates. We re-ran this checker on all $34$ files: $34/34$ valid, both methods COVERED, and the printed $\gamma$ values equal the auditor's table (\texttt{data/logs/auditor\_checker\_rerun.jsonl}). As a literature consistency check, for $n=5,\dots,15$ the certificates use $v=[n]$ and each certificate's $\gamma(v;s)$ is at least the exact $\gamma_{\rm sh}([n])$ of BCS Table~2 (all $11$ are; e.g.\ $n=5$: $189/1154\ge15/94$).
+
+%=====================================================================
+\section{Lean (Tier \tA{} pending a statement lock)}\label{sec:lean}
+\paragraph{The statement.} The auditor's generator \texttt{gen\_lean.py} (untrusted; deterministic) writes, for each certificate, a file importing \texttt{Mathlib.Tactic} only (never \texttt{import Mathlib}); for $n=18$:
+\begin{lstlisting}
+def v : Fin 18 → ℕ := ![1, 2, ..., 18]
+def s : Fin 18 → ℚ := ![3521/5777, ..., 4869/5777]   -- a_i / D of cert_n018.json
+theorem v_injective : Function.Injective v := by decide
+theorem v_pos : ∀ i, 0 < v i := by decide
+theorem cover : ∀ t : ℝ, ∃ i : Fin 18, ∃ k : ℤ,
+    |((s i : ℚ) : ℝ) + ((v i : ℕ) : ℝ) * t - (k : ℝ)| < 1 / 19
+\end{lstlisting}
+\lean{cover} says that for every real $t$ some runner is within distance $<\frac1{n+1}$ of an integer, which is exactly the negation of the conclusion of Conjecture~1.1(ii) for this $(v,s)$; together with \lean{v\_injective} and \lean{v\_pos} (distinct positive velocities) it is a counterexample of size $n$. It needs neither the maximum $\gamma$ nor compactness. The proof reduces $t$ to $t-\lfloor t\rfloor\in[0,1)$, splits on a chain of arc right endpoints ($82$ cases at $n=18$, $449$ at $n=38$) computed by the generator in exact rationals, and closes each case with \texttt{linarith}; the kernel re-checks every case, so the generator is not trusted.
+\paragraph{What the auditor ran} (\texttt{AUDIT.md} \S2c; the auditor's run, not ours). All $34$ files $n=5,\dots,38$ compiled with \texttt{scripts/certified\_numerics/lean\_pinned.py} (Lean~4.34.1, Mathlib \texttt{d13f23b7}) with \textbf{rc~0}, no banned token (\texttt{sorry}, \texttt{admit}, \texttt{native\_decide}, \texttt{axiom}); \lean{cover} and \lean{v\_injective} depend on $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$ and \lean{v\_pos} on \lean{propext} only (\texttt{data/lean/lean\_all\_summary\_auditor.json}; $3456$ s in total on one core). Controls: the positive control (n=5, $\delta=1/6$) has rc~0 with standard axioms; the same file with $\delta$ tampered to the exact $\gamma=15/94$ has rc~1 (\texttt{linarith} fails), as it should. An early $n=38$ attempt with a parse error still printed an axioms line, so the return code and not the axiom line is the gate.
+\paragraph{Our re-run (sample $n=18$ and $n=38$)} (\texttt{ledger/SLR-A-0001}, \texttt{data/logs/lean\_gate/}; script \texttt{data/code/lean\_gate\_sample.py}). For each file we ran, on one core of a loaded machine: (1) \texttt{lean\_pinned.compile\_file} with an olean (Lean~4.34.1, Mathlib \texttt{d13f23b7}): $n=18$ rc~0 in $60.7$ s, $n=38$ rc~0 in $347.3$ s; (2) the repository's \texttt{anse/formal/lean\_runner.py} \texttt{verify\_file} gate with \texttt{lean\_cmd} pointed at the pinned toolchain (the way the producer of the sibling E1 result ran it): for both files all three theorems are compiled, not \lean{sorryAx}, with only whitelisted axioms (\lean{cover} and \lean{v\_injective}: \lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}; \lean{v\_pos}: \lean{propext}); (3) \texttt{leanchecker} on the olean (\texttt{Programmes.SLR18.SLRN18}, \texttt{...SLRN38}): rc~0 for both. Controls through the same three gates: \texttt{SLRP1.lean} rc~0 with standard axioms; \texttt{SLRP1neg.lean} (the tampered $\delta=15/94$) rc~1 at compile, \texttt{lean\_runner} reports it as failed, and \texttt{leanchecker} finds no olean (rc~1). So the file-mode gate of \texttt{lean\_runner.py} \emph{can} be run on these files, but we ran it on the sample only ($2$ of $34$ plus the control).
+\paragraph{Generator, hashes, and the link to the certificates.} \texttt{formal\_cert/Programmes/SLR18/} holds the generator (\texttt{auditor\_tools/gen\_lean.py}) and the $34$ generated files \texttt{SLRN05.lean}\,\dots\,\texttt{SLRN38.lean} plus the controls \texttt{SLRP1.lean} and \texttt{SLRP1neg.lean} (the latter fails by design), placed there as the audit's correction~8 asks (uncommitted at writing). The generator is deterministic: regenerating $n=18$ and $n=38$ gives byte-identical files with sha256 \texttt{19a312563d9277568341a0a01bb21c6f83c4c8fced45d85869fa7fd379faaa65} for \texttt{SLRN18.lean} and \texttt{9dcac924e547ad82f39f7bd77ed4f8bfc70cccf44cee39f4d4136a3f01154dd4} for \texttt{SLRN38.lean}, the hashes the auditor reported. A script of ours (\texttt{ledger/check\_lean\_literals.py}, \texttt{data/logs/lean\_literal\_check.json}) checks for all $34$ files that the typed literals $v$ and $s$ equal the certificate JSON, that the \lean{cover} statement is the template above with only $n$ substituted, that the only import is \texttt{Mathlib.Tactic} and that no banned token occurs: all $34$ pass.
+\paragraph{Why this is not yet plain Tier A.} The binding repository rule is that Lean verification goes through \texttt{anse/formal/lean\_runner.py} and a statement lock. The auditor used \texttt{lean\_pinned.py} plus a manual \texttt{\#print axioms}, as its brief asked, not \texttt{lean\_runner.py}, and no statement lock was run. We ran the file-mode gate of \texttt{lean\_runner.py} on the sample above only; we created no statement-lock entry (the repository's other lanes hash statements with LeanMaster's \texttt{tools/statement\_lock.py} in a scratch root, but it is not clear to us that this is the established way for programme files, and we did not guess) and \textbf{the statement lock is owed}. In the ledger the Lean rows are therefore Tier~\tA{} with an \texttt{ai\_audit} field and the gate field \texttt{audit} left null, as in the sibling papers, and the gate flags them. No person has certified that the Lean statements mean what their gloss says.
+
+%=====================================================================
+\section{Controls}\label{sec:controls}
+\paragraph{Producer's controls} (run before any $n\ge18$ was counted; \texttt{data/logs/controls\_run1.json}, \texttt{data/logs/fuzz\_agree.json}).
+\begin{center}\small\begin{tabular}{l p{12.2cm}}\toprule
+id & control and outcome\\\midrule
+P1 & $\gamma$ exact of $(1..5)$ with shifts $(0,46,38,47,72)/94$ is $15/94$ (argmax $t=45/94$, BCS Prop.~5.11); both checkers COVERED at $\delta=\frac16$\\
+P2 & $(2,3,4,5,6,8)$ with $(0,29,17,0,16,22)/30$: $\gamma=2/15$; both COVERED at $\frac17$\\
+P3 & own shifts for $[n]$, $n=5..17$: all $13$ certified by both checkers\\
+N0 & P1 shifts at $\delta=\gamma=15/94$ (tangency): both checkers reject\\
+N1 & $[n]$, $s=0$, $\delta=\frac1{n+1}$, $n=2..94$: $0$ of $93$ certified; $\gamma=\frac1{n+1}$ checked exactly for $n\le12$\\
+N2 & single-shift perturbation by $\pm1/(10\sum v)$: at the published $\delta$ ($P1$ at $\frac16$, $P2$ at $\frac17$) \textbf{$0$ of $10$ and $0$ of $12$ broke} (the margin exceeds the perturbation; reported, not hidden; the preregistered wording ``the covering must break'' is false there); at near-tight $\delta$ $4/10$ and $5/12$ broke; on new certificates $n=18$: $10/36$, $n=30$: $4/60$, $n=35$: $5/70$, $n=37$: $5/74$, $n=38$: $6/76$ broke; checker disagreements $0$\\
+N3 & $s=0$, up to $14$ distinct speeds ($3000$ random sets and $5$ known tight sets), $\delta=\frac1{k+1}$: $0$ certified (consistent with the lonely runner conjecture for at most $14$ speeds, Allikvere \cite{alli}, \tL)\\
+F & agreement fuzz, $600$ random small instances $\times4$ deltas ($\gamma$ exactly, $\gamma\pm10^{-6}$, random): $2400$ tests, $0$ mismatches among checker~1, checker~2 and $\gamma_{\rm exact}<\delta$\\\bottomrule
+\end{tabular}\end{center}
+\paragraph{Auditor's adversarial tests} (\texttt{data/code\_auditor/adversarial.py}; \texttt{AUDIT.md} \S2b): $[n]$ with $s=0$ and $\delta=\frac1{n+1}$ for $n=2..40$: $0/39$ covered, $\gamma=\frac1{n+1}$ exactly (Dirichlet); the published values $15/94$, $2/15$ and, for $(1..6)$ with $s=(0,39,37,51,62,54)/67$, $9/67$ reproduced exactly; tangency at $n=5,18,29,38$ not covered at $\delta=\gamma$, covered at $\gamma+10^{-12}$, not covered at $\gamma-10^{-12}$; a duplicated velocity, a zero velocity and $\delta=\frac1n$ each flagged invalid; the trivial repeated-velocity cover ($v=1^6$, $s=i/6$) covers but is flagged invalid; shifting one runner by $\delta/2$ in either direction broke $36/36$ perturbations at $n=18$ and $72/76$ at $n=38$ (four runners redundant) with $0$ disagreements between methods A and B; a fuzz of $400$ random small instances $\times4$ deltas had $0$ mismatches, and a $4000$-point float grid never exceeded the exact $\gamma$.
+
+%=====================================================================
+\section{Tiers, and what is not claimed}\label{sec:tiers}
+\begin{center}\small\begin{tabular}{p{6.4cm}p{1.9cm}p{4.8cm}}\toprule
+statement & tier & basis\\\midrule
+Definition of the shifted conjecture; strictness $\Leftrightarrow$ open arcs cover; prior results ($n\le17$, $n\ge95$, $n\le4$ proved) & \tL & BCS, Zhang, Poliakova, as read by the auditor\\
+For $n=5..38$ the exact covering statement and distinctness/positivity of $v$ & \tA{} pending lock & auditor's Lean replay (34/34); our re-run for $n=18,38$\\
+Each certificate is covered; exact $\gamma(v;s)<\frac1{n+1}$ & \tC & three exact checkers (two same-author, one independent)\\
+$E_n\ge0.096$ for $n=18..38$ & \tC & auditor's exact $\gamma$ (method B)\\
+The search that found the certificates; the gaps and stall diagnostics & \tX & floating point, untrusted\\
+Failure for $n=39..94$ & --- & \textbf{open}; no certificate within the budget is not evidence either way\\\bottomrule
+\end{tabular}\end{center}
+\paragraph{What is not claimed.} (i) No breakthrough: this continues a disproof that already exists for $n\le17$ and $n\ge95$. (ii) \textbf{Nothing about the unshifted lonely runner conjecture}, which is a different statement ($s=0$). (iii) Upper bounds $\Gamma(n)<\frac1{n+1}$ only. No exact $\gamma_{\rm sh}$ values. The auditor's exact $\gamma(v;s)$ gives the explicit lower bounds $E_n\ge1/\gamma(v;s)-(n+1)\ge0.096$ for $n=18..38$ (correction~7). (iv) \textbf{We do not claim the shifted conjecture fails for all $n\ge5$}: the preregistered title said so, but the result does not support it, because $39\le n\le94$ is open. (v) The Lean files check the covering statement for the listed $(v,s)$; they do not formalise $\gamma$, the conjecture, or the literature.
+
+%=====================================================================
+\section{Literature position and scoop check}\label{sec:scoop}
+Dated 2026-10-28 (producer) and 2026-10-31 (auditor).
+\begin{itemize}\itemsep=0pt
+\item \textbf{alphaXiv} (recency-ranked discovery, and with \texttt{published\_after} $2026$-$10$-$01$ / $10$-$20$ / $10$-$24$) for ``shifted lonely runner'', ``lonely runner'' and ``counterexamples'': the only shifted-conjecture counterexample papers are arXiv:2603.24784 and 2609.23952. Newer hits concern other problems (for example 2610.23790 on the unshifted $ML(V)$, 2610.37711 view-obstruction for spheres, 2610.35206 a runner-flow PDE); the producer read titles and abstracts only.
+\item \textbf{Web search}: no source settles any $n$ in $18..94$. Zhang v3 (18 Oct 2026) and Poliakova v1 both call the range open; BCS v4 (24 Oct 2026) states failure only for $n=5..17$ and $E_n\ge1$ only for $n\ge95$.
+\item \textbf{No conflict found.} The shifted conjecture is proved only for $n\le4$ (Alc\'antara--Criado--Santos; BCS Remark~1.2). Nothing published gives a lower bound on $\gamma_{\rm sh}$ or $\Gamma(n)$ for $18\le n\le38$. Beck--Everett (arXiv:2609.06259 v2, Thm~3.2) require a shifted counterexample to satisfy a small relation $m\cdot v=0$; the certificates do ($[n]$ has $2\cdot1-2=0$ and the swapped sets for $n\ge29$ contain many relations $a+b=c$). Zhang's Lemma~A.1 is consistent with them. BCS Table~2 gives $1/\gamma_{\rm sh}(1..15)=18$ ($E=2$), so it is plausible that $[n]$ still fails at $n=18..28$.
+\item \textbf{Criado's repository} (latest commit 2026-04-24) has outputs only for $n\le13$ (\texttt{consecutive.out}) and $n=5,6,7$ censuses; only the listing and that file were looked at, at the end, as part of the scoop check, and nothing from it was used as a seed.
+\end{itemize}
+\textbf{Residual risk.} Not checked: arXiv listings after the alphaXiv index date, unpublished BCS/Criado computations (the producer saw repository outputs only up to $n=13$), and private communications. ``To our knowledge, the first published certificates for $18\le n\le38$'' is not a priority claim.
+\paragraph{A courtesy note.} We have not contacted the authors of the cited preprints (Blanco--Criado--Santos, Zhang, Poliakova), and they have not seen this work. Before any wide announcement the owner may wish to inform them.
+
+%=====================================================================
+\section{Audit corrections applied}\label{sec:corr}
+The independent audit (\texttt{AUDIT.md}, \S5) required eight corrections to the producer's report; they are applied in this paper as follows. The producer's \texttt{data/RESULT.md} and \texttt{data/result.json} are the pre-audit text (their hashes are recorded in \texttt{result.json}, so they were not edited); this paper supersedes them.
+\begin{enumerate}\itemsep=1pt
+\item \textbf{Claim wording on checkers.} The producer wrote ``two independent checkers''. Here: exact integer arithmetic by two producer checkers (different criteria and languages, same author) and by an independent auditor checker; the covering statement kernel-checked in Lean by the auditor (Section~\ref{sec:lean}).
+\item \textbf{Tier wording.} Not ``C, no Lean replay'' but: A by the audit brief's criterion for $n=5..38$ (auditor's Lean kernel replay of the exact covering statement), repository gates (\texttt{lean\_runner.py} and statement lock) pending, on top of three exact checkers (one independent). Hence ``Tier~\tA{} pending a statement lock''.
+\item \textbf{Status line.} Counterexamples are certified for every $n\in[18,38]$. With $n=5..17$ (BCS) and $n\ge95$ (Poliakova) the shifted conjecture is known to fail for $n\in5..38$ and $n\ge95$; $n\in39..94$ stays open.
+\item \textbf{Lean attribution.} The producer did no Lean replay; the replay is the auditor's. Standard axioms; Tier~\tA{} by the audit brief's criterion, repository gates pending.
+\item \textbf{Hash coverage.} The $333$ files of \texttt{logs/fast\_tmp/*.txt} are raw search scratch, not in the hash list of \texttt{result.json}. We omit them from this paper's \texttt{data/} and from the bundle.
+\item \textbf{Margin range.} ``The margins are $E\approx0.125$'' is replaced by the exact $1/\gamma(v;s)-(n+1)\in[0.0961,0.1098]$; $0.125$ is the search target radius.
+\item \textbf{Bound.} ``No value of $E_n$ beyond $E_n>0$'' is replaced by $E_n\ge1/\gamma(v;s)-(n+1)\ge0.096$ for $n=18..38$; still no exact $\gamma_{\rm sh}$ values.
+\item \textbf{Commit generator and Lean.} \texttt{gen\_lean.py} and the generated \texttt{.lean} files are placed (uncommitted) under \texttt{formal\_cert/Programmes/SLR18/}; they are re-run through the pinned toolchain here, and through \texttt{lean\_runner.py} for the sample (Section~\ref{sec:lean}); a statement lock is owed.
+\end{enumerate}
+\paragraph{Two further points on the producer's text.} The producer's note that frontier attempts covered $39..59$ with $12$ attempts of $300$ s each is refined above from the driver logs ($n=39$ and $40$ had more attempts; $n=60$ also had $11$; $61..94$ never). Everything in \texttt{data/RESULT.md} about ``independent checkers'' and ``Tier C, not A'' is superseded by items 1, 2 and 4.
+
+%=====================================================================
+\section{Claim ledger}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files $13$ claims: $3$ at Tier~\tA{} (\texttt{SLR-A-0001}: the sample $n=18,38$ through all three gates; \texttt{-0002}: all $34$, the auditor's run; \texttt{-0003}: Lean controls), $2$ at \tL{} (definition; prior results), $5$ at \tC{} (\texttt{SLR-C-0001..0005}: producer's checkers, auditor's checker, controls, Lean-literal check, and the headline \texttt{SLR-C-0005}) and $3$ at \tX{} (search effort and absences; scoop check; what was not run). Each carries a content-addressed evidence blob in \texttt{ledger/evidence/}; each Tier~\tA{} claim also carries an \texttt{ai\_audit} field. The headline is filed at Tier~\tC{} because its evidence kind (an argument assembling the rows above) is capped at \tC{} by the gate. The gate field \texttt{audit} is left null: the audit was done by an AI agent, not a person, so \texttt{LEDGER\_UNAUDITED\_TIER\_A} stays open. The gate (\texttt{tools/ledger.py ledger.json -{}-evidence-dir evidence}; verbatim in \texttt{ledger/gate\_output.txt}) exits with code~\texttt{1}: $0$ blocking findings and $3$ flags, all \texttt{LEDGER\_UNAUDITED\_TIER\_A}, one per Tier~\tA{} row (\texttt{SLR-A-0001..0003}). That is the honest state.
+
+%=====================================================================
+\section{Limitations}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item \textbf{AI audit only; human audit and statement lock owed.} The audit is by a separate AI agent instance, not a person. No person has certified that the Lean statements mean what their gloss says; no statement lock exists; the repository's \texttt{lean\_runner.py} gate was run on a sample ($n=18,38$) only, and the other $32$ files rest on the auditor's run with \texttt{lean\_pinned.py}.
+\item \textbf{Still unverified (audit \S6).} (a) The repository-gate Lean verification of all files; (b) scoop completeness beyond the alphaXiv index and web search, including unpublished BCS computations; (c) the per-log CPU figures ($101746.4$ s by log plus $5344.8$ s manual runs $=107091.2$ s $=29.75$ core-hours; the controls/checks entry of $300$ s is an estimate; the margin to the $30$ core-hour cap is about $900$ s); (d) the producer's search code, which is untrusted and not needed for validity; (e) a full reading of every log for third-party text (grep-level only: no copy of Criado's \texttt{consecutive.out} and no paper text is tracked).
+\item \textbf{The two producer checkers share an author.} Their agreement is not independent evidence; the independent evidence is the auditor's checker (two methods) and the Lean replay.
+\item \textbf{Literature premises are taken as stated} (\tL{}): the definition and the statements about $n\le17$ and $n\ge95$ were read by the auditor on alphaXiv, not re-derived; $n=5..17$ are cited from BCS and used here only as positive controls.
+\item \textbf{Scope.} $18\le n\le38$ only. The search is heuristic. $39\le n\le94$ is open; $61\le n\le94$ was never attempted. Nothing here concerns the unshifted conjecture, exact $\gamma_{\rm sh}$ values, or any physical claim.
+\item \textbf{Bundle contents.} The $333$ raw search scratch files \texttt{logs/fast\_tmp/*.txt} are omitted (correction~5); compiled binaries are not shipped (C sources as \texttt{.c.txt}); the Lean files are the auditor's generated files, copied unchanged.
+\item \textbf{Deviations from the preregistration} (from the producer's note): velocities for $n\ge29$ are swapped sets, which the preregistration allows as ``modified velocity sets''; the Poliakova uniform-rule route and add-a-runner chaining were not used; the N2 control wording was applied per runner and both signs (see Section~\ref{sec:controls}); everything ran on one core, one process at a time.
+\end{itemize}
+
+%=====================================================================
+\section{Reproducibility}\label{sec:repro}
+Repository AutoevolveAI, branch \texttt{worktree-openai-math-discovery}; HEAD when this paper was written \texttt{1e29c538f2ceacd0e644fc990cfba32ce45fa0d7}; the producer's commit is \texttt{bbfc5653a4d72f0f7dc311d109095c3fc7dc567b}. The paper, the Lean files and the auditor's tools are uncommitted working-tree files at that time; nothing was pushed. Copies are in \texttt{data/}.
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+python3 -I data/code_auditor/audit_check.py data/certificates            # exact checker, methods A and B
+python3 -I data/code_auditor/adversarial.py data/certificates            # edit the audit_check import path
+python3 -I data/lean/gen_lean.py data/certificates/cert_n018.json N18 > SLRN18.lean
+python3 scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/SLR18/SLRN18.lean --timeout 3600
+python3 -I ledger/check_lean_literals.py ; python3 -I ledger/gen_table.py
+python3 -I ledger/build_ledger.py ; python3 -I ledger/run_gate.py
+\end{lstlisting}
+
+%=====================================================================
+\appendix
+\section{sha256 of the generated Lean files}\label{sec:hashes}
+Hashes of the files in \texttt{formal\_cert/Programmes/SLR18/} (the auditor's generated files, copied unchanged; computed by \texttt{ledger/gen\_table.py}, which writes \texttt{table\_lean\_hashes.tex}; its content is pasted below so that every file name occurs in this source). $\mathrm{SLRN}nn$ is the certificate with $n=nn$; \texttt{SLRP1} is the positive control ($n=5$, $\delta=\frac16$), \texttt{SLRP1neg} the tampered control that must fail.
+\begin{center}\scriptsize\begin{tabular}{ll}\toprule
+file & sha256\\\midrule
+\texttt{SLRN05.lean} & \texttt{15e6d53df2cf05e0632155e70bc2204fb33c5ca2a73113baec35267c70e7af03}\\
+\texttt{SLRN06.lean} & \texttt{5c7e136f41566c094c6fc33dbf302fc610573c550d2512d330b3efb0cbc08c1e}\\
+\texttt{SLRN07.lean} & \texttt{b92d6a11ca44193fe31c1b5797f238538a5996913fe1c0e2b74a2ca8cf408b6a}\\
+\texttt{SLRN08.lean} & \texttt{015296176da2c35fe5fde50f95e00d2a861fce8f82b933248e9d8cde5b2086fb}\\
+\texttt{SLRN09.lean} & \texttt{5badba94a2cdd9f4f34ae2464f94abf487a1b467bc9cb373dd0bfc2b81e68186}\\
+\texttt{SLRN10.lean} & \texttt{c428c4cccb2dd43f6e57de466a8dfd42aa1115be82434041329bc135638c5c39}\\
+\texttt{SLRN11.lean} & \texttt{c346028387e7f2973859056a4a57af82238809c3c17c90eea8f5d6d2b7c66b9a}\\
+\texttt{SLRN12.lean} & \texttt{fa6d04a6785d4b722aaabf4b9683b06e6dcfbedc02dad0b16aa364ca7aa4b51a}\\
+\texttt{SLRN13.lean} & \texttt{79513b6a09ee15633d8e1f9e0143c62256d872856874c489f8a15112cad42b6d}\\
+\texttt{SLRN14.lean} & \texttt{d8ff1ded70568251739cddcff33bf34b6b053672be68d9ed3fb852dcc8763e0e}\\
+\texttt{SLRN15.lean} & \texttt{4dd180bee0f7371f8bc2f3756b5cc757678f7fc7d01e7f798152edfd4692dee9}\\
+\texttt{SLRN16.lean} & \texttt{d8b78fb8981803150e7fdf0a6816a23d1011e54a41cf20772b2f8b0833e14742}\\
+\texttt{SLRN17.lean} & \texttt{43124a84b8d5fa3fda3595d2efa3ac9c11880afa29f621875f9faee7ed5d13fc}\\
+\texttt{SLRN18.lean} & \texttt{19a312563d9277568341a0a01bb21c6f83c4c8fced45d85869fa7fd379faaa65}\\
+\texttt{SLRN19.lean} & \texttt{caae6d38058b178b6fa7ebf943ed2d1dab15ad80e11a70639ccfb9e949dd0691}\\
+\texttt{SLRN20.lean} & \texttt{a7a32baa86b00c9f4f11e0f6eeab0ded2ce5e88dab07b737c13fb63dbaf2ced8}\\
+\texttt{SLRN21.lean} & \texttt{03be9fc9580fe7075fd272a4527e37117304d897c6e7d3073005e88e1f445e49}\\
+\texttt{SLRN22.lean} & \texttt{d5415658e8ac91dfbd318ac7940ed542b00b1117e25a67a9b5755e8ff145b2ac}\\
+\texttt{SLRN23.lean} & \texttt{66dfde9026c824a8af377f20517cd0b54d94a301b87775cd27c783e8f9896b73}\\
+\texttt{SLRN24.lean} & \texttt{99fddb73a2fda9f4738c779f560fdaecd7342213cb49973495a8889d1d761f30}\\
+\texttt{SLRN25.lean} & \texttt{8d925378f25370d192725252723e56c3a137dd8c3f8b5601e448dcb135fd2f5a}\\
+\texttt{SLRN26.lean} & \texttt{be1f10e1eecb775e769b1da4034d37e43a472986c7c964fad6123ca051f6c740}\\
+\texttt{SLRN27.lean} & \texttt{957d7ccee91230eb34ea4ab7f0e488fdd3b593f94f15389226dedd354fcdf087}\\
+\texttt{SLRN28.lean} & \texttt{0e19c9a3c8c76e4795933c81f4d0aa45993524f2b2f3b27a1b3a066ddf3c1af7}\\
+\texttt{SLRN29.lean} & \texttt{a4e7dae04f690b197be757ab95c114f2500e38b57c1c57e780265942ff290016}\\
+\texttt{SLRN30.lean} & \texttt{9ce094b125828e6fc46f9d7abb3ec7ae4fb71c88cde73e3888829def2dddd8a0}\\
+\texttt{SLRN31.lean} & \texttt{5b699517d072d30f50c24e9074bcedbab93365487dbc59d9c8fcb2ab08a8b16a}\\
+\texttt{SLRN32.lean} & \texttt{3e3f8b64bbfc20d76acb84ba2c86405b44f4f120376bd6d43340009ea855ea58}\\
+\texttt{SLRN33.lean} & \texttt{18a6250fd6947f5668f7de7b704b72393d0717f7aca4b17f069b2acf91606910}\\
+\texttt{SLRN34.lean} & \texttt{0a52a0bddd662fd75b4fc032148359404db59e06e6465952135d27eef458b781}\\
+\texttt{SLRN35.lean} & \texttt{64b91f789a8d4995944c48a50d4eda6e3afb9beb429b7a28fa480ea71022cfe1}\\
+\texttt{SLRN36.lean} & \texttt{1225cb214684fba87e69e67858877f637502fe450fbc0cd43a12c1f062650145}\\
+\texttt{SLRN37.lean} & \texttt{4d91758e24eb2ab410fa23548d064dd3cfbdfe1d6297dcfd154eb9080b495b81}\\
+\texttt{SLRN38.lean} & \texttt{9dcac924e547ad82f39f7bd77ed4f8bfc70cccf44cee39f4d4136a3f01154dd4}\\
+\texttt{SLRP1.lean} & \texttt{a4b28e1bb977754cbb7f6a18cef82f6633d9a94fbb9ff430ed2d0bc6bccb5d15}\\
+\texttt{SLRP1neg.lean} & \texttt{82dad2898bf46e4e4788b3e43b8cdfbe036dc941b43bdc80e6d98f66e148343c}\\
+\bottomrule\end{tabular}\end{center}
+
+%=====================================================================
+\begin{thebibliography}{99}\small
+\bibitem{bcs} Blanco, Criado, Santos, shifted lonely runner conjecture, arXiv:2603.24784 (v4, 2026-10-24). Conjecture~1.1(ii), Def.~1.3, Table~2, Props.~5.11, 5.12, 5.14, Remark~1.2 (\tL; title not reproduced here).
+\bibitem{zhang} Zhang, arXiv:2608.13599 (v3, 2026-10-18). App.~A, Question~8.5, Lemma~A.1 (\tL).
+\bibitem{pol} Poliakova, arXiv:2609.23952 (v1). \S1, Theorem~2, p.~3 (\tL).
+\bibitem{alli} Allikvere, \emph{Fourteen and fifteen lonely runners}, arXiv:2609.02604; cited only for the unshifted conjecture with at most $14$ speeds (control N3, \tL).
+\end{thebibliography}
+\end{document}

@@ -114,7 +114,7 @@ PAPERS = [
         "hamiltonian": r"\mathcal{H} = -e^{K(z,\bar{z})} \, |Z(q,p;z)|^2",
         "pde": r"\frac{dz^i}{d\tau} = -2 g^{i\bar{\jmath}} \partial_{\bar{\jmath}} |Z|, \quad \frac{dp_i}{d\tau} = -e^K \partial_i |Z|^2",
         "energy_def": r"E[\text{traj}] = \max_{t \in [0,T]} \frac{|\mathcal{H}(t) - \mathcal{H}(0)|}{|\mathcal{H}(0)|} \times 10^6",
-        "novel": "We prove that the Yoshida-4 symplectic integrator reduces the Hamiltonian drift by 16.4\\% vs RK4 by preserving the symplectic structure of the Kahler phase space.",
+        "novel": "On one harmonic attractor, one conserved Hamiltonian and one step size, Yoshida-4 and RK4 are both fourth order (observed order 4.00). Their drifts differ in kind rather than by a fixed percentage: RK4's drift grows linearly in time (5.6e-09, 5.6e-08, 5.6e-07 at T=10, 100, 1000 for $dt=0.02$) while Yoshida-4's stays at 6.6e-08, so RK4 is smaller at short horizons (by up to 47$\\times$ at $T=10$, $dt=0.005$) and Yoshida-4 is smaller beyond a crossover between $T=100$ and $T=1000$. An earlier 16.4\\% figure compared the drift of two different functions and is withdrawn.",
         "refs": ["ferrara1995", "yoshida1990"],
     },
     {
@@ -202,7 +202,7 @@ PAPERS = [
         "hamiltonian": r"\mathcal{H}_{\mathrm{Kerr}} = \frac{1}{2\mu}\left(\frac{\Delta}{\Sigma} p_r^2 + \frac{1}{\Sigma} p_\theta^2 + \frac{\Sigma}{\Delta} p_t^2 + \frac{1}{\Sigma \sin^2\!\theta} p_\phi^2\right)",
         "pde": r"K = p_\theta^2 + \cos^2\!\theta\!\left(a^2(\mu^2 - E^2) + \frac{L_z^2}{\sin^2\!\theta}\right) = \mathrm{const}",
         "energy_def": r"E[\mathrm{traj}] = \max_{t} \frac{|K(t) - K_0|}{|K_0|} \times 10^6",
-        "novel": "Yoshida-4 symplectic integration achieves 85.1\\% lower Carter constant drift than RK4 at matched timestep. The Kerr Hamiltonian separability in $(r, \\theta)$ makes symplectic methods the natural choice, as proven by the exact Carter constant formula.",
+        "novel": "The earlier 85.1\\% figure is withdrawn: the two arms used unequal step sizes ($0.005$ versus $0.002$) and the integrated right-hand side is not Hamiltonian, so a symplectic splitting does not apply to it. A matched test on the Kerr geodesic Hamiltonian is open.",
         "refs": ["carter1968", "yoshida1990"],
     },
     {

@@ -81,6 +81,45 @@ scientist actually asks — *"is 'correct' the right word for what I specified?"
 and a measurable stopping rule. It turns the generator, usually the untrusted part, into the
 instrument that tests the trusted part's assumptions.
 
+## 3b. Result: the loop run end to end on linear multistep methods
+
+`scripts/kge_spec_closure_bdf.py`, `results/kge_spec_closure_bdf.json`. A structure-search generator
+(every support of a k-step BDF-type stencil, k ≤ 7, coefficients solved exactly for the highest
+order the support admits) produced **247 candidates, each satisfying its order conditions**. Two
+specifications were red-teamed by an **independent oracle** — the definition of zero-stability
+itself, simulated: run `Σ aⱼ y_{n+j} = 0` from unit-vector starts and reject unbounded growth.
+
+| specification | accepts | red-team gaps (kernel-acceptable, oracle-rejected) |
+|---|---:|---:|
+| v1 — order conditions only (what Lean proves today) | 247 | **94 (38.1%)** |
+| v2 — order conditions + exact root condition (Schur–Cohn / cyclotomic over ℚ) | 153 | **0** |
+
+Over-strictness (v2 rejects a stencil the oracle accepts): **0**. The two mechanisms — exact algebra
+and simulation — share no code, and agree on all 247. Highest zero-stable order by step count: k
+for k ≤ 6, and **6 for k = 7**, so the BDF7 failure generalises into a barrier visible in the data.
+
+**Three errors of mine along the way, each caught by a control rather than by inspection:**
+
+1. *Blind starts.* A first diagnostic started from the all-ones vector and reported peak |y| = 1
+   forever. For any consistent method that vector is the constant solution (Σaⱼ = 0), so it excites
+   only the z = 1 mode and cannot see an unstable root. The oracle uses unit-vector starts.
+2. *Too short a horizon.* A 400-step oracle accepted BDF7 (peak 1.7×10⁴, under its 10⁶ bound); the
+   control "BDF7 must be rejected" failed, which is how it was found. At 1000 steps the peak is
+   9.6×10⁹. The oracle now runs 2000 steps and its blind spot is stated: it catches root moduli
+   above about 1.006 and would miss a root at 1.001.
+3. *An over-strict exact test.* The first `zero_stable_exact` required every non-unit root strictly
+   inside the disc, which rejects weakly stable methods (leapfrog, ρ = z² − 1). Its own control —
+   agreement with numeric roots on BDF1–8 — could not catch this, because none of those has a weak
+   root; the over-strictness check did (31 disagreements, all exactly simple on-circle roots). It now
+   strips cyclotomic factors exactly (Kronecker), requires each at most once, and runs Schur–Cohn on
+   the remainder. `tests/unit/test_zero_stability_exact.py` (6 tests) pins the controls that would
+   have caught it: leapfrog accepted, `(z−1)²` and `(z²+1)²` rejected, BDF1–6 accepted, BDF7/8 rejected.
+
+**What this does and does not show.** It demonstrates that specification gaps are *findable by the
+generator* and that closing one removes them from this candidate set. It does not show completeness
+of v2 in general, and zero-stability is decided exactly but **not yet kernel-proved** — the Lean
+theorem is the open item. The oracle is finite-horizon, and the candidate set is one family.
+
 ## 4. Next experiments, with the controls that make them count
 
 | experiment | success criterion | controls |

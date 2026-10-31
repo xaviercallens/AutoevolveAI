@@ -1,0 +1,52 @@
+{
+ "title": "Which stored elastic tensors in JARVIS-DFT are not positive definite? An exact-rational Born-stability audit of 34,323 tensors (a statement about stored DFT tensors, not about materials)",
+ "version": "v1",
+ "description": "<p>An unstressed crystal is elastically stable only if its 6&times;6 stiffness matrix is positive definite (the Born criterion, as stated by Mouhat and Coudert, PRB 90, 224104). We tested every full 6&times;6 elastic tensor stored in the JARVIS-DFT <i>dft_3d</i> dataset (CC BY 4.0; figshare article 6815699; unzipped json sha256 9dacb55a&hellip;5907) with exact rational arithmetic. Of 93,902 records, 59,400 carry no tensor (&quot;na&quot;), 179 contain a non-finite number, and N = 34,323 are analysed. Reading each stored float as the exact rational of its shortest decimal and testing the symmetric part: 22,842 tensors are positive definite and <b>11,481 (33.45 %) are not</b>, each with an exact rational witness x &ne; 0, x<sup>T</sup>Sx &le; 0. Three exact methods agree on every entry (the producer's LDL<sup>T</sup> and Bareiss elimination, and an independent auditor's characteristic-polynomial sign pattern), and the auditor re-checked all 11,481 witnesses. 234 tensors are numerically zero; without them 11,247 of 34,089 (32.99 %) are not positive definite. Under an exact worst-case rounding test (each printed value within half a unit of its last printed place): 22,809 robustly positive definite, 11,244 robustly not, 55 certified ambiguous, 215 undecided (210 of them null tensors). 342 tensors pass the incorrect linear orthorhombic criterion (Mouhat&ndash;Coudert Eq. 19) but are not positive definite.</p><p><b>This is a statement about stored DFT tensors under one stated reading, not about materials.</b> Many entries are raw DFT outputs, including hypothetical, unrelaxed and dynamically unstable structures, so a large fraction is expected. It does <b>not</b> say that JARVIS-DFT or its authors are wrong and says nothing about any material being unstable in a laboratory. The criterion tested is the zero-stress one (Mouhat&ndash;Coudert Eq. 20: under load the relevant matrix is B, not C), so residual stress in a computed cell changes the relevant test. To our knowledge no exact-rational Born audit of the whole JARVIS elastic dataset has been published (not an exhaustive search, not a priority claim).</p><p><b>Tier split.</b> <b>Tier A</b> (Lean 4.34.1, Mathlib, pinned toolchain; axioms within propext, Classical.choice, Quot.sound), provisional: 12 witnesses x &ne; 0 with x<sup>T</sup>Sx &le; 0 and 6 LDL<sup>T</sup> identities with positive pivots for 18 explicit dataset matrices, plus 2 control statements; three tampered certificates are rejected; independently recompiled and replayed with leanchecker by the auditor; the anse/formal/lean_runner.py gate and a statement-lock entry are still owed, and the step from the LDL<sup>T</sup> identity to positive definiteness is outside Lean. <b>Tier L</b>: the criterion (Mouhat&ndash;Coudert), the dataset and its licence; Born&ndash;Huang (1954) was not read. <b>Tier C</b>: all exact counts (exact rational arithmetic on the stored decimals; not kernel-checked). <b>Tier X</b>: float pipelines (numpy eigvalsh with and without tolerance disagrees on 0, 236 and 3 tensors for three conventions) and context counts; the producer's <i>ehull</i> bins are withdrawn because the field's meaning was not verified.</p><p><b>Controls.</b> Positive: Cu, Si and diamond tensors are positive definite; the Mouhat&ndash;Coudert footnote-26 tensor passes the incorrect linear criterion and fails the exact test; stored values of five materials reproduce a published table; Voigt K and G recomputed from the tensors match the stored moduli within 1 % for about 98 % of entries. Negative: sign flips flip the verdicts; singular and near-boundary tensors are flagged undecided; planted wrong Lean certificates are rejected.</p><p><b>Dataset observations, neutral.</b> 234 numerically zero tensors, 12 with a zero row, 922 not exactly symmetric (598 differ by more than 1 GPa, median 19.5 GPa), 874 with over-precise entries, 18 entries above 1e4 GPa. The owner has not forwarded these to the dataset authors.</p><p><b>Redistribution.</b> No dataset file and no per-entry table is included (the dataset is fetched from figshare by hash); 22 dataset tensors appear in a Lean file and a json file, each with a CC BY 4.0 attribution line (Choudhary et al., npj Comput. Mater. 6, 173 (2020)). The derived summaries, code and Lean files are released under the licence of this record; they do not enlarge the dataset's licence. Member list: BUNDLE_MANIFEST.txt.</p><p><b>Status.</b> Produced by AI agents (Claude) under the author's direction; the author is responsible for the content. Independently audited by a separate AI agent instance (ACCEPT_WITH_CORRECTIONS, corrections C1&ndash;C10 applied; full re-classification of all 34,323 entries with 0 mismatches); no human audit. Still unverified: the lean_runner gate and a statement lock, the meaning of the ehull and min_ir_mode fields, Born&ndash;Huang 1954, a re-run of the producer's controls.py by the auditor. The Elenchus ledger gate exits with code 1 (0 blocking findings, 2 flags LEDGER_UNAUDITED_TIER_A). Not peer reviewed.</p>",
+ "keywords": [
+  "Born stability criterion",
+  "elastic tensor",
+  "JARVIS-DFT",
+  "exact rational arithmetic",
+  "positive definiteness",
+  "dataset audit",
+  "Lean 4",
+  "formal verification",
+  "epistemic tiers",
+  "AI-assisted research"
+ ],
+ "licence_note": "Derived data only. The dataset (JARVIS-DFT dft_3d, figshare article 6815699, CC BY 4.0, Choudhary et al., npj Comput. Mater. 6, 173 (2020)) is not redistributed: no dataset file and no per-entry table. 22 dataset tensors (18 in data/lean/Witnesses.lean, 4 in data/summaries/f1_inspect.json) carry an attribution line. Counts, summaries, code and Lean files are the authors' own derived work; CC BY 4.0 permits such use with attribution, and this record's licence does not extend over the dataset.",
+ "audit": {
+  "auditor": "independent AI audit agent (producer != verifier), 2026-10-31; not a person",
+  "report": "papers/p4_born_stability_jarvis/AUDIT.md",
+  "verdict": "ACCEPT_WITH_CORRECTIONS (corrections C1-C10 applied; no human review)",
+  "unverified": [
+   "anse/formal/lean_runner.py gate and statement lock",
+   "meaning of ehull and min_ir_mode",
+   "Born-Huang 1954 not read",
+   "producer controls.py not re-run by the auditor"
+  ]
+ },
+ "notes": "Preprint v1 (2026-10-31), independently AI-audited (AUDIT.md), not human-audited. Proposal 4, item M2 (preregistered 2026-10-31, prereg_M2.json; its internal written_utc 16:30Z is wrong, file mtime 16:22:52Z precedes the 16:23:00Z download). Lean: AutoevolveAI formal_cert/Programmes/BornM2/{Probe,Witnesses,Tamper1,Tamper2,Tamper3}.lean (sha256 in the paper), Lean 4.34.1 via scripts/certified_numerics/lean_pinned.py. Branch worktree-openai-math-discovery, HEAD at writing abe4718ed552e3c77b7207cadb8095d998e02602; the M2 audit, the CC BY attribution edits and this paper were uncommitted working-tree files; nothing pushed. Ledger gate: exit code 1, 0 blocking, 2 flags (ledger/gate_output.txt). Owed: statement lock, lean_runner gate, human audit. data/RESULT.md is the producer's pre-audit text (hash recorded); the paper supersedes it on C1-C10. Logs ship as *.log.txt. The dataset itself is not shipped; the auditor's code and per-entry output are not shipped. No third-party full texts are included.",
+ "related_identifiers": [
+  {
+   "identifier": "10.6084/m9.figshare.6815699",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "arXiv:1410.0065",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:2007.01831",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:1804.01033",
+   "relation": "references",
+   "scheme": "arxiv"
+  }
+ ]
+}

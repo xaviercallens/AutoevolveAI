@@ -1,5 +1,7 @@
 import Mathlib.Tactic
 
+-- Data: JARVIS-DFT dft_3d (Choudhary et al., npj Comput. Mater. 6, 173 (2020)), figshare 10.6084/m9.figshare.6815699, CC BY 4.0. The 18 matrices below are symmetrised stored decimals of dataset entries (jid in each comment).
+
 namespace BornM2W
 
 /-- Quadratic form x^T C x for a 6x6 rational matrix. -/

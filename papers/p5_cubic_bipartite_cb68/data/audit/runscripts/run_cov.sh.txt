@@ -1,0 +1,24 @@
+#!/bin/bash
+M=/tmp/egaudit/mine
+O=/tmp/egaudit/out/cov; mkdir -p $O
+part() { python3 -c "import sys;v=int(sys.argv[1]);print('a'*v+'b'*v)" $1; }
+# C16 off, C8 on, cap 19, all modes
+for m in 0 1 2; do taskset -c 2,3 $M/aud_search 19 $m no16 comp $O/p3_m$m.comp > $O/p3_m$m.json; done
+for m in 0 1 2; do taskset -c 2,3 $M/comp2g6 19 < $O/p3_m$m.comp | taskset -c 2,3 nauty-labelg -q -f$(part 19) | sort -u > $O/p3_m${m}_v19.canon; done
+cat $O/p3_m0_v19.canon $O/p3_m1_v19.canon $O/p3_m2_v19.canon | sort -u > $O/p3_all_v19.canon
+# filters off: mode 0 cap 13 (v=7..13)
+taskset -c 2,3 $M/aud_search 13 0 no8 no16 comp $O/p2_m0.comp > $O/p2_m0.json
+for v in 7 8 9 10 11 12 13; do
+  taskset -c 2,3 $M/comp2g6 $v < $O/p2_m0.comp | taskset -c 2,3 nauty-labelg -q -f$(part $v) | sort -u > $O/p2_m0_v$v.canon
+  taskset -c 2,3 nauty-genbg -q -c -d3:3 -D3:3 -Z1 $v $v | taskset -c 2,3 nauty-labelg -q -f$(part $v) | sort -u > $O/genbg_c_v$v.canon
+done
+rm -f $O/p2_m0.comp
+# filters off: triangle modes cap 14, v = 14 only
+for m in 1 2; do
+  taskset -c 2,3 $M/aud_search 14 $m no8 no16 comp $O/p2_m${m}_cap14.comp > $O/p2_m${m}_cap14.json
+  taskset -c 2,3 $M/comp2g6 14 < $O/p2_m${m}_cap14.comp | taskset -c 2,3 nauty-labelg -q -f$(part 14) | sort -u > $O/p2_m${m}_v14.canon
+  rm -f $O/p2_m${m}_cap14.comp
+done
+sort -u $O/p2_m1_v14.canon $O/p2_m2_v14.canon > $O/p2_tri_v14.canon
+taskset -c 2,3 nauty-genbg -q -c -d3:3 -D3:3 -Z1 14 14 | taskset -c 2,3 nauty-labelg -q -f$(part 14) | sort -u > $O/genbg_c_v14.canon
+echo done > $O/done

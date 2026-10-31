@@ -1,0 +1,22 @@
+BUNDLE_MANIFEST (dry run only; nothing uploaded) 2026-10-31
+Staging tree: /home/callensxavier_gmail_com/eg_stage/repo (copy of papers/p5_cubic_bipartite_cb68 and results/proposal5/2026-10-27/EG-CB68 minus compiled binaries (cb_search, cb_check_fast, g6_cycles) and minus the git-ignored logs/*.out (their copies travel in the paper data as data/logs/*.out.txt),
+plus what scripts/publish_ar_paper.py hard-codes: scripts/certified_numerics/lean_pinned.py, results/autoresearch/2026-10-25/{program.md,preregistration.json}; the script also imports scripts/publish_universal_optimality_tiered.py, which sits in the staging tree only as the runner and is not a bundle member;
+no formal_cert directory: there is no Lean in this paper).
+Command (unmodified script, run from the staging root): python3 -I scripts/publish_ar_paper.py --paper-dir papers/p5_cubic_bipartite_cb68 --lane-dir results/proposal5/2026-10-27/EG-CB68 --dry-run
+(--lane-dir is required with --paper-dir; the script uses REPO = parent of its scripts dir.) Exit code 0.
+Bundle: /home/callensxavier_gmail_com/zenodo-bundles/p5_cubic_bipartite_cb68/p5_cubic_bipartite_cb68_2026-10-25.tar.gz (864937 bytes, 480 members in MANIFEST.json, 481 tar entries with MANIFEST.json; the 2026-10-25 in the name is the script's fixed tag, not a date of this work), plus MANIFEST.json and the PDF (sha256 bff7140fb58ed9fe6f71d3912768be9b1a9957c11638f6ac21a08ca4fc1d385a).
+Bundle built before this BUNDLE_MANIFEST.txt was added to the paper dir (the file is not itself a member), as for the sibling papers.
+Members by prefix (tar entries):
+        1 MANIFEST.json
+      340 papers/p5_cubic_bipartite_cb68 (main.tex, table_*.tex, publication_meta.json, AUDIT.md, ledger/ incl. 13 evidence blobs, data/ incl. data/audit/ with the auditor's sources and small outputs)
+      137 results/proposal5/2026-10-27/EG-CB68 (RESULT.md, result.json, PREREG_*.md, AUDIT.md, code/*.py, data/main, logs/; C sources, shell scripts and graph6 files are dropped by the suffix filter there and travel in the paper data instead)
+        2 results/autoresearch/2026-10-25
+        1 scripts/certified_numerics
+Checks on the extracted bundle (/home/callensxavier_gmail_com/eg_extract): no secret patterns (hf_, sk-, ghp_, AKIA, private keys, ZENODO_TOKEN, token file path); no PDF, .gz, .cert, .png, .o or .so member and no ELF binary;
+the largest members are four graph6 class lists of 1.1-1.4 MB each (data/audit/out/cov/*_v14.canon.txt); every file is under 5 MB.
+NOT in the bundle on purpose: the 12 route-1 certificate streams (134,625,781 bytes of gzip; names, sizes and sha256 are in main.tex Appendix A and data/certs_inventory.json; kept at /home/callensxavier_gmail_com/EG-CB68_scratch/certs/ and regenerable), the 14 tampered-stream files of the auditor (up to 3.4 MB each, regenerable with data/audit/code/tamper.py), the auditor's copy of the Ripatti 2017 PDF (third-party text), compiled binaries. main.pdf is shipped as the separate PDF of the dry run; build1.log and build2.log are in the paper dir but are not members (.log suffix).
+No third-party full text: no Tranquilli, Garcia, Ducoffe-Dumitru, Ripatti or Exoo-Jajcay text; only this project's notes that cite them.
+Suffix rule of the bundler: only .json .jsonl .md .py .tex .lean .txt .rs .toml .csv .tsv are kept, so C sources are shipped as .c.txt, shell scripts as .sh.txt, graph6 files as .g6.txt, *.out logs as .out.txt.
+Known unchanged items: data/RESULT.md, data/result.json and the lane copies are the producer's PRE-AUDIT text (RESULT.md still says "first certified computation ... audit pending", "producer != verifier pending", the 'our interpretation of a numerical coincidence' sentence and the wrong ~18:10 header time of Addendum 1); the paper (main.tex, Section 'Audit corrections applied') supersedes them on the audit's nine corrections, and data/result_audited.json carries the audited fields. Their hashes are recorded in result.json, so they were not edited.
+The route-1 certificates' sha256 were recomputed for this paper by ledger/make_cert_inventory.py and agree with the producer's and the auditor's recorded hashes.
+Staging paper dir vs repo paper dir: diff -rq reports no difference (after this file was copied in).

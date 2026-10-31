@@ -1,0 +1,12 @@
+#!/bin/bash
+# verify every route-1 gz certificate: gz sha256, plain sha256 via zcat, auditor checker (expected params hardcoded), producer cb_check_fast
+C=/home/callensxavier_gmail_com/EG-CB68_scratch/certs
+O=/tmp/egaudit/out/certs
+mkdir -p $O
+for cap in 30 31 32 33 34 35; do for o in 1 2; do
+  f=$C/T_cap${cap}_o$o.cert.gz
+  sha256sum $f > $O/T${cap}_o$o.gzsha
+  zcat $f | taskset -c 3 tee >(sha256sum > $O/T${cap}_o$o.plainsha) | taskset -c 3 /tmp/egaudit/mine/aud_check $cap $o > $O/T${cap}_o$o.aud 2>&1
+  zcat $f | taskset -c 3 /tmp/egaudit/prod/cb_check_fast > $O/T${cap}_o$o.fast 2>&1
+done; done
+echo done > $O/all.done

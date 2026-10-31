@@ -143,13 +143,33 @@ not sufficient, so this certificate cannot give it. It needs either a formalised
 different witness. It remains decided *exactly* by `kge_spec_closure_bdf.py`, and unproved by the kernel.
 The Dahlquist equivalence between the root condition and bounded solutions is also not formalised.
 
+### 3d. Certifying the rest of rusty-SUNDIALS' tables — scope, and a clean result
+
+A survey of the integrator crates found **two** hand-written coefficient tables, not the Adams and
+Runge–Kutta tableaux the roadmap anticipated: `BDF_L` (certified in §1) and `BDF_ERR_COEFF`. Adams
+coefficients are computed at runtime, as in the C original, and there is no RK tableau in the library, so
+those experiments have no table to certify there.
+
+`BDF_ERR_COEFF` is certified (`scripts/kge_certify_sundials_errconst.py`,
+`formal/ANSE/AlixSundialsErrConst.lean`, **16 declarations through `lean_runner`**): the normalised error
+constant of the k-step BDF method, computed exactly from the first failing order condition, is
+`−1/(k+1)` for k = 1..8; all five stored entries match it; and the doc comment's derived values
+(`tq4 = NLS_COEF / BDF_ERR_COEFF[q]` = 0.20, 0.30, 0.40, 0.50, 0.60) are exactly what the table implies.
+**No discrepancy was found.** The same Lean file also proves the defect is *nonzero*, so each method's
+order is exactly k — `AlixBDF.lean` proves only order ≥ k.
+
+Controls (`tests/unit/test_certify_sundials_tables.py`, 6 tests): a planted typo in a numerator, in a
+trailing zero, and in an error constant are each caught, and only that row; decimal literals are read as
+written (`0.2` is 1/5; the nearest f64 is not). Stored constants are compared as written; rounding to f64 is
+a separate matter and is not claimed.
+
 ## 4. Next experiments, with the controls that make them count
 
 | experiment | success criterion | controls |
 |---|---|---|
 | ~~Lean proof of instability for BDF7/8~~ **done** (§3c). Open: Lean proof of zero-stability for BDF1–6 | Schur–Cohn soundness, or another witness for "all roots inside" | a perturbed coefficient that breaks stability must fail to certify |
 | Spec red-team on BDF: generator searches stencils passing order conditions | finds a stable/unstable split; spec gap rate reported before and after adding stability | random stencil sampling as the naive baseline |
-| Certification mode across all numerical tables in rusty-SUNDIALS (Adams, error constants `BDF_ERR_COEFF`, RK tableaux) | every table either certified or a discrepancy named | a planted typo in a copy of the table must be caught |
+| ~~Certification mode across rusty-SUNDIALS' tables~~ **done for the two that exist** (§3d: `BDF_L`, `BDF_ERR_COEFF`; no Adams or RK table is present). Still open: run it on tables elsewhere in your repositories | every table either certified or a discrepancy named | a planted typo in a copy of the table must be caught — done (6 tests) |
 | Structure search × exact solve on SRSD-Feynman | beats tree evolution at matched total work | restart hill-climber and random search on the same budget |
 | Runge–Kutta order conditions (nonlinear in coefficients) | recover RK4 and a 3-stage order-3 family | the affine-solve step must be shown insufficient here, motivating search |
 

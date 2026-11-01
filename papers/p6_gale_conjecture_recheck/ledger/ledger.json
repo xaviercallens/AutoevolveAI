@@ -1,0 +1,95 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "GALE-L-0001",
+   "statement": "Voronov, arXiv:2610.28828 v1 (20 Oct 2026, 'A counterexample to Gale's conjecture in R^3', by its own statement not independently reviewed and not formalised in Lean): Gale's 1953 conjecture, as quoted there, is beta_{n,n+1} = beta_{n+1}(B^n) for every n >= 2; Theorem 2 claims that the 101-point set V in R^3 of Appendix A satisfies beta_4(V) > 0.88928 > beta_4(S^2). Taken as stated; Gale 1953 was not read.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:182174478d2ca96766a6330a25880d981b65442b5cbf5795c6aa462384c43cd6",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GALE-L-0002",
+   "statement": "Upper bound for the ball: beta_4(B^3) <= sigma_3 = sqrt((3+sqrt3)/6) = 0.8880738340 (explicit cone partition over a regular tetrahedron); optimality beta_4(B^3) = sigma_3 is cited to Kalai's survey in Voronov's paper and is not needed for the refutation. The reduction to the diameter of one spherical triangle T is rigorous (each cone lies in conv({0} u T), diameter max(diam T, 1/2) = diam T); diam T >= sigma_3 is analytic (vertex to opposite midpoint chord); diam T = sigma_3 is asserted by the paper and only sampled here (GALE-X-0001). Tier stays L.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:b1e4bf855074859bb77b55ab82c92cd26d11e62ded1b66cd218082dfa7f1776e",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GALE-C-0001",
+   "statement": "Exact geometry of the rounded Appendix A set (rational arithmetic and Python integers, two extraction tools: PyMuPDF word boxes and pdfminer.six agree; producer's pdftotext route agrees): 303 numbers give 101 distinct points; D^2 = 100000021020030 in units 1e-14 (D = 1.0000001051), attained only by the pair (19,56); exactly 2030 pairs with dist > (88928/100000) D, none on the threshold; weakest included ratio 0.8892809651305 (ratio^2 margin 1.7165e-6, ratio margin 9.65e-7), strongest excluded ratio 0.8892597950 (gap 2.02e-5); degrees 28..52, 4-core all 101 vertices, maximum clique 4. Rounding robustness: any coordinate set within 5e-8 of the rounded one changes any ratio by at most about 3.3e-7 and so gives the same 2030-edge graph; the author's 17-figure repository points give the identical edge set (symmetric difference 0), diameter pair (12,37), weakest ratio 0.8892811623939.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "GALE-L-0001"
+   ],
+   "evidence": "sha256:c6a6e2d112d9da675bf08b7902b371324649dd15fe559673554fc98479366087",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GALE-C-0002",
+   "statement": "The 2030-edge distance graph is not 4-colourable (UNSAT, certificates checked): producer, Glucose4 DRUP proofs verified by drat-trim with and without a symmetry unit, CaDiCaL 1.9.5 on a ladder encoding, own exhaustive DSATUR (745 nodes); auditor, own 2-bit encoding with no symmetry breaking (202 variables, 8120 clauses), PicoSAT and CaDiCaL 3.0.1 UNSAT, DRAT proof verified by drat-trim, LRAT proof verified by lrat-check.c and by the auditor's own Python LRAT checker (6246 lemmas); a proof with one hint removed is rejected by both LRAT checkers; the producer's CNF files equal the clause set rebuilt from the edge list. Controls (K4, K5, K6, Groetzsch, Moser spindle, Petersen; corrupted proof; planted 4-colourable 101-vertex graphs) all pass. The graph is 5-colourable (chromatic number 5).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "GALE-C-0001"
+   ],
+   "evidence": "sha256:909102ff467b9172e5edb8584a28970a0287dd0de0b7f9342d29a7d0d06fe744",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GALE-C-0003",
+   "statement": "Value and structure: beta_4(V) = sqrt(39541040058709/50000010510015) = 0.88928096513... exactly for this rounded set (the 2029 longest pairs form a 4-colourable graph, decoded colouring checked edge by edge, its longest monochromatic pair is pair number 2030); threshold sweep: not 4-colourable at t = 0.888, 0.888073 (2054 edges), 0.889 (2039), 0.88928 (2030), 4-colourable at 0.889281 (2025 edges) and above; a minimal (edge-critical) non-4-colourable subgraph with 425 edges on all 101 vertices (all 425 single-edge deletions are 4-colourable, exhaustive); deleting any one vertex leaves a 4-colourable graph; moving one coordinate by 1e-3 makes all 20 trials 4-colourable; 50 random 60-vertex induced subgraphs are 4-colourable. The set is a finely tuned object, not a robust one.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "GALE-C-0001",
+    "GALE-C-0002"
+   ],
+   "evidence": "sha256:416a39ef4126d7f6318de36164a4c8b4a875a2ce9a393d195e009e211b9192da",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GALE-C-0004",
+   "statement": "Logic chain, argued and not formalised: V finite so beta_4(V) is a minimum over 4-partitions; a 4-partition is a 4-colouring; since the distance graph at threshold t D is not 4-colourable, some part contains a pair with distance > t D, so beta_4(V) > t relative to D = 1.0000001051 (the threshold multiplies D, as applied). With t = 0.88928 and sigma_3 = 0.8880738340, 0.88928 > sigma_3 holds exactly ((6t^2-3)^2 > 3 with 6t^2-3 > 0). Hence, given the upper bound GALE-L-0002, beta_4(V) exceeds the ball bound sigma_3 >= beta_4(B^3); this is the refutation claimed by Voronov, not ours.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "GALE-C-0002",
+    "GALE-L-0002"
+   ],
+   "evidence": "sha256:175bed0c83787ab54221dd258bdcd139fc44273424cd4dae590b46f79f35006f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GALE-X-0001",
+   "statement": "diam T = sigma_3 for the tetrahedral spherical triangle T (radius 1/2) is supported only by floating-point dense sampling (6000 boundary and 4000 interior points: maximum 0.888073833977, equal to sigma_3 to 2e-16); producer sanity check likewise. Not a proof.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:8774bf786b0afdb8935f7ac53ffbbbffe0a3ccc08c6bb15db708ae8ee96549ca",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GALE-X-0002",
+   "statement": "NOT done: Lean or any proof-assistant check (Tier A not reached); a proof that diam T = sigma_3 or of the optimality of sigma_3 for the ball; Gale 1953 not read; kissat run (build refused by the permission classifier); a formally verified checker (cake_lpr); dimensions 4 to 6 and the author's search code; contacting the author; a human audit. No independent verification, refutation or comment was found in the literature on 2026-11-01. Recorded so the absences are explicit.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:64fa89e795b8d455477b3614dfdb01fff9b9d131a87cc29a633c9d279f2d11b2",
+   "audit": null
+  }
+ ]
+}

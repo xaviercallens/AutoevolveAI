@@ -91,6 +91,8 @@ def main() -> int:
     for k, stored in (("A0", a.stored_none), ("A1", a.stored_random)):
         st = solved(stored)
         for rung, m in st.items():
+            if rung not in S[k]:
+                continue                                    # the arm did not run this rung (A1 ran L3-L5 only)
             same = all(S[k][rung].get(s) == v for s, v in m.items())
             if not same:
                 inv.append(f"{k} does not reproduce the stored solved set on {rung}")
@@ -113,6 +115,13 @@ def main() -> int:
     sec = {r: paired(S["A2"][r], S["A0"][r]) for r in (L4, L5)}
     report["secondary_A2_vs_A0"] = {r: v for r, v in sec.items()}
     report["secondary_holm_significant"] = holm({r: v["p_two_sided"] for r, v in sec.items()})
+    # ---- easy-rung equivalence guard (pre-registered margin +-0.05; L2 is near ceiling, so this is a bug guard only)
+    eq = {}
+    for r in ("L1_base", "L2_minus_q"):
+        if r in S["A2"] and r in S["A0"]:
+            v = paired(S["A2"][r], S["A0"][r])
+            eq[r] = {"diff": v["diff"], "ci95": v["ci95"], "inside_margin_0.05": bool(v["ci95"][0] > -0.05 and v["ci95"][1] < 0.05)}
+    report["easy_rung_equivalence_A2_vs_A0"] = eq
     report["L6_floor_solves_by_arm"] = {k: sum(S[k][L6].values()) for k in S if L6 in S[k]}
 
     # ---- dose-response (descriptive + pre-registered monotone sign)
@@ -152,9 +161,11 @@ def main() -> int:
         verdict = "SUPPORTED only as intensification / triggered hypermutation (A2 does not beat the matched operator A3)."
     else:
         verdict = "SUPPORTED only as extra search (A2 does not beat the clone control A4)."
+    if any(not v["inside_margin_0.05"] for v in eq.values()):
+        verdict += "  [CAUTION: A2 differs from A0 on an easy rung beyond the +-0.05 margin; check for a bug or a cost on easy targets.]"
     report["verdict"] = verdict
     a.out.write_text(json.dumps(report, indent=2, default=str) + "\n")
-    print(json.dumps({k: report[k] for k in ("primary_A2_vs_A0_L3", "mechanism_one_sided", "dose_response_L3_solved", "harness_invalid_reasons", "mechanism_check_ran", "verdict")}, indent=2, default=str))
+    print(json.dumps({k: report[k] for k in ("primary_A2_vs_A0_L3", "mechanism_one_sided", "dose_response_L3_solved", "harness_invalid_reasons", "easy_rung_equivalence_A2_vs_A0", "mechanism_check_ran", "verdict")}, indent=2, default=str))
     return 0
 
 

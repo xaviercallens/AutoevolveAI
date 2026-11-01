@@ -1,0 +1,16 @@
+BUNDLE_MANIFEST (dry run only; nothing uploaded) 2026-11-01
+Staging tree: /home/callensxavier_gmail_com/lrspec_stage/repo (copy of papers/p5_near_tight_speed_tuples and results/proposal5/2026-10-27/LR-SPEC without the two compiled scan binaries and __pycache__,
+plus what scripts/publish_ar_paper.py hard-codes: scripts/certified_numerics/lean_pinned.py, results/autoresearch/2026-10-25/{program.md,preregistration.json};
+the script also imports scripts/publish_universal_optimality_tiered.py, which sits in the staging tree only as the runner and is not a bundle member;
+no formal_cert directory: there is no Lean in this paper). Staged paper dir is identical to the repo paper dir (diff -rq), checked after this file was added.
+Command (unmodified script, run from the staging root): python3 -I scripts/publish_ar_paper.py --paper-dir papers/p5_near_tight_speed_tuples --lane-dir results/proposal5/2026-10-27/LR-SPEC --dry-run
+Exit code 0. Bundle: /home/callensxavier_gmail_com/zenodo-bundles/p5_near_tight_speed_tuples/p5_near_tight_speed_tuples_2026-10-25.tar.gz (the 2026-10-25 is the script's fixed tag, not a date of this work),
+plus the PDF (sha256 1a02855444750135c644146eda964c9069671975060f49556be781493a54dbe6).
+Members by prefix: 1 MANIFEST.json; paper dir (main.tex, publication_meta.json, AUDIT.md, ledger/ incl. 10 evidence blobs, data/ incl. data/audit/ with the auditor's Rust sources and small outputs, Cordella survey outputs, rebuilt-producer outputs);
+the lane records under results/proposal5/2026-10-27/LR-SPEC; 2 under results/autoresearch/2026-10-25; 1 scripts/certified_numerics/lean_pinned.py.
+Checks on the extracted bundle: no secret patterns (API-key and token prefixes, private-key headers, the publishing-token variable names or token file path: grep over all members is empty); no PDF, .gz, .png, .o, .so member and no .c file;
+every file is far below 5 MB (largest 282 KB).
+NOT in the bundle on purpose: the Fan-Sun and Cordella PDFs and Cordella's code archive (survey.c, lrk.h; third-party), compiled binaries (lrspec_scan_w4/w9, the auditor's Rust target/ and survey/scan binaries), main.pdf, build logs.
+Suffix rule of the bundler: only .json .jsonl .md .py .tex .lean .txt .rs .toml .csv .tsv are kept, so C source is shipped as lrspec_scan.c.txt, shell scripts as .sh.txt and *.log outputs as .log.txt (the lane's own code/lrspec_scan.c is dropped by the bundler; the .c.txt copy is in the paper data/code).
+Known unchanged items: data/RESULT.md, data/PREREG_*.md and data/result.json (and the lane copies) are the producer's PRE-AUDIT text and are hashed in result.json; the paper (Section 'Audit corrections applied') supersedes them.
+The one edited copy is papers/.../data/code/ladder2.py (docstring, audit correction 6); the lane copy keeps the stale docstring.

@@ -1,0 +1,94 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+
+\title{An independent exact recheck of the $n=6$ non-transitive dice theorem\\
+{\large (a recheck of a result by others; no novelty is claimed)}}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-11-01}
+\hypersetup{pdftitle={An independent exact recheck of the n=6 non-transitive dice theorem (a recheck of a result by others)},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its code, its claim ledger and the audit were produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{This version was audited by a separate AI agent instance (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.} All six corrections are applied (Section~\ref{sec:corr}). No human audit exists. There is no Lean in this paper.
+
+\begin{abstract}
+\noindent T.~Easlick (arXiv:2610.40321, 29 Oct 2026) studies $n$-sided dice with faces in $\{1,\dots,n\}$ and the directed graph $G_n$ whose edges are the pairs where one die beats the other with the smallest possible advantage. His Theorem~1 states that for $n=6$ there are exactly two uniform minimal non-transitive cycles of maximum length $6$, and none of length $n$ for $n=3,4,5$. \textbf{The theorem is Easlick's; we claim nothing new.} Two independent implementations (a producer's numpy code for $n\le9$ and an auditor's C code for $n\le10$) reproduce every graph statistic for $n=3,\dots,10$ in exact integer arithmetic; for $n=6$ both $6$-cycles and the absence of $4$-, $5$- and $7$-cycles are reproduced with every edge exactly $19/36$; the cycles printed in the paper for $n=7,8,9,10$ (lengths $14,29,10,110$) verify exactly. Since a cycle longer than $n$ exists for each $n=7,\dots,10$, Conjecture~1 is open only for $n\ge11$ under the reading of the proof of Theorem~1 (and false at $n=7$ under the alternative reading). Tier~\tC{} for the exact verification, Tier~\tX{} for searches and context controls.
+\end{abstract}
+
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{What this is NOT.} Not a new result; not a proof of Conjecture~1 or any statement for $n\ge11$; not a formal proof (no Lean); not a comparison of the vertex lists of the $n\ge7$ strongly connected components with the paper's appendices (only sizes and counts); not an exhaustive prior-art search; not human-audited.}}
+
+\paragraph{Markers.} \tL{}: a cited source, taken as stated. \tC{}: executed exact code (integers, \texttt{Fraction}) with the argument written down, not formalised. \tX{}: searches and context controls, not exhaustive. Identifiers \texttt{DICE-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+\section{Definitions}\label{sec:def}
+A \emph{die} is a multiset of $n$ faces in $\{1,\dots,n\}$ (repeats allowed; the same multiset is the same vertex), each face with probability $1/n$; there are $\binom{2n-1}{n}$ dice. Die $x$ \emph{beats} $y$ if $W(x,y)=\#\{(i,j):x_i>y_j\}>n^2/2$ (strict; ties do not count). The minimal winning count is $W=\lfloor n^2/2\rfloor+1$ out of $n^2$ pairs, i.e.\ probability $\tfrac12+\tfrac1{n^2}$ for even $n$ and $\tfrac12+\tfrac1{2n^2}$ for odd $n$ (Easlick eq.~1). The graph $G_n$ has an edge $x\to y$ iff $W(x,y)=\lfloor n^2/2\rfloor+1$; a \emph{uniform minimal} cycle is a directed cycle in $G_n$. ``Maximum length $n$'' is not formally defined in the paper; we read it, through the proof of Theorem~1 (two $6$-cycles exhibited, a $7$-cycle excluded in the $7$-vertex components), as ``an $n$-cycle exists and no longer cycle exists''. The alternative reading is ``an $n$-cycle exists''. (\tL{}, \texttt{DICE-L-0001}.) This is not the maximin problem of maximising the minimal winning probability.
+
+\section{Graph statistics, $n=3,\dots,10$ (\tC{})}\label{sec:graph}
+Table~\ref{tab:g} lists the statistics. The producer used numpy (count-vector form of the double sum, \texttt{scipy} SCCs, brute-force double-sum cross-check for $n\le6$). The auditor, without running or reading producer code, wrote C using face histograms and cumulative counts ($W(x,y)=\sum_v c_x[v]\,C_y[v-1]$) with an iterative Tarjan SCC; $200{,}000$ random pairs per $n$ agreed with the brute-force sum (no mismatch). All rows equal the paper's numbers (Section~3 and Appendices~B--J, including $2115$ SCCs at $n=8$). The $n=10$ row is the auditor's only.
+\begin{table}[h]\centering\small
+\begin{tabular}{@{}rrrrl@{}}\toprule
+$n$ & dice & edges & SCCs & nontrivial SCC (vertices, edges)\\ \midrule
+3 & 10 & 3 & 10 & none\\
+4 & 35 & 67 & 35 & none\\
+5 & 126 & 620 & 126 & none\\
+6 & 462 & 5491 & 450 & two: $(7,10)$ and $(7,10)$\\
+7 & 1716 & 89153 & 636 & one: $(1081,\,53389)$\\
+8 & 6435 & 956307 & 2115 & one: $(4321,\,674108)$\\
+9 & 24310 & 12528131 & 3860 & one: $(20451,\,10933011)$\\
+10 & 92378 & 157244770 & 10588 & one: $(81791,\,147620052)$\\ \bottomrule
+\end{tabular}
+\caption{Graph statistics of $G_n$, reproduced by two implementations ($n\le9$) and by the auditor ($n=10$). No self-loops.}\label{tab:g}
+\end{table}
+\paragraph{Involution.} $f_n(x)=(n+1-x_n,\dots,n+1-x_1)$ is an involution on dice and sends every edge $a\to b$ to $f(b)\to f(a)$ (checked on all edges for $n=3,\dots,10$ by the auditor: no violation; by the producer for $n\le6$). Hence $f$ is an anti-automorphism of $G_n$. For $n=3,4,5$ every SCC is trivial, so $G_n$ has no directed cycle at all, in particular no $n$-cycle (\texttt{DICE-C-0001}, \texttt{-0002}).
+
+\section{The case $n=6$ (\tC{})}\label{sec:six}
+Exhaustive simple-cycle enumeration (producer, and the auditor's own DFS) inside the two $7$-vertex SCCs gives, in each, exactly three $3$-cycles and one $6$-cycle, and none of length $4$, $5$ or $7$; in $G_6$ altogether six $3$-cycles and exactly two $6$-cycles. Every edge of each $6$-cycle equals exactly $19/36=\tfrac12+\tfrac1{36}$ (\texttt{Fraction}). The map $f$ swaps the two $6$-cycles (applied to one and reversed it is a rotation of the other). The $1$-based lexicographic vertex labels of the two SCCs, $\{88,89,151,207,217,277,291\}$ and $\{118,119,160,235,286,385,391\}$, equal those of the paper's Appendix~E. With $n=3,4,5$ cycle-free, $n=6$ is the smallest $n\ge3$ admitting an $n$-cycle, and its longest cycle has length $6$: Theorem~1 is reproduced (\texttt{DICE-C-0003}).
+
+\section{$n\ge7$ and Conjecture 1 (\tC{} and \tX{})}\label{sec:big}
+The cycles printed in the paper for $n=7,8,9,10$ (lengths $14,29,10,110$) were parsed from its text and checked in print order with exact fractions: all dice are distinct and every edge has the minimal probability ($25/49$, $33/64$, $41/81$, $51/100$). The $n=10$ check is the auditor's only. Under the reading of Section~\ref{sec:def}, one exact-checked cycle longer than $n$ shows that the property ``the longest cycle has length $n$'' fails, so it fails at $n=7,8,9$ and also at $n=10$; the $n=10$ case needs only the $110$-cycle, not the $157$-million-edge graph. Easlick's Conjecture~1 ($n=6$ is the largest $n$ with a uniform minimal cycle of maximum length $n$) is therefore open only for $n\ge11$ under this reading. Under the alternative reading ``an $n$-cycle exists'' the conjecture is false at $n=7$: the auditor's randomized walk search in $G_7$ found exact-checked cycles of \emph{every} length from $3$ to $28$, including $7$, $8$ and $14$ (\tX{}: the search is not exhaustive; each cycle found is verified exactly). We do not prove the conjecture for any $n\ge11$ and do not decide it (\texttt{DICE-C-0004}, \texttt{DICE-X-0001}).
+
+\section{Controls}\label{sec:ctrl}
+Positive (exact): Efron's four dice give $2/3$ on all four edges; the Moon--Moser triple $(2,4,9),(1,6,8),(3,5,7)$ gives $5/9$ on each edge; the paper's $6$-cycles have six edges of exactly $19/36$. Negative: all $62$ single-face $\pm1$ perturbations of a paper $6$-cycle (faces kept in $[6]$) break the uniform minimal cycle; the edge predicate rejects the near-miss pairs $x=(1,1,2,5,5,5)$, $y=(1,1,1,1,1,5)$ with $W=20$ and $y=(1,1,1,2,2,5)$ with $W=18$ (run by the auditor; see Section~\ref{sec:corr}). Context (\tX{}, orthogonal to the claim, producer only): the best $3$-cycle winning probability among $m$-sided dice in $[m]$ is $3/5$ ($m=5$), $7/12$ ($m=6$), $29/49$ ($m=7$), all below $(\sqrt5-1)/2$; $m=4$ has no $3$-cycle.
+
+\section{Literature note}\label{sec:lit}
+The closest prior setting we found is Conrey, Gabbard, Grant, Liu and Morrison, \emph{Intransitive Dice} \cite{conrey}: ``proper'' $n$-sided dice with faces in $[n]$ and face sum $n(n+1)/2$ (counted by OEIS A076822); Easlick drops the sum constraint, does not cite it, and Conrey et al.\ do not study the minimal-advantage graph. Also related, and not examined here beyond the abstract: Angel--Davis (arXiv:1610.08595; uniform sets with advantage $\tfrac12+\tfrac1{2k^2}$, general labels), Hur--Kim (2006.12866), Schaefer--Schweig (1602.00969, 1706.08986), Rooney (2505.21950). None of these treats $n$-cycles in $G_n$, and we found no earlier statement of the $n=6$ theorem, but the search was limited (a few alphaXiv and web queries), so prior work is not excluded (\tL{}, \texttt{DICE-L-0002}).
+
+\section{Audit corrections applied}\label{sec:corr}
+The producer's \texttt{data/RESULT.md} and \texttt{data/result.json} are kept unmodified (pre-audit); this paper supersedes them on the audit's six corrections. (1) The $n=8$ SCC count $2115$ is stated in the paper's Appendix~H and matches (the producer wrote ``not stated''). (2) The conclusion for $n\ge7$ is as in Section~\ref{sec:big}: one exact-checked cycle longer than $n$ settles each of $n=7,8,9,10$; open only for $n\ge11$; false at $n=7$ under the alternative reading. (3) The $n=10$ graph \emph{was} independently reproduced (by the auditor) and matches Appendix~J; the producer had listed it as not done. (4) The preregistered $W=20$ near-miss control was in fact run on a $W=36$ pair, and the key \texttt{ctrl\_predicate\_rejects\_W20} in \texttt{extra\_results.json} is mislabelled; the auditor ran $W=20$ and $W=18$ near-misses and both are rejected. (5) Provenance: \texttt{PREREG\_ITEM.md} (sha256 \texttt{b3425a39\dots 0051765}) was committed in the same commit as the results, so version control cannot show that it was written first (self-attested; hash recorded); its line ``copy in data/'' is stale, the paper's text is kept outside the repository, and the corresponding hash in \texttt{result.json} refers to an external file. (6) The literature note of Section~\ref{sec:lit}.
+
+\section{Limitations and what is not done}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item AI audit only; no human audit; no Lean.
+\item Not verified: $n\ge11$ and any proof of Conjecture~1; the full vertex lists of the $n\ge7$ SCCs in the paper's appendices (only sizes and counts); the maximin context controls (not recomputed by the auditor); an exhaustive prior-art search.
+\item The meaning of ``maximum length $n$'' is our reading of the proof, not a definition in the paper.
+\item Trusted components: Python integers and \texttt{fractions}, numpy/scipy (producer), a C compiler (auditor).
+\item Deviation note: the preregistration is self-attested (Section~\ref{sec:corr}, item 5).
+\end{itemize}
+
+\section{Claim ledger and reproducibility}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files the claims with hashed evidence; the Elenchus gate (\texttt{ledger/run\_gate.py}, verbatim output in \texttt{ledger/gate\_output.txt}) checks bookkeeping only and licenses nothing. Producer code, summaries and logs are in \texttt{data/code}, \texttt{data/summaries}, \texttt{data/logs} (\texttt{.log.txt}); the auditor's C source (\texttt{dg.c.txt}), Python script and small logs are in \texttt{data/audit}. The paper's full text is third-party and is not shipped. Inputs are copies of \texttt{results/proposal6/2026-11-01/DICE-6/} and of the auditor's scratch directory; nothing was committed, pushed or uploaded.
+
+\begin{thebibliography}{9}\small
+\bibitem{easlick} T.\ Easlick, \emph{Computer-Assisted Results for $n$-Sided Non-Transitive Dice Taking Face Values in $[n]$}, arXiv:2610.40321 (v1, 29 Oct 2026), unrefereed. (\tL)
+\bibitem{conrey} B.\ Conrey, J.\ Gabbard, K.\ Grant, A.\ Liu, K.\ Morrison, \emph{Intransitive Dice}, arXiv:1311.6511 (v1 25 Nov 2013; v2 7 Jul 2016). (\tL)
+\end{thebibliography}
+\end{document}

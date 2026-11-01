@@ -34,7 +34,6 @@ LR-IND. See `docs/journal/` and the NewDiscoveries addendum (PR #3, awaiting mer
 ## In flight
 | Lane | Area | State |
 |---|---|---|
-| E3 | energy (Lean/interval check of a low-dissipation monotonicity) | producer running (cores 2,3) |
 | A1 | Lean Sandier-Serfaty port | scheduler on core 0 (nothing proved) |
 
 ## Queue (ranked; Proposal 4 section 3, Proposal 5)
@@ -44,11 +43,12 @@ LR-IND. See `docs/journal/` and the NewDiscoveries addendum (PR #3, awaiting mer
 | LR-Q84, N1-ext, LR-SPEC, LR-2E, GR-11, S8-ALL | mathematics | Proposal 5 items 5-10 | next (cores free) |
 | SLR-18 follow-up | mathematics | n = 39..94 (30 core-h cap reached), statement lock for the Lean covering statements | next |
 | B-lane | biology | preregistered audits of published mathematical-biology claims on public data | to define |
+| MS-CENSUS, DICE-6 | mathematics | from the 2026-11-01 scout (docs/journal/2026-11-01.md) | next |
 | Proposal 6 | all | write after the scout of the week | to do |
 
 ## Published (Zenodo), as of 2026-10-31
 Textbooks FR/EN, journal FR/EN, N1, N2, A2 v1.2, C1 v1.1, C1b, M3, M1, K1, E1, LR-IND, SLR-18, DH-Psi2, M2,
-EG-CB68, E2, K3, K2. Details and DOIs: `docs/journal/2026-10-31.md` and the NewDiscoveries addendum.
+EG-CB68, E2, K3, K2, E3, GR-11, LR-SPEC, GALE-101 (also: independent router verification and a Gen 6 swarm design, see the journal). Details and DOIs: `docs/journal/2026-10-31.md` and the NewDiscoveries addendum.
 
 ## Foundation being leveraged
 Lean 4.34.1 pinned runner + leanchecker replay; Arb/mpmath ball arithmetic; nauty; exact rational solvers;

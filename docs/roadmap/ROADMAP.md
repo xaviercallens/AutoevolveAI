@@ -50,6 +50,11 @@ LR-IND. See `docs/journal/` and the NewDiscoveries addendum (PR #3, awaiting mer
 Textbooks FR/EN, journal FR/EN, N1, N2, A2 v1.2, C1 v1.1, C1b, M3, M1, K1, E1, LR-IND, SLR-18, DH-Psi2, M2,
 EG-CB68, E2, K3, K2, E3, GR-11, LR-SPEC, GALE-101, DICE-6, MS-CENSUS (also: independent router verification and a Gen 6 swarm design, see the journal). Details and DOIs: `docs/journal/2026-10-31.md` and the NewDiscoveries addendum.
 
+## Private direction (details withheld by owner decision)
+One special AI-architecture research direction is kept PRIVATE (IP/licensing under review). Nothing about it is published
+or committed here; its notes live outside every repository. It follows the same Elenchus rules and counts against the
+same weekly spend cap (`SPEND_POLICY.md`).
+
 ## Foundation being leveraged
 Lean 4.34.1 pinned runner + leanchecker replay; Arb/mpmath ball arithmetic; nauty; exact rational solvers;
 the Elenchus ledger gate; the staging-tree Zenodo publisher; the independent-audit pattern (every published

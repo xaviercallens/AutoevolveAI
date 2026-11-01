@@ -23,7 +23,7 @@
 
 use num_bigint::BigInt;
 use num_rational::BigRational;
-use num_traits::{One, Signed, Zero};
+use num_traits::{One, Signed, ToPrimitive, Zero};
 use rand::{RngExt, SeedableRng};
 use rand_pcg::Pcg64;
 use serde::Serialize;
@@ -520,6 +520,37 @@ pub fn checkpoint(candidate: &Node, spec: &Node, points: &[Env]) -> Checkpoint {
 // Search
 // --------------------------------------------------------------------------
 
+/// `k` successive mutations of `best`, `k` drawn uniformly from `kmin..=kmax` out of `rng`. A step that
+/// returns its input is retried up to 8 times at a new locus.
+pub fn perturb_best(best: &Node, kmin: u8, kmax: u8, rng: &mut Pcg64, max_size: usize) -> Node {
+    let k = rng.random_range(kmin as usize..=kmax as usize);
+    let mut cur = best.clone();
+    for _ in 0..k {
+        let mut next = mutate(&cur, rng, max_size);
+        let mut tries = 0;
+        while (next == cur || next.size() > max_size) && tries < 8 {
+            next = mutate(&cur, rng, max_size);
+            tries += 1;
+        }
+        cur = next;
+    }
+    cur
+}
+
+/// Population-variance of the fitness values as f64 (diagnostic only; never used to select).
+fn fitness_variance(scored: &[(Rat, Node)]) -> f64 {
+    let v: Vec<f64> = scored.iter().map(|s| s.0.to_f64().unwrap_or(f64::INFINITY)).collect();
+    let n = v.len() as f64;
+    let mean = v.iter().sum::<f64>() / n;
+    v.iter().map(|x| (x - mean) * (x - mean)).sum::<f64>() / n
+}
+
+fn retire(born: &mut [Option<usize>], slot: usize, now: usize, survival: &mut Vec<u16>) {
+    if let Some(g) = born[slot].take() {
+        survival.push(now.saturating_sub(g).min(u16::MAX as usize) as u16);
+    }
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct ArmResult {
     pub seed: u64,
@@ -546,6 +577,22 @@ pub struct ArmResult {
     /// With `generations_observed` and `solved` this allows a per-generation
     /// hazard comparison that is not confounded by solved runs stopping early.
     pub first_collapse_generation: Option<usize>,
+    /// Interventions that inserted candidates: how many were inserted, how many of those had a fitness
+    /// EQUAL to the best's (they add no selectable variance), and how many slots were left empty because
+    /// no candidate differed from the current population within 8 draws.
+    /// `inserted_total` counts candidates GENERATED AND CHARGED to the budget; `admitted_total` counts those that
+    /// actually entered the population (all of them under forced admission, only improvements under normal
+    /// admission). `survival_gens` has one record per ADMITTED individual.
+    pub inserted_total: usize,
+    pub admitted_total: usize,
+    pub inserted_equal_to_best_fitness: usize,
+    pub dedup_fail: usize,
+    /// For each inserted individual, the number of generation boundaries it stayed in the population
+    /// (still-alive individuals are counted to the end of the run). Random immigrants are expected near 0.
+    pub survival_gens: Vec<u16>,
+    /// Mean variance of the population's fitness over the 10 generation boundaries after the FIRST
+    /// collapse. Measured identically in every arm, including the baseline that never intervenes.
+    pub var_fitness_post10: Option<f64>,
     pub best_fitness: String,
     pub best_size: usize,
     pub inert_fraction_of_best: f64,
@@ -562,6 +609,32 @@ pub struct SearchConfig {
     /// On collapse, replace the worst half of the population with fresh random
     /// trees, each evaluated out of the same budget.
     pub immigration: bool,
+    /// Which intervention fires on collapse. `Legacy` follows the `immigration` flag, so every earlier
+    /// result stays reproducible bit for bit.
+    pub immigration_mode: ImmigrationMode,
+    /// HARNESS-VALIDITY CONTROL ONLY: rotate the specification's target values by one sample point, so no
+    /// tree realises it. A search run this way must solve nothing; if it does, the harness is broken.
+    pub scramble_spec: bool,
+}
+
+/// How candidates produced by an intervention enter the population.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Admit {
+    /// Overwrite the slot, as the random-immigrant branch does.
+    Forced,
+    /// Admit only under the ordinary steady-state rule, `score < worst`.
+    Normal,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ImmigrationMode {
+    /// Follow the `immigration` flag (random immigrants when set): the pre-existing behaviour.
+    Legacy,
+    /// Refill the worst half with `kmin..=kmax` successive mutants of the current best genome.
+    /// Draws come from a SEPARATE stream, so the main stream -- and the pairing with the baseline -- is untouched.
+    PerturbBest { kmin: u8, kmax: u8, admit: Admit },
+    /// Control: write copies of the best into the same slots at the same cost. Adds no genotype.
+    CloneBest,
 }
 
 impl Default for SearchConfig {
@@ -574,6 +647,8 @@ impl Default for SearchConfig {
             tuning: Tuning::None,
             tuning_rounds: 4,
             immigration: false,
+            immigration_mode: ImmigrationMode::Legacy,
+            scramble_spec: false,
         }
     }
 }
@@ -590,7 +665,10 @@ impl Default for SearchConfig {
 /// measured to agree.
 pub fn evolve(seed: u64, target: &Node, points: &[Env], config: &SearchConfig) -> ArmResult {
     let mut rng = Pcg64::seed_from_u64(seed);
-    let want: Vec<Rat> = points.iter().map(|env| target.eval(env)).collect();
+    let mut want: Vec<Rat> = points.iter().map(|env| target.eval(env)).collect();
+    if config.scramble_spec {
+        want.rotate_left(1);
+    }
     let mut tree_points = 0usize;
     let mut constants_tuned = 0usize;
 
@@ -625,6 +703,16 @@ pub fn evolve(seed: u64, target: &Node, points: &[Env], config: &SearchConfig) -
     let mut collapsed_generations = 0usize;
     let mut immigration_events = 0usize;
     let mut first_collapse_generation: Option<usize> = None;
+    let new_mode = config.immigration_mode != ImmigrationMode::Legacy;
+    let mut rng_int = Pcg64::seed_from_u64(seed ^ 0x9E37_79B9_7F4A_7C15);
+    let mut main_children = 0usize;
+    let mut inserted_total = 0usize;
+    let mut admitted_total = 0usize;
+    let mut inserted_equal_to_best_fitness = 0usize;
+    let mut dedup_fail = 0usize;
+    let mut born: Vec<Option<usize>> = vec![None; config.population_size];
+    let mut survival_gens: Vec<u16> = Vec::new();
+    let (mut var_acc, mut var_n, mut post_left) = (0.0f64, 0usize, 0usize);
     let distinct = |scored: &[(Rat, Node)]| -> usize {
         let mut v: Vec<&Rat> = scored.iter().map(|s| &s.0).collect();
         v.sort();
@@ -634,14 +722,82 @@ pub fn evolve(seed: u64, target: &Node, points: &[Env], config: &SearchConfig) -
 
     while evaluations < config.budget && !best.as_ref().unwrap().0.is_zero() {
         // Once per generation: measure diversity, and intervene if asked.
-        if evaluations % config.population_size == 0 {
+        // New modes count boundaries in MAIN-LOOP children, so the cadence matches the baseline whatever the
+        // intervention spent; the legacy clock (evaluations) is kept for the legacy modes, bit for bit.
+        let at_boundary = if new_mode {
+            main_children % config.population_size == 0
+        } else {
+            evaluations % config.population_size == 0
+        };
+        if at_boundary {
             generations_observed += 1;
+            if post_left > 0 {
+                var_acc += fitness_variance(&scored);
+                var_n += 1;
+                post_left -= 1;
+            }
             if distinct(&scored) <= 2 {
                 collapsed_generations += 1;
                 if first_collapse_generation.is_none() {
                     first_collapse_generation = Some(generations_observed);
+                    post_left = 10;
                 }
-                if config.immigration {
+                if new_mode {
+                    immigration_events += 1;
+                    let mut order: Vec<usize> = (0..scored.len()).collect();
+                    order.sort_by(|&a, &b| scored[b].0.cmp(&scored[a].0));
+                    let best_idx = (0..scored.len()).min_by(|&i, &j| scored[i].0.cmp(&scored[j].0)).unwrap();
+                    let (best_pop_score, best_genome) = (scored[best_idx].0.clone(), scored[best_idx].1.clone());
+                    for &slot in order.iter().take(scored.len() / 2) {
+                        if evaluations >= config.budget {
+                            break;
+                        }
+                        let (cand, admit) = match config.immigration_mode {
+                            ImmigrationMode::CloneBest => (Some(best_genome.clone()), Admit::Forced),
+                            ImmigrationMode::PerturbBest { kmin, kmax, admit } => {
+                                let mut chosen = None;
+                                for _ in 0..8 {
+                                    let c = perturb_best(&best_genome, kmin, kmax, &mut rng_int, config.max_size);
+                                    if !scored.iter().any(|s| s.1 == c) {
+                                        chosen = Some(c);
+                                        break;
+                                    }
+                                }
+                                (chosen, admit)
+                            }
+                            ImmigrationMode::Legacy => unreachable!(),
+                        };
+                        let Some(cand) = cand else {
+                            dedup_fail += 1;
+                            continue;
+                        };
+                        let (score, genome, phenotype) = assess(cand, &mut tree_points, &mut constants_tuned);
+                        evaluations += 1;
+                        inserted_total += 1;
+                        if score == best_pop_score {
+                            inserted_equal_to_best_fitness += 1;
+                        }
+                        if score < best.as_ref().unwrap().0 {
+                            best = Some((score.clone(), phenotype));
+                        }
+                        let target_slot = match admit {
+                            Admit::Forced => Some(slot),
+                            Admit::Normal => {
+                                let w = (0..scored.len()).max_by(|&i, &j| scored[i].0.cmp(&scored[j].0)).unwrap();
+                                if score < scored[w].0 { Some(w) } else { None }
+                            }
+                        };
+                        if let Some(s) = target_slot {
+                            admitted_total += 1;
+                            retire(&mut born, s, generations_observed, &mut survival_gens);
+                            scored[s] = (score, genome);
+                            born[s] = Some(generations_observed);
+                        }
+                    }
+                    if best.as_ref().unwrap().0.is_zero() || evaluations >= config.budget {
+                        break;
+                    }
+                } else if config.immigration {
                     immigration_events += 1;
                     let mut order: Vec<usize> = (0..scored.len()).collect();
                     order.sort_by(|&a, &b| scored[b].0.cmp(&scored[a].0));
@@ -656,7 +812,11 @@ pub fn evolve(seed: u64, target: &Node, points: &[Env], config: &SearchConfig) -
                         if score < best.as_ref().unwrap().0 {
                             best = Some((score.clone(), phenotype));
                         }
+                        inserted_total += 1;
+                        admitted_total += 1;
+                        retire(&mut born, slot, generations_observed, &mut survival_gens);
                         scored[slot] = (score, genome);
+                        born[slot] = Some(generations_observed);
                     }
                     if best.as_ref().unwrap().0.is_zero() || evaluations >= config.budget {
                         break;
@@ -677,8 +837,10 @@ pub fn evolve(seed: u64, target: &Node, points: &[Env], config: &SearchConfig) -
         let child = mutate(&parent, &mut rng, config.max_size);
         let (score, genome, phenotype) = assess(child, &mut tree_points, &mut constants_tuned);
         evaluations += 1;
+        main_children += 1;
         let worst = (0..scored.len()).max_by(|&i, &j| scored[i].0.cmp(&scored[j].0)).unwrap();
         if score < scored[worst].0 {
+            retire(&mut born, worst, generations_observed, &mut survival_gens);
             scored[worst] = (score.clone(), genome);
         }
         if score < best.as_ref().unwrap().0 {
@@ -686,6 +848,9 @@ pub fn evolve(seed: u64, target: &Node, points: &[Env], config: &SearchConfig) -
         }
     }
 
+    for s in 0..born.len() {
+        retire(&mut born, s, generations_observed, &mut survival_gens);
+    }
     let (best_score, best_tree) = best.unwrap();
     let solved = best_score.is_zero();
     ArmResult {
@@ -699,6 +864,12 @@ pub fn evolve(seed: u64, target: &Node, points: &[Env], config: &SearchConfig) -
         final_distinct_fitness: distinct(&scored),
         immigration_events,
         first_collapse_generation,
+        inserted_total,
+        admitted_total,
+        inserted_equal_to_best_fitness,
+        dedup_fail,
+        survival_gens,
+        var_fitness_post10: if var_n > 0 { Some(var_acc / var_n as f64) } else { None },
         best_fitness: best_score.to_string(),
         best_size: best_tree.size(),
         inert_fraction_of_best: inert_fraction(&best_tree, points),
@@ -803,6 +974,12 @@ pub fn random_search(seed: u64, target: &Node, points: &[Env], budget: usize) ->
         final_distinct_fitness: 0,
         immigration_events: 0,
         first_collapse_generation: None,
+        inserted_total: 0,
+        admitted_total: 0,
+        inserted_equal_to_best_fitness: 0,
+        dedup_fail: 0,
+        survival_gens: Vec::new(),
+        var_fitness_post10: None,
         best_fitness: score.to_string(),
         best_size: node.size(),
         inert_fraction_of_best: inert_fraction(&node, points),

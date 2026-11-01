@@ -8,6 +8,7 @@
 //! and their obligations and leaves acceptance to that gate.
 
 use kernel_gated_evolution::{
+    Admit, ImmigrationMode,
     checkpoint, evolve, fitness, hill_climb, sample_points, target_ladder, Checkpoint, Env,
     Rat, SearchConfig,
 };
@@ -117,6 +118,27 @@ fn load_points(args: &[String]) -> (Vec<Env>, String) {
     }
 }
 
+/// `--immigration-mode none|random|pb13-forced|pb13-matched|pb1-forced|pb3-forced|pb10-forced|clone`, or the
+/// legacy `--immigration` flag (random immigrants). Returns (legacy flag, mode).
+fn immigration_arg(args: &[String]) -> (bool, ImmigrationMode) {
+    let pb = |kmin: u8, kmax: u8, admit: Admit| (false, ImmigrationMode::PerturbBest { kmin, kmax, admit });
+    match arg(args, "--immigration-mode").as_deref() {
+        None => (args.iter().any(|a| a == "--immigration"), ImmigrationMode::Legacy),
+        Some("none") => (false, ImmigrationMode::Legacy),
+        Some("random") => (true, ImmigrationMode::Legacy),
+        Some("pb13-forced") => pb(1, 3, Admit::Forced),
+        Some("pb13-matched") => pb(1, 3, Admit::Normal),
+        Some("pb1-forced") => pb(1, 1, Admit::Forced),
+        Some("pb3-forced") => pb(3, 3, Admit::Forced),
+        Some("pb10-forced") => pb(10, 10, Admit::Forced),
+        Some("clone") => (false, ImmigrationMode::CloneBest),
+        Some(other) => {
+            eprintln!("unknown --immigration-mode {other:?}");
+            std::process::exit(2);
+        }
+    }
+}
+
 /// `--tuning none|baldwin|lamarck`: lifetime learning of constants (default none).
 fn tuning_arg(args: &[String]) -> kernel_gated_evolution::Tuning {
     match arg(args, "--tuning").as_deref() {
@@ -141,7 +163,7 @@ fn run_ladder(args: &[String]) {
     let only = selected(args);
     let lean_out = arg(args, "--lean-out").map(PathBuf::from);
     let (points, points_source) = load_points(args);
-    let config = SearchConfig { budget, tuning: tuning_arg(args), immigration: args.iter().any(|a| a == "--immigration"), ..SearchConfig::default() };
+    let config = SearchConfig { budget, tuning: tuning_arg(args), immigration: immigration_arg(args).0, immigration_mode: immigration_arg(args).1, scramble_spec: args.iter().any(|a| a == "--scramble-spec"), ..SearchConfig::default() };
 
     if let Some(dir) = &lean_out {
         fs::create_dir_all(dir).expect("cannot create --lean-out");
@@ -264,7 +286,7 @@ fn run_hillclimb(args: &[String]) {
     let out = PathBuf::from(arg(args, "--out").expect("--out is required"));
     let only = selected(args);
     let (points, points_source) = load_points(args);
-    let config = SearchConfig { budget, tuning: tuning_arg(args), immigration: args.iter().any(|a| a == "--immigration"), ..SearchConfig::default() };
+    let config = SearchConfig { budget, tuning: tuning_arg(args), immigration: immigration_arg(args).0, immigration_mode: immigration_arg(args).1, scramble_spec: args.iter().any(|a| a == "--scramble-spec"), ..SearchConfig::default() };
 
     let mut rungs = Vec::new();
     for (name, target) in target_ladder() {
@@ -380,7 +402,7 @@ fn run_solve(args: &[String]) {
     let (points, points_source) = load_points(args);
     let want: Vec<Rat> = points.iter().map(|e| target.eval(e)).collect();
     assert!(fitness(&target, &points, &want).is_zero(), "target is not a solution of itself");
-    let config = SearchConfig { budget, tuning: tuning_arg(args), immigration: args.iter().any(|a| a == "--immigration"), ..SearchConfig::default() };
+    let config = SearchConfig { budget, tuning: tuning_arg(args), immigration: immigration_arg(args).0, immigration_mode: immigration_arg(args).1, scramble_spec: args.iter().any(|a| a == "--scramble-spec"), ..SearchConfig::default() };
 
     let kge: Vec<_> = (0..seeds as u64).map(|s| evolve(s, &target, &points, &config)).collect();
     let rnd: Vec<_> = (0..seeds as u64)

@@ -1,0 +1,11 @@
+#!/bin/bash
+export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+PY=/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/openai-math-discovery/.venv/bin/python
+cd /tmp/gr11audit
+for n in 4 5 6 7 8 9; do
+  taskset -c 4 $PY -I code/audit_scan.py $n 0 1 out/n$n.json > /dev/null
+done
+taskset -c 4 $PY -I code/audit_scan.py 10 0 1 out/n10.json > out/n10.log 2>&1
+taskset -c 4 $PY -I code/audit_scan.py 11 31 40 out/n11_31.json > out/n11_31.log 2>&1
+taskset -c 4 $PY -I code/audit_scan.py 11 12 40 out/n11_12.json > out/n11_12.log 2>&1
+echo done > out/core4.done

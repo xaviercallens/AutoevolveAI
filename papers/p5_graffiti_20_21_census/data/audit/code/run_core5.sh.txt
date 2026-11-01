@@ -1,0 +1,10 @@
+#!/bin/bash
+export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+PY=/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/openai-math-discovery/.venv/bin/python
+SCAN=/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/openai-math-discovery/results/proposal5/2026-10-27/GR-11/code/scan.py
+cd /tmp/gr11audit
+taskset -c 5 $PY -I code/audit_scan.py 11 39 40 out/n11_39.json > out/n11_39.log 2>&1
+taskset -c 5 $PY -I code/audit_scan.py 11 5 40 out/n11_5.json > out/n11_5.log 2>&1
+taskset -c 5 $PY -I code/audit_scan.py 11 7 40 out/n11_7.json > out/n11_7.log 2>&1
+taskset -c 5 $PY -I $SCAN 11 39 40 out/producer_flag39.txt > out/producer_rerun_n11_39.json 2> out/producer_rerun.err
+echo done > out/core5.done

@@ -1,0 +1,13 @@
+#!/bin/bash
+# canonicalise auditor and producer D2C lists per n and compare as sets
+P=/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/openai-math-discovery/results/proposal6/2026-11-01/MS-CENSUS/data
+O=/tmp/msaudit/out
+mkdir -p /tmp/msaudit/canon
+for n in $(seq 3 ${1:-10}); do
+  cat $O/d2c_n$n*.g6 | nauty-labelg -q | sort > /tmp/msaudit/canon/aud_$n.g6
+  cat $P/d2c_n${n}_p*.g6 | nauty-labelg -q | sort > /tmp/msaudit/canon/prod_$n.g6
+  a=$(wc -l < /tmp/msaudit/canon/aud_$n.g6); p=$(wc -l < /tmp/msaudit/canon/prod_$n.g6)
+  au=$(sort -u /tmp/msaudit/canon/aud_$n.g6 | wc -l)
+  d=$(comm -3 /tmp/msaudit/canon/aud_$n.g6 /tmp/msaudit/canon/prod_$n.g6 | wc -l)
+  echo "n=$n auditor=$a (unique $au) producer=$p symdiff=$d"
+done

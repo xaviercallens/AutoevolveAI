@@ -1,0 +1,179 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "LD-A-0001",
+   "statement": "LowDissE3.Core and Instances, for 0<c<1, 1<K, zeta in [-1,1], with etaPlus c K zeta := (1 - wPlus^2)/c and wPlus the explicit positive root of the quadratic G(w) = K(w^2-(1-c)) - c((1-zeta)+(1+zeta)w)^2/4: etaPlus_strictMono (zeta1<zeta2 implies etaPlus zeta1 < etaPlus zeta2, strict, whole box; elementary: a root of a quadratic moves monotonically with a parameter in which the quadratic is monotone); supporting lemmas wPlus_root, root_unique, root_strict_anti; etaPlus_one = (K-1)/(K-c); etaPlus_le_one_value; eq1_of_P (Eq. (1) of Ma et al. for the root form, P~ in (0,1]); esposito_sandwich (positive control at P~=1: 1/2 <= etaPlus <= 1/(2-c)); exact-rational instances (c=48/49, K=2: roots 5/7, 1/5; eta 1/2, 49/50) and pert_eta_not_mono, which only restates the instance values at negated arguments (a weak control). These state the paper's model THROUGH THE ROOT FORM: that the root form equals Eq. (13) as printed, and that it is the paper's eta~+, is outside Lean (LD-C-0001, LD-C-0002).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:9835a888507e4a9b7b40f318c8048703c1286ed0e109689bf29e3668b0caba92",
+   "audit": null,
+   "ai_audit": {
+    "auditor": "independent AI audit agent (separate instance, producer != verifier), 2026-11-01",
+    "human": false,
+    "report": "papers/p4_low_dissipation_zeta/AUDIT.md",
+    "verdict": "ACCEPT_WITH_CORRECTIONS",
+    "scope": "own clean recompile of Core, Instances, Engine, Axioms, Controls with #print axioms (27/27 whitelisted), own leanchecker replay, escape-hatch grep (only planted controls and one set_option maxHeartbeats 3000000 on engine_bound), Controls caught by the axiom gate, reading of hypotheses for vacuity",
+    "not_scope": "statement adequacy not certified by a person; the lemma 'engine with asymmetry zeta implies eta/eta_C <= etaPlus(zeta)' is not in Lean; Eq. (13) = root form is symbolic + numerical, not in Lean; P~=0 and Mh=0/Mc=0 not formalised; no Lean instance of engine_bound's hypotheses",
+    "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"
+   }
+  },
+  {
+   "schema_version": 1,
+   "id": "LD-A-0002",
+   "statement": "LowDissE3.Engine: engine_bound (with cs2, Cauchy-Schwarz in Engel form) for every engine of the paper's Eqs. (3)-(4) with a=sqrt(Mh)>0, b=sqrt(Mc)>0, q>0, 0<c<1, th,tc>0, P>0 and positive hot-bath heat (q/c - a^2/th > 0), Pt q^2 = 4(a+b)^2 P: eta/eta_C + (1-c)Pt/(2(1+sqrt(1-Pt)) - c Pt) <= 1 (Eq. (1)), with no zeta and without Eq. (13). This is a machine check of a KNOWN result (analytic proofs: Ma & Fu arXiv:2411.03849 App. B; Zhai arXiv:2605.02732); only the machine check is new. One declaration uses set_option maxHeartbeats 3000000 (elaboration budget; leanchecker rc 0). No Lean instance of the hypotheses exists (non-vacuity is numerical, LD-X-0001).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:84119a152dd5bb848a98230a886e39c3ed6c66deb8c2d549d56be4feb8b4ac6d",
+   "audit": null,
+   "ai_audit": {
+    "auditor": "independent AI audit agent (separate instance, producer != verifier), 2026-11-01",
+    "human": false,
+    "report": "papers/p4_low_dissipation_zeta/AUDIT.md",
+    "verdict": "ACCEPT_WITH_CORRECTIONS",
+    "scope": "own clean recompile of Core, Instances, Engine, Axioms, Controls with #print axioms (27/27 whitelisted), own leanchecker replay, escape-hatch grep (only planted controls and one set_option maxHeartbeats 3000000 on engine_bound), Controls caught by the axiom gate, reading of hypotheses for vacuity",
+    "not_scope": "statement adequacy not certified by a person; the lemma 'engine with asymmetry zeta implies eta/eta_C <= etaPlus(zeta)' is not in Lean; Eq. (13) = root form is symbolic + numerical, not in Lean; P~=0 and Mh=0/Mc=0 not formalised; no Lean instance of engine_bound's hypotheses",
+    "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"
+   }
+  },
+  {
+   "schema_version": 1,
+   "id": "LD-A-0003",
+   "statement": "Lean controls: Controls.lean (never to be imported) compiles with rc 0 but its axiom audit reports sorryAx for LowDissE3.ctl_sorry and the smuggled axiom LowDissE3.ctl_cheat for LowDissE3.ctl_axiom, which a compile exit code alone would accept; the auditor reproduced both. A leanchecker run on a missing module exits 1.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:8eab65a2ba00d36542b3fae9e7319847f9b36e8b486f4447a8ebeb5a70bacda1",
+   "audit": null,
+   "ai_audit": {
+    "auditor": "independent AI audit agent (separate instance, producer != verifier), 2026-11-01",
+    "human": false,
+    "report": "papers/p4_low_dissipation_zeta/AUDIT.md",
+    "verdict": "ACCEPT_WITH_CORRECTIONS",
+    "scope": "own clean recompile of Core, Instances, Engine, Axioms, Controls with #print axioms (27/27 whitelisted), own leanchecker replay, escape-hatch grep (only planted controls and one set_option maxHeartbeats 3000000 on engine_bound), Controls caught by the axiom gate, reading of hypotheses for vacuity",
+    "not_scope": "statement adequacy not certified by a person; the lemma 'engine with asymmetry zeta implies eta/eta_C <= etaPlus(zeta)' is not in Lean; Eq. (13) = root form is symbolic + numerical, not in Lean; P~=0 and Mh=0/Mc=0 not formalised; no Lean instance of engine_bound's hypotheses",
+    "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"
+   }
+  },
+  {
+   "schema_version": 1,
+   "id": "LD-L-0001",
+   "statement": "Ma, Xu, Dong, Sun, arXiv:1802.09806v4 (Phys. Rev. E 98, 042112 (2018)), 'Universal constraint for efficiency and power of a low-dissipation heat engine': low-dissipation model Q_x = Q_x^(r) - M_x/t_x (Eq. 2), P and eta (Eqs. 3-4), Eq. (1) universal bound, eta~+ over th+tc = tau+ (Eqs. 10-11), Eq. (13) closed form, asymmetry zeta (Eq. 14), 'it is not a supremum for all the P~' (p. 3), Appendix B: 'the analytical proof of its monotonicity is tedious and difficult. Instead numerical calculate the derivative'.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:854e0640073ac79575ef26a09b83b8e23cd2c51fe9c1efad06da69991b51fa9f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LD-L-0002",
+   "statement": "Ma & Fu, arXiv:2411.03849 (Phys. Rev. E 112, 054130 (2025)), 'Unified approach to power-efficiency trade-off relations of generic thermal machines', Appendix B: analytic proof (sign of d eta~+/d delta) that their upper bound increases in the dissipation ratio delta in [0,1]; at delta = 1 it is Eq. (1) of Ma et al. 2018. Their family is a different interpolation: it agrees with the root form at zeta = -1 (delta=0) and zeta = 1 (delta=1) but differs in between (max 0.038 under delta=(1+zeta)/2; 0.40 and 0.055 under two other natural maps; auditor script mafu_cmp.py).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:96ec7aa14d0f08fe437be79edf19e9e4bca54b307aac90c52ec8bac485b4621e",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LD-L-0003",
+   "statement": "Zhai, arXiv:2605.02732 (2026), 'Geometric Formulation of Power-Efficiency Bounds in Carnot-like Engines': re-derives Eq. (1) by a short geometric / linear-programming argument (as reported in AUDIT.md section 5). Zhai, Yue, Sun, arXiv:2509.07721, 'Exact bound of power-efficiency trade-off in finite-time thermodynamic cycles': state that Ma et al. 2018 already rigorously proved the Holubec-Ryabov conjecture and give an exact, tighter bound.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:62ee5b83f32a40614009f31304d9d4b450c3eead08962ba9c703a7543d0939ae",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LD-L-0004",
+   "statement": "Holubec & Ryabov, arXiv:1603.02551 (J. Stat. Mech. (2016) 073204), 'Maximum Efficiency of Low-Dissipation Heat Engines at Arbitrary Power': their Eq. (34) upper bound equals Eq. (1); derived analytically only near P~ = 0 and P~ = 1, numerical evidence in between (read by the auditor). Ye & Holubec 2021 (arXiv:2112.08923) concerns heat pumps, not relevant. Esposito et al. 2010 (efficiency at maximum power bounds eta_C/2 <= eta* <= eta_C/(2-eta_C)) was NOT re-read; only used as the positive control at P~=1.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:2a7110b71ec4321dc6b396bc516d0b6b2abb2cbd4c6d73adf3522ce8a976296d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LD-C-0001",
+   "statement": "Hand derivation of the root form from the paper's model (code/derivation.md steps 1-4, with step 3 as corrected by audit correction 6): eta = u c, w = sqrt(1-eta); q(1-u) = w^2 a^2/th + b^2/tc; Cauchy-Schwarz gives q(1-u) tau+ >= (wa+b)^2 on th+tc <= tau+, with q tau+ = K M, K = 2/(1-sqrt(1-P~)); eta~+ is the largest u for which this holds, i.e. the MAXIMUM of eta over th+tc = tau+, an upper bound at power P that is not attained in general (the efficiency Cauchy-Schwarz equality needs th/tc = w a/b, the power equality th/tc = a/b); G(w,zeta) = K(w^2-(1-c)) - c((1-zeta)+(1+zeta)w)^2/4 is a convex quadratic with G(0)<0, so the feasible set is w >= w+ and eta~+/eta_C = (1-w+^2)/c. Checked independently by the auditor (AUDIT.md section 1). Not in Lean.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "LD-L-0001"
+   ],
+   "evidence": "sha256:21ed96b294fa9570052eb08e5b197649c873d7ecd3deb38c82311fa0213d4262",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LD-C-0002",
+   "statement": "Eq. (13) as printed equals the root form. Symbolic (sympy, auditor): eliminating w from the tangency equality by squaring twice gives a quadratic R(u)=0; R(u13(x)) reduces to 0 modulo x^2 - radicand, so both sign branches of Eq. (13) are exact roots of R once square roots are squared away (an identity). Branch selection numerical (mpmath, 50 digits, 5000 random (c,P~,zeta)): the + branch matches the root form to 5.0e-48, the - branch is off by up to 0.47, the 'term inside the root' misreading by up to 0.23; minimum radicand 2.0e-3 > 0. Producer: 3000 random points at 60 digits, max |difference| 1.6e-58. None of this is in Lean; the branch choice is numerical only. The producer's preregistered transcription of Eq. (13) was wrong (the term -((1+zeta)/4) eta_C (1-sqrt(1-P)) put inside the root); the original disagreement (up to 0.23) is kept in logs/link_first_transcription.log.txt.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "LD-L-0001",
+    "LD-C-0001"
+   ],
+   "evidence": "sha256:4240997ff5562b1ae838e3b3a830bbb5d6bee123e3fa77ff5d8860891cce949c",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LD-C-0003",
+   "statement": "Controls, run before the headline: P1 Esposito sandwich (Lean + numerics: exact 1/2 and 1/(2-c) at P~=1); P2 exact rational instance (roots 5/7, 1/5); P3 Eq. (13) transcription agreement after the correction; N1 perturbed factor (zeta -> -zeta): perturbed roots increase, perturbed eta decreases 49/50 -> 1/2, grid 15,200/15,200 pairs non-increasing (the Lean pert_eta_not_mono only restates instance values, a weak control); N2 B sign flipped (5,920 bad pairs), K halved (611), C sign flipped (13,256, 558 undefined): all caught, true formula 0; N3 planted sorry and axiom caught by the axiom gate (LD-A-0003); N4 mistyped Eq. (13) (sign of zeta inside the root) differs by up to 0.156; perturbed Eq. (1) (1-c -> 1+c) violated by 11,522 of 17,355 random engines (auditor: 20,112 of 53,021).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "LD-A-0001"
+   ],
+   "evidence": "sha256:02ce7bb88a4e18548b4705ae1fe20abbfd30cc77146181aee7ec534969d567bd",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LD-C-0004",
+   "statement": "HEADLINE (model-conditional, elementary). In the phenomenological low-dissipation Carnot model (Eqs. (2)-(4)), with the paper's eta~+ defined by the root form of the tangency quadratic: (i) eta~+ is strictly increasing in the asymmetry zeta on the whole box 0<c<1, K>1, zeta in [-1,1] (Lean, Tier A pending statement lock; the paper's Appendix B checked it only numerically; no analytic proof of the zeta-monotonicity of Eq. (13) found in the literature search, which was not systematic); (ii) Eq. (1) holds for every engine of Eqs. (3)-(4) (Lean machine check of a known result). NOT proved: that eta~+ is attained, or that every engine with asymmetry zeta has eta/eta_C <= etaPlus(zeta) (derivation + numerics only). The identification etaPlus = Eq. (13) is outside Lean. No device or power-plant claim.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "LD-A-0001",
+    "LD-A-0002",
+    "LD-C-0001",
+    "LD-C-0002",
+    "LD-C-0003",
+    "LD-L-0001",
+    "LD-L-0002",
+    "LD-L-0003",
+    "LD-L-0004"
+   ],
+   "evidence": "sha256:7312afce5a5e92145a0b1e0ce13a720e859bc02129c4cb9a399e7be515af33e8",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LD-X-0001",
+   "statement": "Float / high-precision scans, not proofs: root-form monotonicity grid 124,800 consecutive-zeta pairs at 60 digits (producer), 0 non-increasing; auditor 336,200 pairs (41 c x 41 P~ x 201 zeta, mpmath 40 digits), 0 non-increasing, smallest increment 1.25e-12; E3x implicit-differentiation grid of 801,900 points: d etaPlus/d zeta > 0, minimum 1.2e-5, maximum 0.34; 17,355 random exact-rational engines (producer) and 53,021 random engines (auditor) with 0 violations of Eq. (1) and 0 violations of eta/eta_C <= etaPlus(zeta) (max LHS of Eq. (1) 0.99999091, so the bound is nearly attained); the root form is a valid upper bound, NOT attained in general, on a brute-force float optimum of the engine at exactly given power (producer 8 points, root - brute in [4.8e-7, 2.2e-3]; auditor 8 other points, [1.3e-5, 6.6e-3]; all >= 0). The 53,021 engines are the only evidence that engine_bound's hypotheses are satisfiable.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:7b600a62e5e27ea2f72e96d53e6ad5c2d20abc4f8a7f54e5d8fc7d6bddd70337",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "LD-X-0002",
+   "statement": "NOT done or not establishable here, recorded so the absences are explicit: statement lock for the Lean statements; human audit; Lean proof of the lemma 'engine with asymmetry zeta implies eta/eta_C <= etaPlus(zeta)' (short: Cauchy-Schwarz => G(w,zeta) >= 0 => w >= wPlus via root_unique / convexity); Lean proof that Eq. (13) equals the root form; the + branch choice is numerical only; P~=0 and the endpoints Mh=0 / Mc=0 not formalised; a Lean example that engine_bound's hypotheses can be met; Esposito et al. 2010 not re-read; a systematic literature search; ordering of the preregistration against the work (hash matches).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:283273862a5c79e98a6508f1baa823f46491cd5739771e489dcffcadd49530e3",
+   "audit": null
+  }
+ ]
+}

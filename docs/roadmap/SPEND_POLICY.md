@@ -9,10 +9,17 @@ only). The agent can only record a PROXY: the `subagent_tokens` and tool-use cou
 The proxy is logged in `docs/roadmap/SPEND_LEDGER.md` and is only meaningful once the owner supplies one calibration
 reading (see below). Until then the policy defaults to the conservative mode.
 
-**Conservative default (in force now).** Week 1 (31 Oct - 6 Nov) already produced 13 audited papers with about
-10 Opus audits, which very probably exceeds 15% of a month. Therefore: items already in flight are finished
-(producer -> audit -> revision -> publish); NO new items are started until the owner reports the current `/usage`
-percentages (weekly and monthly). The daily job still runs the housekeeping, the scout and the PR updates, which are cheap.
+**CALIBRATED 2026-11-01 (owner reading from `/usage`).** The meter shows the WEEKLY limit: all models 20% used
+(Fable 3%), resetting Saturday 7 Nov 08:59 UTC. It does not show the monthly allowance. Assumption (stated, not
+verified): the weekly limit is about one quarter of the monthly allowance, so "15% of the monthly allowance per week"
+is read as **60% of the weekly meter**. Under that reading the cap is reached at 60% on the weekly meter, and the
+tiers below apply to the weekly meter as follows: normal below 42%, economy 42-54%, finish-only 54-60%, pause at 60%.
+Reading at calibration: 20% (that is 33% of the cap) after 13 audited papers plus housekeeping, so the 1-per-day plan
+fits (about 40 points of meter remain until the cap; roughly 0.5M reported subagent tokens per meter point, a rough
+proxy). The owner re-reads `/usage` on each Saturday and whenever asked; if the weekly limit is not a quarter of the
+monthly allowance, the owner says so and the cap is rescaled. Mode now: NORMAL.
+
+**Earlier conservative default (superseded by the calibration above).** Before the reading, new starts were held.
 
 **Calibration.** The owner reports two numbers once: the monthly percentage used now, and the weekly percentage used
 now. The agent then converts the logged proxy into percent-of-allowance (proxy tokens per percent) and keeps the cap.

@@ -18,4 +18,6 @@ not included. A conservative reading is that this week is already at or above th
 
 | Date | Monthly % used (from /usage) | Weekly % used | Proxy tokens at that moment | Tokens per 1% |
 |---|---|---|---|---|
-| (pending) | | | | |
+| 2026-11-01 | not shown by /usage (the meter is weekly) | 20% (all models), Fable 3%; resets 7 Nov 08:59 UTC | ~10M (rough) | ~0.5M (rough) |
+
+Cap in meter terms: 60% of the weekly meter (assumption: weekly limit = monthly allowance / 4). Next re-anchor: 7 Nov.

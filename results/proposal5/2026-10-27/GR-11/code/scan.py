@@ -8,6 +8,7 @@ B = 200000
 stat = dict(n=n, res=res, mod=mod, count=0, viol20=0, viol21=0, tie20=0, tie21=0,
             ctl29=0, ctl_l1=0, ctl_rank=0, min_gap20=9e9, min_gap21=9e9)
 ex = {}
+FLAG = open(sys.argv[4], 'w') if len(sys.argv) > 4 else None
 
 def dec(lines):
     w = (nb + 5) // 6
@@ -27,6 +28,11 @@ def proc(lines):
         stat['min_gap' + k] = min(stat['min_gap' + k], float(gap.min()))
         v = gap < -1e-6
         stat['viol' + k] += int(v.sum()); stat['tie' + k] += int((np.abs(gap) <= 1e-6).sum())
+        fl = np.nonzero(gap < 1e-6)[0]
+        if len(fl) and FLAG is not None:
+            for i in fl:
+                FLAG.write(k + ' ' + lines[int(i)].decode().strip() + '\n')
+            FLAG.flush()
         if v.any() and 'v' + k not in ex:
             ex['v' + k] = lines[int(np.argmax(v))].decode().strip()
     deg = A.sum(2)

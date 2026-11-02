@@ -1,0 +1,90 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\F}{\mathbb F}
+
+\title{An independent exact recheck of the PG(2,9) multiple-unicast counterexample\\
+{\large (a recheck of a result by others; no novelty is claimed)}}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-11-02}
+\hypersetup{pdftitle={An independent exact recheck of the PG(2,9) multiple-unicast counterexample (a recheck of a result by others)},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its code, its claim ledger and the audit were produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{This version was audited by a separate AI agent instance (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.} The corrections are applied (Section~\ref{sec:corr}). No human audit exists. There is no Lean in this paper.
+
+\begin{abstract}
+\noindent M.~Braverman and Z.~He \cite{bh} (arXiv:2610.10108, 7 Oct 2026, unrefereed) give a network on $182$ vertices, obtained from the incidence graph of the projective plane $PG(2,9)$ by deleting $175$ edges, with $157$ unicast sessions, and a deterministic causal linear code over $\F_9$ (their Section~4) that, they say, beats the best fractional multicommodity flow, and so refutes the Li--Li / Harvey--Kleinberg--Lehman conjecture for undirected networks. The paper says GPT-6 found the non-deterministic example of its Section~3; \textbf{the claim checked here is the deterministic Section~4 code. The result is theirs; we claim nothing new.} With our own code, and an auditor's independent code (Sage), we reproduce the finite facts exactly: the graph ($735$ edges, every session at distance exactly $5$, total $785$), the $\F_9$ arithmetic, all $182$ local codes $5$-dimensional MDS, the rank $744$ of the $910\times910$ parity matrix ($\dim W=166$, $\dim W_C=157$, injective on the session edges), the Appendix~B assignments ($\dim W=166$ exactly), decoding of all $157$ unit inputs (hence, by linearity, of every input), and the exact optimum $147/157$ of the fractional flow (an exact rational flow plus the length-function dual). Not verified: that the paper's model is the conjecture's model, the amplification theorem, Section~3, the authors' verifier. We do not say the conjecture is resolved beyond what is listed. Outcome: confirmed as a recheck; Tier~A (Lean) not reached.
+\end{abstract}
+
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{What this is NOT.} Not a new result; not a verification that the conjecture, as stated by Li--Li and Harvey--Kleinberg--Lehman, is refuted (the model equivalence is Tier~\tL, not checked); not a check of the amplification (Corollary~1.2) or of Section~3; not a run of the authors' verifier; not a formal proof (no Lean); not human-audited; not an exhaustive prior-art search.}}
+
+\paragraph{Markers.} \tL{}: a cited source, taken as stated. \tC{}: executed exact code (finite-field, integer and rational arithmetic) or an elementary argument written down, not formalised. \tX{}: random-input simulation and floating-point readings, and statements of what was not done. Identifiers \texttt{MUC-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+\section{The claim and its scope}\label{sec:claim}
+The conjecture (Li--Li 2004; Harvey--Kleinberg--Lehman 2004; \tL) says that in undirected networks coding gives no throughput advantage over fractional multicommodity flow \cite{bh}. Braverman and He take $H$, the point--line incidence graph of $PG(2,9)$: $182$ vertices, $10$-regular, $910$ edges, bipartite, girth $6$. They delete a set $R$ of $175$ edges and keep $G=H-R$ with $735$ edges. Sets $C,J\subset R$ of $9$ edges each give $B=R\setminus(C\cup J)$, $|B|=157$, one unicast session per edge of $B$ (the earlier endpoint in a vertex order $\pi$ is the source, the later one the sink). Physical edges are oriented earlier$\to$later in $\pi$, deleted ones later$\to$earlier. The code lives over $\F_9=\F_3[i]/(i^2+1)$: at each vertex the incident values, indexed by the neighbours, lie in a $5$-dimensional local code (evaluations of a binary quartic form), so any $5$ values determine the other $5$. The claim is that every sink recovers its source symbol while all sources have rate $1$ symbol, i.e.\ $735$ symbol transmissions serve sessions whose total distance is $785>735$, so routing is at most $735/785=147/157<1$. Section~3 of \cite{bh} contains a non-deterministic variant ($166$ deleted edges, $744$ edges, bound $744/830$); the paper credits GPT-6 with it. It was not recomputed here (\texttt{MUC-L-0001}). The lists $R,\pi,C,J$ of its Appendix~A are third-party content and are not redistributed (Section~\ref{sec:lim}).
+
+\section{Graph and sessions (\tC{})}\label{sec:graph}
+Both implementations build $PG(2,9)$ from the $91$ normalised triples in the paper's order. Results: $182$ vertices, $910$ edges, $10$-regular, bipartite, girth $6$ (any two points share exactly one line); $|R|=175$ distinct indices, $C,J$ disjoint $9$-subsets of $R$, $|B|=157$, $\pi$ a permutation of $0,\dots,181$; $G$ has $735$ edges and is connected; on the full $910$-edge orientation $d^-(v)=d^+(v)=5$ and $d^+_C(v)=d^-_J(v)$ at all $182$ vertices. There are $157$ sessions from $66$ distinct sources, and the BFS distance in $G$ of every session is exactly $5$ (sum $785$). Also $735<785$ and $735/785=147/157$ in rational arithmetic (\texttt{MUC-C-0001}).
+
+\section{Field, local codes and rank (\tC{})}\label{sec:rank}
+\emph{Field.} The producer's hand-built tables for $\F_9$ satisfy associativity, distributivity, commutativity, inverses, no zero divisors, cyclic multiplicative order $8$ and characteristic $3$; the auditor used Sage \texttt{GF(9, modulus=x\^{}2+1)} and cross-checked with $2\times2$ blocks over $\F_3$ (a ring homomorphism on all of $\F_9$). \emph{Local codes.} At all $182$ vertices the local code has dimension $5$ and is MDS: all $252$ five-subsets of the $10$ incident positions are independent (\texttt{MUC-C-0002}).
+
+\emph{Global rank.} The $910\times910$ parity matrix has rank $744$ over $\F_9$, so $\dim W=166$; the $\F_3$ block version has rank $1488=2\cdot744$. With the public zeros on $C$, $\dim W_C=157$, and $\operatorname{rank}[P;e_C;e_B]=910$, so restriction of $W_C$ to the session edges $B$ is injective: $W_C\cong\F_9^{157}$ (\texttt{MUC-C-0003}).
+
+\emph{Appendix B of \cite{bh}.} The auditor checked that the $166$ retained bidegree-$(4,4)$ monomials ($225-30-30+1=166$) give assignments of rank $166$ that satisfy every local code, and that all $225$ monomials together span only rank $166$. Hence $\dim W=166$ exactly: the paper's lower bound is tight on this instance, and $W$ is the span of the Appendix~B assignments. The paper's analytic proof was not re-derived (\texttt{MUC-C-0004}).
+
+\section{Causal decoding (\tC{}, \tX{})}\label{sec:decode}
+Vertices are processed in the order $\pi$. At each vertex there are exactly $5$ known independent values (incoming physical edges, own $B$-sources, $C=0$); the vertex interpolates, emits the other $5$, and the checks are consistency on incoming edges, agreement at both ends of $J$-edges, and decoding at each sink. The auditor's run: \textbf{$157/157$ unit-vector inputs decode correctly}. The whole map is $\F_9$-linear in the input, so the unit vectors cover all $9^{157}$ inputs; this exact argument is Tier~\tC{} (audit correction~3). Random inputs, producer $1000/1000$ and auditor $200/200$, are a redundant \tX{} check (\texttt{MUC-C-0005}, \texttt{MUC-X-0001}).
+
+\section{The flow optimum is exactly 147/157 (\tC{})}\label{sec:lp}
+\emph{Upper bound.} The length function $\ell_e=1$ gives load $\ge r\cdot785$ against total capacity $735$, hence $r\le147/157$. \emph{Exact primal.} The producer's HiGHS value $0.9363057324840819$ against $147/157=0.9363057324840764$ was only a floating-point agreement. The auditor built an exact flow: a feasibility LP over shortest-path-DAG arcs (66 source groups, $31{,}899$ arc variables) with each session demand $147/157$ and each edge load $1$; HiGHS returned a vertex with support $3{,}328$ columns of full column rank; that support system was solved exactly over $\mathbb Q$ in Sage (largest denominator about $1.7\cdot10^{101}$), then re-verified in Python \texttt{Fraction}: flows nonnegative, exact conservation with demand $147/157$ for every session, every edge load $1$. The run was repeated, with the same support and denominators. The certificate itself ($3{,}328$ arc flows, sha256 \texttt{5f29f1ac\dots9ed3}, 715{,}658 bytes) is \emph{withheld}: the complement of its edge support determines the third-party deleted-edge set $R$. We ship only its hash and a summary (\texttt{data/audit/outputs/lp\_certificate\_summary.json}); it is regenerated by \texttt{data/audit/code/lp\_exact.py} from the locally extracted lists (see \texttt{data/THIRDPARTY\_FETCH.txt}), and the reader can compare the hash. So the undirected unit-capacity max concurrent flow optimum is \emph{exactly} $147/157$, and every session uses only shortest paths and every edge is saturated (\texttt{MUC-C-0006}).
+
+\section{Rate model (\tC{} argument, \tL{} for the model)}\label{sec:rate}
+Under the paper's Section~2 definition (each edge split into two directed edges, $H(X_\to)+H(X_\leftarrow)\le c(e)c^*$, throughput $r$ with $H(m_i)\ge r\,d_i\,c^*$; here $c^*=\log9$), \emph{one} execution already achieves $r=1$: uniform $x_q\in\F_9$ gives $H(m_i)=\log9$, and each physical edge carries one symbol in one direction only. Causality and correctness are exactly what Section~\ref{sec:decode} checks. Pipelining is needed only for the time-slot wording of Section~4 of \cite{bh}. That this Section~2 model is the model of the conjecture of Li--Li and Harvey--Kleinberg--Lehman is Tier~\tL{} and was not checked (\texttt{MUC-C-0007}, \texttt{MUC-L-0003}).
+
+\section{Controls}\label{sec:ctrl}
+Run before the headline (\texttt{MUC-C-0008}). Positive: the directed butterfly, where the GF(2) XOR code decodes all $4$ inputs at rate $1$ while routing gets $0.5$; the undirected $4$-cycle with two opposite sessions (LP $1.0$), a single edge ($1.0$) and a path with two sessions ($0.5$); the true field passes every check. Negative: the field relations $t^2=0$ and $t^2=1$ fail; a tampered $R$ (restore edge $7$, delete edge $0$) breaks $d^-=d^+=5$ at $2$ vertices and $20/20$ causal trials fail; renormalising $(\lambda,\mu)$ at all neighbours of one vertex (the paper says not to) fails $20/20$; adding $1$ to one transmitted symbol fails $20/20$; scaling one local-code row by $\theta$ fails $17/20$ in the producer's run and $16/20$ in the auditor's (the others pass by chance, plausibly because the affected value is $0$; not checked edge by edge). An earlier renormalisation control that touched only one neighbour passed and was replaced, since it was a flaw in the control.
+
+\section{Audit corrections applied}\label{sec:corr}
+The producer's \texttt{data/RESULT.md} and \texttt{data/result.json} are kept unmodified (pre-audit); this paper supersedes them on the audit's eight corrections. (1) The flow optimum is certified exactly, not only floating. (2) Item A11 is exact: an exact rational flow of value $147/157$ with every edge saturated, plus the dual $\ell_e=1$. (3) Tiers: \tC{} for decoding via the $157$ unit inputs plus linearity and for A11; the random trials are a redundant \tX{} check; \tL{}: that the Section~2 model is the LL04/HKL04 model, the BGS17 amplification and Corollary~1.2. (4) The plan item reads: GPT-6 found the non-deterministic (Section~3) example; the checked claim is Section~4. (5) The Appendix~A lists were re-extracted by the auditor with two tools (\texttt{pdftotext -layout} and PyMuPDF word boxes), which agree element by element after dropping the page-number footer ``13''; hashes are identical to the producer's transcription. (6) Appendix~B is verified as in Section~\ref{sec:rank}. (7) For \cite{zll}, the auditor read the abstract: a completely different counterexample (below). (8) The preregistration (\texttt{PREREG\_ITEM.md}, sha256 \texttt{a0582465\dots eb29}) was committed in the same commit as \texttt{RESULT.md} (a06dcfd); that it came first is shown only by file timestamps (07:17 against first code at 07:18).
+
+\section{Prior art}\label{sec:prior}
+A same-day, independent counterexample exists: Zhang, Li and Li \cite{zll} (arXiv:2610.09367, 7 Oct 2026) use a binary linear block code on a connected network of maximum degree $3$ with leaf terminals, built from a reversible circuit, with their own tensor amplification; they state that their finite counterexample and family theorem are formalised in Lean, which was \emph{not checked} here. Follow-ups 2610.20079 and 2610.33655 and attempts 2608.06042 and 2608.06070 were found but not read. The OpenAI preprint ``Finite tensor savings and exact Fourier circuits'', which \cite{bh} cites, was not found or opened. The kingy.ai and MathWorld statements quoted in \texttt{RESULT.md} are unverified. No independent replication of the authors' verifier was found. This recheck therefore adds only one more independent computation of one of two same-day counterexamples.
+
+\section{Limitations and what is not done}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item AI audit only; no human audit; no Lean (no Tier~A).
+\item Unverified (Tier~\tL{}): the Section~2 model equivalence with the conjecture, BGS17 amplification and Corollary~1.2, Section~3's example ($166/744/830$), the authors' verifier and repository (not run), the OpenAI preprint, the Lean formalisation claimed by \cite{zll}, the kingy.ai/MathWorld statements.
+\item The statement ``refutes the conjecture'' therefore rests on the model equivalence and is not asserted here beyond the verified finite facts.
+\item Third-party content: the Appendix~A lists $R,\pi,C,J$ and the producer's transcription file are not shipped, nor the derived session-pair list; \texttt{data/THIRDPARTY\_FETCH.txt} gives their hashes and extraction instructions, so the scripts do not run without them. The exact LP certificate is also withheld (hash and summary only), since it determines $R$.
+\item Trusted components: numpy, Sage, scipy/HiGHS, PyMuPDF, pdftotext.
+\end{itemize}
+
+\section{Claim ledger and reproducibility}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files the claims with hashed evidence; the Elenchus gate (\texttt{ledger/run\_gate.py}, verbatim output in \texttt{ledger/gate\_output.txt}) checks bookkeeping only and licenses nothing. Producer code, data and logs are in \texttt{data/code}, \texttt{data/data}, \texttt{data/logs}; the auditor's scripts (\texttt{extract.py}, \texttt{audit.py}, \texttt{appB.py}, \texttt{lp\_exact.py}) and small outputs are in \texttt{data/audit}. The third-party full texts are not shipped. Nothing was committed, pushed or uploaded.
+
+\begin{thebibliography}{9}\small
+\bibitem{bh} M.\ Braverman, Z.\ He, \emph{The Multiple Unicast Conjecture is False}, arXiv:2610.10108 (v1, 7 Oct 2026), unrefereed. (\tL)
+\bibitem{zll} X.\ Zhang, B.\ Li, Z.\ Li, \emph{Network Coding Can Beat Routing in Undirected Multiple-Unicast Networks}, arXiv:2610.09367 (v1, 7 Oct 2026), unrefereed. (\tL)
+\end{thebibliography}
+\end{document}

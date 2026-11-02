@@ -116,3 +116,14 @@ Recommended, not required: soften the title "Closing the long-range gap".
 - **Point comparisons.** The auditor's own mpmath point jets (riesz3 and d = 0.5373 at alpha = 1; Gaussian known-answer
   at 6 points) had completed only 1 Gaussian point, which matched. The full 54-number comparisons are pending. Rerun
   /tmp/m1audit/scripts/compare_points.py when the points/my_*.json files are complete.
+
+## Addendum (after handback): Gaussian known-answer comparison complete
+The producer's Recip.sums2 was run with Vhat set to the transform of exp(-r^2/10). It was compared with the auditor's
+own direct real-space mpmath sum at 6 points x 54 numbers (scripts/compare_points.py).
+- The values match to all printed digits at all 6 points. Where symmetry forces zero, the producer gives 0.0 and the
+  auditor 1e-24.
+- 198 of the 324 numbers lie inside the producer's balls.
+- The other 126 are all pure second derivatives (ss, t't', and the second t-derivative). For these the auditor's
+  mpmath.diff, with an automatic step, returned obvious garbage (1e34 to 1e231). This is a defect in the auditor's
+  harness, not a discrepancy in the producer's code.
+- A rerun with an explicit step (for example h = 1e-6 at 30 digits) is still owed for those 126 numbers.

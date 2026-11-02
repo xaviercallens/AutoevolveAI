@@ -19,6 +19,23 @@ fits (about 40 points of meter remain until the cap; roughly 0.5M reported subag
 proxy). The owner re-reads `/usage` on each Saturday and whenever asked; if the weekly limit is not a quarter of the
 monthly allowance, the owner says so and the cap is rescaled. Mode now: NORMAL.
 
+**RE-ANCHORED 2026-11-02 (owner reading): weekly meter 36% used (all models), Fable 27%, resets Sat 7 Nov 08:59 UTC.**
+The previous reading was 20% (Fable 3%) on 2026-11-01: +16 points in about one day, against +4 predicted by the token
+proxy. The proxy (reported subagent tokens) therefore UNDERESTIMATES by about 4x: it omits the main loop's own tokens
+(very large session context) and cache effects. New rough conversion: about 0.125M reported subagent tokens per meter
+point (main loop included); never trust the proxy over the owner's meter.
+
+**PACING RULE (added 2026-11-02).** The cap is 60% of the weekly meter by the weekly reset. Allowed burn per day =
+(60 - used) / days left = (60 - 36) / 5 = about 4.8 points per day. The last day burned 16. Therefore ECONOMY mode now,
+even though 36% is below the 42% tier: at most ONE new item every TWO days until the pace is back under the allowed daily
+burn; in-flight items finish; no extra parallel lanes; no optional extras; scout and housekeeping only on off days.
+Recompute the allowed burn at each owner reading.
+
+**Levers to cut the main-loop cost (owner decisions, not yet applied):** (1) run /compact or start a fresh session so the
+main loop does not re-read a huge context on every turn; (2) shorter reports (fewer turns narrating); (3) merge the
+producer and writer stages for low-risk rechecks; (4) allow a Sonnet auditor for tiny rechecks (WEAKENS independence: only
+with the owner's explicit approval, never silently); (5) pause the month plan for a day.
+
 **Earlier conservative default (superseded by the calibration above).** Before the reading, new starts were held.
 
 **Calibration.** The owner reports two numbers once: the monthly percentage used now, and the weekly percentage used

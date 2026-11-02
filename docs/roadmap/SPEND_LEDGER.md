@@ -19,10 +19,13 @@ not included. A conservative reading is that this week is already at or above th
 Estimated position on 2026-11-02 (proxy only, ~0.5M per meter point): about 20% + 4 points = about 24% of the weekly meter,
 i.e. NORMAL mode (< 42%). This is an estimate: the owner is asked for a fresh `/usage` reading to re-anchor.
 
+Re-anchor 2026-11-02: owner reading 36% (Fable 27%); the proxy estimate above (24-28%) was too low. Mode: ECONOMY by the pacing rule.
+
 ## Calibration (owner to fill in or report)
 
 | Date | Monthly % used (from /usage) | Weekly % used | Proxy tokens at that moment | Tokens per 1% |
 |---|---|---|---|---|
 | 2026-11-01 | not shown by /usage (the meter is weekly) | 20% (all models), Fable 3%; resets 7 Nov 08:59 UTC | ~10M (rough) | ~0.5M (rough) |
+| 2026-11-02 | not shown | 36% (all models), Fable 27%; resets 7 Nov 08:59 UTC | ~12M (rough) | ~0.125M for the last day (main loop included): the earlier ~0.5M figure was too optimistic |
 
 Cap in meter terms: 60% of the weekly meter (assumption: weekly limit = monthly allowance / 4). Next re-anchor: 7 Nov.

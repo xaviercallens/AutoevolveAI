@@ -14,6 +14,11 @@ not included. A conservative reading is that this week is already at or above th
 |---|---|---|---|---|
 | 2026-10-31 .. 2026-11-01 | ~60 | ~10M (rough, from notifications; not recomputed) | ~10 | 13 papers published |
 
+| 2026-11-01 (after calibration) .. 2026-11-02 | ~14 | ~2.0M (rough, from notifications) | 2 | AIC-LUO and BIO-BISTAB audits + writers; statement-lock tool; private direction prior-art, Level-0 pilot, paper study; GitHub housekeeping |
+
+Estimated position on 2026-11-02 (proxy only, ~0.5M per meter point): about 20% + 4 points = about 24% of the weekly meter,
+i.e. NORMAL mode (< 42%). This is an estimate: the owner is asked for a fresh `/usage` reading to re-anchor.
+
 ## Calibration (owner to fill in or report)
 
 | Date | Monthly % used (from /usage) | Weekly % used | Proxy tokens at that moment | Tokens per 1% |

@@ -1,5 +1,7 @@
 # Spend policy (owner decision, 2026-11-01)
 
+**STATUS 2026-11-02: month plan PAUSED by the owner (no daily cron). See HANDOFF_AND_TOKEN_PRACTICES_2026-11-02.md.**
+
 **Rule.** Weekly cap = 60% of the monthly Ultra allowance divided by 4 = **15% of the monthly allowance per week**,
 so the month ends at about 60% used. A week runs from the platform's weekly reset (Saturday 09:00 UTC as seen on
 2026-10-31); the monthly window is the subscription's billing month.

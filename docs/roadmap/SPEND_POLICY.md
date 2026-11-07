@@ -21,6 +21,16 @@ fits (about 40 points of meter remain until the cap; roughly 0.5M reported subag
 proxy). The owner re-reads `/usage` on each Saturday and whenever asked; if the weekly limit is not a quarter of the
 monthly allowance, the owner says so and the cap is rescaled. Mode now: NORMAL.
 
+**RE-ANCHORED 2026-11-07 (owner `/usage`): NEW WEEK, 4% used (all models), Fable 0%, resets Sat 14 Nov 09:00 UTC.**
+Mode: NORMAL. Allowed burn = (60 - 4) / 7 = 8 points per day: one new item per day is affordable.
+Session cost breakdown from `/usage` (8 days, all of this project): total $1160.67; Opus $904.46 (78%: 970M cache-read tokens,
+the long contexts of Opus producer/audit agents), Sonnet $223.37 (19%), Fable main loop $31.67 (3%), Haiku $1.18.
+CORRECTION to the 2026-11-02 note: the dominant cost is the Opus agents (audits, early Opus producers), NOT the main loop.
+Levers, in order: (1) keep Opus ONLY for audits and Lean proofs and bound each audit (about 40 tool calls, targeted reads,
+no full re-implementation of what an exact checker already does); (2) Sonnet for producers/writers (already); (3) owner
+option: allow a Sonnet auditor for tiny rechecks (weakens independence; only with explicit owner approval); (4) the
+`/usage` hints also suggest cheaper models for general-purpose subagents and `/clear` when switching tasks (owner action).
+
 **RE-ANCHORED 2026-11-02 (owner reading): weekly meter 36% used (all models), Fable 27%, resets Sat 7 Nov 08:59 UTC.**
 The previous reading was 20% (Fable 3%) on 2026-11-01: +16 points in about one day, against +4 predicted by the token
 proxy. The proxy (reported subagent tokens) therefore UNDERESTIMATES by about 4x: it omits the main loop's own tokens

@@ -14,7 +14,7 @@ Start a fresh session (or /compact) and read ONLY this file first. It replaces r
   a directory name on the public feature branch that the owner wants kept off public repos (details with the owner);
   human reader (Dr Henry Maurin) for cancer items C2/C3 (ON HOLD, never contact him); JARVIS issue
   usnistgov/jarvis#341 posted (watch replies); extra GPU hosts for the HiveMind router.
-- Restart after the T4 host reboot: `bash scripts/start_scheduler.sh` (A1 Lean port, core 0; nothing proved); check the
+- Restart after the T4 host reboot: `bash results/proposal2/2026-10-26/A1-continuation/scripts/start_scheduler.sh` (A1 Lean port, core 0; nothing proved); check the
   hourly merge cron and the HiveMind producers; the 819 MB `formal_cert/Programmes/SandierSerfatyL1` is NOT in git.
 
 ## 2. How to publish one audited item (the pipeline that worked)

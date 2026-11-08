@@ -1,0 +1,179 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,
+  frame=single,framesep=3pt,xleftmargin=4pt,xrightmargin=4pt,upquote=true,aboveskip=4pt,belowskip=2pt,
+  literate={∀}{{$\forall$}}1 {∃}{{$\exists$}}1 {ℝ}{{$\mathbb R$}}1 {ℚ}{{$\mathbb Q$}}1 {ℕ}{{$\mathbb N$}}1 {ℤ}{{$\mathbb Z$}}1 {→}{{$\to$}}1}
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tA}{\tier{A}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\lean}[1]{\texttt{#1}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\dist}{\operatorname{dist}}
+
+\title{A single exact counterexample to the shifted lonely runner conjecture\\
+at $n=63$, inside the open range $39\le n\le94$}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-11-08}
+\hypersetup{pdftitle={A single exact counterexample to the shifted lonely runner conjecture at n=63},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small doi:10.5281/zenodo.24051700 \quad (not peer reviewed)\end{center}
+
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its search and checking code, its Lean code and its claim ledger were
+produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{The result was independently audited by a different AI agent instance (\texttt{data/AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.}
+The audit's corrections are applied in this text (Section~\ref{sec:corr}). \textbf{No human audit exists.}
+
+\begin{abstract}
+The \emph{shifted} lonely runner conjecture (Blanco--Criado--Santos, arXiv:2603.24784, Conjecture~1.1(ii)) says: for distinct positive integer velocities $v_1,\dots,v_n$ and any real shifts $s_i$ there is a time $t$ with $\dist(s_i+v_it,\Z)\ge\frac1{n+1}$ for all $i$. It is known to fail for $5\le n\le17$ and $n\ge95$ (Poliakova, arXiv:2609.23952), and in our earlier note (doi:10.5281/zenodo.23842167) for $18\le n\le38$; the range $39\le n\le94$ was open.
+\textbf{We give an explicit exact certificate that the shifted conjecture fails at $n=63$}: $63$ distinct positive integer velocities (largest $128$) and rational shifts $a_i/520$ whose $63$ open arcs of radius $\frac1{64}$ cover the circle. The exact value is $\gamma(v;s)=66/4225<\frac1{64}$ (gap $\frac1{270400}$), so $E_{63}\ge\frac1{66}$ in Poliakova's notation, and no more. The certificate is a Poliakova-type move on the base $2,4,\dots,128$: six even velocities removed, seven rephased, five odd velocities $1,3,9,27,81$ added; it is \emph{sporadic}: the same menu is infeasible for $N=n+1=65,\dots,95$ and $60,\dots,63$.
+The certificate passed three exact checkers (two by the producer, one written independently by an auditing AI agent); the covering statement (with injectivity and positivity of the velocities) was kernel-checked in Lean~4 on a pinned toolchain with axioms within the standard whitelist, after a first compile failed on one auxiliary lemma and was repaired (Section~\ref{sec:lean}); no statement lock and no person's check of the statement exist. \textbf{This concerns the shifted conjecture at $n=63$ only; nothing is said about the unshifted lonely runner conjecture, and no other $n$ in $39..94$ is settled.}
+\end{abstract}
+
+\paragraph{Markers.} \tA{}: kernel-checked Lean, axioms within $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$. \tL{}: a cited source, taken as stated. \tC{}: executed code with an argument written down but not machine-checked. \tX{}: search output or a recorded absence, supporting nothing by itself. Identifiers \texttt{SLR63-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+%=====================================================================
+\section{Statement and definition}\label{sec:setting}
+\paragraph{The shifted conjecture.} (BCS \cite{bcs}, Conj.~1.1(ii); definition as pinned in our earlier note, which read it on the sources \cite{bcs,zhang,pol}.) For $n\ge1$, take $n$ runners with \emph{distinct positive integer} velocities $v_1,\dots,v_n$ and shifts $s_1,\dots,s_n\in\R/\Z$, and put
+\[
+\gamma(v;s)=\max_{t}\ \min_{1\le i\le n}\ \|s_i+v_it\|,\qquad \|x\|=\dist(x,\Z).
+\]
+The conjecture asserts $\gamma(v;s)\ge\frac1{n+1}$ for all such $(v,s)$. A counterexample of size $n$ is therefore a pair with $\gamma(v;s)<\frac1{n+1}$. For integer $v$ the function $t\mapsto\min_i\|s_i+v_it\|$ is $1$-periodic and continuous, so its maximum is attained, and
+\[
+\gamma(v;s)<\delta\iff\text{the open arcs }\{t\in\R/\Z:\ \|s_i+v_it\|<\delta\}\text{ cover }\R/\Z .
+\]
+A single uncovered point (tangency) is \emph{not} a cover. With $\delta=\frac1{n+1}$ this is the criterion every checker below uses. Distinctness is essential (with repeated velocities the conjecture fails trivially). In Poliakova's notation \cite{pol}, $\frac1{n+1+E_n}=\inf_{v,s}\gamma(v;s)$, so a certificate gives $E_n\ge1/\gamma(v;s)-(n+1)$.
+
+\paragraph{Known ranges} (\tL{}, \texttt{SLR63-L-0001}). Fails for $5\le n\le17$ \cite{bcs} and $n\ge95$ \cite{pol}; proved for $n\le4$; for $18\le n\le38$ by our earlier note \cite{slr18}; Zhang \cite{zhang} lists the middle range as open. We make no claim beyond $n=63$.
+
+%=====================================================================
+\section{The certificate}\label{sec:cert}
+\texttt{data/certificates/cert\_n063.json} (sha256 in \texttt{BUNDLE\_MANIFEST.txt}): $n=63$, common denominator $D=520$, $s_i=a_i/520$, $\delta=\frac1{64}$.
+\begin{itemize}\itemsep=0pt
+\item \textbf{Fifty-one velocities with shift $0$:} the even numbers $2,\dots,126$ except $\{4,8,12,16,24,32,36,48,64,72,96,108\}$:
+{\scriptsize
+$2,\allowbreak 6,\allowbreak 10,\allowbreak 14,\allowbreak 18,\allowbreak 20,\allowbreak 22,\allowbreak 26,\allowbreak 28,\allowbreak 30,\allowbreak 34,\allowbreak 38,\allowbreak 40,\allowbreak 42,\allowbreak 44,\allowbreak 46,\allowbreak 50,\allowbreak 52,\allowbreak 54,\allowbreak 56,\allowbreak 58,\allowbreak 60,\allowbreak 62,\allowbreak 66,\allowbreak 68,\allowbreak 70,\allowbreak 74,\allowbreak 76,\allowbreak 78,\allowbreak 80,\allowbreak 82,\allowbreak 84,\allowbreak 86,\allowbreak 88,\allowbreak 90,\allowbreak 92,\allowbreak 94,\allowbreak 98,\allowbreak 100,\allowbreak 102,\allowbreak 104,\allowbreak 106,\allowbreak 110,\allowbreak 112,\allowbreak 114,\allowbreak 116,\allowbreak 118,\allowbreak 120,\allowbreak 122,\allowbreak 124,\allowbreak 126$.}
+\item \textbf{Twelve velocities with non-zero shift $a_i/520$}, listed in the table (velocities $v$, numerators $a$).
+\end{itemize}
+\input{table_rephased.tex}
+All $63$ velocities are distinct positive integers in $1..128$ and all $a_i\in[0,512]$, so $s_i\in[0,1)$. The shifts are $264/520=\frac{33}{65}=\frac{1+e}2$, $256/520=\frac{32}{65}=\frac{1-e}2$, $512/520=-e \bmod 1$ and $8/520=+e$ with the \emph{rephasing offset} $e=\frac1{65}=\frac8{520}$; the five odd runners sit near $\frac34$ ($385,390,388,391,391$ over $520$). Throughout, $\delta$ denotes only the cover radius $\frac1{64}$; the offset is called $e$.
+
+%=====================================================================
+\section{Exact verification}\label{sec:verify}
+\paragraph{Three exact checkers (Tier \tC{}).}
+\emph{Checker~1} (\texttt{slr\_exact.py}, Python integers; producer): every open-arc endpoint scaled to an integer, greedy sweep of open integer intervals; COVERED. \emph{Checker~2} (\texttt{check\_cover.c}, \texttt{\_\_int128}; producer): the arcs cover iff every arc endpoint lies strictly inside another arc; COVERED, $3961$ endpoints checked. These two share an author. \emph{Checker~3} (\texttt{audit63.py}, Python standard library plus numpy for a float pre-filter, written from scratch by the auditing AI agent without reading the producer's checkers): exact interval union in integer arithmetic over open intervals with wraparound, and the exact value of $\gamma$. A fourth script (\texttt{verify63.py}, the main session's own Fractions code, $7858$ distinct arc endpoints, none outside every open arc) agrees. We re-ran checker~3 and \texttt{verify63.py} for this paper (\texttt{data/logs/audit63\_run.txt}, \texttt{verify63\_run.txt}).
+\paragraph{Exact value.} Among the $331632$ pairwise crossing candidates $s_i+v_it=\pm(s_j+v_jt)$, the maximum of $\min_i\|s_i+v_it\|$ is, evaluated with exact fractions,
+\[
+\gamma(v;s)=\frac{66}{4225}=\frac{66}{65^2}\approx0.0156213\quad\text{at }t^\ast=\frac{4291}{8450},\qquad \frac1{64}-\gamma=\frac1{270400}\approx3.7\times10^{-6}.
+\]
+(The sampled value $0.0156212$ in the producer's first report is superseded by this exact one.) The smallest endpoint slack over all arcs is about $3.76\times10^{-6}$.
+\paragraph{Consequence.} $1/\gamma=4225/66=64+\frac1{66}$, hence $E_{63}\ge\frac1{66}$. \textbf{This is all the certificate gives}: it is not $E_{63}\ge1$ and says nothing about $\gamma_{\rm sh}$ beyond $\gamma_{\rm sh}(v)\le\gamma(v;s)<\frac1{64}$.
+\paragraph{Negative and tightness checks.} The cover \emph{fails} at radius $r=\gamma$ (tangent: an uncovered point exists), holds at $\gamma+10^{-12}$, and fails at $r=\frac1{65}$ (uncovered point at $t\equiv\frac1{130}$, so the certificate is not trivially loose). Replacing velocity $81$ by $27$ (duplicate) is rejected as non-distinct. Perturbing each shift by $\pm\frac1{2D}$ breaks the cover in $83$ of $126$ cases (auditor); the producer's smaller perturbation $\pm\frac1{10\sum v}$ broke $3$ of $126$. With $s=0$ and velocities $\{1,\dots,63\}$ the cover is rejected, as it must be.
+
+%=====================================================================
+\section{Structure: a Poliakova-type move}\label{sec:structure}
+Poliakova \cite{pol} starts from $2,4,\dots,2N$ at shift $0$ with $N=n+1$ and radius $\frac1{N+1}$; at an odd scale $b$ coprime to $6$ she removes $8b,32b,192b$, rephases $12b,24b,48b,96b$ to $\frac{1\pm\delta}2$ and $16b,64b$ to $\mp\delta$ and adds $3b,9b$ at $\frac14$; the largest scaled velocity $192b\le2N$ forces $n\ge95$. (Her Section~3 and Table~1 differ in the signs for $48,96,64$; both variants cover at $n=95..109$ in our check, \texttt{data/code/rule.py}.)
+
+Our certificate has the same shape for $N=64$ on the base $2,4,\dots,128$ at the \emph{open} radius $\frac1{64}$ (which has slack over her closed radius $\frac1{65}$):
+\begin{center}\small\begin{tabular}{ll}\toprule
+removed (even, from shift $0$) & $4,8,32,72,96,108$\\
+rephased (kept, shift changed) & $12,24,36\to\frac{1+e}2$; $48\to\frac{1-e}2$; $16,128\to-e$; $64\to+e$\\
+added (odd) & $1,3,9,27,81$ at about $\frac34$\\\bottomrule
+\end{tabular}\end{center}
+Here the largest rephased velocity is $128=2N$ instead of $192$, and odd powers of $3$ near shift $\frac34$ fill the remaining gaps. The count is $64-6=58$ even runners plus $5$ odd ones $=63=n$.
+\paragraph{How it was found.} A CP-SAT set cover (\texttt{cpsat\_rule.py}): base $2,\dots,2N$ at shift $0$, radius $\frac1N$; a pool of $3$-smooth multiples of $4$ and $\{3,5\}$-smooth odd velocities may be removed, rephased or added, with shifts $\frac c4+\frac j{8(N+1)}$, $|j|\le8$, and at most (pool evens)$-1$ changed runners; exact integer test points (all arc endpoints and cell midpoints inside the part left uncovered by the fixed runners) feed the set cover. Positive control: with Poliakova's rule fixed at $N=96$ ($n=95$) the model is feasible and the extracted certificate is COVERED by both producer checkers.
+\paragraph{It is sporadic.} The \emph{same} pool and menu are infeasible (CP-SAT, exact for that pool and menu) for $N=95,\dots,65$ ($N=72$ needed $600$ s) and for $N=63,\dots,60$; only $N=64$ is feasible. Why it does not extend uniformly is not understood and no general rule was proved. These infeasibility statements concern only that pool, menu and $N$; they say nothing about the conjecture, and they were \textbf{not re-run by the auditor}. With a wider menu ($J=16$) infeasibility was found for $N=47,46,44$ and the solver returned UNKNOWN at $120$ s for the other tried values; larger pools (5-smooth, all multiples of $4$) returned UNKNOWN at $120$--$400$ s (logs in \texttt{data/logs/}; Tier~\tX{}). Random local search from an even base found no certificate (best uncovered measure $\approx10^{-4}$ at several $n$).
+\paragraph{Phase-2 evidence (Tier~\tX{}/\tC{}; \texttt{data/RESULT\_PHASE2.md}).} A second round looked for further members of the family. Within the pools and shift menu tried (shifts $\frac c4+\frac j{8(N+1)}$, $|j|\le8$; pools: $3$-smooth multiples of $4$ with $\{3,5\}$-smooth odds, $5$-smooth, and $3$-smooth evens with $\{3,5,7\}$-smooth odds), $N=64$ ($n=63$) is the only $N$ in $39..95$ that admits a cover. The smooth pool with $J=8$ is infeasible for every other $N$ in $39..95$; the $5$-smooth pool is infeasible at $N=47,46,45,43,39$ and unknown (time limit $120$ s) at the remaining values tried; the larger $3$-smooth-even pool timed out (even the positive control at $N=64$). A direct application of the $n=63$ move with $\delta=1/(N+k)$, $k=-1..2$, for $N=64..129$ covers only at $N=64$, so the move is not uniform in $N$. This is evidence, not a theorem: unknown cases remain and none of it was re-run by the auditor. The same search also returned a second valid $n=63$ solution, \texttt{data/certificates/cert\_n063\_alt\_sw3\_p5.json} (sha256 \texttt{dfc8b4d79664a48053aff2b1e3d057235ced913cea483e46b5484bc8fac68d7a}), accepted by both producer checkers (COVERED, $3961$ endpoints); it is \textbf{not} audited and \textbf{not} Lean-checked, and nothing here depends on it. Phase 2 used about $8$ core-hours, about $24$ in total.
+
+%=====================================================================
+\section{Lean}\label{sec:lean}
+The generated file \texttt{data/lean/SLRN63.lean} (imports \texttt{Mathlib.Tactic} only, never \texttt{import Mathlib}; sha256 in \texttt{BUNDLE\_MANIFEST.txt}) states, for the typed $v:\mathrm{Fin}\,63\to\mathbb N$ and $s:\mathrm{Fin}\,63\to\mathbb Q$ (the certificate's $a_i/520$):
+\begin{lstlisting}
+theorem v_injective : Function.Injective v := by decide
+theorem v_pos : ∀ i, 0 < v i := by decide
+theorem cover : ∀ t : ℝ, ∃ i : Fin 63, ∃ k : ℤ,
+    |((s i : ℚ) : ℝ) + ((v i : ℕ) : ℝ) * t - (k : ℝ)| < 1 / 64
+\end{lstlisting}
+\lean{cover} is exactly the negation of the conclusion of the conjecture for this $(v,s)$; with injectivity and positivity of $v$ it is a counterexample of size $63$. It needs neither $\gamma$ nor compactness.
+\paragraph{What happened, in order.} (1) A first full compile of the unmodified file (auditor, pinned Lean~4.34.1 toolchain, $3304$ s) returned \textbf{rc~1}: \lean{cover} was kernel-accepted (axioms \lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}), \lean{v\_pos} accepted (\lean{propext}), but \lean{v\_injective} failed (\texttt{decide}: maximum recursion depth reached) and so depended on \lean{sorryAx}; the file as a whole did not pass (\texttt{data/lean/compile\_first\_attempt.log}). (2) The fix is \texttt{set\_option maxRecDepth 1000000 in} before \lean{v\_injective}. A small-file test containing $v$, $s$ and the two small theorems returned rc~0 in $13.6$ s with axioms \lean{propext}, \lean{Classical.choice}, \lean{Quot.sound} for \lean{v\_injective} and \lean{propext} for \lean{v\_pos} (\texttt{data/lean/lean\_inj.json}). (3) The full recompile of the fixed file (sha256 in \texttt{BUNDLE\_MANIFEST.txt}) returned \textbf{rc~0} in $3327.6$ s through \texttt{scripts/certified\_numerics/lean\_pinned.py} (compile plus \texttt{\#print axioms}; \texttt{data/lean/lean\_full.json}, \texttt{data/lean/compile\_full.log}). Axioms: \lean{cover}: \lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}; \lean{v\_injective}: the same three; \lean{v\_pos}: \lean{propext}. No error is reported, and the source contains no \texttt{sorry}, \texttt{admit}, \texttt{native\_decide} or \texttt{axiom}. (4) A second, independent run of the same compile (same runner \texttt{lean\_pinned.py}, same pinned toolchain; the file regenerated from the certificate copy by the same generator and byte-identical to \texttt{data/lean/SLRN63.lean}, sha256 \texttt{090944f2\ldots}) returned \textbf{rc~0} in $2028.2$ s with identical axioms (\texttt{data/lean/lean\_second.json}, \texttt{data/lean/compile\_second.log}). Both full compiles were run by the main session: the second is a repeat, \emph{not} an independent auditor's compile and \emph{not} a run through \texttt{anse/formal/lean\_runner.py}. The first attempt's failure and its repair are part of the record, not hidden.
+
+\paragraph{Final gate status.} Passed for the compile-and-axioms gate used here, with these limits stated plainly. (a) The compile used the \texttt{certified\_numerics} runner \texttt{lean\_pinned.py}, \emph{not} \texttt{anse/formal/lean\_runner.py}. (b) The statement is \emph{not} locked by LeanMaster's statement-lock tool. (c) The Lean file was produced by our untrusted generator; this does not weaken the kernel result, because the kernel re-checks every case of \lean{cover}, and distinctness (\lean{v\_injective}) and positivity (\lean{v\_pos}) of $v$ are theorems in the same file. (d) A kernel-checked statement certifies that statement, not its gloss: the claim is the stated covering of the circle by the $63$ open arcs, nothing beyond it.
+
+\medskip\noindent The Lean covering statement is filed at Tier~\tA{} as \texttt{SLR63-A-0001} (with an \texttt{ai\_audit} field; the gate field \texttt{audit} stays null). As in the earlier note, no person has certified that the Lean statement means what its gloss says, there is no statement lock, and the repository's \texttt{lean\_runner.py} gate is separate from the compile used here.
+
+%=====================================================================
+\section{Related work and novelty}\label{sec:scoop}
+\begin{itemize}\itemsep=0pt
+\item Blanco--Criado--Santos \cite{bcs} (arXiv:2603.24784): the shifted conjecture and failures for $n=5..17$.
+\item Poliakova \cite{pol} (arXiv:2609.23952): failure for $n\ge95$ and the move above; she states $18\le n\le94$ open.
+\item Zhang \cite{zhang} (arXiv:2608.13599): lists the middle range as open.
+\item Our earlier note \cite{slr18} (doi:10.5281/zenodo.23842167): certificates for $18\le n\le38$ by a different (local search) method.
+\end{itemize}
+Searches on alphaXiv (recency windows after 2026-03-01 and after 2026-09-20, producer, 2026-11-07; two queries including one after 2026-10-01, auditor, 2026-11-08) and a web search found no paper covering any $n$ in $39..94$ and none proving the conjecture there. \textbf{To our knowledge} this is the first published certificate in that range; this is not a priority claim. Residual risk: arXiv listings after the alphaXiv index, unpublished computations, and private communications. We have not contacted the cited authors. We reproduce no third-party text.
+
+%=====================================================================
+\section{Audit corrections applied}\label{sec:corr}
+The independent audit (\texttt{data/AUDIT.md}, \S6) required four corrections to the producer's \texttt{RESULT.md}; all are applied in the copy in \texttt{data/} and in this paper:
+\begin{enumerate}\itemsep=0pt
+\item Shift of velocity $48$ is $256/520=\frac{1-e}2$, not $264/520$; the rephasing offset is named $e=\frac1{65}$ so that $\delta$ means only the cover radius $\frac1{64}$.
+\item The sampled $\max_t\min_i\|\cdot\|=0.0156212$ is replaced by the exact $\gamma=66/4225$ and gap $1/270400$.
+\item Added: the certificate gives $E_{63}\ge\frac1{66}$ only.
+\item The Lean wording: the first compile failed on \lean{v\_injective} (recursion depth), with no gate pass for that file; the repaired file passed the full recompile (Section~\ref{sec:lean}).
+\end{enumerate}
+
+%=====================================================================
+\section{Claim ledger}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files the claims in \texttt{ledger/ledger.json} with content-addressed evidence in \texttt{ledger/evidence/}: \tL{} (definition and prior results), \tC{} (three exact checkers; controls; the headline \texttt{SLR63-C-0003}, filed C because an assembly argument is capped at \tC{}), \tX{} (search absences; scoop check; what was not done), and one \tA{} row, \texttt{SLR63-A-0001}: the Lean covering statement \lean{cover}, with \lean{v\_injective} and \lean{v\_pos}, kernel-checked with axioms within the whitelist (not its physical or conjecture-level meaning beyond the stated covering). \textbf{The finding itself stays Tier~\tC{}} (assembly argument, capped at \tC{}). The \tA{} row is flagged by the gate as unaudited by a person. The Elenchus gate (\texttt{ledger/gate\_output.txt}) reports $8$ claims, no blocking finding and one flag, \texttt{LEDGER\_UNAUDITED\_TIER\_A} on \texttt{SLR63-A-0001}, exit code~\texttt{1}: the honest state, since no person has certified the statement.
+
+%=====================================================================
+\section{Limitations}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item \textbf{Shifted conjecture only.} Nothing here concerns the unshifted lonely runner conjecture. One value of $n$ ($63$); no other $n$ in $39..94$ is settled, and no uniform rule was found.
+\item \textbf{$E_{63}\ge\frac1{66}$ only}, an upper bound $\Gamma(63)<\frac1{64}$; no exact $\gamma_{\rm sh}$.
+\item \textbf{Sporadic.} Infeasible for the same pool at $N=65..95$ and $60..63$; why is not understood.
+\item \textbf{AI producer and AI auditor; no human audit}, no statement lock.
+\item \textbf{Negative sweeps unverified by the auditor}: the CP-SAT infeasibility runs were not re-run, nor \texttt{cpsat\_rule.py 64 8 60}. The Poliakova rule was re-derived from the paper text by the producer and auditor only.
+\item \textbf{Literature search} covers alphaXiv and one web search; novelty is ``to our knowledge'' only. Premises about prior ranges are taken as stated (\tL{}).
+\item \textbf{Lean:} the first full compile failed on \lean{v\_injective} (fixed by \texttt{set\_option maxRecDepth 1000000}); the full recompile passed (rc~0, axioms whitelisted) and a second run of the same compile (same runner and file, main session, $2028.2$ s) agreed; it was not compiled by an independent auditor. Not run through \texttt{anse/formal/lean\_runner.py}; no LeanMaster statement lock; generated by an untrusted generator (the kernel re-checks every case); no person has certified that the statement means what its gloss says.
+\item \textbf{Phase-2 evidence} is a set of exact infeasibility results for specific pools and a shift menu plus UNKNOWN cases; it supports no claim beyond them. The alternative $n=63$ solution is unaudited and not Lean-checked.\item \textbf{Compute.} About $15$--$16$ core-hours in phase 1 and about $8$ in phase 2 (about $24$ in all; upper bound; CP-SAT counted as wall$\times6$ or $7$), cores $1$--$7$; a host reboot occurred during the run and the final sweep completed.
+\end{itemize}
+
+%=====================================================================
+\section{Reproducibility}\label{sec:repro}
+Repository AutoevolveAI, branch \texttt{worktree-openai-math-discovery}; HEAD when this paper was written: commit \texttt{3fa606c}; the paper and data are uncommitted working-tree files at that time. Preregistration: \texttt{data/PREREG\_ITEM.md} (hash in \texttt{PREREG\_ITEM.md.sha256}), written before any search. Copies of all scripts are in \texttt{data/}.
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+python3 -I data/code_auditor/audit63.py data/certificates/cert_n063.json   # exact cover + exact gamma
+python3 -I data/code_main/verify63.py            # edit the certificate path inside the file
+python3 -I data/code/slr_exact.py data/certificates/cert_n063.json   # producer checker 1
+python3 -I ledger/gen_table.py ; python3 -I ledger/build_ledger.py
+\end{lstlisting}
+The C checker is stored as \texttt{data/code/check\_cover.c.txt} (rename to \texttt{.c} to compile).
+
+\begin{thebibliography}{9}\small
+\bibitem{bcs} Blanco, Criado, Santos, arXiv:2603.24784 (v4): the shifted lonely runner conjecture.
+\bibitem{pol} Poliakova, arXiv:2609.23952: counterexamples to the shifted lonely runner conjecture for $n\ge95$.
+\bibitem{zhang} Zhang, arXiv:2608.13599.
+\bibitem{slr18} X.~Callens, \emph{Exact counterexample certificates to the shifted lonely runner conjecture for $18\le n\le38$}, doi:10.5281/zenodo.23842167.
+\end{thebibliography}
+\end{document}

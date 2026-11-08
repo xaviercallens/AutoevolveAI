@@ -190,6 +190,10 @@ def certify(info: dict, outdir: str, meta: dict) -> dict:
             "delta": f"1/{n + 1}", "meta": meta}
     os.makedirs(outdir, exist_ok=True)
     p = os.path.join(outdir, f"cert_n{n:03d}.json")
+    k = 0
+    while os.path.exists(p):  # never overwrite an existing certificate
+        k += 1
+        p = os.path.join(outdir, f"cert_n{n:03d}_alt_{meta.get('tag', 'x')}_{k}.json")
     tmp = p + ".tmp"
     json.dump(cert, open(tmp, "w"), indent=1)
     r = subprocess.run([os.path.join(HERE, "check_cover"), tmp], capture_output=True, text=True)
@@ -224,6 +228,9 @@ if __name__ == "__main__":
     if a.pool == "wide4":
         pe = list(range(4, 2 * N + 1, 4))
         po = [x for x in range(1, 2 * N + 1, 2) if x % 3 == 0 or x % 5 == 0]
+    elif a.pool == "p5":
+        pe = [v for v in smooth(2 * N, (2, 3, 5)) if v % 4 == 0]
+        po = [v for v in smooth(2 * N, (3, 5)) if v % 2 == 1]
     elif a.pool == "s23e":
         pe = [v for v in smooth(2 * N, (2, 3)) if v % 2 == 0]
         po = [v for v in smooth(2 * N, (3, 5, 7)) if v % 2 == 1]

@@ -5,8 +5,8 @@ Prereg: PREREG_ITEM.md (sha256 in PREREG_ITEM.md.sha256, written before any sear
 ## Result
 - **n = 63** certificate: `certificates/cert_n063.json` (63 distinct positive velocities in 1..128, D = 520, delta = 1/64, open arcs cover R/Z).
   Accepted by `code/slr_exact.py` and `code/check_cover.c` (COVERED, 3961 endpoints); re-verified independently by the coordinator (own Fraction script).
-  Tight: sampled max_t min_i ||.|| = 0.0156212 vs 1/64 = 0.015625; min slack about 3.8e-6.
-- Not claimed: anything about the unshifted LRC; any other n in 39..94; Lean check (Tier C only). Novelty "to our knowledge" only.
+  Exact: gamma = max_t min_i ||.|| = 66/4225 (at t = 4291/8450) < 1/64; gap 1/270400 (independent audit); min endpoint slack about 3.8e-6.
+- Not claimed: anything about the unshifted LRC; this gives E_63 >= 1/66 only (not E_63 >= 1); any other n in 39..94; Lean replay: `cover` kernel-checked (standard axioms), `v_injective` failed (maxRecDepth, sorryAx); file rc = 1, so no Lean gate pass (later fixed by set_option maxRecDepth 1000000, see paper). Novelty "to our knowledge" only.
 
 ## Prior art (2026-11-07)
 Poliakova arXiv 2609.23952: start 2,4,..,2N at shift 0; at odd scale b coprime to 6 remove 8b,32b,192b, rephase 12b,24b,48b,96b to (1+-delta)/2,
@@ -20,7 +20,7 @@ and {3,5}-smooth odd velocities may be removed, rephased or added, with shifts c
 points (all arc endpoints and cell midpoints inside the part left uncovered by the fixed runners) feed a CP-SAT set cover. Positive control N = 96: the model is feasible with
 the Poliakova rule fixed (certified n = 95, `controls_certs/cert_n095.json`); an unfixed solve also found a cover in 0.6 s.
 
-n = 63 (N = 64): removed evens {4, 8, 32, 72, 96, 108}; rephased 12, 24, 36, 48 to (1+delta)/2 (shift 264/520), 16 and 128 to -delta (512/520), 64 to +delta (8/520), delta = 1/65;
+n = 63 (N = 64): removed evens {4, 8, 32, 72, 96, 108}; rephased 12, 24, 36 to (1+e)/2 (264/520), 48 to (1-e)/2 (256/520), 16 and 128 to -e (512/520), 64 to +e (8/520), where e = 1/65 = 8/520 is the rephasing offset (the cover radius is delta = 1/64);
 added odd runners 1, 3, 9, 27, 81 at about 3/4 (385, 390, 388, 391, 391 over 520). So it is a Poliakova-type replacement whose largest rephased velocity is 128 = 2N instead of 192,
 with odd powers of 3 near shift 3/4 filling the gaps; it relies on the open-radius slack. It is sporadic: the same pool is INFEASIBLE for N = 65..95 and for N = 60..63.
 Why it does not extend uniformly is not understood; no general rule was proved.
@@ -46,4 +46,8 @@ A host reboot happened during the run; the final sweep finished (all log lines p
 - Superset pruning of cover constraints only drops implied constraints.
 
 ## What an auditor must redo
-Both checkers on `certificates/cert_n063.json`; re-derive the Poliakova rule; rerun `cpsat_rule.py 64 8 60 x`; Lean `decide` replay not done.
+Both checkers on `certificates/cert_n063.json`; re-derive the Poliakova rule; rerun `cpsat_rule.py 64 8 60 x`; Lean: see the Update below (the audit's own first compile failed on v_injective; the fixed file later compiled rc 0).
+
+## Update 2026-11-08 (after the audit; audited fields above unchanged)
+- Lean: the maxRecDepth-fixed file was compiled twice by the main session through the same runner (`lean_pinned.py`; rc 0 in 3327.6 s and rc 0 in 2028.2 s, identical axioms: cover and v_injective [propext, Classical.choice, Quot.sound], v_pos [propext]). Not an independent auditor's compile; not through anse/formal/lean_runner.py; no statement lock.
+- Phase 2 (RESULT_PHASE2.md): within the pools and shift menu tried, N = 64 (n = 63) is the only N in 39..95 admitting a cover (evidence, not a theorem; UNKNOWN cases remain). A second valid n = 63 solution `certificates/cert_n063_alt_sw3_p5.json` (sha256 dfc8b4d7...8d7a) exists: both checkers COVERED, not audited, not Lean-checked. Phase 2 about 8 core-h; total about 24.

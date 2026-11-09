@@ -657,13 +657,20 @@ def main(argv: list[str] | None = None) -> int:
         help="build results/v2/heldout_baseline.json from results/hardness/*.json and exit "
              "(no GPU; this is the file GATE compares against)",
     )
+    parser.add_argument(
+        "--k", type=int, default=1,
+        help="pass@k for --write-heldout-baseline; must equal the k of the candidate eval "
+             "(compare refuses a k mismatch). Needs >= k samples per item in baseline.json.",
+    )
     args = parser.parse_args(argv)
+    if args.k < 1:
+        parser.error("--k must be >= 1")
 
     logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(message)s",
                         datefmt="%H:%M:%S")
 
     if args.write_heldout_baseline:
-        write_heldout_baseline()
+        write_heldout_baseline(k=args.k)
         return 0
 
     ok, desc, free = gpu_state()

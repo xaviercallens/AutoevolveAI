@@ -25,6 +25,7 @@ from pathlib import Path
 import build_ladder as bl
 import httpx
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
 from gpu_lease import release as lease_release  # noqa: E402
 from gpu_lease import wait_and_acquire  # noqa: E402
@@ -75,11 +76,11 @@ def acquire_gpu_lease(purpose: str, timeout_s: int = 3600) -> bool:
     return ok
 
 
-def generate(model: str, prompt: str) -> tuple[str, dict]:
+def generate(model: str, prompt: str, temperature: float = 0.0) -> tuple[str, dict]:
     t0 = time.time()
     r = httpx.post("http://localhost:11434/api/chat", timeout=1200, json={
         "model": model, "stream": False,
-        "options": {"temperature": 0.0, "num_ctx": 12288, "num_predict": 4096},
+        "options": {"temperature": temperature, "num_ctx": 12288, "num_predict": 4096},
         "messages": [{"role": "user", "content": prompt}],
     })
     r.raise_for_status()
@@ -87,7 +88,7 @@ def generate(model: str, prompt: str) -> tuple[str, dict]:
     msg = d.get("message", {})
     text = (msg.get("content") or "") + "\n" + (msg.get("thinking") or "")
     rec = {"timestamp": datetime.now(UTC).isoformat(), "model": model,
-           "input": {"messages": [{"role": "user", "content": prompt}], "temperature": 0.0},
+           "input": {"messages": [{"role": "user", "content": prompt}], "temperature": temperature},
            "output": {"text": msg.get("content") or "", "thinking": msg.get("thinking") or "",
                       "completion_tokens": d.get("eval_count", 0)},
            "elapsed_s": round(time.time() - t0, 1)}
@@ -119,16 +120,48 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", nargs="+", default=list(MODELS))
     ap.add_argument("--out", default=str(bl.OUT / "baseline.json"))
+    ap.add_argument("--split", choices=["all", "frozen"], default="all",
+                    help="frozen = only items in results/hardness/frozen_split.json (P4-5 gate)")
+    ap.add_argument("--samples", type=int, default=1, help="attempts per item (pass@k needs k)")
+    ap.add_argument("--temperature", type=float, default=0.0)
+    ap.add_argument("--tag", action="append", default=[], metavar="KEY=OLLAMA_TAG",
+                    help="register an extra arm, e.g. deepseek-adapter=my-adapter:latest")
+    ap.add_argument("--emit-heldout", default=None, metavar="PATH",
+                    help="write the gate's candidate eval (heldout_eval.json) for the one model run")
+    ap.add_argument("--prover", default=None,
+                    help="base prover key the candidate is compared against (with --emit-heldout)")
     args = ap.parse_args()
+    for kv in args.tag:
+        key, _, tag = kv.partition("=")
+        if not key or not tag:
+            ap.error(f"--tag expects KEY=OLLAMA_TAG, got {kv!r}")
+        MODELS[key] = tag
+    unknown = [m for m in args.models if m not in MODELS]
+    if unknown:
+        ap.error(f"unknown model key(s) {unknown}; known: {sorted(MODELS)}")
+    if args.samples < 1:
+        ap.error("--samples must be >= 1")
+    if args.samples > 1 and args.temperature <= 0.0:
+        # Greedy decoding returns the same text every time: pass@k would equal
+        # pass@1 by construction, a k that cannot vary.
+        ap.error("--samples > 1 needs --temperature > 0")
+    if args.emit_heldout and (len(args.models) != 1 or not args.prover):
+        ap.error("--emit-heldout needs exactly one model in --models and --prover")
 
     ladder = json.loads((bl.OUT / "ladder.json").read_text())
+    if args.split == "frozen":
+        frozen = {str(f["id"]) for f in json.loads((bl.OUT / "frozen_split.json").read_text())}
+        ladder = [it for it in ladder if it["id"] in frozen]
+        if not ladder:
+            print("BLOCKED: frozen split selects no ladder items", flush=True)
+            return 2
     results = {"started": datetime.now(UTC).isoformat(), "n_items": len(ladder), "runs": []}
     # Resume: keep rows that actually ran (no infrastructure error).
     prev = Path(args.out)
     if prev.exists():
         old = json.loads(prev.read_text())
         results["runs"] = [r for r in old.get("runs", []) if "error" not in r]
-    done = {(r["model"], r["id"]) for r in results["runs"]}
+    done = {(r["model"], r["id"], r.get("sample", 0)) for r in results["runs"]}
 
     if not acquire_gpu_lease(f"hardness ladder ({','.join(args.models)})"):
         return 2
@@ -141,10 +174,11 @@ def main() -> int:
 def _run(args, ladder: list[dict], results: dict, done: set) -> int:
     for key in args.models:
         model = MODELS[key]
-        for it in ladder:
-            if (key, it["id"]) in done:
+        for it, sample in ((it, j) for it in ladder for j in range(args.samples)):
+            if (key, it["id"], sample) in done:
                 continue
-            row = {"model": key, "id": it["id"], "tier": it["tier"], "truth": it["truth"]}
+            row = {"model": key, "id": it["id"], "tier": it["tier"], "truth": it["truth"],
+                   "sample": sample, "temperature": args.temperature}
             if not wait_for_server():
                 print("ABORT: Ollama unavailable for 60 min; rerun to resume", flush=True)
                 Path(args.out).write_text(json.dumps(results, indent=1))
@@ -152,7 +186,7 @@ def _run(args, ladder: list[dict], results: dict, done: set) -> int:
             # Renew: a long ladder run can outlive the lease's 30-min TTL.
             wait_and_acquire(LEASE_HOLDER, "hardness ladder (renew)", ttl_s=1800, timeout_s=60)
             try:
-                text, rec = generate(model, prompt_for(it))
+                text, rec = generate(model, prompt_for(it), args.temperature)
                 proof = extract_proof(text, it)
                 row["gen_s"] = rec["elapsed_s"]
                 if proof is None:
@@ -182,6 +216,14 @@ def _run(args, ladder: list[dict], results: dict, done: set) -> int:
     results["finished"] = datetime.now(UTC).isoformat()
     Path(args.out).write_text(json.dumps(results, indent=1))
     print(json.dumps(results["summary"], indent=1))
+    if args.emit_heldout:
+        from anse.v2 import heldout_eval
+        doc = heldout_eval.build_candidate_eval(
+            Path(args.out), bl.OUT / "frozen_split.json", args.samples,
+            prover=args.prover, arm=args.models[0], tag=MODELS[args.models[0]],
+        )
+        Path(args.emit_heldout).write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
+        print(f"wrote {args.emit_heldout}", flush=True)
     return 1 if any(s["false_accepted"] for s in summ.values()) else 0
 
 

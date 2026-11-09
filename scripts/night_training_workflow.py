@@ -65,6 +65,16 @@ HELDOUT_BASELINE = REPO / "results/v2/heldout_baseline.json"
 HARDNESS_DIR = REPO / "results/hardness"
 CANDIDATE_EVAL_NAME = "heldout_eval.json"  # written next to the adapter by a ladder run
 
+# FIT base model per journal model name. A Qwen adapter cannot move the pipeline prover's
+# numbers (TODO 1, trainer/prover mismatch), so the prover arm names the prover's own HF
+# weights and the ladder key GATE compares it against (the key in heldout_baseline.json).
+BASE_MODELS: dict[str, str] = {
+    "qwen_lora": "Qwen/Qwen2.5-Coder-7B-Instruct",
+    "deepseek_prover_lora": "deepseek-ai/DeepSeek-Prover-V2-7B",
+}
+PROVER_KEYS: dict[str, str] = {"deepseek_prover_lora": "deepseek"}
+SMOKE_BASE_ID = "Qwen/Qwen2.5-0.5B-Instruct"
+
 T4_TOTAL_MIB = 15360
 MIN_HELDOUT_N = 30  # below this, a per-model pass-rate difference is noise
 
@@ -336,7 +346,14 @@ def step_fit(
         )
         return None
 
-    base_id = "Qwen/Qwen2.5-0.5B-Instruct" if smoke else "Qwen/Qwen2.5-Coder-7B-Instruct"
+    if model not in BASE_MODELS:
+        journal.record(
+            StepRecord(Step.FIT, Outcome.BLOCKED,
+                       f"no base model registered for {model!r}; known: {sorted(BASE_MODELS)}",
+                       seconds=time.time() - t0)
+        )
+        return None
+    base_id = SMOKE_BASE_ID if smoke else BASE_MODELS[model]
     # 7B in fp16 is ~14.2 GiB of weights alone and cannot fit a 15 GiB T4
     # (FIT OOM'd on 2026-09-27). Non-smoke runs load 4-bit NF4 (~5 GiB).
     need = 3_000 if smoke else 7_000
@@ -433,6 +450,7 @@ def step_fit(
 
             result = {
                 "base_model": base_id,
+                "prover": PROVER_KEYS.get(model),
                 "steps": steps,
                 "trainable_params": trainable,
                 "loss_first": losses[0],

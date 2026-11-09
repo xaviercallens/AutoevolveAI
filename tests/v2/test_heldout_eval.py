@@ -396,3 +396,80 @@ def test_write_heldout_baseline_flag_builds_the_file_from_the_ladder(
     assert set(doc3["skipped"]) == {"deepseek", "goedel", "deepseek+premises"}
     assert any("SKIPPED" in r.message for r in caplog.records)
     assert json.loads(wf.HELDOUT_BASELINE.read_text())["k"] == 3
+
+
+# ── candidate eval: what GATE reads next to an adapter ────────────────────────
+def _write_runs(tmp_path: Path, rows: list[dict]) -> tuple[Path, Path]:
+    runs = tmp_path / "runs.json"
+    runs.write_text(json.dumps({"runs": rows}))
+    split = tmp_path / "split.json"
+    ids = sorted({r["id"] for r in rows})
+    split.write_text(json.dumps([{"id": i, "tier": "T1"} for i in ids]))
+    return runs, split
+
+
+def _row(item: str, sample: int, clean: bool, truth: bool = True) -> dict:
+    return {"model": "ad", "id": item, "tier": "T1", "truth": truth, "sample": sample, "clean": clean}
+
+
+def test_build_candidate_eval_scores_pass_at_k_and_names_prover(tmp_path: Path) -> None:
+    from anse.v2.heldout_eval import build_candidate_eval
+
+    rows = [_row("a", s, s == 2) for s in range(3)] + [_row("b", s, False) for s in range(3)]
+    rows += [_row("f", s, False, truth=False) for s in range(3)]
+    runs, split = _write_runs(tmp_path, rows)
+    doc = build_candidate_eval(runs, split, 3, prover="deepseek", arm="ad", tag="x:1")
+    assert doc["k"] == 3
+    assert doc["pass_at_k"] == pytest.approx(0.5)  # a solved in 1 of 3 -> pass@3 = 1; b never
+    assert doc["prover"] == "deepseek" and doc["false_n"] == 3 and doc["false_accepted"] == 0
+    assert len(doc["sha256"]["runs"]) == 64
+
+
+def test_build_candidate_eval_rejects_short_runs_and_false_acceptance(tmp_path: Path) -> None:
+    from anse.v2.heldout_eval import build_candidate_eval
+
+    runs, split = _write_runs(tmp_path, [_row("a", 0, True), _row("a", 1, True)])
+    with pytest.raises(ValueError, match="2 sample"):
+        build_candidate_eval(runs, split, 3, prover="deepseek", arm="ad")
+    with pytest.raises(ValueError, match="no runs for arm"):
+        build_candidate_eval(runs, split, 2, prover="deepseek", arm="missing")
+    rows = [_row("a", s, True) for s in range(3)] + [_row("f", 0, True, truth=False)]
+    runs, split = _write_runs(tmp_path, rows)
+    doc = build_candidate_eval(runs, split, 3, prover="deepseek", arm="ad")
+    base = {"k": 3, "pass_at_k": 0.0, "n_items": 40, "tiers": {}}
+    doc["n_items"] = 40
+    verdict = compare(base, doc, min_items=30)
+    assert verdict["promote"] is False
+    assert any("FALSE" in r for r in verdict["reasons"])
+
+
+def test_run_ladder_refuses_degenerate_pass_at_k(monkeypatch: pytest.MonkeyPatch) -> None:
+    hdir = str(REPO / "scripts" / "hardness")
+    sys.path.insert(0, hdir)  # run_ladder imports its sibling build_ladder
+    spec = importlib.util.spec_from_file_location("run_ladder", REPO / "scripts/hardness/run_ladder.py")
+    assert spec is not None and spec.loader is not None
+    run_ladder = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(run_ladder)
+
+    monkeypatch.setattr(sys, "argv", ["run_ladder", "--samples", "3"])
+    with pytest.raises(SystemExit) as exc:
+        run_ladder.main()
+    assert exc.value.code == 2
+    monkeypatch.setattr(sys, "argv", ["run_ladder", "--models", "nope"])
+    with pytest.raises(SystemExit) as exc2:
+        run_ladder.main()
+    assert exc2.value.code == 2
+
+
+def test_fit_base_model_is_the_provers_and_unknown_models_block(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    wf = _load_workflow()  # fresh: the `wf` fixture replaces step_fit with a stub
+    assert wf.BASE_MODELS["deepseek_prover_lora"] == "deepseek-ai/DeepSeek-Prover-V2-7B"
+    assert wf.PROVER_KEYS["deepseek_prover_lora"] == "deepseek"
+    assert wf.BASE_MODELS["qwen_lora"] != wf.BASE_MODELS["deepseek_prover_lora"]
+    monkeypatch.setattr(wf, "gpu_state", lambda: (True, "fake T4", 15000))
+    journal = wf.ModelJournal(model="nope", smoke=False)
+    assert wf.step_fit("nope", journal, [], False) is None
+    last = journal.steps[-1]
+    assert last.outcome is wf.Outcome.BLOCKED and "nope" in last.detail

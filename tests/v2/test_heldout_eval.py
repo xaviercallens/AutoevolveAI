@@ -473,3 +473,31 @@ def test_fit_base_model_is_the_provers_and_unknown_models_block(
     assert wf.step_fit("nope", journal, [], False) is None
     last = journal.steps[-1]
     assert last.outcome is wf.Outcome.BLOCKED and "nope" in last.detail
+
+
+def test_build_candidate_eval_rejects_a_run_that_skipped_frozen_items(tmp_path: Path) -> None:
+    from anse.v2.heldout_eval import build_candidate_eval
+
+    rows = [_row("a", s, True) for s in range(3)]
+    runs, split = _write_runs(tmp_path, rows)
+    split.write_text(json.dumps([{"id": "a", "tier": "T1"}, {"id": "b", "tier": "T1"}]))
+    with pytest.raises(ValueError, match="did not run 1 frozen"):
+        build_candidate_eval(runs, split, 3, prover="deepseek", arm="ad")
+    rows += [_row("b", s, False) for s in range(3)]
+    runs, split2 = _write_runs(tmp_path, rows)
+    split2.write_text(split.read_text())
+    assert build_candidate_eval(runs, split2, 3, prover="deepseek", arm="ad")["n_items"] == 2
+
+
+def test_run_ladder_refuses_to_pollute_the_greedy_baseline(monkeypatch: pytest.MonkeyPatch) -> None:
+    spec = importlib.util.spec_from_file_location(
+        "run_ladder_pollute_test", REPO / "scripts/hardness/run_ladder.py")
+    assert spec is not None and spec.loader is not None
+    sys.path.insert(0, str(REPO / "scripts" / "hardness"))
+    run_ladder = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(run_ladder)
+    for extra in (["--split", "frozen"], ["--temperature", "0.5"]):
+        monkeypatch.setattr(sys, "argv", ["run_ladder", *extra])
+        with pytest.raises(SystemExit) as exc:
+            run_ladder.main()
+        assert exc.value.code == 2

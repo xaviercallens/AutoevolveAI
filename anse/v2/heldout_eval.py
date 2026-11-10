@@ -290,6 +290,16 @@ def build_candidate_eval(
     arms = load_ladder_verdicts(runs_path, None, frozen_split_path)
     if arm not in arms:
         raise ValueError(f"{runs_path}: no runs for arm {arm!r}; found {sorted(arms)}")
+    # A partial run must not be compared against a full-split baseline: every frozen item
+    # has to have been attempted by this arm.
+    frozen_ids = {str(f["id"]) for f in json.loads(frozen_split_path.read_text())}
+    ran = {str(r["id"]) for r in _runs_of(runs_path) if str(r["model"]) == arm}
+    missing = sorted(frozen_ids - ran)
+    if missing:
+        raise ValueError(
+            f"{runs_path}: arm {arm!r} did not run {len(missing)} frozen item(s), "
+            f"e.g. {missing[:3]}"
+        )
     doc = arms[arm].scored(k)
     doc.update(
         prover=prover,

@@ -145,6 +145,13 @@ def main() -> int:
         # Greedy decoding returns the same text every time: pass@k would equal
         # pass@1 by construction, a k that cannot vary.
         ap.error("--samples > 1 needs --temperature > 0")
+    default_out = str(bl.OUT / "baseline.json")
+    if args.out == default_out and (args.split != "all" or args.samples > 1
+                                    or args.temperature != 0.0):
+        # baseline.json is the greedy full-ladder record the held-out baseline is built
+        # from; appending sampled or frozen-only rows to it would mix sampling regimes.
+        ap.error("--split frozen / --samples / --temperature need an explicit --out "
+                 "(refusing to write into results/hardness/baseline.json)")
     if args.emit_heldout and (len(args.models) != 1 or not args.prover):
         ap.error("--emit-heldout needs exactly one model in --models and --prover")
 
@@ -160,7 +167,9 @@ def main() -> int:
     prev = Path(args.out)
     if prev.exists():
         old = json.loads(prev.read_text())
-        results["runs"] = [r for r in old.get("runs", []) if "error" not in r]
+        # Resume only rows from the same sampling regime (old rows are greedy, no field).
+        results["runs"] = [r for r in old.get("runs", []) if "error" not in r
+                           and float(r.get("temperature", 0.0)) == args.temperature]
     done = {(r["model"], r["id"], r.get("sample", 0)) for r in results["runs"]}
 
     if not acquire_gpu_lease(f"hardness ladder ({','.join(args.models)})"):

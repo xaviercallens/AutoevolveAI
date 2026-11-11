@@ -84,6 +84,13 @@ certificate that passes the public checker.
 
 ## 8. Order of work
 
+**Update, 2026-11-11 (prior-art screen, `results/proposal7/2026-11-11/MA1/PRIOR_ART.md`): MA-1 is NOT NEW.**
+Luo-Wei (arXiv:2610.31456, unrefereed) state a computer-assisted proof that among all 3D lattices at unit covolume
+BCC minimises the Yukawa energy below a single crossover and FCC above it, with the crossover enclosed to 15 digits;
+Luo-Wei (arXiv:2609.17356) settle the Gaussian case, where the crossover is exact by duality. The scout read the
+theorem statements, not the proofs, and did not run their certificates. MA-1 ends with this record; no compute was run.
+The chance estimate of 0.5 in section 3 was wrong.
+
 1. **MA-1** (3D lattice crossover): largest reuse of our kernel-checked 2D work; a certified crossover is a usable number.
 2. **GE-2** (reaction-network census): extends an audited result; exact algebra; relevant to genetic switches.
 3. **EN-1** (fusion windows): reuses E1 and the solver work; clear deliverable.

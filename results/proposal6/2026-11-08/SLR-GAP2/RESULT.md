@@ -27,6 +27,13 @@ Bases of multiples of 3, 4, 6 and the wider even pool were not tractable within 
 ## CPU ledger (wall x workers, upper bound, cores 1-6 only)
 About 3.5 core-h over about 93 logged runs, controls included; wall-clock about 3 h across a host reboot (first-wave sweeps lost, 3 logged rows). Unused kill budget about 8.5 core-h.
 
+## Update 2026-11-11 (continuation; total about 9.6 core-h of 12, kill rule still not reached)
+Wave 2: 6 workers on the tractable b=2 smooth pool (3-smooth multiples of 4 removable, {3,5}-smooth odds added), q=8 shift menu (c/8 + j/D), N=40..94.
+- b2q8s (J=4, 90 s): INFEASIBLE for n=39..93 except n=81 (UNKNOWN). CAVEAT: also INFEASIBLE at n=63, where the known cover needs |j|=8, so this family FAILS the positive control; its verdicts only mean "no cover with offsets within 4/D" and are not evidence about n other than 63.
+- b2q8J8 (J=8): UNKNOWN in all 34 runs (N=94..65 at 90 s then 45 s; the N=64 control at 45 s too), so the q=8 J=8 menu did not even re-find n=63; verdicts uninformative.
+- b4q8w (b=4, J=8, odds {3,5,7}-smooth): UNKNOWN in 6 runs, stopped as too slow.
+Conclusion unchanged: NEGATIVE/inconclusive, nothing found. Wide menus need a reformulation (column generation, reflection symmetry breaking), not more solver time.
+
 ## Recommendation
 Continuing needs a stronger solver strategy (6 workers, 600 s, one family at a time, N chosen by necessary-condition pruning), not wider 60 s sweeps. No audit, Lean or publication warranted.
 

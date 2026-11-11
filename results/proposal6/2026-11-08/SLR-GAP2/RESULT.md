@@ -34,6 +34,9 @@ Wave 2: 6 workers on the tractable b=2 smooth pool (3-smooth multiples of 4 remo
 - b4q8w (b=4, J=8, odds {3,5,7}-smooth): UNKNOWN in 6 runs, stopped as too slow.
 Conclusion unchanged: NEGATIVE/inconclusive, nothing found. Wide menus need a reformulation (column generation, reflection symmetry breaking), not more solver time.
 
+## Update 2026-11-11 (after the Zenodo record doi 10.5281/zenodo.24131231 was published; that record reflects the 9.6 core-h state)
+Final wave b2q4e2: q=4 menu with the control-compatible width J=8, all 3-smooth evens removable (not only multiples of 4), {3,5,7}-smooth odds added, 6 workers, 60 s, N=40..62: UNKNOWN in all 23 runs. Total 12.1 core-h (wall x workers) over 212 logged runs: the 12 core-h kill rule is now reached with no cover found, so the preregistered outcome is NEGATIVE (still: UNKNOWN-dominated, no claim about n other than the narrow-menu INFEASIBLE verdicts). Zenodo record not updated; a new version would be needed to state this.
+
 ## Recommendation
 Continuing needs a stronger solver strategy (6 workers, 600 s, one family at a time, N chosen by necessary-condition pruning), not wider 60 s sweeps. No audit, Lean or publication warranted.
 

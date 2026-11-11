@@ -1,10 +1,10 @@
 # GE-2: bistability census of 3-species open bimolecular mass-action networks (<=3 internal reactions)
 
-Outcome: **FOUND** (certified), with a large UNDECIDED residue; the census is not a complete classification. Not audited, no Lean, no paper, not published. Preregistration: PREREG_ITEM.md (sha256 in PREREG_ITEM.md.sha256, frozen before any run).
+Outcome: **FOUND (754 exact witnesses independently re-verified, 781/781 incl. control)**, with a large UNDECIDED residue; the census is not a complete classification. "New" = new within this class, not checked against Joshi-Shiu-type small-network classifications (see PRIOR_ART_ADDENDUM.md). MULTISTATIONARY_CERT (807) not independently re-verified (no witness files audited). Independently audited once (AUDIT.md, ACCEPT_WITH_CORRECTIONS; corrections applied 2026-11-11); no Lean, no human audit, not published. Preregistration: PREREG_ITEM.md (sha256 in PREREG_ITEM.md.sha256, frozen before any run).
 
 ## Class and enumeration (sanity counts match)
 9 nonzero complexes, 72 directed edges, <=3 internal edges, inflow and linear removal for each species. Labelled networks 62269 (1+72+2556+59640); S3 orbits **10523** (Burnside agrees; orbit sizes 1/2/3/6 = 7/9/266/10241; sizes sum to 62269). 2-species control: 1351 labelled, 681 orbits.
-Buckets: A = at most 2 species occur in internal reactions (681 orbits, reducible to Peng's class), B = 3 species but interaction graph disconnected (220 orbits), C = connected genuinely 3-species (9622 orbits). Nothing dropped; all classified by the same pipeline.
+Buckets: A = at most 2 species occur in internal reactions (681 orbits, reducible to Peng's class), B = 3 species but interaction graph disconnected (220 orbits), C = connected support 3 (9622 orbits); 79 of the 175 minimal (79 of the 727 bistable) have a never-reactant species and are effectively 2-species cascades; 96 minimal are irreducible by this screen. Nothing dropped; all classified by the same pipeline.
 
 ## Counts (orbits; labelled in brackets)
 | bucket | MONOSTATIONARY (JAC) | BISTABLE_CERT | MULTISTATIONARY_CERT (no 2-sink witness) | UNDECIDED |

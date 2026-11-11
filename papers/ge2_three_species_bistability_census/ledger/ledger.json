@@ -1,0 +1,152 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "GE2-L-0001",
+   "statement": "Control source, taken as stated: Peng, arXiv:2610.32739 (23 Oct 2026, unrefereed): two-species networks with at most three internal reactions on {X,Y,2X,X+Y,2Y}, positive inflows and linear removal, 681 networks up to species swap, 27 bistable (Table 1), 245 excluded by the Jacobian rule. The two-species classification is Peng's.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:17c7423fa1e320c5db039da18ce1767a3e62c99204dbdfb3aa7ab974f2e4d916",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GE2-L-0002",
+   "statement": "Inheritance and related small-network results, taken as stated: Joshi-Shiu, Atoms of multistationarity, arXiv:1108.5238, Thm 3.1 (subnetwork N of G with equal stoichiometric subspace: multiple nondegenerate / exponentially stable positive steady states of N lift to G) and Sec. 6-7 (386 reversible bimolecular two-non-flow-reaction fully open networks, 35 multistationary, 11 atoms; multistationarity, not stability); Joshi-Shiu arXiv:1603.06441 (Cor. 5.5: at-most-bimolecular networks with exactly two reactions are not multistable; flows counted as reactions); Tang-Xu arXiv:2008.03846 (multistability of two-reaction networks).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:1b83212d761a5da44122dead309e21d9854bd1297c2e6931a81416656bb4de27",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GE2-L-0003",
+   "statement": "Determinant-sign exclusion tradition, taken as stated: Craciun-Feinberg injectivity criterion for fully open networks (SIAM J. Appl. Math. 65 (2005) 1526-1546; part II 66 (2006) 1321-1338) and the Jacobian criterion in Joshi-Shiu (arXiv:1106.1578, SIAM J. Appl. Math. 72 (2012) 857-876). Our JAC rule is a self-contained midpoint argument of the same type, proved in Section 4 of the paper and checked by the auditor; it is not claimed to be a new criterion.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:0395a78144e591c773f8c9a1115ead02511c40f5d799c6a65356bb88a4c0f411",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GE2-C-0001",
+   "statement": "Enumeration. Class: 3 species X,Y,Z, 9 nonzero complexes of molecularity <= 2, 72 directed internal edges, at most 3 internal edges, inflow 0->S and linear removal S->0 for every species. Labelled networks 1+72+2556+59640 = 62269; orbits under S3: 10523 (producer enumeration and Burnside agree; independent auditor enumeration and Burnside both give 10523; orbit sizes sum to 62269); 2-species control 1351 labelled, 681 orbits.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:bd0d6785f6388379e70c7cd582b13b4e0257f153f013f1d838be0e89f70d5972",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GE2-C-0002",
+   "statement": "754 networks (orbits) carry an exact rational bistability witness (BISTABLE_CERT): rational parameters (a, rho, k) > 0 and two distinct positive rational equilibria p, q with f(p)=f(q)=0 verified by exact Fraction substitution and exact Routh-Hurwitz at both points. The auditor re-verified all 781 witness files (754 three-species + 27 two-species control) with a verifier written from scratch: 781/781 pass; no BISTABLE_CERT row lacks a witness and no witness lacks a row.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "GE2-C-0001"
+   ],
+   "evidence": "sha256:4edf8312d85f53ee0e38762952f6e0f33c083c6e9c1be26e0efb88c5eb8530af",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GE2-C-0003",
+   "statement": "5071 networks (orbits) are certified to have at most one positive equilibrium for all positive parameters (MONOSTATIONARY_JAC): all coefficients of det(-J) as a polynomial in (x, rho, k) are nonnegative and the rho1*rho2*rho3 coefficient is 1; since the field f is quadratic, f(x)-f(y) = J((x+y)/2)(x-y), the midpoint is positive, so a second positive equilibrium is impossible. The auditor judged the argument sound, re-derived 60/60 random JAC rows with sympy (all coefficients nonnegative), 40/40 random non-JAC rows (a negative coefficient), and found no second positive root in a numerical search on 30 JAC rows. The full 5071 were computed by the producer only; the auditor sampled.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:9d213c5c7a387ea4c4806fc22e2ef8b1ba732cb7a1372e13e5f0b9e4ae33864c",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GE2-C-0004",
+   "statement": "Controls. Positive: the identical pipeline on the 2-species class gives exactly 27 BISTABLE_CERT among 681 orbits, the same set (up to S2) as Peng's Table 1, and 245 JAC exclusions (Peng 245); the 3-species bucket A reproduces the same counts 245/27/102/307. Negative: the empty network, X->Y and the cycle X<->Y<->Z (deficiency-zero weakly reversible, external control) never give BISTABLE_CERT; a corrupted witness (p perturbed by 1/1000, or rho multiplied by 1.1) fails the exact checker while the uncorrupted one passes; the auditor's verifier rejects the same corruptions and rejects +I as not Hurwitz.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "GE2-L-0001",
+    "GE2-C-0002"
+   ],
+   "evidence": "sha256:dd00ee5c7cbf9bd663d5bf2c6d0836d9a194a262bca402c2169bb274b81e2ad9",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GE2-C-0005",
+   "statement": "Structure of the bistable set. Bucket C (connected support 3): 727 bistable orbits, 9 with two internal reactions and 718 with three; 175 are minimal (no proper edge subset is BISTABLE_CERT), of which 79 contain a species that is never a reactant (the other two species then form an autonomous 2-species subsystem: a cascade) and 96 are irreducible by this screen. The 9 two-reaction networks are listed in the paper with one exact witness each. Of the 718 three-reaction networks, 552 contain a BISTABLE_CERT two-reaction subnetwork and 166 do not. Counts reproduced by a third script (writer) and by the producer aggregator (202 minimal in all, 175 in bucket C).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "GE2-C-0002"
+   ],
+   "evidence": "sha256:de6d84045fda48029f5981d9471b46fa92005965f19580f11a9564556366adf1",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GE2-C-0006",
+   "statement": "Inheritance consistency check. 609 three-reaction orbits (any bucket) contain a BISTABLE_CERT two-reaction subnetwork: the census certifies 552 of them, has 38 as MULTISTATIONARY_CERT and 19 as UNDECIDED; none is JAC-excluded (0 contradictions). Given the Tier L inheritance theorem (Atoms Thm 3.1; same stoichiometric subspace because all flows are present), those 57 networks are bistable although the census does not certify them; they are NOT added to the headline counts, and they show that the UNDECIDED and MULTISTATIONARY_CERT classes contain bistable networks.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "GE2-L-0002",
+    "GE2-C-0005"
+   ],
+   "evidence": "sha256:1a939db32faf7869ba76852252aec66b410d77452ba3234094cd52ccc85904b7",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GE2-C-0007",
+   "statement": "HEADLINE. Partial certified census of bistability for 3-species at-most-bimolecular open mass-action networks with at most three internal reactions: 10523 orbits; 754 BISTABLE_CERT (exact witnesses, independently re-verified), 5071 certified single-equilibrium (JAC), 807 MULTISTATIONARY_CERT (two equilibria certified exactly, no stable pair found; NOT independently verified), 3891 UNDECIDED (37.0%). The census is PARTIAL: UNDECIDED is search evidence only. Within bucket C, 727 bistable, 175 minimal (79 effectively two-species cascades, 96 irreducible by this screen). No claim of new mechanisms; no biological claim. Producer and one independent audit are AI agents; no human audit; the preregistration hash is self-attested.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "GE2-C-0001",
+    "GE2-C-0002",
+    "GE2-C-0003",
+    "GE2-C-0004",
+    "GE2-C-0005",
+    "GE2-C-0006"
+   ],
+   "evidence": "sha256:07daa5d4745048be89b9af1b8409ede89858adeadfbbbc56bfbe65f2125103ec",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GE2-X-0001",
+   "statement": "3891 orbits (37.0%) are UNDECIDED: no exclusion certificate and no witness within 2e5 sampled equilibrium pairs per network (1e6 for none: preregistered stage 2 not run). Search evidence only; never counted as absence of bistability. Also unaudited: the 807 MULTISTATIONARY_CERT rows (no witness files audited), and whether the search missed bistable networks in that class (the 57 implied by inheritance show it did miss some).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:b5173e392cc3895edbddbfd058458ec2a35217b349d4ef2e326e79f903a8db84",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GE2-X-0002",
+   "statement": "Completeness is NOT claimed: the census is not a classification; no statement is made about the 3891 UNDECIDED networks. Novelty is NOT a certified fact: 'to our knowledge' no published census of exact-witness bistability for this class; read in full or in part: Peng 2610.32739, Joshi-Shiu 1603.06441 and 1108.5238, Tang-Xu 2008.03846 (PRIOR_ART.md, PRIOR_ART_ADDENDUM.md); not read: Siegal-Gaskins et al. 2009, Banaji-Pantea, the Lixiviant manuscript, Section 7 of 1108.5238. A recorded search is not proof of absence; authors not contacted.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:ed5828dbdb7e57ba9a406fbc997153fb2979518857d5b8565f7f0e1bec3e3bd5",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GE2-X-0003",
+   "statement": "NOT done: Lean formalisation; human audit; independent audit of the 807 multistationary rows and of every JAC exclusion (auditor sampled 60 + 40 + 30); preregistered stage 2 (1e6 pairs); DIV/ROOT/FLUX rules; edge-by-edge comparison with Section 7 of Joshi-Shiu 1108.5238; a timestamp for the preregistration other than its self-attested hash; interpretation of any mechanism as biological.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:fd95661d9d6ae99b89e5789d0c79deddbb314b9656553185a3e1596716f920e5",
+   "audit": null
+  }
+ ]
+}

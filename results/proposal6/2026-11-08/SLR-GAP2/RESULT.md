@@ -29,3 +29,59 @@ About 3.5 core-h over about 93 logged runs, controls included; wall-clock about 
 
 ## Recommendation
 Continuing needs a stronger solver strategy (6 workers, 600 s, one family at a time, N chosen by necessary-condition pruning), not wider 60 s sweeps. No audit, Lean or publication warranted.
+
+## PHASE2 (2026-11-10): NEGATIVE_INCONCLUSIVE
+Amendment in PREREG_ITEM.md (hash refreshed; phase-1 hash in PREREG_ITEM.md.sha256.phase1). Driver code/run_phase2.py, log logs/runs2.jsonl (+ runs2_start.log). 6 workers, 600 s per (N, family), cores 1-6.
+Pruning (exact rational uncovered measure of the fixed runners <= slots*2/N) kept every N in 40..95 for all three families (ratios 0.29-0.4): it is a ranking, not a filter, here. Phase 1 INFEASIBLE pairs were not in these families.
+
+Positive control (6 workers, 600 s cap): N=64 OPTIMAL in 3.9 s solve, checkers {'checker1': True, 'checker2': True, 'out': 'COVERED n=63 endpoints_checked=3961'} (certificates/ctl2 not written; cert in certificates/p2).
+
+| tag | family | N | n | status | solve s | wall s | pool | slots | points |
+|---|---|---|---|---|---|---|---|---|---|
+| p2_b3_N73 | b3 | 73 | 72 | UNKNOWN | 600.2 | 609.3 | 33 | 13 | 108930 |
+| p2_b3_N55 | b3 | 55 | 54 | UNKNOWN | 600.1 | 608.7 | 30 | 11 | 84594 |
+| p2_b3_N65 | b3 | 65 | 64 | UNKNOWN | 600.1 | 608.7 | 31 | 12 | 90198 |
+| p2_b3_N72 | b3 | 72 | 71 | UNKNOWN | 600.0 | 609.4 | 33 | 13 | 110682 |
+| p2_b3_N67 | b3 | 67 | 66 | UNKNOWN | 600.0 | 608.6 | 32 | 12 | 98490 |
+| p2_b3_N64 | b3 | 64 | 63 | UNKNOWN | 600.1 | 608.0 | 31 | 12 | 91002 |
+| p2_b3_N74 | b3 | 74 | 73 | UNKNOWN | 600.0 | 609.1 | 33 | 13 | 109878 |
+| p2_b2w_N83 | b2w | 83 | 82 | UNKNOWN | 600.1 | 605.6 | 50 | 30 | 124380 |
+| p2_b2w_N81 | b2w | 81 | 80 | UNKNOWN | 600.1 | 605.7 | 50 | 30 | 127356 |
+| p2_b2w_N91 | b2w | 91 | 90 | UNKNOWN | 600.0 | 606.2 | 52 | 31 | 133324 |
+| p2_b2w_N82 | b2w | 82 | 81 | UNKNOWN | 600.0 | 606.1 | 50 | 30 | 126856 |
+| p2_b2w_N80 | b2w | 80 | 79 | UNKNOWN | 600.4 | 608.6 | 49 | 29 | 117636 |
+| p2_b6_N81 | b6 | 81 | 80 | UNKNOWN | 600.1 | 632.8 | 42 | 18 | 389832 |
+| p2_b6_N83 | b6 | 83 | 82 | UNKNOWN | 600.1 | 632.3 | 42 | 18 | 385536 |
+
+Status counts: b2w:UNKNOWN=5, b3:UNKNOWN=7, b6:UNKNOWN=2
+FEASIBLE n: []
+Runs killed before finishing (counted up to their kill time): []
+CPU ledger phase 2: 14.28 core-h (wall x 6, rows 14.28 + killed 0.00); phase 1 was about 3.5. INFEASIBLE/UNKNOWN verdicts concern the given pool and shift menu only, not the conjecture.
+
+## PHASE2 (2026-11-10): NEGATIVE_INCONCLUSIVE
+Amendment in PREREG_ITEM.md (hash refreshed; phase-1 hash in PREREG_ITEM.md.sha256.phase1). Driver code/run_phase2.py, log logs/runs2.jsonl (+ runs2_start.log). 6 workers, 600 s per (N, family), cores 1-6.
+Pruning (exact rational uncovered measure of the fixed runners <= slots*2/N) kept every N in 40..95 for all three families (ratios 0.29-0.4): it is a ranking, not a filter, here. Phase 1 INFEASIBLE pairs were not in these families.
+
+Positive control (6 workers, 600 s cap): N=64 OPTIMAL in 3.9 s solve, checkers {'checker1': True, 'checker2': True, 'out': 'COVERED n=63 endpoints_checked=3961'} (certificates/ctl2 not written; cert in certificates/p2).
+
+| tag | family | N | n | status | solve s | wall s | pool | slots | points |
+|---|---|---|---|---|---|---|---|---|---|
+| p2_b3_N73 | b3 | 73 | 72 | UNKNOWN | 600.2 | 609.3 | 33 | 13 | 108930 |
+| p2_b3_N55 | b3 | 55 | 54 | UNKNOWN | 600.1 | 608.7 | 30 | 11 | 84594 |
+| p2_b3_N65 | b3 | 65 | 64 | UNKNOWN | 600.1 | 608.7 | 31 | 12 | 90198 |
+| p2_b3_N72 | b3 | 72 | 71 | UNKNOWN | 600.0 | 609.4 | 33 | 13 | 110682 |
+| p2_b3_N67 | b3 | 67 | 66 | UNKNOWN | 600.0 | 608.6 | 32 | 12 | 98490 |
+| p2_b3_N64 | b3 | 64 | 63 | UNKNOWN | 600.1 | 608.0 | 31 | 12 | 91002 |
+| p2_b3_N74 | b3 | 74 | 73 | UNKNOWN | 600.0 | 609.1 | 33 | 13 | 109878 |
+| p2_b2w_N83 | b2w | 83 | 82 | UNKNOWN | 600.1 | 605.6 | 50 | 30 | 124380 |
+| p2_b2w_N81 | b2w | 81 | 80 | UNKNOWN | 600.1 | 605.7 | 50 | 30 | 127356 |
+| p2_b2w_N91 | b2w | 91 | 90 | UNKNOWN | 600.0 | 606.2 | 52 | 31 | 133324 |
+| p2_b2w_N82 | b2w | 82 | 81 | UNKNOWN | 600.0 | 606.1 | 50 | 30 | 126856 |
+| p2_b2w_N80 | b2w | 80 | 79 | UNKNOWN | 600.4 | 608.6 | 49 | 29 | 117636 |
+| p2_b6_N81 | b6 | 81 | 80 | UNKNOWN | 600.1 | 632.8 | 42 | 18 | 389832 |
+| p2_b6_N83 | b6 | 83 | 82 | UNKNOWN | 600.1 | 632.3 | 42 | 18 | 385536 |
+
+Status counts: b2w:UNKNOWN=5, b3:UNKNOWN=7, b6:UNKNOWN=2
+FEASIBLE n: []
+Runs killed before finishing (counted up to their kill time): []
+CPU ledger phase 2: 14.28 core-h (wall x 6, rows 14.28 + killed 0.00); phase 1 was about 3.5. INFEASIBLE/UNKNOWN verdicts concern the given pool and shift menu only, not the conjecture.

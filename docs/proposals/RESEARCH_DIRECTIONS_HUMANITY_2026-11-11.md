@@ -91,6 +91,16 @@ Luo-Wei (arXiv:2609.17356) settle the Gaussian case, where the crossover is exac
 theorem statements, not the proofs, and did not run their certificates. MA-1 ends with this record; no compute was run.
 The chance estimate of 0.5 in section 3 was wrong.
 
+**Update, 2026-11-11 (`results/proposal7/2026-11-11/EN1/PRIOR_ART.md`): EN-1 is NOT NEW, and the duplicate is our own.**
+Our published E1 (papers/p4_pb_ignition, doi:10.5281/zenodo.23733098) already gives interval enclosures of the D-T
+ideal ignition temperature and of the minima of n·T·τ and n·τ for the Wurzel-Hsu model. Propagating the reactivity
+fit error would only widen those intervals by the fit error, which is the kill criterion written in section 2. The
+author of this document proposed EN-1 without checking our own record; that was an error. Possible small add-ons
+(a Lean unimodality lemma, a check against the Bosch-Hale primary source, which E1 never obtained) belong in an E1
+version 2, not in a new item. No compute was run.
+
+**Update, 2026-11-11: GE-2 was done and published** as a partial census, doi:10.5281/zenodo.24131124.
+
 1. **MA-1** (3D lattice crossover): largest reuse of our kernel-checked 2D work; a certified crossover is a usable number.
 2. **GE-2** (reaction-network census): extends an audited result; exact algebra; relevant to genetic switches.
 3. **EN-1** (fusion windows): reuses E1 and the solver work; clear deliverable.

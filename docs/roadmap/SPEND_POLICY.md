@@ -21,6 +21,9 @@ fits (about 40 points of meter remain until the cap; roughly 0.5M reported subag
 proxy). The owner re-reads `/usage` on each Saturday and whenever asked; if the weekly limit is not a quarter of the
 monthly allowance, the owner says so and the cap is rescaled. Mode now: NORMAL.
 
+**RE-ANCHORED 2026-11-13 (owner `/usage`): week 22% used (all models), Fable 9%, resets Sat 14 Nov 09:00 UTC.**
+Mode: NORMAL (cap 60%). Between 7 and 13 Nov the meter went from 4% to 22% (+18 points in 6 days, about 3 per day: under the 8 per day allowed). Session cost $1190.87: Opus $905.40 (76%), Sonnet $252.54 (21%), Fable $31.67, Haiku $1.27. Opus is still the dominant cost although only audits use it; the main loop on Sonnet/Fable is cheap. The week resets tomorrow: re-anchor again then.
+
 **RE-ANCHORED 2026-11-07 (owner `/usage`): NEW WEEK, 4% used (all models), Fable 0%, resets Sat 14 Nov 09:00 UTC.**
 Mode: NORMAL. Allowed burn = (60 - 4) / 7 = 8 points per day: one new item per day is affordable.
 Session cost breakdown from `/usage` (8 days, all of this project): total $1160.67; Opus $904.46 (78%: 970M cache-read tokens,

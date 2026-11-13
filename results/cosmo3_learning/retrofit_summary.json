@@ -1,46 +1,235 @@
 {
-  "episodes": 206,
-  "passes": 173,
-  "fails": 33,
-  "distinct_tasks": 68,
-  "embedding_model": "qwen3-embedding:0.6b",
-  "embedding_dim": 1024,
-  "episodes_file": "/mnt/disks/disk-socrateai-local-1/AutoevolveAI/datalake/episodes/cosmo3_2026-09-27.jsonl",
-  "literature_ingest": {
-    "docs/literature/DESI_DR2_BAO_LITERATURE_REVIEW_2026.md": 7,
-    "papers/desi_dr2_bao/desi_dr2_bao.tex": 16,
-    "docs/literature/BAO_BBN_H0_LITERATURE_REVIEW_2026.md": 9,
-    "papers/bao_bbn_h0/bao_bbn_h0.tex": 22,
-    "docs/literature/EBOSS_VS_DESI_LITERATURE_REVIEW_2026.md": 9,
-    "papers/eboss_vs_desi/eboss_vs_desi.tex": 21,
-    "_collection_total": 284
+  "corpus": "Phase 1 failure-rich verified traces (traces_uc2_verified, traces_uc2_adaptive, traces_uc4_memory, traces_uc5)",
+  "trace_files": [
+    "results/phase1_evolution/traces_uc2_verified.jsonl",
+    "results/phase1_evolution/traces_uc2_adaptive.jsonl",
+    "results/phase1_evolution/traces_uc4_memory.jsonl",
+    "results/phase1_evolution/traces_uc5.jsonl"
+  ],
+  "root_causes_fixed": [
+    "1. JEPADataset max_energy normalisation mismatch: cosmo3_retrofit previously passed binary {0, 1} energies into JEPADataset(max_energy=100.0), squashing targets into {0.00, 0.01} within energy_accuracy_threshold=0.1 so energy_accuracy saturated at 1.00 on both real and shuffled arms.",
+    "2. JEPATrainer._energy_predictions and validate previously encoded h_ctx instead of h_tgt, inverting predictions on (h_fail -> h_pass) transition items where energy_actual is the target state's energy.",
+    "3. Corpus grown to 383 unique verified states (323 fail / 60 pass, 84.3% failure-rich, 270 transitions, 653 items across 20 tasks)."
+  ],
+  "states": 383,
+  "transitions": 270,
+  "items": 653,
+  "distinct_tasks": 20,
+  "passes": 60,
+  "fails": 323,
+  "fail_fraction": 0.8433,
+  "embedding_dim": 1536,
+  "skipped": {
+    "malformed_json": 0,
+    "empty_hidden_state": 15,
+    "non_finite": 0,
+    "unverified": 102,
+    "duplicate": 200
   },
-  "jepa_real": {
-    "items": 344,
-    "skipped": {
-      "malformed_json": 0,
-      "empty_hidden_state": 0,
-      "non_finite": 0,
-      "unverified": 0,
-      "duplicate": 0
-    },
-    "final_train_loss": 6.291437202029758,
-    "final_val_loss": 21.872384786605835,
-    "best_val_energy_accuracy": 1.0,
-    "final_val_energy_accuracy": 1.0
+  "config": {
+    "epochs": 100,
+    "batch_size": 256,
+    "lr": 0.003,
+    "weight_decay": 0.05,
+    "dropout": 0.2,
+    "d_hidden": 256,
+    "d_latent": 64,
+    "energy_weight": 10.0,
+    "val_fraction": 0.2,
+    "split": "by task (anse.jepa.dataset.train_val_split)",
+    "auroc_positive": "energy > 0 (failure)",
+    "energy_accuracy_threshold": 0.15,
+    "max_energy": 16.67
   },
-  "jepa_shuffled_energy_control": {
-    "items": 344,
-    "skipped": {
-      "malformed_json": 0,
-      "empty_hidden_state": 0,
-      "non_finite": 0,
-      "unverified": 0,
-      "duplicate": 0
+  "per_seed": [
+    {
+      "seed": 42,
+      "label_control_seed": 142,
+      "val_items": 109,
+      "val_positives_real": 90,
+      "seconds": 158.33,
+      "metrics": {
+        "auroc": {
+          "real": 0.7497076023391813,
+          "shuffled": 0.38202247191011235,
+          "delta": 0.367685130429069,
+          "informative": true,
+          "status": "INFORMATIVE"
+        },
+        "spearman": {
+          "real": 0.6432469261726306,
+          "shuffled": -0.11927658092613508,
+          "delta": 0.7625235070987657,
+          "informative": true,
+          "status": "INFORMATIVE"
+        },
+        "energy_accuracy": {
+          "real": 0.44036697247706424,
+          "shuffled": 0.10091743119266056,
+          "delta": 0.3394495412844037,
+          "informative": true,
+          "status": "INFORMATIVE"
+        },
+        "val_loss": {
+          "real": 37.367958068847656,
+          "shuffled": 39.37092971801758,
+          "delta": -2.002971649169922,
+          "informative": true,
+          "status": "INFORMATIVE"
+        }
+      },
+      "saturated": [],
+      "final_train_loss": 29.09088897705078
     },
-    "final_train_loss": 5.993718730078803,
-    "final_val_loss": 21.464189767837524,
-    "best_val_energy_accuracy": 1.0,
-    "final_val_energy_accuracy": 1.0
+    {
+      "seed": 43,
+      "label_control_seed": 143,
+      "val_items": 144,
+      "val_positives_real": 120,
+      "seconds": 114.1,
+      "metrics": {
+        "auroc": {
+          "real": 0.6663194444444445,
+          "shuffled": 0.31548688465684516,
+          "delta": 0.3508325597875993,
+          "informative": true,
+          "status": "INFORMATIVE"
+        },
+        "spearman": {
+          "real": 0.09577950035575125,
+          "shuffled": -0.07943850569987565,
+          "delta": 0.1752180060556269,
+          "informative": true,
+          "status": "INFORMATIVE"
+        },
+        "energy_accuracy": {
+          "real": 0.2777777777777778,
+          "shuffled": 0.18055555555555555,
+          "delta": 0.09722222222222224,
+          "informative": true,
+          "status": "INFORMATIVE"
+        },
+        "val_loss": {
+          "real": 32.83076858520508,
+          "shuffled": 32.97758102416992,
+          "delta": -0.14681243896484375,
+          "informative": true,
+          "status": "INFORMATIVE"
+        }
+      },
+      "saturated": [],
+      "final_train_loss": 25.74961566925049
+    },
+    {
+      "seed": 44,
+      "label_control_seed": 144,
+      "val_items": 149,
+      "val_positives_real": 136,
+      "seconds": 97.48,
+      "metrics": {
+        "auroc": {
+          "real": 0.7975113122171946,
+          "shuffled": 0.6695402298850575,
+          "delta": 0.12797108233213716,
+          "informative": true,
+          "status": "INFORMATIVE"
+        },
+        "spearman": {
+          "real": 0.43473884264060075,
+          "shuffled": 0.22815944954693163,
+          "delta": 0.20657939309366913,
+          "informative": true,
+          "status": "INFORMATIVE"
+        },
+        "energy_accuracy": {
+          "real": 0.4228187919463087,
+          "shuffled": 0.2751677852348993,
+          "delta": 0.1476510067114094,
+          "informative": true,
+          "status": "INFORMATIVE"
+        },
+        "val_loss": {
+          "real": 34.18864440917969,
+          "shuffled": 35.054481506347656,
+          "delta": -0.8658370971679688,
+          "informative": true,
+          "status": "INFORMATIVE"
+        }
+      },
+      "saturated": [],
+      "final_train_loss": 23.421131134033203
+    }
+  ],
+  "aggregate": {
+    "auroc": {
+      "real_mean": 0.7378461196669401,
+      "real_min": 0.6663194444444445,
+      "real_max": 0.7975113122171946,
+      "real_seed_spread": 0.13119186777275016,
+      "shuffled_mean": 0.455683195484005,
+      "shuffled_min": 0.31548688465684516,
+      "shuffled_max": 0.6695402298850575,
+      "shuffled_seed_spread": 0.3540533452282123,
+      "mean_delta": 0.28216292418293515,
+      "n_seeds_defined": 3,
+      "delta_exceeds_seed_spread": false,
+      "worst_real_beats_best_shuffled": false
+    },
+    "spearman": {
+      "real_mean": 0.3912550897229942,
+      "real_min": 0.09577950035575125,
+      "real_max": 0.6432469261726306,
+      "real_seed_spread": 0.5474674258168793,
+      "shuffled_mean": 0.009814787640306966,
+      "shuffled_min": -0.11927658092613508,
+      "shuffled_max": 0.22815944954693163,
+      "shuffled_seed_spread": 0.3474360304730667,
+      "mean_delta": 0.38144030208268725,
+      "n_seeds_defined": 3,
+      "delta_exceeds_seed_spread": false,
+      "worst_real_beats_best_shuffled": false
+    },
+    "energy_accuracy": {
+      "real_mean": 0.38032118073371696,
+      "real_min": 0.2777777777777778,
+      "real_max": 0.44036697247706424,
+      "real_seed_spread": 0.16258919469928645,
+      "shuffled_mean": 0.1855469239943718,
+      "shuffled_min": 0.10091743119266056,
+      "shuffled_max": 0.2751677852348993,
+      "shuffled_seed_spread": 0.17425035404223876,
+      "mean_delta": 0.19477425673934512,
+      "n_seeds_defined": 3,
+      "delta_exceeds_seed_spread": true,
+      "worst_real_beats_best_shuffled": true
+    },
+    "val_loss": {
+      "real_mean": 34.795790354410805,
+      "real_min": 32.83076858520508,
+      "real_max": 37.367958068847656,
+      "real_seed_spread": 4.537189483642578,
+      "shuffled_mean": 35.80099741617838,
+      "shuffled_min": 32.97758102416992,
+      "shuffled_max": 39.37092971801758,
+      "shuffled_seed_spread": 6.393348693847656,
+      "mean_delta": -1.0052070617675781,
+      "n_seeds_defined": 3,
+      "delta_exceeds_seed_spread": false,
+      "worst_real_beats_best_shuffled": false
+    }
+  },
+  "verdict": "NO_SEPARATION_ABOVE_CONTROL",
+  "summary_comparison": {
+    "auroc_real_mean": 0.7378,
+    "auroc_shuffled_mean": 0.4557,
+    "auroc_mean_delta": 0.2822,
+    "auroc_real_seed_spread": 0.1312,
+    "auroc_shuffled_seed_spread": 0.3541,
+    "spearman_real_mean": 0.3913,
+    "spearman_shuffled_mean": 0.0098,
+    "spearman_mean_delta": 0.3814,
+    "energy_accuracy_real_mean": 0.3803,
+    "energy_accuracy_shuffled_mean": 0.1855,
+    "energy_accuracy_saturated": false
   }
 }

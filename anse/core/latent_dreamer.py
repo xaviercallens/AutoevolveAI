@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import os
 import random
 import time
 from dataclasses import dataclass
@@ -87,8 +88,30 @@ class FastJEPALatentPredictor(nn.Module):
         )
         self.is_loaded = False
         self.checkpoint_path: Path | None = None
+        self._inference_net: nn.Module | None = None
+
+    def quantize_for_cpu(self) -> None:
+        """Apply dynamic INT8 quantization to Linear layers for high-efficiency CPU inference."""
+        import copy
+        import warnings
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                import torch.ao.quantization as tq
+                self._inference_net = tq.quantize_dynamic(
+                    copy.deepcopy(self.net),
+                    {nn.Linear},
+                    dtype=torch.qint8,
+                )
+                self._inference_net.eval()
+            logger.info("FastJEPALatentPredictor: INT8 dynamic quantization active for CPU inference.")
+        except Exception as exc:
+            logger.warning("Dynamic quantization not applied: %s", exc)
+            self._inference_net = None
 
     def forward(self, z: torch.Tensor) -> torch.Tensor:
+        if not self.training and self._inference_net is not None:
+            return self._inference_net(z).squeeze(-1)
         return self.net(z).squeeze(-1)
 
     def load_checkpoint(self, path: Path) -> None:
@@ -97,6 +120,8 @@ class FastJEPALatentPredictor(nn.Module):
         self.load_state_dict(state_dict)
         self.is_loaded = True
         self.checkpoint_path = path
+        if self._inference_net is not None:
+            self.quantize_for_cpu()
 
     def _trace_to_latent(self, trace: dict[str, Any]) -> torch.Tensor:
         """Deterministically map trace metadata/text to a latent vector."""
@@ -136,6 +161,8 @@ class FastJEPALatentPredictor(nn.Module):
             loss.backward()
             optimizer.step()
         self.eval()
+        if self._inference_net is not None:
+            self.quantize_for_cpu()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -153,6 +180,7 @@ class LatentDreamer:
         latent_dim: int = 32,
         num_branches: int = 16,
         checkpoint_path: Path | None = None,
+        quantize_cpu: bool = True,
     ) -> None:
         self.latent_dim = latent_dim
         self.num_branches = num_branches
@@ -161,6 +189,11 @@ class LatentDreamer:
         self.predictor.eval()
         if self.expected_checkpoint.exists():
             self.predictor.load_checkpoint(self.expected_checkpoint)
+        if quantize_cpu and not torch.cuda.is_available():
+            optimal_threads = max(1, min(8, os.cpu_count() or 4))
+            if torch.get_num_threads() != optimal_threads:
+                torch.set_num_threads(optimal_threads)
+            self.predictor.quantize_for_cpu()
 
     def dream_and_search(
         self,

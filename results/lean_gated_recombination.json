@@ -1,0 +1,3913 @@
+{
+  "question": "Does recombination beat mutation when the gate is a Lean proof?",
+  "why_now": "A verified answer needs a formal gate, and the gate used to cost one Lean invocation per candidate. It now costs one per BATCH, because a compile reports a per-declaration verdict even when it exits nonzero, which brings a paired experiment inside a few minutes.",
+  "architecture": {
+    "fitness": "exact rational agreement at sample points, in Python, zero Lean cost",
+    "acceptance": "the Lean kernel, via verify_batch_against_spec",
+    "why_separate": "A wrong fitness misguides the search and wastes effort but can never cause a wrong acceptance, since nothing is accepted without a proof whose axioms line is free of sorryAx and of non-whitelisted axioms. Fitness guides, the kernel decides."
+  },
+  "controls": {
+    "positive_target_reachable": true,
+    "positive_target_fitness": "0",
+    "negative_target_unreachable_runs": 8,
+    "negative_target_solved": 0,
+    "negative_control_passes": true,
+    "pairing": "identical seeds and identical initial populations in both arms"
+  },
+  "parameters": {
+    "rung": "L3_minus_wq",
+    "target_size": 9,
+    "seeds": 200,
+    "budget": 4000,
+    "sample_points": 12,
+    "grammar": [
+      "+",
+      "-",
+      "*"
+    ],
+    "variables": [
+      "h",
+      "w",
+      "q",
+      "p"
+    ],
+    "constants": [
+      "1",
+      "2",
+      "1/2"
+    ]
+  },
+  "results": {
+    "mutation_only_solved": 94,
+    "crossover_solved": 58,
+    "mutation_only_median_evaluations": 1286.5,
+    "crossover_median_evaluations": 1269.0,
+    "paired_seeds_both_solved": 35,
+    "crossover_cheaper_on": 18,
+    "paired_median_ratio_crossover_over_mutation": 0.9588477366255144
+  },
+  "lean_gate": {
+    "passed": true,
+    "spec_file": "/mnt/data/xdev-cache/tmp/tmpwdnbnolx/RungSpec.lean",
+    "spec_sha256": "541d298623a90f56cffa8efccb50095a16a99a353e62309939731da6b303801b",
+    "candidates": 8,
+    "invocations": 1,
+    "invocations_if_run_individually": 8,
+    "isolation_strategy": "none needed: one invocation yields a per-candidate verdict, since a failed proof is admitted as sorryAx and reported by name",
+    "saving_realised": 8.0,
+    "verdicts": {
+      "Sol0": true,
+      "Sol1": true,
+      "Sol2": true,
+      "Sol3": true,
+      "Sol4": true,
+      "Sol5": true,
+      "Sol6": true,
+      "Sol7": true
+    },
+    "failed": []
+  },
+  "arms": [
+    {
+      "seed": 0,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1277/60",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 0,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "18047/840",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 1,
+      "arm": "mutation_only",
+      "evaluations": 691,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * h) - ((w * q) - q))",
+      "solution_size": 9
+    },
+    {
+      "seed": 1,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 2,
+      "arm": "mutation_only",
+      "evaluations": 2188,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((p - p) * (1 : Rat)) + ((((2 : Rat) - (2 : Rat)) * (q + (w - w))) - ((q * w) - (p * h)))) + q)",
+      "solution_size": 25
+    },
+    {
+      "seed": 2,
+      "arm": "crossover",
+      "evaluations": 2508,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * p) + (((((1 : Rat)/2) * ((((1 : Rat)/2) * (((((1 : Rat)/2) - ((1 : Rat)/2)) * ((1 : Rat)/2)) * ((1 : Rat)/2))) * ((1 : Rat)/2))) * ((1 : Rat)/2)) - (w * q))) + q)",
+      "solution_size": 25
+    },
+    {
+      "seed": 3,
+      "arm": "mutation_only",
+      "evaluations": 810,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * h) + (q - (w * q)))",
+      "solution_size": 9
+    },
+    {
+      "seed": 3,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 4,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "791887/25200",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 4,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "2017/210",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 5,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 5,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1277/60",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 6,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "5643/280",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 6,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "4811/210",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 7,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1194/35",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 7,
+      "arm": "crossover",
+      "evaluations": 1531,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((p * h) + (q + q)) - q) - (q * (w - (((1 : Rat)/2) - ((1 : Rat)/2)))))",
+      "solution_size": 17
+    },
+    {
+      "seed": 8,
+      "arm": "mutation_only",
+      "evaluations": 1951,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * (p - (1 : Rat))) + (h + ((((((1 : Rat)/2) - (q - q)) + (((1 : Rat)/2) - (1 : Rat))) - (w * q)) + q)))",
+      "solution_size": 23
+    },
+    {
+      "seed": 8,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "860959/58800",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 9,
+      "arm": "mutation_only",
+      "evaluations": 1203,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * h) - (q * (w - (1 : Rat))))",
+      "solution_size": 9
+    },
+    {
+      "seed": 9,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 10,
+      "arm": "mutation_only",
+      "evaluations": 104,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h - h) - ((q * w) - (((q - h) + h) + (p * h))))",
+      "solution_size": 17
+    },
+    {
+      "seed": 10,
+      "arm": "crossover",
+      "evaluations": 423,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * h) + (((1 : Rat) + (p - ((q * w) - (q - p)))) - (1 : Rat)))",
+      "solution_size": 17
+    },
+    {
+      "seed": 11,
+      "arm": "mutation_only",
+      "evaluations": 1291,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * p) - (q * w)) + ((q + q) * (((1 : Rat)/2) + (w - w))))",
+      "solution_size": 17
+    },
+    {
+      "seed": 11,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "122389/5040",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 12,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 12,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 13,
+      "arm": "mutation_only",
+      "evaluations": 1786,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((2 : Rat) - (((2 : Rat) + h) - (((h + ((q * ((1 : Rat) - w)) + p)) + (p * h)) - p)))",
+      "solution_size": 21
+    },
+    {
+      "seed": 13,
+      "arm": "crossover",
+      "evaluations": 1146,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((1 : Rat) - w) * q) + (h * p))",
+      "solution_size": 9
+    },
+    {
+      "seed": 14,
+      "arm": "mutation_only",
+      "evaluations": 546,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) + ((((1 : Rat) + q) - (1 : Rat)) - (w * q)))",
+      "solution_size": 13
+    },
+    {
+      "seed": 14,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "2943/100",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 15,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 15,
+      "arm": "crossover",
+      "evaluations": 1263,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(q - ((q * w) + (p * (((1 : Rat) - (1 : Rat)) - h))))",
+      "solution_size": 13
+    },
+    {
+      "seed": 16,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 16,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "45323/1800",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 17,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 17,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "302249/12600",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 18,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1277/120",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 18,
+      "arm": "crossover",
+      "evaluations": 2503,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(q + ((q * ((p - p) - w)) - (((p - p) + (p - p)) - (h * p))))",
+      "solution_size": 21
+    },
+    {
+      "seed": 19,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "3558881/126000",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 19,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "36689/1050",
+      "solution_lean": null,
+      "solution_size": 5
+    },
+    {
+      "seed": 20,
+      "arm": "mutation_only",
+      "evaluations": 351,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * ((1 : Rat) * (1 : Rat))) * p) + (q * ((1 : Rat) - w)))",
+      "solution_size": 13
+    },
+    {
+      "seed": 20,
+      "arm": "crossover",
+      "evaluations": 2406,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * p) + (((w - w) - w) * q)) - ((q * ((1 : Rat)/2)) * ((w - w) - (2 : Rat))))",
+      "solution_size": 21
+    },
+    {
+      "seed": 21,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "6451/360",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 21,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 22,
+      "arm": "mutation_only",
+      "evaluations": 994,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) + (q - ((q + q) * (((1 : Rat)/2) * w))))",
+      "solution_size": 13
+    },
+    {
+      "seed": 22,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/72",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 23,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "576929/25200",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 23,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "8035/252",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 24,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "693/20",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 24,
+      "arm": "crossover",
+      "evaluations": 514,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((p * h) + q) - ((((1 : Rat)/2) * w) * ((2 : Rat) * q)))",
+      "solution_size": 13
+    },
+    {
+      "seed": 25,
+      "arm": "mutation_only",
+      "evaluations": 1458,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((q * (1 : Rat)) * ((((q - q) - ((2 : Rat) * w)) + (2 : Rat)) * ((1 : Rat)/2))) + (h * p))",
+      "solution_size": 19
+    },
+    {
+      "seed": 25,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "426053/25200",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 26,
+      "arm": "mutation_only",
+      "evaluations": 396,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q - (q * w)) + (p * h))",
+      "solution_size": 9
+    },
+    {
+      "seed": 26,
+      "arm": "crossover",
+      "evaluations": 1715,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((q - (w * q)) + (q - q)) + (p * h))",
+      "solution_size": 13
+    },
+    {
+      "seed": 27,
+      "arm": "mutation_only",
+      "evaluations": 838,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((p + q) - (w * q)) + ((h - (1 : Rat)) * p))",
+      "solution_size": 13
+    },
+    {
+      "seed": 27,
+      "arm": "crossover",
+      "evaluations": 3745,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((((q * ((1 : Rat)/2)) * ((2 : Rat) - (2 : Rat))) * ((1 : Rat)/2)) + ((q * ((((1 : Rat)/2) * (2 : Rat)) - w)) + (h + (h * p)))) - h)",
+      "solution_size": 25
+    },
+    {
+      "seed": 28,
+      "arm": "mutation_only",
+      "evaluations": 958,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q + ((((1 : Rat) - (2 : Rat)) + (1 : Rat)) - (q * w))) + (p * h))",
+      "solution_size": 15
+    },
+    {
+      "seed": 28,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "362843/12600",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 29,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 29,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 30,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 30,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "122389/5040",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 31,
+      "arm": "mutation_only",
+      "evaluations": 3152,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) + (q + (((1 : Rat) * (q * ((w - ((2 : Rat) * w)) + (((2 : Rat) - (2 : Rat)) - w)))) * ((1 : Rat)/2))))",
+      "solution_size": 23
+    },
+    {
+      "seed": 31,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 32,
+      "arm": "mutation_only",
+      "evaluations": 1700,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((((1 : Rat) - (1 : Rat)) - (q * w)) + q) + (h * p))",
+      "solution_size": 13
+    },
+    {
+      "seed": 32,
+      "arm": "crossover",
+      "evaluations": 1630,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q - p) - (((q * w) - p) - (p * h)))",
+      "solution_size": 13
+    },
+    {
+      "seed": 33,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/72",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 33,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 34,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "34369/1008",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 34,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "46187/1800",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 35,
+      "arm": "mutation_only",
+      "evaluations": 3656,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) + (q - (q * w)))",
+      "solution_size": 9
+    },
+    {
+      "seed": 35,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "24841/1200",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 36,
+      "arm": "mutation_only",
+      "evaluations": 1505,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q + (p * h)) + (((1 : Rat) - ((1 : Rat) + w)) * q))",
+      "solution_size": 13
+    },
+    {
+      "seed": 36,
+      "arm": "crossover",
+      "evaluations": 1246,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * h) + (q * (((((((1 : Rat)/2) - w) + (1 : Rat)) - w) + ((1 : Rat)/2)) * ((1 : Rat)/2))))",
+      "solution_size": 17
+    },
+    {
+      "seed": 37,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "249629/12600",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 37,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "451363/25200",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 38,
+      "arm": "mutation_only",
+      "evaluations": 545,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * p) - (((1 : Rat)/2) + ((w * q) - (((1 : Rat)/2) + q)))) * (1 : Rat))",
+      "solution_size": 15
+    },
+    {
+      "seed": 38,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "24701/720",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 39,
+      "arm": "mutation_only",
+      "evaluations": 1467,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((2 : Rat) - (2 : Rat)) - (w * q)) + ((h * p) + q))",
+      "solution_size": 13
+    },
+    {
+      "seed": 39,
+      "arm": "crossover",
+      "evaluations": 2720,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q - (p + (q * w))) + ((p * h) + p))",
+      "solution_size": 13
+    },
+    {
+      "seed": 40,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "416329/12600",
+      "solution_lean": null,
+      "solution_size": 7
+    },
+    {
+      "seed": 40,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "2943/100",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 41,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "693/20",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 41,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 42,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "261829/12600",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 42,
+      "arm": "crossover",
+      "evaluations": 690,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((q * ((1 : Rat) - w)) - (((p - p) * ((1 : Rat)/2)) - p)) + ((h * p) - p))",
+      "solution_size": 19
+    },
+    {
+      "seed": 43,
+      "arm": "mutation_only",
+      "evaluations": 1589,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((q * ((1 : Rat) - w)) + (h * p)) - (h - h))",
+      "solution_size": 13
+    },
+    {
+      "seed": 43,
+      "arm": "crossover",
+      "evaluations": 1698,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * p) + (q * (p - (w + p)))) + q)",
+      "solution_size": 13
+    },
+    {
+      "seed": 44,
+      "arm": "mutation_only",
+      "evaluations": 1132,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((1 : Rat) * ((2 : Rat) + ((q + (2 : Rat)) + (p * h)))) - (2 : Rat)) - ((2 : Rat) + (w * q)))",
+      "solution_size": 19
+    },
+    {
+      "seed": 44,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 45,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "25469/840",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 45,
+      "arm": "crossover",
+      "evaluations": 896,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q - h) - ((((w * q) * (1 : Rat)) - h) - (h * p)))",
+      "solution_size": 15
+    },
+    {
+      "seed": 46,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "420881/12600",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 46,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "416329/12600",
+      "solution_lean": null,
+      "solution_size": 7
+    },
+    {
+      "seed": 47,
+      "arm": "mutation_only",
+      "evaluations": 3339,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) + (p - (p + ((((((2 : Rat) * q) * w) * ((1 : Rat)/2)) + w) - (w + q)))))",
+      "solution_size": 21
+    },
+    {
+      "seed": 47,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 48,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 48,
+      "arm": "crossover",
+      "evaluations": 1140,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((p * h) - (((1 : Rat)/2) * ((1 : Rat) - (1 : Rat)))) - (q * w)) + q)",
+      "solution_size": 15
+    },
+    {
+      "seed": 49,
+      "arm": "mutation_only",
+      "evaluations": 674,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * h) - ((w * q) - q))",
+      "solution_size": 9
+    },
+    {
+      "seed": 49,
+      "arm": "crossover",
+      "evaluations": 1961,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((p * h) + q) + (((h - w) - ((h + w) + ((1 : Rat) * (1 : Rat)))) * (q * ((1 : Rat)/2)))) + (((1 : Rat)/2) * q))",
+      "solution_size": 25
+    },
+    {
+      "seed": 50,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "155963/5040",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 50,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 51,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "45683/1260",
+      "solution_lean": null,
+      "solution_size": 9
+    },
+    {
+      "seed": 51,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "38111/1260",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 52,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 52,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "27119/840",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 53,
+      "arm": "mutation_only",
+      "evaluations": 1295,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * h) - ((w * q) - q))",
+      "solution_size": 9
+    },
+    {
+      "seed": 53,
+      "arm": "crossover",
+      "evaluations": 1220,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(q - ((((q * p) + w) * (h - h)) - (q - ((((1 : Rat) + w) * q) - (p * h)))))",
+      "solution_size": 23
+    },
+    {
+      "seed": 54,
+      "arm": "mutation_only",
+      "evaluations": 840,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) - ((p - (h + (q + p))) + (h + (q * w))))",
+      "solution_size": 17
+    },
+    {
+      "seed": 54,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "16595/504",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 55,
+      "arm": "mutation_only",
+      "evaluations": 2525,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * p) + q) + (((w - (w + w)) * ((q + q) * ((1 : Rat)/2))) - ((2 : Rat) - (2 : Rat))))",
+      "solution_size": 21
+    },
+    {
+      "seed": 55,
+      "arm": "crossover",
+      "evaluations": 951,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) + (q - (w * q)))",
+      "solution_size": 9
+    },
+    {
+      "seed": 56,
+      "arm": "mutation_only",
+      "evaluations": 259,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * p) + (h - ((w * q) - q))) - h)",
+      "solution_size": 13
+    },
+    {
+      "seed": 56,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "53269/2100",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 57,
+      "arm": "mutation_only",
+      "evaluations": 2365,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((p * h) - (q * w)) + q)",
+      "solution_size": 9
+    },
+    {
+      "seed": 57,
+      "arm": "crossover",
+      "evaluations": 1040,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(q + (((((1 : Rat)/2) - (((1 : Rat)/2) + w)) * q) + (p * h)))",
+      "solution_size": 13
+    },
+    {
+      "seed": 58,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 58,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "385291/12600",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 59,
+      "arm": "mutation_only",
+      "evaluations": 1252,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) + ((q - (((1 : Rat) + w) - q)) + (((1 : Rat) - q) * ((1 : Rat) + w))))",
+      "solution_size": 19
+    },
+    {
+      "seed": 59,
+      "arm": "crossover",
+      "evaluations": 1387,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((1 : Rat) - w) * q) + (h * p))",
+      "solution_size": 9
+    },
+    {
+      "seed": 60,
+      "arm": "mutation_only",
+      "evaluations": 448,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((h + (2 : Rat)) * p) + (q - (q * w))) - (p + p))",
+      "solution_size": 15
+    },
+    {
+      "seed": 60,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 9
+    },
+    {
+      "seed": 61,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 61,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 62,
+      "arm": "mutation_only",
+      "evaluations": 972,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q * ((1 : Rat) - w)) + (p * h))",
+      "solution_size": 9
+    },
+    {
+      "seed": 62,
+      "arm": "crossover",
+      "evaluations": 932,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((q + q) - ((q + q) - q)) - (w * q)) + ((p * (1 : Rat)) * h))",
+      "solution_size": 19
+    },
+    {
+      "seed": 63,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 63,
+      "arm": "crossover",
+      "evaluations": 1275,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((2 : Rat) - (q * w)) + (((p * h) - (2 : Rat)) - ((1 : Rat) - (q + (1 : Rat)))))",
+      "solution_size": 17
+    },
+    {
+      "seed": 64,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "12773/700",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 64,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 65,
+      "arm": "mutation_only",
+      "evaluations": 3303,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((((q + q) - (q * w)) - (q * w)) + (p * (h + ((h * (1 : Rat)) * (1 : Rat))))) * ((1 : Rat)/2))",
+      "solution_size": 23
+    },
+    {
+      "seed": 65,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "36689/1050",
+      "solution_lean": null,
+      "solution_size": 5
+    },
+    {
+      "seed": 66,
+      "arm": "mutation_only",
+      "evaluations": 1228,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h - (q * (w - ((h * h) * (p - p))))) - ((1 : Rat) * h)) + (q + (h * p)))",
+      "solution_size": 23
+    },
+    {
+      "seed": 66,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 67,
+      "arm": "mutation_only",
+      "evaluations": 860,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q - ((w * q) - p)) - ((p * ((1 : Rat)/2)) * (((2 : Rat) - h) - h)))",
+      "solution_size": 17
+    },
+    {
+      "seed": 67,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 68,
+      "arm": "mutation_only",
+      "evaluations": 351,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(q - ((w * q) - (h * p)))",
+      "solution_size": 9
+    },
+    {
+      "seed": 68,
+      "arm": "crossover",
+      "evaluations": 1012,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(q - (((((1 : Rat) - w) + (w + p)) * (((1 : Rat) - (1 : Rat)) - h)) - ((((1 : Rat) - (1 : Rat)) - h) - (q * w))))",
+      "solution_size": 25
+    },
+    {
+      "seed": 69,
+      "arm": "mutation_only",
+      "evaluations": 817,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(q - ((w * (q * (1 : Rat))) - (p * h)))",
+      "solution_size": 11
+    },
+    {
+      "seed": 69,
+      "arm": "crossover",
+      "evaluations": 156,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(q - ((q * w) - (p * h)))",
+      "solution_size": 9
+    },
+    {
+      "seed": 70,
+      "arm": "mutation_only",
+      "evaluations": 739,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * h) - ((q * w) - q))",
+      "solution_size": 9
+    },
+    {
+      "seed": 70,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "44108/1575",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 71,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "85069/3600",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 71,
+      "arm": "crossover",
+      "evaluations": 987,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((1 : Rat) * (p * h)) + (q + ((q + ((h - h) * ((1 : Rat)/2))) * (((1 : Rat)/2) - (w + ((1 : Rat)/2))))))",
+      "solution_size": 21
+    },
+    {
+      "seed": 72,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "149357/5880",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 72,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "416329/12600",
+      "solution_lean": null,
+      "solution_size": 9
+    },
+    {
+      "seed": 73,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "45323/1800",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 73,
+      "arm": "crossover",
+      "evaluations": 1132,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((h * p) + q) - (q + (q * w))) + q)",
+      "solution_size": 13
+    },
+    {
+      "seed": 74,
+      "arm": "mutation_only",
+      "evaluations": 1154,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * h) + (q * ((1 : Rat) - w)))",
+      "solution_size": 9
+    },
+    {
+      "seed": 74,
+      "arm": "crossover",
+      "evaluations": 889,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q * (((1 : Rat) - ((1 : Rat)/2)) * (2 : Rat))) - ((w * q) - ((p * h) * (((1 : Rat)/2) + ((1 : Rat)/2)))))",
+      "solution_size": 19
+    },
+    {
+      "seed": 75,
+      "arm": "mutation_only",
+      "evaluations": 1801,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * p) - (w * q)) - (q - ((2 : Rat) * q)))",
+      "solution_size": 13
+    },
+    {
+      "seed": 75,
+      "arm": "crossover",
+      "evaluations": 1703,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((1 : Rat) - w) * q) + (h * p))",
+      "solution_size": 9
+    },
+    {
+      "seed": 76,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 76,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "83479/2520",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 77,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1459/70",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 77,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 78,
+      "arm": "mutation_only",
+      "evaluations": 271,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((((1 : Rat)/2) * (1 : Rat)) + (h * p)) - ((q * w) + (((1 : Rat)/2) - q)))",
+      "solution_size": 15
+    },
+    {
+      "seed": 78,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 79,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "19493/630",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 79,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1699/50",
+      "solution_lean": null,
+      "solution_size": 7
+    },
+    {
+      "seed": 80,
+      "arm": "mutation_only",
+      "evaluations": 762,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) + ((q - q) + (q - (q * w))))",
+      "solution_size": 13
+    },
+    {
+      "seed": 80,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "4517/420",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 81,
+      "arm": "mutation_only",
+      "evaluations": 2025,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(q + ((h * p) - (((((1 : Rat)/2) - ((1 : Rat)/2)) * (h + h)) + (w * q))))",
+      "solution_size": 17
+    },
+    {
+      "seed": 81,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "40883/1260",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 82,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "163993/6300",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 82,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "131431/4200",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 83,
+      "arm": "mutation_only",
+      "evaluations": 2440,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) - (q * (w - (1 : Rat))))",
+      "solution_size": 9
+    },
+    {
+      "seed": 83,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "55333/2100",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 84,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 84,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "416329/12600",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 85,
+      "arm": "mutation_only",
+      "evaluations": 1892,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((q + ((2 : Rat) - (1 : Rat))) - (q * w)) - (1 : Rat)) + (h * p))",
+      "solution_size": 15
+    },
+    {
+      "seed": 85,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 86,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 86,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 87,
+      "arm": "mutation_only",
+      "evaluations": 1314,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) - (q * (w - (1 : Rat))))",
+      "solution_size": 9
+    },
+    {
+      "seed": 87,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 88,
+      "arm": "mutation_only",
+      "evaluations": 3244,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((q * ((1 : Rat) - w)) + ((1 : Rat) * ((1 : Rat) - ((h - h) * (p - q))))) + (h * p)) - (1 : Rat))",
+      "solution_size": 23
+    },
+    {
+      "seed": 88,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "416329/12600",
+      "solution_lean": null,
+      "solution_size": 9
+    },
+    {
+      "seed": 89,
+      "arm": "mutation_only",
+      "evaluations": 1028,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((2 : Rat) - w) * q) - (q - (p * h)))",
+      "solution_size": 11
+    },
+    {
+      "seed": 89,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1069897/47040",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 90,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 90,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "3/2",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 91,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "106081/4200",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 91,
+      "arm": "crossover",
+      "evaluations": 1928,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) - (((q * w) + ((q * (q - q)) * (1 : Rat))) - q))",
+      "solution_size": 17
+    },
+    {
+      "seed": 92,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 92,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 93,
+      "arm": "mutation_only",
+      "evaluations": 2929,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((p + (1 : Rat)) * h) - ((q * w) + (h - q)))",
+      "solution_size": 13
+    },
+    {
+      "seed": 93,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 94,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 94,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "336019/12600",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 95,
+      "arm": "mutation_only",
+      "evaluations": 619,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * p) - (((1 : Rat) - (1 : Rat)) + (q * w))) + q)",
+      "solution_size": 13
+    },
+    {
+      "seed": 95,
+      "arm": "crossover",
+      "evaluations": 3953,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((((h * p) - q) + (q * (((1 : Rat) - (1 : Rat)) - (w + ((1 : Rat) - (1 : Rat)))))) + q) + (q * (1 : Rat)))",
+      "solution_size": 23
+    },
+    {
+      "seed": 96,
+      "arm": "mutation_only",
+      "evaluations": 1189,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((((1 : Rat) - w) * q) - ((w - w) * (2 : Rat))) - (((w - (w - w)) - w) - (h * p)))",
+      "solution_size": 23
+    },
+    {
+      "seed": 96,
+      "arm": "crossover",
+      "evaluations": 1429,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q + (((1 : Rat)/2) - (w * q))) - (((1 : Rat)/2) - (h * p)))",
+      "solution_size": 13
+    },
+    {
+      "seed": 97,
+      "arm": "mutation_only",
+      "evaluations": 504,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * p) - ((2 : Rat) + ((w * q) - (2 : Rat)))) + q)",
+      "solution_size": 13
+    },
+    {
+      "seed": 97,
+      "arm": "crossover",
+      "evaluations": 1281,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * p) - (((q * w) - h) + ((h - q) + p))) + p)",
+      "solution_size": 17
+    },
+    {
+      "seed": 98,
+      "arm": "mutation_only",
+      "evaluations": 2207,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((p * ((((1 : Rat)/2) - ((1 : Rat)/2)) + ((1 : Rat) * h))) - (((q * (1 : Rat)) * w) - q)) + (q - q))",
+      "solution_size": 21
+    },
+    {
+      "seed": 98,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "16723/600",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 99,
+      "arm": "mutation_only",
+      "evaluations": 2096,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) + ((((((1 : Rat) * (1 : Rat)) * (h - h)) + (2 : Rat)) - (w - ((((1 : Rat)/2) - ((1 : Rat)/2)) - w))) * (((1 : Rat)/2) * q)))",
+      "solution_size": 25
+    },
+    {
+      "seed": 99,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "6",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 100,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "19493/630",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 100,
+      "arm": "crossover",
+      "evaluations": 1142,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((p * h) - (p + ((((1 : Rat)/2) - (((1 : Rat) + q) - ((1 : Rat)/2))) - p))) - (q * w))",
+      "solution_size": 19
+    },
+    {
+      "seed": 101,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "74993/2940",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 101,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 102,
+      "arm": "mutation_only",
+      "evaluations": 1420,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) + (((1 : Rat) - w) * q))",
+      "solution_size": 9
+    },
+    {
+      "seed": 102,
+      "arm": "crossover",
+      "evaluations": 1298,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * p) - (p + (q * w))) + (p + ((1 : Rat) * q)))",
+      "solution_size": 15
+    },
+    {
+      "seed": 103,
+      "arm": "mutation_only",
+      "evaluations": 551,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(q - ((q * w) - (h * p)))",
+      "solution_size": 9
+    },
+    {
+      "seed": 103,
+      "arm": "crossover",
+      "evaluations": 3255,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((((1 : Rat)/2) * q) * (((1 : Rat) - w) - w)) - (((((1 : Rat)/2) * q) - q) - (h * p)))",
+      "solution_size": 19
+    },
+    {
+      "seed": 104,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 104,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "27119/840",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 105,
+      "arm": "mutation_only",
+      "evaluations": 2036,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((((1 : Rat)/2) + ((p * h) - (((1 : Rat)/2) - (p - p)))) + (((1 : Rat)/2) - (1 : Rat))) - ((w * q) - (((1 : Rat)/2) + q)))",
+      "solution_size": 23
+    },
+    {
+      "seed": 105,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "416329/12600",
+      "solution_lean": null,
+      "solution_size": 7
+    },
+    {
+      "seed": 106,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "37581/2800",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 106,
+      "arm": "crossover",
+      "evaluations": 2385,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((p * h) + (q * (((w * ((1 : Rat)/2)) - w) - (w * ((1 : Rat)/2))))) + q)",
+      "solution_size": 17
+    },
+    {
+      "seed": 107,
+      "arm": "mutation_only",
+      "evaluations": 596,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * h) - ((w * q) - (q * (1 : Rat))))",
+      "solution_size": 11
+    },
+    {
+      "seed": 107,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1306/105",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 108,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 108,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "7004/315",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 109,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "416329/12600",
+      "solution_lean": null,
+      "solution_size": 9
+    },
+    {
+      "seed": 109,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 110,
+      "arm": "mutation_only",
+      "evaluations": 1573,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * p) + (((1 : Rat)/2) * ((q * (1 : Rat)) - q))) + ((q - ((q * w) + ((1 : Rat)/2))) + ((1 : Rat)/2)))",
+      "solution_size": 21
+    },
+    {
+      "seed": 110,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 111,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "416329/12600",
+      "solution_lean": null,
+      "solution_size": 7
+    },
+    {
+      "seed": 111,
+      "arm": "crossover",
+      "evaluations": 2176,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((p * (1 : Rat)) * h) + ((((1 : Rat)/2) - ((1 : Rat)/2)) * (w - (1 : Rat)))) + (((1 : Rat) - w) * q))",
+      "solution_size": 19
+    },
+    {
+      "seed": 112,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "191579/6300",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 112,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 113,
+      "arm": "mutation_only",
+      "evaluations": 921,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((p * (h + (2 : Rat))) + (q - p)) - p) - (w * q))",
+      "solution_size": 15
+    },
+    {
+      "seed": 113,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 114,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 9
+    },
+    {
+      "seed": 114,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1241069/44100",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 115,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "265211/11760",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 115,
+      "arm": "crossover",
+      "evaluations": 2631,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((2 : Rat) * ((1 : Rat)/2)) * ((p * h) - ((q - q) - q))) - ((q * w) - ((q - q) * p)))",
+      "solution_size": 23
+    },
+    {
+      "seed": 116,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "416329/12600",
+      "solution_lean": null,
+      "solution_size": 7
+    },
+    {
+      "seed": 116,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "416329/12600",
+      "solution_lean": null,
+      "solution_size": 7
+    },
+    {
+      "seed": 117,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 117,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 118,
+      "arm": "mutation_only",
+      "evaluations": 828,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((1 : Rat) + h) * p) - (((p + p) - (q - (w * q))) - p))",
+      "solution_size": 17
+    },
+    {
+      "seed": 118,
+      "arm": "crossover",
+      "evaluations": 561,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q - (q + (w * q))) + (q + (h * p)))",
+      "solution_size": 13
+    },
+    {
+      "seed": 119,
+      "arm": "mutation_only",
+      "evaluations": 1164,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((q - (((q * w) * ((2 : Rat) - ((1 : Rat) * (1 : Rat)))) - h)) - (h - ((2 : Rat) - (1 : Rat)))) + ((h * p) - (1 : Rat)))",
+      "solution_size": 25
+    },
+    {
+      "seed": 119,
+      "arm": "crossover",
+      "evaluations": 690,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(q + ((h * p) - (q * w)))",
+      "solution_size": 9
+    },
+    {
+      "seed": 120,
+      "arm": "mutation_only",
+      "evaluations": 2145,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * p) + q) - ((((p - p) * (w + h)) * w) + (w * q)))",
+      "solution_size": 19
+    },
+    {
+      "seed": 120,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 9
+    },
+    {
+      "seed": 121,
+      "arm": "mutation_only",
+      "evaluations": 1354,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(q + ((w * ((((1 : Rat)/2) - ((1 : Rat)/2)) - q)) + (p * h)))",
+      "solution_size": 13
+    },
+    {
+      "seed": 121,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "385291/12600",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 122,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "54337/3600",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 122,
+      "arm": "crossover",
+      "evaluations": 994,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((q + q) + (p * h)) - (q * w)) - q)",
+      "solution_size": 13
+    },
+    {
+      "seed": 123,
+      "arm": "mutation_only",
+      "evaluations": 1365,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * h) - ((w * q) + (q - (q * (2 : Rat)))))",
+      "solution_size": 13
+    },
+    {
+      "seed": 123,
+      "arm": "crossover",
+      "evaluations": 3785,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) - ((q * (w - (1 : Rat))) + ((((1 : Rat)/2) + w) * (w - w))))",
+      "solution_size": 17
+    },
+    {
+      "seed": 124,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "416329/12600",
+      "solution_lean": null,
+      "solution_size": 7
+    },
+    {
+      "seed": 124,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 125,
+      "arm": "mutation_only",
+      "evaluations": 636,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q - (q * w)) + (p * h))",
+      "solution_size": 9
+    },
+    {
+      "seed": 125,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1699/50",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 126,
+      "arm": "mutation_only",
+      "evaluations": 471,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * h) - ((q * w) - q))",
+      "solution_size": 9
+    },
+    {
+      "seed": 126,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "2183/120",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 127,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 127,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "693/20",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 128,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1459/70",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 128,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "409823/12600",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 129,
+      "arm": "mutation_only",
+      "evaluations": 2879,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * h) - (((h - h) - q) + (w * q)))",
+      "solution_size": 13
+    },
+    {
+      "seed": 129,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 9
+    },
+    {
+      "seed": 130,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "385291/12600",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 130,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 131,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 131,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1429/70",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 132,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 9
+    },
+    {
+      "seed": 132,
+      "arm": "crossover",
+      "evaluations": 723,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((((1 : Rat) * ((2 : Rat) + q)) - (2 : Rat)) + ((h * p) + (h - h))) - (q * w))",
+      "solution_size": 19
+    },
+    {
+      "seed": 133,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "3722977/126000",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 133,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "302249/12600",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 134,
+      "arm": "mutation_only",
+      "evaluations": 1282,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((p * h) - ((((1 : Rat) - h) + (h * (1 : Rat))) - (((1 : Rat) - w) * (((1 : Rat)/2) + (q + ((1 : Rat)/2)))))) + w)",
+      "solution_size": 23
+    },
+    {
+      "seed": 134,
+      "arm": "crossover",
+      "evaluations": 1532,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((((p * h) - (w * q)) + q) - q) + q)",
+      "solution_size": 13
+    },
+    {
+      "seed": 135,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "4517/210",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 135,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "565309/25200",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 136,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "100813/5040",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 136,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 137,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "40883/2520",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 137,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 138,
+      "arm": "mutation_only",
+      "evaluations": 2464,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h + (h - h)) * p) + (q - (w * q)))",
+      "solution_size": 13
+    },
+    {
+      "seed": 138,
+      "arm": "crossover",
+      "evaluations": 1677,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((((w - w) * ((1 : Rat)/2)) + ((1 : Rat) - (1 : Rat))) + (p * h)) - ((w * q) - q))",
+      "solution_size": 19
+    },
+    {
+      "seed": 139,
+      "arm": "mutation_only",
+      "evaluations": 872,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((1 : Rat) * p) * h) - (((q * w) * (((1 : Rat)/2) + ((1 : Rat)/2))) - q))",
+      "solution_size": 15
+    },
+    {
+      "seed": 139,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 140,
+      "arm": "mutation_only",
+      "evaluations": 3069,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) - (((w - w) + (q * w)) - q))",
+      "solution_size": 13
+    },
+    {
+      "seed": 140,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "16723/600",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 141,
+      "arm": "mutation_only",
+      "evaluations": 653,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q + (p * h)) - ((q + q) * (((1 : Rat)/2) * w)))",
+      "solution_size": 13
+    },
+    {
+      "seed": 141,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 142,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "334387/10080",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 142,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "2017/210",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 143,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 143,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "336019/12600",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 144,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "385291/12600",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 144,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "177431/5880",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 145,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 145,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 146,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "25253/840",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 146,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "19493/630",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 147,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "27749/840",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 147,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "57137/2100",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 148,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "16723/600",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 148,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1277/60",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 149,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 149,
+      "arm": "crossover",
+      "evaluations": 1010,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q + (p * h)) - (q * w))",
+      "solution_size": 9
+    },
+    {
+      "seed": 150,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "693/20",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 150,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "46309/1680",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 151,
+      "arm": "mutation_only",
+      "evaluations": 1913,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((q * ((1 : Rat) - w)) + w) + (((1 : Rat) - (1 : Rat)) * ((1 : Rat)/2))) + ((h * p) - w))",
+      "solution_size": 19
+    },
+    {
+      "seed": 151,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "3",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 152,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "738763/25200",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 152,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 153,
+      "arm": "mutation_only",
+      "evaluations": 3086,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * (((2 : Rat) * ((1 : Rat)/2)) * (h + q))) - ((p * q) + (q * (w - (1 : Rat)))))",
+      "solution_size": 19
+    },
+    {
+      "seed": 153,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 154,
+      "arm": "mutation_only",
+      "evaluations": 942,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((((1 : Rat)/2) * q) + (((((1 : Rat)/2) - w) * q) + (p * h)))",
+      "solution_size": 13
+    },
+    {
+      "seed": 154,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "22277/840",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 155,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 155,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "385291/12600",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 156,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "37018/1575",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 156,
+      "arm": "crossover",
+      "evaluations": 2533,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) - (((((q - q) + ((((1 : Rat) + w) + w) * q)) - q) * ((1 : Rat)/2)) - q))",
+      "solution_size": 21
+    },
+    {
+      "seed": 157,
+      "arm": "mutation_only",
+      "evaluations": 1615,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q - (((q * w) - w) - (p * h))) - w)",
+      "solution_size": 13
+    },
+    {
+      "seed": 157,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "16073/525",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 158,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/72",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 158,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "133927/6300",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 159,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "34369/1008",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 159,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "14241037/504000",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 160,
+      "arm": "mutation_only",
+      "evaluations": 964,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q + (2 : Rat)) - ((((w * q) + ((1 : Rat) * (h - h))) - (h * p)) + (2 : Rat)))",
+      "solution_size": 19
+    },
+    {
+      "seed": 160,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "758101/26460",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 161,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "67499/2100",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 161,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "416329/12600",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 162,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 162,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 163,
+      "arm": "mutation_only",
+      "evaluations": 1411,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) + ((((2 : Rat) - w) - w) * (q * ((1 : Rat)/2))))",
+      "solution_size": 13
+    },
+    {
+      "seed": 163,
+      "arm": "crossover",
+      "evaluations": 533,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * h) - ((w * q) - q))",
+      "solution_size": 9
+    },
+    {
+      "seed": 164,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "4595/126",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 164,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 165,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "302249/25200",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 165,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/72",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 166,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 166,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "10487/315",
+      "solution_lean": null,
+      "solution_size": 7
+    },
+    {
+      "seed": 167,
+      "arm": "mutation_only",
+      "evaluations": 827,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((w + (((1 : Rat)/2) * ((((q + q) - w) - w) - (w - w)))) + ((h * (p * (1 : Rat))) - (q * w)))",
+      "solution_size": 25
+    },
+    {
+      "seed": 167,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 168,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1459/70",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 168,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 169,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 169,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 170,
+      "arm": "mutation_only",
+      "evaluations": 667,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((p * h) + (q - (w * q))) - (w - w))",
+      "solution_size": 13
+    },
+    {
+      "seed": 170,
+      "arm": "crossover",
+      "evaluations": 401,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((p * h) + ((p + (1 : Rat)) - ((w * q) + (p - ((1 : Rat) * q))))) - (1 : Rat))",
+      "solution_size": 19
+    },
+    {
+      "seed": 171,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "382211/12600",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 171,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 172,
+      "arm": "mutation_only",
+      "evaluations": 3623,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(q - ((w * q) - (p * ((w - w) + h))))",
+      "solution_size": 13
+    },
+    {
+      "seed": 172,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "196879/6300",
+      "solution_lean": null,
+      "solution_size": 23
+    },
+    {
+      "seed": 173,
+      "arm": "mutation_only",
+      "evaluations": 2542,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * h) + (((1 : Rat)/2) * (q * ((1 : Rat) - (((1 : Rat) - (2 : Rat)) + (w + w))))))",
+      "solution_size": 17
+    },
+    {
+      "seed": 173,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 174,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "85069/3600",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 174,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "302249/25200",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 175,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "416329/12600",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 175,
+      "arm": "crossover",
+      "evaluations": 1112,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q + ((q + (p * h)) - (q * w))) - q)",
+      "solution_size": 13
+    },
+    {
+      "seed": 176,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "40883/2520",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 176,
+      "arm": "crossover",
+      "evaluations": 348,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q - ((p - (p * h)) + (w * q))) - ((q - ((p - h) + (h * (1 : Rat)))) - q))",
+      "solution_size": 23
+    },
+    {
+      "seed": 177,
+      "arm": "mutation_only",
+      "evaluations": 1924,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * p) + q) - (q * w))",
+      "solution_size": 9
+    },
+    {
+      "seed": 177,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 178,
+      "arm": "mutation_only",
+      "evaluations": 1794,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * p) - ((q * w) - q)) + (p - p))",
+      "solution_size": 13
+    },
+    {
+      "seed": 178,
+      "arm": "crossover",
+      "evaluations": 1414,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((h * p) - (h - q)) - ((p - (h - (w * q))) - p))",
+      "solution_size": 17
+    },
+    {
+      "seed": 179,
+      "arm": "mutation_only",
+      "evaluations": 1707,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((q * ((1 : Rat) - (w - (1 : Rat)))) - q) + (h * p))",
+      "solution_size": 13
+    },
+    {
+      "seed": 179,
+      "arm": "crossover",
+      "evaluations": 340,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) + (q * ((1 : Rat) - w)))",
+      "solution_size": 9
+    },
+    {
+      "seed": 180,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 180,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 181,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "336019/12600",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 181,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "138497/5040",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 182,
+      "arm": "mutation_only",
+      "evaluations": 1251,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(q + ((h * p) + (((1 : Rat)/2) * (q * (q - (w + (q - (p - (w + p)))))))))",
+      "solution_size": 21
+    },
+    {
+      "seed": 182,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "622843/50400",
+      "solution_lean": null,
+      "solution_size": 25
+    },
+    {
+      "seed": 183,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "40183/1260",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 183,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 9
+    },
+    {
+      "seed": 184,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 184,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "36689/1050",
+      "solution_lean": null,
+      "solution_size": 5
+    },
+    {
+      "seed": 185,
+      "arm": "mutation_only",
+      "evaluations": 1056,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) - (q * (w - (1 : Rat))))",
+      "solution_size": 9
+    },
+    {
+      "seed": 185,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 186,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "416329/12600",
+      "solution_lean": null,
+      "solution_size": 7
+    },
+    {
+      "seed": 186,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 187,
+      "arm": "mutation_only",
+      "evaluations": 1043,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((h * p) + (q + ((((q * p) * (h - h)) * q) - ((w * q) * (1 : Rat)))))",
+      "solution_size": 21
+    },
+    {
+      "seed": 187,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 188,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 188,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 189,
+      "arm": "mutation_only",
+      "evaluations": 2869,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((p * h) + q) - ((1 : Rat) - (((1 : Rat)/2) * (((2 : Rat) - ((1 : Rat) - (1 : Rat))) - (((2 : Rat) * w) * q)))))",
+      "solution_size": 21
+    },
+    {
+      "seed": 189,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "302249/12600",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 190,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "268691/10500",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 190,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 11
+    },
+    {
+      "seed": 191,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "4030181/282240",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 191,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "19493/630",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 192,
+      "arm": "mutation_only",
+      "evaluations": 1739,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((q + ((((((h - w) - h) + w) - (w + w)) * q) * ((1 : Rat)/2))) + (p * (h * (1 : Rat))))",
+      "solution_size": 23
+    },
+    {
+      "seed": 192,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 193,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1277/60",
+      "solution_lean": null,
+      "solution_size": 7
+    },
+    {
+      "seed": 193,
+      "arm": "crossover",
+      "evaluations": 673,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((p * h) + p) - (((w * q) - q) + p))",
+      "solution_size": 13
+    },
+    {
+      "seed": 194,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 194,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "85069/3600",
+      "solution_lean": null,
+      "solution_size": 19
+    },
+    {
+      "seed": 195,
+      "arm": "mutation_only",
+      "evaluations": 1397,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((((1 : Rat)/2) * q) + (p * h)) + ((((1 : Rat)/2) - w) * q))",
+      "solution_size": 13
+    },
+    {
+      "seed": 195,
+      "arm": "crossover",
+      "evaluations": 2418,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * h) + (q - ((q * ((1 : Rat) * (w * (1 : Rat)))) * (1 : Rat))))",
+      "solution_size": 15
+    },
+    {
+      "seed": 196,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "40982287/1764000",
+      "solution_lean": null,
+      "solution_size": 21
+    },
+    {
+      "seed": 196,
+      "arm": "crossover",
+      "evaluations": 3901,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "(((1 : Rat) + w) + ((p * h) - ((((1 : Rat) + w) - q) + (w * q))))",
+      "solution_size": 17
+    },
+    {
+      "seed": 197,
+      "arm": "mutation_only",
+      "evaluations": 2422,
+      "solved": true,
+      "best_fitness": "0",
+      "solution_lean": "((p * h) + (((((1 : Rat)/2) * ((2 : Rat) + q)) - (1 : Rat)) + ((((1 : Rat)/2) - w) * q)))",
+      "solution_size": 17
+    },
+    {
+      "seed": 197,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1699/50",
+      "solution_lean": null,
+      "solution_size": 13
+    },
+    {
+      "seed": 198,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "17597/525",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 198,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "409823/12600",
+      "solution_lean": null,
+      "solution_size": 15
+    },
+    {
+      "seed": 199,
+      "arm": "mutation_only",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "1249/36",
+      "solution_lean": null,
+      "solution_size": 17
+    },
+    {
+      "seed": 199,
+      "arm": "crossover",
+      "evaluations": 4000,
+      "solved": false,
+      "best_fitness": "180839/12600",
+      "solution_lean": null,
+      "solution_size": 15
+    }
+  ],
+  "paired": [
+    {
+      "seed": 2,
+      "mutation_only": 2188,
+      "crossover": 2508,
+      "crossover_cheaper": false
+    },
+    {
+      "seed": 10,
+      "mutation_only": 104,
+      "crossover": 423,
+      "crossover_cheaper": false
+    },
+    {
+      "seed": 13,
+      "mutation_only": 1786,
+      "crossover": 1146,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 20,
+      "mutation_only": 351,
+      "crossover": 2406,
+      "crossover_cheaper": false
+    },
+    {
+      "seed": 26,
+      "mutation_only": 396,
+      "crossover": 1715,
+      "crossover_cheaper": false
+    },
+    {
+      "seed": 27,
+      "mutation_only": 838,
+      "crossover": 3745,
+      "crossover_cheaper": false
+    },
+    {
+      "seed": 32,
+      "mutation_only": 1700,
+      "crossover": 1630,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 36,
+      "mutation_only": 1505,
+      "crossover": 1246,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 39,
+      "mutation_only": 1467,
+      "crossover": 2720,
+      "crossover_cheaper": false
+    },
+    {
+      "seed": 43,
+      "mutation_only": 1589,
+      "crossover": 1698,
+      "crossover_cheaper": false
+    },
+    {
+      "seed": 49,
+      "mutation_only": 674,
+      "crossover": 1961,
+      "crossover_cheaper": false
+    },
+    {
+      "seed": 53,
+      "mutation_only": 1295,
+      "crossover": 1220,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 55,
+      "mutation_only": 2525,
+      "crossover": 951,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 57,
+      "mutation_only": 2365,
+      "crossover": 1040,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 59,
+      "mutation_only": 1252,
+      "crossover": 1387,
+      "crossover_cheaper": false
+    },
+    {
+      "seed": 62,
+      "mutation_only": 972,
+      "crossover": 932,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 68,
+      "mutation_only": 351,
+      "crossover": 1012,
+      "crossover_cheaper": false
+    },
+    {
+      "seed": 69,
+      "mutation_only": 817,
+      "crossover": 156,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 74,
+      "mutation_only": 1154,
+      "crossover": 889,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 75,
+      "mutation_only": 1801,
+      "crossover": 1703,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 95,
+      "mutation_only": 619,
+      "crossover": 3953,
+      "crossover_cheaper": false
+    },
+    {
+      "seed": 96,
+      "mutation_only": 1189,
+      "crossover": 1429,
+      "crossover_cheaper": false
+    },
+    {
+      "seed": 97,
+      "mutation_only": 504,
+      "crossover": 1281,
+      "crossover_cheaper": false
+    },
+    {
+      "seed": 102,
+      "mutation_only": 1420,
+      "crossover": 1298,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 103,
+      "mutation_only": 551,
+      "crossover": 3255,
+      "crossover_cheaper": false
+    },
+    {
+      "seed": 118,
+      "mutation_only": 828,
+      "crossover": 561,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 119,
+      "mutation_only": 1164,
+      "crossover": 690,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 123,
+      "mutation_only": 1365,
+      "crossover": 3785,
+      "crossover_cheaper": false
+    },
+    {
+      "seed": 134,
+      "mutation_only": 1282,
+      "crossover": 1532,
+      "crossover_cheaper": false
+    },
+    {
+      "seed": 138,
+      "mutation_only": 2464,
+      "crossover": 1677,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 163,
+      "mutation_only": 1411,
+      "crossover": 533,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 170,
+      "mutation_only": 667,
+      "crossover": 401,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 178,
+      "mutation_only": 1794,
+      "crossover": 1414,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 179,
+      "mutation_only": 1707,
+      "crossover": 340,
+      "crossover_cheaper": true
+    },
+    {
+      "seed": 195,
+      "mutation_only": 1397,
+      "crossover": 2418,
+      "crossover_cheaper": false
+    }
+  ],
+  "statistics": {
+    "solve_rate": {
+      "mutation_only": "94/200",
+      "crossover": "58/200",
+      "fisher_exact_two_sided_p": 0.00029829825347200506,
+      "significant_at_0.05": true
+    },
+    "paired_evaluations": {
+      "pairs": 35,
+      "crossover_cheaper_on": 18,
+      "sign_test_two_sided_p": 1.0,
+      "median_ratio": 0.9588477366255144,
+      "significant_at_0.05": false
+    },
+    "pre_registered_criterion": "crossover's paired median ratio must be <= 0.90 to support recombination",
+    "criterion_met": false
+  },
+  "conclusion": {
+    "headline": "Recombination does not help, and it significantly HURTS the probability of solving at all. Mutation-only solved 94/200 (47.0%) against crossover's 58/200 (29.0%), Fisher exact p = 2.98e-04.",
+    "the_two_measures_disagree_and_that_is_the_result": "Conditional on solving, crossover changes the evaluation count hardly at all (median ratio 0.959, cheaper on 18 of 35 pairs, sign test p = 1.000). So crossover does not make successful searches faster; it makes success less likely. That is the signature of a macromutation that destroys assembled structure rather than a recombination that transmits it, which is independently what hypothesis AR.H3-gp proposed on different evidence.",
+    "why_this_closes_the_line": "Papers F, G and H and hypothesis AR.H1-gp established that recombination is not DETECTABLE in evolved programs, because no heritable character carries it. This establishes the prior question from the other side: recombination does not HELP either. Both follow from one cause -- a program's contribution is not modular, so swapping subtrees is macromutation. Four independent refutations now agree.",
+    "honest_note_against_an_earlier_number_of_my_own": "At 48 seeds the paired median ratio was 1.500 on 10 pairs, which would have been reported as crossover being 50% more expensive. At 200 seeds and 35 pairs it is 0.959 and the sign test is p = 1.000. The small-n paired estimate did not replicate. The solve-rate difference, which was p = 0.147 at 48 seeds, is the measure that held up."
+  },
+  "not_established": [
+    "One grammar ({+,-,*} over h,w,q,p and three constants), one target rung (L3, size 9), one budget (4000 evaluations), one population scheme (steady-state, tournament of 3), one crossover rate (0.5). The result is about THIS search, not about recombination in general.",
+    "The arms' RNG streams diverge after the initial population, since the crossover arm consumes an extra draw for its crossover decision. Pairing is therefore on the initial population, not on the whole stream; 200 seeds is what carries the comparison rather than a matched trace.",
+    "The discriminating rung was chosen by a pooled-solve-rate band of [0.3, 0.7] fixed in advance. Only L3 fell in it, so there is no second rung to check the result against.",
+    "The full Verlet target (L6, size 17) was solved 0/16 by both arms at this budget, so nothing is established at the size the rung-2 gate actually cares about."
+  ]
+}

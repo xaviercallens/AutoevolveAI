@@ -10,10 +10,8 @@ to Redis LTM for post-processing distillation.
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import os
-import time
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -41,14 +39,16 @@ class ClusterConfig:
     workers: list[JuniorWorker] = field(default_factory=list)
     escalate_on_error: bool = True
     escalate_on_complexity_threshold: int = 15  # Cyclomatic complexity or token threshold
+    frontier_model: str = "gemini-4-argon"
+    frontier_fallback_model: str = "gemini-3.8-flash"
     frontier_stream_key: str = "antigravity:stream:frontier_distillation"
 
 
 class JuniorClusterRouter:
     """
     Manages load balancing across junior models and transparently escalates
-    to Frontier models (Gemini 3.1 Pro / Claude 3.7 Sonnet / Opus) when complexity
-    or retry counts require frontier reasoning.
+    to Frontier models (Gemini 4 Argon `gemini-4-argon` / Gemini 3.1 Pro / Gemini 3.8 Flash)
+    when complexity, cyber-hardening requirements, or retry counts require frontier reasoning.
     """
 
     def __init__(self, config: ClusterConfig | None = None) -> None:
@@ -61,6 +61,7 @@ class JuniorClusterRouter:
         local_url = os.getenv("LOCAL_INFERENCE_URL", "http://localhost:8000/v1/chat/completions")
         local_model = os.getenv("LOCAL_MODEL_NAME", "antigravity-local")
         fallback_model = os.getenv("MODEL_EXECUTION", "gemini-3.8-flash")
+        frontier_model = os.getenv("MODEL_FRONTIER", "gemini-4-argon")
         
         workers = [
             JuniorWorker(
@@ -76,10 +77,14 @@ class JuniorClusterRouter:
                 max_concurrency=16,
             ),
         ]
-        return ClusterConfig(workers=workers)
+        return ClusterConfig(
+            workers=workers,
+            frontier_model=frontier_model,
+            frontier_fallback_model=fallback_model,
+        )
 
     def is_complex_task(self, prompt: str) -> bool:
-        """Determines if a task exceeds Junior capabilities and requires a Frontier model."""
+        """Determines if a task exceeds Junior capabilities and requires a Frontier model (Gemini 4 Argon)."""
         prompt_lower = prompt.lower()
         complexity_indicators = [
             "architect",
@@ -91,6 +96,12 @@ class JuniorClusterRouter:
             "symplect",
             "quantum",
             "tensor dimension mismatch",
+            "cyber",
+            "harden",
+            "zero-trust",
+            "sandbox",
+            "vulnerability",
+            "attestation",
         ]
         # Check explicit keywords or prompt length
         if any(ci in prompt_lower for ci in complexity_indicators):
@@ -98,6 +109,19 @@ class JuniorClusterRouter:
         if len(prompt.split()) > 600:
             return True
         return False
+
+    def get_frontier_target(self, prompt: str) -> dict[str, Any]:
+        """Return the frontier escalation model descriptors for complex or cyber-hardening tasks."""
+        from antigravity_harness.core.argos_hardener import resolve_gemini_argos_model
+
+        escalate = self.is_complex_task(prompt)
+        primary = resolve_gemini_argos_model(self.config.frontier_model)
+        return {
+            "escalate_to_frontier": escalate,
+            "primary_model": primary if escalate else self.config.frontier_fallback_model,
+            "fallback_model": self.config.frontier_fallback_model,
+            "stream_key": self.config.frontier_stream_key,
+        }
 
     async def select_best_worker(self) -> JuniorWorker | None:
         """Least-connections load balancing across healthy junior workers."""

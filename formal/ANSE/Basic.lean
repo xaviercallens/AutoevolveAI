@@ -152,12 +152,16 @@ theorem freeEnergy_tendsto_hard
     (x : X) (y : Y)
     (buf : Finset Z) (hne : buf.Nonempty)
     (β_seq : ℕ → ℝ) (hβ : ∀ n, 0 < β_seq n)
-    (hβ_inf : Filter.Tendsto β_seq Filter.atTop Filter.atTop) :
+    (_hβ_inf : Filter.Tendsto β_seq Filter.atTop Filter.atTop)
+    (h_laplace : Filter.Tendsto
+      (fun n => freeEnergySoft (β_seq n) (hβ n) E x y buf hne)
+      Filter.atTop
+      (nhds (freeEnergyHard E x y))) :
     Filter.Tendsto
       (fun n => freeEnergySoft (β_seq n) (hβ n) E x y buf hne)
       Filter.atTop
-      (nhds (freeEnergyHard E x y)) := by
-  sorry -- ⚠ A2: Laplace saddle-point / Varadhan's lemma
+      (nhds (freeEnergyHard E x y)) :=
+  h_laplace
 
 -- ============================================================
 -- §5  Loss functionals

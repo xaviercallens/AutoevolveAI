@@ -24,11 +24,84 @@ LEDGER_DIR = RES / "hypotheses" / "ledger"
 ELENCHUS = Path("/mnt/disks/disk-socrateai-local-1/SocrateAI-Scientific-Elenchus/tools/ledger.py")
 
 
+VALID_AUDITOR_KINDS = ("human", "model")
+
+
 def digest(path: Path) -> str:
     return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def claim(cid: str, statement: str, tier: str, kind: str, evidence: Path, deps: list[str] | None = None) -> dict[str, object]:
+def sha256_hex(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def resolve_audit(
+    audit: dict[str, object] | None,
+    *,
+    repo_root: Path = REPO,
+    refuse_stale: bool = False,
+) -> dict[str, object] | None:
+    """Validate an Elenchus audit object and bind it to the audited file's live SHA-256.
+
+    Every audit object must carry ``auditor_kind`` (``"human"`` or ``"model"``),
+    ``audited_file``, and ``audited_file_sha256`` (64-char hex digest). When the
+    file on disk differs from ``audited_file_sha256``, the audit is stale:
+    - If ``refuse_stale=True``, raises ``ValueError``.
+    - Otherwise returns ``None`` so a changed file yields ``audit: null`` in the ledger.
+    """
+    if audit is None:
+        return None
+    auditor_kind = audit.get("auditor_kind")
+    if auditor_kind not in VALID_AUDITOR_KINDS:
+        raise ValueError(
+            f"audit must carry auditor_kind in {VALID_AUDITOR_KINDS}, got {auditor_kind!r}"
+        )
+    audited_file = audit.get("audited_file")
+    if not isinstance(audited_file, str) or not audited_file.strip():
+        raise ValueError("audit must carry non-empty 'audited_file' path")
+    expected_sha = audit.get("audited_file_sha256")
+    if (
+        not isinstance(expected_sha, str)
+        or len(expected_sha) != 64
+        or any(ch not in "0123456789abcdef" for ch in expected_sha)
+    ):
+        raise ValueError(
+            f"audit must carry 64-hex 'audited_file_sha256', got {expected_sha!r}"
+        )
+    target = Path(audited_file)
+    if not target.is_absolute():
+        target = repo_root / target
+    if not target.exists():
+        if refuse_stale:
+            raise ValueError(f"audited_file does not exist: {target}")
+        return None
+    live_sha = sha256_hex(target)
+    if live_sha != expected_sha:
+        if refuse_stale:
+            raise ValueError(
+                f"stale audit sha256 for {audited_file}: audit has {expected_sha}, live file has {live_sha}"
+            )
+        return None
+    return dict(audit)
+
+
+def claim(
+    cid: str,
+    statement: str,
+    tier: str,
+    kind: str,
+    evidence: Path,
+    deps: list[str] | None = None,
+    audit: dict[str, object] | None = None,
+    *,
+    repo_root: Path = REPO,
+    refuse_stale_audit: bool = False,
+) -> dict[str, object]:
+    ev_rel = (
+        str(evidence.relative_to(repo_root))
+        if evidence.is_relative_to(repo_root)
+        else str(evidence)
+    )
     return {
         "schema_version": 1,
         "id": cid,
@@ -37,8 +110,8 @@ def claim(cid: str, statement: str, tier: str, kind: str, evidence: Path, deps: 
         "kind": kind,
         "depends_on": deps or [],
         "evidence": digest(evidence),
-        "audit": None,
-        "_evidence_path": str(evidence.relative_to(REPO)),
+        "audit": resolve_audit(audit, repo_root=repo_root, refuse_stale=refuse_stale_audit),
+        "_evidence_path": ev_rel,
     }
 
 

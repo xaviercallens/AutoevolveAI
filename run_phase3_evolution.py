@@ -128,7 +128,7 @@ class Bench:
 
         self.critic = None
         critic_model_arg = getattr(args, "critic_model", None)
-        if critic_model_arg:
+        if critic_model_arg and "5" in args.uc:
             try:
                 from anse.guard.critic import NeuralEnergyCritic
 
@@ -599,6 +599,106 @@ class Bench:
             flush=True,
         )
 
+    # ── UC7 ──────────────────────────────────────────────────────────────────
+    def uc7_alphaevolve_biomimetic(self) -> None:
+        """UC7: AlphaEvolve + Genetic Algorithm + Biomimetic MAP-Elites Evolution Workflow."""
+        from anse.autopoiesis.alphaevolve_biomimetic import (
+            MAX_APOPTOSIS_ENERGY,
+            AlphaEvolveBiomimeticEngine,
+        )
+
+        hv = self.hypervisor("uc7")
+        rows: list[dict[str, Any]] = []
+
+        for c in self.components:
+            comp_name = c["name"]
+            parent_code = c["parent"]
+            fast_code = c["child_fast"]
+            wrong_code = c["child_wrong"]
+            diff_proposal = (
+                f"<<<<<<< SEARCH\n{parent_code.strip()}\n=======\n{fast_code.strip()}\n>>>>>>> REPLACE"
+            )
+
+            def _sandbox_eval(code: str, comp: dict[str, Any] = c) -> dict[str, float]:
+                if hv.blocked_imports(code):
+                    return {
+                        "physical_energy": MAX_APOPTOSIS_ENERGY,
+                        "latency_ms": 9999.0,
+                        "memory_mb": 0.0,
+                        "invariant_error": 1.0,
+                    }
+                report = hv.run_hidden_tests(code, comp["tests"])
+                if report is None or not report.all_passed or report.total != len(comp["tests"]):
+                    return {
+                        "physical_energy": MAX_APOPTOSIS_ENERGY,
+                        "latency_ms": 9999.0,
+                        "memory_mb": 0.0,
+                        "invariant_error": 1.0,
+                    }
+                sample = hv.measure_once(code, comp["workload"])
+                if not sample.valid:
+                    return {
+                        "physical_energy": MAX_APOPTOSIS_ENERGY,
+                        "latency_ms": 9999.0,
+                        "memory_mb": 0.0,
+                        "invariant_error": 1.0,
+                    }
+                return {
+                    "physical_energy": float(sample.energy),
+                    "latency_ms": float(sample.duration_ms),
+                    "memory_mb": float(sample.peak_ram_mb),
+                    "invariant_error": 0.0,
+                }
+
+            engine = AlphaEvolveBiomimeticEngine(
+                evaluator_fn=_sandbox_eval,
+                num_islands=2,
+                migration_interval=1,
+                seed=self.args.fuzz_seed,
+            )
+
+            # Verify wrong child triggers apoptosis (E = 10^6)
+            wrong_eval = _sandbox_eval(wrong_code)
+            wrong_rejected = wrong_eval["physical_energy"] >= MAX_APOPTOSIS_ENERGY * 0.5
+
+            evo_res = engine.run_evolution_with_hardened_gate(
+                initial_codes=[parent_code],
+                generations=1,
+                candidate_proposals=[diff_proposal, wrong_code],
+            )
+            champion_code = evo_res["champion"]["dominant_code"]
+            decision = hv.evolve(comp_name, champion_code, c["tests"], c["workload"])
+            ora = self.oracle(hv, c, hv.registry.active_code(comp_name))
+
+            row = {
+                **self.decision_row(decision),
+                "baseline_biomimetic_energy": round(float(evo_res["baseline_energy"]), 3),
+                "champion_biomimetic_energy": round(float(evo_res["champion_energy"]), 3),
+                "delta_biomimetic_energy": round(float(evo_res["delta_energy"]), 3),
+                "archive_total_elites": int(evo_res["archive_total_elites"]),
+                "wrong_child_apoptosis": wrong_rejected,
+                "hardened_gate_promoted": bool(evo_res["promoted"]),
+                **ora,
+            }
+            rows.append(row)
+            print(
+                f"  {comp_name:18s} promoted={decision.promoted} speedup={row['speedup']}x "
+                f"delta_E={row['delta_biomimetic_energy']:+.2f} elites={row['archive_total_elites']} "
+                f"oracle={ora['oracle_mismatches']}/{ora['oracle_inputs']}",
+                flush=True,
+            )
+
+        self.results["uc7"] = {
+            "title": "AlphaEvolve + Biomimetic MAP-Elites evolution workflow",
+            "components": len(rows),
+            "promoted": sum(r["promoted"] for r in rows),
+            "hardened_gate_promoted": sum(r["hardened_gate_promoted"] for r in rows),
+            "wrong_children_apoptosis": sum(r["wrong_child_apoptosis"] for r in rows),
+            "live_versions_agreeing_with_held_out_oracle": sum(r["oracle_agrees"] for r in rows),
+            "rows": rows,
+        }
+        self.checkpoint()
+
     def checkpoint_partial(self, key: str, rows: list[dict[str, Any]]) -> None:
         """LLM calls are slow: keep finished proposals on disk even if the run is interrupted."""
         (self.out / f"{key}_partial_rows.json").write_text(json.dumps(rows, indent=2))
@@ -645,6 +745,16 @@ class Bench:
         if "uc6" in r:
             checks["G6 prompt strategy registry component supports swap and rollback (Directive D8)"] = (
                 r["uc6"]["success"]
+            )
+        if "uc7" in r:
+            u = r["uc7"]
+            checks[
+                "G7 AlphaEvolve + Biomimetic MAP-Elites workflow promotes faster elites, triggers apoptosis on wrong children, and agrees on held-out oracle"
+            ] = (
+                u["components"] > 0
+                and u["promoted"] == u["components"]
+                and u["wrong_children_apoptosis"] == u["components"]
+                and u["live_versions_agreeing_with_held_out_oracle"] == u["components"]
             )
         r["gate"] = checks
         n_passed = sum(checks.values())
@@ -706,6 +816,7 @@ def main() -> int:
         "4": bench.uc4_rollback,
         "5": bench.uc5_llm_evolution,
         "6": bench.uc6_prompt_strategy_swap,
+        "7": bench.uc7_alphaevolve_biomimetic,
     }
     for uc in args.uc:
         print(f"\n=== UC{uc} ===", flush=True)

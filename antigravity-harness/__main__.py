@@ -124,6 +124,7 @@ def cmd_triage(args: argparse.Namespace) -> int:
 
 def cmd_decision(args: argparse.Namespace) -> int:
     import json
+
     from anse.decision.kev_engine import KevDecisionEngine
 
     report_path = Path(args.report) if args.report else None
@@ -162,6 +163,109 @@ def cmd_decision(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_harden(args: argparse.Namespace) -> int:
+    import json
+
+    from antigravity_harness.core.argos_hardener import (
+        ArgosHardeningConfig,
+        ArgosHardeningEngine,
+        resolve_gemini_argos_model,
+    )
+
+    resolved_model = resolve_gemini_argos_model(args.model)
+    cfg = ArgosHardeningConfig(primary_model=resolved_model)
+    engine = ArgosHardeningEngine(config=cfg)
+    target = Path(args.target)
+
+    print(f"==> Running Gemini Argos ({resolved_model}) Hardening Gate on '{target}'...")
+    reports = engine.audit_path(target, include_tests=args.include_tests)
+    if not reports:
+        print(f"⚠️ No Python files found under '{target}'.")
+        return 1
+
+    passed_count = sum(1 for r in reports if r.passed)
+    failed_reports = [r for r in reports if not r.passed]
+
+    for r in reports:
+        if not r.passed or len(reports) <= 10:
+            print(r.summary)
+
+    print(
+        f"\n==> Argos Hardening Summary: {passed_count}/{len(reports)} file(s) passed "
+        f"(Model: {resolved_model}, Failed: {len(failed_reports)})."
+    )
+
+    if args.json_out:
+        out_path = Path(args.json_out)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "model_id": resolved_model,
+            "total_files": len(reports),
+            "passed_files": passed_count,
+            "failed_files": len(failed_reports),
+            "all_passed": len(failed_reports) == 0,
+            "reports": [r.to_dict() for r in reports],
+        }
+        out_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        print(f"==> Saved Argos hardening telemetry to '{out_path}'.")
+
+    return 0 if len(failed_reports) == 0 else 1
+
+
+def cmd_alphaevolve(args: argparse.Namespace) -> int:
+    import json
+
+    from anse.autopoiesis.alphaevolve_biomimetic import AlphaEvolveBiomimeticEngine
+
+    target = Path(args.target)
+    if not target.is_file():
+        print(f"❌ Target file '{target}' does not exist.")
+        return 1
+
+    seed_code = target.read_text(encoding="utf-8")
+
+    def _default_evaluator(code: str) -> dict[str, float]:
+        # Deterministic AST + physical complexity proxy when no custom benchmark runner is attached
+        import ast
+
+        tree = ast.parse(code)
+        node_count = sum(1 for _ in ast.walk(tree))
+        loop_count = sum(1 for n in ast.walk(tree) if isinstance(n, (ast.For, ast.While)))
+        phys_e = float(node_count) * 0.5 + float(loop_count) * 8.0
+        return {
+            "physical_energy": phys_e,
+            "latency_ms": phys_e * 0.2,
+            "memory_mb": 1.5,
+            "invariant_error": 0.0,
+        }
+
+    engine = AlphaEvolveBiomimeticEngine(
+        evaluator_fn=_default_evaluator,
+        num_islands=args.islands,
+        seed=args.seed,
+    )
+    print(
+        f"==> Running AlphaEvolve + Biomimetic Evolution on '{target}' "
+        f"(islands={args.islands}, generations={args.generations})..."
+    )
+    res = engine.run_evolution_with_hardened_gate(
+        initial_codes=[seed_code],
+        generations=args.generations,
+    )
+    print(
+        f"==> Baseline Energy: {res['baseline_energy']:.4f} | "
+        f"Champion Energy: {res['champion_energy']:.4f} | "
+        f"Delta E: {res['delta_energy']:+.4f} | "
+        f"Archive Elites: {res['archive_total_elites']}"
+    )
+    if args.json_out:
+        out_path = Path(args.json_out)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(res, indent=2) + "\n", encoding="utf-8")
+        print(f"==> Saved AlphaEvolve telemetry to '{out_path}'.")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="antigravity-harness",
@@ -185,6 +289,31 @@ def main() -> int:
     )
     p_audit.add_argument("target", help="File or directory path to audit")
     p_audit.add_argument("--include-tests", action="store_true", help="Include test files in audit")
+
+    # harden (Gemini Argos / gemini-4-argon)
+    p_harden = subparsers.add_parser(
+        "harden",
+        help="Run Google Gemini Argos (gemini-4-argon) cyber-defense, anti-stub, and attestation hardening gate",
+    )
+    p_harden.add_argument("target", help="File or directory path to harden")
+    p_harden.add_argument(
+        "--model",
+        default="gemini-4-argon",
+        help="Gemini model identifier or alias (e.g. gemini-4-argon, gemini-argos, gemini-3.8-flash)",
+    )
+    p_harden.add_argument("--include-tests", action="store_true", help="Include test files in hardening audit")
+    p_harden.add_argument("--json-out", default=None, help="Optional JSON output report path")
+
+    # alphaevolve
+    p_alphaevolve = subparsers.add_parser(
+        "alphaevolve",
+        help="Run AlphaEvolve + Genetic Algorithm + Biomimetic MAP-Elites evolution on a target Python file",
+    )
+    p_alphaevolve.add_argument("target", help="Python file to seed the AlphaEvolve archipelago")
+    p_alphaevolve.add_argument("--islands", type=int, default=3, help="Number of MAP-Elites islands")
+    p_alphaevolve.add_argument("--generations", type=int, default=5, help="Evolutionary generations")
+    p_alphaevolve.add_argument("--seed", type=int, default=42, help="Random seed")
+    p_alphaevolve.add_argument("--json-out", default=None, help="Optional JSON output report path")
 
     # verify
     p_verify = subparsers.add_parser(
@@ -229,6 +358,10 @@ def main() -> int:
         return cmd_decision(args)
     elif args.command == "audit":
         return cmd_audit(args)
+    elif args.command == "harden":
+        return cmd_harden(args)
+    elif args.command == "alphaevolve":
+        return cmd_alphaevolve(args)
     elif args.command == "triage":
         return cmd_triage(args)
     elif args.command == "verify":

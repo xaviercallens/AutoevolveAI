@@ -18,9 +18,32 @@ class DSPyLeanProver:
         # except-branch substituted a fake `True := by trivial` proof, so the
         # run-one "20/20 rejected" result measured the fallback, not the model.
         self.llm = APIExtractor(timeout_s=900.0, call_log_path=call_log_path)
-        # NOTE: DeepThinkAuditor's PRM check is simulated (canned PASS/REJECT
-        # strings). Its verdicts are not evidence; use lean_runner for truth.
         self.auditor = DeepThinkAuditor(extractor=self.llm)
+
+    @staticmethod
+    def _prepare_lean_source_for_kernel(lean_code: str) -> str:
+        """Ensure declared theorems carry `#print axioms <name>` for `lean_runner.verify_file`."""
+        from anse.formal.lean_runner import declared_theorems
+
+        code = lean_code.strip()
+        for thm in declared_theorems(code):
+            marker = f"#print axioms {thm}"
+            if marker not in code:
+                code = f"{code}\n{marker}\n"
+        return code
+
+    def verify_lean_code(self, lean_code: str) -> dict:
+        """Verify generated Lean 4 source via `lean_runner` (`LeanKernelVerifier.verify_file`)."""
+        import tempfile
+
+        prepared = self._prepare_lean_source_for_kernel(lean_code)
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".lean", delete=False, encoding="utf-8") as tmp:
+            tmp.write(prepared)
+            tmp_path = Path(tmp.name)
+        try:
+            return self.auditor.verify_with_lean_kernel(str(tmp_path))
+        finally:
+            tmp_path.unlink(missing_ok=True)
 
     def generate_proof(self, theorem_statement: str) -> dict:
         logger.info(f"Generating proof for: {theorem_statement}")
@@ -35,6 +58,8 @@ class DSPyLeanProver:
                 "theorem": theorem_statement,
                 "generated_code": "",
                 "audit_verdict": f"GENERATION_FAILED: {type(exc).__name__}",
+                "kernel_clean": False,
+                "kernel_theorems": [],
                 "thoughts": [],
             }
 
@@ -45,9 +70,9 @@ class DSPyLeanProver:
                 response, _ = self.llm.extract(prompt=rag_prompt, system_prompt="You are a RAG agent connected to LeanDojo.")
             except Exception as exc:
                 logger.error("Import repair failed for %s: %s", theorem_statement, exc)
-                
+
         # Improvement A: Semantic Typeclass Radar (Anti-Cheat Gate)
-        # Fast-fail before wasting tokens on Red Team
+        # Fast-fail before invoking Lean kernel
         is_geometry = "Gauss-Bonnet" in theorem_statement or "Manifold" in theorem_statement or "Riemann" in theorem_statement
         if is_geometry and "import Mathlib.Geometry" not in response:
             logger.warning("Semantic Radar Triggered: Heavy topology modules missing. Applying E=10^6 Penalty.")
@@ -55,25 +80,22 @@ class DSPyLeanProver:
                 "theorem": theorem_statement,
                 "generated_code": response,
                 "audit_verdict": "REJECT: EPISTEMIC CHEATING (SEMANTIC RADAR)",
-                "thoughts": ["<think>Intercepted by Semantic Typeclass Radar before Red Team evaluation. E=10^6.</think>"]
+                "kernel_clean": False,
+                "kernel_theorems": [],
+                "thoughts": ["<think>Intercepted by Semantic Typeclass Radar before kernel evaluation. E=10^6.</think>"],
             }
 
-        # 2. Epistemic Audit (Red Team)
-        state = {
-            "math_problem": theorem_statement,
-            "lean_code": response,
-            "python_metrics": {"energy": 0.05, "latency_ms": 1.2},
-            "thoughts": []
-        }
-        
-        audit_result = self.auditor.invoke(state)
-        logger.info(f"Audit Verdict: {audit_result['verdict']}")
-        
+        # 2. Ground-Truth Formal Verification via lean_runner (TODO 7)
+        kernel_result = self.verify_lean_code(response)
+        logger.info(f"Lean Runner Verdict: {kernel_result['verdict']}")
+
         return {
             "theorem": theorem_statement,
             "generated_code": response,
-            "audit_verdict": audit_result['verdict'],
-            "thoughts": audit_result['thoughts']
+            "audit_verdict": kernel_result["verdict"],
+            "kernel_clean": kernel_result["clean"],
+            "kernel_theorems": kernel_result["theorems"],
+            "thoughts": [],
         }
 
 def run_regeneration(num_problems: int = 10, call_log_path: str | Path | None = None):

@@ -1,0 +1,27 @@
+{
+  "campaign_id": "phase4_rust_numerical_kernels",
+  "subreddit": "r/rust",
+  "flair": "[P] Project / Discussion",
+  "title": "Why Do Numerical Solvers Allocate? Zero-Allocation Symplectic Integrators in Rust vs C PETSc",
+  "target_audience": "Systems programmers, scientific computing engineers, numerical simulation developers",
+  "post_body": "Why do standard numerical solvers trigger heap allocations in the inner step loop, and how can we eliminate this memory bottleneck in Rust?\n\nWhen integrating long-horizon Hamiltonian systems and stiff ODEs in Rust, eliminating dynamic heap allocations in the inner Newton-Krylov solver is essential to avoid memory bandwidth saturation and cache thrashing.\n\n### Architectural Constraints & Solutions\n1. Static Workspace Structure: Pass a contiguous `&mut [f64]` buffer slice into the integrator. All stage intermediates, Runge-Kutta vectors, and Krylov directions are mapped onto sub-slices with zero runtime allocations.\n2. In-Place CSR Sparse Pattern Reuse: Perform the sparsity symbolic analysis once during initialization. In subsequent Newton steps, update the Jacobian values slice in-place without touching index buffers.\n3. Symplectic Conservation: Enforcing symplectic phase-space volume preservation bounds Hamiltonian energy drift to |Delta H / H_0| < 1e-4 over millions of integration steps.\n\n### Boundary Limitations\nThe zero-allocation guarantee strictly applies to fixed-dimensional phase spaces. Non-periodic or adaptive mesh refinement (AMR) requires bounded buffer pooling.",
+  "submission_statement": "Submission Statement: Technical report on zero-allocation numerical kernels in Rust.\n\u2022 Preprint DOI: 10.5281/zenodo.23295142\n\u2022 Open-source verification benchmarks and code: https://github.com/xaviercallens/AutoevolveAI\n\u2022 Testing setup: Rust 1.80+ with AVX2 vectorization profiled under valgrind / DHAT.\n\u2022 AI Disclosure: Prepared following Terence Tao open science guidelines.",
+  "tactics": [
+    "No external links in the original post body.",
+    "All links relegated to the submission statement in the first comment.",
+    "Zero promotional hype ('our amazing library'); focus purely on Rust memory patterns and cache efficiency."
+  ],
+  "predicted_reach": "~15,000 - 30,000 views",
+  "reward_evaluation": {
+    "total_reward": 0.93,
+    "hook_score": 1.0,
+    "grounding_score": 1.0,
+    "modesty_score": 1.0,
+    "compliance_score": 0.85,
+    "resonance_score": 0.6,
+    "hype_violations": [],
+    "moderation_risk": 0.0,
+    "moderation_warnings": [],
+    "is_recommended": true
+  }
+}

@@ -25,6 +25,8 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconn
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from scripts.social_command_center import SocialMediaCommandCenter
+import os
 from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
@@ -83,6 +85,11 @@ app.add_middleware(
 )
 
 app.include_router(factory_router)
+
+from anse.gateway.openai_proxy import router as openai_router  # noqa: E402
+from anse.training.tpu_trainer import TPUTrainer, TPUTrainingConfig  # noqa: E402
+
+app.include_router(openai_router)
 
 executor = SandboxExecutor()
 evaluator = PerformanceEnergyEvaluator()
@@ -147,6 +154,30 @@ class CyberEngagementRequest(BaseModel):
     )
 
 
+
+@app.get("/smccc", response_class=HTMLResponse)
+async def smccc_ui():
+    return HTMLResponse(content='''<html><head><title>SMCCC Dashboard</title></head><body>
+    <h1 id="title">Social Media Communication Command Center</h1>
+    <button id="repair-btn" onclick="fetch('/api/smccc/repair', {method: 'POST'}).then(r => r.json()).then(d => document.getElementById('status').innerText = 'Karma: ' + d.karma)">Run Reputation Repair</button>
+    <button id="campaign-btn" onclick="fetch('/api/smccc/campaign', {method: 'POST'}).then(r => r.json()).then(d => document.getElementById('status').innerText = 'Success: ' + d.success)">Run Campaign</button>
+    <div id="status">Ready</div>
+    </body></html>''')
+
+@app.post("/api/smccc/repair")
+async def smccc_repair():
+    api_key = os.environ.get("STITCH_API_KEY", "TEST_KEY")
+    smccc = SocialMediaCommandCenter(api_key)
+    karma = await smccc.run_reputation_repair_protocol()
+    return {"karma": karma}
+
+@app.post("/api/smccc/campaign")
+async def smccc_campaign():
+    api_key = os.environ.get("STITCH_API_KEY", "TEST_KEY")
+    smccc = SocialMediaCommandCenter(api_key)
+    success = await smccc.run_dissemination_campaign()
+    return {"success": success}
+
 @app.get("/health")
 async def health_check() -> dict[str, str]:
     """Health check for Cloud Run / load balancers."""
@@ -185,6 +216,47 @@ async def serve_index() -> FileResponse:
     if not index_path.exists():
         raise HTTPException(status_code=404, detail="index.html not found")
     return FileResponse(index_path)
+
+
+@app.get("/studio", response_class=HTMLResponse)
+@app.get("/ollama", response_class=HTMLResponse)
+async def serve_ollama_studio() -> FileResponse:
+    studio_path = STATIC_DIR / "ollama_studio.html"
+    if not studio_path.exists():
+        raise HTTPException(status_code=404, detail="ollama_studio.html not found")
+    return FileResponse(studio_path)
+
+
+@app.get("/api/tpu/status")
+async def get_tpu_status() -> dict[str, Any]:
+    trainer = TPUTrainer()
+    return trainer.get_tpu_hardware_status()
+
+
+class TPUTrainRequest(BaseModel):
+    model_name: str = "qwen2.5-coder:1.5b"
+    adapter_name: str = "laya-tpu-lora"
+    lora_r: int = 16
+    lora_alpha: int = 32
+    epochs: int = 3
+    batch_size: int = 4
+    learning_rate: float = 2e-4
+
+
+@app.post("/api/tpu/train")
+async def run_tpu_training_job(req: TPUTrainRequest) -> dict[str, Any]:
+    cfg = TPUTrainingConfig(
+        model_name=req.model_name,
+        adapter_name=req.adapter_name,
+        lora_r=req.lora_r,
+        lora_alpha=req.lora_alpha,
+        epochs=req.epochs,
+        batch_size=req.batch_size,
+        learning_rate=req.learning_rate,
+    )
+    trainer = TPUTrainer(config=cfg)
+    summary = await anyio.to_thread.run_sync(trainer.run_training)
+    return summary.to_dict()
 
 
 @app.get("/papers/{filename}")

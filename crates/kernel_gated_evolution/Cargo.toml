@@ -1,0 +1,25 @@
+[package]
+name = "kernel_gated_evolution"
+version = "0.1.0"
+edition = "2021"
+license = "BSD-3-Clause"
+description = "Kernel-Gated Evolution: Darwinian mutation-selection over exact-rational expression genomes, with apoptotic one-sided checkpoints, exact per-locus dosage analysis, and a Lean 4 kernel as the final arbiter of survival"
+authors = ["Xavier Callens"]
+keywords = ["evolutionary-computation", "program-synthesis", "formal-verification", "lean4", "biomimetic"]
+categories = ["science", "algorithms"]
+
+[dependencies]
+# Exact arbitrary-precision rationals: fitness, dosage coefficients and the
+# apoptotic screen are all exact, so no step of the search is an approximation.
+num-rational = "0.4"
+num-bigint = "0.4"
+num-traits = "0.2"
+# Seeded, reproducible randomness: every run is replayable from its seed.
+rand = "0.10"
+rand_pcg = "0.10"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[[bin]]
+name = "kge"
+path = "src/main.rs"

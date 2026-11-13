@@ -2,6 +2,197 @@
 
 All notable changes to AutoevolveAI / SuperGravity are documented here.
 
+## [14.13.0] — H11 toward fixation; the H12 prediction tested (2026-10-25)
+
+Summary: Paper J edition 5 (DOI [10.5281/zenodo.23640856](https://doi.org/10.5281/zenodo.23640856)).
+- **Lean**: `AlixPopulationGenetics.lean` now 16 declarations, all gated. New: a harmonic function's expectation is
+  conserved by every step; distributions stay nonnegative; `xav_wf_fixation_by_time_le` — Wright–Fisher fixation by
+  generation t is at most i/N for every t, with no limit taken.
+- **Engine**: `evolve` records diversity per generation (collapse = ≤2 distinct fitness values) and first-collapse
+  generation; `--immigration` replaces the worst half with random trees on collapse, paid from the budget. 11 tests.
+- **Result**: per-generation solve hazard (unconfounded by early stopping) falls after collapse at L3 (0.0081→0.0048,
+  p = 0.015) and L5 (0.0013→0.0001, p = 0.0019); n.s. at L4. Random immigration helps on no rung (L3 94 vs 90,
+  p = 0.45). Instrumented runs reproduce earlier counts exactly. Registered next: perturb the best, not inject random.
+- Zenodo returned 500 then 502 mid-deposit; the existing draft was adopted (never a blind retry), no duplicate record.
+
+## [14.12.0] — Population-genetic foundations proved: H11 and H12 (2026-10-25)
+
+Summary: Paper J edition 4 (DOI [10.5281/zenodo.23639141](https://doi.org/10.5281/zenodo.23639141)). `formal/ANSE/AlixPopulationGenetics.lean`,
+11 declarations over ℚ, 0 `sorry`, whitelist axioms only, gated through `lean_runner`:
+- **H12** — one locus, two alleles, haploid selection with constant positive fitnesses: mean fitness never
+  decreases, with exact increment `p(1-p)(w₁-w₂)²/w̄`, whose numerator is the population fitness variance
+  (`kal_increment_is_variance`). Not Fisher's general theorem.
+- **H11** — a maximum principle for finite chains whose interior states reach 0 in one step; Wright–Fisher
+  satisfies it, its rows sum to 1, `j/N` is harmonic (binomial mean), so `i/N` is the unique harmonic function
+  with boundary 0 and 1. The step to fixation probability is NOT formalised.
+- Registered, untested prediction for KGE: stalled runs should be those whose population fitness variance has
+  collapsed.
+
+## [14.11.0] — Kernel-Gated Evolution: exact lifetime learning of constants (2026-10-25)
+
+Summary: Paper J edition 3 (DOI [10.5281/zenodo.23638652](https://doi.org/10.5281/zenodo.23638652)).
+`tune_constants` and `--tuning none|baldwin|lamarck`: each constant locus is set to its required value
+`v* = v + (want − out)/B` when that value agrees at every sample point — the Baldwin effect made exact.
+Over 1,200 paired seeds it never lost a solve the plain population found (L1 0.550→0.835, p = 1e-17;
+L3 0.255→0.450, p = 4e-12; L5 0.015→0.060, p = 0.004); 40/40 gated solutions kernel-proved. At matched
+total work (plain population at 11,000 evaluations) it stays ahead on L3 (0.450 vs 0.395) and L5 (0.060 vs
+0.040), level on L4; L6 unsolved by every arm. Baldwin and Lamarck coincide on all 1,200 seeds: exact tuning
+is all-or-nothing. 10 Rust tests.
+
+## [14.10.0] — Kernel-Gated Evolution: Hub benchmark, Lean-proved identities, guidelines (2026-10-25)
+
+Summary: Paper J edition 2 (DOI [10.5281/zenodo.23636412](https://doi.org/10.5281/zenodo.23636412),
+concept 10.5281/zenodo.23635678). Kernel-Gated Evolution (codename ALIX) is benchmarked outside its
+calibration ladder on five SRSD-Feynman laws from the Hugging Face Hub against random search, a restart
+hill-climber and exact polynomial regression; every one of the 39 distinct recovered laws is proved by the
+Lean kernel with a planted wrong candidate rejected in every batch. The population wins outright on one
+law and loses to a naive baseline on three (all at most four leaves), which becomes the operational
+guideline *choose the search layer by target size, keep the gate*.
+
+### Added
+- `formal/ANSE/AlixKalSpec.lean`: the dosage identities for `+`, `−`, `*`, the backward-pass chain rule,
+  the required-value identity, and the checkpoint's one-sidedness — six theorems, zero `sorry`, one axiom-free.
+- `kge solve` (any prefix target over `{+,-,*}`; outside the grammar is refused), `random_search` baseline,
+  `--points-file` replay; 8 Rust tests.
+- `scripts/kge_select_hf_problems.py` (AST walk, never `eval`, over 120 untrusted equation strings; 8 fit),
+  `scripts/kge_traditional_baseline.py` (exact degree-3 regression: ambiguous on 12 points, exact on 40),
+  `scripts/kge_gate_rust_solutions.py --names`, `scripts/kge_figures.py` (seven figures from artifacts),
+  `scripts/fill_paper_j_results.py`, `scripts/verify_paper_j_claims.py` (provenance gate; blocked two deposits).
+- `docs/KGE_GUIDELINES.md` and `crates/kernel_gated_evolution/README.md` for end users.
+
+### Fixed
+- `kge solve` recorded the budget as the hill-climber's evaluation count; now its real count. Re-run with the
+  same seeds before deposit (rates unchanged by construction).
+
+## [14.9.0] — Kernel-Gated Evolution: Rust crate and foundation paper (2026-10-25)
+
+Summary: Paper J edition 1 (DOI 10.5281/zenodo.23635679). `crates/kernel_gated_evolution` implements
+mutation-selection, a one-sided apoptotic checkpoint and exact per-locus dosage over exact rationals, with
+the Lean kernel as arbiter via `anse/formal/lean_runner.py`. Ladder at 200 seeds L1 0.550 … L6 0.000;
+31/31 solutions kernel-proved in 5 invocations; restart hill-climber beats the population on L1/L2 and
+loses from L3 (49 vs 9, p = 9e-8); cross-implementation gap attributed by replay on the prototype's points.
+
+## [14.8.1] — Paper I edition 2: the second repair fails its bar (2026-10-25)
+
+Summary: Preserving `B·v` exactly (verified at 1,614/1,614) reaches 73/200, not significantly above random
+crossover (p = 0.136); nothing survives Bonferroni over five comparisons. DOI 10.5281/zenodo.23626924.
+Also: two defects fixed in `verify_theorem_axioms` (a compile failure no longer reports `has_sorry=True`;
+unique temp file instead of a shared fixed name).
+
+## [14.8.0] — Recombination does not help, and the verifier limit was our own (2026-10-24)
+
+Summary: Paper I edition 1 (DOI 10.5281/zenodo.23622869). `verify_file` had made a Lean batch look atomic by
+discarding the kernel's per-declaration axiom report on a nonzero exit; `verify_file_per_declaration` and the
+rewired `verify_batch_against_spec` verify a batch of eight in one invocation at any failure rate. Over 200
+paired seeds mutation-only solved 94/200 against crossover's 58/200 (p = 2.98e-4); the homology repair was
+refuted by its own control (p = 0.408).
+
+## [14.4.0] — AlphaEvolve + Biomimetic Genetic Algorithm, Gemini 4 Argon Strong Hardness & Continual RL (2026-10-14)
+
+Summary: Integrates AlphaEvolve SEARCH/REPLACE diff evolution with structural AST Genetic Programming,
+4D NSGA-II Pareto-front non-dominated sorting, epsilon-Lexicase parent selection, diploid dominance
+masking, and Artificial Immune System (AIS) negative selection into ANSE Phase 3 (`UC7` + Gate `G7`),
+coupled with Gemini 4 Argon (`gemini-3.1-pro-preview`) Strong AI Coding Hardness (`ARGOS-CYBER-001..005`,
+`ARGOS-EPIST-006`, `ARGOS-HARD-007..010`).
+
+### Added
+- `anse/autopoiesis/alphaevolve_biomimetic.py`: `AlphaEvolveBiomimeticEngine` with AlphaEvolve `SEARCH/REPLACE`
+  diff blocks, AST subtree crossover (`ast_crossover`), structural GP mutations (`apply_memoization_mutation`,
+  `apply_strength_reduction_mutation`, `apply_loop_comprehension_mutation`), 4D NSGA-II non-dominated sorting
+  (`compute_pareto_fronts`), $\epsilon$-Lexicase parent selection (`select_parent_lexicase`), diploid dominance
+  masking (`DiploidGenome`), and Artificial Immune System negative selection (`ArtificialImmuneDetector`).
+- `run_phase3_evolution.py`: Use Case 7 (`UC7: AlphaEvolve + Biomimetic Genetic Algorithm Evolution`) and Gate `G7`
+  (`95.72x` speedup on `find_duplicates`, `48.61x` on `fibonacci`, `0` oracle mismatches).
+- `scripts/run_alphaevolve_physics_math_kernel.py`: Evolutionary pass on Symplectic Kepler Orbit integrator (`2.14x`
+  speedup preserving $|\Delta H/H_0| < 10^{-4}$) and DEC 1-Form Hodge Laplacian (`490.97x` speedup preserving
+  $\|d_1 d_0\|_F = 0.0$).
+- `antigravity_harness/core/argos_hardener.py` & `anse/core/self_healing.py`: Gemini 4 Argon Strong AI Coding
+  Hardness AST detectors (`ARGOS-HARD-007` silent exception swallowing, `ARGOS-HARD-008` input-ignoring specification
+  gaming, `ARGOS-HARD-009` sandbox/timer monkey-patching, `ARGOS-HARD-010` dynamic `__import__`/`ctypes.CDLL` escape)
+  and `SelfHealingCodeLoop.generate_and_evolve_hardened()`.
+- `scripts/setup_nightly_cron.sh` & `scripts/nightly_retrain_at_5am.py`: Daily 05:00 AM Dream Consolidation and
+  11-step Continual Learning Retraining pipeline (`P(Promote) = 0.9968`, `Quality = 2.94 / 3.0`).
+
+## [14.3.0] — Cloud TPU support as a detected environment (2026-10-09)
+
+Summary: AutoevolveAI now detects a Cloud TPU as part of its capability profile and ships a JAX
+port of the DESI DR2 BAO grid-posterior kernel that runs on it. Validated on `gwenlaya-tpu-1`
+(us-west4-a, v5litepod-1, JAX 0.6.2) from a Linux 7.0.0-1013-gcp host.
+
+### Added
+- `anse/infrastructure/agent_environment.py`: `detect_tpu()` / `TPUInfo`. Local TPU VM = `/dev/accel*`
+  or `/dev/vfio/<n>` plus GCE `accelerator-type` metadata (vfio alone is never accepted: GPU
+  passthrough uses it too). Remote TPU = `AUTOEVOLVE_TPU_NAME` + `AUTOEVOLVE_TPU_ZONE`, verified live
+  with `gcloud ... tpu-vm describe` and required to be READY. No JAX import during detection.
+  `CapabilityProfile` gains `tpu`, `jax_platform` and `ANSE_JAX_PLATFORM`; `device` stays
+  `cuda`/`cpu` so existing `model.to(profile.device)` callers are unaffected.
+- `scripts/desi_dr2_bao/grid_posterior_jax.py`: `export` (local, numpy reference + Fisher-centred grids)
+  and `run` (jax only, float64 or `f32`). Positive control (JAX == numpy) and negative control
+  (shifted parameter changes the likelihood) must pass before any grid number is reported.
+- `pyproject.toml`: `jax` optional extra.
+- `anse/infrastructure/tpu_runner.py` + `scripts/tpu/run_on_tpu.py`: upload files, run a command inside
+  `~/venv-tpu`, fetch results, via `gcloud ... tpu-vm scp/ssh --internal-ip`; failures raise with the
+  real stderr and the CLI exits non-zero. `scripts/tpu/setup_tpu_env.sh`: idempotent venv creation +
+  auto-activation, exits non-zero unless JAX reports the `tpu` backend. Live-tested: the f32 DESI job
+  reproduced through the runner; a remote `sys.exit(7)` surfaces as CLI exit 1.
+
+- `anse/memory/tpu_index.py` (`ExactIndex`): exact cosine kNN over LTM embeddings in JAX, always at
+  `highest` matmul precision. `scripts/tpu/export_vectordb.py` + `scripts/tpu/vector_search_jax.py`:
+  validate it against float64 brute force (positive) and mismatched queries (negative), and score
+  Chroma/HNSW against the exact ground truth. `scripts/ltm_consistency_audit.py`: read-only
+  Redis-vs-Chroma transcript audit.
+
+- `anse/verification/gwaya_gate.py` + `gwaya` extra (pinned `v3.7.1`, commit 5278db2): ACCEPT only if the AST zero-stub
+  audit is clean AND the candidate+tests exit 0 inside GWAYA's bubblewrap sandbox; otherwise REJECT, or BLOCKED when
+  isolation/toolchain/time is missing. 6 tests (sandbox stubbed). Measured on this host: stubs REJECT, executable
+  candidates BLOCKED (AppArmor blocks unprivileged userns; `GWAYA_ALLOW_UNISOLATED` deliberately not used).
+- `anse/training/jax_lora.py` + `scripts/tpu/{validate_jax_qwen,prepare_lora_data,lora_train_jax}.py`: pure-JAX Qwen2
+  LoRA. Validated vs Hugging Face (max logit err 5.4e-5, argmax 100%) and vs PEFT with a random adapter (1.2e-4);
+  wrong-rope negative control errs by 10.8.
+
+### GWAYA gate wired into the episode harvest
+- `anse/verification/episode_gate.py` + `scripts/harvest_episodes.py`: every harvested episode now carries
+  `metadata.gwaya` = {status, reasons, confirmed}. REJECT demotes a "converged" episode (converged=False,
+  energy >= 100); BLOCKED/UNAVAILABLE never upgrade or demote. `scripts/ltm_learning_mix.py --require-gate` keeps only
+  gate-ACCEPTed rows. Legacy episodes have no gate record, so strict mode currently exits BLOCKED (0 of 12 confirmed).
+- Measured on this host: harvest `--dry-run` controls pass (stub-that-passes-its-test is demoted; real solution kept);
+  real-solution gate status is BLOCKED until the host's bubblewrap sandbox works. 26 tests pass.
+
+### LoRA retraining on TPU (Qwen2.5-Coder-1.5B, 9 train / 3 held-out sandbox-verified episodes, r=16 alpha=32)
+- BUG FOUND AND FIXED: `np.asarray` of a TPU array shaped `(d, 16)` is not C-contiguous; safetensors serialised the raw
+  buffer and scrambled every `lora_B`. In-process training numbers were right, saved adapters were not (reload on CPU
+  and on the TPU showed ~zero effect). `save_peft_adapter` now forces C order; regression test in
+  `tests/training/test_jax_lora_save.py`, negative control confirmed (F-ordered array without the fix is scrambled).
+- Result after the fix, adapter reloaded and scored independently with PEFT + torch on CPU (bf16), held-out NLL:
+  base 0.1937 -> real pairs lr 1e-5 x 20 steps 0.1372 (train 0.1347 -> 0.0440); shuffled-label negative control 0.1808.
+  lr 2e-4 x 40 steps memorises (train NLL ~1e-6) and held-out NLL gets WORSE (0.19 -> 0.55 in-process).
+- Caveats: n=3 held-out tasks; lr/steps were chosen after looking at that same held-out set, so the gain is optimistic;
+  NLL is not pass@1 -- no functional evaluation was run. NOT promoted; adapters are not committed.
+
+### Vector DB / LTM measurements (TPU v5e, real Chroma collections, k=10)
+- mathlib4_premises 1881x384: exact == float64 brute force (recall 0.9945, max |sim err| 2.4e-7; the
+  gap is near-tie swaps), Chroma/HNSW recall vs exact 0.9925, 200 queries in 1.2 ms (TPU) vs 5.2 ms
+  (CPU, same host). ltm_code_solutions 481x384: HNSW recall 0.996. claude_code_sessions 153x1024: 1.000.
+  Negative control (mismatched queries) recall <= 0.10 in all three.
+- Redis LTM vs Chroma transcripts: 129 turns each, 0 orphans, 0 trainable/retrieval_only flag leaks.
+- Retraining on TPU was NOT done: `ltm_code_solutions` has 391/481 rows at two energy values
+  (9.4/9.1) and `phase1_traces` has 21 rows -- no honest training signal. Reported BLOCKED, not faked.
+
+### Measured (TPU v5e, 4 DESI grids vs `results/desi_dr2_bao/grid_summary.json`)
+- float64: moments agree to <= 4e-13 relative; DR2 LCDM 361,201 pts 7.3 s, wCDM 2,803,221 pts 12.5 s
+  (numpy CPU on the same host: DR2 LCDM 8.2 s, so no speedup; v5e emulates f64).
+- float32 + `jax_default_matmul_precision=highest`: moments agree to <= 5e-6 relative (max mean shift
+  2.2e-5 sigma); 0.75 s / 1.7 s. Default-precision float32 FAILS the control (3e-3 relative error).
+- Detection on the TPU VM itself: local, v5litepod-1. From the dev host with the env vars set: remote, READY.
+
+### Gates
+- `pytest tests/infrastructure`: 30 passed. `ruff` clean on every changed file.
+- `tests/test_kev_decision_engine.py::test_kev_decision_gate_cli` fails identically with and without
+  this change (live nightly-training state); `tests/test_local_32gb_cpu_antigravity_validation.py`
+  hangs on a clean HEAD checkout too. Neither was caused by or fixed here.
+- `antigravity_guard.py` / `test_rigor_guard.py`: exit 1 on pre-existing files (ruff backlog, hollow K3
+  tests); no finding in new files.
+
 ## [Unreleased] — dyadic triangular Hilbert preprint (2026-10-08)
 
 - Preprint and Zenodo record doi:10.5281/zenodo.23232389: C* >= 3 for the absolute dyadic triangular Hilbert

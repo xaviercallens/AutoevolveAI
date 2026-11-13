@@ -9,6 +9,7 @@ throughout the codebase.
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal, cast
@@ -52,8 +53,6 @@ class ModelConfig:
     api_key: str = os.getenv("ANSE_API_KEY", "ollama")
     api_model_name: str = os.getenv("ANSE_API_MODEL", "qwen2.5-coder:7b")
 
-
-import re
 
 def is_small_model(model_name: str) -> bool:
     """Return True if model is <= 3B parameters based on model name heuristics."""
@@ -365,14 +364,22 @@ class DeepThinkConfig:
     enabled: bool = True
     """Whether to use the Deep Think LangGraph PRM."""
 
-    environment: Literal["local_cpu", "rtx_2080", "pod_gpu"] = cast(
-        Literal["local_cpu", "rtx_2080", "pod_gpu"], os.getenv("ANSE_ENV", "local_cpu")
+    environment: Literal["local_cpu", "rtx_2080", "pod_gpu", "gemini_argos"] = cast(
+        Literal["local_cpu", "rtx_2080", "pod_gpu", "gemini_argos"], os.getenv("ANSE_ENV", "local_cpu")
     )
-    """Hardware environment."""
+    """Hardware or frontier cloud environment."""
+
+    frontier_teacher_model: str = os.getenv("ANSE_FRONTIER_MODEL", "gemini-4-argon")
+    """Primary frontier reasoning and cyber-hardening model (Gemini 4 Argon)."""
+
+    frontier_flash_model: str = os.getenv("ANSE_FLASH_MODEL", "gemini-3.8-flash")
+    """High-speed Gemini 3.8 Flash fallback model."""
 
     @property
     def model_name(self) -> str:
-        """Select the appropriate DeepSeek-R1 model based on hardware capability."""
+        """Select the appropriate reasoning model based on hardware or frontier capability."""
+        if self.environment == "gemini_argos":
+            return self.frontier_teacher_model
         if self.environment == "local_cpu":
             # 32GB RAM can easily run 7B or 8B quantized on CPU via Ollama
             return "deepseek-r1:8b"

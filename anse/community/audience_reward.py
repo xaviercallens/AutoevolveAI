@@ -59,16 +59,16 @@ def _score_hook(title: str, body: str) -> float:
     return min(1.0, score)
 
 
-def _score_grounding(body: str, submission_statement: str) -> float:
+def _score_grounding(body: str, submission_statement: str, is_comment: bool = False) -> float:
     """
     Rewards rigorous grounding: preprints (Zenodo/ArXiv), DOI links, code repositories,
     and mathematical or empirical telemetry.
     """
     score = 0.0
     combined = body + " " + submission_statement
+    combined_l = combined.lower()
 
     # Preprint / DOI references or links
-    combined_l = combined.lower()
     if any(k in combined_l for k in ("doi.org", "zenodo", "arxiv", "doi:", "preprint", "paper")):
         score += 0.35
 
@@ -87,9 +87,32 @@ def _score_grounding(body: str, submission_statement: str) -> float:
         "test suite",
         "reproducib",
         "theorem",
+        "#print axioms",
+        "cvode",
+        "poisson summation",
+        "mach",
+        "shear heating",
+        "acoustic",
+        "jacobian",
+        "statement adequacy",
+        "exciton",
+        "bilayer",
+        "monotone",
+        "triangular lattice",
+        "stiff ode",
+        "symplectic",
+        "newton-krylov",
     )
-    if any(term in combined.lower() for term in verification_terms):
+    matches = sum(1 for term in verification_terms if term in combined_l)
+    if matches >= 1:
         score += 0.30
+    if matches >= 3:
+        score += 0.15
+
+    # For comments adhering to zero-link karma repair, allow deep mathematical & physical rigor
+    # to achieve top grounding without forcing external links
+    if is_comment and matches >= 2 and score < 0.90:
+        score = min(1.0, score + 0.40)
 
     return min(1.0, score)
 
@@ -138,8 +161,19 @@ STRICT_LINK_MODERATION_SUBREDDITS = {
     "artificial",
 }
 
+STRICT_COMMENT_LINK_SUBREDDITS = {
+    "math",
+    "physics",
+    "claudeai",
+    "machinelearning",
+    "singularity",
+    "askphysics",
+    "localllama",
+}
+
 SELF_PROMO_TRIGGERS = (
     "our team",
+    "our team open-sourced",
     "we wrote",
     "our paper",
     "our audit",
@@ -147,15 +181,29 @@ SELF_PROMO_TRIGGERS = (
     "our repository",
     "we open-sourced",
     "check out our",
+    "socrate ai lab",
+    "our group",
+    "our ai agent swarm",
+    "ai agent swarm",
+    "i am more an ai person",
+    "our framework solves",
 )
 
 
-def audit_moderation_risk(subreddit: str, title: str, body: str) -> dict[str, Any]:
+def audit_moderation_risk(
+    subreddit: str,
+    title: str,
+    body: str,
+    is_comment: bool = False,
+    karma_repair_mode: bool = False,
+) -> dict[str, Any]:
     """
     Evaluates risk of automated removal by Reddit AutoMod and subreddit moderation rules.
     Detects:
     - Rule 3 (Self-Promotion): External links (github, zenodo, doi) in OP body on strict subreddits.
-    - Promotional language heuristics ('our team', 'we wrote', 'our scripts').
+    - Karma Repair Violations: External links in comments when in karma repair mode (karma < +25).
+    - Unprompted Link Dumps: External links in comments on academic/technical subreddits.
+    - Promotional language heuristics ('our team', 'we open-sourced', 'socrate ai lab', etc.).
     - Title rule violations (excessive length, shoutouts).
     """
     sub_clean = subreddit.lower().replace("r/", "").strip()
@@ -163,25 +211,40 @@ def audit_moderation_risk(subreddit: str, title: str, body: str) -> dict[str, An
     risk_score = 0.0
 
     has_raw_links = bool(re.search(r"https?://|doi\.org|github\.com|zenodo\.", body))
-    is_strict = sub_clean in STRICT_LINK_MODERATION_SUBREDDITS
+    is_strict_post = sub_clean in STRICT_LINK_MODERATION_SUBREDDITS
+    is_strict_comment = sub_clean in STRICT_COMMENT_LINK_SUBREDDITS
 
-    if is_strict and has_raw_links:
+    if not is_comment and is_strict_post and has_raw_links:
         risk_score += 0.50
         warnings.append(
             f"Rule 3 (Self-Promotion) Risk: External URLs in post body trigger AutoMod on r/{sub_clean}. "
-            "Move repository and DOI links to a pinned/top comment."
+            "Move repository and DOI links to a pinned/top submission comment."
         )
+
+    if is_comment:
+        if karma_repair_mode and has_raw_links:
+            risk_score += 0.80
+            warnings.append(
+                "Karma Repair Violation: Active karma repair mode strictly enforces the Zero-Link Rule. "
+                "Do not post external links until comment karma > +25."
+            )
+        elif is_strict_comment and has_raw_links:
+            risk_score += 0.40
+            warnings.append(
+                f"Unprompted Link Dump Risk: Dropping external links in r/{sub_clean} comments triggers cynical "
+                "gatekeeping and downvotes. Explain the core mechanism and wait for organic reader demand."
+            )
 
     body_lower = body.lower()
     promo_matches = [phrase for phrase in SELF_PROMO_TRIGGERS if phrase in body_lower]
     if promo_matches:
-        risk_score += 0.30
+        risk_score += 0.35
         warnings.append(
             f"Self-referential language detected ({promo_matches}). "
-            "Frame as an objective community discussion rather than an announcement of your team's project."
+            "Eliminate marketing terms ('our team', 'we open-sourced'). Frame as objective community discussion."
         )
 
-    if len(title.split()) > 22:
+    if title and len(title.split()) > 22:
         risk_score += 0.20
         warnings.append("Title exceeds 22 words; violates concise title rules in general subreddits.")
 
@@ -205,10 +268,6 @@ def _score_compliance(subreddit: str, title: str, submission_statement: str) -> 
             score += 0.4
     else:
         score += 0.4  # Other subreddits don't require title prefixes
-
-    # Deduct penalty for moderation / AutoMod ban risk
-    mod_audit = audit_moderation_risk(subreddit, title, "")
-    # Note: full body audit done in compute_audience_reward
 
     # Mandatory Submission Statement presence
     if submission_statement.strip():
@@ -256,17 +315,26 @@ def compute_audience_reward(
     title: str,
     body: str,
     submission_statement: str = "",
+    is_comment: bool = False,
+    karma_repair_mode: bool = False,
 ) -> dict[str, Any]:
     """
     Master reward function aggregating all components into a scalar in [0.0, 1.0].
+    Enforces minimum grounding score (0.90) and maximum moderation risk (0.10) for recommendations.
     """
     s_hook = _score_hook(title, body)
-    s_grounding = _score_grounding(body, submission_statement)
+    s_grounding = _score_grounding(body, submission_statement, is_comment=is_comment)
     s_modesty, violations = _score_modesty(title, body)
     s_compliance = _score_compliance(subreddit, title, submission_statement)
     s_resonance = _score_resonance(body)
 
-    mod_audit = audit_moderation_risk(subreddit, title, body)
+    mod_audit = audit_moderation_risk(
+        subreddit,
+        title,
+        body,
+        is_comment=is_comment,
+        karma_repair_mode=karma_repair_mode,
+    )
     if mod_audit["is_ban_prone"]:
         # Severe penalty on compliance for ban-prone submissions
         s_compliance = max(0.0, s_compliance - mod_audit["moderation_risk"])
@@ -280,6 +348,14 @@ def compute_audience_reward(
         + WEIGHT_RESONANCE * s_resonance
     )
 
+    is_recommended = (
+        total_reward >= 0.75
+        and len(violations) == 0
+        and not mod_audit["is_ban_prone"]
+        and s_grounding >= 0.90
+        and mod_audit["moderation_risk"] <= 0.10
+    )
+
     return {
         "total_reward": round(total_reward, 4),
         "hook_score": round(s_hook, 3),
@@ -290,5 +366,41 @@ def compute_audience_reward(
         "hype_violations": violations,
         "moderation_risk": mod_audit["moderation_risk"],
         "moderation_warnings": mod_audit["moderation_warnings"],
-        "is_recommended": total_reward >= 0.75 and len(violations) == 0 and not mod_audit["is_ban_prone"],
+        "is_recommended": is_recommended,
+    }
+
+
+def audit_comment_reputation(
+    comment_text: str,
+    karma: int = -8,
+    target_sub: str = "",
+) -> dict[str, Any]:
+    """
+    Audits a candidate comment specifically for karma recovery and gatekeeping avoidance.
+    Enforces Phase 1 Zero-Link Rule when karma < +25.
+    """
+    karma_repair_active = karma < 25
+    mod = audit_moderation_risk(
+        target_sub or "r/askphysics",
+        title="",
+        body=comment_text,
+        is_comment=True,
+        karma_repair_mode=karma_repair_active,
+    )
+    grounding = _score_grounding(comment_text, "", is_comment=True)
+    modesty, violations = _score_modesty("", comment_text)
+
+    is_safe = (
+        mod["moderation_risk"] <= 0.10
+        and len(violations) == 0
+        and (not karma_repair_active or ("http" not in comment_text and "doi.org" not in comment_text and "github.com" not in comment_text))
+    )
+
+    return {
+        "karma_repair_active": karma_repair_active,
+        "is_safe_to_post": is_safe,
+        "moderation_risk": mod["moderation_risk"],
+        "grounding_score": round(grounding, 3),
+        "modesty_score": round(modesty, 3),
+        "warnings": mod["moderation_warnings"] + violations,
     }

@@ -160,3 +160,23 @@ collect_ignore: list[str] = []
 if not _GATEWAY_EXTRAS_AVAILABLE:
     collect_ignore = [str(_REPO_ROOT / p) for p in _OPTIONAL_EXTRAS_TESTS]
 
+
+
+# torch default dtype isolation. scripts/openai_math/lt_matrix/{instrument,second_variation}.py call
+# torch.set_default_dtype(torch.float64) at import time, and pytest imports them at collection, so without this
+# hook the whole run silently switches to double precision and float32 model tests fail with
+# "mat1 and mat2 must have the same dtype" (seen on the 2026-11-13 merge test run). The tests under
+# tests/openai_math/ need float64; every other test gets the library default float32. A hook, not a fixture:
+# it runs before any fixture is set up, including class- and module-scoped ones.
+try:
+    import torch as _torch
+except ImportError:  # torch is an optional extra
+    _torch = None
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_setup(item: pytest.Item) -> None:
+    if _torch is None:
+        return
+    needs_float64 = "openai_math" in str(item.fspath)
+    _torch.set_default_dtype(_torch.float64 if needs_float64 else _torch.float32)

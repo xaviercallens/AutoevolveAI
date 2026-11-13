@@ -25,6 +25,16 @@ import sys
 import time
 from pathlib import Path
 from typing import Any
+import os
+
+# Interpreter for every pipeline step. Default: the interpreter running this script, so a
+# launch with a training-capable venv (torch + peft) is inherited by every step. Night
+# 2026-10-08: "uv run python" in a worktree without a synced training extra built a fresh
+# env without peft and the Qwen LoRA step failed. Set AUTOEVOLVE_NIGHTLY_USE_UV=1 to restore
+# the old behaviour.
+STEP_PYTHON: list[str] = (
+    ["uv", "run", "python"] if os.environ.get("AUTOEVOLVE_NIGHTLY_USE_UV") == "1" else [sys.executable]
+)
 
 sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
 
@@ -102,7 +112,7 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
         results.append(
             run_pipeline_step(
                 "Wake Episode Harvest & Redis LTM Sync",
-                ["uv", "run", "python", "scripts/sync_conversations_to_redis.py"],
+                [*STEP_PYTHON, "scripts/sync_conversations_to_redis.py"],
             )
         )
 
@@ -110,7 +120,7 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
         results.append(
             run_pipeline_step(
                 "Nightly REM Dream Consolidation & Laya LoRA",
-                ["uv", "run", "python", "scripts/nightly_dream_phase.py"],
+                [*STEP_PYTHON, "scripts/nightly_dream_phase.py"],
             )
         )
 
@@ -118,7 +128,7 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
         results.append(
             run_pipeline_step(
                 "Qwen LoRA LTM Retraining",
-                ["uv", "run", "python", "scripts/execute_local_redis_ltm_lora.py", "--steps", str(lora_steps), "--max-len", "160"],
+                [*STEP_PYTHON, "scripts/execute_local_redis_ltm_lora.py", "--steps", str(lora_steps), "--max-len", "160"],
             )
         )
 
@@ -126,7 +136,7 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
         results.append(
             run_pipeline_step(
                 "Reinforcement Learning Critic Retraining",
-                ["uv", "run", "python", "scripts/retrain_multidisciplinary_rl.py"],
+                [*STEP_PYTHON, "scripts/retrain_multidisciplinary_rl.py"],
             )
         )
 
@@ -134,7 +144,7 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
         results.append(
             run_pipeline_step(
                 "JEPA World Model Continual Learning",
-                ["uv", "run", "python", "-m", "anse.physics.advanced_world_models"],
+                [*STEP_PYTHON, "-m", "anse.physics.advanced_world_models"],
             )
         )
 
@@ -142,7 +152,7 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
         results.append(
             run_pipeline_step(
                 "ANSE V2 Autopoietic Engine Validation",
-                ["uv", "run", "python", "scripts/run_v2_autopoiesis.py"],
+                [*STEP_PYTHON, "scripts/run_v2_autopoiesis.py"],
             )
         )
 
@@ -150,7 +160,7 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
         results.append(
             run_pipeline_step(
                 "AlphaEvolve Biomimetic Physics & Math Kernel Evolution",
-                ["uv", "run", "python", "-m", "scripts.run_alphaevolve_physics_math_kernel"],
+                [*STEP_PYTHON, "-m", "scripts.run_alphaevolve_physics_math_kernel"],
             )
         )
 
@@ -158,7 +168,7 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
         results.append(
             run_pipeline_step(
                 "Scientific Communication LinUCB Policy Retraining",
-                ["uv", "run", "python", "scripts/retrain_communication_policy.py"],
+                [*STEP_PYTHON, "scripts/retrain_communication_policy.py"],
             )
         )
 
@@ -166,7 +176,7 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
         results.append(
             run_pipeline_step(
                 "Retrained Models Capability & Use Case Evaluation",
-                ["uv", "run", "python", "scripts/evaluate_retrained_models_use_cases.py"],
+                [*STEP_PYTHON, "scripts/evaluate_retrained_models_use_cases.py"],
             )
         )
 
@@ -184,7 +194,7 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
     decision_step = run_pipeline_step(
         "Kev Post-Retrain Calibrated Decision Gate",
         [
-            "uv", "run", "python", "scripts/kev_decision_gate.py",
+            *STEP_PYTHON, "scripts/kev_decision_gate.py",
             "--report", str(interim_report_path),
             "--gate",
         ],
@@ -216,7 +226,7 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
             results.append(
                 run_pipeline_step(
                     "GCP Data Lake Synchronization & Cartography",
-                    ["uv", "run", "python", "scripts/deploy_models_and_datalake.py"],
+                    [*STEP_PYTHON, "scripts/deploy_models_and_datalake.py"],
                 )
             )
         else:

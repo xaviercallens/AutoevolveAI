@@ -145,7 +145,7 @@ verifier writes its own check; Opus-class audits only where they pay.
 **Phase 3 (12 to 24 weeks, overlapping): Numerica Lean, Tier A for one theorem.**
 - Formalise the one-step theorem: the midpoint identity for quadratic fields, the Dini-derivative comparison, the
   spectral-norm basis-change bound. Emit compact certificates checked by a verified checker.
-- **Design constraint from our own data:** unrolled terms made a 639 KB file take about 35 to 55 minutes to compile.
+- **Design constraint from our own data:** unrolled terms made a 639 KB file take about 34 to 55 minutes to compile.
   Use proof by reflection or a verified checker over rational traces, not generated term proofs.
 - *Exit:* a sorry-free, axiom-audited theorem plus an end-to-end certificate for one Robertson step range, through the
   pinned runner. *Kill:* if no sorry-free statement of the one-step theorem exists after the allotted weeks, release

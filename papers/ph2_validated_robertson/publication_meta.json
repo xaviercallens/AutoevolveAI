@@ -1,0 +1,33 @@
+{
+ "title": "A validated enclosure of Robertson's stiff problem on [0,4000] and the true error of a Rust port of CVODE against it",
+ "version": "v1",
+ "description": "<p>We compute a validated enclosure of Robertson's stiff kinetics problem at ten output times from t = 0.1 to t = 4000, with an a-posteriori logarithmic-norm integrator in 160-bit Arb ball arithmetic. <b>The enclosure is rigorous under stated assumptions</b> (Arb correct; the step theorem is proved in prose, not formalised): the required relative width of 1e-6 is met everywhere, the reported widths are at most 6e-10. It was <b>independently re-derived by an auditing AI agent's different method (MPFI Lohner) at t = 1, 10, 40 only</b>. Against the enclosure we measure the true global error of the rusty-SUNDIALS <b>cvode crate, a Rust port and not C CVODE</b>, for rtol 1e-4 to 1e-10. For y2 the apparent absence of tolerance violations is only because atol dominates: relative to rtol*|y2| the error is up to 169 times larger. No claim for general stiff problems or t &ge; 1e4. Producer and auditor are AI agents; no human audit; no Lean.</p>",
+ "keywords": [
+  "validated numerics",
+  "Robertson problem",
+  "stiff ODE",
+  "interval arithmetic",
+  "CVODE",
+  "global error",
+  "epistemic tiers",
+  "AI-assisted research"
+ ],
+ "notes": "Preprint v1 (2026-11-14), independently AI-audited once (data/AUDIT.md, ACCEPT_WITH_CORRECTIONS, eleven corrections applied), not human-audited. Proposal 7, item PH-2. Findings filed at Tier C (no Lean); independent confirmation for 40 < t <= 4000, Rust-binary provenance and Arb correctness at Tier X; cited literature at Tier L. The compared solver is a Rust port, not LLNL C CVODE. To our knowledge only; not a priority claim; authors of cited works not contacted. The preregistration was first committed to git after the production run started (mtimes and a self-hash only).",
+ "related_identifiers": [
+  {
+   "identifier": "arXiv:1804.04847",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:2604.19068",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "10.5281/zenodo.23293429",
+   "relation": "references",
+   "scheme": "doi"
+  }
+ ]
+}

@@ -1,6 +1,6 @@
 # PH-2 RESULT: PARTIAL
 
-Rigorous enclosure of Robertson's problem reached T = 4000 (largest output time with relative width <= 1e-6 in every component: 4000). Steps 2850083, attempts 4389852, driver CPU 8.306 core-hours (getrusage; controls extra, small, not metered). Finished flag: False; stopped: None; failed: None.
+Rigorous enclosure of Robertson's problem reached T = 4000 (largest output time with relative width <= 1e-6 in every component: 4000). Steps 2850083, attempts 4389852, driver CPU 8.306 core-hours (getrusage; controls extra, small, not metered). Finished flag: False; stopped: cpu_cap (cumulative 29900 s, main-session cap; the checkpoint omits the flag because of a bookkeeping order bug in run(), ph2_enclose.py:342-343: res["stopped"] is set after save(). The code was left unchanged so that it matches the code that produced the run); failed: None.
 
 ## Enclosure (y(t) in box; y1 = 1 - y2 - y3)
 
@@ -19,9 +19,9 @@ Rigorous enclosure of Robertson's problem reached T = 4000 (largest output time 
 
 Exact midpoints/radii as rationals: enclosures.json.
 
-## Solver comparison: rusty-SUNDIALS cvode crate (Rust port of CVODE; BDF/Newton/dense; analytic Jacobian), atol = 1e-3*rtol scalar
+## Solver comparison: rusty-SUNDIALS cvode crate (Rust port of CVODE; BDF/Newton/dense; analytic Jacobian), atol = 1e-3*rtol scalar for rtol 1e-4, 1e-6, 1e-8; rtol 1e-10 rows use atol = 1e-10 (NON-preregistered: the preregistered atol 1e-13 run failed with ErrTestFailure and produced no output)
 
-No LLNL C CVODE exists on this host; nothing here is a statement about the C library. Error interval = |y_solver - y| using the enclosure; ratio = error / (rtol|y|+atol), shown as [lo,hi].
+No LLNL C CVODE exists on this host; nothing here is a statement about the C library. Error interval = |y_solver - y| using the enclosure; ratio = error / (rtol|y|+atol), shown as [lo,hi]. NOTE: 'provably > tol' compares the GLOBAL error with the per-component tolerance scale; CVODE controls a local error estimate, so this is not a breach of the solver's contract.
 
 | rtol | atol | t | comp | err in | ratio in | provably > tol | provably <= tol |
 |---|---|---|---|---|---|---|---|
@@ -150,31 +150,31 @@ Solver error lines in the raw log (rtol=1e-10, atol=1e-13, the preregistered set
 
 First output time per rtol/component with a provable tolerance violation:
 - rtol 1e-10 atol 1.0e-10 y1: 0.4
-- rtol 1e-10 atol 1.0e-10 y2: none among the reached output times
+- rtol 1e-10 atol 1.0e-10 y2: none, because the tolerance for y2 is atol-dominated (y2 <= 3.6e-5); relative to rtol*|y2| alone the error exceeds rtol by up to 169x (1e-10), 20x (1e-8), 11x (1e-6), 4.1x (1e-4)
 - rtol 1e-10 atol 1.0e-10 y3: 0.1
 - rtol 1e-08 atol 1.0e-11 y1: 10.0
-- rtol 1e-08 atol 1.0e-11 y2: none among the reached output times
+- rtol 1e-08 atol 1.0e-11 y2: none, because the tolerance for y2 is atol-dominated (y2 <= 3.6e-5); relative to rtol*|y2| alone the error exceeds rtol by up to 169x (1e-10), 20x (1e-8), 11x (1e-6), 4.1x (1e-4)
 - rtol 1e-08 atol 1.0e-11 y3: 0.1
 - rtol 1e-06 atol 1.0e-09 y1: 40.0
-- rtol 1e-06 atol 1.0e-09 y2: none among the reached output times
+- rtol 1e-06 atol 1.0e-09 y2: none, because the tolerance for y2 is atol-dominated (y2 <= 3.6e-5); relative to rtol*|y2| alone the error exceeds rtol by up to 169x (1e-10), 20x (1e-8), 11x (1e-6), 4.1x (1e-4)
 - rtol 1e-06 atol 1.0e-09 y3: 0.4
 - rtol 0.0001 atol 1.0e-07 y1: 100.0
-- rtol 0.0001 atol 1.0e-07 y2: none among the reached output times
+- rtol 0.0001 atol 1.0e-07 y2: none, because the tolerance for y2 is atol-dominated (y2 <= 3.6e-5); relative to rtol*|y2| alone the error exceeds rtol by up to 169x (1e-10), 20x (1e-8), 11x (1e-6), 4.1x (1e-4)
 - rtol 0.0001 atol 1.0e-07 y3: 0.4
 
-Solver outputs available per rtol (12 requested each): {0.0001: 12, 1e-06: 12, 1e-08: 12, 1e-10: 12}. Missing rtol/time = the solver returned an error (see logs/cvode_err.txt: e.g. ErrTestFailure); it is reported as such, not retried.
+Solver outputs available per rtol (12 requested each): {0.0001: 12, 1e-06: 12, 1e-08: 12, 1e-10: 12} (the 1e-10 count is the non-preregistered atol=1e-10 run; the preregistered 1e-10/1e-13 run gave 0 outputs). Only 10 of the 12 times have an enclosure. Missing rtol/time = the solver returned an error (see logs/cvode_err.txt: e.g. ErrTestFailure); it is reported as such, not retried.
 
-## Secondary literature values (recalled from the SUNDIALS cvRoberts_dns example printout, 5 digits, NOT fetched or verified here)
+## Secondary values: SUNDIALS cvRoberts_dns printout (solver output at rtol=1e-4, NOT the true solution; recalled, not fetched)
 
-- t=0.4 y1: literature 9.85170e-01 vs enclosure mid 9.85172e-01, relative difference 2.1e-06 (rounding of the 5-digit print is about 5e-6 relative)
-- t=0.4 y2: literature 3.38640e-05 vs enclosure mid 3.38640e-05, relative difference 1.4e-06 (rounding of the 5-digit print is about 5e-6 relative)
-- t=0.4 y3: literature 1.47940e-02 vs enclosure mid 1.47940e-02, relative difference 1.5e-06 (rounding of the 5-digit print is about 5e-6 relative)
-- t=4 y1: literature 9.05510e-01 vs enclosure mid 9.05519e-01, relative difference 9.6e-06 (rounding of the 5-digit print is about 5e-6 relative)
-- t=4 y2: literature 2.24060e-05 vs enclosure mid 2.24048e-05, relative difference 5.5e-05 (rounding of the 5-digit print is about 5e-6 relative)
-- t=4 y3: literature 9.44590e-02 vs enclosure mid 9.44589e-02, relative difference 8.8e-07 (rounding of the 5-digit print is about 5e-6 relative)
-- t=40 y1: literature 7.15830e-01 vs enclosure mid 7.15827e-01, relative difference 4.1e-06 (rounding of the 5-digit print is about 5e-6 relative)
-- t=40 y2: literature 9.18560e-06 vs enclosure mid 9.18553e-06, relative difference 7.1e-06 (rounding of the 5-digit print is about 5e-6 relative)
-- t=40 y3: literature 2.84160e-01 vs enclosure mid 2.84164e-01, relative difference 1.3e-05 (rounding of the 5-digit print is about 5e-6 relative)
+- t=0.4 y1: literature 9.85170e-01 vs enclosure mid 9.85172e-01, relative difference 2.1e-06 (differences are consistent with rtol=1e-4 solver error)
+- t=0.4 y2: literature 3.38640e-05 vs enclosure mid 3.38640e-05, relative difference 1.4e-06 (differences are consistent with rtol=1e-4 solver error)
+- t=0.4 y3: literature 1.47940e-02 vs enclosure mid 1.47940e-02, relative difference 1.5e-06 (differences are consistent with rtol=1e-4 solver error)
+- t=4 y1: literature 9.05510e-01 vs enclosure mid 9.05519e-01, relative difference 9.6e-06 (differences are consistent with rtol=1e-4 solver error)
+- t=4 y2: literature 2.24060e-05 vs enclosure mid 2.24048e-05, relative difference 5.5e-05 (differences are consistent with rtol=1e-4 solver error)
+- t=4 y3: literature 9.44590e-02 vs enclosure mid 9.44589e-02, relative difference 8.8e-07 (differences are consistent with rtol=1e-4 solver error)
+- t=40 y1: literature 7.15830e-01 vs enclosure mid 7.15827e-01, relative difference 4.1e-06 (differences are consistent with rtol=1e-4 solver error)
+- t=40 y2: literature 9.18560e-06 vs enclosure mid 9.18553e-06, relative difference 7.1e-06 (differences are consistent with rtol=1e-4 solver error)
+- t=40 y3: literature 2.84160e-01 vs enclosure mid 2.84164e-01, relative difference 1.3e-05 (differences are consistent with rtol=1e-4 solver error)
 
 ## Controls (code/controls.py, logs/controls.json)
 
@@ -185,20 +185,22 @@ Solver outputs available per rtol (12 requested each): {0.0001: 12, 1e-06: 12, 1
 - lin_p6_broken: steps 28667; t=0.1: contained [False, False]; t=1: contained [False, False]; t=10: contained [False, False]
 - log_p6_broken: steps 84; t=1: contained [False, False]; t=5: contained [False, False]; t=10: contained [False, False]
 
+C-1 has no power for lin y2 (y2 = e^{-1e4 t}, relative width >= 2e4): never rejected; this is adjudicated as a powerless test, not a soundness failure (AUDIT.md section 4). The controls in logs/controls.json were run on a pre-final ph2_enclose.py; the auditor's rerun on the final code gives the same verdicts.
+
 ## Method and proof obligations (mapping to code/ph2_enclose.py)
 Reduction: (a,b)=(y2,y3), y1 = 1 - a - b (conservation, exact in balls). Region of the vector field: all of R^2 (no positivity used; quasi-positivity / simplex invariance is NOT needed because the tube argument O4 is self-contained. The prereg listed O1 as a region restriction; it was not used.)
 - O2 defect: `attempt`: coefficients D_k of f(q(t)) - q'(t) (k=0..2p-2) by exact ball Cauchy products from the dyadic coefficients of q (`Fk`, `taylor_q`); dbar = sum_k ||P^-1 D_k||_2 h^k >= sup_{[0,h]} ||P^-1 D(t)||_2 (triangle inequality).
 - O3 one-sided Lipschitz: `attempt`: U = hull_t q([0,h]) + row-norm(P)*rho box (superset of every point on a segment between z(t) and q(t)); `Quad.jac_ball` interval Jacobian (affine in y, exact enclosure of J over U); S = sym(P^-1 J P); nu = upper bound of lambda_max(S) by the closed 2x2 formula in balls (monotone, so the ball evaluation bounds all matrices in the set). Lemma: <e, P^-T P^-1 (f(z)-f(q))> <= nu |e|_P^2 for z,q with segment in U.
 - O4 bootstrap: `attempt`: rho = 8(eps0 + dbar h); require (eps0+dbar h) exp(max(nu,0) h) < rho strictly (checked with .upper()/.lower()), so the exact solution cannot leave the rho-tube on [0,h]; global existence on the step follows (it stays in a compact set). Then eps_end = eps0 e^{nu h} + dbar int_0^h e^{nu s} ds (ball).
 - O5 jump: m' = mid(q(h)); jump = q(h) - m' as a ball, added in the next norm (`attempt`, eps0).
-- O6 basis change: factor sigma_max(P_{k+1}^-1 P_k) by the exact 2x2 singular-value formula in balls (`attempt`).
+- O6 basis change: factor sigma_max(P_{k+1}^-1 P_k) by the exact 2x2 singular-value formula in balls (`attempt`). Correction (audit): O6 uses the exact 2x2 spectral norm (prereg: Frobenius); tighter and valid.
 - P exact balls from floats (`choose_basis`), P^-1 by ball adjugate (`inv2`; rejects det containing 0).
 - O7 output: |e_i| <= ||row_i P||_2 eps (Cauchy-Schwarz); box = q(h) +/- that, `attempt`. Output times are hit exactly by truncating the last step (`run`); h as exact rational in a ball H.
 - Initial value exact: eps_0 = 0.
 Floats: only h choice, eigenvector choice for P, display.
 
 ## Unproved assumptions / what an auditor must check
-1. Arb ball arithmetic (Sage 9.5 RealBall) is rigorous; no independent second implementation or second precision was run (producer != verifier NOT satisfied; prereg mentioned it).
+1. Arb ball arithmetic (Sage 9.5 RealBall) is rigorous; independent MPFI/Lohner integrator by the auditor (AUDIT.md section 3) confirms t=1, 10 and 40 (the t=40 run finished after the first audit text; AUDIT.md Addendum); t>40 is single-implementation. Independent check exists for t <= 40.
 2. The lemma in O3/O4 (log-norm comparison, first-exit argument) is argued here, not formalized in Lean.
 3. Boundary subtleties of ball comparisons: rsqrt/sq helpers clip lower ends at 0 (valid because the quantities are mathematically >= 0); auditors should read them.
 4. The solver comparison uses exact doubles of the Rust solver's printed shortest round-trip floats and exactly representable output times (0.1 and 0.4 are the doubles passed to the solver). The Rust right-hand side uses fl(0.04) != 1/25 and fl(1e4*y...) roundings: that is the solver's own arithmetic, counted as solver error.
@@ -206,7 +208,7 @@ Floats: only h choice, eigenvector choice for P, display.
 6. Literature numbers are recalled, not retrieved.
 7. Step history: code/ph2_enclose.py stores [t,h,nu,eps_end] every 20 steps in logs/enclosure_ckpt.json (res.history).
 
-## Step history (every 20th step: t, h, nu, eps_end)
+## Step history (a subsample of the every-20th-step history)
 
 - t=2.01471e-05 h=7.556e-06 nu=9.906e+00 eps=1.326e-53
 - t=267.89 h=1.897e-03 nu=1.203e-03 eps=7.002e-18
@@ -234,6 +236,12 @@ Floats: only h choice, eigenvector choice for P, display.
 - t=3727.03 h=1.063e-03 nu=-1.949e-04 eps=2.744e-16
 - t=3867.74 h=1.714e-03 nu=-1.064e-04 eps=2.709e-16
 - t=4007.84 h=9.685e-04 nu=-1.987e-04 eps=2.675e-16
+
+## Preregistration anchoring caveat
+PREREG_ITEM.md was first git-committed 2026-11-13 (00328e1), after the launch; the freeze rests on file mtimes and a self-hash.
+
+## Audit status
+Independently audited once by an AI agent (AUDIT.md, ACCEPT_WITH_CORRECTIONS); the eleven corrections of AUDIT.md section 8 are applied to this file (correction 8 per the Addendum). No human audit.
 
 ## CPU ledger
 Driver CPU 29900.0 s (checkpoint field cpu_s; cumulative across restarts). Rusty-SUNDIALS runs: a few seconds. Controls: not metered (minutes).

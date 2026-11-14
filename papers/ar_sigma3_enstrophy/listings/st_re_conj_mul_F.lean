@@ -1,0 +1,3 @@
+-- Autoresearch_EnstrophyFlow.lean lines 117-118
+theorem re_conj_mul_F (k ω : ℕ → ℝ) (v : ℕ → ℂ) (n : ℕ) :
+    ((starRingEnd ℂ) (v n) * F k ω v n).re = ((starRingEnd ℂ) (v n) * shellBc k n v).re := ...

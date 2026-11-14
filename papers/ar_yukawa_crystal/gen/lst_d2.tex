@@ -1,0 +1,8 @@
+\begin{Verbatim}[fontsize=\scriptsize,frame=single,framesep=1.5mm]
+def DensityRho (ρ : ℝ) (C : Set Plane) : Prop :=
+  Tendsto (fun R : ℝ => (diskCount C R : ℝ) / (Real.pi * R ^ 2)) atTop (𝓝 ρ)
+
+theorem universal_any_density (h : ℝ → ℝ) (hh : AdmissiblePotential h) {ρ : ℝ} (hρ : 0 < ρ) (C : Set Plane)
+    (hC : LocallyFinite C) (hd : DensityRho ρ C) :
+    latticeEnergy (fun t => h (ρ⁻¹ * t)) ≤ energy h C := by
+\end{Verbatim}

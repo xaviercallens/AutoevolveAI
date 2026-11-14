@@ -1,0 +1,57 @@
+/* aud_g6cyc.c -- auditor's own filter: reads graph6 lines (stdin), for each graph decides whether it has a
+ * simple cycle of length 4, 8 or 16 (early exit in that order). Prints totals:
+ * graphs, cubic_bipartite_ok, has4, has8_no4, has16_no4_no8, none (counterexamples, printed to stderr). */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+typedef uint64_t u64;
+static int n, adj[64][8], dg[64];
+static u64 nb[64];
+static int L, S;
+static int dfs(int v, int len, u64 used) { /* path S..v of 'len' edges, all vertices > S */
+    if (len == L - 1) return (nb[v] >> S) & 1;
+    for (int i = 0; i < dg[v]; i++) {
+        int w = adj[v][i];
+        if (w <= S || (used >> w & 1)) continue;
+        if (dfs(w, len + 1, used | (1ULL << w))) return 1;
+    }
+    return 0;
+}
+static int hascyc(int len) {
+    L = len;
+    for (S = 0; S < n; S++) if (dfs(S, 0, 1ULL << S)) return 1;
+    return 0;
+}
+static int bip(void) { int col[64]; for (int i = 0; i < n; i++) col[i] = -1;
+    for (int s = 0; s < n; s++) if (col[s] < 0) { int st[64], sp = 0; col[s] = 0; st[sp++] = s;
+        while (sp) { int v = st[--sp]; for (int i = 0; i < dg[v]; i++) { int w = adj[v][i];
+            if (col[w] < 0) { col[w] = 1 - col[v]; st[sp++] = w; } else if (col[w] == col[v]) return 0; } } }
+    return 1; }
+int main(void) {
+    char line[4096]; u64 g = 0, ok = 0, h4 = 0, h8 = 0, h16 = 0, none = 0;
+    while (fgets(line, sizeof line, stdin)) {
+        char *s = line; if (*s == '>') continue;
+        n = s[0] - 63; s++;
+        if (n > 62 || n < 1) { fprintf(stderr, "bad n\n"); return 1; }
+        memset(dg, 0, sizeof dg); memset(nb, 0, sizeof nb);
+        int k = 0, bits = 0, val = 0;
+        for (int j = 1; j < n; j++) for (int i = 0; i < j; i++) {
+            if (bits == 0) { val = *s++ - 63; bits = 6; }
+            bits--;
+            if ((val >> bits) & 1) { adj[i][dg[i]++] = j; adj[j][dg[j]++] = i; nb[i] |= 1ULL << j; nb[j] |= 1ULL << i; }
+            k++;
+        }
+        g++;
+        int cub = 1; for (int i = 0; i < n; i++) if (dg[i] != 3) cub = 0;
+        if (cub && bip()) ok++;
+        if (hascyc(4)) h4++;
+        else if (hascyc(8)) h8++;
+        else if (hascyc(16)) h16++;
+        else { none++; fputs(line, stderr); }
+    }
+    printf("graphs=%llu cubic_bipartite=%llu has4=%llu has8_no4=%llu has16_no4_no8=%llu none=%llu\n",
+           (unsigned long long)g, (unsigned long long)ok, (unsigned long long)h4, (unsigned long long)h8,
+           (unsigned long long)h16, (unsigned long long)none);
+    return 0;
+}

@@ -1,0 +1,52 @@
+{
+ "item": "K3",
+ "date": "2026-10-31",
+ "parent_preregistration": "results/proposal4/2026-10-27/preregistration.json (sha256 7f7d5ac1b2ba2987860542bcb6acec4bf5b68bbdabce183433d9d2135e65b438, unchanged)",
+ "written_before_any_attempt": true,
+ "resources": "cores 4,5 only (taskset -c 4,5); time box about 4 agent-hours, at most two budgets for part (c)",
+ "sources_read_before_this_file": {
+  "Joos et al. 2013, ACP 13, 2793, doi:10.5194/acp-13-2793-2013": "Table 5, row IRFCO2 (100 GtC pulse, 0<t<1000 yr, eq. 11): a0..a3 = 0.2173, 0.2240, 0.2824, 0.2763; tau1..tau3 = 394.4, 36.54, 4.304 yr; sum of a = 1.0000. Licence CC BY 3.0 (journal landing page). PDF kept outside the repo in /home/callensxavier_gmail_com/k3_thirdparty/joos/ (not redistributed).",
+  "Seshadri, arXiv 1502.00805v3 (Global and Planetary Change 2017 doi:10.1016/j.gloplacha.2016.09.004)": "eq. (1) prints 0.276, 0.282, 0.224, 0.217 (sum 0.999), tau 4.30, 36.5, 394; text uses tau1 = 4.4; emissions family m(t) = m0 (1+r)^(min(t,tg)-t0) exp(-(t-t0)/tau_m); Fig. 5 scenario 'tg-t0 = 60 yr, r = 0.015 %/year, tau_m = 50 yr'. Note ln(1.015) = 0.01489 < 1/tau_m = 0.02, so with r = 0.015 per year his own condition r > 1/tau_m fails (peak emissions then at t0); '%/year' is also ambiguous. Reported as a source inconsistency. PDF in k3_thirdparty/seshadri/ (arXiv licence not checked, not redistributed).",
+  "Ciais et al. arXiv 2609.34226 (low-latency global carbon budget 2025)": "text lines: fossil 10.38, land sink 2.04, ocean emulator 3.15, growth 2.06 ppm/yr, factor 2.124 GtC/ppm, printed imbalance 0.81. Positive arithmetic control (addendum A4) only; the licence is not checked and nothing from it is redistributed beyond these printed numbers with citation."
+ },
+ "question": "For the linear impulse-response model u(t) = uP + int_0^t m(z) h(t-z) dz with h(t) = a0 + sum_i a_i exp(-t/tau_i), a_i >= 0 (Joos 2013 mean IRF, h(0) = 1): (a) after emissions cease (m = 0 for t > T) is the excess concentration completely monotone on (T, inf), with limit a0 * int m; (b) certified enclosures of the time of the concentration peak and of the delay after the emissions peak for Seshadri's emission family; (c) can a single-peaked emission path (nondecreasing then nonincreasing, m >= 0) give a concentration path with two (or more) local maxima?",
+ "hypotheses_stated_before_attempt": {
+  "Ha": "True, elementary: for any nonnegative emission measure supported on [0,T], u(t) - uP = a0 W + sum_i b_i exp(-t/tau_i) with b_i = a_i int exp(z/tau_i) dm(z) >= 0, hence antitone, convex, all (-1)^n derivatives >= 0 on (T, inf). Expected known (Laplace-mixture closure), so value is low; the label is 'independent check', not new.",
+  "Hc_yes": "Expected YES by my own pencil derivation (not yet computed): u'(t) = sum_j c_j h(t - z_j) for step emissions with jumps c_j; for a staircase emission up by A at z1, down by B1 (0<B1<A) at z2 and to zero at z3, u' just after z2 is A h(z2-z1) - B1 h(0), negative if B1/A > h(z2-z1)/h(0), while for large t-z2 it tends to A - B1 > 0 when a0 > 0 (ratio h(x+d)/h(x) increases strictly toward 1 by log-convexity, which is strict unless h is a single exponential). So u has a local max near z2, a local min, and a second local max at z3 where emissions stop. Therefore a unimodal emission can give two concentration maxima for the Joos IRF; 'at most one peak' is false in general for a CM IRF with a0 > 0 (and for a0 = 0 with at least two distinct decay rates).",
+  "Hc_no_single_exp": "For a single-exponential IRF (h = exp(-t/tau)) and any unimodal m, u has at most one local max: w(t) = u'(t) exp(t/tau) satisfies w' = m'(t) exp(t/tau) <= 0 after the emissions peak and w >= 0 before it. To be proved by hand and checked numerically as a positive control.",
+  "Hb": "Delay is a number depending on (r, tg, tau_m); for the printed Seshadri scenario the computed delay may differ because of the r inconsistency; we report the family r in {0.03, 0.05}/yr (ln-growth exceeds 1/tau_m = 0.02) plus the printed r = 0.015 case separately."
+ },
+ "model": "h from Joos Table 5 as exact decimals (rationals). Time origin t0 = 0 (emissions before t0 ignored; Tier X check of sensitivity). Emissions m(z) = m0 exp(alpha z) for z <= tg, alpha = ln(1+r) - 1/tau_m, and m(tg) exp(-(z-tg)/tau_m) afterwards (Seshadri family, exactly). Step emissions for (c): finite staircases with exact rational levels and times. Closed forms: x_i(t) = int_0^t m(z) exp(-(t-z)/tau_i) dz, u' = m - sum_i (a_i/tau_i) x_i, u'' = m' - m sum a_i/tau_i + sum a_i/tau_i^2 x_i; for steps, u(t) = sum_j c_j H(t - z_j) with H(x) = a0 x + sum a_i tau_i (1 - exp(-x/tau_i)).",
+ "method": "(a) analytic proof plus Lean (pinned 4.34.1 via scripts/certified_numerics/lean_pinned.py, leanchecker replay, escape grep, axioms within {propext, Classical.choice, Quot.sound}): for discrete nonnegative emission measures and any finite exponential-sum IRF with nonnegative coefficients, the post-cessation excess is antitone and convex and tends to a0 W. The continuous-m version is stated and proved on paper only (Tier L/C, not in Lean). (b) mpmath interval arithmetic (iv, outward rounding): bracket the sign change of u' with u'(ta) > 0 > u'(tb) and u'' < 0 (interval) on [ta,tb] so the peak time is enclosed and unique in the bracket; delay = t2 - t1 with t1 = tg (or t0). (c) exact-rational staircase emission families; certification of >= 2 local maxima by interval-arithmetic values u(s1) < u(s2) > u(s3) < u(s4) > u(s5) at rational times s1<...<s5 (continuity gives a local max in (s1,s3) and in (s3,s5)); adversarial search over staircase families (random plus the analytic recipe) to map where 0, 1, 2 maxima occur; exhaustive check that no unimodal staircase gives >1 max for single-exponential h.",
+ "positive_controls": [
+  "P1: Joos Table 5 coefficients sum to 1.0000 exactly as rationals; Seshadri eq. (1) printed coefficients sum to 0.999 (discrepancy recorded, not a failure).",
+  "P2: single-exponential h: closed form of u equals mpmath quad of the convolution at 30 random points to 1e-30; and 5000 random unimodal staircases give at most one local max (Hc_no_single_exp).",
+  "P3: for the Joos IRF, closed-form u (steps and Seshadri exponentials) equals mpmath.quad of int m(z) h(t-z) dz to 1e-25 at 50 points (independent implementation of the convolution).",
+  "P4: CARBON-1 arithmetic of Ciais et al.: 10.38 - 2.04 - 3.15 - 2.06*2.124 = 0.8146 rounds to the printed 0.81 (exact rational arithmetic).",
+  "P5: part (a) numerically: post-cessation u on a grid is non-increasing, second differences >= 0, limit a0*W, for 200 random emission histories with the Joos IRF."
+ ],
+ "negative_controls": [
+  "N1: an IRF with one negative coefficient (a1 = -0.2240 offset onto a0) is not CM: part (a) check must FAIL on an explicit instance (u not monotone or not convex after cessation), and the Lean lemma must not apply (nonnegativity hypothesis explicit).",
+  "N2: deliberately wrong sign in u' (m + sum a_i/tau_i x_i): the P3 quad comparison must fail.",
+  "N3: Descartes-type false claim 'sign changes of u' <= sign changes of m'' (variation-diminishing) must be refuted by the Hc_yes instance; i.e. the checker must detect >= 2 maxima in the recipe instance and 1 in a single-exponential instance with the same emission.",
+  "N4 (Lean): a planted sorry and a planted extra axiom in a *Controls.lean file must be rejected by the axiom gate."
+ ],
+ "kill_criterion": "(c) gets at most two budgets of about 4 agent-hours; if no exact two-maximum instance is certified and no at-most-one-peak theorem is established, (c) is reported open with the covered search space. If a control fails unexplained (P2, P3, P5, N1, N2) stop and report. If the answer to (c) is already established in the literature, say so: this study would then be an independent re-derivation. To our knowledge (no systematic search done) the multiple-peak behaviour of u under CM IRFs is not stated in Seshadri 2016 or Joos 2013; a quick alphaXiv search is recorded in logs.",
+ "outcomes": {
+  "KEEP": "P1-P5 and N1-N4 pass, (a) in Lean, (b) enclosures, (c) certified two-maximum instance for the Joos IRF plus proved single-exponential theorem, and a stated sufficient condition characterised",
+  "PARTIAL": "(a) and (c) certified but (b) limited to the scenario family because of the Seshadri parameter inconsistency, or Lean covers only the discrete case (expected)",
+  "KILL": "a control fails unexplained, or part (c) result turns out wrong on independent recomputation"
+ },
+ "tiers": {
+  "A": "Lean lemma for (a) in the discrete-measure, finite exponential-sum case only (statement lock not independently audited, so LEDGER_UNAUDITED_TIER_A flagged)",
+  "C": "interval-arithmetic certified enclosures (b) and the two-maxima instance (c), given the pinned Joos coefficients; hand proofs of the continuous (a) and the single-exponential unique-peak theorem",
+  "X": "floats, quad comparisons, random search, sensitivity to pre-t0 history, anything about the real Earth system",
+  "L": "Joos Table 5 coefficients, Seshadri formulae as literature"
+ },
+ "not_claimed": [
+  "no tonnes of CO2, no climate effect, no warming, no emission-pathway advice",
+  "the Joos fit is a multi-model mean for one pulse experiment; real carbon-cycle responses are state-dependent and nonlinear; 'concentrations fall after emissions stop' is a statement about the linear model only",
+  "the two-peak instance is a mathematical staircase, not a plausible scenario, and nothing is claimed about real emissions",
+  "no deployment advocacy; no 'breakthrough'"
+ ]
+}

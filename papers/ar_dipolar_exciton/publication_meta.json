@@ -1,0 +1,37 @@
+{
+ "title": "The bilayer dipolar-exciton interaction is completely monotone in r^2: kernel-checked triangular-lattice corollaries at every density and an exact-Ewald CVODE consistency study",
+ "version": "v1",
+ "description": "<p>Two rigid, vertically aligned electron&ndash;hole dipoles in a bilayer, at layer separation d and in-plane distance r, interact by V(r) = 2(1/r &minus; 1/&radic;(r<sup>2</sup>+d<sup>2</sup>)). As a function of t = r<sup>2</sup> this is g<sub>d</sub>(t) = 2(t<sup>&minus;1/2</sup> &minus; (t+d<sup>2</sup>)<sup>&minus;1/2</sup>). Every claim is filed in an Elenchus claim ledger with tiers A (kernel-checked Lean), L (cited literature, quoted verbatim), C (human argument, not machine-checked) and X (floating-point exploration, which never supports a claim).</p><p><b>Tier A</b> (Lean 4.34.1, pinned openai/math and Mathlib; axioms within propext, Classical.choice, Quot.sound; planted sorry and planted-axiom controls caught):</p><ul><li>g<sub>d</sub> satisfies upstream's AdmissiblePotential (smooth, nonnegative, completely monotone), as does the whole family t<sup>&minus;s/2</sup> &minus; (t+c)<sup>&minus;s/2</sup> for s &gt; 0, c &ge; 0; for c &lt; 0 it fails (negative control);</li><li>triangular-lattice optimality among locally finite configurations at density one and at every density &rho; &gt; 0, obtained from upstream's universal_energy_minimum and a rescaling theorem;</li><li>for g<sub>d</sub> (d &gt; 0) only: finiteness of the optimal energy at density one and at every density, so those inequalities are not &top; &le; &top; (no finiteness theorem is proved for the rest of the shifted-difference family, which at c = 0 is identically zero);</li><li>the Step-1 identity g<sub>d</sub>(r<sup>2</sup>) = 2(1/r &minus; 1/&radic;(r<sup>2</sup>+d<sup>2</sup>)) for r &gt; 0 (the physical pair counting stays Tier C).</li></ul><p>These corollaries are <b>conditional</b> on the upstream openai/math theorem, which is AI-generated and not peer reviewed (the planar Cohn&ndash;Kumar conjecture was stated open in the human literature by Petrache and Serfaty in 2019), and on the fidelity of its definitions. The prior-round theorems were re-checked by a separate AI verifier (ACCEPT_WITH_CORRECTIONS); the every-density and shifted-difference module was re-elaborated from source by a separate AI auditor at the stage-4 audit (rc 0, axioms within the allowlist, planted sorry and planted axiom caught; verdict ACCEPT_WITH_CORRECTIONS, no blocking findings, corrections applied in this version); the small Step-1 module added in this revision is producer-checked only. No human has audited the statements.</p><p><b>Tier C</b>: the physics reading (classical, zero-temperature, rigid, unscreened point dipoles) and a step-by-step human demonstration for undergraduates. Complete monotonicity is elementary (Bernstein); the only new item is the explicit kernel-checked corollary. No breakthrough is claimed.</p><p><b>Tier X</b>: a new rusty-SUNDIALS module computes exact Ewald energies of the untruncated potential (agreement with an independent Python Ewald sum to about 1e-13; tail-dropping negative control caught). Preregistered CVODE gradient-flow relaxations found 0 of 21 relaxed periodic competitors below the triangular lattice (only 14 of the 21 are open searches; the other 7 are designed negative controls, and two runs end in the same state), with positive and negative controls behaving as designed; the run set is smaller than preregistered, and Ewald energies replace the preregistered truncated sum (a stated deviation). The HuggingFace dataset colabfit/JARVIS_DFT_3D_12_12_2022 (JARVIS-DFT, OptB88vdW; card license &lsquo;unknown&rsquo;) supplies a homo-stack proxy layer spacing of about 6.6 &Aring; for MoSe<sub>2</sub>/WSe<sub>2</sub>, placing experimental exciton densities at d&radic;n &asymp; 0.02&ndash;0.11; the resulting unscreened square-minus-triangular gaps (about 0.0014 to 0.22 meV per exciton, with the gap taken at the nearest simulated d&radic;n) are about 1.5 to 5 orders of magnitude below moir&eacute; trap depths, and real excitons there are a quantum gas.</p><p>The Elenchus ledger gate reports 0 blocking findings and 14 flags (exit code 1), one for each Tier A row whose statement adequacy no human has audited. The work was produced by AI agents (Claude) under the author's direction; the author is responsible for the content.</p>",
+ "keywords": [
+  "Lean 4",
+  "formal verification",
+  "interlayer excitons",
+  "dipolar excitons",
+  "bilayer",
+  "transition metal dichalcogenides",
+  "MoSe2/WSe2",
+  "complete monotonicity",
+  "universal optimality",
+  "triangular lattice",
+  "Ewald summation",
+  "CVODE",
+  "rusty-SUNDIALS",
+  "HuggingFace",
+  "JARVIS-DFT",
+  "epistemic tiers",
+  "AI-assisted research"
+ ],
+ "notes": "Preprint v1 (2026-10-25), revised after an independent AI audit (AUDIT.md, REVISION.md). Lean: AutoevolveAI formal_cert/Autoresearch/DipolarExciton.lean (sha256 b85389a50373adaf877e866c79f0696ba0a284d9626bc9a56040821c3e11f27d), DipolarExcitonMultipolar.lean (sha256 7f52ea64903c43cbfe95b76eea74a2ea01040c45d778ae05bbb848aa9554f98a) and DipolarExcitonStep1.lean (sha256 ceb2c607498086e8f865ebeee944842548345501d704a54b0dfc465cd9f42f7d; controls DipolarExcitonStep1Controls.lean sha256 8a26b6ba14882ad6fc3e57cc69376786c30993695fc50846fc8a75add1ca4987) under pinned openai/math fd4aeeb2ee4fc729c18d98444fed42fd0529eeeb, Lean 4.34.1, Mathlib d13f23b723b8a846827a245b89c10fc7d3f11612; AutoevolveAI files uncommitted on base db794dd98d12c2a79702eab5651ae7c36a35ea27. Numerics: rusty-SUNDIALS branch physics/ar-dipolar-exciton-2026-10-25, commits 4feb027eb502ff0936a28f8168499b6fef25e276 (preregistration), 17ea6beccd044a02f46a8d8f7f04c76f31ee33f0 (code), 916fc88c8cebab15426427a5601a38278a1467c2 (driver patch), 272a09e62c1b9b36eabc167cdafaa2845fbe9198 (results); not pushed at the time of writing. HuggingFace dataset colabfit/JARVIS_DFT_3D_12_12_2022 at revision f4de0085edcf92885870c67459363d2c7080c90b (license 'unknown' on the card; only derived numbers reproduced). Producer, verifier and auditor are all AI agent instances; no human has reviewed the work.",
+ "related_identifiers": [
+  {"identifier": "10.5281/zenodo.23293429", "relation": "references", "scheme": "doi"},
+  {"identifier": "10.5281/zenodo.23295142", "relation": "references", "scheme": "doi"},
+  {"identifier": "10.5281/zenodo.23285631", "relation": "references", "scheme": "doi"},
+  {"identifier": "arXiv:1908.09714", "relation": "references", "scheme": "arxiv"},
+  {"identifier": "arXiv:2001.03812", "relation": "references", "scheme": "arxiv"},
+  {"identifier": "arXiv:2007.01831", "relation": "references", "scheme": "arxiv"},
+  {"identifier": "10.1038/s41524-020-00440-1", "relation": "references", "scheme": "doi"},
+  {"identifier": "10.60732/e9e65ccd", "relation": "references", "scheme": "doi"},
+  {"identifier": "https://huggingface.co/datasets/colabfit/JARVIS_DFT_3D_12_12_2022/tree/f4de0085edcf92885870c67459363d2c7080c90b", "relation": "references", "scheme": "url"},
+  {"identifier": "https://github.com/openai/math/tree/fd4aeeb2ee4fc729c18d98444fed42fd0529eeeb", "relation": "references", "scheme": "url"}
+ ]
+}

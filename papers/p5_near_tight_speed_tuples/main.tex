@@ -1,0 +1,116 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\tx}[1]{\texttt{#1}}
+\newcommand{\ML}{\operatorname{ML}}
+
+\title{Null boxes for the Fan--Sun amended conjecture on near-tight speed tuples:\\
+a partial recomputation with an independent complete-witness screen\\
+{\large (no counterexample; a null box proves nothing outside the box)}}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-11-01}
+\hypersetup{pdftitle={Null boxes for the Fan-Sun amended conjecture on near-tight speed tuples: a partial recomputation with an independent complete-witness screen},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small doi:10.5281/zenodo.23859744 \quad (not peer reviewed)\end{center}
+
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its code, its claim ledger and the audit were produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{This version was audited by a separate AI agent instance (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.} The audit's eight corrections are applied (Section~\ref{sec:corr}). No human audit exists. There is no Lean in this paper.
+
+\begin{abstract}
+\noindent For positive integer speeds $v_1,\dots,v_n$ let $\ML$ be the lonely-runner loneliness, $\ML=\max_t\min_i\|tv_i\|$. A tuple is \emph{near-tight} if $\ML<1/n$. Fan and Sun's amended spectrum conjecture (Conjecture~1.3) says that $\ML=s/(ns+k)$ with $1\le k\le n$, or $\ML\ge1/n$; for $\ML=p/q$ in lowest terms and $k'=q-np$ this is exactly $1\le k'\le n$. We enumerated all primitive tuples of distinct speeds in boxes with exact integer witnesses and recomputed $\ML$ of every near-tight tuple with Python fractions. \textbf{No counterexample was found}: no tuple has $k>n$, and none has $k>n/2$ (Fan--Sun Conjecture~6.1). The boxes $7$ speeds $\le70$ and $8$ speeds $\le60$ were already covered by Fan and Sun's own Table~1, so they are recomputations. Relative to the literature only $7$ speeds in $(70,200]$ and $8$ speeds in $(60,130]$ are new, and they are \textbf{null boxes}: $55$ primitive near-tight septuples $\le200$ ($k=1$: $51$, $k=2$: $4$), $65$ octuples $\le130$ (all $k=1$). An independent audit (Rust, a complete witness set containing sums, differences and peaks) and a run of Cordella's own \texttt{survey.c} reproduced every tuple set exactly. \textbf{Not a proof, nothing is solved, Tier~\tC{} throughout.}
+\end{abstract}
+
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{What this is NOT.} Not a proof or refutation of Conjecture~1.3; not a statement about speeds beyond the boxes; not a new finding about the septuple $(2,7,9,11,13,20,54)$ (Section~\ref{sec:res}); the box $8\le150$ preregistered in the addendum was \emph{not run}; not formalised in Lean; not human-audited.}}
+
+\paragraph{Markers.} \tL{}: a cited source, taken as stated. \tC{}: executed exact integer/fraction code with the argument written down, not machine-checked. \tX{}: floating-point or recorded-absence evidence. Identifiers \texttt{LRS-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+\section{Statement, definitions, scope}\label{sec:stmt}
+$\ML(v)=\max_t\min_i\|tv_i\|$, $\|\cdot\|$ the distance to the nearest integer. Near-tight: $n$ distinct positive integers with $\ML<1/n$ (Cordella \cite{cor}, \S2.1). Write $\ML=p/q$ in lowest terms, $k'=q-np\ge1$ for near-tight tuples.
+
+\textbf{Fan--Sun Conjecture~1.3 (\tL{}, \cite{fs}).} For positive integers $v_1,\dots,v_n$, either $\ML=s/(ns+k)$ for some $s,k\in\mathbb N$ with $k\le n$, or $\ML\ge1/n$. With $s=gp$, $ns+k=gq$ one gets $k=gk'\ge k'$, so a representation with $k\le n$ exists iff $1\le k'\le n$ (the audit checked this equivalence). \textbf{Conjecture~6.1} is the same with $k\le n/2$. Fan--Sun's Table~1 (their computer search, speeds up to $70$ for $n=7$ with $k\in\{1,2\}$, up to $60$ for $n=8$ with $k=1$) calls $n=7,8$ ``unconvincing due to the low search bounds''; their code is unpublished and their counts are not published.
+
+\textbf{Scope.} \emph{Distinct speeds suffice:} a tuple with a repeated speed has at most $n-1$ distinct speeds, and then $\ML\ge1/n$ by the proved lonely runner conjecture for at most $8$ runners (classical for $\le7$ runners; Rosenfeld \cite{ros} for $8$), since here $n-1\le7$ speeds. \emph{Primitive tuples suffice:} $\ML$ is invariant under dividing out a common factor.
+
+\section{Method}\label{sec:method}
+\paragraph{Completeness of the sum-time witness set (\tC{}).} Let $f(t)=\min_i\|tv_i\|$, $D=v_i+v_j$. Claim: if $\ML=f(t_0)>0$, then $t_0$ is of the form $m/(v_i+v_j)$ with $1\le m\le D/2$ after the symmetry $t\mapsto1-t$. At a maximiser the right derivative of $f$ is $\le0$, so some active runner $r$ falls to the right (value $b-t_0v_r$, $b\in\mathbb Z$); the left derivative is $\ge0$, so some active runner $s$ rises on the left (value $t_0v_s-a$). If $r\ne s$ then $t_0=(a+b)/(v_r+v_s)$. If $r=s$ then $t_0v_r\equiv1/2$, $f(t_0)=1/2$ and every active runner sits at $1/2$, so $t_0(v_i+v_j)\in\mathbb Z$ for two active runners: $t_0$ is a sum time with $m=D/2$. Cordella's Lemma~2.2 uses sums \emph{and} differences $m/(v_i-ev_j)$, $e=\pm1$; for positive speeds the sums suffice, as just shown. Hence ``tuple is near-tight iff no sum time $m/(v_i+v_j)$, $m\le D/2$, has all runners at distance $\ge1/n$'' is exact, and each rejection is an exact integer witness.
+
+\paragraph{Scan.} \texttt{data/code/lrspec\_scan.c.txt} (C, bitmask per speed over the witness list, two witness lists W4/W9 as a consistency device, exact second stage scanning $m=1..D/2$), driven by \texttt{run\_box.py}; every near-tight tuple is recomputed with Python \texttt{Fraction} (\texttt{verify.py}). Every box enumerates exactly $\binom Nn$ tuples (checked). Cores $6,7$ only. \emph{Correlated check:} \texttt{verify.py} shares the sums-only reduction with the C exact stage, so its ``0 mismatches'' cannot detect an error in that reduction; the auditor's screen below does not share it.
+
+\paragraph{Controls (run before the headline boxes).} Positive: $n=4\le200$: $4125$ primitive near-tight tuples ($k=1$: $3836$, $k=2$: $289$, containing $(1,3,4,14)$ with $\ML=4/17$); $6\le110$: $348$ ($315$, $k=3$: $33$); $7\le50$: $29$ ($26$; $k=2$: three tuples); $8\le40$: $29$ (all $k=1$); Fan--Sun examples $7/30$, $8/51$, $3/23$, $5/37$ and the family $(2s+7)/(8s+30)$, $s=0..20$. Negative: strictness corrupted ($n d>b$) changes the counts ($4125\to14197$, $n=6\le60$: $118\to908$, $7\le50$: $29\to382$, $8\le40$: $29\to394$), truncated witnesses ($m\le D/4$) change them ($4143,119,39,31$), a tampered $p/q$ is flagged. The C scan agrees with a pure-Python brute force on $4\le30$, $5\le24$, $6\le20$, $7\le18$, $8\le16$, and the two witness lists give byte-identical output on $4\le200$, $5\le100$, $6\le110$, $7\le60$, $8\le45$ and on $7\le80$, $8\le60$, $7\le120$.
+
+\section{Results}\label{sec:res}
+\begin{table}[h]\centering\small
+\begin{tabular}{@{}rrrlrr@{}}\toprule
+$n$ & speeds $\le$ & near-tight & $k$ counts & $k>n$ & core-s\\ \midrule
+4 & 200 & 4125 & 1:3836, 2:289 & 0 & (control)\\
+6 & 110 & 348 & 1:315, 3:33 & 0 & (control)\\
+7 & 50 & 29 & 1:26, 2:3 & 0 & (control)\\
+8 & 40 & 29 & 1:29 & 0 & (control)\\
+7 & 80 (primary) & 37 & 1:33, 2:4 & 0 & 14\\
+8 & 60 (primary) & 36 & 1:36 & 0 & 13\\
+7 & 100 & 40 & 1:36, 2:4 & 0 & 66\\
+8 & 80 & 47 & 1:47 & 0 & 128\\
+7 & 120 & 44 & 1:40, 2:4 & 0 & 243\\
+8 & 100 & 53 & 1:53 & 0 & 831\\
+7 & 150 & 48 & 1:44, 2:4 & 0 & 1225\\
+7 & 180 & 52 & 1:48, 2:4 & 0 & 4054\\
+8 & 130 & 65 & 1:65 & 0 & 8136\\
+7 & 200 & 55 & 1:51, 2:4 & 0 & 8409\\
+6 & 150 & 627 & 1:562, 3:65 & 0 & 53\\
+6 & 200 & 1085 & 1:971, 3:114 & 0 & 301\\ \bottomrule
+\end{tabular}
+\caption{Primitive near-tight tuples of distinct positive speeds (\tC{}). No tuple has $k>n$, and none has $k>n/2$, in any box. Core-s is $2\times$ wall, an upper bound; the boxes (below the controls) sum to $23{,}473$ core-s $=6.5$ core-h, excluding controls and verification.}\label{tab:res}
+\end{table}
+\paragraph{Novelty, exactly.} The boxes $7\le70$ and $8\le60$ are covered by Fan--Sun's Table~1, so they are recomputations; the 7-speed boxes $\le50$ and 8-speed $\le40$ are Cordella's. New relative to the literature are only $7$ speeds in $(70,200]$ and $8$ speeds in $(60,130]$, and they are null boxes. Fan--Sun's counts are not published, so ours are the first exact published counts at those bounds, and that is all they are. A same-day search (alphaXiv, 2026-11-01) found no later work extending the $7$- or $8$-speed spectrum searches and no refutation or proof for $n\ge5$; Hu--Jing \cite{hj} (uniform $\ML$ gap) is not about the spectrum.
+
+\paragraph{The four $k=2$ septuples.} The same four appear in every box from $\le54$ up to $200$: $(1,2,3,4,5,7,18)$ and $(1,3,4,5,7,13,18)$ with $\ML=3/23$, $(1,3,4,5,7,11,30)$ with $5/37$, $(2,7,9,11,13,20,54)$ with $9/65$. All were re-verified over the complete Lemma~2.2 set (optimal $t=4/23,\,4/23,\,6/37,\,11/65=11/(11+54)$). \textbf{The last is not a new finding.} It is printed in neither paper. It lies outside Cordella's 7-speed box (maximum speed $54>50$), and Cordella's own \texttt{survey.c} finds it ($9/65$, $k=2$) once the box reaches $54$. It lies inside Fan--Sun's searched range ($\le70$), where they report $k\in\{1,2\}$ without listing tuples. That they saw it is an inference: their search code is unpublished.
+
+\paragraph{Secondary (descriptive).} All $1085$ sextuples $\le200$ have $\ML=(P-1)/(6P)$ with odd $q$ ($P\equiv\pm1\bmod6$), consistent with Cordella's odd-denominator theme (his Conjecture~6.2 is the odd-denominator statement, $k\in\{1,3\}$). Maximum $v_{\max}/q$: $195/73<3$ for six speeds, attained at $(6,61,67,128,189,195)$, a member of the family $(6,31,37,68,99,105)$, $(6,43,49,92,135,141)$, $(6,61,67,128,189,195)$ that looks like the extremal family for which Cordella's Theorem~5.3 already proves $v_{\max}<3q$; this is consistent with a theorem and is not new evidence about sporadic tuples. For $7$ and $8$ speeds the maxima are $13/5$ at $(1,4,5,6,7,11,39)$ and $21/17$ at $(1,5,6,7,8,11,13,21)$.
+
+\section{The independent audit}\label{sec:audit}
+A separate AI agent instance (not a person; \texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS) wrote a screen in Rust not derived from the C code. Its witness set is \emph{every} reduced fraction $a/b\le1/2$ with $b\le2N$ ($3903$ fractions for $N=80$, $24339$ for $N=200$), which contains all sums, differences and peaks, so near-tight $\iff$ the AND of per-speed bitsets is $0$, with no second stage. A faster prefilter mode (first $6$ words) matched the full mode on $4\le200$, $6\le110$, $7\le80$, $8\le60$. Tuple sets were compared as lines ``$v_1..v_n\;p\;q\;k$'': identical to the producer on every box of Table~\ref{tab:res}, including $8\le130$ ($1{,}624{,}177{,}854{,}000$ tuples, $4133$ s) and $7\le200$ ($2{,}283{,}896{,}214{,}600$ tuples, $5339$ s), and on the sub-boxes obtained by restricting. The auditor rebuilt \texttt{lrspec\_scan.c} from source and reproduced $7\le80$, $8\le60$ byte for byte. Exact fraction checks over the complete set: all rows of $7\le80$ and $8\le60$ and $40$ random rows of each of $7\le200$, $8\le130$, $6\le200$, $0$ mismatches. The auditor's own strictness-corruption control gives the same counts ($14197,908,382,394$), every added row having $\ML=1/n$ exactly.
+
+\paragraph{Cordella's code.} The auditor reviewed \texttt{survey.c} (v1.0.2, MIT; printf/OpenMP only, no file, network or exec calls) before building and running it: its tuple sets for $4\le200$, $6\le110$, $7\le50$, $8\le40$ are identical to the producer's controls, including $p,q,k$; \texttt{survey 56 7} gives $32$ tuples ($k=1$: $28$, $k=2$: $4$), identical to the auditor's Rust $7\le56$. The archive is not shipped.
+
+\section{Audit corrections applied}\label{sec:corr}
+The producer's \texttt{data/RESULT.md}, \texttt{data/PREREG\_*} and \texttt{data/result.json} are unmodified copies (pre-audit, hashed); this paper supersedes them. (1) The $(2,7,9,11,13,20,54)$ sentence is replaced as in Section~\ref{sec:res}. (2) The \texttt{survey.c} run is reported (Section~\ref{sec:audit}). (3) The producer's two-witness-list check on $8\le130$ and $7\le200$ was \emph{not done}; it is superseded by the auditor's complete screen. (4) The scope sentences are added (Section~\ref{sec:stmt}). (5) The cost is stated as $23{,}473$ core-s $=6.5$ core-h; the unrun box $8\le150$ ($\binom{150}{8}=5.26\cdot10^{12}$ tuples) would have added about $26{,}000$ core-s, far below the $60$ core-h cap, so skipping it was a choice and is disclosed. (6) The docstring of \texttt{data/code/ladder2.py} now reads ``8<=150 not run; 7<=200 was run separately'' (this is the only edited file; the lane copy is unchanged). (7) The correlated-check note is added (Section~\ref{sec:method}). (8) The \texttt{PREREG\_ITEM.md} header says ``written $\sim$23:20 UTC'' but its mtime is 23:16:30, before the scan binaries (23:17:09); the preregistration timing is self-attested, since the whole directory arrived in one commit, so the hashes prove content, not time.
+
+\section{Limitations and what is not done}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item Null boxes only. Conjecture~1.3 is neither proved nor refuted. Both screens enumerate only the stated boxes.
+\item $8\le150$ was never run, by anyone. The producer's W9 run on $8\le130$ and $7\le200$ was not done (superseded).
+\item The producer's N2 (truncated candidates) and N3 (sampling) controls and the float-grid check were not re-implemented by the auditor.
+\item The claim that Fan--Sun likely saw the septuple is an inference. AI audit only; no human audit. Tier~\tC{}; no Lean.
+\item Preregistration deviations: the optional run of Cordella's code was refused by the producer's sandbox (done by the auditor); control N3 wording corrected in addendum~1; the second ladder (addendum~1, sha256 \texttt{b6d9ebf0\dots7669}) was partly run; \texttt{PREREG\_ITEM.md} sha256 \texttt{7e62a74e\dots7ac7a6}.
+\end{itemize}
+
+\section{Claim ledger and reproducibility}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files the claims with hashed evidence; the Elenchus gate (\texttt{ledger/run\_gate.py}, verbatim output in \texttt{ledger/gate\_output.txt}) checks bookkeeping only and licenses nothing. Reproduce: \texttt{run\_box.py n N label 4} (compile \texttt{lrspec\_scan.c.txt} as C), \texttt{verify.py}; auditor: Rust sources in \texttt{data/audit/rs}, \texttt{fracverify.py}, \texttt{cmp.py}. Shell scripts are stored as \texttt{.sh.txt}, logs as \texttt{.log.txt}, binaries and third-party PDFs and code are not shipped. Inputs are copies of \texttt{results/proposal5/2026-10-27/LR-SPEC/} and of the auditor's scratch directory; nothing was committed, pushed or uploaded.
+
+\begin{thebibliography}{9}\small
+\bibitem{fs} H.\,T.\ Fan, A.\ Sun, \emph{Amending the Lonely Runner Spectrum Conjecture}, arXiv:2306.10417 (v2, 30 Jan 2026); Electron.\ J.\ Combin.\ 33(1) (2026) P1.38. (\tL)
+\bibitem{cor} F.\ Cordella, \emph{Odd denominators in the Lonely Runner spectrum for six speeds}, arXiv:2609.03444 (v2, Sept 2026); code \texttt{survey.c} v1.0.2, doi:10.5281/zenodo.22345079 (MIT). (\tL)
+\bibitem{hj} X.\ Hu, Y.\ Jing, \emph{Near optimal gap in the Lonely Runner Conjecture}, arXiv:2610.23790 (16 Oct 2026). (\tL)
+\bibitem{ros} M.\ Rosenfeld, \emph{The lonely runner conjecture holds for eight runners}, arXiv:2509.14111 (v2, Oct 2025). (\tL)
+\end{thebibliography}
+\end{document}

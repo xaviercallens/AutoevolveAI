@@ -1,0 +1,178 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,
+  frame=single,framesep=3pt,xleftmargin=4pt,xrightmargin=4pt,upquote=true,aboveskip=4pt,belowskip=2pt}
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tA}{\tier{A}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\lean}[1]{\texttt{#1}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\eC}{\eta_C}
+\newcommand{\ep}{\tilde\eta_+}
+\theoremstyle{plain}
+\newtheorem{thm}{Theorem}
+\newtheorem{cor}[thm]{Corollary}
+
+\title{A Lean proof that the low-dissipation efficiency-at-given-power bound is increasing in the asymmetry parameter\\
+{\large (elementary; the engine-level bound is already known)}}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-11-01}
+\hypersetup{pdftitle={A Lean proof that the low-dissipation efficiency-at-given-power bound is increasing in the asymmetry parameter (elementary; the engine-level bound is already known)},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small doi:10.5281/zenodo.23855967 \quad (not peer reviewed)\end{center}
+
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its Python and Lean code and its claim ledger were
+produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{This version was independently audited by a different AI agent instance (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.}
+The audit's nine corrections are applied in this text (Section~\ref{sec:corr}). No human audit and no statement lock exist; both are owed (Section~\ref{sec:lim}).
+
+\begin{abstract}
+In the phenomenological low-dissipation Carnot engine model (heat $Q_x=Q_x^{(r)}-M_x/t_x$ per stroke), Ma, Xu, Dong and Sun~\cite{ma18} define an upper bound $\ep(\tilde P,\zeta,\eC)$ on the efficiency at given normalised power $\tilde P$ and dissipation asymmetry $\zeta\in[-1,1]$ (their Eq.~(13)). They state that it increases with $\zeta$ and that the analytic proof ``is tedious and difficult'', so they check it numerically (Appendix~B). We prove in Lean~4 that the \emph{root form} of the bound---the positive root of the quadratic obtained from their tangency condition---is strictly increasing in $\zeta$ on the whole box $0<\eC<1$, $\tilde P\in(0,1]$, $\zeta\in[-1,1]$ (Tier~\tA{}, statement lock owed). The proof is elementary: a root of a quadratic moves monotonically with a parameter in which the quadratic is monotone. We also machine-check their universal bound Eq.~(1) for every engine of their Eqs.~(3)--(4); \textbf{that bound is a known result with analytic proofs} (Ma and Fu~\cite{mafu}, Zhai~\cite{zhai}), so only the machine check is new. To our knowledge there is no earlier machine-checked proof of either statement; only the $\zeta$-monotonicity lacks a published analytic proof (search not systematic). The identification of the root form with Eq.~(13) is \emph{not} in Lean (symbolic identity up to the sign branch, plus high-precision numerics, Tier~\tC{}). The bound is a valid upper bound, \emph{not} attained in general. A model result; no device or power-plant claim.
+\end{abstract}
+
+\medskip
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{What this is NOT.} It is \textbf{not} a statement about any real engine or power plant; \textbf{not} a ``first proof of Eq.~(1)'' (analytic proofs exist); \textbf{not} a proof that $\ep$ is attained, nor that every engine with asymmetry $\zeta$ satisfies $\eta/\eC\le\ep(\zeta)$ (derivation and numerics only); \textbf{not} a formalisation of Eq.~(13) as printed (the Lean statements use the root form); and the bound is \textbf{not} tight.}}
+
+\paragraph{Markers.} \tA{}: kernel-checked Lean, axioms within $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$, controls caught, no statement lock yet. \tL{}: a cited source, taken as stated. \tC{}: executed code or a hand/symbolic argument written down, not machine-checked. \tX{}: floating-point or high-precision scans, supporting nothing by themselves. Identifiers \texttt{LD-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+%=====================================================================
+\section{Model, definitions and scope}\label{sec:model}
+\paragraph{Model (Tier \tL{}).} Following Ma et al.~\cite{ma18} (Eqs.~(2)--(4)): a Carnot-like cycle with hot and cold isothermal strokes of durations $t_h,t_c>0$ exchanges heat $Q_x=Q_x^{(r)}-M_x/t_x$ ($x=h,c$), where $M_x>0$ is the dissipation coefficient. Put $a=\sqrt{M_h}$, $b=\sqrt{M_c}$, $M=(a+b)^2$, $\zeta=(a-b)/(a+b)\in(-1,1)$ and $q=\eC Q_h^{(r)}$ with $c=\eC\in(0,1)$ the Carnot efficiency. Power and efficiency are
+\[
+P=\frac{q-a^2/t_h-b^2/t_c}{t_h+t_c},\qquad \eta=\frac{q-a^2/t_h-b^2/t_c}{q/c-a^2/t_h},
+\]
+(their Eqs.~(3)--(4)). The maximal power is $P_{\max}=q^2/(4M)$ (Eq.~(6)) and $\tilde P=P/P_{\max}\in(0,1]$. Everything below is \emph{model-conditional}: it concerns this idealised model, not a device.
+\paragraph{The bound $\ep$.} The source maximises $\eta$ over $t_h+t_c=\tau_+$, the largest cycle time compatible with power $P$ (their Eqs.~(9)--(11)), using that $\eta$ increases in $t_h$ and $t_c$. The result, Eq.~(13), is a closed form in $(\tilde P,\zeta,\eC)$. It is an \emph{upper bound} on the efficiency of every engine at normalised power $\tilde P$ and asymmetry $\zeta$: it relaxes the exact power constraint. It is \textbf{a valid upper bound and is not attained in general}; the source itself remarks that it ``is not a supremum for all the $\tilde P$'' (p.~3), and Zhai, Yue and Sun~\cite{zys} give an exact, tighter bound. In this paper $\ep$ means this quantity and ``the bound'' never means a tight or optimal one.
+\paragraph{Root form.} With $s=\sqrt{1-\tilde P}\in[0,1)$ and $K=2/(1-s)>1$ define
+\[
+G(w)=K\bigl(w^2-(1-c)\bigr)-\tfrac{c}{4}\bigl((1-\zeta)+(1+\zeta)w\bigr)^2=Aw^2-Bw-C,
+\]
+$A=K-c(1+\zeta)^2/4>0$, $B=c(1-\zeta^2)/2\ge0$, $C=K(1-c)+c(1-\zeta)^2/4>0$, let $w_+=\bigl(B+\sqrt{B^2+4AC}\bigr)/(2A)$ be its unique positive root, and $\ep/\eC=(1-w_+^2)/c$ (the root form, \lean{etaPlus}). The Lean theorems are stated for the root form; the identification with Eq.~(13) is Section~\ref{sec:link}.
+
+\section{Prior art and what is added}\label{sec:prior}
+\begin{itemize}\itemsep=1pt
+\item \textbf{Eq.~(1) already has analytic proofs (Tier \tL{}).} Ma and Fu~\cite{mafu} (arXiv:2411.03849, Phys.\ Rev.\ E 112, 054130 (2025)), Appendix~B, prove analytically (sign of $d\tilde\eta_+/d\delta$) that their upper bound increases in a dissipation ratio $\delta\in[0,1]$, and at $\delta=1$ obtain their Eq.~(14), identical to Eq.~(1) of~\cite{ma18}. Zhai~\cite{zhai} (arXiv:2605.02732) re-derives Eq.~(1) by a short geometric argument. Zhai, Yue and Sun~\cite{zys} (arXiv:2509.07721) state that~\cite{ma18} already ``rigorously proved'' the Holubec--Ryabov conjecture and give an exact, tighter bound. Holubec and Ryabov~\cite{hr} (2016; read by the auditor) derived the bound analytically only near zero and maximum power, with numerical evidence in between. Ye and Holubec (2021) concern heat pumps and are not relevant. Esposito et al.\ (2010) were not re-read; they enter only as a positive control (Section~\ref{sec:controls}).
+\item \textbf{$\zeta$-monotonicity of Eq.~(13): no analytic proof found.} The source checks it numerically (Appendix~B: ``the analytical proof of its monotonicity is tedious and difficult. Instead numerical calculate the derivative''). The Ma--Fu family is a \emph{different} interpolating function: it agrees with the root form at $\zeta=\pm1$ ($\delta=0,1$) but differs in between by up to $0.038$ under $\delta=(1+\zeta)/2$ (and by $0.40$ and $0.055$ under two other natural maps; auditor script \texttt{mafu\_cmp.py}); their proof is the closest analogue and is cited, not reused.
+\item \textbf{What is added.} (i) A Lean proof of the $\zeta$-monotonicity of the root form: elementary, with a claim to novelty only in being a proof (none found analytically) and a machine-checked one. (ii) A Lean machine check of Eq.~(1) for every engine of Eqs.~(3)--(4): a \emph{known} result, so only the machine check is new. \textbf{To our knowledge this is the first machine-checked proof of either statement}; the literature search was not systematic. We do not claim a first proof of Eq.~(1).
+\end{itemize}
+
+%=====================================================================
+\section{Derivation of the root form (Tier \tC{})}\label{sec:deriv}
+Write $u=\eta/c$, $w=\sqrt{1-\eta}=\sqrt{1-cu}$. This section corrects step~3 of the producer's \texttt{code/derivation.md} (audit correction~6); the producer's file is shipped unchanged and is superseded here.
+\begin{enumerate}\itemsep=1pt
+\item From Eq.~(4): $q(1-u)=w^2a^2/t_h+b^2/t_c$.
+\item Cauchy--Schwarz, $A^2/x+B^2/y\ge(A+B)^2/(x+y)$, with $A=wa$, $B=b$, $x+y\le\tau_+$ and $q\tau_+=KM$ (since $\tau_+=q(1+s)/(2P)$, $K=2/(1-s)$): $K(1-u)\ge\bigl((1-\zeta)+(1+\zeta)w\bigr)^2/4$, using $a/(a+b)=(1+\zeta)/2$.
+\item $\ep/\eC$ is the largest $u$ (equivalently the smallest $w$) for which this holds, i.e.\ the \emph{maximum of $\eta$ over $t_h+t_c=\tau_+$}. This is an upper bound at power $P$ and is \emph{not} attained in general: the equality in the power constraint needs $t_h/t_c=a/b$, whereas the efficiency Cauchy--Schwarz equality needs $t_h/t_c=wa/b$. The boundary of the feasible set is the tangency condition of the source's Eq.~(12). Multiplying by $c$ and using $c(1-u)=w^2-(1-c)$ gives $G(w)\ge0$.
+\item $G$ is a convex quadratic with $G(0)=-C<0$, so $G(w)\ge0$ for $w\ge0$ iff $w\ge w_+$, and $\ep/\eC=(1-w_+^2)/c$. At fixed $w\in[0,1)$ the quantity $T=(1-\zeta)+(1+\zeta)w=(1+w)-\zeta(1-w)$ is strictly decreasing in $\zeta$ and $\ge 2w\ge0$, so $G$ is strictly increasing in $\zeta$; hence $w_+$ strictly decreases and $\ep$ strictly increases.
+\end{enumerate}
+At $\zeta=1$: $(K-c)w^2=K(1-c)$ and $\ep/\eC=(K-1)/(K-c)=(1+s)^2/(2(1+s)-c\tilde P)$, which is Eq.~(1) solved for $\eta/\eC$. At $\tilde P=1$ ($s=0$, $K=2$): $\zeta=-1$ gives $1/2$ and $\zeta=1$ gives $1/(2-c)$ (Esposito sandwich).
+
+\section{Results}\label{sec:results}
+\begin{thm}[Tier \tA{}, statement lock owed; \lean{etaPlus\_strictMono}]\label{thm:mono}
+For $0<c<1$, $K>1$ and $-1\le\zeta_1<\zeta_2\le1$: $\ep(c,K,\zeta_1)<\ep(c,K,\zeta_2)$, with $\ep$ the root form above. (Here $K>1$ contains the physical range $K=2/(1-s)\ge2$.)
+\end{thm}
+\noindent\emph{Proof idea (the Lean proof follows it).} Nonnegative roots of $G(\cdot;\zeta)$ are unique (\lean{root\_unique}), $<1$ (\lean{root\_lt\_one}), and $G$ is strictly increasing in $\zeta$ on $[0,1)$ (\lean{G\_strict\_mono\_zeta}); with $G_{\zeta}(w_1)-G_{\zeta}(w_2)=(w_1-w_2)(A(w_1+w_2)-B)$ and $A w>B$ at a positive root, a larger $\zeta$ forces a smaller root (\lean{root\_strict\_anti}). Quantifiers range over the whole box; the physical $K$ is a subset.
+
+\begin{cor}[\lean{etaPlus\_one}, \lean{etaPlus\_le\_one\_value}, \lean{eq1\_of\_P}; Tier \tA{}]
+$\ep(c,K,1)=(K-1)/(K-c)$, hence $\ep(\zeta)\le(K-1)/(K-c)$, and for $s\in[0,1)$, $\tilde P=1-s^2$: $\ep(c,2/(1-s),\zeta)+(1-c)\tilde P/(2(1+s)-c\tilde P)\le1$ (Eq.~(1) for the root form; $\tilde P=0$ is trivial and not formalised).
+\end{cor}
+
+\begin{thm}[engine-level Eq.~(1), \lean{engine\_bound}; Tier \tA{}; a known result]\label{thm:eng}
+For all $a,b,q,t_h,t_c>0$, $0<c<1$, $P>0$, $\tilde P$ with $\tilde Pq^2=4(a+b)^2P$, $P$ and $\eta$ given by Eqs.~(3)--(4) and positive hot-bath heat $q/c-a^2/t_h>0$:
+$\eta/c+(1-c)\tilde P/\bigl(2(1+\sqrt{1-\tilde P})-c\tilde P\bigr)\le1$.
+\end{thm}
+\noindent This uses Cauchy--Schwarz (\lean{cs2}), the quadratic $P\tau^2-q\tau+M\le0$ and $w\le1$; no $\zeta$ and no Eq.~(13) is used. It is a machine check of a result proved analytically in~\cite{mafu,zhai}; \textbf{only the machine check is new}. $\tilde P\le1$ is derived, not assumed. Engines with $M_h=0$ or $M_c=0$ ($\zeta=\mp1$) are excluded (limits only). One declaration carries \lean{set\_option maxHeartbeats 3000000} (an elaboration budget; the term is re-checked by \texttt{leanchecker}).
+
+\paragraph{Scope: what the Lean theorems do and do not say.} The Lean statements are about the root form, i.e.\ they \emph{state the paper's model through the root form}. They prove \textbf{neither} that $\ep$ is attained \textbf{nor} that every engine with asymmetry $\zeta$ has $\eta/\eC\le\ep(\zeta)$: \lean{engine\_bound} avoids $\zeta$ (it uses $w\le1$, the worst case $\zeta=1$). The latter inequality rests on the derivation of Section~\ref{sec:deriv} (checked by the auditor) and on numerics (0 of 53,021 random engines violate it). The missing Lean lemma is short (Cauchy--Schwarz $\Rightarrow G(w;\zeta)\ge0\Rightarrow w\ge w_+$ via \lean{root\_unique} and convexity) and is owed.
+
+\section{Link to Eq.~(13) as printed}\label{sec:link}
+\paragraph{Transcription.} Read from the page images (arXiv:1802.09806v4, Eq.~(13)), the square-root vinculum ends after ``$+1-\eC$''; the term $-\tfrac{1+\zeta}{4}\eC\bigl(1-\sqrt{1-\tilde P}\bigr)$ lies \emph{outside} the root, inside the square bracket. \textbf{The producer's preregistered transcription was wrong}: it put this term inside the square root. The disagreement with the root form was reported first (up to $0.23$; \texttt{logs/link\_first\_transcription.log.txt}), diagnosed through the symbolic structure (\texttt{code/sym.py}) and the page image, and the transcription corrected; the original disagreement is kept in the logs and the preregistration file is not edited. The corrected reading agrees with the root form to $1.6\cdot10^{-58}$ at $3000$ random $(c,\tilde P,\zeta)$ at 60 digits (\texttt{logs/link.log.txt}, Tier \tC{}).
+\paragraph{Symbolic branch identity (auditor; Tier \tC{}, none in Lean).} Eliminating $w$ from the tangency equality by squaring away the square roots gives a quadratic $R(u)=0$. Writing Eq.~(13) as $u_{13}(x)$ with $x$ the square root, the remainder of $R(u_{13}(x))$ modulo $x^2-(\text{radicand})$ is $0$ (sympy, \texttt{audit\_scripts/sym\_audit.py}): \emph{both sign branches of Eq.~(13) are exact roots of the tangency quadratic} once square roots are squared away. The branch is then selected numerically (mpmath, 50 digits, 5000 random points; minimum radicand $2.0\cdot10^{-3}>0$): the $+$ branch matches the root form to $5.0\cdot10^{-48}$; the $-$ branch is off by up to $0.47$; the ``term inside the root'' misreading by up to $0.23$. So the identification is symbolic up to the sign branch, with the $+$ branch chosen numerically, and is not in Lean.
+
+\section{Controls}\label{sec:controls}
+Run before the headline (ledger \texttt{LD-C-0003}, \texttt{LD-A-0003}):
+\begin{itemize}\itemsep=1pt
+\item \textbf{P1} Esposito sandwich: at $\tilde P=1$, $1/2\le\ep\le1/(2-c)$ with the endpoints at $\zeta=\mp1$ (Lean \lean{esposito\_sandwich}, numerics at $c=0.1,0.5,0.9$). Passed.
+\item \textbf{P2} exact rational instance $c=48/49$, $K=2$: roots $5/7$ ($\zeta=-1$), $1/5$ ($\zeta=1$); $\eta/\eC=1/2$ and $49/50$ (Lean \lean{inst\_*}). Passed.
+\item \textbf{P3} Eq.~(13) transcription agreement after the correction. Passed.
+\item \textbf{N1} perturbed factor ($\zeta\to-\zeta$): on the same instance the perturbed roots increase and the perturbed efficiency decreases $49/50\to1/2$; grid: $15{,}200/15{,}200$ pairs non-increasing. Caught. \textbf{The Lean \lean{pert\_eta\_not\_mono} only restates the instance values at negated arguments; it is a weak control}, the grid is the substantive one.
+\item \textbf{N2} other perturbations (grid of consecutive-$\zeta$ pairs): $B$ sign flipped $5{,}920$ bad pairs, $K$ halved $611$, $C$ sign flipped $13{,}256$ ($558$ undefined); the true formula $0$. Caught.
+\item \textbf{N3} planted \lean{sorry} and planted axiom (\texttt{Controls.lean}, \emph{never to be imported}): the axiom gate shows \lean{sorryAx} and \lean{LowDissE3.ctl\_cheat}; both compile with rc~0. Caught (and reproduced by the auditor).
+\item \textbf{N4} mistyped Eq.~(13) (sign of $\zeta$ inside the root): differs by up to $0.156$. Caught. Perturbed Eq.~(1) ($1-c\to1+c$): violated by $11{,}522$ of $17{,}355$ random engines (auditor: $20{,}112$ of $53{,}021$).
+\end{itemize}
+\paragraph{Numerics (Tier \tX{}).} Root-form monotonicity: $124{,}800$ consecutive-$\zeta$ pairs at 60 digits (producer) and $336{,}200$ pairs (auditor: $41$ values of $c$ $\times$ $41$ of $\tilde P$ $\times$ $201$ of $\zeta$, 40 digits, smallest increment $1.25\cdot10^{-12}$), none non-increasing. A float implicit-differentiation grid of $801{,}900$ points gives $\partial\ep/\partial\zeta>0$ everywhere, minimum $1.2\cdot10^{-5}$ at $c=\tilde P=0.01$, $\zeta=1$, maximum $0.34$; the derivative vanishes as $c\to0$, consistent with the source's remark that the curves merge for small $\eC$. Eq.~(1): $0$ violations in $17{,}355$ random exact-rational engines (producer; maximum left-hand side $0.99999091$, so the bound is nearly attained) and in $53{,}021$ random engines (auditor, which also found $0$ violations of $\eta/\eC\le\ep(\zeta)$). Brute force at exactly given power: the root form is a valid upper bound, \textbf{not attained in general} (producer $8$ points, $\ep-\text{brute}\in[4.8\cdot10^{-7},2.2\cdot10^{-3}]$; auditor $8$ other points, $[1.3\cdot10^{-5},6.6\cdot10^{-3}]$; all $\ge0$).
+
+\section{Lean (Tier \tA{}, statement lock owed)}\label{sec:lean}
+Files \texttt{Core.lean} (root form, Theorem~\ref{thm:mono}, corollary), \texttt{Instances.lean} (exact instances, N1, Esposito), \texttt{Engine.lean} (Theorem~\ref{thm:eng}), \texttt{Axioms.lean}, \texttt{Controls.lean}; Lean 4.34.1 with pinned Mathlib via \texttt{scripts/certified\_numerics/lean\_pinned.py}, importing only \texttt{Mathlib.Tactic} and \texttt{Mathlib.Analysis.SpecialFunctions.Pow.Real}. The producer compiled and replayed \texttt{leanchecker} (rc 0 on Core, Instances, Engine). \textbf{Independent recompile by the auditor} into a fresh olean directory: Core 14.1~s, Instances 6.7~s, Engine 401~s (all rc 0); \lean{\#print axioms} of all $27$ theorems prints exactly $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$; \texttt{leanchecker} rc 0 on Core, Instances and Engine, and rc 1 on a nonexistent module (negative control). Escape-hatch grep (\lean{sorry}, \lean{admit}, \lean{axiom}, \lean{native\_decide}, \lean{implemented\_by}, \lean{extern}, \lean{unsafe}, \lean{opaque}, \lean{macro}, \lean{elab}, \lean{set\_option}, \dots): hits only in the planted \texttt{Controls.lean} and the single \lean{set\_option maxHeartbeats 3000000} on \lean{engine\_bound}. The hypotheses are consistent (exact instances at $c=48/49$, $K=2$); there is no Lean instance of \lean{engine\_bound}'s hypotheses (non-vacuity is numerical: $53{,}021$ sampled engines satisfy them). Producer's \texttt{logs/lean/axioms.txt} predates \lean{cs2} and \lean{engine\_bound}; the complete $27$-theorem list is in \texttt{logs/lean/axioms.json} and \texttt{audit\_logs/Axioms.txt}.
+
+\section{Independent AI audit}\label{sec:audit}
+A separate AI agent instance (producer $\ne$ verifier) audited the work on 2026-11-01 (\texttt{AUDIT.md}): hashes (preregistration and all $32$ entries of \texttt{result.json}) match; the source was re-read from page images (Eqs.~(3), (4), (11), (13), Appendix~B); the root form was re-derived independently and found faithful to Eq.~(11); Lean was recompiled and replayed (Section~\ref{sec:lean}); the symbolic branch identity, the numerics and the literature check of Section~\ref{sec:prior} were its own. Verdict: ACCEPT\_WITH\_CORRECTIONS. It is an AI audit; no person has audited the statements.
+
+\section{Audit corrections applied}\label{sec:corr}
+The audit (\S6) required nine corrections to the producer's report (\texttt{data/RESULT.md}, the producer's \emph{pre-audit} text, superseded by this paper). Applied here, in the numbering of \S6:
+\begin{enumerate}\itemsep=1pt
+\item \textbf{``Tight''.} Replaced by: a valid upper bound, not attained in general (the source's ``not a supremum for all $\tilde P$''; the tighter exact bound of Zhai--Yue--Sun); the word ``tight'' is not used (Section~\ref{sec:model}, numerics).
+\item \textbf{Literature.} Section~\ref{sec:prior}: Eq.~(1) has analytic proofs (Ma--Fu App.~B; Zhai); Holubec--Ryabov only near the ends; Ye--Holubec irrelevant; no analytic proof of the $\zeta$-monotonicity of Eq.~(13); Ma--Fu's family differs.
+\item \textbf{\lean{engine\_bound}.} Theorem~\ref{thm:eng}: a known result; only the machine check is new.
+\item \textbf{Novelty wording.} ``To our knowledge the first machine-checked proof of either statement''; only the $\zeta$-monotonicity lacks a published analytic proof; never ``first proof of Eq.~(1)''.
+\item \textbf{Scope.} Section~\ref{sec:results}: neither attainment of $\ep$ nor $\eta/\eC\le\ep(\zeta)$ for every engine is proved.
+\item \textbf{Derivation step~3.} ``with equality being attainable'' deleted; replaced by the maximum over $t_h+t_c=\tau_+$, an upper bound (Section~\ref{sec:deriv}).
+\item \textbf{Symbolic branch identity} added (Section~\ref{sec:link}).
+\item \textbf{N1.} \lean{pert\_eta\_not\_mono} is a weak control (Section~\ref{sec:controls}).
+\item \textbf{Wording.} Elementary, model-conditional, no device or power-plant claims, throughout.
+\end{enumerate}
+Additionally stated: the Lean theorems are about the root form; the preregistered transcription of Eq.~(13) was wrong and corrected (Section~\ref{sec:link}).
+
+\section{Claim ledger}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files $13$ claims: $3$ at Tier~\tA{} (\texttt{LD-A-0001} Core/Instances, \texttt{-0002} Engine, \texttt{-0003} controls), $4$ at \tL{} (\texttt{LD-L-0001..0004}), $4$ at \tC{} (\texttt{LD-C-0001..0004}, the last being the headline) and $2$ at \tX{} (\texttt{LD-X-0001}, \texttt{-0002}). Each carries a content-addressed evidence blob in \texttt{ledger/evidence/}; each Tier~\tA{} claim also carries an \texttt{ai\_audit} field. The gate field \texttt{audit} is left null: the audit was by an AI agent, not a person, so the Elenchus gate keeps \texttt{LEDGER\_UNAUDITED\_TIER\_A} open for each Tier~\tA{} row. \texttt{ledger/run\_gate.py} runs the unmodified gate; the verbatim output (exit code~1, no blocking finding, $3$ expected flags) is in \texttt{ledger/gate\_output.txt}.
+
+\section{Limitations and what remains unverified}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item \textbf{Model-conditional, elementary, no device claims.} Phenomenological low-dissipation model; nothing about real engines or power plants.
+\item \textbf{AI audit only; statement lock and human audit owed} (Tier~\tA{} pending lock).
+\item \textbf{Unverified, from the audit.} (i) The Lean lemma ``engine with asymmetry $\zeta\Rightarrow\eta/\eC\le\ep(\zeta)$'' (numerics only). (ii) Eq.~(13)=root form: symbolic up to the sign branch; the $+$ branch is chosen numerically; not in Lean. (iii) $\tilde P=0$ and the endpoints $M_h=0$, $M_c=0$ are not formalised. (iv) No Lean example that \lean{engine\_bound}'s hypotheses can be met. (v) Esposito et al.\ (2010) were not re-read. (vi) The literature search was not systematic; Ma--Fu and Zhai were read by the auditor, not re-read by the writer of this text. (vii) The ordering of the preregistration (sha256 \texttt{aee87a67\dots}, hash matches) relative to the work cannot be checked from git history.
+\item \textbf{Deviations from the preregistration.} The transcription of Eq.~(13) (Section~\ref{sec:link}); one \lean{set\_option maxHeartbeats}; root form parametrised by $K=2/(1-s)$ and $\tilde P=0$ not formalised; the preregistered N1 data ($w=3/5$, $c=4/5$) replaced by $c=48/49$, $K=2$ (both roots rational).
+\item \textbf{Outcome.} KEEP (producer), audited ACCEPT\_WITH\_CORRECTIONS; modest and elementary.
+\end{itemize}
+
+\section{Reproducibility}\label{sec:repro}
+Repository AutoevolveAI, branch \texttt{worktree-openai-math-discovery}, HEAD at writing \texttt{b6dad99}; the E3 outputs, the Lean files and this paper are uncommitted working-tree files; nothing pushed. Copies of the inputs are in \texttt{data/} (\texttt{RESULT.md}, \texttt{result.json}, \texttt{prereg\_E3.json}, \texttt{AUDIT.md}, \texttt{code/}, \texttt{data/}, \texttt{logs/}, \texttt{lean/}, \texttt{audit\_scripts/}, \texttt{audit\_logs/}). The producer ran on cores $2,3$ only. The bundler keeps only listed suffixes, so \texttt{.log} and \texttt{.sha256} files are also stored as byte-identical \texttt{.txt} copies. Compiled Lean objects and third-party PDFs are not shipped.
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+python3 scripts/certified_numerics/compile_modules.py <dir> 1 Programmes.LowDissE3.Core Programmes.LowDissE3.Instances
+# Engine.lean (about 6.5 min), Axioms.lean, Controls.lean via scripts/certified_numerics/lean_pinned.py
+python3 results/proposal4/2026-10-27/E3/code/leanchecker_replay.py <three module names>
+python3 results/proposal4/2026-10-27/E3/code/link.py ; python3 results/proposal4/2026-10-27/E3/code/numerics2.py
+python3 -I papers/p4_low_dissipation_zeta/ledger/build_ledger.py
+python3 -I papers/p4_low_dissipation_zeta/ledger/run_gate.py
+\end{lstlisting}
+
+%=====================================================================
+\begin{thebibliography}{99}\small
+\bibitem{ma18} Y.-H.\ Ma, D.\ Xu, H.\ Dong, C.-P.\ Sun, \emph{Universal constraint for efficiency and power of a low-dissipation heat engine}, arXiv:1802.09806 (v4), Phys.\ Rev.\ E 98, 042112 (2018). Eqs.\ (1)--(4), (10)--(14), Appendix~B (\tL; PDF not redistributed).
+\bibitem{mafu} Y.-H.\ Ma, C.\ Fu, \emph{Unified approach to power-efficiency trade-off relations of generic thermal machines}, arXiv:2411.03849, Phys.\ Rev.\ E 112, 054130 (2025). Appendix~B (\tL; PDF not redistributed).
+\bibitem{zhai} R.\ X.\ Zhai, \emph{Geometric Formulation of Power-Efficiency Bounds in Carnot-like Engines}, arXiv:2605.02732 (2026) (\tL).
+\bibitem{zys} R.\ X.\ Zhai, X.\ Yue, C.\ P.\ Sun, \emph{Exact bound of power-efficiency trade-off in finite-time thermodynamic cycles}, arXiv:2509.07721 (\tL).
+\bibitem{hr} V.\ Holubec, A.\ Ryabov, \emph{Maximum efficiency of low-dissipation heat engines at arbitrary power}, arXiv:1603.02551, J.\ Stat.\ Mech.\ (2016) 073204 (\tL; read by the auditor).
+\end{thebibliography}
+\end{document}

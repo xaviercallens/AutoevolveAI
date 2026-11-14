@@ -1,0 +1,39 @@
+{
+ "title": "An independent reimplementation of the k = 10 lonely-runner sieve: J(10,p) is empty for the 61 primes of P_10 (a replication, not a new theorem)",
+ "version": "v1",
+ "description": "<p>Sungkawichai and Trakulthongchai (S&ndash;T, arXiv:2604.23906 v2) reduce the lonely runner conjecture for 11 runners (k = 10 moving speeds plus the stationary runner) to a finite computation: a set J(10,p) must be empty for each of 61 primes p in P<sub>10</sub> = {127, &hellip;, 467}. We re-ran that computation with <i>independently written</i> code. <b>We find J(10,p) = &empty; for all 61 primes</b> (exact integer arithmetic, Tier C). <b>This is a replication, not a new theorem</b>: together with literature premises it recomputes S&ndash;T's Theorem 1.3 for k = 10, and the lonely runner conjecture in general is open. To our knowledge it is the first reimplementation of the k = 10 computation not derived from the S&ndash;T code (a one-day web and alphaXiv search, not a priority claim).</p><p><b>What was done.</b> The implementer did not read the S&ndash;T repository (the producer's attestation; the independent auditor opened their logs only after its own counts at p = 127 and 137 were complete). S&ndash;T's size of the level-1 set equals ours at all 61 primes, with no disagreement. The step that S&ndash;T discharge with their Proposition 1.4 is replaced by a direct computation: for every p, all 2,593,742,461 level-11 vectors (up to scaling) over the class of (1, &hellip;, 10) are (10, p, 11)-proper, 0 improper (158,218,290,121 vectors in all); the audit reproduced this with its own program at p = 127, 137, 263, 467, checked S&ndash;T's Proposition 4.1 exhaustively (15,937,424,600 vectors, 0 failures) and the Lemma 4.3 inclusion at all 61 primes.</p><p><b>Tier split.</b> <b>Tier A</b> (Lean 4.34.1, Mathlib, pinned toolchain; axioms within propext, Classical.choice, Quot.sound): scalar inputs only &mdash; P<sub>10</sub> is 61 distinct primes, all &gt; 110, equal to row k = 10 of S&ndash;T's Table 1, and 55<sup>90</sup> &le; 10<sup>10</sup>&prod;P<sub>10</sub> (margin 5.08 nats; the bound fails without 467), with kernel-rejected and sorry-caught controls. <b>Tier L</b>: the chain LRC(9) (Trakulthongchai) + the Malikiosis&ndash;Santos&ndash;Schymura/Rosenfeld bound B<sub>k</sub> (division by k) + S&ndash;T Corollary 2.5 / Proposition 2.7 + J(10,p) = &empty; + &prod;P<sub>10</sub> &ge; B<sub>10</sub> gives LRC(10), the conjecture for 11 runners; taken as stated. <b>Tier C</b>: the per-prime emptiness (exhaustive enumeration, exact integers; not kernel-checked).</p><p><b>Controls.</b> Positive: per-prime verdict patterns for k = 3..8 match the printed ones in Rosenfeld and Trakulthongchai at the tested level (the k = 4, p = 13 flag raised by the producer is withdrawn: Rosenfeld's section 7 is hedged, and a brute force of 12,960,000 ordered tuples gives I(4,13,5) empty). Negative: planted wrong witness rules change the counts at k = 7, 8 and one removes the identity class at k = 10; both are inert at the level-11 step, where instead a strict-inequality control flags exactly the identity orbit, and the nonzero counts of two independent fibre programs agree (p = 13: 54,976; p = 23: 7,210).</p><p><b>An observation on exposition, recorded neutrally.</b> A displayed identity in the soundness argument for lifting (also in the proof of S&ndash;T's Proposition 3.1) is false for a general set S (auditor's counterexample at k = 10, p = 127); this affects neither their theorem nor the computation, which chains full fibres. It has not been raised with the authors; if anyone raises it, it should go to them first, after a second check.</p><p><b>What this is NOT.</b> Not a proof of anything new, not a proof of the lonely runner conjecture, not a formalisation of the computation (only scalar inputs are in Lean).</p><p><b>Limitations.</b> Independently audited by a different AI agent instance (AUDIT.md, ACCEPT_WITH_CORRECTIONS, six corrections applied); no human audit and no statement lock (owed). Unverified: the literature premises (LRC(9), the MSS bound, S&ndash;T's lemmas as stated); phase 1 and lifts with the auditor's own algorithm at only 3 of 61 primes (127, 137, 263), the other 58 including 467 resting on the producer's code (rebuilt bit-identically) and on exact agreement with the S&ndash;T logs; the unpruned second pass at 33 of 61 primes; nothing formalised beyond the scalar inputs. The Elenchus ledger gate exits with code 1 (0 blocking findings, 2 flags LEDGER_UNAUDITED_TIER_A, one per Tier A row).</p>",
+ "keywords": [
+  "lonely runner conjecture",
+  "independent reimplementation",
+  "replication",
+  "exact integer arithmetic",
+  "exhaustive enumeration",
+  "Lean 4",
+  "formal verification",
+  "epistemic tiers",
+  "AI-assisted research"
+ ],
+ "notes": "Preprint v1 (2026-10-28), independently AI-audited (AUDIT.md), not human-audited. Proposal 5, item LR-IND (preregistered 2026-10-27, class (d): an independent re-run, not a new theorem). Lean: AutoevolveAI formal_cert/Programmes/LonelyRunnerInd/{ScalarInputs,AxiomAudit,ControlsMustFail,ControlsSorry}.lean (sha256 hashes in the paper), Lean 4.34.1 with the pinned toolchain via lean_pinned.py; leanchecker replay rc 0 on ScalarInputs. Branch worktree-openai-math-discovery, HEAD at writing f2016dc913ac03d301076c1bb8126638a8bec4c1; the LR-IND outputs and this paper were uncommitted working-tree files; nothing pushed. Ledger gate: exit code 1, 0 blocking, 2 flags (ledger/gate_output.txt). Owed: statement lock, human audit. Compiled binaries are not shipped; C sources are stored as .c and .c.txt. data/RESULT.md and data/result.json are the producer's pre-audit text (their hashes are recorded); the paper supersedes them on the audit's six corrections. No third-party full texts are included.",
+ "related_identifiers": [
+  {
+   "identifier": "arXiv:2604.23906",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:2509.14111",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:2511.22427",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:2609.02604",
+   "relation": "references",
+   "scheme": "arxiv"
+  }
+ ]
+}

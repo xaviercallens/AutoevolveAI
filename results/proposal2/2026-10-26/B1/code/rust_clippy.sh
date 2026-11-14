@@ -1,0 +1,6 @@
+#!/bin/bash
+# clippy exactly as CI runs it (workspace, experimental features, -D warnings), cores 6,7, -j 2.
+export CARGO_TARGET_DIR=/home/callensxavier_gmail_com/rusty-target-ar
+cd /home/callensxavier_gmail_com/rusty-SUNDIALS-wt-p2
+taskset -c 6,7 cargo clippy -j 2 --offline --workspace --features experimental -- -D warnings 2>&1 | tail -20
+echo "exit=${PIPESTATUS[0]}"

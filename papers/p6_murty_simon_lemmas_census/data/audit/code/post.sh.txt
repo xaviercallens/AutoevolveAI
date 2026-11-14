@@ -1,0 +1,8 @@
+#!/bin/bash
+cd /tmp/msaudit
+bash cmp.sh 11 | tail -1
+cat canon/aud_*.g6 > canon/aud_all.g6
+python3 dfh.py gen | nauty-labelg -q | sort -u > canon/c5plus.g6
+python3 dfh.py canon/aud_all.g6 canon/c5plus.g6
+time taskset -c 2 python3 lem.py out/d2c_n3.g6 out/d2c_n4.g6 out/d2c_n5.g6 out/d2c_n6.g6 out/d2c_n7.g6 out/d2c_n8.g6 out/d2c_n9.g6 out/d2c_n10_p0.g6 out/d2c_n10_p1.g6 out/d2c_n10_p2.g6 out/d2c_n10_p3.g6 out/d2c_n11_p0.g6 out/d2c_n11_p1.g6 out/d2c_n11_p2.g6 out/d2c_n11_p3.g6 > lem_out.json
+cat lem_out.json

@@ -1,0 +1,43 @@
+{
+  "status": "rejected",
+  "code": "false-statement",
+  "message": "Lean's decision procedure proved 1 statement(s) false",
+  "tier": null,
+  "claim_sha256": "5cc0a861d1bf513802d68f1514adbe896fcc52fe870d9f991bc35c5b53bee3ae",
+  "statement": "-- LeanFlow data certificate 'b2_a2_shear' (generated; tier A for the arithmetic statement only)\nset_option maxRecDepth 100000\n-- certified window bound B = Upp0.hi + trW.hi*esum.hi < 0\ntheorem cert_0 : (0 : Int) < (((1 : Int) * (250000000000 : Int)) * ((1 : Int) * (12500000000000000000000 : Int))) \u2227 (((1 : Int) * (3189252546719 : Int)) * ((1 : Int) * (12500000000000000000000 : Int)) + ((1 : Int) * (984201679268078785349 : Int)) * ((1 : Int) * (250000000000 : Int))) * (1 : Int) < (0 : Int) * (((1 : Int) * (250000000000 : Int)) * ((1 : Int) * (12500000000000000000000 : Int))) := by decide\n-- stability margin lmin.lo - dB.hi > 0\ntheorem cert_1 : (0 : Int) < (((1 : Int) * (1000000000000 : Int)) * ((1 : Int) * (500000000000 : Int))) \u2227 (((1 : Int) * (146725649479 : Int)) * ((1 : Int) * (500000000000 : Int)) + ((-1 : Int) * (737853077 : Int)) * ((1 : Int) * (1000000000000 : Int))) * (1 : Int) > (0 : Int) * (((1 : Int) * (1000000000000 : Int)) * ((1 : Int) * (500000000000 : Int))) := by decide\n",
+  "statement_sha256": "e31e7e5b606ee1052baa7fd52ea77d45198b3e9f2a98e8112c93db1fb6c529bd",
+  "assertions": [
+    {
+      "theorem": "cert_0",
+      "label": "certified window bound B = Upp0.hi + trW.hi*esum.hi < 0",
+      "lean_accepted": false,
+      "oracle_true": false
+    },
+    {
+      "theorem": "cert_1",
+      "label": "stability margin lmin.lo - dB.hi > 0",
+      "lean_accepted": true,
+      "oracle_true": true
+    }
+  ],
+  "failed": [
+    "cert_0"
+  ],
+  "lean_version": "Lean (version 4.34.1, x86_64-unknown-linux-gnu, commit 5045d0056413266e57c625dcd7c365b10e377c52, Release)",
+  "seconds": 2.1017260140215512,
+  "axioms": {
+    "cert_0": {
+      "status": "SORRY",
+      "axioms": [
+        "sorryAx"
+      ]
+    },
+    "cert_1": {
+      "status": "STANDARD",
+      "axioms": []
+    }
+  },
+  "output_excerpt": "/tmp/leanflow_cert_z4gyzmav/Certificate.lean:4:402: error: Tactic `decide` proved that the proposition\n  0 < 1 * 250000000000 * (1 * 12500000000000000000000) \u2227\n    (1 * 3189252546719 * (1 * 12500000000000000000000) + 1 * 984201679268078785349 * (1 * 250000000000)) * 1 <\n      0 * (1 * 250000000000 * (1 * 12500000000000000000000))\nis false\n'cert_0' depends on axioms: [sorryAx]\n'cert_1' does not depend on any axioms\nLEANFLOW_AUDIT_SENTINEL_49303493ed18a8593d2c3e219c30b0ec\n",
+  "tier_scope": "arithmetic statement about the stated numbers only; not the provenance of the numbers",
+  "verified": false
+}

@@ -1,0 +1,31 @@
+
+/-! ## A2 planted controls (negative controls for #print axioms and the environment scan) -/
+namespace A2Plant
+
+/-- sorry control -/
+theorem plant_sorry : (1 : Nat) = 2 := by sorry
+
+/-- smuggled axiom control -/
+axiom plant_ax : (1 : Nat) = 2
+theorem plant_uses_axiom : (1 : Nat) = 2 := plant_ax
+
+/-- implemented_by + native_decide: the compiled code disagrees with the logical definition,
+so native_decide "proves" a FALSE statement. -/
+def plant_true_impl : Bool := true
+@[implemented_by plant_true_impl] def plant_false_logically : Bool := false
+theorem plant_forged_by_native : plant_false_logically = true := by native_decide
+
+/-- extern control -/
+@[extern "lean_a2_plant"] opaque plant_extern : Nat → Nat
+
+/-- unsafe/partial control -/
+unsafe def plant_unsafe : Nat := 0
+partial def plant_partial (n : Nat) : Nat := plant_partial n
+
+theorem plant_root : True := by
+  have := plant_sorry
+  have := plant_uses_axiom
+  have := plant_forged_by_native
+  trivial
+
+end A2Plant

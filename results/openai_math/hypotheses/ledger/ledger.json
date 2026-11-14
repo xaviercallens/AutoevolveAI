@@ -62,6 +62,169 @@
       "depends_on": [],
       "evidence": "sha256:6a177df7e6e4714997de65594392d73a5890e1db086264ee466f9557e39b0999",
       "audit": null
+    },
+    {
+      "schema_version": 1,
+      "id": "OMHN-B-1",
+      "statement": "H5': the +-1 input kron(w4, w4) at N=8 (w4 = sign of the N=4 witness) has dyadic triangular Hilbert ratio exactly 23/8 (ratio^3 = 12167/512 by the integer certifier; h5_exact and an independent implementation both give 23/8). Hence C* >= 23/8 > 5/2 and the preregistered H5' (C* = 5/2) is refuted.",
+      "tier": "B",
+      "kind": "exact_harness",
+      "depends_on": [
+        "OMH-B-4"
+      ],
+      "evidence": "sha256:fd965a3cdd3c2cfdce421a8d1dcc3b987b7795b3a943403d40d442c2d6833a2f",
+      "audit": null
+    },
+    {
+      "schema_version": 1,
+      "id": "OMHN-B-2",
+      "statement": "H5: over +-1 inputs the maximum ratio is exactly 1 at N=1 and exactly 2 at N=2 (exhaustive enumeration, exact arithmetic, every argmax rechecked).",
+      "tier": "B",
+      "kind": "exact_harness",
+      "depends_on": [],
+      "evidence": "sha256:9dc619846e18c8950b3e100ae9d88acf63aeb60c117e8a996c499202e0c9da1b",
+      "audit": null
+    },
+    {
+      "schema_version": 1,
+      "id": "OMHN-C-3",
+      "statement": "H5 (exploratory, not preregistered): product rule R(f (x) g) = H(g) + |T(g)| R(f) for +-1 f, g, proved on paper in NOTE.md (not Lean-checked, reviewed only by the lane verifier); with the N=2 maximiser g2 (R=2, H=3/2, T=1/2) its tensor powers give 3 - 2^(1-r), so C* >= 3. Novelty unchecked.",
+      "tier": "C",
+      "kind": "argument",
+      "depends_on": [
+        "OMHN-B-1",
+        "OMHN-B-2"
+      ],
+      "evidence": "sha256:a52a6692f4af6559d5f897c0ba033c7fc32ab06c131fe6349698025f087d9274",
+      "audit": null
+    },
+    {
+      "schema_version": 1,
+      "id": "OMHN-C-4",
+      "statement": "H5 (exploratory): Hoelder-marginal upper bounds over all real inputs B_1 = 1, B_2 = 2, B_3 = 5/2, giving C_1 = 1, C_2 = 2 and 2 <= C_3 <= 5/2. The reduction is a paper argument; B_1, B_2 were recomputed independently, B_3 rests on holder_bound.py alone.",
+      "tier": "C",
+      "kind": "argument",
+      "depends_on": [],
+      "evidence": "sha256:068b0f86724b04388970ff2aff89205f112e453c61510a54985daad371ee479f",
+      "audit": null
+    },
+    {
+      "schema_version": 1,
+      "id": "OMHN-X-5",
+      "statement": "H5': 18 preregistered Hoelder-ascent chunks at N = 5..8 reached per-chunk best ratios between 2.4999186 and 2.4999999999, never above 5/2; Walsh lifts of the N=4 witness max 5/2. Local ascent misses the tensor extremisers. 7 walsh_top chunks BLOCKED by a code bug.",
+      "tier": "X",
+      "kind": "numeric",
+      "depends_on": [
+        "OMHN-B-1"
+      ],
+      "evidence": "sha256:7f7baa39b1af8917118c1193f0345a6ce74ceeab617cfb5449622ce746e48eca",
+      "audit": null
+    },
+    {
+      "schema_version": 1,
+      "id": "OMHN-X-6",
+      "statement": "H2(b): for all 27,356,753 fundamental D < 0 with 1e7 < |D| <= 1e8, L(1,chi_D) log log|D| >= 0.567741 (min at D = -10560643, h = 211). PARI qfbclassno (relies on PARI's documented correctness); 11,700 D rechecked with GRH-conditional quadclassunit; positive and negative controls passed. Finite check, not a proof.",
+      "tier": "X",
+      "kind": "numeric",
+      "depends_on": [
+        "OMH-X-3"
+      ],
+      "evidence": "sha256:8c48fb9339d1027f2295f31cbcb63bbd201117c59f9a803081cda9387b7375e9",
+      "audit": null
+    },
+    {
+      "schema_version": 1,
+      "id": "OMHN-X-7",
+      "statement": "H4: the h4_v2 instrument passes C1-C3 and N1, but the reconstructed De Maesschalck-Dumortier degree-6 family gives at most 1 confirmed cycle at eps = 0.003 (the only one of 6 preregistered eps run), so positive control P4 (>= 4) was not reproduced; N2 incomplete. Lane PARTIAL: no claim about H4.",
+      "tier": "X",
+      "kind": "numeric",
+      "depends_on": [],
+      "evidence": "sha256:bdda021d5683465ec9da2abf2fe59be6d64f581698d492ee08cd75aa20c7034c",
+      "audit": null
+    },
+    {
+      "schema_version": 1,
+      "id": "OMHN-X-8",
+      "statement": "D1: a frozen token comparison of the 45 Comparator definition-hole bodies (9 configs, upstream adc7f124) gives 37 MATCHES, 6 DIFFERS, 2 SORRIED_IN_CHALLENGE; controls 98/98. Unelaborated (no Lean run).",
+      "tier": "X",
+      "kind": "numeric",
+      "depends_on": [],
+      "evidence": "sha256:62542f6cb89cecf68ecbcadce04a8259003145b8f8e4a81db33da78810a3360d",
+      "audit": null
+    },
+    {
+      "schema_version": 1,
+      "id": "OMHN-X-9",
+      "statement": "D1: by reading, the 6 mechanical DIFFERS are equivalent, so 43 of 45 holes reproduce the challenge's definition at the token level or by reading (unelaborated; 8 MATCHES have differing open/instance context pinned by reading only; sobolevOddPower's pin is conditional on sobolevProduct). sobolevProduct and elementaryPositivityWitness are sorried in the challenge and stay unpinned. Filed at X because the 37 MATCHES come from the mechanical comparison.",
+      "tier": "X",
+      "kind": "numeric",
+      "depends_on": [
+        "OMHN-X-8"
+      ],
+      "evidence": "sha256:6f032cf44f214633e2df6cae950420b307f31895cd1c856094b408082e1b2bf9",
+      "audit": null
+    },
+    {
+      "schema_version": 1,
+      "id": "OMHL-X-1",
+      "statement": "H-LT1 (m=2): in 22 cells (gamma 0.75/1.0/1.25/1.4; random/embed/rotpair/twist; K=2 and K=3), 336 restarts, none exceeded L1(gamma) by the 1e-7 flag (best excess about -2.8e-7 to -2.2e-5 below L1); lane controls passed. Finite-power numerical evidence, not a proof; violations below about 1e-6 are not detectable (a third-grid recheck of the best restart shifts its excess by about 1e-7).",
+      "tier": "X",
+      "kind": "numeric",
+      "depends_on": [],
+      "evidence": "sha256:314d2c35278872f308e9734ae16be1ca5aac6d47607d757dd3f4e101a13f4968",
+      "audit": null
+    },
+    {
+      "schema_version": 1,
+      "id": "OMHL-X-2",
+      "statement": "H-LT1 (m=3): 8 restarts in each of 6 cells (gamma 1.0 and 1.25; random/embed/twist) found no R above L1(gamma) (all excess below 0, best -8.2e-7 at gamma 1.0 twist); the gamma=3/2 non-exceedance control (sup 3/16) was not exceeded (max excess -2.0e-7). Search cannot see violations below about 1e-6.",
+      "tier": "X",
+      "kind": "numeric",
+      "depends_on": [],
+      "evidence": "sha256:76783719714037038422f3c0ac44c0d0d55527a37c7179cdb553cfa2ccea955f",
+      "audit": null
+    },
+    {
+      "schema_version": 1,
+      "id": "OMHL-X-3",
+      "statement": "H-LT3: at the embedded scalar one-soliton for gamma in {0.75, 1.0, 1.25, 1.4} and m = 1, 2, 3 (P=8), the Hessian of log R restricted to the complement of translation and dilation has no eigenvalue above the relative threshold (6.8e-7 to 2.7e-6). Most matrix directions are second-order flat zero modes (122 of 162 at m=3), so local maximality along them is undecided; the gamma=3 control is a weak detection check (theta0 is not critical there).",
+      "tier": "X",
+      "kind": "numeric",
+      "depends_on": [
+        "OMHL-X-2"
+      ],
+      "evidence": "sha256:76783719714037038422f3c0ac44c0d0d55527a37c7179cdb553cfa2ccea955f",
+      "audit": null
+    },
+    {
+      "schema_version": 1,
+      "id": "OMHL-X-4",
+      "statement": "H-LT5: the dual kinetic bound J = sum ||psi_j'||^2 / int tr(rho^3) >= pi^2/4 (gamma=1) was not violated in 12 cells (m=1..3, N=1..4; 144 restarts); smallest excess +1.49e-8 (m=1, N=1). Cells (1,3), (1,4), (2,4) never came within 1e-5 of pi^2/4, so resolution there is about 1e-4. Finite search, not a proof.",
+      "tier": "X",
+      "kind": "numeric",
+      "depends_on": [],
+      "evidence": "sha256:9145f0670afcb0e6418809ee89001af5bda0a507cebc6a0085cb52e0ea2a0cdf",
+      "audit": null
+    },
+    {
+      "schema_version": 1,
+      "id": "OMHL-X-5",
+      "statement": "H-LT2 (exploratory kill): on a partial snapshot (125 of 345 near-maximisers had stored parameters), the preregistered commutator prediction is refuted: near-maximisers with R >= (1-1e-4) L1 and commutator statistic C > 0.05 exist (C up to 0.4955). Kinds of kill are mixed (tail noise, multi-channel random-family, and at least one single-channel non-commuting rotpair gamma=1.4 row). Whether one constant unitary suffices is an untested hypothesis; snapshot selection bias is possible.",
+      "tier": "X",
+      "kind": "numeric",
+      "depends_on": [],
+      "evidence": "sha256:a82009aa0b6422affc89d57295be53552ea2b9aca977fc1d2858de74f62d83f7",
+      "audit": null
+    },
+    {
+      "schema_version": 1,
+      "id": "OMHL-X-6",
+      "statement": "LT_D: of the 38-file import closure of OAI.Analysis.LiebThirring.Main, 14 compiled under LeanMaster's Lean v4.34.0-rc2 toolchain in this lane, FiniteParity.lean:505 failed with unknown constant Set.equivOfEq, and 23 files were blocked; consistent with version drift (not checked against upstream's Mathlib pin in this lane). The challenge statement elaborated; Elenchus gave NO_FOOTPRINT on the sorry-ended challenge files by design. Not Tier A. Superseded by later commits LT_D2b and LT_D3.",
+      "tier": "X",
+      "kind": "numeric",
+      "depends_on": [],
+      "evidence": "sha256:362d6ccf04a1783d0e6cad8b06ec2f3913530cb09398eb4d97ece63491e678aa",
+      "audit": null
     }
   ]
 }

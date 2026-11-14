@@ -1,0 +1,19 @@
+\begin{Verbatim}[fontsize=\scriptsize,frame=single,framesep=1.5mm]
+lemma mul_sign {f h : ℝ → ℝ} {t : ℝ} (r : ℕ) (hf : ContDiffAt ℝ r f t) (hh : ContDiffAt ℝ r h t)
+    (Hf : ∀ i ≤ r, 0 ≤ (-1 : ℝ) ^ i * iteratedDeriv i f t)
+    (Hh : ∀ i ≤ r, 0 ≤ (-1 : ℝ) ^ i * iteratedDeriv i h t) :
+    0 ≤ (-1 : ℝ) ^ r * iteratedDeriv r (f * h) t := by
+  rw [iteratedDeriv_mul hf hh, Finset.mul_sum]
+  refine Finset.sum_nonneg fun i hi => ?_
+  have hir : i ≤ r := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
+  have hpow : (-1 : ℝ) ^ r = (-1) ^ i * (-1) ^ (r - i) := by
+    rw [← pow_add, Nat.add_sub_cancel' hir]
+  have h1 := Hf i hir
+  have h2 := Hh (r - i) (Nat.sub_le r i)
+  have hc : (0 : ℝ) ≤ (r.choose i : ℝ) := Nat.cast_nonneg _
+  calc (0 : ℝ) ≤ (r.choose i : ℝ) *
+        (((-1) ^ i * iteratedDeriv i f t) * ((-1) ^ (r - i) * iteratedDeriv (r - i) h t)) :=
+        mul_nonneg hc (mul_nonneg h1 h2)
+    _ = (-1 : ℝ) ^ r * ((r.choose i : ℝ) * iteratedDeriv i f t * iteratedDeriv (r - i) h t) := by
+        rw [hpow]; ring
+\end{Verbatim}

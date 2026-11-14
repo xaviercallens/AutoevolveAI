@@ -1,0 +1,27 @@
+\begin{Verbatim}[fontsize=\scriptsize,frame=single,framesep=1.5mm]
+lemma phi_sign {κ : ℝ} (hκ : 0 < κ) :
+    ∀ n : ℕ, ∀ m ≤ n, ∀ t : ℝ, 0 < t → 0 ≤ (-1 : ℝ) ^ m * iteratedDeriv m (phi κ) t := by
+  intro n
+  induction n with
+  | zero =>
+    intro m hm t _
+    rw [Nat.le_zero.mp hm]
+    simp only [pow_zero, one_mul, iteratedDeriv_zero, phi]
+    exact (Real.exp_pos _).le
+  | succ n ih =>
+    intro m hm t ht
+    rcases Nat.lt_or_eq_of_le hm with hlt | rfl
+    · exact ih m (Nat.lt_succ_iff.mp hlt) t ht
+    · have hEq : Set.EqOn (deriv (phi κ)) (fun x => -(κ / 2) * (riesz 1 x * phi κ x)) (Set.Ioi 0) :=
+        fun x hx => (phi_hasDerivAt κ hx).deriv
+      rw [iteratedDeriv_succ', hEq.iteratedDeriv_of_isOpen isOpen_Ioi n ht, iteratedDeriv_const_mul_field]
+      have hR := riesz_admissible (s := 1) one_pos
+      have key : 0 ≤ (-1 : ℝ) ^ n * iteratedDeriv n (fun x => riesz 1 x * phi κ x) t :=
+        mul_sign n (contDiffAt_of_admissible hR ht n) (phi_contDiffAt κ ht)
+          (fun i _ => hR.2.2 i t ht) (fun i hi => ih i hi t ht)
+      have hk : (0 : ℝ) ≤ κ / 2 := by positivity
+      calc (0 : ℝ) ≤ κ / 2 * ((-1 : ℝ) ^ n * iteratedDeriv n (fun x => riesz 1 x * phi κ x) t) :=
+            mul_nonneg hk key
+        _ = (-1 : ℝ) ^ (n + 1) * (-(κ / 2) * iteratedDeriv n (fun x => riesz 1 x * phi κ x) t) := by
+            ring
+\end{Verbatim}

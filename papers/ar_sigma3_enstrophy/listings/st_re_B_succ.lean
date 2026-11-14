@@ -1,0 +1,3 @@
+-- Autoresearch_EnstrophyFlow.lean lines 137-138
+theorem re_B_succ (k : ℕ → ℝ) (v : ℕ → ℂ) (m : ℕ) :
+    ((starRingEnd ℂ) (v (m + 1)) * shellBc k (m + 1) v).re = k m * R v m - k (m + 1) * R v (m + 1) := ...

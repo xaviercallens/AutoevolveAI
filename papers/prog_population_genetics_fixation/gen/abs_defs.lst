@@ -1,0 +1,12 @@
+noncomputable def kPow (P : Fin (N + 1) (*@$\to$@*) Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)) : (*@$\mathbb{N}$@*) (*@$\to$@*) Fin (N + 1) (*@$\to$@*) Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)
+  | 0 => fun i j => if i = j then 1 else 0
+  | n + 1 => fun i j => (*@$\sum$@*) k, kPow P n i k * P k j
+
+structure AbsorbingChain (P : Fin (N + 1) (*@$\to$@*) Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)) : Prop where
+  nonneg : (*@$\forall$@*) i j, 0 (*@$\le$@*) P i j
+  rowSum : (*@$\forall$@*) i, (*@$\sum$@*) j, P i j = 1
+  absorb0 : (*@$\forall$@*) j, P 0 j = if j = 0 then 1 else 0
+  absorbN : (*@$\forall$@*) j, P (Fin.last N) j = if j = Fin.last N then 1 else 0
+
+def InteriorHarmonic (P : Fin (N + 1) (*@$\to$@*) Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)) (g : Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)) : Prop :=
+  (*@$\forall$@*) i : Fin (N + 1), 0 < (i : (*@$\mathbb{N}$@*)) (*@$\to$@*) (i : (*@$\mathbb{N}$@*)) < N (*@$\to$@*) (*@$\sum$@*) j, P i j * g j = g i

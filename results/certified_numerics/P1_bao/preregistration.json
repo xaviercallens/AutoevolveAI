@@ -1,0 +1,33 @@
+{
+  "pilot": "P1 certified BAO distances (docs/OPENAI_MATH_CROSSWALK_2026-10-08.md, section A1)",
+  "authorised_by": "user: 'approval provide. continue and prepare research directions and new publication on zenodo' (2026-10-08)",
+  "stage": "preregistration: written and committed before any table was generated and before any Lean file of this pilot was written or compiled; no result of this pilot has been seen",
+  "model": "flat LambdaCDM, radiation off: E(z) = sqrt(Om (1+z)^3 + 1 - Om); chi(z) = int_0^z dz'/E(z'); D_M/r_d = c/(100 h r_d) chi(z); D_H/r_d = c/(100 h r_d) / E(z); c = 299792.458 km/s",
+  "fit_point": {"Om": "29743/100000", "h_rd_Mpc": "101543/1000", "source": "rusty-SUNDIALS crates/qf-bao-distances README (origin/main), DESI DR2 CVODE-path best fit"},
+  "redshifts": "the effective redshifts of the DESI DR2 BAO mean file desi_bao_dr2/desi_gaussian_bao_ALL_GCcomb_mean.txt, each rounded to 1/2000 only if not already a multiple (the rounding, if any, is recorded)",
+  "method": [
+    "1/E is antitone on [0, inf) for 0 <= Om <= 1, so on the grid x_i = i/S (S = 2000) Mathlib's AntitoneOn.sum_le_integral / AntitoneOn.integral_le_sum give lower and upper Riemann sums",
+    "an untrusted Python emitter computes integer bounds lo_i, hi_i with lo_i^2 a_i <= D^2 b_i <= hi_i^2 a_i, where A(x_i) = a_i/b_i exactly and D = 10^12, so lo_i/D <= 1/E(x_i) <= hi_i/D",
+    "Lean checks the integer table with decide +kernel (no native_decide) and a soundness theorem lifts it to real-number bounds on the integral",
+    "Lean host: upstream's pinned Lean 4.34.1 + Mathlib d13f23b7 on disk 2 (openai_math_pinned), pinned Mathlib imports only; verification = compile + #print axioms with whitelist {propext, Classical.choice, Quot.sound}"
+  ],
+  "hypotheses": {
+    "H1": "Kernel-checked theorems give, for every DESI DR2 redshift, an enclosure of chi(z) at the fit point with relative width <= 5e-4, and the derived D_M/r_d and D_H/r_d enclosures; axioms within the whitelist, no sorry, no native_decide.",
+    "H2": "Solver audit (positive): rusty-SUNDIALS qf-bao-distances values at the fit point (CVODE path and quadrature path) and astropy 6.1.7 FlatLambdaCDM (Tcmb0 = 0) values lie inside the certified enclosures.",
+    "H3": "Sensitivity (negative control): the certified enclosures at Om x 1.01 are disjoint from the baseline enclosures at every DESI redshift >= 0.5 (expected from the README's 1.8e-3 shift of D_M(z=1) versus the <= 5e-4 width).",
+    "H4": "Solver audit (negative): a deliberately loose rusty-SUNDIALS CVODE run (rtol = 1e-2) gives at least one chi(z) outside the enclosure. If the crate exposes no way to set rtol without editing it, H4 is BLOCKED (not simulated).",
+    "H5 (secondary)": "A certified interval for the DESI DR2 chi^2 at the fit point, computed in Lean by rational interval arithmetic from the enclosures, contains the Rust value 10.2710. Not attempted counts as NOT_ATTEMPTED, not as a pass."
+  },
+  "controls": {
+    "C1 (positive)": "Einstein-de Sitter (Om = 1): the closed form chi(z) = 2(1 - (1+z)^(-1/2)) lies inside the Lean enclosure at every redshift (checked exactly with integer square roots in Python).",
+    "C2 (negative)": "a table with one entry tampered (hi_i decreased by 10^6 units) must make the Lean check fail to elaborate (kernel rejects decide).",
+    "C3 (negative)": "a theorem in the same environment proved by sorry and one using a declared axiom are rejected by the axiom whitelist check."
+  },
+  "kill_and_void": [
+    "any control failing voids the pilot",
+    "an external value outside an enclosure is a finding (solver error or our bug) and is investigated and reported, never removed",
+    "if the enclosure is wider than 5e-4 the pilot reports H1 as NOT MET with the measured width"
+  ],
+  "seeds": "none (deterministic)",
+  "budget": "one working session; Lean builds on 1-2 cores"
+}

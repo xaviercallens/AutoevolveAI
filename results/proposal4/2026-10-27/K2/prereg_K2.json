@@ -1,0 +1,43 @@
+{
+ "item": "K2",
+ "date": "2026-10-31",
+ "parent_preregistration": "results/proposal4/2026-10-27/preregistration.json (sha256 7f7d5ac1b2ba2987860542bcb6acec4bf5b68bbdabce183433d9d2135e65b438, unchanged)",
+ "written_before_any_attempt": true,
+ "resources": "cores 6,7 only (taskset -c 6,7); time box about 4 agent-hours",
+ "question": "eta = (dDIC/dTA) at fixed fCO2 in equilibrium carbonate chemistry: certified enclosures over (a) seawater box T in [0,30] C, S in [30,38], fCO2 in [280,560] uatm, TA = (S/35)*TA35 with TA35 in [2200,2400] umol/kg; (b) dilute/soil water: pH thresholds below which eta < eps (eps in {0.01,0.1}) and the pH where eta = 0.5; (c) alkalinity-front retardation R = 1 + dq/dc and delay time T(CEC, L, q) from Jessen et al. 2026 (arXiv 2607.01835).",
+ "model": "(a) TA = [HCO3]+2[CO3]+[B(OH)4]+[OH]-[H] on the total scale; sulfate, fluoride, phosphate, silicate set to zero (stated simplification, effect quantified in Tier X); total boron 0.000416*S/35 mol/kg (Uppstrom 1974 as tabulated in the Dickson et al. 2007 Guide ch.5); K0 (Weiss 1974), K1 and K2 (Lueker et al. 2000), KB (Dickson 1990), KW (Millero 1995) as printed in Dickson, Sabine, Christian (eds) 2007, Guide to Best Practices for Ocean CO2 Measurements, Ch.5 sec.7. The Guide is read; the primary papers are NOT read. This is a recorded deviation from 'primary sources': constants are pinned to the Guide's transcription by the primary authors. fCO2 is the independent variable (no fugacity coefficient applied). (b) the same algebra without borate and with freshwater constants taken from the PyCO2SYS source (Millero 1979 freshwater); primary NOT read, so (b) is Tier X by the kill criterion. (c) closed form from Jessen et al. Supplementary Text 2.",
+ "method": "Closed form eta = C(K1/h^2+2K1K2/h^3) / (C(K1/h^2+4K1K2/h^3) + BT*KB/(KB+h)^2 + KW/h^2 + 1), with C = K0*fCO2 and h solving TA(h)=TA. TA(h) is strictly decreasing in h, so h is bracketed rigorously: h_lo, h_hi with the interval lower bound of F(h_lo) > 0 and the interval upper bound of F(h_hi) < 0 over a sub-box (mpmath.iv). Box subdivision on a grid; the enclosure is the union of sub-box enclosures. Constants as intervals: scenario U0 = exact formulas (outward rounding only); U1 = pK intervals +-1 sigma (pK0 0.002, pK1 0.0075, pK2 0.015, pKB 0.01, pKW 0.01; OEDG18 values as shipped in PyCO2SYS, a secondary source); U2 = +-2 sigma. These are input intervals, not probability statements. Lean (pinned 4.34.1): monotonicity of R and T in CEC, L, q, dc, plus the Jessen rational instance; axioms within {propext, Classical.choice, Quot.sound}, leanchecker replay, escape grep.",
+ "positive_controls": [
+  "P1: PyCO2SYS 1.8.3.4 (opt_k_carbonic=10 Lueker, pH total, sulfate = fluoride = 0) eta by the 1 umol/kg secant at fixed fCO2 lies inside the U0 sub-box enclosure at 500 random points of the box (seed 20261031), and agrees with our float eta to relative 1e-4",
+  "P2: closed-form eta equals a high-precision (mpmath, 50 digits) numerical derivative of DIC(TA) at fixed fCO2 at 50 points to relative 1e-12",
+  "P3: Dickson Guide printed check values reproduced: ln K0 = -3.5617, log10 K1 = -5.8472, log10 K2 = -8.9660, ln KB = -19.7964 at S=35, 25 C, to the printed digits",
+  "P4: Jessen dq, R, v reproduced: R 58 and 165, v 3.0 and 8.7 cm/yr, 12-34 yr/m, to printed digits (tolerance: printed rounding, inputs are 'ca.')"
+ ],
+ "negative_controls": [
+  "N1: K1 and K2 swapped in the model: PyCO2SYS values at the 500 points must fall outside the corrupted model's enclosure at >= 95 percent of points",
+  "N2: wrong-sign borate alkalinity term: must be detected the same way",
+  "N3: pCO2 unit error (420 read as atm, i.e. x1e6): the box guard must reject it, and forced evaluation must disagree with PyCO2SYS",
+  "N4: corrupted constant (K1 coefficient 3633.86 -> 3733.86): must break P3 and be rejected",
+  "N5 (Lean): planted sorry / extra axiom in Controls.lean must be caught by the axiom gate"
+ ],
+ "kill_criterion": "As in the parent: constants cannot be pinned to primary sources => the item stays Tier X. Applied per part: (a) is pinned to the Dickson 2007 Guide transcription (reported as a deviation, not the primary papers); (b) freshwater constants are not pinned => X. Also stop if P1 fails (a model/implementation disagreement not explained by the stated simplifications) or any N control is not caught.",
+ "outcomes": {
+  "KEEP": "P1-P4 pass, all N caught, (a) enclosures for U0/U1/U2 over the box, (b) pinned, (c) Lean done",
+  "PARTIAL": "(a) and (c) certified but (b) stays Tier X (expected)",
+  "KILL": "P1 fails unexplained or (a) cannot be pinned"
+ },
+ "tiers": {
+  "A": "Lean monotonicity lemmas for the retardation/delay closed form only",
+  "C": "interval-arithmetic enclosures of eta (a) and delay (c), given the pinned constants, not replayed in Lean",
+  "X": "floats, PyCO2SYS comparisons, freshwater/soil (b), sulfate/fluoride effect, Jessen PHREEQC re-run (not attempted unless time)",
+  "L": "constants and formulas as literature"
+ },
+ "not_claimed": [
+  "no tonnes of CO2 removed, no climate effect",
+  "no statement on ecological or biogeochemical safety of OAE or enhanced weathering",
+  "no deployment advocacy",
+  "equilibrium thermodynamics only: no air-sea gas-exchange kinetics, no CaCO3 precipitation or saturation state, no mixing",
+  "eta is a model derivative, not a measurement-and-verification protocol"
+ ],
+ "literature_note": "To our knowledge eta of about 0.8 (and its dependence on T, S, pCO2 and TA) is already known (e.g. Zeebe and Wolf-Gladrow 2001; Renforth and Henderson 2017; OAE efficiency studies, not re-read here). The only contribution attempted is certified, uncertainty-bounded enclosures and a monotone closed form."
+}

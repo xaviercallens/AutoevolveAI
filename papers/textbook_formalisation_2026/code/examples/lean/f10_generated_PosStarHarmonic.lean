@@ -1,0 +1,18 @@
+-- LeanFlow data certificate 'starN3' (generated; tier A for the arithmetic statement only)
+set_option maxRecDepth 100000
+-- x0 == 0
+theorem cert_0 : (0 : Int) < ((1 : Int) * (1 : Int)) ∧ ((1 : Int) * (0 : Int)) * (1 : Int) = (0 : Int) * ((1 : Int) * (1 : Int)) := by decide +kernel
+-- x7 == 1
+theorem cert_1 : (0 : Int) < ((1 : Int) * (1 : Int)) ∧ ((1 : Int) * (1 : Int)) * (1 : Int) = (1 : Int) * ((1 : Int) * (1 : Int)) := by decide +kernel
+-- harmonique en S=001
+theorem cert_2 : (0 : Int) < (((((2 : Int) * (1 : Int)) * ((4 : Int) * (6 : Int))) * ((4 : Int) * (6 : Int))) * ((1 : Int) * (12 : Int))) ∧ (((((1 : Int) * (0 : Int)) * ((4 : Int) * (6 : Int)) + ((1 : Int) * (5 : Int)) * ((2 : Int) * (1 : Int))) * ((4 : Int) * (6 : Int)) + ((1 : Int) * (5 : Int)) * (((2 : Int) * (1 : Int)) * ((4 : Int) * (6 : Int)))) * ((1 : Int) * (12 : Int)) + ((-1 : Int) * (5 : Int)) * ((((2 : Int) * (1 : Int)) * ((4 : Int) * (6 : Int))) * ((4 : Int) * (6 : Int)))) * (1 : Int) = (0 : Int) * (((((2 : Int) * (1 : Int)) * ((4 : Int) * (6 : Int))) * ((4 : Int) * (6 : Int))) * ((1 : Int) * (12 : Int))) := by decide +kernel
+-- harmonique en S=010
+theorem cert_3 : (0 : Int) < ((((8 : Int) * (1 : Int)) * ((2 : Int) * (6 : Int))) * ((8 : Int) * (3 : Int))) ∧ ((((1 : Int) * (0 : Int)) * ((2 : Int) * (6 : Int)) + ((1 : Int) * (5 : Int)) * ((8 : Int) * (1 : Int))) * ((8 : Int) * (3 : Int)) + ((-5 : Int) * (2 : Int)) * (((8 : Int) * (1 : Int)) * ((2 : Int) * (6 : Int)))) * (1 : Int) = (0 : Int) * ((((8 : Int) * (1 : Int)) * ((2 : Int) * (6 : Int))) * ((8 : Int) * (3 : Int))) := by decide +kernel
+-- harmonique en S=011
+theorem cert_4 : (0 : Int) < ((((5 : Int) * (3 : Int)) * ((5 : Int) * (1 : Int))) * ((5 : Int) * (6 : Int))) ∧ ((((1 : Int) * (2 : Int)) * ((5 : Int) * (1 : Int)) + ((1 : Int) * (1 : Int)) * ((5 : Int) * (3 : Int))) * ((5 : Int) * (6 : Int)) + ((-2 : Int) * (5 : Int)) * (((5 : Int) * (3 : Int)) * ((5 : Int) * (1 : Int)))) * (1 : Int) = (0 : Int) * ((((5 : Int) * (3 : Int)) * ((5 : Int) * (1 : Int))) * ((5 : Int) * (6 : Int))) := by decide +kernel
+-- harmonique en S=100
+theorem cert_5 : (0 : Int) < ((((8 : Int) * (1 : Int)) * ((2 : Int) * (6 : Int))) * ((8 : Int) * (3 : Int))) ∧ ((((1 : Int) * (0 : Int)) * ((2 : Int) * (6 : Int)) + ((1 : Int) * (5 : Int)) * ((8 : Int) * (1 : Int))) * ((8 : Int) * (3 : Int)) + ((-5 : Int) * (2 : Int)) * (((8 : Int) * (1 : Int)) * ((2 : Int) * (6 : Int)))) * (1 : Int) = (0 : Int) * ((((8 : Int) * (1 : Int)) * ((2 : Int) * (6 : Int))) * ((8 : Int) * (3 : Int))) := by decide +kernel
+-- harmonique en S=101
+theorem cert_6 : (0 : Int) < ((((5 : Int) * (3 : Int)) * ((5 : Int) * (1 : Int))) * ((5 : Int) * (6 : Int))) ∧ ((((1 : Int) * (2 : Int)) * ((5 : Int) * (1 : Int)) + ((1 : Int) * (1 : Int)) * ((5 : Int) * (3 : Int))) * ((5 : Int) * (6 : Int)) + ((-2 : Int) * (5 : Int)) * (((5 : Int) * (3 : Int)) * ((5 : Int) * (1 : Int)))) * (1 : Int) = (0 : Int) * ((((5 : Int) * (3 : Int)) * ((5 : Int) * (1 : Int))) * ((5 : Int) * (6 : Int))) := by decide +kernel
+-- harmonique en S=110
+theorem cert_7 : (0 : Int) < (((((10 : Int) * (3 : Int)) * ((10 : Int) * (3 : Int))) * ((5 : Int) * (1 : Int))) * ((1 : Int) * (15 : Int))) ∧ (((((1 : Int) * (2 : Int)) * ((10 : Int) * (3 : Int)) + ((1 : Int) * (2 : Int)) * ((10 : Int) * (3 : Int))) * ((5 : Int) * (1 : Int)) + ((4 : Int) * (1 : Int)) * (((10 : Int) * (3 : Int)) * ((10 : Int) * (3 : Int)))) * ((1 : Int) * (15 : Int)) + ((-1 : Int) * (14 : Int)) * ((((10 : Int) * (3 : Int)) * ((10 : Int) * (3 : Int))) * ((5 : Int) * (1 : Int)))) * (1 : Int) = (0 : Int) * (((((10 : Int) * (3 : Int)) * ((10 : Int) * (3 : Int))) * ((5 : Int) * (1 : Int))) * ((1 : Int) * (15 : Int))) := by decide +kernel

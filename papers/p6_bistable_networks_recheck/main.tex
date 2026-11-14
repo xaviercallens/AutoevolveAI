@@ -1,0 +1,97 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+
+\title{An independent exact recheck of the classification of bistable two-species mass-action networks\\
+{\large (a recheck of a result by others; no novelty is claimed)}}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-11-02}
+\hypersetup{pdftitle={An independent exact recheck of the classification of bistable two-species mass-action networks (a recheck of a result by others)},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small doi:10.5281/zenodo.23867827 \quad (not peer reviewed)\end{center}
+
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its code, its claim ledger and the audit were produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{This version was audited by a separate AI agent instance (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.} The five corrections are applied (Section~\ref{sec:corr}). No human audit exists. There is no Lean in this paper. The subject is pure mathematical dynamical systems; no biological or medical claim is made.
+
+\begin{abstract}
+\noindent B.~Peng \cite{peng} (arXiv:2610.32739, 23 Oct 2026, unrefereed) classifies the bistable networks among small two-species bimolecular mass-action networks with at most three directed reactions: $681$ orbits under species exchange, of which $27$ are bistable (two positive equilibria that are sinks), with rational witnesses (his Table~2) and $654$ exclusions (JAC $245$, DIV $216$, ROOT $179$, FLUX $14$). \textbf{The result is Peng's; we claim nothing new.} Two independent implementations reproduce the enumeration ($1351$ labelled edge sets, $681$ orbits), verify all $27$ witnesses exactly (each has exactly three positive equilibria: two sinks and a saddle), and reproduce all four exclusion counts; the ROOT count $179$ is reproduced only by the auditor, with the resultant taken at the actual degree of each polynomial (the producer's fixed-degree reading gave $105$). The exclusions are certificate checks conditional on the paper's Lemma~3 (pen-and-paper, not machine-checked); Theorem~2 is not verified. Random searches (Tier~\tX) found no bistable network among the $654$ excluded ones. Outcome: PARTIAL. Tier~\tC{} for the exact parts, \tX{} for searches, \tL{} for the paper's lemmas.
+\end{abstract}
+
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{What this is NOT.} Not a new result; not a proof that the $654$ networks are non-bistable independent of Peng's Lemma~3; not a check of Lemma~3, its Sard step, the JAC midpoint identity or Theorem~2; not a formal proof (no Lean); not based on the author's code or catalogue; not an exhaustive prior-art search; not human-audited; no biological or medical claim.}}
+
+\paragraph{Markers.} \tL{}: a cited source or lemma, taken as stated. \tC{}: executed exact code (rational arithmetic, symbolic algebra, certified ball arithmetic) with the argument written down, not formalised. \tX{}: searches and context controls, not exhaustive. Identifiers \texttt{BIST-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+\section{The class and the enumeration (\tC{})}\label{sec:enum}
+Following Peng, the complexes are $X,Y,2X,X+Y,2Y$ and a network is a set of at most three distinct directed edges $\alpha\to\beta$ between them with $\alpha\ne\beta$ ($20$ possible edges). With mass action, $H=\sum_j k_j(\beta_j-\alpha_j)z^{\alpha_j}$ and the dynamics are
+$z'=(a,b)-z+H$ (model E) or $z'=(a,b)-\mathrm{diag}(\rho,1)z+H$ (model F), all of $a,b,k_j,\rho>0$. The target (``bistable'') is: two distinct positive equilibria with $\operatorname{tr}DF<0$ and $\det DF>0$ (sinks). The paper uses $\mathrm{E}$ with $\rho=1$ for the witnesses.
+
+Both implementations (own code each) find $1351$ labelled edge sets, of which $11$ are fixed by exchanging $X$ and $Y$, giving $681$ orbits of sizes $1/10/100/570$. Numbering the orbits by first appearance with the complexes and edge sets in lexicographic order reproduces all $27$ identifiers of the paper's Table~1, and the $27$ sets lie in $27$ distinct orbits (\texttt{BIST-C-0001}). The paper does not state the representative rule; first appearance reproduces it. The paper is internally inconsistent on the label count: Sec.~1 gives $1351$, Sec.~5 says ``all $1362$ labels'' ($1362=1351+11$); we take $1351$, which both implementations obtain.
+
+\section{The 27 witnesses (\tC{})}\label{sec:wit}
+Producer: for each Table~2 parameter set, Gr\"obner elimination of $y$, square-free resultant, exact Sturm count of positive roots, $y>0$ and the signs of trace and determinant by rational intervals of width $10^{-40}$ (gcd of the polynomial and the trace/determinant polynomial being $1$). Auditor, by a different method: the exact resultant in $y$, its square-free part, certified root isolation with Arb ball arithmetic (python-flint, $400$ bits), both $y$-roots of the second equation in ball arithmetic, candidates discarded when the first equation is certified nonzero. Result in both: \emph{every one of the $27$ has exactly three positive equilibria, two sinks and one saddle ($\det<0$), with no undecided sign} (\texttt{BIST-C-0002}). The $x$-coordinates agree (e.g.\ N0438: $0.020611$, $2.02$, $397.909$).
+
+The Table~2 values were first read by the producer from flattened PDF text; four rows were mis-grouped and fixed by testing all groupings. The auditor then confirmed all $27$ rows against the rendered PDF image (the author's catalogue was not used). Rows N0514, N0524: $k_1=17$, $k_2=100/9$; rows N0548, N0554: $k_1=17$, $k_2=100/159$; $k_3=2600/2809,\,650/729,\,2600/2809,\,2600/2809$ respectively.
+
+\section{The 654 exclusions (\tC{}, conditional on \tL{})}\label{sec:excl}
+The paper excludes bistability by four certificate families, each valid on the paper's Lemma~3 (projection injectivity, ``at least three equilibria for two sinks'', and a Sard argument for the saddle) and, for JAC, a midpoint identity. We read these arguments; they look correct, but they are pen-and-paper and neither of us machine-checked them (\tL{}). What we checked is that the certificates exist for the claimed networks.
+\begin{table}[h]\centering\small
+\begin{tabular}{@{}p{0.52\linewidth}rrl@{}}\toprule
+Rule & paper & reproduced & by\\ \midrule
+JAC ($\det DF$ has nonnegative coefficients and the monomial $\rho$ with coefficient 1) & 245 & 245 & producer, auditor\\
+DIV ($\det K$ nonnegative, monomial $ab$ with coefficient 1), after JAC & 216 & 216 & producer, auditor\\
+ROOT (Sylvester resultant sign pattern) & 179 & 179 & auditor (producer: 105)\\
+FLUX (copositivity on the flux cone) & 14 & 14 & auditor only\\ \bottomrule
+\end{tabular}
+\caption{Exclusion counts; total $245+216+179+14=654$. None of the $27$ positives is excluded by any rule.}\label{tab:rules}
+\end{table}
+\paragraph{JAC and DIV.} Applied in that order, both implementations obtain $245$ and $216$, split by network size ($0$ edges $1/0$, $1$ edge $8/2$, $2$ edges $54/33$, $3$ edges $182/181$) exactly as in the paper's table; $193$ negatives remain, including all $14$ FLUX networks.
+\paragraph{ROOT.} The auditor takes the Sylvester resultant at the actual degree of each polynomial in the eliminated variable, eliminating $x$ or $y$, with the paper's sign-pattern criterion (each coefficient fixed strict or free in $\{-1,0,1\}$, at most two sign variations, at least one fixed strict coefficient). This passes $179$ of the $193$: $13$ with two edges and $166$ with three, equal to the paper's per-size counts; $0$ positives and $0$ FLUX networks pass (eliminating $y$ alone gives $171$, $x$ alone $126$, union $179$). The producer, reading ``nominal degree'' as a fixed degree-$2$ ($4\times4$) Sylvester matrix, obtained only $105$. The auditor reproduces $105$ under that reading, so the gap of $88$ comes from the producer's reading, not from the paper; the actual-degree reading is also sound, since a fixed Sylvester determinant vanishes at every common root even under degree drop and the strict coefficient excludes the zero polynomial.
+\paragraph{FLUX.} The auditor enumerated the rays of the flux cone $\{w\ge0,U\ge0\}$ ($6$ to $9$ per network) and formed $G=R^{\!\top}HR$, checking $w^{\top}Hw=\det M(w)$ symbolically. Eleven networks have $G$ entrywise nonnegative; N0391 gives $u^2-2uv+4v^2$ and N0646 gives $u^2-uv+v^2$ (both positive definite); N0610 gives $u^2+3uv+2v^2-uw-vw+w^2$, copositive but not positive semidefinite, with the paper's decomposition $(w-\tfrac{u+v}2)^2+\tfrac34u^2+\tfrac52uv+\tfrac74v^2$ checked by hand expansion. So FLUX $14/14$ reproduces (\texttt{BIST-C-0003}).
+
+\section{Controls (\tC{})}\label{sec:ctrl}
+Positive: the Sec.~4 baseline ($Y\to2X$ with $k=10$, $2X\to X+Y$ with $k=50/9$, $X+Y\to Y$ with $k=10$; $a=4/99$, $b=1/90$) has exactly the equilibria $x=1/10,\,1/5,\,3/5$ with $\det=25/9,\,-20/9,\,100/9$ (exact substitution) and trace formula as in the paper; as $a$ is raised, two sinks at $a=0.04610$ and one at $a=0.04611$, consistent with the fold at $a_+\approx0.0461033$. Negative: the empty network, $X\to Y$, $X\leftrightarrow Y$ and $X+Y\leftrightarrow2X$ each give exactly one positive equilibrium (a sink); the N0056 network ($X\to X+Y$, $X+Y\to2X$) gives exactly one at the producer's tested parameters but can give none (e.g.\ $a=1/3$, $b=2/7$, $k=3/2$, $h=5/4$, $\rho=1$), consistent with the paper's bound of at most two. Perturbation: scaling the inflow $a$ by $2,5,20,100,1000$ destroys bistability for all $27$ witnesses (\texttt{BIST-C-0004}).
+
+\section{Random search (\tX{})}\label{sec:search}
+Producer: $125{,}000$ log-uniform samples of $(a,b,\rho,k)$ in $[10^{-3},10^{3}]$ for each of the $681$ orbits ($85.1$M samples), every hit re-verified exactly in rationals: all $27$ positives re-found (hit rates $0.34\%$ to $8.4\%$); $0$ candidates among the $654$ negatives. Auditor, independent pipeline: $20{,}000$ samples for each of the $27$ positives and $193$ ROOT/FLUX negatives ($4.4$M): all $27$ re-found (lowest rate $0.39\%$); the float pipeline flagged $247$ samples on $10$ negative networks, all rejected by exact Arb re-check (none with two sinks, none undecided). Hence no bistable negative was found. This is evidence only, limited by the parameter box and sampling, and the producer's ``$0$ candidates'' depends on its own pipeline (\texttt{BIST-X-0001}).
+
+\section{Audit corrections applied}\label{sec:corr}
+The producer's \texttt{data/RESULT.md} and \texttt{data/result.json} are kept unmodified (pre-audit); this paper supersedes them on the audit's five corrections. (1) Outcome: the producer's run reproduced ROOT only partly ($105$) and FLUX not; the independent audit reproduced ROOT $179/179$ (actual-degree resultant) and FLUX $14/14$, conditional on Lemma~3; the status stays PARTIAL because Lemma~3 and Theorem~2 are not checked and the producer itself did not reproduce ROOT and FLUX. (2) The ``$88$ not reproduced'' remark is replaced by Section~\ref{sec:excl}: it is the producer's fixed-degree reading, not the paper. (3) Table~2 is confirmed against the PDF image; the author's catalogue was not used. (4) The N0056 control reads ``exactly one positive equilibrium at the tested parameters'' (it can be zero). (5) The not-checked list is as in Section~\ref{sec:lim}, with the paper's own $1351$ versus ``$1362$ labels'' inconsistency noted in Section~\ref{sec:enum}. The preregistration (\texttt{PREREG\_ITEM.md}, sha256 \texttt{9c358006\dots 4de3d3af}) is self-attested; it was written before computation according to the producer, with no independent timestamp.
+
+\section{Limitations and what is not done}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item AI audit only; no human audit; no Lean (no Tier~A).
+\item Not verified: Peng's Lemma~3 and its Sard step, the JAC midpoint identity (read, not machine-checked), Theorem~2 (deletion-minimality and inheritance), and the claim $B_E=B_F$ beyond the counts. The $654$ exclusions are reproduced as certificate checks, not as a proof independent of Lemma~3.
+\item The author's repository, supplementary certificates and checker were not used (repository URL not in the paper; licence unchecked).
+\item Search limits: parameter box $[10^{-3},10^3]$, finite samples; model E only at $\rho=1$ for the witnesses.
+\item Literature: no independent verification or critique of the paper and no earlier enumeration of this exact class was found, but the search was limited (\tL{}, \texttt{BIST-L-0002}); related work includes Tang and Xu \cite{tangxu}, not examined here beyond the abstract.
+\item Trusted components: sympy, python-flint (Arb), Python \texttt{fractions}.
+\end{itemize}
+
+\section{Claim ledger and reproducibility}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files the claims with hashed evidence; the Elenchus gate (\texttt{ledger/run\_gate.py}, verbatim output in \texttt{ledger/gate\_output.txt}) checks bookkeeping only and licenses nothing. Producer code (\texttt{p1\_enum.py}--\texttt{p7\_aggregate.py}, \texttt{run\_search.sh.txt}), summaries and logs are in \texttt{data/}; the auditor's scripts and small outputs are in \texttt{data/audit}. The $50$ raw search part files remain in the lane directory only. The paper's full text is third-party and is not shipped. Nothing was committed, pushed or uploaded.
+
+\begin{thebibliography}{9}\small
+\bibitem{peng} B.\ Peng, \emph{Bistability with equal and independent removal in small bimolecular networks}, arXiv:2610.32739 (v1, 23 Oct 2026), unrefereed. (\tL)
+\bibitem{tangxu} X.\ Tang, H.\ Xu, \emph{Multistability of Small Reaction Networks}, arXiv:2008.03846 (v1 10 Aug 2020; v2 28 Jan 2021). (\tL)
+\end{thebibliography}
+\end{document}

@@ -1,0 +1,191 @@
+import Programmes.SandierSerfatyL1.Jet.Core
+
+/-!
+# Stage `table(24000)` of the triangular-minimality certificate, level L1 (kernel transcription)
+
+Copied by `results/proposal2/2026-10-26/A1-continuation/scripts/gen_table.py` (do not edit). Transcribes from
+`verification/core.hpp` (SHA-256 `c7f76596...`): `integ` (line 245), `dels` (238), one step of the serial state
+propagation of `table` (254-259), `solve` (144) and `fh` (223-237) including the closed form for segment 0 without
+state (227).
+
+The propagation is serial; here every step is a separate theorem `propW old x S_{i-1} b_m b_c = (S_i, cellS_{i-1})`
+between **state witnesses** (`pointS[i]`, `cellS[i-1]`, the C++ values from dump2), so the 6825 steps are checked
+independently and in parallel. `fh` is staged: `basis` (B, D), `fhSolve` (the 40 solved jets), the double sum
+`quad, e` grouped by row blocks `qeBlocks` (interval addition is exact, so the grouping does not change the value),
+and `fhFinal`. A chunk proves each stage on literals and rewrites `fhW` with them.
+-/
+
+namespace ProgSandierSerfaty.L1.Table
+
+open ProgSandierSerfaty.Cert ProgSandierSerfaty.Cert.IV ProgSandierSerfaty.L1.Jet
+
+/-- a propagation state: `s1, s2` and `ps_k` for `k = 6, 12, ..., 228` (in key order) -/
+structure SS where
+  s1 : IV
+  s2 : IV
+  ps : List IV
+deriving DecidableEq, Repr
+
+/-- solved jets of `fh`: `s1, s2, ps_k` -/
+structure SSJ where
+  s1 : J
+  s2 : J
+  ps : List J
+deriving DecidableEq, Repr
+
+def keysL : List Nat := (List.range 38).map (fun i => 6 * (i + 1))
+
+def absInt (a : Int) : Int := if a < 0 then -a else a
+
+/-- `integ(H, y, yc) = H y₀ + [-err, err]`, `err = H³ |yc₂| / 12`. -/
+def integI (H : IV) (y yc : J) : IV :=
+  let err := mul (mul (powI H 3) (absI yc.a2)) (IV.inv (ofInt 12))
+  add (mul H y.a0) ⟨-err.v, err.v⟩
+
+/-- `dels(t, seg)` from `b = basis(t, seg).first`: `{t b, -2 b' + b'² t, b'}`, `b' = b.der() + 1/t`. -/
+def delsW (t b : J) : J × J × J :=
+  let bp := jadd (jder b) (jmuli (jinv t) o1)
+  (jmul t b, jadd (jmuli bp (ofInt (-2))) (jmul (jpow bp 2) t), bp)
+
+def tmOf (old x : IV) : J := ⟨mul (add old x) (IV.inv (ofInt 2)), o1, z0, z0⟩
+def tcOf (old x : IV) : J := ⟨⟨old.u, x.v⟩, o1, z0, z0⟩
+
+/-- One propagation step (core.hpp:254-259) from state `S` at node `old` to node `x`, with the basis values
+`bm = basis(tm, seg).first`, `bc = basis(tc, seg).first` supplied: `(pointS[i], cellS[i-1])`. -/
+def propW (old x : IV) (S : SS) (bm bc : J) : SS × SS :=
+  let H := sub x old
+  let tm := tmOf old x
+  let tc := tcOf old x
+  let zm := delsW tm bm
+  let zc := delsW tc bc
+  let ix := IV.inv x
+  let ns : SS := ⟨add S.s1 (integI H zm.1 zc.1), add S.s2 (integI H zm.2.1 zc.2.1),
+    (keysL.zip S.ps).map fun kv => add (mul (powI (mul old ix) kv.1) kv.2)
+      (integI H (jmul (jpow (jmuli tm ix) kv.1) zm.2.2) (jmul (jpow (jmuli tc ix) kv.1) zc.2.2))⟩
+  let a0 := zc.2.2.a0
+  let bb := max (absInt a0.u) (absInt a0.v)
+  let err := mul H ⟨-bb, bb⟩
+  let itc := IV.inv tc.a0
+  let bs : SS := ⟨add S.s1 (mul ⟨0, H.v⟩ zc.1.a0), add S.s2 (mul ⟨0, H.v⟩ zc.2.1.a0),
+    (keysL.zip S.ps).map fun kv => add (mul (powI (mul old itc) kv.1) kv.2) err⟩
+  (ns, bs)
+
+/-- The propagation step with the basis evaluated in place. -/
+def prop (old x : IV) (S : SS) (seg : Nat) : SS × SS :=
+  propW old x S (basis (tmOf old x) seg).1 (basis (tcOf old x) seg).1
+
+/-- `solve(val, der)` (core.hpp:144): `z = J(val); for i < 3: z.A[i+1] = der(z).A[i] / (i+1)`. -/
+def solveJ (val : IV) (der : J → J) : J :=
+  let w0 : J := ⟨val, z0, z0, z0⟩
+  let w1 : J := ⟨val, mul (der w0).a0 (IV.inv (ofInt 1)), z0, z0⟩
+  let w2 : J := ⟨val, w1.a1, mul (der w1).a1 (IV.inv (ofInt 2)), z0⟩
+  ⟨val, w1.a1, w2.a2, mul (der w2).a2 (IV.inv (ofInt 3))⟩
+
+/-- the solved jets of `fh` (core.hpp:230) -/
+def fhSolve (t B : J) (S : SS) : SSJ :=
+  let B1 := jadd (jder B) (jmuli (jinv t) o1)
+  let tB := jmul t B
+  let d2 := jadd (jmuli B1 (ofInt (-2))) (jmul (jpow B1 2) t)
+  let it := jinv t
+  ⟨solveJ S.s1 (fun _ => tB), solveJ S.s2 (fun _ => d2),
+   (keysL.zip S.ps).map fun kv => solveJ kv.2 (fun F => jsub B1 (jmul (jmuli F (ofInt kv.1)) it))⟩
+
+/-- `Qj = t D' - k D` -/
+def qjL (t : J) (D : List J) : List J := (D.zip ksL).map fun dk => jsub (jmul t (jder dk.1)) (jmuli dk.1 (ofInt dk.2))
+
+def jadd2 (p q : J × J) : J × J := (jadd p.1 q.1, jadd p.2 q.2)
+
+/-- row `i` of the symmetric double sums `quad`, `e` (core.hpp:234): the pairs `(i, j)`, `j ≥ i`. -/
+def qeRow (D Qj : List J) (i : Nat) : J × J :=
+  let ki : Int := ksL.getD i 0
+  let Di := D.getD i jz
+  let Qi := Qj.getD i jz
+  ((List.range (39 - i)).map (fun r => i + r)).foldl (fun acc j =>
+    let mult : Int := if i = j then 1 else 2
+    let kj : Int := ksL.getD j 0
+    jadd2 acc (jmuli (jmul (jmuli Di (ofInt (mult * ki * kj))) (D.getD j jz)) (IV.inv (ofInt (ki + kj))),
+               jmuli (jmul (jmuli Qi (ofInt mult)) (Qj.getD j jz)) (IV.inv (ofInt (ki + kj))))) (jz, jz)
+
+/-- rows `i, ..., i+c-1` -/
+def qeRange (t : J) (D : List J) (i c : Nat) : J × J :=
+  let Qj := qjL t D
+  ((List.range c).map (fun r => qeRow D Qj (i + r))).foldl jadd2 (jz, jz)
+
+/-- the fixed row blocks of the double sum (they tile rows 0..38) -/
+def qeBlocksL : List (Nat × Nat) := [(0, 2), (2, 2), (4, 2), (6, 2), (8, 2), (10, 3), (13, 3), (16, 3), (19, 4), (23, 5), (28, 11)]
+
+def qeBlocks (t : J) (D : List J) : J × J := qeBlocksL.foldr (fun b acc => jadd2 (qeRange t D b.1 b.2) acc) (jz, jz)
+
+/-- the final assembly of `fh` (core.hpp:231-236) -/
+def fhFinal (t : J) (D : List J) (ss : SSJ) (qe : J × J) : List IV :=
+  let psAt := fun (k : Nat) => (((keysL.zip ss.ps).find? (fun kv => kv.1 = k)).map Prod.snd).getD jz
+  let dsum := ((D.zip ksL).map fun dk => jmuli dk.1 (IV.inv (ofInt ((dk.2 : Int) + 2)))).foldl jadd jz
+  let lin := ((D.zip ksL).map fun dk =>
+    jadd (jmuli dk.1 (ofInt (-2))) (jmul (jmuli dk.1 (ofInt (2 * (dk.2 : Int)))) (psAt dk.2))).foldl jadd jz
+  let f := jsub (jmuli (jadd ss.s1 (jmul (jmul t t) dsum)) (mul (ofInt (-2)) piC))
+    (jmuli (jadd (jadd (jadd (jlog t) ss.s2) lin) qe.1) (rat 1 2))
+  let e := jmuli qe.2 (rat 1 2)
+  [f.a0, f.a1, mul (ofInt 2) f.a2, e.a0, e.a1, mul (ofInt 2) e.a2]
+
+/-- `fh` with state, from a given basis `(B, D)` -/
+def fhW (t : J) (S : SS) (bd : J × List J) : List IV :=
+  fhFinal t bd.2 (fhSolve t bd.1 S) (qeBlocks t bd.2)
+
+/-- `fh` for segment 0 without state (core.hpp:227) -/
+def fh0 (t : J) : List IV :=
+  let f := jsub (jmul (jaddi (jmul (jmuli t piC) t) (neg (rat 1 2))) (jlog t))
+    (jmuli (jpow t 4) (mul (mul (rat 3 8) piC) piC))
+  [f.a0, f.a1, mul (ofInt 2) f.a2, z0, z0, z0]
+
+/-- `fh(t, seg, S)` -/
+def fhT (t : J) (seg : Nat) (S : Option SS) : List IV :=
+  match S with
+  | none => if seg = 0 then fh0 t else []
+  | some s => fhW t s (basis t seg)
+
+/-- Segment 2: `basis` is `basisW` with the 38 Horner jets. -/
+theorem basis_seg2 (t : J) : basis t 2 = basisW t 2 ((List.range 38).map fun m => horJ (z2Of t) (dEdge.getD m [])) := by
+  unfold basis
+  rw [bm0Of_seg2, map_eq_range_getD _ [] dEdge, dEdge_length]
+
+/-! ## The initial state `ss0(small)` (core.hpp:206-222), zero-order coefficients
+
+`ss0` is evaluated at the constant jet `J(small)`; all its derivative coefficients are zero, so the order-0
+coefficient of every jet product is the interval product of the order-0 coefficients and the state is computed
+here with intervals. -/
+
+def ekL : List Nat := 2 :: (List.range 38).map (fun i => 6 * (i + 1))
+def bvL : List IV := piC :: ((List.range 38).zip coList).map fun x =>
+  mul (mul (ofInt (if (x.1 + 1) % 2 = 1 then -1 else 1)) x.2) (ofInt (6 * ((x.1 : Int) + 1)))
+
+/-- `[t^0, ..., t^(n-1)]`, each power the previous one times `t` (`powers[e] = powers[e-1] * t`). -/
+def powRev (t : IV) : Nat → IV → List IV → List IV
+  | 0, _, acc => acc
+  | n + 1, cur, acc => powRev t n (mul cur t) (cur :: acc)
+
+def powsL (t : IV) (n : Nat) : List IV := (powRev t n (ofInt 1) []).reverse
+
+def ekbv : List (Nat × IV) := ekL.zip bvL
+
+/-- `s2coeff[e]` (core.hpp:211-212): the exact sum of `-2 bv_i / ek_i` over `ek_i = e` and of
+`bv_i bv_j / (ek_i + ek_j)` over the ordered pairs with `ek_i + ek_j = e`. -/
+def s2cAt (e : Nat) : IV :=
+  let a := ekbv.foldl (fun acc x => if x.1 = e then add acc (mul (mul (ofInt (-2)) x.2) (IV.inv (ofInt x.1))) else acc) z0
+  ekbv.foldl (fun acc xi => ekbv.foldl (fun acc2 xj =>
+    if xi.1 + xj.1 = e then add acc2 (mul (mul xi.2 xj.2) (IV.inv (ofInt ((xi.1 + xj.1 : Nat) : Int)))) else acc2) acc) a
+
+/-- the exponents `e` with a (structurally) nonzero `s2coeff[e]`: `ek_i` and `ek_i + ek_j` -/
+def s2Support : List Nat := ((List.range 457).filter fun e => ekL.contains e || ekL.any (fun a => ekL.contains (e - a) && a ≤ e))
+
+/-- order-0 coefficients of `ss0(J(t))` (core.hpp:215-222) -/
+def ss0I (t : IV) : SS :=
+  let P := powsL t 457
+  let s1a := add (mul (mul (mul t t) (IV.inv (ofInt 2))) (add (neg (logT t)) (rat 1 2))) (mul (P.getD 4 z0) (mul piC (IV.inv (ofInt 8))))
+  let s1 := ((List.range 38).zip coList).foldl (fun acc x =>
+    add acc (mul (P.getD (6 * (x.1 + 1) + 2) z0)
+      (mul (mul (ofInt (if (x.1 + 1) % 2 = 1 then -1 else 1)) x.2) (IV.inv (ofInt (6 * ((x.1 : Int) + 1) + 2)))))) s1a
+  let s2 := s2Support.foldl (fun acc e => add acc (mul (P.getD e z0) (s2cAt e))) z0
+  let ps := keysL.map fun k => ekbv.foldl (fun acc x => add acc (mul (P.getD x.1 z0) (mul x.2 (IV.inv (ofInt ((x.1 + k : Nat) : Int)))))) z0
+  ⟨s1, s2, ps⟩
+
+end ProgSandierSerfaty.L1.Table

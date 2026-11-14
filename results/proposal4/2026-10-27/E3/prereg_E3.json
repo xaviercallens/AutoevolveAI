@@ -1,0 +1,53 @@
+{
+ "item": "E3",
+ "date": "2026-10-31",
+ "parent_preregistration": "results/proposal4/2026-10-27/preregistration.json (sha256 7f7d5ac1b2ba2987860542bcb6acec4bf5b68bbdabce183433d9d2135e65b438, unchanged, not edited)",
+ "written_before_any_attempt": true,
+ "setup_done_before_this_file": "only: read the E3 section of the proposal and the parent preregistration; downloaded arXiv 1802.09806v4 (Ma, Xu, Dong, Sun) to /home/callensxavier_gmail_com/e3_thirdparty/ (outside the repo), read Sections I-II and Appendices A-B and viewed the page image of Eq. (13); transcribed Eq. (13) by eye from the page image (see statement_source). A paper-and-pencil reduction was sketched (see method step 1); NO numerics and NO Lean were run before this file.",
+ "resources": "cores 2,3 only (taskset -c 2,3); one budget = about 2 agent-hours; the kill rule allows at most two budgets",
+ "statement_source": "Ma, Xu, Dong, Sun, 'Universal constraint for efficiency and power of a low-dissipation heat engine', arXiv:1802.09806v4. Main text Sect. II, Eq. (13) for eta+(P,zeta,eta_C); Eq. (14) zeta=(sqrt Mh - sqrt Mc)/(sqrt Mh + sqrt Mc) in [-1,1]; Eq. (1): eta/eta_C + (1-eta_C) P /( 2(1+sqrt(1-P)) - eta_C P ) <= 1 (reading of the extracted text, to be confirmed against the page image in the run); Appendix B: 'the analytical proof of its monotonicity is tedious and difficult. Instead numerical calculate the derivative'. Eq. (13) transcription (a=1+sqrt(1-P), s=sqrt(1-P), d=(1+zeta)^2/4, c=eta_C): eta+ = a^2/(a^2+(1-d c)P) + (1-zeta^2) P a /(a^2+(1-d c)P)^2 * [1 - sqrt( (c/2)(d c - zeta)(1-s) + 1 - c - ((1+zeta)/4) c (1-s) )].",
+ "question": "Is d eta+/d zeta >= 0 (in fact > 0 for c in (0,1), P in (0,1]) on zeta in [-1,1], does the universal bound Eq. (1) follow, and can both be kernel-checked in Lean 4?",
+ "statements": {
+  "E3b_algebraic": "Let c=eta_C in (0,1), s in [0,1) (P=1-s^2, K=2/(1-s)), zeta in [-1,1]. eta+(zeta) := (1-w^2)/c where w>0 is the positive root of F(w,zeta)=K(w^2-(1-c))/c - ((1-zeta)+(1+zeta)w)^2/4. Then zeta1<zeta2 implies eta+(zeta1) < eta+(zeta2) (weak version for zeta1<=zeta2). This is the root form of the paper's definition: eta+ is the largest efficiency with K(1-u) >= ((1-zeta)+(1+zeta) sqrt(1-c u))^2/4, obtained from the paper's own tangency condition (th+tc=tau+, min over th of a/th+b/tc = (sqrt a+sqrt b)^2/tau).",
+  "E3a_algebraic": "eta+(zeta) <= eta+(1) = (1+s)^2/(2(1+s)-c P) = Eq. (1) solved for eta, so Eq. (1) holds for eta+(zeta) for all zeta in [-1,1], c in (0,1), P in (0,1]. P=0 handled separately (eta<=1).",
+  "E3a_engine": "Attempt, Tier A only if completed. Engine-level form: for Mh,Mc,q>0, c in (0,1), th,tc>0 with power P=Ptilde*Pmax (Pmax=q^2/(4M), M=(sqrt Mh+sqrt Mc)^2) and efficiency eta from the paper's Eqs. (3)-(4), eta/eta_C + (1-c)Ptilde/(2(1+sqrt(1-Ptilde))-c Ptilde) <= 1. If not completed in the box it is reported as NOT done; E3a_algebraic stands alone with that label.",
+  "E3link": "Tier C/X, not Lean. Eq. (13) as transcribed equals the root-form eta+ : checked with exact rationals/ball arithmetic (python-flint) on a grid and random points, and independently with mpmath. If Eq. (13) as transcribed disagrees with the root form beyond the 1e-12 level, the disagreement is reported first (transcription error vs genuine difference diagnosed from the page image) and the monotonicity claim is then stated only for the root form.",
+  "E3x": "Tier X: location of the smallest d eta+/d zeta (closed form by implicit differentiation, floats); whether eta+ is attained (not claimed)."
+ },
+ "method": [
+  "1. Reduction (hand derivation, to be recorded in code/derivation.md): with c, K as above and u=eta/eta_C, the paper's feasibility condition at total time tau+ is q(1-u)tau+ >= (sqrt((1-c u)Mh)+sqrt Mc)^2, i.e. K(1-u) >= ((1-zeta)+(1+zeta) w)^2/4, w=sqrt(1-c u). At fixed w in [0,1] the right side is decreasing in zeta (because w<=1), hence F is increasing in zeta; F is a convex quadratic in w with F(0)<0, so the positive root is unique; so the root w+ decreases in zeta and eta+=(1-w^2)/c increases. At zeta=1 the root is u=(K-1)/(K-c)=(1+s)^2/(2(1+s)-cP).",
+  "2. Lean 4 (pinned runner scripts/certified_numerics/lean_pinned.py, Lean 4.34.1, built modules only, no bare import Mathlib): define F, the explicit positive root, prove it satisfies F=0, prove strict monotonicity in zeta, the value at zeta=1, the bound Eq. (1), and the Esposito EMP sandwich at P=1. Axiom audit with #print axioms (whitelist propext, Classical.choice, Quot.sound), leanchecker per module, escape grep.",
+  "3. Engine-level E3a (Lean; weighted AM-GM a/x+b/(tau-x)>=(sqrt a+sqrt b)^2/tau and the convexity inequality of the paper's Eq. (8)) attempted after step 2 if time remains in the first budget.",
+  "4. Numerical link and controls with python-flint, mpmath, exact fractions; floats for E3x only."
+ ],
+ "positive_controls": [
+  "P1 (Esposito 2010 sandwich, the P=1 case): at P=1, eta+(zeta)/eta_C... in units u: u(zeta) in [1/2, 1/(2-c)] for all zeta in [-1,1] with equality 1/2 at zeta=-1 and 1/(2-c) at zeta=1 (i.e. eta_C/2 <= eta* <= eta_C/(2-eta_C)); proved in Lean and checked numerically",
+  "P2: a known monotone function through the same Lean machinery: the root-monotonicity lemma instantiated on a toy quadratic family with F increasing in the parameter proves the root decreases as expected; plus a numeric check that the root-form eta+ is increasing on a dense float grid and on random exact rational points",
+  "P3: Eq. (13) transcription vs root form agreement (E3link) and the closed forms at zeta=1 and zeta=-1"
+ ],
+ "negative_controls": [
+  "N1: perturbed formula (the factor (1-zeta)+(1+zeta)w replaced by (1+zeta)+(1-zeta)w, i.e. zeta -> -zeta) makes eta+ decreasing in zeta: the Lean monotonicity lemma must not apply (its hypothesis fails) and a certified exact-rational point (w=3/5, c=4/5, u=4/5 type data) must show F_perturbed decreasing in zeta, giving a Lean-checked counterexample to monotonicity of the perturbed function",
+  "N2: second perturbation (K replaced by K/2 or the sign of the B term flipped) must be caught by the numeric grid (a point with negative finite difference) and by an exact-rational certified point",
+  "N3: a planted sorry (and a planted extra axiom) in a scratch Lean file must be flagged by the audit pipeline; the scratch file is kept under logs/ and is not part of the claimed modules",
+  "N4: transcription control: a deliberately mistyped Eq. (13) (sign of zeta flipped inside the root) must disagree with the root form"
+ ],
+ "kill_criterion": "(i) the statement cannot be pinned from the source (Eq. (13) / eta+ not reproducible from the paper's own tangency condition): stop, report; (ii) the statement is already proved in the literature: stop and report where (a search of arXiv titles and follow-up papers in the first budget; absence of a hit is only 'to our knowledge'); (iii) two budgets (about 4 agent-hours) without the full box zeta in [-1,1] x c in (0,1) x P in (0,1]: report the certified sub-box; (iv) a certified point with negative d eta+/d zeta is a counterexample, reported first after a second independent check; (v) any P control fails unexplained: no claims count.",
+ "outcomes": {
+  "KEEP": "E3a_algebraic and E3b_algebraic Lean-kernel-checked (Tier A pending statement lock) on the full box, P1-P3 pass, N1-N4 caught, E3link agrees; scope stated honestly (monotonicity proved for the root form of the paper's own definition, elementary; engine-level E3a status stated)",
+  "PARTIAL": "Lean root-form done but E3link or engine-level E3a not completed, or only a sub-box",
+  "KILL": "kill criterion (i), (ii) or (iv) fires, or a P control fails unexplained"
+ },
+ "tiers": {
+  "A": "Lean kernel-checked statements with whitelisted axioms; Tier A pending statement lock (the lock is for the caller to apply)",
+  "C": "exact-rational / ball-arithmetic numerical link to the transcription of Eq. (13)",
+  "X": "floats, E3x location of smallest derivative",
+  "L": "the paper's Eqs. (1),(3),(4),(13),(14) as literature"
+ },
+ "literature": "To our knowledge no machine-checked proof of this monotonicity exists; a published analytic proof may exist (Holubec-Ryabov 2016 arXiv 1603.02551 and Ye-Holubec 2021 arXiv 2112.08923 are not re-read in this run; Esposito et al. PRL 105, 150603 not read). The mathematical content (implicit monotonicity of a root of a quadratic) is elementary and is not presented as a deep result.",
+ "not_claimed": [
+  "no statement about any real engine or power plant; the low-dissipation model is an idealisation",
+  "no claim that the bound is attained or tight",
+  "Eq. (13) as a model of the two-level atom engine is not examined",
+  "no 'breakthrough' claim"
+ ]
+}

@@ -1,0 +1,89 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\Lob}{\Lambda}
+
+\title{An independent exact recheck of a 2-tetrahedron counterexample to Luo's conjectures on Q-theory of closed 3-manifolds\\
+{\large (a recheck of a result by others; no novelty is claimed)}}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-11-02}
+\hypersetup{pdftitle={An independent exact recheck of a 2-tetrahedron counterexample to Luo's conjectures on Q-theory of closed 3-manifolds (a recheck of a result by others)},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small doi:10.5281/zenodo.23867965 \quad (not peer reviewed)\end{center}
+
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its code, its claim ledger and the audit were produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{This version was audited by a separate AI agent instance (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.} The corrections are applied (Section~\ref{sec:corr}). No human audit exists. There is no Lean in this paper.
+
+\begin{abstract}
+\noindent Q.~Guo \cite{guo} (arXiv:2610.13979, 11 Oct 2026, unrefereed; the paper says ChatGPT supplied the idea) exhibits a $2$-tetrahedron, one-vertex triangulation $T$ of the lens space $L(3,1)$ and claims that it refutes Conjectures~1--3 of F.~Luo \cite{luo} (arXiv:1003.4413) on Haken's normal surface equation, Thurston's gluing equation and the maximum of the volume on the space of angle structures. \textbf{The result is Guo's; we claim nothing new,} and nothing about the Poincar\'e conjecture. Two independent implementations (the second with Regina and Singular as instruments) reproduce the four clauses of the counterexample: (i) $\pi_1=C_3$ and a null-homotopic loop edge, (ii) Q-matching of rank $2$ with no cluster of three $2$-quad-type solutions, (iii) Thurston's equation has no solution (Groebner basis $\{1\}$), (iv) every maximum of the volume is a smooth point. Clause (iv) is upgraded from numerical to Tier~\tC{} by an elementary analytic bound. Minimality of two tetrahedra is reproduced by a Regina census. Guo's quotation of Luo's conjectures was checked against arXiv:1003.4413v2. Outcome: confirmed as a recheck; Tier~A (Lean) not reached.
+\end{abstract}
+
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{What this is NOT.} Not a new result; not a statement about the Poincar\'e conjecture or any simply connected case (Guo's Remark~1.2: $L(3,1)$ is not simply connected); not a formal proof (no Lean); not a comparison with the published Contemp.\ Math.\ 541 text of Luo; not interval arithmetic; not an exhaustive prior-art search; not human-audited.}}
+
+\paragraph{Markers.} \tL{}: a cited source, taken as stated. \tC{}: executed exact code (integer, rational, Groebner-basis arithmetic) or an elementary argument written down, not formalised. \tX{}: statements of what was not done and caveats. Identifiers \texttt{LUO-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+\section{The claim and its scope}\label{sec:claim}
+Luo's conjectures concern a closed, irreducible, orientable, minimally triangulated $3$-manifold $M$. Conjecture~1: either Thurston's equation (3.7) has a solution, or Haken's equation has a cluster of three $2$-quad-type solutions. Conjecture~2: if all maxima of the volume on the space $\mathrm{SAS}(T)$ of (signed) angle structures are smooth points, then Thurston's equation has a solution. Conjecture~3: if some edge has equal endpoints and is null-homotopic, a cluster exists \cite{luo}. Guo's counterexample $T$ has $\pi_1=C_3$; clauses (ii)+(iii) refute C1, (iii)+(iv) refute C2, and (i)+(ii) refute C3 \cite{guo}. The deduction is elementary once the clauses and Luo's definitions are fixed. The auditor checked Guo's quotation of the conjectures and of the definitions (``$2$-quad-type'', cluster, signed real Haken solutions, Thurston's equation, $\mathrm{SAS}$, smooth point) against Luo's arXiv v2 (pp.\ 2--3, 6--9, 12--14, 17--20) and found it faithful (\texttt{LUO-L-0002}). The Contemp.\ Math.\ 541 version was not compared. \emph{Scope:} since $L(3,1)$ is not simply connected, the restricted versions behind Luo's route to the Poincar\'e conjecture are not touched (Guo's Remark~1.2).
+
+\section{Triangulation, homology, fundamental group (\tC{})}\label{sec:tri}
+From the four face pairings the gluing permutations are $1230,1230,3201,3201$, all odd; each of the $8$ faces is glued once. There is one vertex class with link $(V,E,F)=(6,12,8)$, $\chi=2$; three edge classes of degrees $2,5,5$; $\chi(M)=0$; the local-edge table equals the paper's table (2). The isomorphism signature is \texttt{cMcabbjak}; Regina~7.4 finds the triangulation isomorphic to its $\mathrm{lens}(3,1)$ and its census entry ``$L(3,1)$ : \#3''. Smith normal forms of the auditor's own boundary matrices ($d_2$ of size $3\times4$, $d_3$ of size $4\times2$, $d_2d_3=0$) give $H_1=\mathbb Z/3$, $H_2=0$, $H_3=\mathbb Z$. The fundamental group is $C_3$ by two routes: the producer's GAP computation and the auditor's sympy coset enumeration (order $3$, and the subgroup $\langle a\rangle$ of index $3$). Hence the loop edge $a$ is null-homotopic (\texttt{LUO-C-0001}).
+
+\section{Q-matching and Lemma 3.1 (\tC{})}\label{sec:q}
+The matrices $I$ and $W=I\Omega$ equal the paper's (5) entry by entry, and Regina's own quad matching matrix is identical to $W$. We have $\operatorname{rank}W=2$ (kernel of dimension $4$). The Haken system has rank $9$ with a $5$-dimensional solution space whose projection to the six quad coordinates equals $\ker W$. The only column pair of rank $<2$ is $(x_1,y_1)$, so every nonzero vector of $\ker W$ with at most two nonzero entries is a multiple of $(1,0,0,1,0,0)$ (Lemma~3.1) and there is no cluster of three. The same holds for nonnegative, integer or signed solutions, since restricting only shrinks the set. A Regina vertex normal surface is a torus with quads $(1,0,0,1,0,0)$, so a genuine $2$-quad-type solution exists, but only in $x_1,y_1$ (\texttt{LUO-C-0002}).
+
+\section{Thurston's equation (\tC{})}\label{sec:thurston}
+The edge equations from the edge classes coincide with the paper's, with $w=1/z$ the last two reduce to $1/z=1$ and $z=1$. The Groebner basis over $\mathbb Q$ (Singular, lex order, nondegeneracy $t\,z(1-z)w(1-w)=1$) is $\{1\}$ for the edge products $(+,+,+)$, in both orientation conventions, so Thurston's equation has no solution. For the generalised equation with edge products in $\{\pm1\}$, exactly $(+,-,-)$, $(-,+,-)$ and $(-,-,+)$ of the $8$ patterns are solvable, in both conventions; $(+,-,-)$ gives $z=w=-1$ (Guo's Remark~4.2). These solvable patterns serve as positive controls (\texttt{LUO-C-0003}).
+
+\section{Clause (iv): the volume maximum (\tC{})}\label{sec:vol}
+\emph{Numerical by the producer:} on $\mathrm{SAS}(T)$ (rank-$4$ constraints, a two-parameter family) a grid search with Nelder--Mead refinement gives the maximum $1.58864663930016$ at $8$ symmetric smooth points; the auditor reproduces it as a strict local maximum (Hessian eigenvalues $-13.7,-50.4$, $\min|\sin\theta|=0.3928$).
+
+\emph{Analytic bound by the auditor (upgrade to \tC{}).} Angles are taken mod $\pi$; the Lobachevsky function $\Lob$ is odd and $\pi$-periodic. In a tetrahedron the three angles sum to $\pi$ mod $2\pi$; if one is in $\pi\mathbb Z$, the other two sum to $0$ mod $\pi$ and their $\Lob$ values cancel, so a partially flat tetrahedron contributes $0$ volume. Since $\Lob'(\theta)=-\log|2\sin\theta|$, $|\Lob|\le\Lob(\pi/6)$ everywhere, and $\Lob(\pi/6)\le0.507721$ by a partial sum with tail bound $1/(2N)$. At a non-smooth point one of the two tetrahedra is partially flat, so $\mathrm{vol}\le3\Lob(\pi/6)\le1.52316$. On the other hand the exact rational point $\theta/\pi=(3/5,1/8,11/40,7/5,17/40,47/40)$ lies in $\mathrm{SAS}(T)$ (tetrahedron sums $1$ and $3$, edge sums $2,4,2$, checked in rationals), all six angles are non-integer multiples of $\pi$, and its volume is at least $1.58529$ (partial sum $N=2000$ of $\Lob(\theta)=\tfrac12\sum\sin(2n\theta)/n^2$ with tail bound $0.0015$). Since $1.58529>1.52316$, every maximum is smooth. The numbers are 30-digit floats with a rigorous tail bound, not interval arithmetic; the rounding error is about $10^{-25}$, far below the margin $0.062$. This route uses neither Luo's Theorems~4.2(a), 4.4 nor Milnor's bound.
+
+\emph{Side remark.} Using Milnor's bound ($\tL$), the non-smooth supremum is exactly $v_3=3\Lob(\pi/3)=1.0149416$, attained at $\theta/\pi=(2/3,0,1/3,-2/3,1/3,4/3)$ (exact membership in $\mathrm{SAS}$ checked). The producer's sampled non-smooth value $1.0149$ is this supremum, not a sampling artefact (\texttt{LUO-C-0004}).
+
+\section{Minimality (\tC{})}\label{sec:min}
+By Regina enumeration, none of the $108$ one-tetrahedron gluings has $H_1=\mathbb Z/3$, so two tetrahedra is minimal (this reproduces, rather than cites, the Jaco--Rubinstein--Tillmann fact). Among the $136080$ two-tetrahedron gluings, $5088$ are closed, orientable and valid, in $16$ classes; three have $H_1=\mathbb Z/3$ and $\pi_1=\langle a\mid a^3\rangle$: \texttt{cMcabbgaj} (one vertex, degrees $1,2,9$), \texttt{cMcabbjak} (Guo's) and \texttt{cPcbbbaai} (two vertices). \textbf{So Guo's triangulation is not the only one-vertex minimal triangulation of $L(3,1)$.} This does not affect the counterexample, but the other one-vertex triangulation was not tested against C1--C3. Calling the other classes ``$L(3,1)$'' uses geometrization (\tL{}); for Guo's own triangulation Regina's explicit lens space construction suffices (\texttt{LUO-C-0005}).
+
+\section{Controls}\label{sec:ctrl}
+Positive: Regina's figure-eight knot complement triangulation is solvable with $z=w=e^{\pm i\pi/3}$, and SnapPy's $4_1$ shapes satisfy the edge equations to $1.4\cdot10^{-15}$ (this does not distinguish the two orientation conventions); the producer's $\pi_1$ code gives $C_3,C_5,C_7,C_2$ and trivial for $L(3,1),L(5,2),L(7,2),L(2,1),S^3$, matching Regina. Negative: $0$ of $20$ single-pairing perturbations keep the claim profile (one vertex, degrees $2,5,5$, $|\pi_1|=3$, same $I$); $18$ single-entry increments of $I$ are all unsolvable, a weak control because the solver never said yes there; the discriminating ``yes'' cases are the figure-eight and the sign patterns of Section~\ref{sec:thurston} (\texttt{LUO-C-0006}).
+
+\section{Audit corrections applied}\label{sec:corr}
+The producer's \texttt{data/RESULT.md} and \texttt{data/result.json} are kept unmodified (pre-audit); this paper supersedes them on the audit's five corrections. (1) Orientation: in the producer's presentation $b,c$ are oriented opposite to the paper's convention; with the paper's orientation the relators are exactly the paper's (3). (2) Clause (iv) is upgraded from numerical to Tier~\tC{} (Section~\ref{sec:vol}), and $1.0149$ is identified as the exact non-smooth supremum $v_3$. (3) Luo's definitions and conjectures are checked against arXiv:1003.4413v2, and Guo's Remark~1.2 scope is added; the published Contemp.\ Math.\ text was not compared. (4) Minimality is reproduced and the non-uniqueness of the one-vertex triangulation is stated. (5) Outcome: (i)--(iii) \tC{}, (iv) \tC{}, minimality \tC{}, Tier~A not reached. The preregistration (\texttt{PREREG\_ITEM.md}, sha256 \texttt{106565b6\dots 4dca57}) is self-attested; no independent timestamp.
+
+\section{Limitations and what is not done}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item AI audit only; no human audit; no Lean (no Tier~A).
+\item Not verified: Milnor's $v_3$ bound (side remark only); the step ``$\pi_1=\mathbb Z/3\Rightarrow L(3,1)$'' (geometrization) used to name the other census classes; the Contemp.\ Math.\ 541 text of Luo; Segerman--Tillmann (Guo's Remark~4.3); interval arithmetic for the volume bounds.
+\item The other one-vertex minimal triangulation (\texttt{cMcabbgaj}) was not tested against C1--C3.
+\item Literature: no independent verification or critique of Guo's paper and no earlier refutation of Luo's conjectures was found, but the search was limited (\texttt{LUO-L-0003}); ``not found'' is relative to the queries.
+\item Trusted components: Regina~7.4, Singular, GAP~4.11.1, sympy, mpmath, SnapPy.
+\end{itemize}
+
+\section{Claim ledger and reproducibility}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files the claims with hashed evidence; the Elenchus gate (\texttt{ledger/run\_gate.py}, verbatim output in \texttt{ledger/gate\_output.txt}) checks bookkeeping only and licenses nothing. Producer code and summaries are in \texttt{data/code}, \texttt{data/summaries}; the auditor's scripts (\texttt{a1}--\texttt{a5}, \texttt{thurston.sing.txt}) and small outputs are in \texttt{data/audit}. The papers' full texts are third-party and not shipped. Nothing was committed, pushed or uploaded.
+
+\begin{thebibliography}{9}\small
+\bibitem{guo} Q.\ Guo, \emph{A Counterexample to Three Conjectures of Luo}, arXiv:2610.13979 (v1, 11 Oct 2026), unrefereed. (\tL)
+\bibitem{luo} F.\ Luo, \emph{Triangulated 3-Manifolds: from Haken's normal surfaces to Thurston's algebraic equation}, arXiv:1003.4413 (v1 23 Mar 2010; v2 23 Jul 2010). (\tL)
+\end{thebibliography}
+\end{document}

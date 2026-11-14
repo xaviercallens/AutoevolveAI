@@ -1,0 +1,12 @@
+noncomputable def rho : (*@$\mathbb{C}$@*) := (*@$\langle$@*)1 / 2, Real.sqrt 3 / 2(*@$\rangle$@*)
+
+theorem rho_sq : rho ^ 2 = rho - 1 := ... -- proof elided
+
+theorem sqrt3_half_sq : (Real.sqrt 3 / 2) ^ 2 = 3 / 4 := ... -- proof elided
+
+theorem gamma_fixes_rho : (rho - 1) / rho = rho := by
+  rw [(*@$\leftarrow$@*) rho_sq, sq, mul_div_assoc, div_self rho_ne_zero, mul_one]
+
+theorem rho_sq_mul_rot : rho ^ 2 * ((*@$\langle$@*)-1 / 2, -(Real.sqrt 3 / 2)(*@$\rangle$@*) : (*@$\mathbb{C}$@*)) = 1 := ... -- proof elided
+
+theorem hasDerivAt_gamma : HasDerivAt (fun (*@$\tau$@*) : (*@$\mathbb{C}$@*) => ((*@$\tau$@*) - 1) / (*@$\tau$@*)) (1 / rho ^ 2) rho := ... -- proof elided

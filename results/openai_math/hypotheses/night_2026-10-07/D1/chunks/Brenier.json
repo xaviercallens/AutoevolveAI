@@ -1,0 +1,628 @@
+{
+  "challenge": "Brenier",
+  "config": "ComparatorChallenges/Brenier.json",
+  "solution_module": "OAI.Analysis.Brenier.Stability",
+  "solution_closure_files": 89,
+  "theorem_names": [
+    "OAI.Problem358.one_third_stability",
+    "OAI.Problem358.one_third_exponent_is_sharp"
+  ],
+  "holes": [
+    {
+      "hole": "OAI.Problem358.E",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/Brenier.lean",
+          "line": 12,
+          "end_line": 12,
+          "kind": "abbrev",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Analysis/Brenier/Basic.lean",
+          "line": 12,
+          "end_line": 12,
+          "kind": "abbrev",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "abbrev E (dimension : ℕ) := EuclideanSpace ℝ (Fin dimension)",
+      "challenge_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "abbrev E (d : ℕ) := EuclideanSpace ℝ (Fin d)",
+      "solution_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "dimension": "d"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "abbrev",
+        "solution": "abbrev"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical up to bound-variable renaming",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.Problem358.uniformMeasure",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/Brenier.lean",
+          "line": 14,
+          "end_line": 15,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Analysis/Brenier/Basic.lean",
+          "line": 14,
+          "end_line": 15,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def uniformMeasure {dimension : ℕ} (source : Set (E dimension)) : Measure (E dimension) := (volume source)⁻¹ • volume.restrict source",
+      "challenge_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def uniformMeasure {d : ℕ} (K : Set (E d)) : Measure (E d) := (volume K)⁻¹ • volume.restrict K",
+      "solution_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "dimension": "d",
+        "source": "K"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical up to bound-variable renaming",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.Problem358.IsSupported",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/Brenier.lean",
+          "line": 17,
+          "end_line": 19,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Analysis/Brenier/Basic.lean",
+          "line": 17,
+          "end_line": 18,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def IsSupported {dimension : ℕ} (measure : Measure (E dimension)) (container : Set (E dimension)) : Prop := measure (containerᶜ) = 0",
+      "challenge_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def IsSupported {d : ℕ} (μ : Measure (E d)) (Y : Set (E d)) : Prop := μ (Yᶜ) = 0",
+      "solution_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "dimension": "d",
+        "measure": "μ",
+        "container": "Y"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "DIFFERS",
+      "difference_in": "body",
+      "reason": "first differing token #28 (body)",
+      "challenge_window": "( E dimension ) ) : Prop := measure ( containerᶜ ) = 0",
+      "solution_window": "( E d ) ) : Prop := μ ( Yᶜ ) = 0",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.Problem358.IsCoupling",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/Brenier.lean",
+          "line": 21,
+          "end_line": 25,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Analysis/Brenier/Basic.lean",
+          "line": 20,
+          "end_line": 24,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def IsCoupling {dimension : ℕ} (source target : Measure (E dimension)) (plan : Measure (E dimension × E dimension)) : Prop := IsProbabilityMeasure plan ∧ Measure.map Prod.fst plan = source ∧ Measure.map Prod.snd plan = target",
+      "challenge_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def IsCoupling {d : ℕ} (μ ν : Measure (E d)) (π : Measure (E d × E d)) : Prop := IsProbabilityMeasure π ∧ Measure.map Prod.fst π = μ ∧ Measure.map Prod.snd π = ν",
+      "solution_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "dimension": "d",
+        "source": "μ",
+        "target": "ν",
+        "plan": "π"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical up to bound-variable renaming",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.Problem358.quadraticPlanCost",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/Brenier.lean",
+          "line": 27,
+          "end_line": 29,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Analysis/Brenier/Basic.lean",
+          "line": 26,
+          "end_line": 27,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def quadraticPlanCost {dimension : ℕ} (plan : Measure (E dimension × E dimension)) : ℝ≥0∞ := ∫⁻ pair, ENNReal.ofReal (‖pair.1 - pair.2‖ ^ 2) ∂plan",
+      "challenge_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def quadraticPlanCost {d : ℕ} (π : Measure (E d × E d)) : ℝ≥0∞ := ∫⁻ p, ENNReal.ofReal (‖p.1 - p.2‖ ^ 2) ∂π",
+      "solution_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "dimension": "d",
+        "plan": "π",
+        "pair": "p"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical up to bound-variable renaming",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.Problem358.wasserstein2",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/Brenier.lean",
+          "line": 31,
+          "end_line": 36,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Analysis/Brenier/Basic.lean",
+          "line": 29,
+          "end_line": 34,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def wasserstein2 {dimension : ℕ} (source target : Measure (E dimension)) : ℝ := Real.sqrt (ENNReal.toReal (sInf {cost : ℝ≥0∞ | ∃ plan : Measure (E dimension × E dimension), IsCoupling source target plan ∧ quadraticPlanCost plan = cost}))",
+      "challenge_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def wasserstein2 {d : ℕ} (μ ν : Measure (E d)) : ℝ := Real.sqrt (ENNReal.toReal (sInf {r : ℝ≥0∞ | ∃ π : Measure (E d × E d), IsCoupling μ ν π ∧ quadraticPlanCost π = r}))",
+      "solution_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "dimension": "d",
+        "source": "μ",
+        "target": "ν",
+        "cost": "r",
+        "plan": "π"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical up to bound-variable renaming",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.Problem358.graphPlan",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/Brenier.lean",
+          "line": 38,
+          "end_line": 40,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Analysis/Brenier/Basic.lean",
+          "line": 36,
+          "end_line": 38,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def graphPlan {dimension : ℕ} (source : Measure (E dimension)) (transport : E dimension → E dimension) : Measure (E dimension × E dimension) := Measure.map (fun point => (point, transport point)) source",
+      "challenge_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def graphPlan {d : ℕ} (ρ : Measure (E d)) (T : E d → E d) : Measure (E d × E d) := Measure.map (fun x => (x, T x)) ρ",
+      "solution_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "dimension": "d",
+        "source": "ρ",
+        "transport": "T",
+        "point": "x"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical up to bound-variable renaming",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.Problem358.IsQuadraticOptimalMap",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/Brenier.lean",
+          "line": 42,
+          "end_line": 48,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Analysis/Brenier/Basic.lean",
+          "line": 40,
+          "end_line": 46,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def IsQuadraticOptimalMap {dimension : ℕ} (source target : Measure (E dimension)) (transport : E dimension → E dimension) : Prop := Measurable transport ∧ Measure.map transport source = target ∧ ∀ plan : Measure (E dimension × E dimension), IsCoupling source target plan → quadraticPlanCost (graphPlan source transport) ≤ quadraticPlanCost plan",
+      "challenge_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def IsQuadraticOptimalMap {d : ℕ} (ρ μ : Measure (E d)) (T : E d → E d) : Prop := Measurable T ∧ Measure.map T ρ = μ ∧ ∀ π : Measure (E d × E d), IsCoupling ρ μ π → quadraticPlanCost (graphPlan ρ T) ≤ quadraticPlanCost π",
+      "solution_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "dimension": "d",
+        "source": "ρ",
+        "target": "μ",
+        "transport": "T",
+        "plan": "π"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical up to bound-variable renaming",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.Problem358.IsUniqueQuadraticOptimalMap",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/Brenier.lean",
+          "line": 50,
+          "end_line": 56,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Analysis/Brenier/Basic.lean",
+          "line": 48,
+          "end_line": 54,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def IsUniqueQuadraticOptimalMap {dimension : ℕ} (source target : Measure (E dimension)) (transport : E dimension → E dimension) : Prop := IsQuadraticOptimalMap source target transport ∧ ∀ plan : Measure (E dimension × E dimension), IsCoupling source target plan → quadraticPlanCost plan ≤ quadraticPlanCost (graphPlan source transport) → plan = graphPlan source transport",
+      "challenge_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def IsUniqueQuadraticOptimalMap {d : ℕ} (ρ μ : Measure (E d)) (T : E d → E d) : Prop := IsQuadraticOptimalMap ρ μ T ∧ ∀ π : Measure (E d × E d), IsCoupling ρ μ π → quadraticPlanCost π ≤ quadraticPlanCost (graphPlan ρ T) → π = graphPlan ρ T",
+      "solution_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "dimension": "d",
+        "source": "ρ",
+        "target": "μ",
+        "transport": "T",
+        "plan": "π"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical up to bound-variable renaming",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.Problem358.mapL2Dist",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/Brenier.lean",
+          "line": 58,
+          "end_line": 60,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Analysis/Brenier/Basic.lean",
+          "line": 56,
+          "end_line": 58,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def mapL2Dist {dimension : ℕ} (source : Measure (E dimension)) (first second : E dimension → E dimension) : ℝ := Real.sqrt (∫ point, ‖first point - second point‖ ^ 2 ∂source)",
+      "challenge_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def mapL2Dist {d : ℕ} (ρ : Measure (E d)) (T S : E d → E d) : ℝ := Real.sqrt (∫ x, ‖T x - S x‖ ^ 2 ∂ρ)",
+      "solution_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "dimension": "d",
+        "source": "ρ",
+        "first": "T",
+        "second": "S",
+        "point": "x"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical up to bound-variable renaming",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.Problem358.cube",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/Brenier.lean",
+          "line": 62,
+          "end_line": 63,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Analysis/Brenier/Basic.lean",
+          "line": 60,
+          "end_line": 61,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def cube (dimension : ℕ) : Set (E dimension) := {point | ∀ index, |point index| ≤ 1}",
+      "challenge_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def cube (d : ℕ) : Set (E d) := {x | ∀ i, |x i| ≤ 1}",
+      "solution_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "dimension": "d",
+        "point": "x",
+        "index": "i"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical up to bound-variable renaming",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.Problem358.HasExactlyThreeAtoms",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/Brenier.lean",
+          "line": 65,
+          "end_line": 71,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Analysis/Brenier/Basic.lean",
+          "line": 63,
+          "end_line": 69,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def HasExactlyThreeAtoms {dimension : ℕ} (measure : Measure (E dimension)) (container : Set (E dimension)) : Prop := ∃ atoms : Fin 3 → E dimension, Function.Injective atoms ∧ (∀ index, atoms index ∈ container) ∧ ∃ weights : Fin 3 → ℝ≥0∞, (∀ index, 0 < weights index) ∧ (∑ index, weights index) = 1 ∧ measure = ∑ index, weights index • Measure.dirac (atoms index)",
+      "challenge_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def HasExactlyThreeAtoms {d : ℕ} (μ : Measure (E d)) (Y : Set (E d)) : Prop := ∃ y : Fin 3 → E d, Function.Injective y ∧ (∀ i, y i ∈ Y) ∧ ∃ w : Fin 3 → ℝ≥0∞, (∀ i, 0 < w i) ∧ (∑ i, w i) = 1 ∧ μ = ∑ i, (w i) • Measure.dirac (y i)",
+      "solution_context": [
+        "open MeasureTheory",
+        "open scoped BigOperators ENNReal"
+      ],
+      "context_differs": false,
+      "renaming": {
+        "dimension": "d",
+        "measure": "μ",
+        "container": "Y",
+        "atoms": "y",
+        "index": "i",
+        "weights": "w"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "DIFFERS",
+      "difference_in": "body",
+      "reason": "first differing token #84 (body)",
+      "challenge_window": "index ) = 1 ∧ measure = ∑ index , weights index • Measure.dirac ( atoms index )",
+      "solution_window": "i ) = 1 ∧ μ = ∑ i , ( w i ) • Measure.dirac ( y i )",
+      "shadow_candidates": []
+    }
+  ]
+}

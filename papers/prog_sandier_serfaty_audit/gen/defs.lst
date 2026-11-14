@@ -1,0 +1,112 @@
+namespace ProgSandierSerfaty
+
+open MeasureTheory Filter Topology Set
+open scoped ContDiff
+
+abbrev Plane := EuclideanSpace (*@$\mathbb{R}$@*) (Fin 2)
+
+noncomputable def pd (i : Fin 2) ((*@$\varphi$@*) : Plane (*@$\to$@*) (*@$\mathbb{R}$@*)) (x : Plane) : (*@$\mathbb{R}$@*) :=
+  fderiv (*@$\mathbb{R}$@*) (*@$\varphi$@*) x (EuclideanSpace.single i 1)
+
+def IsTestFn ((*@$\varphi$@*) : Plane (*@$\to$@*) (*@$\mathbb{R}$@*)) : Prop := ContDiff (*@$\mathbb{R}$@*) (*@$\infty$@*) (*@$\varphi$@*) (*@$\wedge$@*) HasCompactSupport (*@$\varphi$@*)
+
+def LocFinite ((*@$\Lambda$@*) : Set Plane) : Prop := (*@$\forall$@*) K : Set Plane, IsCompact K (*@$\to$@*) ((*@$\Lambda$@*) (*@$\cap$@*) K).Finite
+
+def DensityBounded ((*@$\Lambda$@*) : Set Plane) : Prop :=
+  (*@$\exists$@*) C : (*@$\mathbb{R}$@*), (*@$\forall$@*) R : (*@$\mathbb{R}$@*), 1 < R (*@$\to$@*) (((*@$\Lambda$@*) (*@$\cap$@*) Metric.ball 0 R).ncard : (*@$\mathbb{R}$@*)) (*@$\le$@*) C * (Real.pi * R ^ 2)
+
+def WeakDivE (b : (*@$\mathbb{R}$@*)) ((*@$\Lambda$@*) : Set Plane) (E : Plane (*@$\to$@*) Plane) : Prop :=
+  (*@$\forall$@*) (*@$\varphi$@*) : Plane (*@$\to$@*) (*@$\mathbb{R}$@*), IsTestFn (*@$\varphi$@*) (*@$\to$@*)
+    -((*@$\int$@*) x, (E x 0 * pd 0 (*@$\varphi$@*) x + E x 1 * pd 1 (*@$\varphi$@*) x)) = 2 * Real.pi * ((*@$\sum$$^{\mathrm{f}}$@*) p (*@$\in$@*) (*@$\Lambda$@*), (*@$\varphi$@*) p) - b * (*@$\int$@*) x, (*@$\varphi$@*) x
+
+def WeakCurlFree (E : Plane (*@$\to$@*) Plane) : Prop :=
+  (*@$\forall$@*) (*@$\varphi$@*) : Plane (*@$\to$@*) (*@$\mathbb{R}$@*), IsTestFn (*@$\varphi$@*) (*@$\to$@*) (*@$\int$@*) x, (E x 0 * pd 1 (*@$\varphi$@*) x - E x 1 * pd 0 (*@$\varphi$@*) x) = 0
+
+def AdmissibleBg (b : (*@$\mathbb{R}$@*)) ((*@$\Lambda$@*) : Set Plane) (E : Plane (*@$\to$@*) Plane) : Prop :=
+  LocFinite (*@$\Lambda$@*) (*@$\wedge$@*) DensityBounded (*@$\Lambda$@*) (*@$\wedge$@*) LocallyIntegrable E volume (*@$\wedge$@*) WeakDivE b (*@$\Lambda$@*) E (*@$\wedge$@*) WeakCurlFree E
+
+def Admissible ((*@$\Lambda$@*) : Set Plane) (E : Plane (*@$\to$@*) Plane) : Prop := AdmissibleBg (2 * Real.pi) (*@$\Lambda$@*) E
+
+def punctured ((*@$\Lambda$@*) : Set Plane) ((*@$\eta$@*) : (*@$\mathbb{R}$@*)) : Set Plane := ((*@$\bigcup$@*) p (*@$\in$@*) (*@$\Lambda$@*), Metric.ball p (*@$\eta$@*))(*@$^{\mathrm{c}}$@*)
+
+noncomputable def localEnergyAt ((*@$\Lambda$@*) : Set Plane) (E : Plane (*@$\to$@*) Plane) ((*@$\chi$@*) : Plane (*@$\to$@*) (*@$\mathbb{R}$@*)) ((*@$\eta$@*) : (*@$\mathbb{R}$@*)) : (*@$\mathbb{R}$@*) :=
+  (1 / 2) * ((*@$\int$@*) x in punctured (*@$\Lambda$@*) (*@$\eta$@*), (*@$\chi$@*) x * (*@$\Vert$@*)E x(*@$\Vert$@*) ^ 2) + Real.pi * Real.log (*@$\eta$@*) * (*@$\sum$$^{\mathrm{f}}$@*) p (*@$\in$@*) (*@$\Lambda$@*), (*@$\chi$@*) p
+
+def HasLocalEnergy ((*@$\Lambda$@*) : Set Plane) (E : Plane (*@$\to$@*) Plane) ((*@$\chi$@*) : Plane (*@$\to$@*) (*@$\mathbb{R}$@*)) (w : (*@$\mathbb{R}$@*)) : Prop :=
+  ((*@$\forall$$^{\mathrm{f}}$@*) (*@$\eta$@*) in (*@$\mathcal{N}$@*)[>] (0 : (*@$\mathbb{R}$@*)), IntegrableOn (fun x => (*@$\chi$@*) x * (*@$\Vert$@*)E x(*@$\Vert$@*) ^ 2) (punctured (*@$\Lambda$@*) (*@$\eta$@*))) (*@$\wedge$@*)
+    Tendsto (localEnergyAt (*@$\Lambda$@*) E (*@$\chi$@*)) ((*@$\mathcal{N}$@*)[>] 0) ((*@$\mathcal{N}$@*) w)
+
+def sq (R : (*@$\mathbb{R}$@*)) : Set Plane := {x | |x 0| (*@$\le$@*) R (*@$\wedge$@*) |x 1| (*@$\le$@*) R}
+
+def IsSquareCutoffFamily ((*@$\chi$@*) : (*@$\mathbb{R}$@*) (*@$\to$@*) Plane (*@$\to$@*) (*@$\mathbb{R}$@*)) : Prop :=
+  ((*@$\forall$@*) R : (*@$\mathbb{R}$@*), 1 < R (*@$\to$@*)
+      ContDiff (*@$\mathbb{R}$@*) (*@$\infty$@*) ((*@$\chi$@*) R) (*@$\wedge$@*) HasCompactSupport ((*@$\chi$@*) R) (*@$\wedge$@*) ((*@$\forall$@*) x, 0 (*@$\le$@*) (*@$\chi$@*) R x (*@$\wedge$@*) (*@$\chi$@*) R x (*@$\le$@*) 1) (*@$\wedge$@*)
+        tsupport ((*@$\chi$@*) R) (*@$\subseteq$@*) sq R (*@$\wedge$@*) (*@$\forall$@*) x (*@$\in$@*) sq (R - 1), (*@$\chi$@*) R x = 1) (*@$\wedge$@*)
+    (*@$\exists$@*) C : (*@$\mathbb{R}$@*), (*@$\forall$@*) R : (*@$\mathbb{R}$@*), 1 < R (*@$\to$@*) (*@$\forall$@*) x, (*@$\Vert$@*)fderiv (*@$\mathbb{R}$@*) ((*@$\chi$@*) R) x(*@$\Vert$@*) (*@$\le$@*) C
+
+noncomputable def WSq (w : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) : EReal :=
+  limsup (fun R : (*@$\mathbb{R}$@*) => ((w R / (4 * R ^ 2) : (*@$\mathbb{R}$@*)) : EReal)) atTop
+
+def IsPeriodic ((*@$\Lambda$@*) : Set Plane) (E : Plane (*@$\to$@*) Plane) : Prop :=
+  (*@$\forall$@*) v (*@$\in$@*) (*@$\Lambda$@*), (*@$\forall$$^{\mathrm{m}}$@*) x (*@$\partial$@*)(volume : Measure Plane), E (x + v) = E x
+
+noncomputable def triScale : (*@$\mathbb{R}$@*) := Real.sqrt (2 / Real.sqrt 3)
+
+noncomputable def e(*@$_1$@*) : Plane := !(*@$_2$@*)[1, 0]
+noncomputable def e(*@$_2$@*) : Plane := !(*@$_2$@*)[1 / 2, Real.sqrt 3 / 2]
+
+def triLattice : Set Plane :=
+  {x | (*@$\exists$@*) m n : (*@$\mathbb{Z}$@*), x = triScale (*@$\bullet$@*) ((m : (*@$\mathbb{R}$@*)) (*@$\bullet$@*) e(*@$_1$@*) + (n : (*@$\mathbb{R}$@*)) (*@$\bullet$@*) e(*@$_2$@*))}
+
+def SandierSerfatyStatement : Prop :=
+  ((*@$\exists$@*) (*@$\chi$@*), IsSquareCutoffFamily (*@$\chi$@*)) (*@$\wedge$@*)
+    (*@$\exists$@*) E(*@$_0$@*) : Plane (*@$\to$@*) Plane, Admissible triLattice E(*@$_0$@*) (*@$\wedge$@*) IsPeriodic triLattice E(*@$_0$@*) (*@$\wedge$@*)
+      (*@$\forall$@*) (*@$\chi$@*) : (*@$\mathbb{R}$@*) (*@$\to$@*) Plane (*@$\to$@*) (*@$\mathbb{R}$@*), IsSquareCutoffFamily (*@$\chi$@*) (*@$\to$@*)
+        (*@$\exists$@*) w(*@$_0$@*) : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*), ((*@$\forall$@*) R : (*@$\mathbb{R}$@*), 1 < R (*@$\to$@*) HasLocalEnergy triLattice E(*@$_0$@*) ((*@$\chi$@*) R) (w(*@$_0$@*) R)) (*@$\wedge$@*)
+          WSq w(*@$_0$@*) (*@$\ne$@*) (*@$\top$@*) (*@$\wedge$@*) WSq w(*@$_0$@*) (*@$\ne$@*) (*@$\bot$@*) (*@$\wedge$@*)
+          (*@$\forall$@*) ((*@$\Lambda$@*) : Set Plane) (E : Plane (*@$\to$@*) Plane) (w : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)), Admissible (*@$\Lambda$@*) E (*@$\to$@*)
+            ((*@$\forall$@*) R : (*@$\mathbb{R}$@*), 1 < R (*@$\to$@*) HasLocalEnergy (*@$\Lambda$@*) E ((*@$\chi$@*) R) (w R)) (*@$\to$@*) WSq w(*@$_0$@*) (*@$\le$@*) WSq w
+
+noncomputable def wTriClosedForm : (*@$\mathbb{R}$@*) :=
+  Real.pi * Real.log (2 * Real.sqrt 2 * Real.pi / (Real.sqrt 3 * Real.Gamma (1 / 3) ^ 3))
+
+def SandierSerfatyValueStatement : Prop :=
+  ((*@$\exists$@*) (*@$\chi$@*), IsSquareCutoffFamily (*@$\chi$@*)) (*@$\wedge$@*)
+    (*@$\exists$@*) E(*@$_0$@*) : Plane (*@$\to$@*) Plane, Admissible triLattice E(*@$_0$@*) (*@$\wedge$@*) IsPeriodic triLattice E(*@$_0$@*) (*@$\wedge$@*)
+      (*@$\forall$@*) (*@$\chi$@*) : (*@$\mathbb{R}$@*) (*@$\to$@*) Plane (*@$\to$@*) (*@$\mathbb{R}$@*), IsSquareCutoffFamily (*@$\chi$@*) (*@$\to$@*)
+        ((*@$\exists$@*) w(*@$_0$@*) : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*), ((*@$\forall$@*) R : (*@$\mathbb{R}$@*), 1 < R (*@$\to$@*) HasLocalEnergy triLattice E(*@$_0$@*) ((*@$\chi$@*) R) (w(*@$_0$@*) R)) (*@$\wedge$@*)
+            WSq w(*@$_0$@*) = (wTriClosedForm : EReal)) (*@$\wedge$@*)
+          (*@$\forall$@*) ((*@$\Lambda$@*) : Set Plane) (E : Plane (*@$\to$@*) Plane) (w : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)), Admissible (*@$\Lambda$@*) E (*@$\to$@*)
+            ((*@$\forall$@*) R : (*@$\mathbb{R}$@*), 1 < R (*@$\to$@*) HasLocalEnergy (*@$\Lambda$@*) E ((*@$\chi$@*) R) (w R)) (*@$\to$@*) (wTriClosedForm : EReal) (*@$\le$@*) WSq w
+
+def WeakDivFree (j : Plane (*@$\to$@*) Plane) : Prop :=
+  (*@$\forall$@*) (*@$\varphi$@*) : Plane (*@$\to$@*) (*@$\mathbb{R}$@*), IsTestFn (*@$\varphi$@*) (*@$\to$@*) (*@$\int$@*) x, (j x 0 * pd 0 (*@$\varphi$@*) x + j x 1 * pd 1 (*@$\varphi$@*) x) = 0
+
+def WeakCurlSS (m : (*@$\mathbb{R}$@*)) ((*@$\Lambda$@*) : Set Plane) (j : Plane (*@$\to$@*) Plane) : Prop :=
+  (*@$\forall$@*) (*@$\varphi$@*) : Plane (*@$\to$@*) (*@$\mathbb{R}$@*), IsTestFn (*@$\varphi$@*) (*@$\to$@*)
+    (*@$\int$@*) x, (j x 0 * pd 1 (*@$\varphi$@*) x - j x 1 * pd 0 (*@$\varphi$@*) x) = 2 * Real.pi * ((*@$\sum$$^{\mathrm{f}}$@*) p (*@$\in$@*) (*@$\Lambda$@*), (*@$\varphi$@*) p) - m * (*@$\int$@*) x, (*@$\varphi$@*) x
+
+def AdmissibleSS (m : (*@$\mathbb{R}$@*)) ((*@$\Lambda$@*) : Set Plane) (j : Plane (*@$\to$@*) Plane) : Prop :=
+  LocFinite (*@$\Lambda$@*) (*@$\wedge$@*) DensityBounded (*@$\Lambda$@*) (*@$\wedge$@*) LocallyIntegrable j volume (*@$\wedge$@*) WeakDivFree j (*@$\wedge$@*) WeakCurlSS m (*@$\Lambda$@*) j
+
+def IsBallCutoffFamily ((*@$\chi$@*) : (*@$\mathbb{R}$@*) (*@$\to$@*) Plane (*@$\to$@*) (*@$\mathbb{R}$@*)) : Prop :=
+  ((*@$\forall$@*) R : (*@$\mathbb{R}$@*), 1 < R (*@$\to$@*)
+      ContDiff (*@$\mathbb{R}$@*) (*@$\infty$@*) ((*@$\chi$@*) R) (*@$\wedge$@*) HasCompactSupport ((*@$\chi$@*) R) (*@$\wedge$@*) ((*@$\forall$@*) x, 0 (*@$\le$@*) (*@$\chi$@*) R x (*@$\wedge$@*) (*@$\chi$@*) R x (*@$\le$@*) 1) (*@$\wedge$@*)
+        tsupport ((*@$\chi$@*) R) (*@$\subseteq$@*) Metric.ball 0 R (*@$\wedge$@*) (*@$\forall$@*) x (*@$\in$@*) Metric.closedBall (0 : Plane) (R - 1), (*@$\chi$@*) R x = 1) (*@$\wedge$@*)
+    (*@$\exists$@*) C : (*@$\mathbb{R}$@*), (*@$\forall$@*) R : (*@$\mathbb{R}$@*), 1 < R (*@$\to$@*) (*@$\forall$@*) x, (*@$\Vert$@*)fderiv (*@$\mathbb{R}$@*) ((*@$\chi$@*) R) x(*@$\Vert$@*) (*@$\le$@*) C
+
+noncomputable def WBall (w : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) : EReal :=
+  limsup (fun R : (*@$\mathbb{R}$@*) => ((w R / (Real.pi * R ^ 2) : (*@$\mathbb{R}$@*)) : EReal)) atTop
+
+def ssTriLattice (m : (*@$\mathbb{R}$@*)) : Set Plane :=
+  {x | (*@$\exists$@*) a b : (*@$\mathbb{Z}$@*), x = Real.sqrt (4 * Real.pi / (m * Real.sqrt 3)) (*@$\bullet$@*) ((a : (*@$\mathbb{R}$@*)) (*@$\bullet$@*) e(*@$_1$@*) + (b : (*@$\mathbb{R}$@*)) (*@$\bullet$@*) e(*@$_2$@*))}
+
+def SandierSerfatyOriginalStatement : Prop :=
+  ((*@$\exists$@*) (*@$\chi$@*), IsBallCutoffFamily (*@$\chi$@*)) (*@$\wedge$@*)
+    (*@$\forall$@*) m : (*@$\mathbb{R}$@*), 0 < m (*@$\to$@*)
+      (*@$\exists$@*) j(*@$_0$@*) : Plane (*@$\to$@*) Plane, AdmissibleSS m (ssTriLattice m) j(*@$_0$@*) (*@$\wedge$@*) IsPeriodic (ssTriLattice m) j(*@$_0$@*) (*@$\wedge$@*)
+        (*@$\forall$@*) (*@$\chi$@*) : (*@$\mathbb{R}$@*) (*@$\to$@*) Plane (*@$\to$@*) (*@$\mathbb{R}$@*), IsBallCutoffFamily (*@$\chi$@*) (*@$\to$@*)
+          (*@$\exists$@*) w(*@$_0$@*) : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*), ((*@$\forall$@*) R : (*@$\mathbb{R}$@*), 1 < R (*@$\to$@*) HasLocalEnergy (ssTriLattice m) j(*@$_0$@*) ((*@$\chi$@*) R) (w(*@$_0$@*) R)) (*@$\wedge$@*)
+            WBall w(*@$_0$@*) (*@$\ne$@*) (*@$\top$@*) (*@$\wedge$@*) WBall w(*@$_0$@*) (*@$\ne$@*) (*@$\bot$@*) (*@$\wedge$@*)
+            (*@$\forall$@*) ((*@$\Lambda$@*) : Set Plane) (j : Plane (*@$\to$@*) Plane) (w : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)), AdmissibleSS m (*@$\Lambda$@*) j (*@$\to$@*)
+              ((*@$\forall$@*) R : (*@$\mathbb{R}$@*), 1 < R (*@$\to$@*) HasLocalEnergy (*@$\Lambda$@*) j ((*@$\chi$@*) R) (w R)) (*@$\to$@*) WBall w(*@$_0$@*) (*@$\le$@*) WBall w

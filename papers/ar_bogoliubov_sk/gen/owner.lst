@@ -1,0 +1,16 @@
+noncomputable def bogoliubovSq (hc ks k : (*@$\mathbb{R}$@*)) : (*@$\mathbb{R}$@*) := (hc * k) ^ 2 + (hc * k ^ 2 / ks) ^ 2
+
+noncomputable def ell (ks k : (*@$\mathbb{R}$@*)) : (*@$\mathbb{R}$@*) := 1 / k + k / ks ^ 2
+
+noncomputable def dualLength (hc k epsSq : (*@$\mathbb{R}$@*)) : (*@$\mathbb{R}$@*) := epsSq / (hc ^ 2 * k ^ 3)
+
+theorem ell_ge {ks k : (*@$\mathbb{R}$@*)} (hk : 0 < k) (hks : 0 < ks) : 2 / ks (*@$\le$@*) ell ks k := -- proof elided
+
+theorem feynman_ge_iff {ks k S : (*@$\mathbb{R}$@*)} (_hk : 0 < k) (hks : 0 < ks) (hS : 0 < S) :
+    2 / ks (*@$\le$@*) k / (ks ^ 2 * S ^ 2) (*@$\leftrightarrow$@*) S ^ 2 (*@$\le$@*) k / (2 * ks) := -- proof elided
+
+theorem not_bogoliubov_of_structure_factor {hc ks k S epsSq : (*@$\mathbb{R}$@*)}
+    (hhc : hc (*@$\ne$@*) 0) (hk : 0 < k) (hks : 0 < ks) (hS : 0 < S)
+    (hfeyn : epsSq (*@$\le$@*) (hc * k ^ 2 / (ks * S)) ^ 2)        -- Feynman's variational bound
+    (hpeak : k / (2 * ks) < S ^ 2) :                      -- measured: S above the dual-scale bound
+    epsSq (*@$\ne$@*) bogoliubovSq hc ks k := -- proof elided

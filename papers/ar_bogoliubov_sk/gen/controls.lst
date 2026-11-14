@@ -1,0 +1,25 @@
+/- Planted controls for the H8 shape file: the axiom audit must flag both.
+Self-contained (re-declares `sBog` locally) so it does not need the claimed module's .olean. -/
+import DualLength
+
+namespace QuantumFluids.AutoresearchSkBoundShapeControls
+
+open QuantumFluids.DualLength
+
+noncomputable def sBog (hc ks k : (*@$\mathbb{R}$@*)) : (*@$\mathbb{R}$@*) :=
+  (hc * k ^ 2 / ks) / Real.sqrt (bogoliubovSq hc ks k)
+
+/-- Planted `sorry` on a FALSE shape claim (S_B (*@$\ge$@*) 1): must show `sorryAx`. -/
+theorem ctl_sorry {hc ks k : (*@$\mathbb{R}$@*)} (hhc : 0 < hc) (hk : 0 < k) (hks : 0 < ks) :
+    1 (*@$\le$@*) sBog hc ks k := by
+  sorry
+
+/-- Planted axiom asserting the false claim that S_B is antitone: must show `ctl_cheat`. -/
+axiom ctl_cheat : (*@$\forall$@*) hc ks : (*@$\mathbb{R}$@*), StrictAntiOn (sBog hc ks) (Set.Ioi 0)
+
+theorem ctl_axiom {hc ks : (*@$\mathbb{R}$@*)} : StrictAntiOn (sBog hc ks) (Set.Ioi 0) := ctl_cheat hc ks
+
+end QuantumFluids.AutoresearchSkBoundShapeControls
+
+#print axioms QuantumFluids.AutoresearchSkBoundShapeControls.ctl_sorry
+#print axioms QuantumFluids.AutoresearchSkBoundShapeControls.ctl_axiom

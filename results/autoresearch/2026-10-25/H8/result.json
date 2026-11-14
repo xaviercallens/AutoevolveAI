@@ -1,0 +1,60 @@
+{
+  "id": "H8",
+  "verdict": "KEEP (producer-checked; obtained on a third, infra-retry run beyond the preregistered 2 attempts, see attempts)",
+  "attempts": [
+    {"n": 1, "minutes": 45, "status": "DISCARD", "error_class": "infra_io_starvation",
+     "note": "first `lake env lean` stalled (lake itself idle, killed); then direct `lean` with LEAN_PATH reached ~400 KB rchar in 12 min, never elaborated. Disk 2 PSI io some~99.9 from ~18 `gcloud storage rsync` workers of the leanmaster tree (another session's backup; not touched). No Lean error observed; not a refutation."},
+    {"n": 2, "minutes": 43, "status": "DISCARD", "error_class": "infra_io_starvation",
+     "note": "direct lean, main (core 6) + controls (core 7) in parallel; both hit timeout rc=124 with ~770 KB read. No Lean error observed."},
+    {"n": "2b (infra retry, directed by the coordinator after it warmed the qf-lake Mathlib oleans into page cache)", "minutes": 14, "status": "KEEP", "error_class": null,
+     "note": "first compile reached elaboration in ~9 min: rc=1 with 2 proof errors (sBog_sq: trailing ring_nf 'No goals'; feynman_sBog_exact: rewrite pattern after mul_pow). Fixed inside the run; recompile rc=0 (25 s), final cleanup recompile rc=0 with no warnings at 1792919476 (unix). Strict reading of the preregistered '<= 2 attempts' would make this run out of protocol; both earlier attempts failed only on infrastructure."}
+  ],
+  "toolchain": "QuantumFluids lean_src env: Lean v4.34.0-rc2, Mathlib 85e3a25e006c35636f0e53b0e9296caca2685bc0 (qf-lake), imports the project's compiled DualLength module; invoked as `lean` with LEAN_PATH = qf-lake build + packages libs; taskset cores 6,7",
+  "lean_file": "results/autoresearch/2026-10-25/H8/Autoresearch_SkBound.lean",
+  "controls_file": "results/autoresearch/2026-10-25/H8/Autoresearch_SkBoundControls.lean",
+  "owner_project_files_created": [],
+  "compile_rc": 0,
+  "controls_compile_rc": 0,
+  "grep_sorry_admit_native_decide_axiom": "no matches in Autoresearch_SkBound.lean (grep rc 1)",
+  "theorems": [
+    "QuantumFluids.AutoresearchSkBound.sBog_le_sqrt",
+    "QuantumFluids.AutoresearchSkBound.sBog_sq_le",
+    "QuantumFluids.AutoresearchSkBound.sBog_sq_eq_iff",
+    "QuantumFluids.AutoresearchSkBound.sBog_sq",
+    "QuantumFluids.AutoresearchSkBound.feynman_sBog_exact",
+    "QuantumFluids.AutoresearchSkBound.sBog_sq_le_via_project",
+    "QuantumFluids.AutoresearchSkBound.epsBog_sq",
+    "QuantumFluids.AutoresearchSkBound.sBog_pos",
+    "QuantumFluids.AutoresearchSkBound.bogoliubovSq_pos",
+    "QuantumFluids.AutoresearchSkBound.free_S_one_violates",
+    "QuantumFluids.AutoresearchSkBound.free_S_one_not_le_at_selfdual"
+  ],
+  "axioms_output": [
+    "'QuantumFluids.AutoresearchSkBound.bogoliubovSq_pos' depends on axioms: [propext, Classical.choice, Quot.sound]",
+    "'QuantumFluids.AutoresearchSkBound.epsBog_sq' depends on axioms: [propext, Classical.choice, Quot.sound]",
+    "'QuantumFluids.AutoresearchSkBound.sBog_pos' depends on axioms: [propext, Classical.choice, Quot.sound]",
+    "'QuantumFluids.AutoresearchSkBound.sBog_sq' depends on axioms: [propext, Classical.choice, Quot.sound]",
+    "'QuantumFluids.AutoresearchSkBound.sBog_sq_le' depends on axioms: [propext, Classical.choice, Quot.sound]",
+    "'QuantumFluids.AutoresearchSkBound.sBog_le_sqrt' depends on axioms: [propext, Classical.choice, Quot.sound]",
+    "'QuantumFluids.AutoresearchSkBound.sBog_sq_eq_iff' depends on axioms: [propext, Classical.choice, Quot.sound]",
+    "'QuantumFluids.AutoresearchSkBound.feynman_sBog_exact' depends on axioms: [propext, Classical.choice, Quot.sound]",
+    "'QuantumFluids.AutoresearchSkBound.sBog_sq_le_via_project' depends on axioms: [propext, Classical.choice, Quot.sound]",
+    "'QuantumFluids.AutoresearchSkBound.free_S_one_violates' depends on axioms: [propext, Classical.choice, Quot.sound]",
+    "'QuantumFluids.AutoresearchSkBound.free_S_one_not_le_at_selfdual' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+    "'QuantumFluids.AutoresearchSkBoundControls.ctl_sorry' depends on axioms: [propext,\n sorryAx,\n Classical.choice,\n Quot.sound]",
+    "'QuantumFluids.AutoresearchSkBoundControls.ctl_axiom' depends on axioms: [propext,\n Classical.choice,\n Quot.sound,\n QuantumFluids.AutoresearchSkBoundControls.ctl_cheat]"
+  ],
+  "controls_caught": true,
+  "negative_control": "S = 1 (free particle / ideal gas): free_S_one_violates proves sqrt(k/(2ks)) < 1 for 0 < k < 2ks; free_S_one_not_le_at_selfdual proves not (1 <= sqrt(ks/(2ks)))",
+  "falsification_gate": "python3 -I numeric_gate.py: 0 violations of S_B(x)=x/sqrt(1+x^2) <= sqrt(x/2) on 200013 points x in (0,100] plus log grid 1e-12..1; max ratio 0.9999999999999999 at x=1 (equality at k=k*); S=1 violates at 999/999 points on (0,2). See numeric_gate.json",
+  "target_chosen": "H8 as preregistered: S_B(k) = eps0/eps_B <= sqrt(k/(2k*)), plus sharpness (equality iff k=k*) and Bijl-Feynman exactness. The other DS-QF' item (cold-atom LHY/Beliaev correction) has no verified coefficient and is not formalizable as stated.",
+  "existing_theorems_found": [
+    "QuantumFluids.DualLength.feynman_ge_iff (any S>0: l_F >= 2/ks <-> S^2 <= k/(2ks))",
+    "QuantumFluids.DualLength.dualLength_feynman",
+    "QuantumFluids.DualLength.not_bogoliubov_of_structure_factor (refutation direction, Feynman inequality as hypothesis)",
+    "QuantumFluids.DualLength.bogoliubov_envelope, ell_ge, ell_eq_iff, dualLength_bogoliubov",
+    "Mathesis.Duality.bogoliubov_dual_form, bogoliubov_selfdual_bound (Duality.lean)"
+  ],
+  "novelty": "None in physics or mathematics. H8 was not stated anywhere in the project, but it is a 3-line corollary of feynman_ge_iff + ell_ge once Bijl-Feynman exactness (feynman_sBog_exact, new here) is supplied; sBog_sq_le_via_project proves exactly that route.",
+  "tier": "KEEP (producer-checked). Tier A pending independent recompile + statement audit (producer != verifier)."
+}

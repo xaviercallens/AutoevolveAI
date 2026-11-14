@@ -1,0 +1,11 @@
+--- /mnt/disks/disk-socrateai-local-1/callensxavier_home_data/SocrateAI-Scientific-Agora-LeanMaster/lean4basesource/openai-math/preprints/Triangular-minimality-for-planar-Coulomb-renormalized-energy-September-23-2026/verification/grids.hpp	2026-10-07 19:24:34.355645663 +0000
++++ /home/callensxavier_gmail_com/programmes-2026-10-25/P1/negctl_B_lip/grids.hpp	2026-10-25 20:41:46.201139816 +0000
+@@ -301,7 +301,7 @@
+     const IV er0=2*Smax*pow(H,2)*chi/24;
+     const IV eri=2*(pow(Dh,2)*Smax*Gdd+pow(H,2)*Gs)/8;
+     const IV factor=er0+IV(0,eri.v);
+-    const IV er_drop=Smax*(H/4*Gs+Dh/2*Gd);
++    const IV er_drop=Smax*(H/2*Gs+Dh*Gd); /* NEGCTL-B: Lipschitz allowance doubled (x2) */
+     struct GlobalRow { IV gmin,drop; };
+     std::vector<GlobalRow> rows(nd);
+     #pragma omp parallel for schedule(dynamic,1)

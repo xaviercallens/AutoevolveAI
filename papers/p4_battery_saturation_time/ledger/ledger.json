@@ -1,0 +1,108 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "E2S-L-0001",
+   "statement": "Closed form and parameters, taken as stated: constant-flux diffusion in a sphere, surface value x_s = x0 + beta F(tau), F(tau) = 3 tau + 1/5 - 2 sum exp(-a_n^2 tau)/a_n^2, tan a_n = a_n (classical, Crank; derived independently by the producer and by the auditor, Crank read by neither); parameters D, R, cmax, L, eps_s, electrode height and width, 5 A nominal current, initial negative concentration 29866 mol/m3 and the Faraday constant printed from the Chen2020 set in PyBaMM 26.10.1.1 (BSD-3-Clause). Chen et al. 2020 itself was not read by anyone.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:66777963db0d594c4af117266dfefe6f8d7bb3db2dfce0bb9a7bb76cdd379a77",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "E2S-L-0002",
+   "statement": "Context taken as stated, not read: Marquis et al. 2019, arXiv 1905.12553 (SPM and SPMe, known to be inaccurate at high C-rate); secondary quotation of Chen et al. 2020 for the negative stoichiometry window 0.0279-0.9014 (arXiv 2311.05482, as found by the auditor); Subramanian, Diwakar, Tapriyal 2005, J. Electrochem. Soc. 152 A2002 for the constant 1/5 of parabolic-profile reductions (believed by the auditor, not read); Li et al. 2025, ACS Energy Lett. (analytic plating onset, related work).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [
+    "E2S-L-0001"
+   ],
+   "evidence": "sha256:4d0e9b9ac9855dbed7a5d41449a65c6f530604f4fe3ab590c551c8c80be21454",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "E2S-C-0001",
+   "statement": "Certified enclosures (python-flint Arb, 300 bits) of t*(C, x0, x*) for C in {1,2,3,4}, x0 in {0.05,0.25,0.5}, x* in {1, 29866/33133}, 24 cases: roots of tan a = a bracketed in (n pi, n pi + pi/2) by a rigorous sign change of g(a) = sin a - a cos a (g' = a sin a has constant sign there, so exactly one root; it is the n-th positive root), tail bounded using a_n >= n pi by a geometric series below 2^-100, tau* bracketed by interval bisection deciding a side only when the F ball lies strictly on one side. The rigorous enclosures are the exact rational tau bounds; relative width of every t* interval at most 9.8e-14. NOT formalised in Lean.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "E2S-L-0001"
+   ],
+   "evidence": "sha256:b33f70f7ecc9367543bfa7a1c265845a1dd17b99784e4025962cc84a3f44f317",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "E2S-C-0002",
+   "statement": "Controls run before the numbers were reported: P1 short-time ratio 0.098; P2 sum rule sum 1/a_n^2 = 1/10 with deficit 2.527e-4 inside the two-sided bracket [2.5236e-4, 2.5330e-4], F(2)-6-1/5 equal to the first exponential term to 5e-54; N1 D x 1.1 gives disjoint intervals in 24/24 cases; N2 shifted bracket and wrong interval not certified, alpha_1 + 0.01 shifts F(1e-5) by 4.4e-4; N3 reversed flux sign unreachable, factor 2 tau gives 4616 s against 3078 s (disjoint). NOT run: the preregistered second half of N3 (the P2 long-time check with 2 tau must fail). The P2 check is weaker than preregistered (2.5e-4 instead of 1e-12).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "E2S-C-0001"
+   ],
+   "evidence": "sha256:8c5a6e7ca5d56e1aa4d5d979c19e8a25caeae3a496c2273a00c06ad40b1c6a14",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "E2S-C-0003",
+   "statement": "Outward rounding and independent confirmation: the first run converted the Arb second endpoints with round-to-nearest float(), after which (exact Fraction arithmetic) the seconds interval contained the rational tau interval times R^2/D in only 2/24 cases and the auditor's enclosure in 21/24; after math.nextafter outward rounding both hold in 24/24 (code/check_exact_rational.py). The auditor's independent mpmath.iv enclosure (interval Newton for roots, integral tail bound, interval Newton for tau; widths about 1e-56 s; no shared code) lies inside the producer's rational tau interval in 24/24 cases; the auditor's beta equals the producer's.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "E2S-C-0001"
+   ],
+   "evidence": "sha256:62bac2b350bae6aab8a80d272ac4df378b58cbbb650bd7766f5a77daf8ae3775",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "E2S-C-0004",
+   "statement": "HEADLINE. Rigorous enclosures of the first surface-saturation (x* = 1) or balancing-limit (x* = 0.9014) time in the constant-flux sphere model with the printed Chen2020 negative-particle parameters, for the 24 stated cases (e.g. C = 1, x0 = 0.05, x* = 1: t* about 3916.716 s), confirmed by an independent AI auditor's solver. For all 24 cases t* equals the long-time formula (R^2/3D)[(x*-x0)/(C beta) - 1/5] up to a relative correction between 8.5e-36 and 8.9e-5 (below 1e-12 in 11/24), so the certificate adds little beyond that formula: its value is the rigorous enclosure. A model computation; no claim about cells, faster charging, safety or plating. Filed C: rigorous computation plus written argument, no kernel check.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "E2S-C-0001",
+    "E2S-C-0002",
+    "E2S-C-0003",
+    "E2S-L-0001"
+   ],
+   "evidence": "sha256:026f6dd8b9e3a20d3e714f070356df7d7ba10a8932835cc757c1ef8c968cd9d1",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "E2S-X-0001",
+   "statement": "Float cross-checks, not a licence: a finite-volume method of lines (400 cells, scipy BDF, rtol 1e-10) agrees with the series to a maximum relative error 7.7e-6 at 20 points; PyBaMM SPM first-crossing times agree with the certified intervals to 4.2e-4 (20 radial points) and 1.7e-5 (100), all 24 cases, error shrinking with the mesh (the auditor's r_n = 200 reruns on four cases give 3.7e-7 to 4.3e-6); PyBaMM SPMe equals SPM on the negative-particle surface concentration by construction (same x-uniform current).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:0471aa48e486510956e541c20cb34d45d06b8be7581857e0439f5edf8bcd3817",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "E2S-X-0002",
+   "statement": "DFN observation, exploratory, mesh dependent, not a licence: in PyBaMM DFN (x* = 0.9014 only, positive start 0.99) the x-averaged negative surface concentration crosses at the certified SPM time to 1e-4 at 1C, but the maximum over x crosses earlier (24 / 30 / 37 % at 1C for x0 = 0.05 / 0.25 / 0.5; 891.6, 574.9, 301.7 s against 1716.8, 1297.2, 772.7 s at 2C), with x_n = 20 nodes; x_n = 40 moves 1870.8 s to 1843.5 s (1C, x0 = 0.25) and 206.0 s to 194.2 s (3C), so the percentages carry about 1.5-6 % mesh uncertainty. DFN fails to integrate for C >= 3 (and for 2C beyond 1.05 t*): auditor diagnosis at 3C, x0 = 0.25: electrolyte concentration below 1 mol/m3 at 368 s, local surface at 0.9999 cmax at about 400 s, IDA fails at 400.5-401.2 s with c_e < 0 and c_s > cmax so the exchange current is NaN; 4C, x0 = 0.05 the same at 193.6 s; the model state leaves its valid range; 2C failures not diagnosed. One parameter set; says nothing about cells.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:cc839ff7fa3e2404e674dc607d78ffab23678f438cc1586519960ca91d0b586a",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "E2S-X-0003",
+   "statement": "Absences, recorded so they are explicit: no earlier certified-interval treatment of this saturation time was found by the auditor's quick search (2 queries, not exhaustive; the producer made no search); NOT run or not complete: Lean/kernel formalisation (Tier C is the ceiling); the second half of preregistered N3; a human audit; any reading of Crank or Chen et al. 2020; the auditor's rerun of the finite-volume check, the SPMe identity and N4; a diagnosis of the 2C DFN failures; pytest tests/ and the repository guards for this paper.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:78bdff9c07f4427dbb075d7ad8093bb4a731b70410874d283617735dc80088d3",
+   "audit": null
+  }
+ ]
+}

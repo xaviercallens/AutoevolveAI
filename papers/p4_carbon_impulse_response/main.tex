@@ -1,0 +1,248 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,
+  frame=single,framesep=3pt,xleftmargin=4pt,xrightmargin=4pt,upquote=true,aboveskip=4pt,belowskip=2pt}
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tA}{\tier{A}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\lean}[1]{\texttt{#1}}
+\newcommand{\R}{\mathbb{R}}
+\theoremstyle{plain}
+\newtheorem{thm}{Theorem}
+\newtheorem{cor}[thm]{Corollary}
+
+\title{Linear carbon-cycle impulse responses:\\
+post-cessation monotonicity, certified peak delays, and two concentration maxima from a single emission hump\\
+{\large (a model result; the unimodality theory is classical)}}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-31}
+\hypersetup{pdftitle={Linear carbon-cycle impulse responses: post-cessation monotonicity, certified peak delays, and two concentration maxima from a single emission hump (a model result; the unimodality theory is classical)},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small doi:10.5281/zenodo.23848023 \quad (not peer reviewed)\end{center}
+
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its Python and Lean code and its claim ledger were
+produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{This version was independently audited by a different AI agent instance (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.}
+The audit's twelve corrections are applied in this text (Section~\ref{sec:corr}). No human audit and no statement lock exist; both are owed (Section~\ref{sec:lim}).
+
+\begin{abstract}
+We study the \emph{linear} impulse-response (IRF) model $u(t)=\int_0^t m(z)\,h(t-z)\,dz$ with the Joos et al.\ (2013) multi-model-mean IRF
+$h(t)=a_0+\sum_{i=1}^3 a_i e^{-t/\tau_i}$~\cite{joos}, for emission paths $m\ge0$. ``Concentration'' always means the model excess $u$; nothing is said about the real atmosphere.
+\textbf{(a)} After emissions cease, $u$ is completely monotone, hence non-increasing and convex, with limit $a_0\int m$. Hand proof for continuous $m$ (Tier~\tC{}); Lean proof for \emph{discrete nonnegative emission measures only} (Tier~\tA{}, statement lock owed).
+\textbf{(b)} For Seshadri's emission family~\cite{sesh}, interval-arithmetic enclosures of the time of the concentration maximum and of its delay after the emissions peak, in $63$ scenarios (Tier~\tC{}); delays of $50$--$227$ yr in the Joos table.
+\textbf{(c)} For every completely monotone, strictly decreasing IRF that is not a single exponential (in particular the Joos IRF), there are single-humped emission paths for which $u$ has two local maxima separated by a strictly lower value; an explicit staircase family with an exactly characterised window $B/A\in(h(d),L)$ is proved (Tier~\tC{}), and three Joos instances are certified with exact rationals and interval arithmetic, one of them for a strictly unimodal emission path.
+\textbf{The mechanism is classical}: it follows from Ibragimov's 1956 theorem on strong unimodality (convolution preserves unimodality iff the kernel is log-concave), which we read only from secondary sources; the single exponential is its log-concave special case. What is added is the explicit window, the certified Joos instances and the carbon-cycle framing. To our knowledge (not a systematic search) no carbon-cycle paper states it. No tonnes, climate effect, policy or ``discovery'' claim is made.
+\end{abstract}
+
+\medskip
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{What this is NOT.} It is \textbf{not} a statement about the real carbon cycle, which is nonlinear and state dependent; \textbf{not} about realistic emission pathways (the inputs giving two maxima are mathematical test inputs); \textbf{not} about warming, tonnes or policy; \textbf{not} a new phenomenon class; and the Lean part covers only discrete emission measures (T2, T3, part~(b) and the continuous case are not in Lean).}}
+
+\paragraph{Markers.} \tA{}: kernel-checked Lean, axioms within $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$, controls caught, no statement lock yet. \tL{}: a cited source, taken as stated. \tC{}: executed code or a hand proof with the argument written down, not machine-checked. \tX{}: floating-point scans and comparisons, supporting nothing by themselves. Identifiers \texttt{CK3-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+%=====================================================================
+\section{Model, definitions and scope}\label{sec:model}
+\paragraph{Model (Tier \tL{}).} Following Seshadri~\cite{sesh} (eq.~2) the concentration is $u(t)=u_P+\int_0^t m(z)\,h(t-z)\,dz$, where $m$ is the emission rate in concentration units (the rate at which $u$ would rise if the lifetime were infinite) and the IRF $h$, with $h(0)=1$, is the fraction of an added pulse still airborne after time $t$, as defined by Joos et al.~\cite{joos} (eq.~7 and text). We work with the excess $u-u_P$, written $u$. A \emph{concentration maximum} is a local maximum of this model excess $u$.
+The Joos IRF is $h(t)=a_0+\sum_{i=1}^{3}a_ie^{-t/\tau_i}$ with (Table~5, row IRFCO2) $a_0..a_3=0.2173,\,0.2240,\,0.2824,\,0.2763$ and $\tau_1..\tau_3=394.4,\,36.54,\,4.304$ yr; the $a$'s sum to $1$ exactly (control P1). They are used as exact decimals. The Joos paper is distributed under CC~BY~3.0 (journal landing page and PDF header).
+\paragraph{Unimodal and ``two maxima''.} An emission path $m\ge0$ is \emph{weakly unimodal} if it is non-decreasing and then non-increasing, and \emph{strictly unimodal} if it has a unique mode and is strictly monotone on each side within its support. ``$u$ has two maxima'' means: two local maxima of $u$ \emph{separated by a strictly lower value}. The certificates below, $u(s_1)<u(s_2)>u(s_3)<u(s_4)>u(s_5)$ at times $s_1<\dots<s_5$, establish exactly this (continuity then gives a local maximum in $(s_1,s_3)$ and one in $(s_3,s_5)$, with $u(s_3)$ strictly below both).
+\paragraph{Fit window.} Joos et al.\ state that their fit (eq.~11) applies for $0\le t\le1000$ yr only. The limit $a_0\int m$, the check $u(10^6)$ and the scan of $u'$ on $[0,6000]$ yr below are properties of the \emph{fitted formula} beyond its stated range, not of the multi-model response. The certified peak times of part~(b) ($\le287$ yr) and the certified times of part~(c) ($\le500$ yr) lie inside the window.
+\paragraph{Scope.} Linear model, multi-model-mean coefficients for one pulse experiment. No tonnes, no climate effect, no emission-pathway or deployment advice. ``Concentrations fall after emissions stop'' is a model statement.
+
+%=====================================================================
+\section{Prior art and what is added}\label{sec:prior}
+By Ibragimov~\cite{ibr} (1956, ``On the composition of unimodal distributions''; ``strong unimodality''), convolution with every unimodal density preserves unimodality \emph{if and only if} the kernel is log-concave. We read this only from secondary sources (the Encyclopedia of Mathematics entry ``Unimodal distribution'' and Watanabe, Nagoya Math.\ J.\ 1991~\cite{wat}), not from the original (\texttt{CK3-L-0003}, Tier~\tL{}). Consequences:
+\begin{itemize}\itemsep=1pt
+\item The one-sided exponential $e^{-t/\tau}\mathbf 1[t\ge0]$ is log-concave, so \textbf{Theorem~\ref{thm:t2} below is a special case of Ibragimov's theorem.}
+\item A completely monotone (CM) kernel that is not a single exponential is strictly log-convex on $(0,\infty)$, so Ibragimov's converse already implies, \emph{for integrable kernels} ($a_0=0$), that some unimodal input yields a non-unimodal output. This is the existence half of part~(c) for $a_0=0$.
+\item For $a_0>0$ the IRF is not integrable and the theorem as stated does not apply directly; Theorem~\ref{thm:t3} gives an explicit construction covering both cases.
+\end{itemize}
+\textbf{Added here:} the explicit staircase window $B/A\in(h(d),L)$, its necessity within the family, the certified Joos instances (including a strictly unimodal path), the certified peak delays of part~(b), and the carbon-cycle framing. To our knowledge (Joos 2013, Seshadri 2016, one alphaXiv query and two web searches; \emph{not} a systematic search; the literature on delays to peak \emph{warming}, e.g.\ MacDougall--Ricke--Caldeira 2014 and Zickfeld--Herrington 2015, was not read for this question) the two-maximum behaviour is not stated in the carbon-cycle literature read. The physical intuition is elementary: with $a_0>0$, any sustained positive emission makes the model $u$ grow, so the end of a long low plateau of emissions produces a second maximum (a model property only). The result is an explicit, certified instance of a known phenomenon class, not a new phenomenon.
+
+%=====================================================================
+\section{Results}\label{sec:results}
+Throughout, $h(t)=a_0+\sum_ia_ie^{-t/\tau_i}$, $a_0\ge0$, $a_i>0$, $h(0)=1$. Then $h(x)=\int e^{-\lambda x}\mu(d\lambda)$ for a probability measure $\mu$ with atoms at $0$ (mass $a_0$) and $1/\tau_i$ (mass $a_i$).
+
+\subsection{(a) Post-cessation complete monotonicity}
+\begin{thm}[T1; Tier \tC{} for continuous $m$, Tier \tA{} for discrete emission measures]\label{thm:t1}
+Let $m\ge0$ be supported on $[0,T]$, $W=\int m$. For $t>T$,
+$u(t)=a_0W+\sum_ib_ie^{-t/\tau_i}$ with $b_i=a_i\int e^{z/\tau_i}m(z)\,dz\ge0$. Hence $(-1)^nu^{(n)}(t)=\sum_ib_i\tau_i^{-n}e^{-t/\tau_i}\ge0$ for all $n$: $u$ is completely monotone on $(T,\infty)$, in particular non-increasing and convex, with limit $a_0W$ (the limit is a property of the fitted formula beyond $1000$ yr).
+\end{thm}
+This is elementary (a positive mixture of shifted CM functions) and, to our knowledge, standard; its value here is an independent kernel check, not novelty.
+\paragraph{Negative control.} With one negative coefficient ($a_0=0.6573$, $a_1=-0.2240$, $a_2=0.2824$, $a_3=0.2763$, sum $1$) $181$ of $200$ random histories violate monotonicity or convexity, and $h=1-e^{-t}$ is not CM in Lean (\lean{neg\_ctl\_not\_cm}).
+
+\subsection{(c) Single-humped emissions and the number of concentration maxima}
+\begin{thm}[T2, single exponential; Tier \tC{}; special case of Ibragimov]\label{thm:t2}
+Let $h=e^{-t/\tau}$ and let $m\ge0$ be weakly unimodal (of locally bounded variation). Then $u$ is non-decreasing and then non-increasing (quasi-concave). Its maximisers form an interval, and $u$ never has two local maxima separated by a strictly lower value.
+\end{thm}
+\emph{Proof.} $u(t)=\int_0^tm(z)e^{-(t-z)/\tau}dz$ gives $u'=m-u/\tau$. Put $V(t)=\int_0^te^{z/\tau}m(z)\,dz=e^{t/\tau}u(t)$ and $g=e^{t/\tau}u'=e^{t/\tau}m-V/\tau$. Then $dg=e^{t/\tau}dm$, so $g$ is non-decreasing up to the emission peak, with $g(0)=m(0)\ge0$, and non-increasing after it. Hence $g$, and so $u'$, is $\ge0$ and then $\le0$. \qed
+
+\emph{Remark on wording.} The statement ``$u$ has at most one local maximum'' is literally false for non-strict maxima: an impulse $c\tau$ at time $0$ (allowed in the discrete setting) followed by constant emission $c$ gives $u\equiv c\tau$, and every point of the plateau is a local maximum. Only the quasi-concave formulation above is claimed. No counterexample to it was found in $400$ adversarial random staircases (auditor, Tier \tX{}).
+
+\begin{thm}[T3; Tier \tC{}]\label{thm:t3}
+Let $h$ be completely monotone, $h(0)=1$, strictly decreasing and not a single exponential. Let $d>0$ and $\rho(x)=h(x+d)/h(x)$. Then $\rho$ is strictly increasing, with $\rho(0)=h(d)<\rho(\infty)=L\le1$, where $L=1$ iff $a_0>0$. For $A>0$ and $\theta=B/A\in(0,1)$ let
+$$m=A\ \text{on }[0,d),\qquad m=A-B\ \text{on }[d,z_3),\qquad m=0\ \text{afterwards},$$
+a weakly unimodal (non-increasing) nonnegative path, with $z_3>d+x^*$ where $\rho(x^*)=\theta$ whenever $\theta\in(h(d),L)$. If $\theta\in(h(d),L)$, then $u$ has \emph{exactly two} local maxima, at $t=d$ and $t=z_3$, and one local minimum, at $t=d+x^*$. If $\theta\le h(d)$ or $\theta\ge L$ it has exactly one. So the window $B/A\in(h(d),L)$ is necessary and sufficient within this family.
+\end{thm}
+\emph{Proof.} (i) \emph{Strict monotonicity of $\rho$.} By Bernstein, $h=\int e^{-\lambda x}\mu(d\lambda)$; Cauchy--Schwarz gives $hh''\ge h'^2$, with equality only if $\mu$ is a point mass, i.e.\ $h$ is a single exponential (this includes the constant $h\equiv1$, excluded by strict decrease). So $\log h$ is strictly convex and $\log\rho(x)=\log h(x+d)-\log h(x)$ is strictly increasing. $\rho(0)=h(d)$; $\rho(\infty)=1$ if $a_0>0$ and $e^{-d/\tau_{\max}}$ if $a_0=0$.\\
+(ii) \emph{Sign of $u'$.} For a staircase with jumps $c_j$ at $z_j$, $u'(t)=\sum_jc_jh(t-z_j)$ off the jump times. Here the jumps are $+A$ at $0$, $-B$ at $d$, $-(A-B)$ at $z_3$. On $(0,d)$, $u'=Ah>0$. For $t=d+x\in(d,z_3)$,
+$u'(t)=Ah(x+d)-Bh(x)=h(x)\bigl(A\rho(x)-B\bigr)$, which is negative for $x<x^*$ and positive for $x>x^*$. Further $u'(d-)=Ah(d)>0$ and $u'(d+)=A(h(d)-\theta)<0$: a local maximum at $d$, and by the sign pattern a local minimum at $d+x^*$.\\
+(iii) \emph{At $z_3$.} $u'(z_3-)=Ah(z_3)-Bh(z_3-d)>0$ since $z_3-d>x^*$, and
+$$u'(z_3+)=-A\bigl(1-h(z_3)\bigr)+B\bigl(1-h(z_3-d)\bigr)<0,$$
+because $A>B$ and $1-h(z_3)>1-h(z_3-d)\ge0$ ($h$ strictly decreasing, $h\le1$). So $z_3$ is a local maximum. After $z_3$, $u$ is CM by Theorem~\ref{thm:t1}, hence decreasing: no further maximum. Together with $u'>0$ on $(0,d)$ there are exactly two maxima.\\
+(iv) \emph{Necessity.} If $\theta\le h(d)$ then $\rho(x)>h(d)\ge\theta$ for $x>0$, so $u'>0$ on $(d,z_3)$, $u$ increases on $(0,z_3)$ and the only maximum is at $z_3$. If $\theta\ge L$ then $\rho<L\le\theta$, $u'<0$ on $(d,z_3)$ and the only maximum is at $d$. \qed
+
+\begin{cor}[headline of (c); Tier \tC{}]\label{cor:c}
+For every IRF $h$ with $h(0)=1$ that is completely monotone, strictly decreasing and not a single exponential (in particular the Joos IRF), there is a weakly unimodal emission path for which $u$ has two local maxima separated by a strictly lower value. For a single exponential, $u$ is quasi-concave for every weakly unimodal path (Theorem~\ref{thm:t2}).
+\end{cor}
+Theorem~\ref{thm:t3} uses a \emph{weakly} unimodal path (a non-increasing step function, mode at $0$). That the existence also holds under the \emph{strict} definition is shown for the Joos IRF by the certified instance I2 below, not by a general proof.
+\paragraph{Mechanism (Tier \tX{}, model property only).} With $a_0>0$, any sustained positive emission makes the model $u$ grow once the fast modes ($\tau=4.3$ and $36.5$ yr) have decayed, so the second maximum is the end of the low plateau. This is expected once stated.
+
+\subsection{Certified instances (Tier \tC{})}\label{sec:inst}
+Five times $s_1<\dots<s_5$ per instance, exact rational inputs from Joos Table~5, mpmath interval arithmetic at $60$ digits (\texttt{data/data/results\_c.json}; half-widths $<10^{-56}$); the certificate is $u(s_2)>u(s_1)$, $u(s_2)>u(s_3)$, $u(s_4)>u(s_3)$, $u(s_4)>u(s_5)$.
+\begin{center}\footnotesize\begin{tabular}{>{\raggedright\arraybackslash}p{0.40\linewidth}>{\raggedright\arraybackslash}p{0.12\linewidth}>{\raggedright\arraybackslash}p{0.17\linewidth}>{\raggedright\arraybackslash}p{0.14\linewidth}}\toprule
+instance and emission path & $s$ (yr) & $u(s_1),\dots,u(s_5)$ & lower bounds of the four differences\\\midrule
+\textbf{I1}: continuous piecewise linear, \emph{weakly} unimodal: nodes (yr, level) $(0,0),(10,1),(22,\tfrac1{10}),(300,\tfrac1{10}),(310,0)$; non-decreasing to year $10$, then non-increasing with a plateau on $[22,300]$ & 10, 21, 32, 303, 320 & 4.2161, 7.9964, 7.6834, 15.4774, 14.9042 & 3.78, 0.313, 7.79, 0.573\\
+\textbf{I2}: nodes $(0,0),(10,1),(22,\tfrac1{10}),(300,\tfrac1{20}),(310,0)$; strictly increasing on $[0,10]$, strictly decreasing on $[10,310]$, zero afterwards; continuous. \textbf{Meets the strict definition.} & 10, 21, 40, 305, 330 & 4.2161, 7.9964, 7.7188, 12.1543, 11.5925 & 3.78, 0.278, 4.44, 0.562\\
+\textbf{S1}: staircase, jumps $+1$ at $0$, $-\tfrac9{10}$ at $5$ yr, $-\tfrac1{10}$ at $200$ yr (a non-increasing step function, weakly unimodal, mode at $0$) & 1, 5, 11, 200, 500 & 0.9661, 4.3361, 4.0146, 10.6010, 7.2520 & 3.37, 0.322, 6.59, 3.35\\\bottomrule
+\end{tabular}\end{center}
+The float picture of I1 has maxima at $20.7$ and $303.2$ yr and a minimum at $31.9$ yr. A first attempt for S1 with the wrong middle time ($s_3=100$) returned \texttt{two\_local\_maxima\_certified: false}; the times were then chosen from the float minimum ($11$ yr). The certificate depends on the chosen times, not on a search that hid failures. The instances were recomputed by the auditor with independent code (Section~\ref{sec:audit}).
+
+\subsection{Where it happens (Tier \tX{}, floats)}
+Plateau family (rise to $1$ by yr $10$, linear drop to level $L$ over $D$ years, plateau to yr $300$, ramp to $0$ by yr $310$): two maxima for $L\le0.15$ for all $D\in\{2,5,12,20,40\}$; for $L=0.2$ for $D=2,5,40$ but one maximum for $D=12,20$; one maximum for $L\ge0.25$. Over $1500$ random continuous unimodal piecewise-linear paths (seed 7) with the Joos IRF: $17$ have no interior maximum, $1364$ one, $117$ two, $2$ three (the three-maximum cases are float-grid counts and are not certified; the audit did not check them); the same paths with a single exponential never give more than one (control P2). A hypothetical IRF with $a_0=0$ (decaying modes only) also gives $2$ maxima with a long plateau; a two-term IRF $a_0=a_1=\tfrac12$, $\tau=50$, gives $2$ maxima for $B/A\in\{\tfrac{19}{20},\tfrac{49}{50}\}$ and $1$ for $\tfrac45<h(d)$, as Theorem~\ref{thm:t3} predicts (\texttt{logs/check\_two\_term.log}). A sufficient condition for ``at most one peak'' beyond the single exponential was not found.
+
+%=====================================================================
+\section{(b) Peak times and delays for Seshadri's emission family}\label{sec:b}
+\paragraph{Family.} $m(t)=m_0(1+r)^{\min(t,t_g)-t_0}e^{-(t-t_0)/\tau_m}$~\cite{sesh}. Our setup puts the origin at $t_0=0$ and ignores emissions before $t_0$ (not varied). Seshadri integrates from an earlier origin $0<t_0$ (his $m'_{av0}$ term), so the producer's time origin differs from his and agreement with his figures is Tier~\tX{} only.
+\paragraph{Method (Tier \tC{}).} Closed-form $u'$ and $u''$ in interval arithmetic (mpmath \texttt{iv}, $60$ digits), exact rational bisection with certified signs $u'(\mathrm{lo})>0>u'(\mathrm{hi})$ and $u''<0$ on the initial bracket (width $0.01$ yr): the peak is the unique local maximum \emph{inside the bracket}, with enclosure width $<10^{-19}$ yr. The emissions peak $t_1$ is certified from the sign of $\ln(1+r)-1/\tau_m$: $t_1=t_g$ if positive, $t_1=t_0=0$ if negative. $63$ scenarios ($3$ IRF variants $\times\ 3$ values of $r\times 7$ values of $\tau_m$) are all CERTIFIED (\texttt{data/data/results\_b.json}). \textbf{Global uniqueness of each peak is Tier~\tX{}}: a float scan of $u'$ on $[0,6000]$ yr found exactly one $+\to-$ sign change in all $63$ scenarios; the range exceeds the $1000$-yr window of the fit, so this describes the fitted formula, not the multi-model response.
+\paragraph{Delays} $t_2-t_1$ in years for Joos Table~5, $t_g=60$ yr (two decimals; enclosures in the JSON):
+\begin{center}\small\begin{tabular}{rrrr}\toprule
+$\tau_m$ & $r=0.03$ & $r=0.05$ & $r=0.015$\\\midrule
+20 & 69.55 ($t_1=0$) & 79.34 ($t_1=0$)$^\dagger$ & 58.68 ($t_1=0$)\\
+40 & 50.47 & 59.52 & 99.01 ($t_1=0$)\\
+50 & 70.48 & 79.40 & 119.04 ($t_1=0$)\\
+60 & 91.22 & 100.12 & 139.78 ($t_1=0$)\\
+80 & 134.32 & 143.31 & 122.80\\
+100 & 176.95 & 185.99 & 165.36\\
+120 & 217.35 & 226.37 & 205.73\\\bottomrule
+\end{tabular}\end{center}
+$^\dagger$ Convention-dependent: ln$(1.05)=0.0488<1/\tau_m=0.05$ gives $t_1=0$ in our exact $(1+r)^t$ reading. Under Seshadri's $e^{rt}$ approximation $r=1/\tau_m$ exactly, emissions are flat on $[0,60]$ and $t_1$ is undefined.
+\begin{itemize}\itemsep=1pt
+\item The delay is \textbf{not monotone in $\tau_m$} across the boundary $r=1/\tau_m$, where $t_1$ jumps from $t_g$ to $0$; the peak time $t_2$ itself is continuous there (the auditor finds $98.28871$ on both sides at $\ln(1.03)=1/\tau_m$, $\tau_m\approx33.83086$, and the delay jumps by exactly $t_g=60$ yr). The table is not a smooth trend.
+\item \emph{Seshadri comparison, Tier \tX{}.} The parameters of his Fig.~5 ($t_g-t_0=60$ yr, $r=0.015$ \%/year, $\tau_m=50$ yr) fall outside the case $r>1/\tau_m$ to which his Sect.~3.2 restricts attention, under either reading of ``0.015 \%/year'' ($0.015$/yr or $0.00015$/yr; both are below $1/\tau_m=0.02$, and $\ln1.015=0.0149$). This is not resolved here. For $r=0.015$, $\tau_m=50$ our certified value is $119.04$ yr (with $t_1=0$), inside the $100$--$135$ yr he states for that figure, and his Fig.~2 range of $40$--$220$ yr is reproduced in order of magnitude. This agreement does not show the intended reading of his parameters. Separately, his printed eq.~(4) omits the boundary term $\sum_i\mu_ie^{-t/\tau_i}m(0)$ from the integration by parts and is exact only when $m(0)=0$ (stated neutrally; the author was not contacted).
+\item His printed eq.~(1) has coefficients $0.276,0.282,0.224,0.217$ with sum $0.999$ (a neutral factual note), and the text uses $\tau_1=4.4$. Variants with these coefficients and $\tau_1=4.30$ or $4.4$ change the delay by at most $0.36$ yr across all $21$ matched scenario pairs, so the $0.001$ coefficient defect is immaterial for the delays, though it matters for the long-run limit.
+\end{itemize}
+\paragraph{Positive control.} For $h=e^{-t/30}$, $m=e^{-t/50}$ the closed-form peak is $75\ln(5/3)=38.311921782449301240\dots$; the certified enclosure $[38.31192178244930124039,\,38.31192178244930124045]$ contains it (\texttt{data/data/control\_closed\_form.json}).
+
+%=====================================================================
+\section{Controls}\label{sec:controls}
+\begin{center}\small\begin{tabular}{p{0.32\linewidth}p{0.6\linewidth}}\toprule
+control & result\\\midrule
+P1 coefficient sums & Joos sums to $1$; Seshadri's printed eq.~(1) to $0.999$ (exact rationals); pass\\
+P2 single exponential & closed-form $u$ vs $1500$ random unimodal paths: at most $1$ maximum; pass\\
+P3 closed form vs quadrature & closed-form $u$ equals mpmath quadrature of the convolution in $50/50$ points, tolerance $10^{-20}$; pass\\
+P4 arithmetic (Ciais et al.~\cite{ciais}, printed numbers only) & $10.38-2.04-3.15-2.06\cdot2.124=5091/6250=0.81456$, rounds to the printed $0.81$; pass\\
+P5 post-cessation & $200/200$ random histories antitone and convex on a grid; $u(10^6)=a_0W$ to about $10^{-8}$ in $5$ spot checks (beyond the fit window); pass\\
+Closed-form peak & $75\ln(5/3)$ enclosed; pass\\
+N1 negative coefficient & $181/200$ histories violate; Lean \lean{neg\_ctl\_not\_cm}; pass\\
+N2 wrong sign in $H$ ($1+e^{\cdot}$) & rejected at $50/50$ points; pass\\
+N3 single exponential vs Joos, same emission & $1$ vs $2$ maxima (I1 and S1); pass\\
+N4 planted \lean{sorry}/axiom in \texttt{Controls.lean} & compiles, rc $0$, caught by \texttt{\#print axioms}; pass\\\bottomrule
+\end{tabular}\end{center}
+
+%=====================================================================
+\section{Lean (Tier \tA{}, discrete nonnegative emission measures only)}\label{sec:lean}
+Module \texttt{formal\_cert/Programmes/CarbonK3/Core.lean} (copy in \texttt{data/lean/}) imports \texttt{Programmes.CompletelyMonotone.Basic} (the repository's CM library; never \texttt{import Mathlib}), compiled with \texttt{scripts/certified\_numerics/lean\_pinned.py} (Lean~4.34.1, Mathlib \texttt{d13f23b7}), rc~$0$ ($17.7$ s; the first run took $22$ min on a cold disk cache and failed on API names). The definitions are $\mathrm{irf}(t)=a_0+\sum_ia_ie^{-r_it}$ and $\mathrm{excess}(t)=\sum_jw_j\,\mathrm{irf}(t-z_j)$ (a finite sum of impulses $w_j\ge0$ at times $z_j$). Theorems:
+\lean{irf\_cm} (for $a_0,a_i,r_i\ge0$ the IRF is CM), \lean{excess\_cm\_after} (for $w_j\ge0$, $z_j\le T$, $s\mapsto\mathrm{excess}(s+T)$ is CM on $(0,\infty)$), \lean{excess\_antitone}, \lean{excess\_convexOn}, \lean{excess\_tendsto} (limit $a_0\sum_jw_j$ when all $r_i>0$; no sign hypotheses), \lean{neg\_ctl\_not\_cm} ($1-e^{-t}$ is not CM); the helper \lean{cm\_convexOn} was added during the run. \texttt{\#print axioms} of all six: $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$. \texttt{leanchecker Programmes.CarbonK3.Core}: rc~$0$. Escape grep (\lean{sorry}, \lean{native\_decide}, \lean{admit}, \lean{unsafe}, \lean{extern}, \lean{implemented\_by}, \lean{axiom}, \lean{opaque}, \lean{set\_option}, \lean{csimp}) on \texttt{Core.lean}: no match.
+\paragraph{Controls.} \texttt{Controls.lean} compiles with rc~$0$ and is caught by the axiom gate: \lean{ctl\_sorry} shows \lean{sorryAx}, \lean{ctl\_axiom} shows \lean{CarbonK3.ctl\_cheat}.
+\paragraph{Scope and caveats.} \lean{IsCompletelyMonotoneOn} (\texttt{Basic.lean} l.28) is the genuine definition: $C^\infty$ on $(0,\infty)$ and $(-1)^nf^{(n)}\ge0$. \lean{excess} is defined for all $t$ without a Heaviside factor; it equals the model excess only for $t\ge\max_jz_j$, which is the only range the theorems use. The auditor recompiled \texttt{Core.lean} (rc $0$, $13.6$ s), ran \texttt{leanchecker} (rc $0$, $61.4$ s) and obtained identical axiom lists; the dependency oleans (\texttt{Programmes.CompletelyMonotone.*}, \texttt{Autoresearch.KeldyshCM}) were \emph{reused, not rebuilt} (axiom audit and leanchecker are transitive, so they still cover them). \textbf{Not in Lean:} continuous emission paths, Theorems~\ref{thm:t2} and~\ref{thm:t3}, part~(b). \textbf{Statement lock owed}; no person has certified that the statements mean what their gloss says.
+\begin{itemize}\scriptsize\itemsep=0pt
+\item \texttt{Core.lean}: \texttt{00e6ba6c08f4fffcb9b9162eb7921b0a756475a55c4cb8d722ea364aa49e363a}
+\item \texttt{Controls.lean}: \texttt{a56d76fb410ce843dbadfced5094b825cee5a523b1ab022849b461673d71c3ff}
+\end{itemize}
+
+%=====================================================================
+\section{Independent AI audit}\label{sec:audit}
+A different AI agent instance (\texttt{AUDIT.md}, 2026-10-31; verdict ACCEPT\_WITH\_CORRECTIONS; none of the producer's code used; its scripts are in \texttt{data/audit\_scripts/}, small outputs only, oleans not shipped) recomputed:
+\begin{itemize}\itemsep=1pt
+\item \emph{Sources:} all nine Joos Table~5 numbers, the $0\le t\le1000$ yr validity of eq.~(11), and Seshadri's eqs.\ (1), (2) and Sect.~3.2.
+\item \emph{(c) instances:} Sage \texttt{RealBallField} at $400$ bits with its own closed-form segment integrals; the $u$ values at all $15$ times agree with \texttt{results\_c.json} to the $20$ printed digits (ball radii $\le5\cdot10^{-116}$); lower bounds of the four differences I1: $3.780,\,0.3130,\,7.794,\,0.5732$; I2: $3.780,\,0.2776,\,4.435,\,0.5618$; S1: $3.370,\,0.3216,\,6.586,\,3.349$.
+\item \emph{(b):} own closed form with mpmath at $50$ digits, step $0.5$ yr on $[0,3000]$, then \texttt{findroot}: for all $21$ Joos scenarios exactly one $+\to-$ change of $u'$ (a different grid and end point from the producer's, hence a Tier \tX{} cross-check, not an independent interval certificate of uniqueness); $t_2$ agrees with the enclosures to $\le6.0\cdot10^{-20}$, $t_1$ in every cell; Seshadri-coefficient variants for three $(r,\tau_m)$ cells differ from Joos by $0.06$--$0.35$ yr.
+\item \emph{T3/T2 numerics (floats):} Joos, $d=5$, $h(5)=0.7712$: $\theta\in\{0.8,0.95\}$ gives exactly two maxima and one minimum at the predicted $d+x^*$; $\theta\in\{0.5,0.65,0.7\}<h(d)$ gives one. For the $a_0=0$ IRF ($\tau=100,5$, $L=e^{-0.05}$): two maxima for $\theta\in(h(d),L)$, one outside. $\rho$ is strictly increasing on a $[0,500]$ grid (a double-precision run reported otherwise for $a_0=0$: float saturation of $e^{-x/5}$; at $60$ digits it is strictly increasing).
+\item \emph{Hand re-derivation:} Theorem~\ref{thm:t3} correct, with the incomplete step $u'(z_3+)<0$ repaired and the exact count and necessity added; Theorem~\ref{thm:t2} correct as quasi-concavity, literally false as ``at most one local maximum''.
+\end{itemize}
+
+%=====================================================================
+\section{Audit corrections applied}\label{sec:corr}
+The audit (\texttt{AUDIT.md}, \S6) required twelve corrections to the producer's report (\texttt{data/RESULT.md}, which is the producer's \emph{pre-audit} text and is superseded by this paper). They are applied here, in the numbering of \S6:
+\begin{enumerate}\itemsep=1pt
+\item \textbf{Headline of (c).} Corollary~\ref{cor:c}: ``for every completely monotone, strictly decreasing IRF that is not a single exponential''; the single exponential is quasi-concave; ``two maxima'' defined as two local maxima separated by a strictly lower value (Section~\ref{sec:model}).
+\item \textbf{Prior art.} Section~\ref{sec:prior}: T2 is a special case of Ibragimov's strong-unimodality theorem; the existence half of (c) for integrable IRFs ($a_0=0$) follows from it; Ibragimov read from secondary sources only; the contribution is the explicit window, the certified instances and the framing; ``to our knowledge'', search not systematic.
+\item \textbf{T2.} Theorem~\ref{thm:t2}: non-decreasing then non-increasing (quasi-concave); the ``at most one local maximum'' wording is false for non-strict maxima (counterexample given).
+\item \textbf{T3.} Theorem~\ref{thm:t3}(iii)--(iv): $u'(z_3+)=-A(1-h(z_3))+B(1-h(z_3-d))<0$; exactly two maxima; the window is also necessary within the family; strict log-convexity by Cauchy--Schwarz on the Bernstein measure.
+\item \textbf{I1, I2, S1.} Section~\ref{sec:inst}: I1 and S1 are only weakly unimodal, I2 strictly; (c) holds under the strict definition through I2.
+\item \textbf{Fit window.} Section~\ref{sec:model}, Theorem~\ref{thm:t1}, control P5 and Section~\ref{sec:b}: the limit $a_0W$, $u(10^6)$ and the $[0,6000]$ yr scan describe the fitted formula beyond its $0$--$1000$ yr range; certified peaks ($\le287$ yr) and times ($\le500$ yr) are inside.
+\item \textbf{Seshadri wording.} Section~\ref{sec:b}: both readings of ``0.015 \%/year'' lie outside $r>1/\tau_m$; the $0.999$ sum as a neutral note; not contacted.
+\item \textbf{Table cell $r=0.05$, $\tau_m=20$.} Footnote $\dagger$ in Section~\ref{sec:b}: convention-dependent.
+\item \textbf{Time origin and eq.~(4).} Section~\ref{sec:b}: the producer's origin differs from Seshadri's, so comparisons with his figures are Tier \tX{}; the missing boundary term in his printed eq.~(4) noted neutrally.
+\item \textbf{Three-maximum counts.} Section~\ref{sec:inst} (Tier \tX{} paragraph): float-grid counts, not certified, not checked by the audit.
+\item \textbf{Mechanism.} Section~\ref{sec:results}: with $a_0>0$ the second maximum is the end of the long low plateau; a model property only.
+\item \textbf{Header and Lean status.} Disclosure and Section~\ref{sec:lean}: independent audit \texttt{AUDIT.md} (ACCEPT\_WITH\_CORRECTIONS); Lean Tier A for discrete emission measures only, recompiled, axiom-audited and \texttt{leanchecker}-replayed by the auditor; dependency oleans reused, not rebuilt; statement lock owed.
+\end{enumerate}
+
+%=====================================================================
+\section{Claim ledger}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files $15$ claims: $2$ at Tier~\tA{} (\texttt{CK3-A-0001}, \texttt{-0002}), $3$ at \tL{} (\texttt{CK3-L-0001..0003}), $8$ at \tC{} (\texttt{CK3-C-0001..0008}, the last being the headline) and $2$ at \tX{} (\texttt{CK3-X-0001}, \texttt{-0002}). Each carries a content-addressed evidence blob in \texttt{ledger/evidence/}; each Tier~\tA{} claim also carries an \texttt{ai\_audit} field. The gate field \texttt{audit} is left null: the audit was done by an AI agent, not a person, so the Elenchus gate keeps \texttt{LEDGER\_UNAUDITED\_TIER\_A} open for each Tier~\tA{} row. \texttt{ledger/run\_gate.py} runs the unmodified gate; the verbatim output and exit code are in \texttt{ledger/gate\_output.txt}.
+
+%=====================================================================
+\section{Limitations and what remains unverified}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item \textbf{Linear model only; no real-world claim.} No tonnes, climate effect, policy or ``discovery''. The Joos fit is a multi-model mean of one pulse experiment.
+\item \textbf{Classical mechanism.} Explicit, certified instances of a known phenomenon class (Ibragimov), not a new phenomenon; Ibragimov read from secondary sources only; the carbon-cycle literature search was not systematic.
+\item \textbf{AI audit only; human audit and statement lock owed.}
+\item \textbf{Unverified, from the audit.} (i) Global uniqueness of each peak in (b) is certified only within the initial $0.01$-yr brackets; the global single-peak statement and the auditor's cross-check are float scans (Tier \tX{}), the auditor having checked $21$ Joos scenarios and $6$ of the $42$ Seshadri-variant cells. (ii) The float maps in (c) (plateau table, $1500$ random paths, three-maximum cases, $a_0=0$ and two-term checks) were not reproduced as certificates. (iii) The continuous-emission version of (a), T2 and T3 are paper proofs, checked by hand by the auditor. (iv) The preregistration (\texttt{prereg\_K3.json}, sha256 \texttt{fc9571ec\dots}) hash matches, but its ordering relative to the work cannot be checked from git history. (v) The P4 arithmetic was checked only as the exact rational $5091/6250$.
+\item \textbf{Deviations from the preregistration.} The Lean lemma set was extended with \lean{cm\_convexOn} and the limit statement (no change of claim); the second search budget for (c) was not needed; the exploratory scripts \texttt{explore3.py} and \texttt{explore\_float.py} remain in \texttt{data/code/} (the producer's text said they were deleted; their hashes are in \texttt{result.json}); the instances were found with floats (\texttt{k3lib.u\_float}) and then certified by \texttt{run\_c.py}.
+\item \textbf{Outcome.} PARTIAL: (a) and (c) as preregistered (Lean for the discrete case only), (b) for a stated scenario family with a parameter inconsistency in the source.
+\end{itemize}
+
+%=====================================================================
+\section{Reproducibility}\label{sec:repro}
+Repository AutoevolveAI, branch \texttt{worktree-openai-math-discovery}; the K3 outputs, the Lean files and this paper are uncommitted working-tree files at the time of writing (HEAD \texttt{d85a839}); nothing was pushed. Copies of the inputs are in \texttt{data/} (\texttt{RESULT.md}, \texttt{result.json}, \texttt{prereg\_K3.json}, \texttt{AUDIT.md}, \texttt{code/}, \texttt{data/}, \texttt{logs/}, \texttt{lean/}, \texttt{audit\_scripts/}). The producer ran on cores $4,5$ only. The bundler keeps only listed file suffixes, so the \texttt{.log}, \texttt{.sha256} and \texttt{.sage} files (the ledger hashes the originals) are also stored as byte-identical \texttt{.txt} copies in \texttt{data/}; compiled Lean objects are not shipped.
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+taskset -c 4,5 .venv/bin/python results/proposal4/2026-10-27/K3/code/run_b.py   # (b) enclosures
+taskset -c 4,5 .venv/bin/python results/proposal4/2026-10-27/K3/code/run_c.py   # (c) certified instances
+.venv/bin/python results/proposal4/2026-10-27/K3/code/check_two_term.py
+.venv/bin/python results/proposal4/2026-10-27/K3/code/control_closed_form.py
+python -I scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/CarbonK3/Core.lean
+python -I papers/p4_carbon_impulse_response/ledger/build_ledger.py
+python -I papers/p4_carbon_impulse_response/ledger/run_gate.py
+\end{lstlisting}
+
+%=====================================================================
+\begin{thebibliography}{99}\small
+\bibitem{joos} F.\ Joos et al., Atmos.\ Chem.\ Phys.\ 13, 2793 (2013), doi:10.5194/acp-13-2793-2013, CC~BY~3.0. Table~5 row IRFCO2, eqs.\ (7), (11) (\tL; the PDF is not redistributed).
+\bibitem{sesh} Seshadri, arXiv:1502.00805 (v3), later Global and Planetary Change 2017, doi:10.1016/j.gloplacha.2016.09.004. Eqs.\ (1), (2), (4), Sect.~3.2, Figs.\ 2 and 5 (\tL; the PDF is not redistributed).
+\bibitem{ibr} I.\ A.\ Ibragimov, \emph{On the composition of unimodal distributions}, Teor.\ Veroyatnost.\ i Primenen.\ 1(2), 283--288 (1956); English translation in Theory Probab.\ Appl.\ 1. \emph{Read only from secondary sources}, see~\cite{wat}.
+\bibitem{wat} Encyclopedia of Mathematics, ``Unimodal distribution''; Watanabe, Nagoya Math.\ J.\ (1991), on strong unimodality (cited as recorded in the audit; secondary sources for Ibragimov's theorem).
+\bibitem{ciais} Ciais et al., arXiv:2609.34226; only the printed numbers used in control P4 are quoted (licence not checked, nothing redistributed).
+\end{thebibliography}
+\end{document}

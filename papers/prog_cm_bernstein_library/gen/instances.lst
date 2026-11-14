@@ -1,0 +1,25 @@
+/-- `t (*@$\mapsto$@*) a t + b` is Bernstein for `a, b (*@$\ge$@*) 0`. -/
+theorem affine {a b : (*@$\mathbb{R}$@*)} (ha : 0 (*@$\le$@*) a) (hb : 0 (*@$\le$@*) b) : IsBernsteinOn (fun t => a * t + b) := -- proof elided
+
+/-- `t (*@$\mapsto$@*) t^(*@$\alpha$@*)` is Bernstein for `0 (*@$\le$@*) (*@$\alpha$@*) (*@$\le$@*) 1`. -/
+theorem rpow {(*@$\alpha$@*) : (*@$\mathbb{R}$@*)} (h0 : 0 (*@$\le$@*) (*@$\alpha$@*)) (h1 : (*@$\alpha$@*) (*@$\le$@*) 1) : IsBernsteinOn (fun t => t ^ (*@$\alpha$@*)) := -- proof elided
+
+/-- `(*@$\surd$@*)` is a Bernstein function. -/
+theorem sqrt : IsBernsteinOn Real.sqrt := -- proof elided
+
+/-- **Bernstein (*@$\circ$@*) Bernstein** (inner function positive) is Bernstein. -/
+theorem comp (hf : IsBernsteinOn f) (hg : IsBernsteinOn g) (hpos : (*@$\forall$@*) t, 0 < t (*@$\to$@*) 0 < g t) :
+    IsBernsteinOn (fun t => f (g t)) := -- proof elided
+
+/-- `t (*@$\mapsto$@*) e^{-a (*@$\psi$@*)(t)}` is completely monotone for `a (*@$\ge$@*) 0` and `(*@$\psi$@*)` a positive Bernstein function. -/
+theorem exp_neg_comp {(*@$\psi$@*) : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)} {a : (*@$\mathbb{R}$@*)} (ha : 0 (*@$\le$@*) a) (h(*@$\psi$@*) : IsBernsteinOn (*@$\psi$@*)) (hpos : (*@$\forall$@*) t, 0 < t (*@$\to$@*) 0 < (*@$\psi$@*) t) :
+    IsCompletelyMonotoneOn (fun t => Real.exp (-(a * (*@$\psi$@*) t))) := -- proof elided
+
+/-- Special case `(*@$\psi$@*) = (*@$\surd$@*)`: `f ((*@$\surd$@*)t)` is completely monotone. -/
+theorem IsCompletelyMonotoneOn.comp_sqrt {f : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)} (hf : IsCompletelyMonotoneOn f) :
+    IsCompletelyMonotoneOn (fun t => f (Real.sqrt t)) := -- proof elided
+
+/-- **Positive control.** `exp(-(*@$\kappa$@*) (*@$\surd$@*)t)` is completely monotone (`(*@$\kappa$@*) (*@$\ge$@*) 0`): a one-line re-derivation of
+`AutoresearchYukawa.phi_admissible` (which needed `(*@$\kappa$@*) > 0`) via subordination, replacing its bespoke induction. -/
+theorem phi_cm {(*@$\kappa$@*) : (*@$\mathbb{R}$@*)} (h(*@$\kappa$@*) : 0 (*@$\le$@*) (*@$\kappa$@*)) : IsCompletelyMonotoneOn (AutoresearchYukawa.phi (*@$\kappa$@*)) :=
+  ((exp_neg_mul h(*@$\kappa$@*)).comp_sqrt).congr' fun t _ => by simp only [AutoresearchYukawa.phi, neg_mul]

@@ -1,0 +1,12 @@
+theorem up_eq ((*@$\mu$@*) : Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (r : (*@$\mathbb{R}$@*)) (S : Finset (Fin n)) :
+    upP (*@$\mu$@*) W r S = r * cutOut (*@$\mu$@*) W S / totFit (*@$\mu$@*) r S := -- proof elided
+
+theorem down_eq ((*@$\mu$@*) : Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)) (r : (*@$\mathbb{R}$@*)) (S : Finset (Fin n)) :
+    downP (*@$\mu$@*) W r S = cutIn (*@$\mu$@*) W S / totFit (*@$\mu$@*) r S := -- proof elided
+
+theorem cut_balance {(*@$\mu$@*) : Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)} {W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)} (hrow : (*@$\forall$@*) i, (*@$\sum$@*) j, W i j = 1)
+    (hstat : (*@$\forall$@*) j, (*@$\sum$@*) i, (*@$\mu$@*) i * W i j = (*@$\mu$@*) j) (S : Finset (Fin n)) : cutOut (*@$\mu$@*) W S = cutIn (*@$\mu$@*) W S := -- proof elided
+
+theorem forward_bias {(*@$\mu$@*) : Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)} {W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)} (r : (*@$\mathbb{R}$@*)) (hrow : (*@$\forall$@*) i, (*@$\sum$@*) j, W i j = 1)
+    (hstat : (*@$\forall$@*) j, (*@$\sum$@*) i, (*@$\mu$@*) i * W i j = (*@$\mu$@*) j) (S : Finset (Fin n)) :
+    upP (*@$\mu$@*) W r S = r * downP (*@$\mu$@*) W r S := -- proof elided

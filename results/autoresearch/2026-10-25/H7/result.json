@@ -1,0 +1,49 @@
+{
+  "id": "H7",
+  "verdict": "KEEP (producer-checked)",
+  "attempts": [
+    {"n": 1, "minutes": 17, "status": "KEEP", "error_class": null,
+     "note": "started 1792919761; page cache warmed (8765 qf-lake oleans) during the numeric gate; gate passed at 1792920128; main file compiled rc=0 on first try with no warnings by 1792920742; controls rc=0 at 1792920768."}
+  ],
+  "statement": "For every cutoff N, every v : ℕ → ℂ and every real D, with k_n = 2^n, S = sum_{n<N+2}|v_n|^2, E = S/2, Omega = 1/2 sum_{n<N+2} k_n^2|v_n|^2, H3 = sum_{n<N+2} 2^-n D k_n^3 |v_n|^2 + sum_{n<N+1} 2^-n k_n Im(conj(v_n)^2 v_{n+1}): 2 D Omega <= H3 + (2E)^(3/2) (Real.rpow). Corollary for D > 0: Omega <= (H3 + (2E)^(3/2))/(2D).",
+  "toolchain": "QuantumFluids lean_src env: Lean v4.34.0-rc2, qf-lake build; imports the project's compiled ShellHamiltonian module; invoked as `lean` with LEAN_PATH = qf-lake/build/lib/lean + qf-lake/packages/{mathlib,batteries,Qq,aesop,proofwidgets,importGraph,LeanSearchClient,plausible,Cli}/.lake/build/lib/lean; taskset cores 6,7",
+  "lean_file": "results/autoresearch/2026-10-25/H7/Autoresearch_Enstrophy.lean",
+  "controls_file": "results/autoresearch/2026-10-25/H7/Autoresearch_EnstrophyControls.lean",
+  "compile_log": "results/autoresearch/2026-10-25/H7/compile_main.log",
+  "owner_project_files_created": [],
+  "compile_rc": 0,
+  "controls_compile_rc": 0,
+  "grep_sorry_admit_native_decide_axiom": "no matches in Autoresearch_Enstrophy.lean (grep rc 1)",
+  "theorems": [
+    "QuantumFluids.AutoresearchEnstrophy.enstrophy_bound",
+    "QuantumFluids.AutoresearchEnstrophy.enstrophy_le",
+    "QuantumFluids.AutoresearchEnstrophy.drop_cubic_term_fails",
+    "QuantumFluids.AutoresearchEnstrophy.weight_eq_one",
+    "QuantumFluids.AutoresearchEnstrophy.disp_weight",
+    "QuantumFluids.AutoresearchEnstrophy.sqrt_mul_self_eq_rpow"
+  ],
+  "axioms_output": [
+    "'QuantumFluids.AutoresearchEnstrophy.weight_eq_one' depends on axioms: [propext, Classical.choice, Quot.sound]",
+    "'QuantumFluids.AutoresearchEnstrophy.disp_weight' depends on axioms: [propext, Classical.choice, Quot.sound]",
+    "'QuantumFluids.AutoresearchEnstrophy.sqrt_mul_self_eq_rpow' depends on axioms: [propext, Classical.choice, Quot.sound]",
+    "'QuantumFluids.AutoresearchEnstrophy.enstrophy_bound' depends on axioms: [propext, Classical.choice, Quot.sound]",
+    "'QuantumFluids.AutoresearchEnstrophy.enstrophy_le' depends on axioms: [propext, Classical.choice, Quot.sound]",
+    "'QuantumFluids.AutoresearchEnstrophy.drop_cubic_term_fails' depends on axioms: [propext, Classical.choice, Quot.sound]",
+    "'QuantumFluids.AutoresearchEnstrophyControls.ctl_sorry' depends on axioms: [propext,\n sorryAx,\n Classical.choice,\n Quot.sound]",
+    "'QuantumFluids.AutoresearchEnstrophyControls.ctl_axiom' depends on axioms: [propext,\n Classical.choice,\n Quot.sound,\n QuantumFluids.AutoresearchEnstrophyControls.ctl_cheat]"
+  ],
+  "controls_caught": true,
+  "negative_controls": {
+    "lean": "drop_cubic_term_fails: N=0, v=(1,-i,0,...), D=1 gives 2DOmega=5 > H3=4, so the (2E)^(3/2) term cannot be dropped",
+    "numeric_sigma2": "sigma=2 regulator: on a top-shell state 2DOmega/(H2+S^1.5) = 4095.0 at N=11 (grows ~2^N), reproducing the owner's claim that sigma=2 does not reach enstrophy",
+    "symbolic_perturbed_weight": "weight 1/3 on shell 2 breaks dH3/dt = 0 (False), as required"
+  },
+  "falsification_gate": "taskset -c 7 python3 -I numeric_gate.py, gate_pass True. (a) sigma=3: dH3/dt==0 and dmass/dt==0 exact-symbolic for N=3,5, truncation and GPE seams, general k_n; perturbed-weight control fails as required. (b) 0 violations in 200000 random states (2..13 shells, D in {+-1e-3,..,+-10}); sup (2DOmega-H3)/S^1.5 = 0.4396 random, 0.4514 adversarial (< 1; two-shell analytic 0.385). (c) see negative_controls. (d) N=4, D=0.05, T=10 split-step run: |dS| <= 3.6e-12, |dH3| <= 9.2e-4 (single dt, not refined; the exact-symbolic check (a) is the conservation evidence), max Omega 156.6 <= bound(t0) 175.0. See numeric_gate.json",
+  "existing_theorems_used": [
+    "QuantumFluids.ShellComplex.dispersive_norm_le (general q,c form; its docstring names the sigma=3 case)",
+    "QuantumFluids.ShellComplex.cubic_bound (via dispersive_norm_le)"
+  ],
+  "not_proved_in_lean": "conservation of H3 under the sigma=3 flow (dispersion/cubic cross-term cancellation; exact-symbolic only, gate part a) and the chain rule along solutions. Uniformity in time is conditional on these. No statement about N -> infinity or the untruncated model. The O5 trap argument (second half of proposal step 2) was not attempted.",
+  "novelty": "None. enstrophy_bound is a direct specialization of the owner's dispersive_norm_le (q_n = 2^-n D k_n^3 = D k_n^2, c_n = 2^-n k_n = 1). New here: the faithful sigma=3 definitions, the rpow form (2E)^(3/2), the D>0 Omega corollary, the Lean negative control, and the sigma=3 exact-symbolic conservation check. Do not call it 'the first cutoff-uniform enstrophy bound' without the corollary qualifier.",
+  "tier": "KEEP (producer-checked). Tier A pending independent recompile + statement audit (producer != verifier)."
+}

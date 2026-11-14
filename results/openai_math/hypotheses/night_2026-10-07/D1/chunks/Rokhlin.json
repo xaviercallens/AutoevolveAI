@@ -1,0 +1,211 @@
+{
+  "challenge": "Rokhlin",
+  "config": "ComparatorChallenges/Rokhlin.json",
+  "solution_module": "OAI.Dynamics.MultipleMixing.Main",
+  "solution_closure_files": 13,
+  "theorem_names": [
+    "OAI.Rokhlin.mixing_all_finite_orders"
+  ],
+  "holes": [
+    {
+      "hole": "OAI.Rokhlin.timeMap",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/Rokhlin.lean",
+          "line": 12,
+          "end_line": 13,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Dynamics/MultipleMixing/HilbertCodes.lean",
+          "line": 20,
+          "end_line": 21,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def timeMap (T : Ω ≃ᵐ Ω) (n : ℤ) : Ω → Ω := ⇑((T.toEquiv : Equiv.Perm Ω) ^ n)",
+      "challenge_context": [
+        "open MeasureTheory Filter",
+        "open scoped BigOperators Topology",
+        "variable {Ω : Type*} [MeasurableSpace Ω]"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def timeMap (T : Ω ≃ᵐ Ω) (n : ℤ) : Ω → Ω := ⇑((T.toEquiv : Equiv.Perm Ω) ^ n)",
+      "solution_context": [
+        "open scoped InnerProductSpace CStarAlgebra",
+        "open ContinuousLinearMap",
+        "open MeasureTheory Filter",
+        "open scoped BigOperators Topology",
+        "variable {Ω : Type*} [MeasurableSpace Ω]"
+      ],
+      "context_differs": true,
+      "renaming": {},
+      "textually_identical": true,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.Rokhlin.IsMixing",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/Rokhlin.lean",
+          "line": 15,
+          "end_line": 18,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Dynamics/MultipleMixing/HilbertCodes.lean",
+          "line": 23,
+          "end_line": 26,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def IsMixing (μ : Measure Ω) (T : Ω ≃ᵐ Ω) : Prop := ∀ A B : Set Ω, MeasurableSet A → MeasurableSet B → Tendsto (fun n : ℤ => μ (A ∩ timeMap T n ⁻¹' B)) (comap Int.natAbs atTop) (𝓝 (μ A * μ B))",
+      "challenge_context": [
+        "open MeasureTheory Filter",
+        "open scoped BigOperators Topology",
+        "variable {Ω : Type*} [MeasurableSpace Ω]"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def IsMixing (μ : Measure Ω) (T : Ω ≃ᵐ Ω) : Prop := ∀ A B : Set Ω, MeasurableSet A → MeasurableSet B → Tendsto (fun n : ℤ => μ (A ∩ timeMap T n ⁻¹' B)) (comap Int.natAbs atTop) (𝓝 (μ A * μ B))",
+      "solution_context": [
+        "open scoped InnerProductSpace CStarAlgebra",
+        "open ContinuousLinearMap",
+        "open MeasureTheory Filter",
+        "open scoped BigOperators Topology",
+        "variable {Ω : Type*} [MeasurableSpace Ω]"
+      ],
+      "context_differs": true,
+      "renaming": {},
+      "textually_identical": true,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.Rokhlin.layoutTime",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/Rokhlin.lean",
+          "line": 20,
+          "end_line": 21,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Dynamics/MultipleMixing/HilbertCodes.lean",
+          "line": 28,
+          "end_line": 29,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def layoutTime {k : ℕ} (gaps : Fin (k - 1) → ℕ+) (i : Fin k) : ℕ := ∑ j : Fin (k - 1), if j.val < i.val then (gaps j : ℕ) else 0",
+      "challenge_context": [
+        "open MeasureTheory Filter",
+        "open scoped BigOperators Topology",
+        "variable {Ω : Type*} [MeasurableSpace Ω]"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def layoutTime {k : ℕ} (gaps : Fin (k - 1) → ℕ+) (i : Fin k) : ℕ := ∑ j : Fin (k - 1), if j.val < i.val then (gaps j : ℕ) else 0",
+      "solution_context": [
+        "open scoped InnerProductSpace CStarAlgebra",
+        "open ContinuousLinearMap",
+        "open MeasureTheory Filter",
+        "open scoped BigOperators Topology",
+        "variable {Ω : Type*} [MeasurableSpace Ω]"
+      ],
+      "context_differs": true,
+      "renaming": {},
+      "textually_identical": true,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical",
+      "shadow_candidates": []
+    },
+    {
+      "hole": "OAI.Rokhlin.MixingOfOrder",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/Rokhlin.lean",
+          "line": 23,
+          "end_line": 28,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Dynamics/MultipleMixing/HilbertCodes.lean",
+          "line": 31,
+          "end_line": 36,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def MixingOfOrder (μ : Measure Ω) (T : Ω ≃ᵐ Ω) (k : ℕ) : Prop := ∀ A : Fin k → Set Ω, (∀ i, MeasurableSet (A i)) → Tendsto (fun gaps : Fin (k - 1) → ℕ+ => μ (⋂ i : Fin k, timeMap T (layoutTime gaps i : ℤ) ⁻¹' A i)) atTop (𝓝 (∏ i : Fin k, μ (A i)))",
+      "challenge_context": [
+        "open MeasureTheory Filter",
+        "open scoped BigOperators Topology",
+        "variable {Ω : Type*} [MeasurableSpace Ω]"
+      ],
+      "solution_has_sorry": false,
+      "solution_text": "def MixingOfOrder (μ : Measure Ω) (T : Ω ≃ᵐ Ω) (k : ℕ) : Prop := ∀ A : Fin k → Set Ω, (∀ i, MeasurableSet (A i)) → Tendsto (fun gaps : Fin (k - 1) → ℕ+ => μ (⋂ i : Fin k, timeMap T (layoutTime gaps i : ℤ) ⁻¹' A i)) atTop (𝓝 (∏ i : Fin k, μ (A i)))",
+      "solution_context": [
+        "open scoped InnerProductSpace CStarAlgebra",
+        "open ContinuousLinearMap",
+        "open MeasureTheory Filter",
+        "open scoped BigOperators Topology",
+        "variable {Ω : Type*} [MeasurableSpace Ω]"
+      ],
+      "context_differs": true,
+      "renaming": {},
+      "textually_identical": true,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical",
+      "shadow_candidates": []
+    }
+  ]
+}

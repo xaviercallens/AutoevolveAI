@@ -1,0 +1,11 @@
+{
+  "id": "D4",
+  "stage": "preregistration, committed before formal_cert/Triangular/OpenDisk.lean is written",
+  "question": "Guideline 4 of the review: does computing upstream's density and lower energy with OPEN disks instead of CLOSED disks change anything?",
+  "hypothesis": "For every locally finite C: (i) DensityOne C <-> DensityOneOpen C (density computed with Metric.ball instead of Metric.closedBall); (ii) for every g, energy g C = openEnergy g C (lower energy with open disks). Hence upstream's universal_energy_minimum holds verbatim with open disks.",
+  "human_proof_sketch": "Local finiteness makes C cap closedBall 0 R finite, so the open-disk point set at radius R equals the closed-disk point set at a slightly smaller radius R - delta (0 < delta < 1), and the closed-disk set at R equals the open-disk set at R + delta'. So the two disk-energy functions take each other's values at radii within distance 1, and their liminfs over R -> infinity coincide. Counts satisfy N_closed(R-1) <= N_open(R) <= N_closed(R), and (R-1)^2/R^2 -> 1, so the densities agree.",
+  "prediction": "provable in Lean against upstream's definitions, with whitelist axioms only",
+  "kill_criterion": "the liminf comparison for ENNReal-valued step functions on atTop (real index) cannot be closed in-session",
+  "probability_estimate": "~65%",
+  "controls": "axiom audit with planted sorry/axiom; non-vacuity: instantiate at C = A"
+}

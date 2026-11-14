@@ -1,0 +1,45 @@
+{
+  "auditor": "independent adversarial audit agent (producer != verifier), 2026-10-26",
+  "toolchain": "/mnt/disks/disk-socrateai-local-1/callensxavier_home_data/elan/toolchains/leanprover--lean4---v4.34.1/bin/leanchecker",
+  "mode": "default leanchecker invocation, one module name per call (no --fresh flag passed): re-checks every declaration of the named module in the kernel; imported modules are loaded from their oleans",
+  "cores": "taskset -c 6,7",
+  "LEAN_PATH": "scripts/certified_numerics/lean_pinned.py lean_path()",
+  "oleans_rebuilt_by_auditor": "Taylor.olean and Basic.olean of Programmes.ZeroPointPhys were recompiled by the auditor (lean_pinned.py compile --olean) at 2026-10-26 10:16:50 / 10:17:16 UTC from sources whose sha256 equal those printed in main.tex; ZeroPointCert/Basic.olean (B2) is the producer-era build of 03:21:35 UTC, not rebuilt",
+  "sources_sha256": {
+    "formal_cert/Programmes/ZeroPointPhys/Taylor.lean": "157fb5512a1a28c31b3e47cfd361bcdab85daff0a68a2d8cd2a208bee97f30dc",
+    "formal_cert/Programmes/ZeroPointPhys/Basic.lean": "13b8a1c6970a0f9fdcef12e90d79ce65a34f7d6ff77fb5ccae8507f45777de91",
+    "formal_cert/Programmes/ZeroPointCert/Basic.lean": "0241b6afa500e46a2fb79cdedc7770eb20cdb0dc336283d683d55096f4d54c00"
+  },
+  "oleans_sha256": {
+    "Programmes/ZeroPointPhys/Taylor.olean": "3b60ea3b42eb46e24a648737bb364532be9fbe06ee4cdda7b31ee2e19156a0d4",
+    "Programmes/ZeroPointPhys/Basic.olean": "8ca828456f9d349d3c86216e661eb55a315c9d39f1227d7472643b21e6e03996",
+    "Programmes/ZeroPointCert/Basic.olean": "15883488c1018b19f173511d889d175e561f97c2e08a3a5c6a339396f9d90f2d"
+  },
+  "replay": [
+    {
+      "module": "Programmes.ZeroPointPhys.Taylor",
+      "rc": 0,
+      "seconds": 68.3,
+      "output": ""
+    },
+    {
+      "module": "Programmes.ZeroPointPhys.Basic",
+      "rc": 0,
+      "seconds": 75.8,
+      "output": ""
+    },
+    {
+      "module": "Programmes.ZeroPointCert.Basic",
+      "rc": 0,
+      "seconds": 60.0,
+      "output": ""
+    }
+  ],
+  "rc_all": 0,
+  "grep_forbidden": {
+    "pattern": "skipKernelTC|addDecl|native_decide|implemented_by|extern|unsafe|set_option|axiom|sorry|admit|macro|elab",
+    "files": "formal_cert/Programmes/ZeroPointPhys/*.lean, formal_cert/Programmes/ZeroPointCert/Basic.lean",
+    "hits": "none outside Controls.lean (the planted sorry/axiom controls, intended) and #print axioms lines"
+  },
+  "note": "replay rc 0 certifies kernel acceptance of the declarations, not their axioms: a sorryAx proof also replays. The axiom gate is the #print axioms output of the auditor recompile (all 12 printed declarations of Taylor/Basic: [propext, Classical.choice, Quot.sound]; Controls exposes sorryAx and ctl_cheat; RejectGauss2 rc 1, unsolved goal False)."
+}

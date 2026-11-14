@@ -1,0 +1,92 @@
+{
+  "lab": "openai_math hypothesis lab, night run 2026-10-07, lane H2",
+  "date": "2026-10-07",
+  "timestamp_utc": "2026-10-07T21:41:16.786093+00:00",
+  "stage": "preregistration; only timing probes and smoke tests below 1e7 have been run (disclosed below)",
+  "repo_head_at_preregistration": "9a9cef6d7b93915826d20c336fc3aab8de39d1e2",
+  "hypothesis": {
+    "id": "H2(b)",
+    "type": "b (conjecture)",
+    "statement": "For every fundamental discriminant D < -4: S(D) := L(1, chi_D) * log log|D| >= 2/5, with L(1, chi_D) = pi h(D) / sqrt|D|.",
+    "prior_evidence": "results/openai_math/hypotheses/H2/result.json: min S = 0.40060 at D = -163 over 7 <= |D| <= 1e7; holdout (1e6, 1e7] min 0.53577 at D = -2383747. Upstream openai/math claims (family 003) are claims by another model, not results; H2(b) does not rest on them.",
+    "prior_result_sha256": "9c664a03c9f13d6e09b158e99644f6fed64627145855f5ae348dbc4a84f588f0"
+  },
+  "test_range": {
+    "absD_lo_exclusive": 10000000,
+    "absD_hi_inclusive": 100000000,
+    "note": "fresh range, never computed before in this lab: all fundamental D < 0 with 1e7 < |D| <= 1e8"
+  },
+  "statistic": "min over the test range of S(D) (float64 via math.pi, math.sqrt, math.log), with argmin D and h at the argmin. Also reported (descriptive): min L(1, chi_D) with argmin; for each dyadic window (2^k, 2^(k+1)], k = 23..26 (partial windows at both ends), the min of S and of L with argmins; total count of fundamental D.",
+  "verdict_categories": [
+    "PASS",
+    "FAIL",
+    "CRASH (control failed; numbers are not evidence)",
+    "INCOMPLETE (chunks do not tile the range)"
+  ],
+  "decision_rule": {
+    "precondition": "the chunk JSONs tile (1e7, 1e8] exactly (no gap, no overlap; check_tiling), else INCOMPLETE; all controls pass and all rechecks agree, else CRASH",
+    "PASS": "min S over the test range >= 2/5",
+    "FAIL": "min S over the test range < 2/5; report the counterexample D (the argmin) and its h",
+    "near_tie": "if |min S - 0.4| < 1e-9 the comparison is redone at 50 digits with mpmath (exact_s_below)",
+    "deadline": "if the range is not fully computed by 2026-10-08T06:00Z the verdict is INCOMPLETE; partial minima are descriptive only and no PASS/FAIL is claimed"
+  },
+  "class_number_instrument": {
+    "primary": "PARI qfbclassno(D) (Shanks baby-step giant-step). The PARI 2.13.3 documentation (??qfbclassno) states it 'gives unconditionally correct results for |D| < 2.10^10'. That is PARI's claim, not verified here.",
+    "recheck": "PARI quadclassunit(D)[1] (independent algorithm, GRH-conditional) on, per chunk: the argmin of S, the argmin of L, every D with S < 0.5, and a deterministic sample of 64 D (every floor(n/64)-th fundamental D of the chunk). Any disagreement sets recheck_agrees = false for that chunk and lists it in recheck_mismatches; the run is then CRASH.",
+    "known_limitation": "an overcount by qfbclassno at a D whose true S is < 0.4 and which is not in the recheck set would hide a counterexample; the guard against that is PARI's documented unconditional correctness below 2e10, not this lab."
+  },
+  "controls": {
+    "positive": {
+      "command": "h2_extend.py positive",
+      "checks": [
+        "qfbclassno and quadclassunit both give h(-23)=3, h(-47)=5, h(-71)=7, h(-163)=1",
+        "the h = 1 list over fundamental |D| <= 200 is exactly the 9 Heegner discriminants {3,4,7,8,11,19,43,67,163}",
+        "regression slice: the new streaming code over (2^21, 2^22] reproduces the earlier runner's minimum S = 0.5357676931072192 at D = -2383747 (|diff| < 1e-12), all rechecks agreeing",
+        "h(D) = 1 never occurs in the test range: sum of chunk h1_count == 0 (Heegner-Baker-Stark; near-vacuous at this height, required anyway)"
+      ]
+    },
+    "negative": {
+      "statement": "the wrong-order statistic U(D) = L(1, chi_D) (no log log factor) must drift down: min U over the last dyadic window (2^26, 1e8] < min U over the first window (1e7, 2^24]. All window minima are reported; strict window-to-window monotonicity is NOT required (log log changes about 1% per octave, below extreme-value noise)."
+    },
+    "rule": "a run whose positive or negative control fails is CRASH; its number is not evidence (program.md rule 1)"
+  },
+  "budget": {
+    "cpu": "3 worker processes (ProcessPoolExecutor max_workers=3); PARI default(nbthreads, 1) in every worker",
+    "chunking": "180 chunks (lo, hi] of width 500000; each chunk JSON written atomically (tmp file + os.replace); reruns skip finished chunks; each 'run' call stops submitting new chunks after --budget-s 240 (worst chunk ~56 s uncontended, ~170 s at 3x contention) so a Bash call ends within 9 minutes; every positive/run Bash call is given an explicit 540000 ms timeout",
+    "timing_probe": "qfbclassno over 20000 consecutive |D| took 1.99 s at 1e7, 2.18 s at 5e7, 2.25 s at 1e8-2e4 (single process, machine load average 2.4-4.5 on 8 cores); quadclassunit took 4.4 / 5.45 / 5.98 s on the same blocks",
+    "expected_runtime": "4500 blocks of 20000 |D| x ~2.15 s = ~9700 CPU-s, plus ~11.7k quadclassunit rechecks at ~1 ms (~12 s), plus the positive control (1-3 min); over 3 workers ~54 min uncontended; with a 2-3x contention factor from other lanes 1.8-2.7 h. Start ~21:50Z, expected finish 22:45Z to 00:35Z, well before 06:00Z, so the full range up to 1e8 is preregistered (no smaller upper limit)."
+  },
+  "code": {
+    "runner": {
+      "path": "scripts/openai_math/hypotheses/night/h2_extend.py",
+      "sha256": "7003d7543f4743035433e5e002048ec8da8d763cad4fdea02c83af094b52e6fb"
+    },
+    "tests": {
+      "path": "tests/openai_math/test_h2_extend.py",
+      "sha256": "7f59e8bd1905097337a7501d8d2005e7fce0f2bc0e95e8b84e7c573850ae187f"
+    },
+    "preregistration_writer": {
+      "path": "results/openai_math/hypotheses/night_2026-10-07/H2/write_preregistration.py"
+    },
+    "outputs": "results/openai_math/hypotheses/night_2026-10-07/H2/{chunks/chunk_*.json, positive_control.json, result.json}",
+    "aggregate_checks_runner_sha256_against_this_file": "enforced: a runner sha256 different from code.runner.sha256 here, or a missing preregistration.json, makes the verdict CRASH (decide())",
+    "commands": [
+      "/usr/bin/python3 scripts/openai_math/hypotheses/night/h2_extend.py positive --workers 3",
+      "/usr/bin/python3 scripts/openai_math/hypotheses/night/h2_extend.py run --budget-s 240 --workers 3  (repeat until chunks_left == 0)",
+      "/usr/bin/python3 scripts/openai_math/hypotheses/night/h2_extend.py aggregate"
+    ]
+  },
+  "environment": {
+    "python": "/usr/bin/python3",
+    "pari": "2.13.3",
+    "cypari2": "2.1.2",
+    "mpmath": "1.3.0"
+  },
+  "disclosure_of_values_seen_before_preregistration": {
+    "timing_probe_in_test_range": "sums of h over fundamental D in blocks |D| in [a, a+20000): a=1e7: 6073 fundamental D, sum h = 8870440; a=5e7: 6081, sum 19848275; a=1e8-2e4: 6083, sum 28059522; quadclassunit gave identical sums on all three blocks. No minimum, S or L value in the test range was computed or seen.",
+    "smoke_test_below_1e7": "runner 'run' machinery on (1000, 21000] in 4 chunks of 5000 (files deleted afterwards): chunk minima S 0.61772 (D=-5923), 0.61079 (D=-10627), 0.60212 (D=-13843), 0.6445 (D=-17803); h1_count 0; 65 rechecks per chunk, all agreeing; a second call skipped all 4 finished chunks; tiling check empty; nbthreads in worker = 1. Merged window min L: k=9 0.39502, k=10 0.31867, k=11 0.30326, k=12 0.28574, k=13 0.26701, k=14 (partial) 0.28254.",
+    "unit_tests": "/usr/bin/python3 -m pytest tests/openai_math/test_h2_extend.py -q -p no:cacheprovider --noconftest -> 7 passed, 1 skipped (the Hypothesis property test is skipped: hypothesis is not installed for /usr/bin/python3)",
+    "positive_control_not_yet_run": "the regression slice (2^21, 2^22] has NOT been run by the new code; its expected value comes from the earlier committed result.json"
+  },
+  "process_note": "while preparing this file one read-only 'git -C <worktree> rev-parse HEAD' was run, against the lane's shell rule; no other git command was run. After the smoke test the runner was edited (decide() with sha enforcement, the positive control forks its pool before initialising PARI in the parent, default --budget-s 240); the run/chunk/summarise code paths that were smoke-tested were not changed, and the unit tests were rerun on the frozen version."
+}

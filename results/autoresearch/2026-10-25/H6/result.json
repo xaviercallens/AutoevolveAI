@@ -1,0 +1,73 @@
+{
+ "id": "H6",
+ "attempts": [
+  {
+   "n": 1,
+   "minutes": 7,
+   "status": "KEEP",
+   "error_class": null,
+   "note": "Python definition check (defs_check.py, all_agree true) ran as a pre-attempt gate before the 07:41 UTC mark (no exact timestamp taken); Lean work 07:41-07:47 UTC (date -u). Main file: try1 rc 1 with elaboration errors at 4 sites (lines 92, 144, 149, 170: implicit n1 of tensor unified to 1 inside n2 + n1 + 1; fixed with explicit (n1 := n1 + 1)); try2 rc 0. W4 file: first compile was REJECTED (decide proved T 4 w4 = -1024 false) because rows 14-15 of table w4t2 had been retyped by hand wrongly; tables regenerated programmatically from the npz, then rc 0. That rejected compile log was overwritten by the final compile_w4.json; the rejection is recorded only in this prose."
+  }
+ ],
+ "verdict": "KEEP (producer only; Tier A requires independent recompilation and statement audit). All four parts (a) definitions, (b) product rule, (c) explicit witness, (d) tensor-power bound and C* >= 3 are kernel-checked.",
+ "files": {
+  "main": "formal_cert/Autoresearch/DyadicHilbert.lean",
+  "witness_w4_check": "formal_cert/Autoresearch/DyadicHilbertW4.lean",
+  "controls": "formal_cert/Autoresearch/DyadicHilbertControls.lean",
+  "defs_check": "results/autoresearch/2026-10-25/H6/defs_check.py",
+  "defs_check_output": "results/autoresearch/2026-10-25/H6/defs_check.json"
+ },
+ "sha256": {
+  "DyadicHilbert.lean": "f19e2639aa710cebc1aec76c4a68dd4197698891d2b351107e674fc16918d191",
+  "DyadicHilbertW4.lean": "7ed0d3091bfdf4de2aa141f7a89e1dd577578618aa0a7a80688a81d6f9a50bde",
+  "DyadicHilbertControls.lean": "2592f99fbae76a944be74df12f9df0b798ad38f00dd11a76f3f8afeabb301d38"
+ },
+ "toolchain": "openai/math pinned Lean 4.34.1 + Mathlib via scripts/certified_numerics/lean_pinned.py (taskset -c 4,5)",
+ "compiles": {
+  "compile_try1.json": "main, rc 1 (elaboration errors)",
+  "compile_try2.json": "main, rc 0, 11.0 s",
+  "compile_main_olean.json": "main to olean Autoresearch.DyadicHilbert, rc 0, 26.7 s",
+  "compile_w4.json": "W4 check, rc 0, 23.2 s (final)",
+  "compile_controls.json": "controls, rc 0, 7.0 s"
+ },
+ "theorems": {
+  "a_definitions": "X, Fn, restrict, T, L0, H, S, R, PM1, split, tensor",
+  "b_product_rule": "AutoresearchDyadic.product_rule (rational), AutoresearchDyadic.S_tensor (integer: S(f(x)g) = 8^n1 H(g) + |T(g)| S(f)); supporting T_tensor, L0_tensor, H_tensor, T_cmul, H_cmul. Scope: the integer identity S_tensor holds for any integer g; R(f(x)g) is the actual ratio S/prod||F_v||_3 only when g is also +-1, which holds in every downstream use (gpow_R, sup_ge_three).",
+  "c_witness": "AutoresearchDyadic.g2_R (R(g2) = 2 at N=2 by decide), AutoresearchDyadic.gpow4_R (R(g2^{(x)4}) = 23/8 at N = d 4 = 8), AutoresearchDyadic.w4_R (recorded N=4 witness w4 has R = 5/2, by decide), AutoresearchDyadic.g2g2_S_direct (S(g2(x)g2) = 10240 by decide, no product rule)",
+  "d_tensor_power": "AutoresearchDyadic.gpow_R (R(g2^{(x)r}) = 3 - 2/2^r for all r, induction from product_rule), AutoresearchDyadic.sup_ge_three (for every c < 3 some +-1 input at finite resolution has R > c)",
+  "negative_control": "AutoresearchDyadic.wrong_rule_refuted (S(f(x)g) = 8^n1 H(g) + 8^n2 S(f), i.e. the rule without |T(g)|, is refuted on f = g = g2: 10240 vs 14336)"
+ },
+ "axioms_output": [
+  "'AutoresearchDyadicControls.ctl_sorry' depends on axioms: [sorryAx]",
+  "'AutoresearchDyadicControls.ctl_axiom' depends on axioms: [AutoresearchDyadicControls.ctl_cheat]",
+  "'AutoresearchDyadic.T_cmul' depends on axioms: [propext]",
+  "'AutoresearchDyadic.H_cmul' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchDyadic.T_tensor' depends on axioms: [propext]",
+  "'AutoresearchDyadic.L0_tensor' depends on axioms: [propext]",
+  "'AutoresearchDyadic.H_tensor' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchDyadic.S_tensor' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchDyadic.product_rule' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchDyadic.g2_pm1' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchDyadic.g2_T' depends on axioms: [propext]",
+  "'AutoresearchDyadic.g2_H' depends on axioms: [propext]",
+  "'AutoresearchDyadic.g2_R' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchDyadic.gpow_pm1' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchDyadic.gpow_R' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchDyadic.gpow4_R' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchDyadic.sup_ge_three' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchDyadic.wrong_rule_refuted' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchDyadic.w4_pm1_0' depends on axioms: [propext, Quot.sound]",
+  "'AutoresearchDyadic.w4_R' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchDyadic.g2g2_S_direct' depends on axioms: [propext]",
+  "'AutoresearchDyadic.g2g2_S_rule' depends on axioms: [propext, Classical.choice, Quot.sound]"
+ ],
+ "grep_sorry_admit_native_decide_axiom_in_claimed_files": "no hits in DyadicHilbert.lean or DyadicHilbertW4.lean",
+ "definition_fidelity": {
+  "python_check": "defs_check.py mirrors the Lean recursion and agrees exactly with the recorded direct implementation (verify_tensor.py::direct_parts) and recorded values: g2 (R,H,T) = (2, 3/2, 1/2); w4 = (5/2, 9/4, 1/4); w4(x)w4 at N=8 = (23/8, 45/16, 1/16); g2^(x)4 at N=8 = 23/8; 10 random +-1 inputs at N=3 and 10 random integer inputs at N=2 agree term by term; a checker negative control (F2 transposed) changes w4 to 25/32. For N=8 the Python check uses the closed-form trace sum for T inside the recursive H (pure recursion for N <= 4).",
+  "lean_check": "w4_R evaluates the Lean definitions in the kernel on the recorded N=4 witness and returns the recorded 5/2 (T = -1024, H = 9216 over 8^4). The tensor power used for 23/8 is g2^(x)4, not the recorded w4(x)w4 (w4 is not a Kronecker product, NOTE.md); both have (R,H,T) = (23/8, 45/16, 1/16) in Python.",
+  "scope": "R = S / 8^N equals the ratio S / prod ||F_v||_3 only for +-1 inputs; all claimed theorems are about +-1 inputs. Conventions (prefactor, Haar sign, coupling, XOR) follow NOTE.md, which checked them against upstream; the Lean statement was not compared against the upstream preprint text in this attempt."
+ },
+ "not_claimed": "No upper bound on C*; C* = 3 remains a conjecture (H5''). No novelty claim. Producer = verifier so far.",
+ "leftovers": "results/autoresearch/2026-10-25/H6/scratch/{Probe.lean, Probe2.lean (#eval probes), compile_w4probe.json if present} and /tmp/w4tables.txt (contains the correct generated tables); not part of the claim",
+ "proposed_results_tsv_row": "H6\t1\tKEEP\t7\t-\tproduct rule + tensor-power 3-2^{1-r} + C*>=3 kernel-checked; w4 recorded 5/2 reproduced in kernel; producer only"
+}

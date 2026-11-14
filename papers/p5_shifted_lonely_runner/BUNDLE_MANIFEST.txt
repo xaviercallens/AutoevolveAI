@@ -1,0 +1,22 @@
+BUNDLE_MANIFEST (dry run only; nothing uploaded) 2026-10-31
+Staging tree: /home/callensxavier_gmail_com/slr18_stage/repo (copy of papers/p5_shifted_lonely_runner, results/proposal5/2026-10-27/SLR18 minus logs/fast_tmp (333 raw search scratch files, omitted on purpose, audit correction 5), minus compiled binaries (check_cover, cover_ls_fast) and __pycache__,
+formal_cert/Programmes/SLR18 (auditor's generator under auditor_tools/, the 34 generated files SLRN05..SLRN38, controls SLRP1 and SLRP1neg, lean_all_summary_auditor.json),
+plus what scripts/publish_ar_paper.py hard-codes: scripts/certified_numerics/lean_pinned.py,
+results/autoresearch/2026-10-25/{program.md,preregistration.json}; scripts/publish_*.py are only the runner, not bundled).
+Command (unmodified script, run from the staging root): python3 -I scripts/publish_ar_paper.py --paper-dir papers/p5_shifted_lonely_runner --lane-dir results/proposal5/2026-10-27/SLR18 --dry-run
+(--lane-dir is required with --paper-dir; the script uses REPO = parent of its scripts dir. It bundles a Lean file only when its stem occurs in main.tex, so the appendix of main.tex lists all 34 SLRN files and both controls with their sha256.)
+Bundle: /home/callensxavier_gmail_com/zenodo-bundles/p5_shifted_lonely_runner/p5_shifted_lonely_runner_2026-10-25.tar.gz (380260 bytes, 294 members in MANIFEST.json, 295 tar entries with MANIFEST.json; the 2026-10-25 in the name is the script's fixed tag, not a date of this work), plus MANIFEST.json and the PDF (sha256 cd4fff59d7eec2f3a85d2abed5002fafb152816bc77e320d78fcaa8649e38f63).
+Members by prefix:
+        1 MANIFEST.json
+       36 formal_cert/Programmes/SLR18 (34 SLRN*.lean + SLRP1.lean + SLRP1neg.lean; the auditor's .py tools and the summary json are not bundled by suffix rule but are in data/code_auditor and data/lean)
+      163 papers/p5_shifted_lonely_runner (data/, ledger/ incl. 13 evidence blobs, AUDIT.md, main.tex, table_certs.tex, publication_meta.json)
+       92 results/proposal5/2026-10-27/SLR18 (RESULT.md, result.json, AUDIT.md, certificates/, controls/, code/*.py + *.c.txt, logs/ without fast_tmp)
+        2 results/autoresearch/2026-10-25
+        1 scripts/certified_numerics
+Checks on the extracted bundle (/home/callensxavier_gmail_com/slr18_extract3): no secret patterns (hf_, sk-, ghp_, AKIA, private keys, ZENODO_TOKEN, token file path); no file > 300 kB;
+no logs/fast_tmp member; no PDF and no third-party text inside the bundle (grep hits for "copyright" or "arxiv.org/pdf" are only citations in AUDIT.md and RESULT.md; no copy of Criado's consecutive.out; no paper text);
+no compiled binaries (check_cover and cover_ls_fast excluded; their C sources travel as data/code/*.c.txt); Lean sources: the 34 + 2 files of formal_cert/Programmes/SLR18 and 3 copies in data/lean.
+Known unchanged items: data/RESULT.md and data/result.json (and their copies in results/proposal5/2026-10-27/SLR18) are the producer's PRE-AUDIT text (RESULT.md still says "two independent checkers", "Tier C, not A", "margins of about 0.125", "contiguous closed range"); the paper (main.tex, Section 9) supersedes them on the audit's eight corrections, and says so. Their hashes are recorded in result.json, so they were not edited.
+Added after the producer's run (and so not in result.json's hash list): results/.../SLR18/code/lean_gate_sample.py, logs/lean_gate/*, logs/auditor_checker_rerun.jsonl; in the paper dir logs/lean_literal_check.json, logs/auditor_adversarial.json, lean/ and code_auditor/ (auditor's material copied from /tmp/slraudit unchanged).
+Largest files (all under 300 kB): MANIFEST.json (49148 bytes), SLRN38.lean (135723 bytes, in each of formal_cert/ and data/lean/).
+Staging paper dir vs repo paper dir: diff -rq reports no difference (after this file was copied in).

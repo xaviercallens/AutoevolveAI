@@ -1,0 +1,54 @@
+import Programmes.CompletelyMonotone.Applications
+import Autoresearch.DipolarExcitonMultipolar
+
+/-! Tier-A-independent measurement script (not a theorem): for each root declaration, the transitive closure of
+constants it uses, restricted to modules under `Programmes.` and `Autoresearch.`, with each constant's source line range.
+Output lines: `CLOSURE <root> <const> <module> <startLine> <endLine>`. -/
+
+open Lean Elab Command
+
+partial def collect (env : Environment) (keep : Name → Bool) (todo : List Name) (seen : NameSet) (acc : Array Name) :
+    NameSet × Array Name :=
+  match todo with
+  | [] => (seen, acc)
+  | n :: rest =>
+    if seen.contains n then collect env keep rest seen acc
+    else
+      let seen := seen.insert n
+      match (if keep n then env.find? n else none) with
+      | none => collect env keep rest seen acc
+      | some ci =>
+        let used := (ci.type.getUsedConstants ++ (match ci with | .thmInfo t => t.value.getUsedConstants | .defnInfo d => d.value.getUsedConstants | .opaqueInfo o => o.value.getUsedConstants | _ => #[])).toList
+        let acc := if keep n then acc.push n else acc
+        collect env keep (used ++ rest) seen acc
+
+def modOf (env : Environment) (n : Name) : Name :=
+  match env.getModuleIdxFor? n with
+  | some i => env.header.moduleNames[i.toNat]!
+  | none => .anonymous
+
+elab "#closure " id:ident : command => do
+  let env ← getEnv
+  let root := id.getId
+  let keep : Name → Bool := fun n =>
+    let m := modOf env n
+    (`Programmes).isPrefixOf m || (`Autoresearch).isPrefixOf m
+  let (_, ns) := collect env keep [root] {} #[]
+  for n in ns do
+    match ← findDeclarationRanges? n with
+    | some r => logInfo m!"CLOSURE {root} {n} {modOf env n} {r.range.pos.line} {r.range.endPos.line}"
+    | none => pure ()
+
+#closure AutoresearchYukawa.yukawa_admissible
+#closure ProgCM.Applications.H2_yukawa_admissible
+#closure AutoresearchDipolarMultipolar.dipolar_admissible_all
+#closure AutoresearchDipolar.dipolar_admissible
+#closure ProgCM.Applications.H1_dipolar_admissible
+#closure AutoresearchKeldysh.keldysh_admissible
+#closure ProgCM.Applications.H3_keldysh_admissible
+#closure ProgCM.Applications.screenedDipolar_cm
+#closure ProgCM.Applications.yukawaSpectrum_cm
+#closure ProgCM.Applications.yukawaExpSpectrum_cm
+#closure ProgCM.Applications.secondDiff_cm
+#closure ProgCM.Applications.quadrupolarCoulomb_cm
+#closure ProgCM.Applications.quadrupolarYukawa_cm

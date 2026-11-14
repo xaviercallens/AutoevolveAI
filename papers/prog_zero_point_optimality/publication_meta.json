@@ -1,0 +1,63 @@
+{
+ "title": "Does the triangular lattice minimise the harmonic zero-point energy? A numerical counterexample for completely monotone potentials, with kernel-checked curvature identities",
+ "version": "v1",
+ "description": "<p>For a pair potential V(r) = g(r<sup>2</sup>) and a planar Bravais lattice of covolume one, the harmonic zero-point energy is E<sub>zp</sub> = &frac12;&lang;&sum;<sub>j</sub> &omega;<sub>j</sub>(k)&rang; over the Brillouin zone. Planar universal optimality (the Cohn&ndash;Kumar conjecture; a theorem for Gaussians by Montgomery; its general proof in openai/math is AI-generated and not peer reviewed) concerns the static energy. The natural quantum analogue, conjecture QU-1, says the triangular lattice also minimises E<sub>zp</sub> for every completely monotone g. We tested it before trying to prove it, and it fails numerically (Tier X); we do not claim a proof that it is false. Every claim is filed in an Elenchus claim ledger with tiers A (kernel-checked Lean), L (cited literature), C (human argument, not machine-checked) and X (floating-point exploration, which never supports a claim by itself).</p><p><b>Tier X</b>: for the Gaussian exp(&minus;&pi; r<sup>2</sup>) the rhombic lattice &tau; = 0.5 + 0.966025 i is dynamically stable and has &Delta;E<sub>zp</sub> = &minus;1.3074e-2 relative to the triangular lattice (E<sub>zp</sub> = 1.4902783183 against 1.5033523522). Two formulas in four implementations agree (real-space folded-grid Rust code and an independent numpy re-implementation; a reciprocal-space Rust code with a spectrally convergent zone rule, quadrature error about 4e-15; a short third numpy implementation). The conjecture is numerically refuted for 8 of 12 completely monotone potentials tested (Gaussian a = 0.5 and 1, Yukawa, dipolar-exciton, Riesz s = 3 and 4); the riesz:4 refutation rests on a single competitor with a small long-wave stability margin (0.08 % of the triangular value), its finite-k stability comes from grid computations only, and its triangular point is a local minimum (c &gt; 0). Four potentials (Gaussian a = 0.25, 2, 4 and Riesz s = 6) are not refuted, on a 567-point sample plus two dense paths, which is not an exhaustive search. At the triangular point the curvature of E<sub>zp</sub> is isotropic and, for exp(&minus;&pi; a r<sup>2</sup>), numerically negative for a in (0.37668, 1.58148) within 0.15 &le; a &le; 4 (a scan of 23 values of a between 0.1 and 8 followed by bisection of the sign changes; gaps between scan points are not excluded). A restricted conjecture QU-1&prime; for 0.15 &le; a &le; 4 is stated; it is supported only by these numbers and is not proved. A first-reported largest-margin point (0.295 + 0.9555 i) is only marginally stable and is corrected in the paper; the competitors are not stress-free and the harmonic approximation, Bravais lattices and two dimensions are assumed.</p><p><b>Tier A</b> (Lean 4.34.1, pinned toolchain and Mathlib; axioms within propext, Classical.choice, Quot.sound; planted sorry and planted-axiom controls caught): 19 finite and algebraic statements (derivatives and Laplacian identities of the lattice-vector length, the Gaussian curvature densities, the 120-degree rotation lemmas that force an isotropic Hessian at the triangular point, and an inversion step for the mean-square-frequency sum rule). They certify none of the statements about E<sub>zp</sub>. <b>Tier L</b>: Montgomery's theorem (cited through Deng&ndash;Luo; original not opened) and two results of Luo&ndash;Wei, with the Elenchus citation gate accepting the three quotations. <b>Tier C</b>: the sum rule, the Einstein bound and a concavity decomposition of the curvature. The curvature scan, the mechanism and QU-1&prime; were run after the preregistered falsification gate refuted the conjecture and are post hoc.</p><p>Conditionality: no result here rests on openai/math apart from the pinned toolchain; the refutation needs only that exp(&minus;&pi; a r<sup>2</sup>) is completely monotone in r<sup>2</sup>. Improvement along the way: a new rusty-SUNDIALS module (reciprocal-space Gaussian dynamical matrix and a Duffy&ndash;Gauss&ndash;Legendre zone rule), crate tests 59 passed, 0 failed, 1 ignored at the commit used for all reported numbers; after the audit a hardening commit (ezp_gauss_duffy_stable, which refuses to return a clipped energy for an unstable lattice) brings the crate to 60 passed, 0 failed, 1 ignored with clippy and fmt clean, changing no reported number. No LeanFlow change was made.</p><p>The Elenchus ledger gate reports 0 blocking findings and 8 flags (exit code 1), one for each Tier A row whose statement adequacy no human has audited. The work was produced by AI agents (Claude) under the author's direction; the author is responsible for the content. No human audit of this preprint, its Lean module or its Rust code has been done. A separate AI agent (Claude) audited the preprint (AUDIT.md in the bundle, verdict accept with corrections; the required corrections are applied): it recompiled the Lean module with its own planted sorry and axiom controls, reproduced the gauss:1 and gauss:0.5 refutations with an independent real-space code, regenerated all numbers and tables and re-checked the three citations, and reran the crate tests; it did not independently recompute the dipolar, Riesz and Yukawa refutations, the long-wave elastic tensor, the Lin/Conc decomposition, Result 5, c(a) beyond a = 1 and 2, or phonon.rs. The paper-stage reruns by the producing pipeline are not a producer-verifier check.</p>",
+ "keywords": [
+  "zero-point energy",
+  "lattice phonons",
+  "triangular lattice",
+  "completely monotone potentials",
+  "universal optimality",
+  "Montgomery theorem",
+  "theta functions",
+  "negative result",
+  "Lean 4",
+  "formal verification",
+  "rusty-SUNDIALS",
+  "epistemic tiers",
+  "AI-assisted research"
+ ],
+ "notes": "Preprint v1 (2026-10-25), revised after the independent AI audit (stage REVISE). Programme P2 (zero-point optimality). Lean: AutoevolveAI formal_cert/Programmes/ZeroPoint/Basic.lean (sha256 7d59f1817767ae64cc37d017348e1eb5f5b9ed83ed068086fae839baff0d64f0) and Controls.lean (sha256 c725bdcba93362681c58f65eaf00d717eea37254c10f364bab4e039d645acd90), Lean 4.34.1 with the pinned openai/math toolchain; AutoevolveAI files uncommitted on base 9d245742c1655852103abb28f585e21af54851e6 (branch worktree-openai-math-discovery). Numerics: rusty-SUNDIALS branch physics/p2-zero-point-optimality-2026-10-25, commits a961a714dd040ad1e1a542db1efc54e0401cd55b (lattice-phonon module and falsification gate), 5f2f73b8c636c4ae45a43ad67c99621acc609660 (stability-edge verification), 6ad3cf7e5e171479d1481e5fd17e7d432aae21d1 (spectral zone rule), 609338e6485fc96002e4c60c0c3e34f9130c0108 (post-audit hardening: ezp_gauss_duffy_stable); not pushed at the time of writing. The seed detector tools/elenchus_check.py skipped the Lean files (toolchain mismatch, exit code 2). Montgomery's 1988 paper and Betermin's 2016 paper were not opened (cited second-hand through arXiv texts). Producer, rerunner and writer are AI agent instances of the same pipeline; a separate AI agent audited it (AUDIT.md, REVISION.md); no human has reviewed the work. Tier-L source texts: ledger/sources/MANIFEST.md (hashes and re-fetch recipe).",
+ "related_identifiers": [
+  {
+   "identifier": "10.5281/zenodo.23646103",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23646105",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23646107",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23646111",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23646117",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23295142",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "arXiv:2302.05042",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:2411.17199",
+   "relation": "references",
+   "scheme": "arxiv"
+  }
+ ]
+}

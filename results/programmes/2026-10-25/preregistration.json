@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-25",
+  "proposal": "docs/proposals/NEXT_STEPS_PROPOSAL_2026-10-25.md (commit f68522c)",
+  "scope": "Weeks 1-4 of the proposal only: P1 steps 1-3, P2 falsification gate (+ proof attempt only if QU-1 survives), P3 core library, P6 data + Feynman-Bijl, P7 steps 1-3. P4, P5/H9 and P1 steps 4-5 are deferred to a second workflow.",
+  "method": "Elenchus: tiers A/L/C/X; claims ledger per paper with the gate run; producer != verifier (independent audit on a tier no cheaper than the producer); positive + negative controls for every experiment; Karpathy-style time-boxed attempts, binary keep/discard with the Lean kernel as judge (whitelist axioms, planted controls caught). Publication only if the audit is not REJECT, the revision is applied and the paper still has a result; negative results are published.",
+  "lanes": [
+    {"id": "P1", "title": "Independent reproduction of the finite certificate and adversarial audit of the reduction in openai/math's claimed proof of the Sandier-Serfaty conjecture; locked Lean statement; LeanFlow fail-closed Lean data-certificate generator",
+     "statements": [
+       "S1: run-certificate.py (sources unchanged) exits 0 with terminal OK, sources_unchanged true and stage_validation passed on our hardware (launched 2026-10-25 ~20:25 UTC, detached, cores 0-3, output /home/callensxavier_gmail_com/programmes-2026-10-25/P1/certificate-run).",
+       "S1-neg: in a separate copy, loosening one analytic bound used by the certificate makes the run fail (rejects), showing the certificate is sensitive to it.",
+       "S2: each analytic step of the reduction (manuscript Sections 2-5) is either confirmed step by step or a specific gap is identified (location, missing hypothesis).",
+       "S3: a Lean statement of the Sandier-Serfaty conjecture (renormalized energy over admissible curl-free fields with unit background, triangular lattice minimal), compiled, with a non-vacuity check; locked by sha256.",
+       "S4: LeanFlow lean.* data-certificate generator prototype that fails closed (missing target, non-zero rc or non-whitelisted axiom are errors, each with a test)."],
+     "priors": {"S1": 0.75, "S1-neg": 0.7, "S2_clean": 0.6, "S2_gap_found": 0.25, "S3": 0.4, "S4": 0.6},
+     "kill": "S1 fails to reproduce -> report; S2 gap found -> second independent Opus audit before any wording; never claim the conjecture proved on our authority",
+     "paper_scope": "independent reproduction of the finite certificate + adversarial audit of the reduction (+ Lean statement); not 'verified', not 'proved'"},
+    {"id": "P2", "title": "Quantum universal optimality QU-1: is the triangular lattice the minimizer of the harmonic zero-point energy among unit-covolume planar Bravais lattices for every completely monotone potential?",
+     "statements": [
+       "G1 (falsification gate, Tier X): over the fundamental domain of lattice shapes, for Gaussian (several alpha), Yukawa, dipolar-exciton and Riesz s>2 potentials, the triangular lattice has the lowest E_zp = 1/2 sum_k sum_branches omega(k) (k-grid converged, k=0 handled, neutralising background for long range). Negative control: a non-CM potential where another lattice has lower E_zp.",
+       "G2 (only if G1 survives): human proof among lattices for Gaussian potentials (theta-function route), then Lean formalization of whatever is proved."],
+     "priors": {"G1_survives": 0.6, "G2_proof": 0.15},
+     "kill": "a converged counterexample refutes QU-1 for that potential (publishable negative result); G2 stalls after two budgets -> keep Tier C"},
+    {"id": "P3", "title": "Lean library of completely monotone and Bernstein functions (closure under products, positive combinations, limits; CM composed with Bernstein; Laplace/Stieltjes mixtures; Fourier criterion), reproving H1-H3 admissibility as one-line corollaries; Mathlib-PR-ready branch (no PR opened without the user)",
+     "priors": {"core_closure": 0.8, "composition_with_Bernstein": 0.5, "fourier_criterion": 0.3},
+     "kill": "two budgets per lemma"},
+    {"id": "P6", "title": "Superfluid diffraction test with real published S(k) data (He-4 neutron/X-ray, BEC Bragg spectroscopy) pinned to tables; Lean Feynman-Bijl variational bound from the f-sum rule",
+     "priors": {"data_found_in_tables": 0.6, "feynman_bijl_lean": 0.45},
+     "kill": "values only available from figures -> Tier X and stated; Lean two budgets"},
+    {"id": "P7", "title": "Population genetics: fixation probability = i/N (close the H11 gap), Moran model with selection fixation probability (1-r^-i)/(1-r^-N), Price equation; Fisher general theorem from Price if time",
+     "priors": {"H11_gap": 0.5, "moran_selection": 0.6, "price": 0.8, "fisher_general": 0.35},
+     "kill": "two budgets per statement"}
+  ]
+}

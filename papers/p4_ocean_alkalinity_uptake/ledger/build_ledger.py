@@ -1,0 +1,212 @@
+"""Build the Elenchus claim ledger for the K2 ocean-alkalinity uptake paper (papers/p4_ocean_alkalinity_uptake).
+
+Modelled on papers/p4_carbon_impulse_response/ledger/build_ledger.py. Tier discipline (tools/ledger.py): a claim may not
+be filed above anything in its depends_on, and the kind caps the tier (lean_axioms A, citation L, argument C, numeric X).
+An independent AI audit exists (AUDIT.md, ACCEPT_WITH_CORRECTIONS, not a person): Tier A rows carry an ai_audit field and the gate field audit stays null,
+so LEDGER_UNAUDITED_TIER_A remains open (exit 1 is the honest state).
+Run:  /home/callensxavier_gmail_com/AutoevolveAI/.venv/bin/python -I build_ledger.py
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+PAPER = HERE.parent
+EV = HERE / "evidence"
+DATA = PAPER / "data"
+LEAN = DATA / "lean"
+LOGS = DATA / "logs"
+RES = DATA / "data"
+CODE = DATA / "code"
+AUD = DATA / "audit_scripts"
+TOOLCHAIN = ("Lean 4.34.1 + Mathlib through scripts/certified_numerics/lean_pinned.py (module imports Mathlib.Tactic only; "
+             "no import Mathlib)")
+ALLOW = ["propext", "Classical.choice", "Quot.sound"]
+STATUS = ("AI-audited (AUDIT.md, a different AI agent instance, not a person); producer leanchecker replay rc 0 on "
+          "Programmes.CarbonateK2.Core (data/logs/leanchecker_replay.json); the auditor recompiled Core with the pinned toolchain "
+          "(rc 0, 101.7 s) and replayed leanchecker (rc 0, 64.0 s) on its own olean (data/audit_scripts/lean.json); "
+          "NO human audit of statement adequacy, NO statement lock")
+AI_AUDIT = {"auditor": "independent AI audit agent (separate instance, producer != verifier), 2026-10-31", "human": False,
+            "report": "papers/p4_ocean_alkalinity_uptake/AUDIT.md", "verdict": "ACCEPT_WITH_CORRECTIONS",
+            "scope": "own compile of Core.lean with #print axioms (14 theorems), own olean + leanchecker replay, escape-hatch grep, Controls caught by the axiom gate",
+            "not_scope": "statement adequacy (the Lean statements mean what their gloss says) not certified by a person; Lean proves algebra only, with hand-supplied N' and D' "
+                         "(that they are derivatives was checked by hand, not in Lean); nothing about constants, root or enclosures",
+            "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"}
+SRC_COMMIT = "c574b58aba67a9041406570e20d557a6c45a25a6"
+
+
+def sha(b: bytes) -> str:
+    return hashlib.sha256(b).hexdigest()
+
+
+def blob(obj: dict) -> str:
+    raw = json.dumps(obj, indent=1, sort_keys=True, ensure_ascii=False).encode()
+    d = sha(raw)
+    EV.mkdir(parents=True, exist_ok=True)
+    (EV / f"{d}.json").write_bytes(raw)
+    return f"sha256:{d}"
+
+
+def fref(p: Path) -> dict:
+    return {"path": str(p.relative_to(PAPER)), "sha256": sha(p.read_bytes()), "bytes": p.stat().st_size}
+
+
+def rec(cid: str, tier: str, kind: str, statement: str, depends: list[str], ev: dict) -> dict:
+    r = {"schema_version": 1, "id": cid, "statement": statement, "tier": tier, "kind": kind,
+         "depends_on": depends, "evidence": blob(ev), "audit": None}
+    if tier == "A":
+        r["ai_audit"] = AI_AUDIT
+    return r
+
+
+def axiom_lines(path: Path, names: list[str]) -> list[str]:
+    lines: list[str] = []
+    text = path.read_text()
+    for n in names:
+        hit = [ln.strip() for ln in text.splitlines() if ln.strip().startswith(f"'{n}'")]
+        if len(hit) != 1:
+            raise SystemExit(f"axiom line missing or duplicated for {n}")
+        lines.append(hit[0])
+    return lines
+
+
+def lean_json_lines(path: Path, names: list[str]) -> list[str]:
+    """Axiom lines from a lean_pinned.py JSON record (the compile output is stored in its 'output' field)."""
+    out = json.loads(path.read_text())["output"].splitlines()
+    lines: list[str] = []
+    for n in names:
+        hit = [ln.strip() for ln in out if ln.strip().startswith(f"'{n}'")]
+        if len(hit) != 1:
+            raise SystemExit(f"axiom line missing or duplicated for {n}")
+        lines.append(hit[0])
+    return lines
+
+
+def cite(source: str, where: str, text: str, note: str) -> dict:
+    return {"kind": "citation", "source": source, "where": where, "text": text, "note": note}
+
+
+def arg(subtier: str, text: str, files: list[Path], instrument: str) -> dict:
+    return {"kind": "argument", "subtier": subtier, "text": text, "files": [fref(f) for f in files],
+            "instrument": instrument, "source_commit": SRC_COMMIT}
+
+
+def num(files: list[Path], note: str) -> dict:
+    return {"kind": "numeric", "tier": "X", "claim_licence": False, "ran": True, "note": note,
+            "files": [fref(f) for f in files]}
+
+
+def main() -> int:
+    for old in EV.glob("*.json"):
+        old.unlink()
+    thm = ["eta_rewrite", "eta_pos", "eta_lt_one", "eta_deriv_identity", "Q_nonpos", "delay_mono_cec", "delay_mono_L",
+           "delay_anti_q", "delay_mono_k", "delay_via_R", "jessen_R_sum", "jessen_R_direct", "jessen_yr_per_m_sum",
+           "jessen_yr_per_m_direct"]
+    thm = [f"CarbonateK2.{t}" for t in thm]
+    c = [
+        rec("CK2-A-0001", "A", "lean_axioms",
+            "CarbonateK2.Core (algebra only): eta_rewrite (N/D form equals (h+2K2)/((h+4K2)+h^3 R/(C K1))); eta_pos and eta_lt_one (0 < eta < 1 for h, K1, K2, C > 0, R >= 0); "
+            "eta_deriv_identity (N'D - ND' = A(2 A h^2 K2 + Q) for HAND-SUPPLIED N', D', no HasDerivAt) and Q_nonpos; delay_mono_cec, delay_mono_L, delay_mono_k, delay_anti_q, delay_via_R "
+            "(delay T = (L/q)(eps_w + k CEC) is monotone, and equals L R/(q/eps_w)); jessen_R_sum, jessen_R_direct, jessen_yr_per_m_sum, jessen_yr_per_m_direct (exact rational instances). "
+            "Nothing about the constants K0..KW, the root h or the interval enclosures; that N', D' are the derivatives of N, D was checked by hand (producer, auditor), not in Lean.",
+            [], {"kind": "lean_axioms", "toolchain": TOOLCHAIN,
+                 "axiom_output": lean_json_lines(LOGS / "lean_core.json", thm), "allowlist": ALLOW,
+                 "compile_transcript": fref(LOGS / "lean_core.json"),
+                 "sources": [fref(LEAN / "Core.lean")],
+                 "leanchecker_replay": fref(LOGS / "leanchecker_replay.json"),
+                 "auditor_recompile": fref(AUD / "lean.json"), "status": STATUS,
+                 "statement_adequacy": "not audited by a person; Core.lean sha256 df5d68d9...b51f matches result.json"}),
+        rec("CK2-A-0002", "A", "lean_axioms",
+            "Lean controls: Controls.lean compiles with rc 0 (planted controls) but its axiom audit reports sorryAx for CarbonateK2.ctl_sorry and the smuggled "
+            "axiom CarbonateK2.ctl_cheat for CarbonateK2.ctl_axiom, which a compile exit code alone would accept.",
+            [], {"kind": "lean_axioms", "toolchain": TOOLCHAIN,
+                 "axiom_output": lean_json_lines(LOGS / "lean_controls.json", ["CarbonateK2.ctl_sorry", "CarbonateK2.ctl_axiom"]),
+                 "allowlist": ALLOW, "compile_transcript": fref(LOGS / "lean_controls.json"),
+                 "sources": [fref(LEAN / "Controls.lean")],
+                 "leanchecker_replay": fref(LOGS / "leanchecker_replay.json"), "status": STATUS,
+                 "statement_adequacy": "not audited by anyone; the controls are meant to fail the gate"}),
+        # ------------------------------------------------------------------ L
+        rec("CK2-L-0001", "L", "citation",
+            "Dickson, Sabine, Christian (eds.) 2007, Guide to Best Practices for Ocean CO2 Measurements, Ch. 5 sec. 7: the formulas for K0 (Weiss 1974), K1 and K2 (Lueker et al. 2000), "
+            "KB (Dickson 1990), KW (Millero 1995), total boron 0.000416 S/35 (Uppstrom 1974), and the printed check values at S 35, 25 C: ln K0 -3.5617, log10 K1 -5.8472, log10 K2 -8.9660, "
+            "ln KB -19.7964, ln KW -30.434. The Guide's KW carries a -0.015 constant-term shift that approximates the SWS-to-total conversion.",
+            [], cite("Dickson, Sabine, Christian 2007, Guide to Best Practices for Ocean CO2 Measurements, PICES Special Publication 3", "Ch.5 sec.7, eqs. 30, 37, 40, 43, 62 and footnote 5",
+                     "All five check values reproduced by producer and auditor; the primary papers (Weiss 1974, Lueker 2000, Dickson 1990, Millero 1995, Uppstrom 1974) were NOT read by producer or auditor",
+                     "taken as stated from the Guide's transcription; PDF not redistributed; PyCO2SYS 1.8.3.4 (GPL-3) agrees for K0, K1, K2, KB to 1e-14")),
+        rec("CK2-L-0002", "L", "citation",
+            "Jessen, Jakobsen, Looms, Ambus, Postma, 'Subsoil acidity causes long delays in inorganic carbon sequestration by Enhanced Weathering' (preprint; recorded in the preregistration as arXiv 2607.01835, "
+            "not re-verified from the PDF text), Supplementary Text 2: inputs Delta-beta = (0.55-0.2)+(0.12-0.03) = 0.44, eps 0.3, rho 2.65, eps_w 0.1, dc 0.80 meq/L, v 5 m/yr; printed dq 45.4 and 131.3 meq/L, "
+            "R 58 and 165, v 8.7 and 3.0 cm/yr, '12-34 yr/m'. The printed dq values are not mutually consistent with dq proportional to CEC (ratio 0.3458 versus 0.56/1.6 = 0.35).",
+            [], cite("Jessen et al. preprint (identifier from the preregistration)", "Supplementary Text 2",
+                     "Read by the producer and re-read by the independent AI auditor; wording neutral, authors not contacted",
+                     "taken as stated; PDF not redistributed; PHREEQC model and Dataverse files not examined")),
+        # ------------------------------------------------------------------ C
+        rec("CK2-C-0001", "C", "argument",
+            "Closed form and monotonicity test: at fixed fCO2, eta = (dDIC/dh)/(dTA/dh) = N/D = (h+2K2)/((h+4K2)+h^3 R/(C K1)), R = BT KB/(KB+h)^2 + KW/h^2 + 1. The interval sign test 2 C K1 K2/h^2 > |Q| "
+            "is a sufficient condition for d eta/dh > 0 by the Lean identity (A) given the hand check that N', D' are the h-derivatives (producer and auditor, NOT in Lean). Numerical support (Tier X for the points): "
+            "closed form versus 50-digit numerical derivative of DIC(TA), producer 50 points worst relative 1.3e-16, auditor 3 points including both extreme corners to 5e-9 (limited by the derivative step).",
+            ["CK2-A-0001", "CK2-L-0001"],
+            arg("C-argument", "RESULT.md section Method; AUDIT.md section 1 (re-derivation); controls P2 in logs/controls_P2_P3.json.",
+                [DATA / "RESULT.md", PAPER / "AUDIT.md", LOGS / "controls_P2_P3.json", AUD / "t1.py"], "paper argument; controls_P2_P3.py; auditor model.py/t1.py")),
+        rec("CK2-C-0002", "C", "argument",
+            "Producer's rigorous outer enclosures of eta over the box T [0,30] C, S [30,38], fCO2 [280,560] uatm, TA = (S/35) TA35, TA35 [2200,2400] umol/kg (mpmath.iv, 30 digits, branch-and-bound, "
+            "evaluation cap 3000 reached with about 1300 live cells so the bounds are sound but not tight): U0 (constants as printed) [0.703565, 0.955707], rounded inward [0.7036, 0.9557]; U1 (pK +-1 sigma) [0.6826, 0.9618]; "
+            "U2 (+-2 sigma) [0.6616, 0.9676]. One-sided point bounds: the true range contains a value >= 0.94428 and a value <= 0.74271 (U0). Given the Guide-printed constants (CK2-L-0001); not replayed in Lean. "
+            "U2 was produced with an earlier root-finder seed (h bracket verified by interval signs, so rigor is unaffected; the archived file hash belongs to that earlier code); "
+            "re-run 2026-10-31 with the current code on cores 6,7: identical enclosure and point bounds, the JSON differs from the archived file only in the 'seconds' field (data/rerun_U2/).",
+            ["CK2-C-0001", "CK2-L-0001"],
+            arg("C-interval", "enclosure_U0/U1/U2.json, logs enc_U*.log; seawater_result.json (controls).",
+                [RES / "enclosure_U0.json", RES / "enclosure_U1.json", RES / "enclosure_U2.json", LOGS / "enc_U0.log", LOGS / "enc_U1.log", LOGS / "enc_U2.log", DATA / "rerun_U2" / "enclosure_U2_rerun.json", DATA / "rerun_U2" / "u2_rerun.log.txt", CODE / "k2lib.py", CODE / "run_seawater.py"],
+                "run_seawater.py; k2lib.py")),
+        rec("CK2-C-0003", "C", "argument",
+            "Independent AI re-check with own code and a different method (mean-value form for the constants, plain interval eta = 1/(1+g) on 4 h-pieces, adaptive bisection, TA widened outward by 1e-12 relative; "
+            "mpmath.iv at 30 digits, the SAME interval library as the producer's): U0 [0.7036, 0.9557]: every cell inside (223 cells); U1 [0.6826, 0.9618]: 167 cells; U2 [0.6616, 0.9676]: 140 cells; "
+            "tighter U0 [0.7410, 0.9455] certified (3039 cells); [0.7425, 0.9445] not certifiable (101 corner cells unresolved at depth 30, interval dependency).",
+            ["CK2-C-0002"],
+            arg("C-audit-report", "AUDIT.md section 2; auditor outputs U0.json, U1.json, U2.json, U0tight.json, U0tight2.json; scripts encl.py, model.py.",
+                [PAPER / "AUDIT.md", AUD / "encl.py", AUD / "model.py", AUD / "U0.json", AUD / "U1.json", AUD / "U2.json", AUD / "U0tight.json", AUD / "U0tight2.json"], "encl.py (auditor)")),
+        rec("CK2-C-0004", "C", "argument",
+            "Controls, run before the headline: P1 PyCO2SYS 1.8.3.4 inside the U0 neighbourhood enclosure 500/500 (float agreement worst 4.1e-5; point-box 0/500 expected); P1b with the Guide's KW and BT fed to PyCO2SYS 100/100 "
+            "(worst 6.7e-10); P2 closed form versus 50-digit derivative worst 1.3e-16; P3 five Guide check values reproduced; N1 K1/K2 swapped 100/100 excluded; N2 wrong-sign borate 100/100 excluded; "
+            "N3 pCO2 unit error rejected by the box guard; N4 corrupted K1 coefficient rejected (log10 K1 -6.1826); N5 planted sorry/axiom caught (CK2-A-0002). "
+            "Auditor: 202-point PyCO2SYS cross-check worst relative 4.4e-5 (1.4e-10 with matched KW, BT).",
+            ["CK2-C-0002", "CK2-A-0002"],
+            arg("C-exact-integer", "logs/controls_P2_P3.json, logs/controls_seawater.log, data/seawater_result.json, data/const_crosscheck.json; auditor t4.json.",
+                [LOGS / "controls_P2_P3.json", LOGS / "controls_seawater.log", RES / "seawater_result.json", RES / "const_crosscheck.json", AUD / "t4.json", AUD / "t4.py"], "run_seawater.py controls; controls_P2_P3.py; const_crosscheck.py; t4.py (auditor)")),
+        rec("CK2-C-0005", "C", "argument",
+            "Jessen arithmetic (partial pass, P4): with the printed inputs, dq = 45.71 and 130.59 meq/L, R = 58.13 and 164.24, v = 8.60 and 3.04 cm/yr, 11.6 to 32.8 yr/m. R and v agree with the printed 58, 165, 8.7, 3.0 within printed rounding; "
+            "the printed dq (45.4, 131.3) have ratio 0.3458 but dq is proportional to CEC, requiring 0.35; the printed '34 yr/m' is not reproduced (32.8 from the inputs, 33.3 even from the printed 3.0 cm/yr). "
+            "Exact rational instances in Lean (CK2-A-0001). No claim about the real experiment.",
+            ["CK2-L-0002", "CK2-A-0001"],
+            arg("C-exact-integer", "data/delay_result.json; run_soil_delay.py; Lean jessen_* theorems; AUDIT.md section 6.",
+                [RES / "delay_result.json", CODE / "run_soil_delay.py", PAPER / "AUDIT.md"], "run_soil_delay.py")),
+        rec("CK2-C-0006", "C", "argument",
+            "HEADLINE. In a carbonate-borate-water equilibrium model on the total pH scale with constants as printed in the Dickson-Sabine-Christian Guide (primary papers not read), the uptake per unit alkalinity "
+            "eta = dDIC/dTA at fixed fCO2 lies in [0.7036, 0.9557] over the seawater box (rigorous interval enclosure, loose; the auditor also certifies [0.7410, 0.9455]); the true range contains a value >= 0.94428 and a value <= 0.74271; "
+            "0 < eta < 1 (Lean, Tier A). The value eta ~ 0.8 is long known; no tonnes, climate effect, ecological safety or deployment claim. Model-conditional on the total scale and the stated TA definition. PARTIAL outcome.",
+            ["CK2-C-0001", "CK2-C-0002", "CK2-C-0003", "CK2-C-0004", "CK2-C-0005", "CK2-A-0001", "CK2-L-0001", "CK2-L-0002"],
+            arg("C-assembly", "Assembly of the closed form (C), the enclosures (C), the independent re-check (C), the controls (C), the Lean algebra (A) and the literature (L) as in Sections 1-9 of the paper.",
+                [DATA / "result.json", DATA / "RESULT.md"], "none")),
+        # ------------------------------------------------------------------ X
+        rec("CK2-X-0001", "X", "numeric",
+            "Point values and samples, not certificates: auditor's attained eta ranges at the two extreme corners over all 32 sign combinations of +-1 sigma (+-2 sigma) in pK: [0.7374, 0.9468] (U1), [0.7322, 0.9491] (U2), "
+            "i.e. attained shifts of about 0.005 and 0.010 (the U1/U2 enclosures' extra width 0.02/0.04 is mostly interval overestimation); finite-difference signs on a 5^4 grid and a 7^4 grid range [0.742708, 0.944283] "
+            "(eta decreases with T, S, TA35, increases with fCO2: numerical observation); omitted terms over 202 PyCO2SYS points: sulfate+fluoride +2e-6 to +7.2e-5, phosphate 2 + silicate 100 umol/kg -0.0004 to -0.0015 (up to -0.0022 at 3/150), "
+            "Lee 2010 boron -0.0004 to -0.0007 at the corners; part (b) dilute/soil water pH thresholds (eta<0.01 below pH ~4.5-4.7, eta<0.1 below ~5.0-5.2, eta=0.5 at ~5.5-5.7 at 420 uatm; freshwater K1, K2 from PyCO2SYS, KW at S=0 carries the seawater -0.015 shift).",
+            [], num([AUD / "t3.json", AUD / "t4.json", RES / "soil_result.json", RES / "seawater_result.json"], "float outputs of the producer and the auditor; they support no claim by themselves")),
+        rec("CK2-X-0002", "X", "numeric",
+            "NOT done or not establishable here, recorded so the absences are explicit: statement lock for the Lean statements; human audit; reading the primary papers for the constants; a second CO2SYS-type package (mocsy, seacarb); "
+            "an independent interval library (python-flint/Arb); a tight certified U1/U2 (a 9-D run did not finish); organic alkalinity and pressure bounds; a systematic literature search; the Jessen PHREEQC model; "
+            "freshwater activity corrections; ordering of the preregistration against the work (committed with the results in e0fbdba, so git cannot confirm it).",
+            [], num([DATA / "prereg_K2.json", DATA / "prereg_K2.sha256"], "preregistration file and its hash; they contain no claim about this paper's results")),
+    ]
+    (HERE / "ledger.json").write_text(json.dumps({"schema_version": 1, "claims": c}, indent=1, ensure_ascii=False))
+    print(f"claims {len(c)}; evidence blobs {len(list(EV.glob('*.json')))}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

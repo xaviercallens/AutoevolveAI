@@ -1,0 +1,102 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+
+\title{A finite check of the Murty--Simon lemmas of Das--Fox on all diameter-2-critical graphs with at most 11 vertices\\
+{\large (a sanity check of claims by others; no novelty is claimed)}}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-11-01}
+\hypersetup{pdftitle={A finite check of the Murty-Simon lemmas of Das-Fox on all diameter-2-critical graphs with at most 11 vertices (a sanity check of claims by others)},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small doi:10.5281/zenodo.23864744 \quad (not peer reviewed)\end{center}
+
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its code, its claim ledger and the audit were produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{This version was audited by a separate AI agent instance (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.} All eight corrections are applied (Section~\ref{sec:corr}). No human audit exists. There is no Lean in this paper.
+
+\begin{abstract}
+\noindent Das and Fox (arXiv:2610.39032, 28 Oct 2026) claim a proof of the Murty--Simon conjecture: a diameter-2-critical (D2C) graph on $n$ vertices has at most $\lfloor n^2/4\rfloor$ edges. Two of their lemmas are unconditional statements about all D2C graphs: Lemma~1.2 (for every maximal matching $M$, $|E\setminus M|$ is at most the number of non-edges) and Lemma~1.3 (if equality holds for every maximal matching, the graph is triangle-free). \textbf{The proof is theirs; we claim nothing new and do not verify it.} We test the two lemma statements, and Theorem~1.1, on every D2C graph with $3\le n\le 11$: $4{,}419$ graphs and $776{,}217$ maximal matchings, with exact integer arithmetic and two independent implementations (a C filter with Python, and a Rust filter with a full fresh enumeration of all $1{,}006{,}700{,}565$ connected graphs on $11$ vertices). There are no violations. The D2C counts equal OEIS A330333, so the census is a recomputation; Theorem~1.1 was already reported proved for $n\le 24$ and $n=26$ (Fan 1987, as reported by Dailly--Foucaud--Hansberg), so this is a sanity check, not new evidence. Tier~\tC{} throughout.
+\end{abstract}
+
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{What this is NOT.} Not a verification of the Das--Fox proof; not evidence for any $n\ge12$; not a new enumeration or new count; not a formal proof (no Lean); the intermediate lemmas (2.4, 2.5, 2.13, 3.1, 3.2) were checked only by the producer; not human-audited.}}
+
+\paragraph{Markers.} \tL{}: a cited source, taken as stated. \tC{}: executed exact code (integers) with the argument written down, not formalised. \tX{}: unaudited or non-exhaustive items. Identifiers \texttt{MS-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+\section{Statements tested}\label{sec:def}
+A graph is \emph{diameter-2-critical} (D2C) if it has diameter exactly $2$ and deleting any edge destroys this ($K_n$ is excluded). A \emph{maximal matching} is a matching to which no edge can be added. A \emph{non-edge} is a pair of distinct non-adjacent vertices. As read by the auditor from the full text of Das--Fox \cite{df} (\tL{}, \texttt{MS-L-0001}):
+\begin{description}\itemsep=1pt
+\item[Lemma 1.2.] For every D2C graph $G$ on $n\ge3$ vertices and every maximal matching $M$: $|E(G)\setminus M|\le|\overline{E}(G)|$.
+\item[Lemma 1.3.] If equality holds for \emph{every} maximal matching $M$, then $G$ is triangle-free.
+\item[Theorem 1.1.] A D2C graph on $n$ vertices has at most $\lfloor n^2/4\rfloor$ edges.
+\end{description}
+Both lemmas carry no extra hypothesis, so they are directly testable on a finite range. Attribution, from the paper's AI statement: GPT-5.6 Sol found a proof of the $\lfloor n^2/4\rfloor$ bound (Lemma 1.2) and an equality-case proof for even $n$ only; the equality-case proof for all $n$ (Lemma 1.3) is the authors' own.
+
+\section{Census and lemma test, $3\le n\le 11$ (\tC{})}\label{sec:res}
+Producer: \texttt{nauty-geng -c} piped into a C filter (\texttt{d2c\_filter.c}), then Python (\texttt{lemmas.py}) for maximal matchings and lemma checks. Auditor, without running producer code: fresh \texttt{geng}, a Rust filter using a common-neighbour characterisation of edge criticality (cross-checked by explicit BFS edge deletion for $n\le10$, $0$ disagreements on $11{,}989{,}762$ connected graphs), a full fresh run over all $1{,}006{,}700{,}565$ connected graphs at $n=11$, and its own maximal-matching enumerator (equal to brute force over all edge subsets on the $51$ D2C graphs with $n\le8$ plus $14$ control graphs). Canonical forms (\texttt{labelg}) of the two D2C sets are equal for every $n=3,\dots,11$: symmetric difference $0$ (\texttt{MS-C-0001}, \texttt{-0002}).
+\begin{table}[h]\centering\small
+\begin{tabular}{@{}rrrrrrr@{}}\toprule
+$n$ & connected & D2C & max edges & $\lfloor n^2/4\rfloor$ & max.\ matchings & violations\\ \midrule
+3 & 2 & 1 & 2 & 2 & 2 & 0\\
+4 & 6 & 2 & 4 & 4 & 5 & 0\\
+5 & 21 & 3 & 6 & 6 & 15 & 0\\
+6 & 112 & 5 & 9 & 9 & 39 & 0\\
+7 & 853 & 10 & 12 & 12 & 147 & 0\\
+8 & 11,117 & 30 & 16 & 16 & 788 & 0\\
+9 & 261,080 & 103 & 20 & 20 & 5,142 & 0\\
+10 & 11,716,571 & 519 & 25 & 25 & 50,991 & 0\\
+11 & 1,006,700,565 & 3,746 & 30 & 30 & 719,088 & 0\\ \midrule
+total & & 4,419 & & & 776,217 & 0\\ \bottomrule
+\end{tabular}
+\caption{Connected graphs equal OEIS A001349. ``Violations'' counts violations of Lemma 1.2 and of Lemma 1.3 (both $0$ for every $n$). At every $n$ the maximum number of edges is attained uniquely by the balanced complete bipartite graph $K_{\lceil n/2\rceil,\lfloor n/2\rfloor}$.}\label{tab:r}
+\end{table}
+
+\paragraph{Lemma 1.3 is nearly vacuous here.} Exactly one graph per $n$ is an equality case for \emph{all} maximal matchings: the balanced $K_{a,b}$, which is triangle-free. The auditor's additional finding: equality for even \emph{one} maximal matching occurs only at $K_{a,b}$. D2C graphs containing a triangle ($1,4,20,87,488,3685$ graphs for $n=6,\dots,11$) stay strictly below the bound of Lemma 1.2, by at least $1$ at $n=6$ and at least $10$ at $n=11$. Lemma~1.2 on $776{,}217$ maximal matchings is the informative test.
+
+\paragraph{Controls.} Positive: C$_4$, C$_5$, Petersen, $K_{2,3}$, $K_{3,3}$, $K_{4,5}$, $K_{1,5}$ accepted by both D2C filters; negative: $K_3,K_4,K_5$, $K_4{-}e$, C$_6$, C$_7$, P$_4$ rejected. Connected-graph counts equal A001349; networkx's graph atlas reproduces the D2C counts for $n\le7$. Perturbed statements that must fail do fail: strict ``$<$'' in Lemma~1.2, the bound minus one, and the empty (non-maximal) matching all fail at $K_{a,b}$.
+
+\paragraph{Structural facts of Dailly--Foucaud--Hansberg.} On the auditor's D2C list we reproduce: $13$ non-bipartite D2C graphs at $\lfloor (n-1)^2/4\rfloor+1$ edges outside the C$_5^+$ family (orders $7,8,9$: $3,8,2$ graphs; $3$ without a dominating edge); $10$ graphs at that bound with a dominating edge, all with $n\le9$; only $H_5$ ($n=6$, $8$ edges) above that bound; maximum degree $n-1$ only in stars (\tC{}, \texttt{MS-C-0003}).
+
+\paragraph{Intermediate lemmas (\tX{}).} Lemmas 2.4, 2.5, 2.13, 3.1, 3.2 of the paper, as implemented by the producer from the paper's definitions (critical non-edge, $I$, $I'$, $C_\ell$), have $0$ violations on all $4{,}419$ graphs. The auditor did not recompute them (\texttt{MS-X-0001}).
+
+\section{Prior art and strength of the evidence}\label{sec:lit}
+The D2C counts $1,2,3,5,10,30,103,519,3746$ are OEIS A330333 (Zivkovic \cite{oeis}, Dec 2019; $a(11)$ added by S.~A.~Irvine, 5 Sep 2026): \url{https://oeis.org/A330333} (\tL{}, \texttt{MS-L-0002}). Dailly--Foucaud--Hansberg \cite{dfh} report a computer search over all graphs of order $\le11$ but publish no per-order counts; MacDougall--Eggleton (1997) list the D2C graphs up to $n=7$ (via the auditor). The census is therefore a recomputation. Fan (1987) proved the Murty--Simon conjecture for $n\le24$ and $n=26$ (as reported by \cite{dfh}; Fan was not read), so our check of Theorem~1.1 re-confirms an established range. The only possibly new element is the per-graph test of Lemmas 1.2--1.3; we did not search whether anyone has run it, and it is weak evidence about the proof.
+
+\section{Audit corrections applied}\label{sec:corr}
+The producer's \texttt{data/RESULT.md}, \texttt{data/PREREG\_ITEM.md} and \texttt{data/result.json} are kept unmodified (pre-audit); this paper supersedes them as follows (a dated erratum, not a silent edit). (1) The counts equal OEIS A330333; the census is a recomputation. (2) DFH give no per-order counts; MacDougall--Eggleton list $n\le7$. (3) Fan (1987) covers $n\le24$, $n=26$ (via DFH); our Theorem~1.1 check is a sanity check. (4) ``Written before any computation'' is not verifiable: \texttt{PREREG\_ITEM.md} (sha256 \texttt{b731521c\dots 7d56}) and the results were committed together (\texttt{c981c12}); self-attested, hash recorded. (5) The DFH structural facts, listed as not tested, were reproduced by the auditor. (6) Process count: $4$ \texttt{geng}$|$filter pipelines $=8$ processes on cores $2$--$5$, not $\le4$ (the auditor's $n=11$ run used the same layout). (7) AI attribution as in Section~\ref{sec:def}. (8) The slack finding of Section~\ref{sec:res}.
+
+\section{Limitations and what is not done}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item AI audit only; no human audit; no Lean.
+\item Not verified: the logic of the Das--Fox proof; intermediate Lemmas 2.4, 2.5, 2.13, 3.1, 3.2 (producer only); anything for $n\ge12$ ($n=12$ has about $1.65\times10^{11}$ connected graphs, about $16$ wall-hours on $4$ cores; not run); Fan (1987); the producer's reconstructed Figure~1 graph.
+\item The readings of ``maximal matching'' and ``diameter-2-critical'' follow the paper's text as read by the auditor.
+\item Trusted components: \texttt{nauty} 2.7 (\texttt{geng}, \texttt{labelg}), a C compiler, \texttt{rustc}, Python integers.
+\end{itemize}
+
+\section{Claim ledger and reproducibility}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files the claims with hashed evidence; the Elenchus gate (\texttt{ledger/run\_gate.py}, verbatim output in \texttt{ledger/gate\_output.txt}) checks bookkeeping only and licenses nothing. Producer code, per-$n$ D2C graph6 lists (\texttt{.g6.txt}), lemma summaries and logs are in \texttt{data/}; the auditor's Rust source, Python scripts and small outputs are in \texttt{data/audit} (the full $10^9$-graph enumeration outputs and binaries are not copied). The paper's full text is third-party and is not shipped. Nothing was committed, pushed or uploaded.
+
+\begin{thebibliography}{9}\small
+\bibitem{df} S.\ Das, J.\ Fox, \emph{A proof of the Murty--Simon conjecture on diameter-2-critical graphs}, arXiv:2610.39032 (v1, 28 Oct 2026), unrefereed. (\tL)
+\bibitem{dfh} A.\ Dailly, F.\ Foucaud, A.\ Hansberg, \emph{Strengthening the Murty--Simon conjecture on diameter 2 critical graphs}, arXiv:1812.08420 (Dec 2018); Discrete Math.\ 2019. (\tL)
+\bibitem{oeis} M.\ Zivkovic, OEIS A330333, \emph{Number of diameter-2-critical graphs with $n$ nodes}, \url{https://oeis.org/A330333}. (\tL)
+\end{thebibliography}
+\end{document}

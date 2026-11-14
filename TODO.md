@@ -452,4 +452,43 @@ Added `detect_lean_source_forgeries` into `anse/formal/lean_runner.py` and wired
   degree 6; fix the per-sample budget (stiff solver or in-loop deadline).
 - H2(b): extend past |D| = 1e7; certify h with an unconditional method.
 - H1-H3: formal derivations, only after TODO 26 Comparator-checks family 003.
+- Night 2026-10-07 follow-ups (`docs/OPENAI_MATH_HYPOTHESES.md`, section "Night run 2026-10-07"):
+  - H5': refuted (23/8). Preregister H5'' (C* = 3); have someone other than the lane review the
+    NOTE.md product-rule proof (or Lean-check it); check its novelty; recompute B_3 = 5/2 independently.
+  - H5: fix the walsh_top `_init` KeyError (`json['top']` vs `result.top`) in a new, re-hashed runner
+    under a new preregistration.
+  - H4: P4 not reproduced at eps 0.003. Higher-precision integration (mpmath/arb) near the A(Y)
+    plateau, or eps 0.006-0.01 with a matched N2. Add a local resolution check and exclude levels
+    in the jitter band.
+  - D1: Expr-level comparison of the 45 holes once D2 builds; scan the challenge-only opens.
 - **Accept when:** each item has a preregistered run with controls in `results.tsv`.
+
+### 30. Nightly dream phase has no JEPA checkpoint to load (found 2026-10-08)
+`scripts/nightly_dream_phase.py` calls `FastJEPALatentPredictor.load_checkpoint(checkpoints/latent_dreamer_jepa.pt)`
+unconditionally, and no script in the repo writes that file (absent in the main checkout and both
+worktrees). The step fails loudly every night, and the Kev gate then rejects the run.
+- Do: decide what the predictor is trained on, add the script that trains and saves it, and make
+  the dream phase report BLOCKED (not crash) when the checkpoint is absent.
+- **Accept when:** a nightly run either trains the checkpoint and the dream step passes, or reports
+  BLOCKED with the missing-checkpoint reason and the other steps still run.
+
+### 31. Dyadic triangular Hilbert constant: next steps after the preprint (2026-10-08)
+Preprint: papers/dyadic_triangular_hilbert (Zenodo DOI 10.5281/zenodo.23232389). Proved C* >= 3
+via the product rule; conjecture H + 3|T| <= 3 prod ||F||_3 (would give C* = 3).
+- Formalise the product rule and the per-level bound in Lean (finite statements over Fin (2^N));
+  only then can any claim here reach Tier A.
+- Attack the conjecture: the coupling between even and odd coarse triples is the obstacle (paper, Sec. 6).
+- Exhaustive +-1 maximum of Psi = H + 3|T| at N = 2 by the lane's reduction (currently only R was exhausted).
+- **Accept when:** a Lean-checked product rule, or a proof/refutation of the conjecture at N = 2 over real inputs.
+
+### 32. Matrix-valued sharp 1D Lieb-Thirring lab: follow-ups (2026-10-08)
+Docs: `docs/OPENAI_MATH_LT_MATRIX.md`, `docs/OPENAI_MATH_SELECTION_2026-10-08.md`; instruments
+`scripts/openai_math/lt_matrix/` (frozen, preregistered e15b810); lane results under
+`results/openai_math/hypotheses/night_2026-10-08/LT_{A,B,C,D}/`.
+- Read the four lane reports and verifications before claiming anything (all Tier X).
+- If NO_VIOLATION_FOUND everywhere: write the numerical evidence up honestly as corroboration, with the search power
+  (how close each cell came to L1) and the gaps (m <= 3, gamma grid, basis K <= 3).
+- If a candidate is VIOLATION_CERTIFIED: re-evaluate the explicit potential in exact/interval arithmetic, then preregister
+  a confirmatory run with new seeds before any public statement.
+- Comparator request (docs/OPENAI_MATH_D2_REQUEST.md, written by lane D): narrow run on `LiebThirring.json` first.
+- **Accept when:** each hypothesis H-LT1..5 has a recorded verdict in the ledger with its controls.

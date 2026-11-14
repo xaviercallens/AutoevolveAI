@@ -1,0 +1,31 @@
+{
+  "pilot": "P3 certified Hubble tension: DESI DR2 BAO + BBN in flat LCDM, kernel-checked exclusion of H0 >= 73 km/s/Mpc",
+  "authorised_by": "user: 'continue and go further on the research contribution' (2026-10-10), following 'go further leveraging existing dataset on cosmology and lean 4' (2026-10-08)",
+  "stage": "preregistration, committed before any P3 Lean file or certified number. Known before: P1, P2 (not yet independently verified at the time of writing); the earlier AutoevolveAI run results/bao_bbn_h0 (fitting-formula fit, radiation ON: H0 = 68.57 +- 0.60, chi2_map 10.28); DESI's published BAO+BBN H0.",
+  "model": {
+    "background": "flat LCDM, radiation OFF (as P1/P2), E(z) = sqrt(Om (1+z)^3 + 1 - Om); scope note: radiation changes E(2.33) by a few 1e-4, the earlier run had it on",
+    "sound_horizon": "Aubourg et al. 2015 eq. 16 fitting formula, exactly as coded in scripts/bao_bbn_h0/common.py and formal/ANSE/BAO_BBN_H0.lean: r_d = 55.154 exp(-72.3 (omega_nu + 0.0006)^2) / (omega_cb^0.25351 omega_b^0.12807) Mpc, omega_nu = 0.0107 * 0.06, omega_cb = Om h^2 - omega_nu; the claim is relative to this formula, not to CAMB",
+    "likelihood": "chi2_total(Om, h, omega_b) = chi2DESI(Om, K) + ((omega_b - 0.02218)/0.00055)^2 with K = c / (100 h r_d), c = 299792.458 (BBN prior: arXiv:2503.14738 eq. 14, as in common.py)"
+  },
+  "claim_shape": "for all Om in [0, 1], all omega_b > 0 and all h >= 73/100 with omega_cb > 0: chi2_total >= U_total + 25, where U_total is the upper end of a kernel-checked interval for chi2_total at a point (Om*, h*, omega_b*) chosen by an untrusted fit (so U_total >= the global minimum).",
+  "method": [
+    "Om outside the band [0.255, 0.35]: P2's all-K slab theorems, re-checked against the NEW threshold U_total + 25 (they hold for every K, hence every h and omega_b); a P2 slab that falls below the new threshold is bisected by the same rule as below",
+    "omega_b outside [mu - 7 sigma, mu + 7 sigma]: the prior term alone is >= 49 > threshold (if U_total + 25 < 49; otherwise widen to the smallest integer k sigma with k^2 > threshold and record it)",
+    "inside: boxes Om-slab x omega_b-slab; for h >= 0.73, h r_d is increasing in h (port of ANSE.BAO_BBN_H0.hrd_strictMonoOn_h), so K <= K_max := c/(100 * 0.73 * r_d(Om, omega_b, h = 0.73)) <= K_max_hi (certified rational, from the monotonicity of r_d in omega_cb and omega_b and certified bounds of x^a = exp(a log x) via Mathlib series bounds); if the centred K-parabola's vertex is certified >= K_max_hi, chi2(K) >= chi2(K_max_hi) for all K <= K_max_hi, bounded below by interval arithmetic; a box failing the vertex check or the threshold is bisected",
+    "bisection rule (fixed now): bisect the box along its wider relative side (Om width / 0.01 vs omega_b width / sigma) at the exact midpoint, recursively, until it passes or reaches Om width <= 1/800 and omega_b width <= sigma/8; failing minimal boxes are reported, the claim is then NOT_MET",
+    "Lean 4.34.1 + Mathlib d13f23b7 pinned, whitelist axioms, no native_decide"
+  ],
+  "hypotheses": {
+    "H9": "a kernel-checked interval for chi2_total at the untrusted BAO+BBN best-fit point, containing an independent float evaluation of the same model",
+    "H10": "the kernel-checked claim_shape statement for H0 >= 73 holds (prediction: yes; the earlier run puts 73 at ~7 sigma)",
+    "H11 (secondary)": "the same for H0 <= 64 (prediction: yes)"
+  },
+  "controls": {
+    "C8 (positive)": "the certified r_d at one point agrees with common.rd_aubourg16 (float) to 1e-10 relative",
+    "C9 (negative)": "the same pipeline for H0 >= 68.6 (inside the 1-sigma region of the earlier fit) must NOT certify an exclusion",
+    "C10 (negative)": "with the BBN prior mean shifted to make H0 = 73 favoured (untrusted float search for such a mean), the H0 >= 73 claim must fail",
+    "C11": "axiom audit with planted sorry/axiom"
+  },
+  "smoke_tests_first": ["port of BAO_BBN_H0.lean lemmas into the pinned project (compile, read exact hypotheses)", "a certified x^a bound at one rational point, timed", "one box end to end"],
+  "not_claimed": ["no claim about CAMB r_d, radiation, neutrino masses beyond the fixed omega_nu, curvature, or dark-energy models", "a certified version of a known tension, not a new measurement", "Delta chi2 = 25 is a convention (1 parameter of interest)"]
+}

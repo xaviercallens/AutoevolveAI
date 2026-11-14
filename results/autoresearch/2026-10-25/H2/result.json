@@ -1,0 +1,57 @@
+{
+ "id": "H2",
+ "attempts": [
+  {
+   "n": 1,
+   "minutes": 11,
+   "status": "KEEP",
+   "error_class": null,
+   "note": "start 07:23 UTC; numeric gate passed first; 3 compiles: try1 two tactic errors (redundant norm_num in riesz_one_eq; convert produced a function-equality side goal in phi_hasDerivAt), try2 ring needed phi unfolded, try3 rc 0 at about 07:32 UTC; olean + controls 07:34 UTC"
+  }
+ ],
+ "verdict": "KEEP (producer only; Tier A requires independent recompilation and statement audit)",
+ "file": "formal_cert/Autoresearch/Yukawa.lean",
+ "controls_file": "formal_cert/Autoresearch/YukawaControls.lean",
+ "toolchain": "openai/math pinned Lean 4.34.1 via scripts/certified_numerics/lean_pinned.py",
+ "theorems": [
+  "AutoresearchYukawa.yukawa_admissible",
+  "AutoresearchYukawa.triangular_yukawa_optimal",
+  "AutoresearchYukawa.latticeEnergy_yukawa_lt_top",
+  "AutoresearchYukawa.c_not_admissible"
+ ],
+ "reusable_lemmas_proved": {
+  "P_pointwise_leibniz_sign": "AutoresearchYukawa.mul_sign",
+  "P_product_closure": "AutoresearchYukawa.admissible_mul",
+  "congruence_on_Ioi0": "AutoresearchYukawa.admissible_congr",
+  "E_exp_neg_kappa_sqrt": "AutoresearchYukawa.phi_admissible (via phi_sign, strong induction on phi' = -(kappa/2) t^(-1/2) phi)",
+  "R_t_pow_neg_half": "TriangularRiesz.riesz_admissible with s = 1 (existing)",
+  "pointwise_bound": "AutoresearchYukawa.g_le : g kappa t <= 2/kappa^2 * riesz 3 t"
+ },
+ "axioms_output": [
+  "'AutoresearchYukawaControls.ctl_sorry' depends on axioms: [sorryAx]",
+  "'AutoresearchYukawaControls.ctl_axiom' depends on axioms: [AutoresearchYukawaControls.ctl_cheat]",
+  "'AutoresearchYukawa.mul_sign' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchYukawa.admissible_mul' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchYukawa.admissible_congr' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchYukawa.phi_sign' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchYukawa.phi_admissible' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchYukawa.yukawa_admissible' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchYukawa.triangular_yukawa_optimal' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchYukawa.c_neg_at_pi' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchYukawa.c_not_admissible' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchYukawa.g_le' depends on axioms: [propext, Classical.choice, Quot.sound]",
+  "'AutoresearchYukawa.latticeEnergy_yukawa_lt_top' depends on axioms: [propext, Classical.choice, Quot.sound]"
+ ],
+ "controls_caught": true,
+ "forbidden_token_grep": "grep -nE 'sorry|admit|native_decide|^axiom|^ *axiom ' formal_cert/Autoresearch/Yukawa.lean: no matches",
+ "negative_control": "c(t) = exp(-kappa sqrt t) cos t: c_neg_at_pi proves c kappa pi < 0, c_not_admissible proves not AdmissiblePotential (kernel-checked)",
+ "numeric_gate": "falsification_gate.json: (-1)^n d^n/dt^n for n<=8, kappa in {0.1,1,5}, 8 t-points (mpmath dps 40): g and phi 0/216 violations; negative controls exp(-k sqrt t) cos t 54/216 and exp(-k t^2) 59/216 violations",
+ "compile_logs": [
+  "compile_try1.json",
+  "compile_try2.json",
+  "compile_try3.json",
+  "compile_yukawa.json",
+  "compile_controls.json"
+ ],
+ "caveats": "Conditional on upstream universal_energy_minimum (AI-generated, not peer reviewed) and on definition fidelity. g is defined with Real.sqrt and division, so g 0 = 0 (junk value off (0,inf); AdmissiblePotential only constrains t > 0). Classical model only. Independent verification pending. Statement fidelity: e^(-kappa r)/r is the 3D screened-Coulomb (Yukawa) potential between particles confined to a plane (standard 2D Yukawa crystal model of dusty plasmas and colloids), exactly the preregistered formula; it is NOT the Green function of the 2D Debye-Hueckel equation, which is K_0(kappa r)."
+}

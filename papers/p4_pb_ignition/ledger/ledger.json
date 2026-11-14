@@ -1,0 +1,196 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "PBI-A-0001",
+   "statement": "PbIgnition.Core (Lean 4.34.1, Mathlib): optimal_mix, 20 x (1 - x) <= (1 + 4 x)^2 for all real x; optimal_mix_eq, equality iff x = 1/6; rpow_25_le_sq, t^2.5 <= t^2 on [0,1]; ee_term_deriv_pos, 0 < 1 + 2.2 t + 3 t^2 - 4.375 t^2.5 on [0,1]. #print axioms for all four: propext, Classical.choice, Quot.sound only; no sorry. They are statements about two elementary real inequalities (the optimal boron mix of Wurzel-Hsu footnote 138, and the sign of the derivative of the electron-electron bremsstrahlung term); the step 'positive derivative implies monotone' and everything about the interval enclosures are NOT in Lean.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:5b1a55b2ce60d9fcf02d1fd0f2b73efb64758310a1de695b8fbb3ca20c2a5d6d",
+   "audit": null,
+   "ai_audit": {
+    "auditor": "independent AI audit agent (separate instance, producer != verifier), 2026-10-28",
+    "human": false,
+    "report": "papers/p4_pb_ignition/AUDIT.md",
+    "verdict": "ACCEPT_WITH_CORRECTIONS",
+    "scope": "own recompilation of Core.lean with lean_pinned.py compile, own olean + leanchecker replay (rc 0), escape-hatch grep, check that the planted statements of Controls.lean are actually false, comparison of the 4.375 coefficient with the exact derivative of t(1+1.1t+t^2-1.25t^2.5)",
+    "not_scope": "statement adequacy (that the two inequalities are the facts the physics argument needs) not certified by a person; the binding lean_runner gate was not re-run by the auditor",
+    "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"
+   }
+  },
+  {
+   "schema_version": 1,
+   "id": "PBI-A-0002",
+   "statement": "Lean controls: Controls.lean (tampered optimum 1/21 at the same proof script; tampered e-e coefficient 7 instead of 4.375; the derivative bound claimed on [0,2]) is rejected by the kernel pipeline, rc 1, with errors at lines 23, 28, 32, 33 (logs/lean_controls.json). The auditor checked that each planted statement is actually false (x = 1/6: 21*5/36 = 2.917 > 25/9; t = 1: 1+2.2+3-7 = -0.8; t = 2: about -7.35), so no proof exists, not only that the script fails.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:effd975d55bf5bb610207a962b07193a85078b0748e7a9c3a0d78354ab8268b6",
+   "audit": null,
+   "ai_audit": {
+    "auditor": "independent AI audit agent (separate instance, producer != verifier), 2026-10-28",
+    "human": false,
+    "report": "papers/p4_pb_ignition/AUDIT.md",
+    "verdict": "ACCEPT_WITH_CORRECTIONS",
+    "scope": "own recompilation of Core.lean with lean_pinned.py compile, own olean + leanchecker replay (rc 0), escape-hatch grep, check that the planted statements of Controls.lean are actually false, comparison of the 4.375 coefficient with the exact derivative of t(1+1.1t+t^2-1.25t^2.5)",
+    "not_scope": "statement adequacy (that the two inequalities are the facts the physics argument needs) not certified by a person; the binding lean_runner gate was not re-run by the auditor",
+    "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"
+   }
+  },
+  {
+   "schema_version": 1,
+   "id": "PBI-L-0001",
+   "statement": "Wurzel and Hsu, arXiv 2105.10954 v4: the ideal 0-D power balance P_c >= P_B (eqs 6-8, 16, 22, 41, D1-D5) with P_c = f_c n1 n2 <sigma v> E and P_B = C_B n_e^2 sqrt(T_e) gamma(Z_eff), C_B = 5.34e-37 W m^3 keV^(-1/2); gamma = Z_eff (1 + 1.78 t^1.34) + 2.12 t (1 + 1.1 t + t^2 - 1.25 t^2.5), t = T_e/(m_e c^2) (eq. D2); optimal proton-boron mix x = n_B/n_i = 1/6, Z_eff = 3 (eqs D3-D4, footnote 138); Table II/III list '-' for p-11B; Fig. 28 caption 'P_B always exceeds P_c when T_e >~ T_i/3', using the parameterized Nevins-Swain reactivity.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:53d29f7125c56352901c5b95575ef99c50974774bc014dc59af49136af2909e1",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PBI-L-0002",
+   "statement": "Wang, Li, Wu, Cui, arXiv 2601.00241 v1 (Jan 2026), eqs (1)-(6) and Table I: an updated p-11B S-factor (segments E<=0.4, 0.4-0.7, 0.7-10 MeV; the first reprints the Nevins-Swain coefficients) and the reactivity as the Maxwellian integral; Fig. 8 text 'if electron-ion thermal equilibrium is assumed (T_e = T), the resulting bremsstrahlung loss ... exceeds the fusion power density over the entire temperature range' (with Rider's bremsstrahlung). Ochs and Fisch, arXiv 2310.18508 v1, eq. (14): the same relativistic bremsstrahlung bracket (prefactor 7.56e-11 eV cm^3/s, x^2 term).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [
+    "PBI-L-0001"
+   ],
+   "evidence": "sha256:8068fedca84cea26d1eac8e2f311ecace7627cfd7349fcfb1907bfddf6065b32",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PBI-L-0003",
+   "statement": "The Bosch-Hale (1992) D-T reactivity coefficients and the Nevins-Swain (2000) p-11B high-temperature reactivity coefficients P1-P7 (valid 50-500 keV) are the values transcribed from the Wurzel-Hsu public code (github.com/swurzel/lawson-criterion-paper, MIT licence, commit 4ae563bf, dated after the 2022 paper), the preregistered fallback. NEITHER the producer NOR the independent auditor could obtain Bosch-Hale 1992 or Nevins-Swain 2000. These coefficients are NOT verified against the primary papers. Only indirect checks exist: the NS low-energy S-factor block agrees with Wang Table I; the transcribed NS fit is 0.985-0.996 of the Maxwellian integral of the NS S-factor at 50-200 keV, 0.976 and 0.965 at 250 and 300 keV, 0.940 at 400 keV, 0.917 at 500 keV (reproduced by the auditor, Tier X); the auditor's recollection of Bosch-Hale agrees (memory, not a pinned source).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:0eaadaf3f65ea4a5e2d0e00cb9256b9b8938856b5532f3d49c37a63f42e793e0",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PBI-C-0001",
+   "statement": "Method (Arb ball arithmetic, python-flint 0.6.0, 128 bit; every coefficient a decimal string from fits.json): certified Maxwellian reactivity of a cross-section fit by rigorous acb.integral plus the temperature-interval bound sv(a)(a/b)^(3/2) <= sv(T) <= sv(b)(b/a)^(3/2) (valid because the S-factor is certified >= 0); best-first branch and bound with outward rounding for max P_c/P_B over (T_i, x) boxes; bisection plus a certified witness for theta*; the reduction from the face theta_hi to every theta in [theta_hi, 1] uses that P_B increases with T_e for T_e <= 500 keV < m_e c^2, whose electron-electron term derivative is positive by PBI-A-0001 (the step 'positive derivative implies monotone' is not formalised). Not replayed in Lean.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PBI-A-0001"
+   ],
+   "evidence": "sha256:78549d340d6404a3854e34bb56680bc52edf93d21474ed1feffeecd92fc722a7",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PBI-C-0002",
+   "statement": "D-T positive control against Wurzel-Hsu, passed for the model the authors' code ran (the gate model was chosen after a float run, Deviation 6): certified ideal-ignition temperature [4.2989514, 4.2989523] keV (printed 4.3); argmin of n T tau_E at Q = infinity in [14.128, 14.442] keV (printed 14), minimum [2.94410, 2.94502]e21 (printed 2.9e21); argmin of n tau_E in [25.590, 26.212] keV (printed 26), minimum [1.55227, 1.55279]e20 (printed 1.6e20); constant hull T_ign [4.2608, 4.3468], TP min [2.94400, 2.96351]e21. Other certified readings: parameterized non-relativistic, text C_B/J, f_c = 0.2: T_ign [4.29959, 4.29959], TP min [2.94923, 2.95056]e21 (straddles the 2.95 rounding edge); parameterized relativistic, code constants: T_ign [4.32619, 4.32620], TP min [2.96275, 2.96409]e21 (prints 3.0); integrated non-relativistic, text C_B/J, f_c = 0.2: TP min [2.93077, 2.93168]e21 (prints 2.9). These 'text' variants use f_c = 0.2 from the code, not the text's 3.5/17.6 (audit correction C1). Every variant gives 4.3, 14, 26 and 1.6e20; only the second digit of the Table III minimum depends on the reading.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PBI-C-0001",
+    "PBI-L-0001",
+    "PBI-L-0003"
+   ],
+   "evidence": "sha256:0679d102a61b0837ad8c480b9906f3384d9d43813ad9a563fce8294fecf2b4da",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PBI-C-0003",
+   "statement": "At T_e = T_i, on T_i in [50, 500] keV and boron fraction x in [0.05, 0.5], P_c < P_B everywhere (no ideal-ignition window) for both reactivity fits, in this ideal 0-D model: certified max P_c/P_B in [0.42139, 0.42556] (Nevins-Swain, argmax about 202 keV, x = 0.100) and [0.42869, 0.43260] (Wang, about 208.5 keV, x = 0.101); at the Wurzel-Hsu mix x = 1/6: [0.39016, 0.39240] (NS) and [0.39732, 0.40083] (Wang). Certified reactivity multiplier m* in [2.350, 2.373] (NS) and [2.312, 2.333] (Wang): any reactivity at most 2.349 x NS on [50, 500] keV gives P_c < P_B on the whole box. The maximum is interior; widening the box (x to [0.005, 0.95], T_i to [20, 1000] keV) leaves it unchanged (auditor, float, Tier X). Not replayed in Lean.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PBI-C-0001",
+    "PBI-L-0001",
+    "PBI-L-0002",
+    "PBI-L-0003"
+   ],
+   "evidence": "sha256:4a91a5ad0edb8dc1bf6fba6b468c6fd198e7b0550f100d63acea0b9e12a84878",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PBI-C-0004",
+   "statement": "A window needs T_e/T_i below a threshold theta*, certified only for theta in [theta_hi, 1]: Nevins-Swain full box [0.4223, 0.4308] (witness at theta = 0.4223: T_i = 243.5 keV, x = 0.0922, R >= 1.0077); NS x = 1/6 [0.3753, 0.3828] (witness 243.5 keV, R >= 1.0082); Wang full box [0.4381, 0.4470] (witness R >= 1.0082 at 243.5 keV, x = 0.092); Wang x = 1/6 [0.396, 0.402] (explicit theta scan: at theta = 0.402 certified max R <= 0.99995; at theta = 0.396 a witness at T_i = 261.65 keV, x = 1/6 with R >= 1.00037, a thin margin; audit C8). Above theta_hi the face argument of PBI-C-0001 applies. These thresholds hold for these two fits and Putvinski's bremsstrahlung only; they scale with the reactivity (PBI-X-0001). The ideal 0-D model has no synchrotron, no transport, no ion-electron coupling, no alpha heating of electrons, no ash, Maxwellian only; the maximum interior is about 202 keV and x about 0.10 at theta = 1.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PBI-C-0001",
+    "PBI-L-0001",
+    "PBI-L-0002",
+    "PBI-L-0003"
+   ],
+   "evidence": "sha256:8e62b57fdee264962f96e3f4529dd9f5fe585c4927ee71e2403872df602552e0",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PBI-C-0005",
+   "statement": "Controls, run with the gate before the p-11B headline: P1 D-T reproduction passes (G1, G2, G2b, G3, G4 true, for the authors' code model); N1 reactivity x 0.5 FAILS the gate (T_ign 5.3724 keV, TP min 6.285e21, LP min 3.230e20); N2 bremsstrahlung removed FAILS (no ignition temperature; the p-11B ratio becomes infinite and the 'no window' conclusion flips); N3 Lean controls fail (PBI-A-0002); S-factor positivity certified. Audit correction C6: the D-T gate G3 does NOT discriminate for the p-11B conclusion (it passes under N1, since halving the reactivity only strengthens an exclusion). The p-11B pipeline's ability to find a window is shown instead by the theta* witnesses (R > 1 at theta_lo), the theta = 1/3 check (R = 1.113 NS, 1.161 Wang; Tier X) and N2. The auditor read the recorded check vectors of N1 and N2 in logs/certify.json; the gate code was not re-run by the auditor.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PBI-C-0002",
+    "PBI-C-0004"
+   ],
+   "evidence": "sha256:a49ea6407cc82815864f1df20684db66139a9925bd9b3e801bddc177d292773d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PBI-C-0006",
+   "statement": "Independent AI audit (AUDIT.md, a separate agent instance, ACCEPT_WITH_CORRECTIONS, not a person): with its own mpmath.iv code (different method: 11,513 x 4,500 geometric/uniform cell grid with corner monotonicity bounds) it reproduced rigorously the D-T T_ign for three readings, the NS max P_c/P_B over the box [0.42140, 0.42470] and at x = 1/6 [0.39016, 0.39311], the NS theta* upper side (U < 1 at 0.43125 and 0.38281), and re-evaluated the producer's NS witnesses (R in [1.0077322, 1.0077331] and [1.0082393, 1.0082399]). Every producer enclosure contains the auditor's value. The Wang-side numbers and the D-T TP/LP minimisers of the gate model are float only on the auditor's side (Tier X). The auditor did not re-run the producer's Arb integrals.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PBI-C-0003",
+    "PBI-C-0004"
+   ],
+   "evidence": "sha256:c218b7ac941bfc6e1b13bab27bcc5506d81225558acfca817f82139796316b41",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PBI-C-0007",
+   "statement": "HEADLINE. In an ideal 0-D power-balance model (Wurzel-Hsu's, with Putvinski's bremsstrahlung), with two reactivity fits (Nevins-Swain as transcribed from the Wurzel-Hsu code, and Wang et al. 2026), in the box T_i in [50, 500] keV, x in [0.05, 0.5]: there is no ignition window at T_e = T_i (certified max P_c/P_B [0.4214, 0.4256] NS, [0.4287, 0.4326] Wang), and a window needs T_e/T_i below thresholds theta* of about 0.42-0.45 (full box) or 0.375-0.402 (x = 1/6), certified only for theta <= 1, for these fits and this bremsstrahlung only. Tier C (Arb ball arithmetic, not replayed in Lean; coefficients not verified against primary papers). Concerns the model and the fits only: nothing about any device, reactor, feasibility or economics.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PBI-C-0003",
+    "PBI-C-0004",
+    "PBI-C-0005",
+    "PBI-C-0006",
+    "PBI-A-0001",
+    "PBI-L-0001",
+    "PBI-L-0002",
+    "PBI-L-0003"
+   ],
+   "evidence": "sha256:702edb962706c7463e79fbf6b779930c59fbd2210991eed960be00285fa11bd4",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PBI-X-0001",
+   "statement": "Float checks (Tier X, supporting nothing by themselves): the producer's independent float implementation (scipy) is inside every certified enclosure (theta_c,max 0.4286 NS box, 0.3811 NS x = 1/6, 0.4451 Wang box, 0.3988 Wang x = 1/6; max R at theta = 1 0.4232 NS, 0.4309 Wang); the Wurzel-Hsu Fig. 28 remark: at T_e = T_i/3 and x = 1/6 max P_c/P_B = 1.113 (NS, T_i about 248 keV) and 1.161 (Wang, about 268.5 keV), so the certified threshold 0.375-0.383 lies above 1/3; the NS fit versus the Maxwellian integral of the NS S-factor (0.985 at 50 keV down to 0.917 at 500 keV); the auditor's float sensitivities: reactivity x1.1/1.2/1.32 moves theta_c to 0.477/0.524/0.579, Rider's bremsstrahlung moves it by about +1%; the auditor's pure-text D-T row (f_c = 3.5/17.6, parameterized non-relativistic, text C_B and 1.6e-16 J/keV): T_ign in [4.3071225, 4.3071227] keV and n T tau_E >= 2.95e21 with a value 2.96846e21 at 14.2486 keV, so the minimum lies in [2.95e21, 2.96846e21] and prints 3.0e21 (auditor mpmath.iv, scratch not shipped; the producer has not certified this row with its own pipeline); Wang/NS reactivity ratio 1.016, 1.000, 1.005, 1.016, 1.070, 1.154, 1.262 at 50, 100, 150, 200, 300, 400, 500 keV.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:dad6ee3f6ebf578af1451c6deeb5969a5a1bac0599ae4b0a819c11fd77b66ad2",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PBI-X-0002",
+   "statement": "NOT run or not complete: pytest tests/ (not run); the repository guards antigravity_guard.py (38 findings) and test_rigor_guard.py exit 1 on pre-existing files elsewhere in the repository and flag no E1 file (logs/guard_*.txt); the CVODE (rusty-SUNDIALS) transient; a synchrotron or kinetic-enhancement model (only the multiplier m* is certified); a statement-lock entry for the two Lean lemmas; the primary-paper check of the Bosch-Hale and Nevins-Swain coefficients; a human audit; the fix of the stopping-order issue of theta_threshold in decide mode (Wang x = 1/6 is certified by the explicit scan instead). Recorded so the absences are explicit.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:39ccf76b040ce23a56501b9a95b04b964419e43471b4bc81bd6eea9645a4b249",
+   "audit": null
+  }
+ ]
+}

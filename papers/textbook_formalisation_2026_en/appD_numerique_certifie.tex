@@ -1,0 +1,301 @@
+% Appendix D -- Certified numerical computation. To be included after \appendix.
+% The outputs quoted come from code/appD_certifie.py and from the robertson example of rusty-SUNDIALS, run on 2026-10-26.
+% Definitions shared by appendices C, D and E (each carries them, so that it can be included on its own).
+\ifdefined\chemin\else
+\lstdefinestyle{appC}{language=Lean,
+  literate={ℝ}{{$\mathbb{R}$}}1 {ℕ}{{$\mathbb{N}$}}1 {≤}{{$\le$}}1 {→}{{$\to$}}1 {∀}{{$\forall$}}1 {∃}{{$\exists$}}1
+  {∧}{{$\wedge$}}1 {∈}{{$\in$}}1 {∑}{{$\sum$}}1 {·}{{$\cdot$}}1 {⟨}{{$\langle$}}1 {⟩}{{$\rangle$}}1 {α}{{$\alpha$}}1
+  {é}{{\'e}}1 {è}{{\`e}}1 {ê}{{\^e}}1 {à}{{\`a}}1 {ô}{{\^o}}1 {ç}{{\c{c}}}1 {«}{{\guillemotleft}}1 {»}{{\guillemotright}}1
+  {’}{{'}}1}
+\DeclareUrlCommand\chemin{\urlstyle{tt}\def\UrlBreaks{\do\/\do\_\do\-\do\.}}
+\DeclareUrlCommand\sha{\urlstyle{tt}\def\UrlBreaks{\do0\do1\do2\do3\do4\do5\do6\do7\do8\do9\do a\do b\do c\do d\do e\do f}}
+\fi
+\chapter{Certified numerical computation}\label{appD:chap}
+
+A number computed in floating point is an approximation whose error is unknown. A \emph{certified} number comes with a
+proved enclosure. Between the two, this book distinguishes several degrees (§\ref{ch1:sec:tiers}):
+\begin{itemize}
+\item a floating-point computation, however precise, is \tierX{};
+\item an enclosure in ball arithmetic (Arb) is rigorous \emph{if the code is correct}; since that code is not verified
+by Lean, the book classifies it as \tierC{} (``C-ball'' in Chapter~3);
+\item a claim about \emph{stated rationals}, decided by Lean's kernel, is \tierAs{} for that arithmetic claim alone, and
+\tierA{} when the module has in addition been replayed by \lean{leanchecker} with code~$0$.
+\end{itemize}
+This appendix explains these three levels, then the solution of stiff differential equations with CVODE, and why a
+CVODE result remains Tier~X. A complete example, \chemin{code/appD_certifie.py}, goes through the three levels with
+its controls.
+
+%=====================================================================================================================
+\section{Floating point}\label{appD:sec:flottant}
+
+A binary64 floating-point number (IEEE~754 standard~\cite{app:ieee754}) is written $\pm m\cdot2^{e}$ with a 53-bit
+significand. The result of an operation ($+,-,\times,\div,\sqrt{\ }$) is the rounding of the exact result, and the
+standard guarantees
+\[\mathrm{fl}(x\circ y)=(x\circ y)(1+\varepsilon),\qquad|\varepsilon|\le u=2^{-53}\approx1.1\times10^{-16},\]
+in round-to-nearest (barring overflow). The standard also offers \emph{directed roundings}: towards
+$-\infty$ and towards $+\infty$.
+
+\begin{uniremark}\tierL{} The bound above is an instance of the standard model of floating-point arithmetic: for every
+real $x$ in the normal range of binary64, round-to-nearest satisfies $\mathrm{fl}(x)=x(1+\varepsilon)$ with
+$|\varepsilon|\le u$, i.e.\ $|\mathrm{fl}(x)-x|\le u|x|$; correct rounding of $+,-,\times,\div,\sqrt{\ }$ means
+$\mathrm{fl}(x\circ y)$ is $\mathrm{fl}$ applied to the exact $x\circ y$, which gives the displayed bound~\cite{app:ieee754}.
+\end{uniremark}
+
+\begin{example}[Ten times one tenth]
+$1/10$ is not representable in binary. The floating-point number \texttt{0.1} is exactly
+$0.1000000000000000055511\ldots$, slightly more than $1/10$. In Python, \texttt{sum([0.1]*10)} gives
+\chemin{0.9999999999999999} and not $1$: the rounding error accumulates, and the sign of the final error is not that
+of the initial error.
+\end{example}
+
+The elementary functions ($\exp$, $\sin$\ldots) of the system's mathematical library have in general \emph{no}
+guarantee of correct rounding: the IEEE~754 standard recommends it without requiring it. A rigorous enclosure therefore
+cannot rely on \texttt{math.exp}.
+
+%=====================================================================================================================
+\section{Interval arithmetic}\label{appD:sec:intervalles}
+
+\begin{definition}
+An unknown real $x$ is represented by an interval $[\underline x,\overline x]$ that contains it. The operations are
+defined by
+\[[a,b]+[c,d]=[a+c,\,b+d],\qquad[a,b]-[c,d]=[a-d,\,b-c],\]
+\[[a,b]\times[c,d]=[\min S,\max S],\quad\text{where }S=\{ac,ad,bc,bd\}.\]
+\end{definition}
+
+\begin{theorem}[Inclusion property]\label{appD:thm:inclusion}
+If $x\in[a,b]$ and $y\in[c,d]$, then $x+y\in[a,b]+[c,d]$, $x-y\in[a,b]-[c,d]$ and $xy\in[a,b]\times[c,d]$. By
+induction, every expression built from these operations, evaluated on intervals containing the arguments, yields an
+interval that contains the exact value.
+\end{theorem}
+
+\begin{humanproof}
+For the sum: $a\le x\le b$ and $c\le y\le d$ give $a+c\le x+y\le b+d$. For the difference, add $-d\le-y\le-c$. For the
+product, for fixed $y$ the map $x\mapsto xy$ is affine, so $xy$ lies between $ay$ and $by$; then $y\mapsto ay$ and
+$y\mapsto by$ are affine, so $ay$ and $by$ lie between their values at $c$ and $d$. Hence $xy$ lies between the
+smallest and the largest of the four products.
+\end{humanproof}
+
+\paragraph{Directed rounding.} On a machine, the endpoints are floating-point numbers and every operation rounds. To
+preserve the inclusion property, one rounds the lower endpoint \emph{downwards} and the upper endpoint \emph{upwards}:
+this is \emph{outward rounding}. Without access to the rounding modes, one can widen each endpoint by one ulp (the gap
+between two consecutive floating-point numbers) with \texttt{math.nextafter}: this is wider than necessary, but safe,
+since round-to-nearest is off by at most half an ulp.
+
+\paragraph{The dependency problem.} Interval arithmetic does not know that two occurrences of the same variable are
+equal: for $x\in[0,1]$, $x-x$ gives $[0,1]-[0,1]=[-1,1]$, and not $\{0\}$. Enclosures grow quickly unless one takes
+care; the remedies are to rewrite the expressions, to subdivide the domain (the 206\,468 cells of B2 in Chapter~3) or
+to use Taylor expansions.
+
+\begin{numbox}[: step 1 of \chemin{code/appD_certifie.py}]
+Ten additions of the interval $[\texttt{nextafter(0.1,-inf)},\,\texttt{0.1}]$, which contains $1/10$, widened by one
+ulp at each addition. Actual output (2026-10-26):
+\begin{lstlisting}[style=appC,language={}]
+"naive_sum": "0.9999999999999999",   "naive_equals_1": false,
+"outward": ["0.9999999999999991", "1.0000000000000009"],   "outward_contains_1": true,
+"nearest": ["0.9999999999999999", "0.9999999999999999"],   "nearest_contains_1": false
+\end{lstlisting}
+\emph{Positive control:} the outward-rounded interval contains exactly $1$ (the membership test is done in exact
+rationals, \chemin{fractions.Fraction}). \emph{Negative control:} the same computation, with endpoints rounded to
+nearest, gives an ``interval'' that excludes the true value.
+\end{numbox}
+
+%=====================================================================================================================
+\section{Ball arithmetic: Arb and python-flint}\label{appD:sec:boules}
+
+Arb~\cite{ch3-arb} represents a real number by a \emph{ball} $[m\pm r]$: a midpoint $m$ in arbitrary precision (a
+dyadic number $M\cdot2^E$) and a radius $r$ in low precision, rounded upwards. It is interval arithmetic in
+midpoint--radius form, which is more economical when the precision is high.
+
+\begin{proposition}[Product of two balls]\label{appD:prop:produit}
+If $|x-m_1|\le r_1$ and $|y-m_2|\le r_2$, then $|xy-m_1m_2|\le|m_1|r_2+|m_2|r_1+r_1r_2$.
+\end{proposition}
+
+\begin{humanproof}
+$xy-m_1m_2=m_1(y-m_2)+m_2(x-m_1)+(x-m_1)(y-m_2)$; apply the triangle inequality.
+\end{humanproof}
+On a machine, Arb computes the rounded midpoint $m_1m_2$, and adds to the radius the error of that rounding, bounded
+from above. For functions ($\exp$, $\operatorname{erf}$, integrals\ldots), the library uses expansions with an explicit
+bound on the remainder. The result contains the exact value \emph{if Arb's code is correct}: it is tested and
+published software, not a formally verified program.
+
+\paragraph{In Python.} The \texttt{python-flint} library gives access to Arb. The B2 study of Chapter~3 used
+version~0.6.0, installed in \chemin{.scratchpad/b2_pylib} of the repository for the Python~3.11 of the \texttt{.venv}
+environment; the system \texttt{python3} (3.10) carries version~0.9.0 instead (Appendix~\ref{appE:chap}). The example
+in this appendix uses version~0.6.0.
+
+\begin{numbox}[: step 2 of \chemin{code/appD_certifie.py}]
+Enclosure of $I=\int_0^1e^{-x^2}dx$ by \texttt{acb.integral} at 96~bits, checked against the independent ball
+$\frac{\sqrt\pi}2\operatorname{erf}(1)$. Actual output:
+\begin{lstlisting}[style=appC,language={}]
+"python_flint": "0.6.0",  "prec_bits": 96,
+"ball":     "[0.746824132812427025399467436 +/- 2.30e-28]",
+"erf_ball": "[0.7468241328124270253994674361 +/- 5.34e-29]",   "erf_overlaps": true,
+"midpoint_float_n10": "0.7471308777479975",   "midpoint_inside_ball": false
+\end{lstlisting}
+\emph{Positive control:} the two balls, computed along two routes (rigorous quadrature, error function), overlap.
+\emph{Negative control:} the $10$-point midpoint rule, in floating point, gives $0.74713$: a plausible value, wrong in
+the fourth digit, and outside the ball. A floating-point number is not an enclosure.
+\end{numbox}
+
+%=====================================================================================================================
+\section{Rational certificates checked by Lean: LeanFlow}\label{appD:sec:leanflow}
+
+\subsection{The principle}
+Lean's kernel can decide equalities and inequalities between explicit \emph{integers}: this is a finite computation.
+LeanFlow (\texttt{leanflow\_mcp.lean}, function \texttt{certify}) turns a numerical claim into such a statement, in four
+steps:
+\begin{enumerate}
+\item \textbf{The claim.} Named rational enclosures, \texttt{x = [lo, hi]}, and linear inequalities between their
+endpoints. Numbers are written \texttt{p/q} or in decimal; a binary floating-point number is rejected (it is Tier X).
+\item \textbf{The template.} Each inequality becomes a theorem over $\Z$, with denominators cleared symbolically, of the
+form \texttt{theorem cert\_i : (0 : Int) < D $\wedge$ N * RD $\le$ RN * D := by decide +kernel}. Python only assembles
+text from integer literals; all multiplications and comparisons are done by Lean.
+\item \textbf{The kernel decides.} The tactic \lean{decide +kernel} (LeanFlow name: \texttt{decide\_kernel}) has the
+proposition evaluated by the kernel itself, with no additional axiom.
+\item \textbf{The audit.} LeanFlow appends to the source one \texttt{\#print axioms} per theorem and a random sentinel,
+then requires exactly one report per theorem, within the whitelist, and the sentinel at the end. An exact oracle in
+Python (\texttt{Fraction}) must return the same verdict.
+\end{enumerate}
+
+\paragraph{Fail-closed.} ``Closed when in doubt'': every abnormal situation yields \texttt{error}, never \texttt{ok}.
+LeanFlow's documentation (\chemin{docs/LEAN_CERTIFY.md}) lists the cases, each with a test: missing Lean toolchain,
+imported module without \texttt{.olean}, nonzero return code, no axiom report, \lean{sorry}, user axiom,
+\lean{native_decide} (which introduces an axiom specific to the use), forged axiom report, \texttt{\#exit}, invalid
+claim, disagreement with the oracle. A \emph{false} claim yields \texttt{rejected} with the code
+\texttt{false-statement}.
+
+\paragraph{What Tier A covers.} The status \texttt{ok} concerns the arithmetic statement \emph{about the stated
+numbers}, and nothing else: neither the provenance of these numbers, nor the fact that they really enclose the
+integral. This is why, in Chapter~3, the B2 chain is \tierC{} overall: the arithmetic is verified, the ball is not.
+LeanFlow audits only \texttt{\#print axioms}; the book adds the \lean{leanchecker} replay when it claims \tierA{}
+(Appendix~\ref{appC:chap}, §\ref{appC:sec:leanchecker}, and case U5 of Chapter~5).
+
+\subsection{The complete example}
+The ball of step~2 is rounded outwards to two decimals with 30~digits, in exact rationals:
+$\mathtt{lo}=\lfloor10^{30}(m-r)\rfloor/10^{30}$ and $\mathtt{hi}=\lceil10^{30}(m+r)\rceil/10^{30}$. LeanFlow then
+receives two assertions:
+\begin{lstlisting}[style=appC,language={}]
+{"name": "gaussI", "tactic": "decide_kernel",
+ "enclosures": {"I": ["186706033203106756349866858969/250000000000000000000000000000",
+                      "74682413281242702539946743623/100000000000000000000000000000"]},
+ "assertions": [{"label": "I.lo > 0.7468", "endpoint": "I.lo", "op": ">", "rhs": "7468/10000"},
+                {"label": "I.hi < 0.7469", "endpoint": "I.hi", "op": "<", "rhs": "7469/10000"}]}
+\end{lstlisting}
+and, as a negative control, the same ball with the false assertion \texttt{I.hi < 7468/10000}.
+\begin{numbox}[: step 3 of \chemin{code/appD_certifie.py}]
+Actual output (Lean 4.34.1, commit \sha{5045d0056413266e57c625dcd7c365b10e377c52}, core only):
+\begin{lstlisting}[style=appC,language={}]
+"pos_I_between_0.7468_and_0.7469": {"status": "ok", "code": "verified", "tier": "A", "failed": [],
+                                    "seconds": 0.64}
+"neg_I_below_0.7468":              {"status": "rejected", "code": "false-statement", "tier": null,
+                                    "failed": ["cert_0"], "seconds": 0.49}
+"all_controls_pass": true
+\end{lstlisting}
+The script's seven controls (three for step~1, two for each of steps~2 and~3) passed; the whole script took 1.7~s.
+\end{numbox}
+\noindent Tier summary: the statement ``$0.7468<\mathtt{lo}$ and $\mathtt{hi}<0.7469$'' is \tierAs{}: LeanFlow
+returns \texttt{"tier": "A"}, but we did not replay these certificates with \lean{leanchecker}, and the book's
+convention reserves \tierA{} for modules replayed with code~$0$; the claim ``$I\in[\mathtt{lo},\mathtt{hi}]$'' is
+\tierC{} (it rests on Arb); the conclusion ``$0.7468<I<0.7469$'' inherits the weaker of the two, \tierC.
+
+%=====================================================================================================================
+\section{Stiff differential equations and CVODE}\label{appD:sec:cvode}
+
+\subsection{Stiffness}
+Consider $y'=-\lambda y$ with $\lambda>0$ large. The solution $e^{-\lambda t}$ is trivial, but the explicit Euler
+method $y_{n+1}=y_n+hf(y_n)=(1-h\lambda)y_n$ stays bounded only if $|1-h\lambda|\le1$, that is, $h\le2/\lambda$. A system
+is \emph{stiff} when it mixes very different time scales: the stability of an explicit method then imposes a step
+dictated by the fastest one, much smaller than what accuracy on the slowest one requires. The \emph{implicit} Euler
+method, $y_{n+1}=y_n+hf(y_{n+1})$, gives $y_{n+1}=y_n/(1+h\lambda)$: it is stable for every $h>0$.
+
+\subsection{BDF formulas}
+CVODE~\cite{app:sundials} integrates stiff systems with the \emph{backward differentiation formulas} (BDF) of order
+$q=1,\dots,5$. One approximates $y'(t_{n+1})$ by the derivative of the polynomial interpolating
+$y_{n+1},y_n,\dots,y_{n+1-q}$:
+\[\text{BDF1: }y_{n+1}-y_n=hf(y_{n+1}),\qquad\text{BDF2: }y_{n+1}-\tfrac43y_n+\tfrac13y_{n-1}=\tfrac23hf(y_{n+1}).\]
+Each step requires solving a \emph{nonlinear} equation in $y_{n+1}$, of the form $G(y)=y-\gamma hf(y)-a_n=0$, where
+$a_n$ collects the past values and $\gamma$ depends on the order.
+
+\subsection{Newton and the Jacobian}
+CVODE solves $G(y)=0$ by a modified Newton method:
+$\bigl(I-\gamma hJ\bigr)\,\delta^{(k)}=-G(y^{(k)})$, $y^{(k+1)}=y^{(k)}+\delta^{(k)}$, where $J=\partial f/\partial y$ is the
+Jacobian. The matrix $I-\gamma hJ$ is recomputed and factorised only from time to time. The Jacobian is either supplied
+analytically by the user or approximated by finite differences, column by column (one extra evaluation of $f$ per
+column). The book's \texttt{qf-*} crates supply analytic Jacobians: for a gradient flow $\dot x=-\nabla E(x)$
+(relaxations in cases U1 and U2), $J=-\mathrm{Hess}\,E$; for the Kolmogorov equation $\dot\pi=\pi(P-I)$ (case U5), the
+system is linear and $J$ is exact.
+
+\subsection{Error control, and what it does not guarantee}
+At each step, CVODE estimates the \emph{local} error $e$ (the error made in one step, starting from values assumed
+exact) and accepts the step if
+\[\|e\|_{\mathrm{WRMS}}=\Bigl(\frac1n\sum_{i=1}^n\Bigl(\frac{e_i}{\mathrm{rtol}\,|y_i|+\mathrm{atol}_i}\Bigr)^2\Bigr)^{1/2}\le1;\]
+otherwise it reduces the step. It also adjusts the order $q$. This control is \emph{heuristic}: the global error, after
+thousands of steps, is not bounded by rtol; the local error estimate rests on asymptotic expansions; and everything is
+done in floating point. This is why \textbf{a CVODE result is Tier~X}. The book never presents it as a proof: it
+compares it with an exact value (U5), with a conservation law (U4), or with a theorem (U1, U2), with controls.
+
+\paragraph{The \texttt{qf-popgen} certificate is not a proof.} The ``absorption certificate'' of case U5 (stochastic
+kernel, conserved mass, no negative component, interior mass $<10^{-9}$, final value within $10^{-8}$ of the target) is
+a set of \emph{checks} that reject dubious runs. It makes a run more reliable; it does not prove it. The only Tier~A
+part of case U5 is the LeanFlow statement about the number \chemin{0.5714285714284759} and about the vector
+$(0,\frac47,\frac67,1)$.
+
+\subsection{A stiff example: Robertson kinetics}
+The Robertson problem is the classic stiffness test, with rate constants from $0.04$ to $3\times10^{7}$:
+\[y_1'=-0.04y_1+10^4y_2y_3,\quad y_2'=0.04y_1-10^4y_2y_3-3\times10^7y_2^2,\quad y_3'=3\times10^7y_2^2,\]
+with $y(0)=(1,0,0)$ and $t\in[0,4\times10^{10}]$. The sum $y_1+y_2+y_3$ is conserved exactly by the system, which
+provides a check. rusty-SUNDIALS ships it as the example \chemin{examples/robertson.rs} (BDF up to order $5$,
+$\mathrm{rtol}=10^{-4}$, $\mathrm{atol}=10^{-8}$, analytic Jacobian). Command, from the working copy
+\chemin{rusty-SUNDIALS-wt-tb2ch5}:
+\begin{lstlisting}[style=appC,language={}]
+cargo run --manifest-path ~/rusty-SUNDIALS-wt-tb2ch5/Cargo.toml --target-dir ~/rusty-target-ar \
+    --release -j 2 --offline -p examples --example robertson
+\end{lstlisting}
+\begin{numbox}[: actual output (2026-10-26, 43~s including compilation)]
+\begin{lstlisting}[style=appC,language={}]
+           t             y1             y2             y3
+----------------------------------------------------------
+   4.0000e-1    9.851721e-1    3.386396e-5    1.479401e-2
+    4.0000e0    9.055204e-1    2.240497e-5    9.445716e-2
+    4.0000e2    4.505200e-1    3.222938e-6    5.494767e-1
+    4.0000e6    5.169270e-4    2.068765e-9    9.994831e-1
+   4.0000e10    5.155066e-8   2.062027e-13    9.999999e-1
+
+Solver statistics:
+  Steps:      633  (C ref: 1070, ratio: 0.6x)
+  RHS evals:  1762  (C ref: 1537, ratio: 1.1x)
+  Final order: 5
+  Conservation (y1+y2+y3): 1.000000000000000e0 (should be 1.0)
+  Conservation error: 4.44e-16  (threshold 1e-12)
+\end{lstlisting}
+(Intermediate lines omitted; the program's last line, \texttt{Conservation: PASS} followed by a check mark, is cut
+here because the check mark is not printable.)
+\end{numbox}
+\noindent Reading: in $633$ steps, CVODE traverses eleven orders of magnitude in time; the step size grows accordingly.
+An explicit method would be limited in stability, over the whole interval, by the fast eigenvalues of the Jacobian. The
+program compares its statistics with the C version of SUNDIALS (\texttt{cvRoberts\_dns}, reference values written in
+the example's code, not rerun here; with an absolute tolerance different from that of the Rust example, so the comparison of step counts is only indicative). Conservation to within $4.4\times10^{-16}$ is a \emph{necessary} check; it proves
+nothing about $y_2$, which could be wrong without violating conservation. This is a \tierX{} computation.
+
+%=====================================================================================================================
+\section{Exercises}\label{appD:sec:exos}
+
+\begin{exercise}
+Prove that, for $x\in[a,b]$ with $0<a$, the interval $[1/b,1/a]$ contains $1/x$. What should be done if $0\in[a,b]$?
+\end{exercise}
+
+\begin{exercise}
+Evaluate $f(x)=x^2-2x$ on $[0,2]$ in interval arithmetic, then the form $f(x)=(x-1)^2-1$. Compare with the exact image
+$[-1,0]$ and explain the discrepancy by the dependency problem.
+\end{exercise}
+
+\begin{exercise}
+For the BDF2 method applied to $y'=-\lambda y$, write the linear recurrence satisfied by $y_n$ and show that its
+characteristic roots have modulus $<1$ for every $h\lambda>0$ (A-stability of BDF2).
+\end{exercise}
+
+\begin{exercise}[LeanFlow, negative control]
+In \chemin{code/appD_certifie.py}, change the precision \texttt{ctx.prec} to $20$~bits. Does the ball still contain the
+value? Do the two LeanFlow certificates still pass? Why does a wider enclosure make the assertion
+\texttt{I.lo > 0.7468} harder to certify?
+\end{exercise}

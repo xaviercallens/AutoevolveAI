@@ -1,0 +1,114 @@
+{
+  "lane": "H4",
+  "date": "2026-10-07",
+  "date_note": "night run of 2026-10-07; the file was written just after 00:00 UTC on 2026-10-08 (see written_utc)",
+  "stage": "preregistration: only design probes and smoke tests have run; every number seen is disclosed under smoke_tests_seen",
+  "hypothesis": {
+    "id": "H4",
+    "type": "b (conjecture)",
+    "statement": "Classical Lienard systems x' = y - F(x), y' = -x with F a real polynomial of degree 6 have at most 4 limit cycles.",
+    "anchor": "openai/math family 143 (QuinticLienard.lean): degree <= 5 has at most 2 limit cycles, 2 attained. A claim by another model, Lean-stated, NOT compiled here.",
+    "literature": "De Maesschalck & Dumortier, 'Classical Lienard equations of degree n >= 6 can have [(n-1)/2]+2 limit cycles', J. Differential Equations 250(4) (2011) 2162-2176, doi:10.1016/j.jde.2010.12.003: degree 6 with 4 limit cycles, via slow-fast (canard) theory."
+  },
+  "paper_access": {
+    "status": "full text NOT obtained",
+    "attempts": [
+      "documentserver.uhasselt.be/bitstream/1942/11743/1/morelc-jde-final.pdf: WebFetch 503; curl returned an HTML page 'Document Server temporarily available only on campus and via VPN'",
+      "sciencedirect.com/science/article/pii/S0022039610004559: HTTP 403",
+      "academia.edu/24910007: HTTP 403",
+      "PMC3988861 (Wu et al. 2014, citing paper): verbal description only: 'four limit cycles bifurcated from the canard cycle of a singular perturbed Lienard system of degree six, which consists of a single fast orbit and a single slow curve and contains one turning point'; slow divergence integral Int(x1,x2) = -int_{x1}^{x2} F0'(x)^2/g(x) dx",
+      "NTDS2012 slides (Li Chengzhi, gsd.uab.cat): cite the result, no construction"
+    ],
+    "consequence": "the family is RECONSTRUCTED from that description and standard canard theory, not copied from the paper: x' = y - (a x + F0(x)), y' = -eps x, F0(0)=F0'(0)=0, F0''(0)=1; one turning point at the origin; k simple zeros of I(x_R) = int_{x_L}^{x_R} F0'(x)^2/x dx (F0(x_L)=F0(x_R)) give k+1 cycles for small eps with a tuned. 4 cycles needs k = 3 at degree 6. Classical form: F = (a x + F0(x))/sqrt(eps), same degree."
+  },
+  "instrument": {
+    "code": "scripts/openai_math/hypotheses/night/h4_v2.py",
+    "integration": "hand-driven step loop over scipy OdeSolver classes; wall-clock deadline and step cap checked after every step; timeouts recorded as status 'timeout' and never counted",
+    "map": "two-sided shooting from (0, Y), Y > 0: forward and backward to the first landing on {x = 0, y < 0}; D(Y) = fwd - bwd; where one direction escapes to infinity, the same-sign full-return surrogate (status ok_fr / ok_br) is used",
+    "primary_solver": "Radau rtol 1e-10 atol 1e-12 (analytic Jacobian)",
+    "confirmation": "a sign change of D between adjacent grid points counts as a CONFIRMED cycle only if, at both grid ends, Radau 1e-10, DOP853 1e-12 and Radau 1e-11 give the same sign and |D| > 10 x the spread between the three",
+    "a_tuning": "A(Y) = value of a with D(Y; a) = 0, by 41-point bracket + 70-step bisection with DOP853 rtol 1e-12 (search aid only). `level` ranks up to 3 distinct levels by how often the sampled A curve crosses them (ranked_levels). Cycles are counted and confirmed at ONE (F0, eps, a) point per count. Counts at different a are never added.",
+    "lower_bound_only": "semistable (even-order) cycles and cycles inside one grid cell are invisible"
+  },
+  "verdict_categories": {
+    "REFUTED": "controls pass and >= 5 confirmed cycles at one degree-6 parameter point",
+    "CONTRADICTS_UPSTREAM": "controls pass and >= 3 confirmed cycles at one degree-5 parameter point; reported prominently whatever the H4 verdict",
+    "NOT_REFUTED": "all controls pass including P4 (>= 4 confirmed at degree 6 reproduced) and no point reaches 5 at degree 6; stated with the searched region",
+    "PARTIAL": "instrument controls pass but P4 fails: 'instrument cannot reach the known regime'; no claim about H4 beyond the controls",
+    "CRASH": "an instrument control (C1-C3) or the canard negative control N2 fails; no number from the run is evidence",
+    "BLOCKED": "a stage cannot run (reason stated)"
+  },
+  "decision_rule": "H4 REFUTED iff >= 5 confirmed cycles at a single degree-6 (F, a, eps) point with all controls passed. Any confirmed 3 at degree 5 contradicts upstream's formal theorem and is reported prominently. Stage 3 (search for 5) runs only if P4 passes; if P4 fails the lane is PARTIAL. SDI-level observations (zeros of I without an ODE count) are reported as theory-level and never enter the verdict.",
+  "controls": {
+    "C1_positive_vdp": "F = 0.5 (x^3/3 - x): exactly 1 confirmed cycle (Radau) and 1 sign change (DOP853), amplitudes agree to 1e-6 relative, full-return map changes sign across the root",
+    "C2_positive_avg_quintic": "F = 0.01 (8x - 40/3 x^3 + 16/5 x^5): exactly 2, same checks",
+    "C3_negative_random_deg34": "20 v1-generator samples (seed 2026; degree 3/4, every third averaging-structured): never > 1 with Radau or DOP853 (theorems; Li-Llibre 2012 for degree 4)",
+    "N1_negative_sdi_deg4": "sdi-design at degree 4 (seeds 200, 201; 400 trials each): SDI never has a sign change (k >= 1 would mean >= 2 cycles for small eps, against Li-Llibre)",
+    "N2_negative_canard_deg4": "degree-4 F0 = x^2/2 + 0.2 x^3 + 0.3 x^4 run through the SAME canard pipeline (curve n_y 48, level, count grid 160 at each of its top 3 levels) at every eps in eps_grid: never > 1 confirmed cycle",
+    "P4_positive_lane": "reproduce >= 4 confirmed cycles at one degree-6 parameter point of the reconstructed family"
+  },
+  "procedure": {
+    "stage1_controls": "h4_v2.py controls --part vdp | avg_quintic | negative --idx i:i+2 (10 chunks), seed 2026, n_negative 20; outputs controls/*.json",
+    "stage2a_design": "h4_v2.py sdi-design --degree 6 with seeds 100, 101 (trials 1500, scale 1.0, polish 300) and 102, 103 (trials 1500, scale 1.5, polish 300); plus the primary family with --trials 0 --center <primary> --polish 300 --seed 104. Pick the k = 3 F0 with the largest strength; ties -> lower seed. Outputs design_runs/*.json (one per seed, each call <= 480 s; if a call times out the seed is reported as timed out and skipped).",
+    "stage2b_canard": "for the chosen F0 and every eps in eps_grid = [0.01, 0.006, 0.004, 0.003, 0.002, 0.0015] (absolute list, fixed from the resolution smoke below): curve --n-y 48 --a-half-width 0.05 in chunks of 8 indices (if a point has no bracket, it is reported, not retried with other widths); level; count --grid 160 at each of the top 3 levels from `level`. Outputs canard/eps_<eps>/*.json. If the chosen F0 gives < 4 everywhere and differs from the primary family, the same is repeated for the primary family; then stop.",
+    "stage2_resolution_diagnostic": "per eps, `level` writes A_spread_ulps = (max A - min A)/ulp(median A); below 64 the eps is recorded as 'A curve below double resolution' and smaller eps are skipped for that F0. predicted_crossings is only ever reported together with A_spread_ulps; it is a search aid, never evidence (only confirmed counts at fixed a are).",
+    "stage3_perturb": "ONLY if P4 passes. (i) SDI-level: sdi-design --degree 6 --trials 200 --center <4-cycle c_high> with --scale 0.02 (seed 300) and --scale 0.05 (seed 301); the code adds ABSOLUTE noise scale * [1, 1, 0.5, 0.3] to (c3, c4, c5, c6), no polish. Every sampled k >= 4 F0 would go through stage 2b; sdi-design keeps only the best, so a k >= 4 best is the trigger. (ii) ODE-level: sdi-design --trials 20 --scale 0.02 --center <4-cycle c_high> --seed 302 --polish 0 defines one perturbed F0 (its best); that F0 and the 4-cycle F0 at the 4-cycle eps go through stage 2b again (top 3 levels). Outputs perturb/*.json. Anything else is manual and labelled as such.",
+    "stage3b_deg5_sdi": "degree-5 sdi-design seeds 400, 401 (1500 trials each, scale 1.0): any k >= 2 is reported as a theory-level red flag against upstream and, if P4 passed, run through stage 2b at degree 5"
+  },
+  "primary_family": {
+    "c_high_note": "F0 = x^2/2 + c3 x^3 + c4 x^4 + c5 x^5 + c6 x^6; found during design smoke (probe seed 1 trial 816, then polish seeds 11 and 12)",
+    "c_high": [
+      0.06715677160487617,
+      -0.7379975246919829,
+      -0.17361682563272798,
+      0.4889996327338291
+    ],
+    "sdi_zeros_xR": [
+      0.9160311242903596,
+      1.218928159819962,
+      1.3707194075148188
+    ],
+    "segment_extrema_I": [
+      0.006269631488540012,
+      -0.006431326109099522,
+      0.006467383485945999
+    ],
+    "strength": 0.0004166406315759263,
+    "honest_expectation": "strength = min |I_ext| / J(x_hi) = 4.2e-4. The J/eps window heuristic is pessimistic: the smoke A curve of this F0 is resolved at eps = 0.005 and 0.003 and at 1 ulp at eps = 0.001, so the reachable band is about eps in [0.0015, 0.01], where |I_ext|/eps is about 0.6 to 4. 4 cycles may or may not show there; if they do not, the lane is PARTIAL."
+  },
+  "budget": {
+    "cpu": "at most 2 concurrent python processes",
+    "per_call": "each Bash call <= 480 s (timeout 480); every chunk writes its own JSON and reruns skip finished files",
+    "per_sample": "landing deadline 20 s; count deadline 420 s (positive controls), 200 s (negatives), 480 s (canard counts)",
+    "wall": "stage 1 <= 60 min, stage 2a <= 40 min, stage 2b <= 180 min, stage 3 <= 90 min; total <= 6 h; a stage out of budget stops and is reported as such"
+  },
+  "smoke_tests_seen": {
+    "deadline": "land(..., deadline 1e-4 s) returned 'timeout' for Radau, DOP853, LSODA",
+    "vdp_two_sided_D": "Radau D(0.5, 1.0, 3.0) = -0.774191, -1.092138, +0.936093 (3.0 via ok_fr surrogate); DOP853 and LSODA agree to <= 6e-10",
+    "vdp_count_grid30": "1 confirmed at Y = 2.0440650 (57 s)",
+    "sdi_probe_seed0_1500": "max 2 sign changes (design/sdi_probe.py)",
+    "sdi_probe_seed1_local": "3 sign changes at trial 816, c_high = [0.0207307, -0.697148, -0.132681, 0.499666]",
+    "sdi_probe_seed2_scale2": "max 2",
+    "sdi_even_F0": "0 sign changes after the noise floor (the even case is identically 0; without the floor roundoff produced 9 spurious ones, which is why the floor exists)",
+    "sdi_deg4_seed0_200": "histogram {0: 169}",
+    "polish_seed11_600_balance": "k=3, balance 0.742, extrema +0.0060, -0.0061, +0.0081",
+    "polish_seed12_500_strength": "k=3, the primary_family above; strength 7.4e-5 with the earlier x_hi = 1.25 x last zero, 4.2e-4 with x_hi = 1.1 x",
+    "sdi_design_seed13_1200_scale1.5": "histogram {0: 281, 1: 115, 2: 1}, best k = 2",
+    "curve_probe_F0_eps0.01": "A(Y) at 3 points: -3.5714e-4, -4.0720e-4, -4.4730e-4 (9 s)",
+    "curve_primary_eps0.001": "A at 2 points agree to 1 ulp (-1.8915705225562e-4): below double resolution at eps = 1e-3",
+    "count_probe_F0_eps0.01_a-0.0004_grid10": "2 confirmed (Y = 0.39494, 1.22453) in 18.6 s; an earlier version that confirmed at the bisected bracket rejected both as below the error margin; fixed to confirm at the grid ends before this preregistration",
+    "pytest": "tests/openai_math/test_night_h4.py with /usr/bin/python3: 11 passed, 1 skipped (the Hypothesis property test; Hypothesis is not installed for /usr/bin/python3)",
+    "curve_primary_eps0.005": "A at Y = 1.338, 1.599: -1.11896212e-3, -1.11972034e-3 (resolved)",
+    "curve_primary_eps0.003": "A at Y = 1.728, 2.064: -6.398972821e-4, -6.398976092e-4 (resolved, spread 3.3e-10)",
+    "level_probe_eps0.01": "a* = -4.2725e-4, predicted_crossings 1 from 3 points (smoke, earlier level code without top_levels)",
+    "level_primary_eps0.003": "2 points: a* = -6.39897e-4, predicted_crossings 1, A_spread_ulps 3.0e9 (final level code)"
+  },
+  "eps_grid": [
+    0.01,
+    0.006,
+    0.004,
+    0.003,
+    0.002,
+    0.0015
+  ]
+}

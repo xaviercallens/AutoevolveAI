@@ -1,0 +1,219 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,
+  frame=single,framesep=3pt,xleftmargin=4pt,xrightmargin=4pt,upquote=true,aboveskip=4pt,belowskip=2pt}
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tA}{\tier{A}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\lean}[1]{\texttt{#1}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\R}{\mathbb{R}}
+
+\title{Which stored elastic tensors in JARVIS-DFT are not positive definite?\\
+An exact-rational Born-stability audit of 34\,323 tensors\\
+{\large (a statement about stored DFT tensors, not about materials or about JARVIS being wrong)}}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-31}
+\hypersetup{pdftitle={Which stored elastic tensors in JARVIS-DFT are not positive definite? An exact-rational Born-stability audit of 34,323 tensors},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small doi:10.5281/zenodo.23842486 \quad (not peer reviewed)\end{center}
+
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its Python code, its Lean code and its claim ledger were
+produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{This version was independently audited by a different AI agent instance (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.}
+The audit's corrections C1--C10 are applied in this text (Section~\ref{sec:corr}). No human audit and no statement lock exist, and the binding \texttt{lean\_runner.py} gate was not run; these are owed (Section~\ref{sec:lim}).
+
+\begin{abstract}
+An unstressed crystal is elastically stable only if its $6\times6$ stiffness matrix $C$ is positive definite (the Born criterion, as stated by Mouhat and Coudert~\cite{mc}). We tested every full $6\times6$ elastic tensor stored in the
+JARVIS-DFT \texttt{dft\_3d} dataset~\cite{jarvis} (CC BY 4.0; figshare article 6815699; unzipped json sha256 \texttt{9dacb55a\dots5907}) with exact rational arithmetic. Of $93\,902$ records, $59\,400$ carry no tensor (\texttt{"na"}), $179$ contain a non-finite number, and
+$N=34\,323$ are analysed. Reading each stored float as the exact rational of its shortest decimal, and testing the symmetric part $S=(C+C^T)/2$: $22\,842$ tensors are positive definite and
+\textbf{$11\,481$ ($33.45\%$) are not}, each with an exact rational witness $x\ne0$, $x^TSx\le0$. Three exact methods agree on every entry (the producer's $LDL^T$ and Bareiss elimination, and an independent auditor's characteristic-polynomial sign pattern), and the auditor re-checked all $11\,481$ witnesses. $234$ tensors are numerically zero; without them $11\,247$ of $34\,089$ ($32.99\%$) are not positive definite.
+Under an exact worst-case rounding test (each printed value within half a unit of its last printed place) $22\,809$ verdicts are robustly positive definite, $11\,244$ robustly not, $55$ certified ambiguous and $215$ undecided ($210$ of them null tensors). $342$ tensors pass the incorrect linear orthorhombic criterion but are not positive definite.
+\textbf{This is a statement about stored DFT tensors under one stated reading.} Many entries are raw DFT outputs, including hypothetical, unrelaxed and dynamically unstable structures, so a large fraction is expected. It does \textbf{not} say that JARVIS-DFT is wrong and says nothing about any material being unstable in a laboratory. The kernel-checked Lean part (Tier~\tA{}, provisional: a statement-lock entry and the \texttt{lean\_runner.py} gate are still owed) covers $18$ explicit matrices and $2$ control statements only.
+
+\medskip
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{What this is NOT.} Not a claim that any material is stable, unstable or synthesisable; not a claim that JARVIS-DFT or its authors are wrong; not a formalisation of the classification (Lean covers 18 matrices and 2 controls); not a statement under applied load (the zero-stress criterion is tested). The owner has not forwarded the dataset observations of Section~\ref{sec:obs} to the dataset authors.}}
+\end{abstract}
+
+\paragraph{Markers.} \tA{}: kernel-checked Lean, axioms within $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$, controls caught (a statement-lock entry and the \texttt{lean\_runner.py} gate are still owed, so \tA{} is provisional). \tL{}: a cited source, taken as stated. \tC{}: executed code with an argument written down but not machine-checked (here: exact rational arithmetic on the stored decimals). \tX{}: float runs, context counts and recorded absences, supporting only.
+
+%=====================================================================
+\section{Setting and question}\label{sec:setting}
+\paragraph{Criterion (Tier \tL{}).} Mouhat and Coudert~\cite{mc} state that an unstressed crystal is elastically stable iff the quadratic form $E=\tfrac12V_0\sum C_{ij}\varepsilon_i\varepsilon_j$ is positive for all $\varepsilon\ne0$, i.e.\ iff the $6\times6$ matrix $C$ is positive definite (all eigenvalues $>0$, equivalently all leading principal minors $>0$). They cite Born and Huang~\cite{bh} for this; we did not read that book. Under load the relevant matrix is $B\ne C$ (their Eq.~20), so what is tested here is the \emph{zero-stress} criterion (correction C4). Their Eq.~19 is the linear orthorhombic criterion of Wu et al., which they call incorrect, with the counterexample of their footnote~26. Only the symmetric part $S=(C+C^T)/2$ enters $x^TCx$, so verdicts are for $S$; the number of non-symmetric stored tensors is reported separately.
+
+\paragraph{Data and licence (Tier \tL{}).} JARVIS-DFT \texttt{dft\_3d}~\cite{jarvis,jarvis_elastic}, figshare article 6815699 (DOI \texttt{10.6084/m9.figshare.6815699}; the file used is \texttt{jdft\_3d-9-24-2025.json.zip}, figshare version~11). The unzipped json has sha256 \texttt{9dacb55ac8371c7c2bf0332933b55c98e9cca6201e92eb9d6fcd03aab0975907}; the zip's md5 \texttt{c3179161\dots} equals the figshare API's \texttt{computed\_md5}. The licence is \textbf{CC BY 4.0}, read from the figshare API by the producer before download and again by the auditor; attribution: Choudhary et al., npj Comput.\ Mater.\ 6, 173 (2020). The dataset is not redistributed with this paper (no bulk data, no per-entry table; per-entry results are kept outside the repository, with their sha256 in \texttt{data/result.json}). Exactly $22$ dataset tensors are shipped: $18$ in \texttt{Witnesses.lean} and $4$ in \texttt{data/summaries/f1\_inspect.json}, each file carrying the CC BY 4.0 attribution line (correction C9). Stored units are GPa (the auditor matched five published values of Table~S3 of~\cite{jarvis_elastic} to the printed digits).
+
+\paragraph{Questions (preregistered).} \texttt{data/prereg\_M2.json} (sha256 \texttt{2c3127f9\dots5d0fb}) asked: (Q1) how many tensors are certifiably not positive definite when the stored decimals are read as exact rationals; (Q2) how many verdicts are ambiguous under half-unit rounding; (Q3) how many pass the incorrect linear criterion but fail exact positive definiteness; (Q4) where float pipelines disagree with the exact verdict; (Q5) where the class-specific closed-form conditions of~\cite{mc} disagree with the exact verdict. The outcome rule was KEEP if all controls pass, the whole dataset is classified, two implementations agree and the certified not-positive-definite fraction is at least $1\%$. Outcome: KEEP.
+
+%=====================================================================
+\section{Method}\label{sec:method}
+\paragraph{Reading.} Each stored float is converted to the exact rational of its shortest round-trip decimal representation. This is an interpretation: the stored decimals are treated as exact numbers. A DFT tensor is a calculation, not ``the material's'' tensor. The auditor checked that this equals reading the literal json text for every finite entry ($1\,235\,628$ entries, $0$ differences) and that no entry is a json integer literal.
+
+\paragraph{Exact test.}\tC{} $LDL^T$ without pivoting over $\Q$ on $S$: $S$ is positive definite iff all pivots are $>0$ (Sylvester). If the first non-positive pivot is $d_k\le0$, solving $L^Tx=e_k$ gives an exact rational witness with $x^TSx=d_k\le0$ (a ``boundary'' case when $d_k=0$). The producer ran this ($LDL^T$), an integer Bareiss elimination on all entries, and sympy leading minors on a $14\,615$-entry subset (all not-positive-definite entries, all rounding-undecided entries and $3\,000$ random positive definite ones; a logged deviation from ``all''). The auditor wrote separate code deciding positive definiteness from strict sign alternation of the exact characteristic polynomial over $\Q$ (an ``iff'' because $S$ is symmetric, hence real-rooted) on all $34\,323$ entries.
+
+\paragraph{Ordering.} JARVIS stores the VASP order $(xx,yy,zz,xy,yz,zx)$. Positive definiteness is invariant under simultaneous permutation and positive diagonal congruence, so the order cannot change a full-tensor verdict; it matters only for the class conditions, where the producer maps to Voigt by $[0,1,2,4,5,3]$. The auditor confirmed the mapping (tetragonal-I entries: stored index 4 equals index 5 exactly in $9\,596$ of $10\,343$, against index 3 equals index 4 in $35$; the identity map would give $1\,046$ instead of $555$ class disagreements).
+
+\paragraph{Rounding robustness.}\tC{} Each printed value is allowed $\pm\tfrac12$ unit of its last printed place (half-widths $\Delta_{ij}$, symmetrised). The producer used sufficient tests (a Frobenius-norm bound for ``robustly positive definite'', $x^TSx+|x|^T\Delta|x|<0$ for ``robustly not''). The auditor replaced the first by the exact Rohn vertex test: every symmetric $S+E$ with $|E_{ij}|\le\Delta_{ij}$ is positive definite iff all $32$ matrices $S-T_z\Delta T_z$, $z\in\{\pm1\}^6$, $z_1=1$, are (here $T_z=\operatorname{diag}(z)$). A not-positive-definite entry is ``certified ambiguous'' when some $S+T_z\Delta T_z$ or $S+\operatorname{diag}\Delta$ is positive definite; ``undecided'' means no certificate was found.
+
+\paragraph{Float pipelines (Tier \tX).} \texttt{numpy.linalg.eigvalsh} on $S$ with three conventions: F0 $\lambda_{\min}>0$; F1 $\lambda_{\min}>-10^{-8}$; F2 $\lambda_{\min}>-10^{-6}\lambda_{\max}$. These are context, not evidence for the exact verdict.
+
+\paragraph{Code.} \texttt{data/code/}: \texttt{born\_exact.py} (exact tests, class conditions, intervals), \texttt{controls.py}, \texttt{run\_dataset.py}, \texttt{analysis2.py}, \texttt{final\_summary.py}, \texttt{inspect\_f1.py}, \texttt{gen\_lean.py}, \texttt{make\_result\_json.py}. The downloaded json was only parsed with \texttt{json.load}; the producer's own scripts were not run with \texttt{-I} (it would drop the script directory), a logged deviation.
+
+%=====================================================================
+\section{Results}\label{sec:results}
+\subsection{Headline counts (Tier \tC)}
+\begin{center}\small\begin{tabular}{lr}\toprule
+quantity & count\\\midrule
+records in the dataset & $93\,902$\\
+\ \ with \texttt{elastic\_tensor} $=$ \texttt{"na"} & $59\,400$\\
+\ \ with a $6\times6$ list & $34\,502$\\
+\ \ \ \ of which with NaN or $\pm\infty$ (excluded) & $179$\\
+analysed tensors $N$ & $34\,323$\\
+exactly positive definite & $22\,842$\\
+\textbf{exactly not positive definite} (each with a verified rational witness) & $\mathbf{11\,481}$ ($33.45\%$)\\
+\ \ of which on the boundary (first non-positive pivot exactly $0$) & $204$\\
+numerically null tensors (max $|{\rm entry}|<10^{-6}$; all not positive definite) & $234$\\
+not positive definite without the null tensors & $11\,247$ of $34\,089$ ($32.99\%$)\\
+$LDL^T$ vs Bareiss disagreements & $0$\\
+auditor (characteristic polynomial) vs producer, 10 fields, all $34\,323$ entries & $0$ mismatches\\\bottomrule
+\end{tabular}\end{center}
+The $234$ null tensors have entries from $10^{-14}$ down to $5\cdot10^{-324}$; the largest maximum entry below the cut is $6.8\cdot10^{-12}$ and the smallest above is $0.333$, so the $10^{-6}$ cut is not arbitrary in effect. The auditor re-checked all $11\,481$ witnesses on its own $S$ ($x\ne0$, $x^TSx\le0$, equal to the stored value), superseding the requested $500$-sample.
+
+\subsection{Rounding robustness (correction C1)}
+\begin{center}\small\begin{tabular}{p{5.6cm}rrrr}\toprule
+half-width rule & robust PD & robust not PD & certified ambiguous & undecided\\\midrule
+$\pm\tfrac12$ unit, producer (Frobenius) & $22\,708$ & $11\,244$ & --- & $371$\\
+$\pm\tfrac12$ unit, auditor (exact Rohn) & $\mathbf{22\,809}$ & $11\,244$ & $55$ ($33$ PD, $22$ not PD) & $215$ ($210$ null)\\
+floored at $0.05$, producer & $22\,708$ & $11\,216$ & --- & $399$\\
+floored at $0.05$, auditor (Rohn) & $\mathbf{22\,809}$ & $11\,216$ & $286$ ($33$ PD, $253$ not PD) & $12$\\\bottomrule
+\end{tabular}\end{center}
+$33\,399$ tensors print every entry at one decimal; $874$ have an entry printed with more than six places (numerical noise, down to denormal numbers), where the $\pm\tfrac12$-unit rule gives absurdly small intervals; this is why the floored variant was added post hoc. The producer's bounds are sufficient, not necessary, so its ``undecided'' means ``not certified''; the auditor's Rohn test closes this: of the $134$ producer ``positive definite, undecided'' entries, $101$ are robustly positive definite and $33$ truly ambiguous, and every producer-robust verdict is also auditor-robust. Excluding null tensors (at $\pm\tfrac12$ unit): robust PD $22\,809$, robust not PD $11\,225$, ambiguous $50$, undecided $5$.
+
+\subsection{The incorrect linear criterion and the class conditions}
+\paragraph{Q3.} $23\,184$ tensors pass the linear orthorhombic criterion of Wu et al.\ \cite{wu} (\cite{mc} Eq.~19) applied to all entries regardless of class; $342$ ($1.00\%$ of $N$) of them are exactly not positive definite ($328$ robustly); $0$ fail it while positive definite, consistent with necessity. By class, pass-but-not-PD: cubic $87$, tetragonal~I $63$, trigonal~I $57$, monoclinic $47$, triclinic $41$, hexagonal $29$, orthorhombic $15$, trigonal~II $3$, tetragonal~II $0$.
+
+\paragraph{Q5 (correction C3).} Closed-form class conditions (cubic, hexagonal, tetragonal~I/II, trigonal~I/II, orthorhombic; Eqs.~6, 9, 11, 13, 15, 18 of~\cite{mc}) on the stored entries of $30\,203$ tensors disagree with exact positive definiteness of the full tensor in $555$ cases: $544$ class-stable but not positive definite, $11$ class-unstable but positive definite. Most are expected: the class formulae read only representative entries (e.g.\ $C_{11}$ for $C_{22}$ and $C_{33}$, $C_{44}$ for $C_{55}$ and $C_{66}$), and the stored tensors do not satisfy those class equalities exactly. The auditor's split of the $544$ by block: $184$ have a Voigt diagonal entry $\le0$, $299$ a non-positive-definite normal $3\times3$ block, $55$ a non-positive-definite shear block, and $6$ fail only through normal--shear couplings. So $483$ are driven by violated class equalities and $61$ by off-diagonal couplings (mostly outside the class zero pattern). This is not an error in either method. Monoclinic and triclinic reduce to the generic test and are not cross-checked.
+
+\subsection{Float pipelines (Tier \tX)}
+F0 disagrees with the exact verdict on $0$ tensors. F1 ($-10^{-8}$ absolute) disagrees on $236$, all calling a not-positive-definite tensor stable; $234$ are the null tensors and $2$ are not. F2 (relative $-10^{-6}\lambda_{\max}$) disagrees on $3$ ($2$ not null). The disagreements are essentially tolerance verdicts on null-like tensors plus two near-singular tensors. The auditor's own numpy call reproduces the figures.
+
+\subsection{DFT-uncertainty context (illustrative)}
+Exact test of $S-\theta\|S\|_F I$ among the $22\,842$ positive definite tensors: $\theta=1\%$: $22\,074$; $2\%$: $21\,224$; $5\%$: $17\,983$; $10\%$: $10\,703$; $20\%$: $611$. The dataset stores no uncertainty; these thresholds are illustrative stand-ins and not statements about JARVIS accuracy.
+
+\subsection{Dataset observations (neutral)}\label{sec:obs}
+\begin{itemize}\itemsep=1pt
+\item $59\,400$ of $93\,902$ records have \texttt{elastic\_tensor} $=$ \texttt{"na"}; $179$ tensors contain NaN or infinity.
+\item $234$ stored tensors are numerically zero; $12$ tensors have a literal zero row.
+\item $922$ tensors are not exactly symmetric: $232$ of them are null tensors, $598$ have $\max|C_{ij}-C_{ji}|>1$~GPa (median $19.5$~GPa), and for $7$ the verdict depends on which triangle is mirrored (correction C5).
+\item $874$ tensors have an entry printed with more than six decimal places; $18$ tensors have an entry above $10^4$~GPa; the smallest float eigenvalue reaches $-6.3\cdot10^5$.
+\item Read-sanity (a positive control for reading the dataset): Voigt $K$ and $G$ recomputed from the tensor match the stored \texttt{bulk\_modulus\_kv} and \texttt{shear\_modulus\_gv} within $1\%$ for $97.9\%$ and $98.1\%$ of entries (median relative error $3\cdot10^{-5}$).
+\end{itemize}
+The owner has not forwarded these observations to the dataset authors; whether to do so is the owner's decision.
+
+\subsection{Context counts (Tier \tX, no association claimed)}
+Among entries with \texttt{min\_ir\_mode}, a negative lowest IR mode is stored for $40$ of $480$ not-positive-definite tensors ($8.3\%$) against $221$ of $2\,959$ positive definite ones ($7.5\%$); the meaning of the field was not verified. The not-positive-definite fraction is $11.3\%$ ($1\,048$ of $9\,258$) for entries with an ICSD id against $41.1\%$ ($10\,199$ of $24\,831$) without. \textbf{The \texttt{ehull} bins of the producer's report are withdrawn} (correction C2): the field was not verified to be an energy above hull (median $1.55$, ICSD-linked median $1.46$, spot checks mixed), so it is not used here; the shipped producer json files still contain those bins and should be ignored. A large fraction of the dataset is hypothetical structures, and we do not know the convergence state of individual calculations.
+
+%=====================================================================
+\section{Interpretation}\label{sec:interp}
+The percentage is the fraction of stored DFT tensors that are not positive definite under one stated reading (exact decimals, symmetrised, zero-stress criterion). A tensor with a negative eigenvalue is a calculated tensor that is not positive definite; finite-difference noise, unrelaxed or hypothetical structures, residual stress, magnetism and convergence all remain possible reasons, and finite-difference tensors of dynamically unstable cells are expected to be non-positive-definite at times. The criterion tested is the zero-stress Born criterion (Mouhat--Coudert Eq.~20 replaces $C$ by $B$ under load); residual stress in a computed cell changes the relevant matrix. The JARVIS elastic-property paper~\cite{jarvis_elastic} invites users to apply Born's criterion but, to the extent the auditor read it, reports no unstable fraction. \textbf{Novelty:} to our knowledge no exact-rational Born audit of the whole JARVIS elastic dataset has been published; this is not an exhaustive search and not a priority claim. The result neither validates nor invalidates any individual entry or the dataset.
+
+%=====================================================================
+\section{Controls}\label{sec:controls}
+All run and logged before any dataset number (\texttt{data/logs/controls.json}, the tracked record; \texttt{controls.log.txt} is a copy of the untracked \texttt{controls.log}: 24 lines, every check PASS, \texttt{ALL\_CONTROLS\_PASS True}; correction C8).
+\paragraph{Positive.} Cu, Si and diamond cubic tensors (literature values) are positive definite in exact, Bareiss and float arithmetic, the cubic Born conditions agree and the interval verdict is robust PD. The Mouhat--Coudert footnote-26 tensor ($C_{11}=\tfrac12$, $C_{22}=C_{33}=1$, $C_{12}=-1$, $C_{13}=C_{23}=0$; the shear constants are not given in the footnote and are set to $1$ here, labelled) passes the incorrect linear criterion, fails exact positive definiteness and the orthorhombic Born conditions, has a rational witness and is robustly not positive definite. Three known-unstable cubic tensors are not positive definite. The auditor additionally reproduced stored JVASP-91, 1002, 890, 1174 and 1195 against the printed Table~S3 values. Read-sanity of Voigt $K$, $G$ against the stored moduli (Section~\ref{sec:obs}).
+\paragraph{Negative.} Sign flips of $C_{11}$ and $C_{44}$ on each textbook crystal flip the verdict; symmetry breaking is detected and a large one flips the verdict; a singular tensor ($C_{11}=C_{12}$) is not positive definite and rounding-undecided; a tensor $0.1$~GPa from the boundary is positive definite but undecided. Random cross-check: exact $LDL^T$ against integer Bareiss on $6\,000$ random rational matrices agree, plus sympy minors on $400$.
+\paragraph{Auditor's controls.} Fourteen of its own, all PASS: diamond, Cu positive definite; $C_{11}<C_{12}$, $C_{44}<0$, $C_{11}=C_{12}$ and footnote~26 not positive definite; an exact determinant check; characteristic polynomial against elimination against numpy on $3\,000$ random symmetric rational matrices; Rohn robust, ambiguous and near-boundary cases; the Mouhat--Coudert cubic conditions. The auditor did not re-run the producer's \texttt{controls.py}.
+
+%=====================================================================
+\section{Lean (Tier \tA{}, provisional)}\label{sec:lean}
+Files in \texttt{formal\_cert/Programmes/BornM2/} (copies in \texttt{data/lean/}), \texttt{import Mathlib.Tactic} (never \texttt{import Mathlib}), compiled with \texttt{scripts/certified\_numerics/lean\_pinned.py} (Lean~4.34.1, Mathlib \texttt{d13f23b7}).
+\begin{itemize}\itemsep=1pt
+\item \texttt{Probe.lean}: \lean{foot\_witness} (a witness $x\ne0$ with $x^TCx\le0$ for the footnote-26 tensor) and \lean{dia\_pd} ($578\sum x_i^2\le x^TCx$ for a diamond-type tensor, which does imply positive definiteness in Lean terms). Axioms: \lean{propext}, \lean{Classical.choice}, \lean{Quot.sound} only.
+\item \texttt{Witnesses.lean}: $12$ theorems \lean{notpd\_k} $\exists x\ne0,\ x^TSx\le0$ for symmetrised stored tensors of $12$ dataset entries ($4$ pass the linear criterion; cubic $2$, hexagonal $2$, tetragonal~I $2$, orthorhombic $1$, monoclinic $1$, others as in \texttt{code/gen\_lean.py}, a deterministic sample), and $6$ pairs \lean{pd\_k}, \lean{pd\_k\_pivots} for $6$ randomly chosen robustly positive definite entries: the identity $x^TSx=\sum_kd_k(l_k\cdot x)^2$ with explicit rational $d_k$ and $L$ unit lower-triangular, and $0<d_k$. \textbf{Scope note (correction C6):} \lean{pd\_k} proves the factorisation identity and the positive pivots; positive definiteness follows from $L$ being unit lower-triangular, which is visible in the statement, but that step is not a Lean theorem.
+\item \texttt{Tamper1/2/3.lean} (wrong witness; lower bound $600>578$; altered pivot) are \textbf{rejected} by the kernel, rc~$1$ (errors: unsolved goal $2\le0$, \texttt{linarith} failure, \texttt{ring} failure). These are controls.
+\end{itemize}
+After the CC BY 4.0 attribution comment was added to \texttt{Witnesses.lean} (correction C9) it was recompiled with \texttt{lean\_pinned.py}: rc~$0$, $24$ \texttt{\#print axioms} lines, each within the whitelist, no \lean{sorryAx} (\texttt{data/logs/lean\_witnesses\_after\_c9.json}; the pre-edit transcript \texttt{lean\_witnesses.json} is kept). The auditor compiled byte-identical copies under its own module names (Probe rc~$0$, Witnesses rc~$0$, Tamper1--3 rc~$1$), replayed both modules with \texttt{leanchecker} (rc~$0$; a missing-module negative control rc~$1$), found no escape hatch in a grep over all five files, and matched all $18$ matrices and $12$ witnesses to its own symmetrised tensors by jid ($18$ of $18$ identical; $12$ of $12$ witnesses give $x^TSx<0$; the $6$ \lean{pd\_k} matrices are auditor-positive definite). Those were checks on the \emph{pre-attribution} bytes; the only change since is the added comment.
+
+\paragraph{Labelling.} Kernel-checked and independently replayed, but \textbf{not yet Tier~\tA{} in the strict sense}: that needs a statement-lock entry and a run of the \texttt{anse/formal/lean\_runner.py} gate (compile, \texttt{\#print axioms}, \lean{sorryAx} rejected), neither of which has been done; both are owed. The Lean files state facts about the exact matrices written in them (symmetrised stored decimals); matching them to the dataset is a Python and hash step (Tier~\tC). \textbf{Not in Lean:} the classification of the other $11\,469$ unstable entries and of the stable ones (verified exactly in Python only), the rounding tests, and the link between the criterion and crystal stability.
+\begin{itemize}\scriptsize\itemsep=0pt
+\item \texttt{Probe.lean}: \texttt{bfd6b8919ae197d63d4bb04a5dbe88b6a0a6ed0f46b6bffe4c0351642e270c90}
+\item \texttt{Witnesses.lean}: \texttt{c134b1390e058efb3af1b8ee2532f54a2a44f7a79d502d5d4981d970387de427} (with attribution comment; pre-edit \texttt{1c83a5a0\dots9bafc})
+\item \texttt{Tamper1.lean}: \texttt{43b4050236e46967327038b00442e47578ee698ccb38b550fbcf3e863df9f488}
+\item \texttt{Tamper2.lean}: \texttt{d17051b84043c67796eaae7f26a8e14b0dd5583a993887c2266bef9f6a6f7142}
+\item \texttt{Tamper3.lean}: \texttt{0159b8ee0c1646e87bc88f9e7d0070bf3ff8db53e330ddf5f31f85c6ed0cff18}
+\end{itemize}
+
+%=====================================================================
+\section{Audit corrections applied}\label{sec:corr}
+The independent audit (\texttt{AUDIT.md}, \S9) listed ten corrections. Their treatment:
+\begin{enumerate}\itemsep=1pt
+\item[C1] Exact Rohn rounding numbers replace the sufficient-test numbers (Section~\ref{sec:results}); also mirrored in \texttt{data/result.json} under \texttt{interval\_exact\_rohn}.
+\item[C2] The \texttt{ehull} bins are withdrawn (Section~\ref{sec:results}); the field is kept neutral.
+\item[C3] The class-condition explanation and the $184/299/55/6$ split are used (Section~\ref{sec:results}).
+\item[C4] The zero-stress caveat (Mouhat--Coudert Eq.~20) is stated in Sections~\ref{sec:setting} and~\ref{sec:interp}.
+\item[C5] The size of the asymmetry ($232$ null; $598$ above $1$~GPa, median $19.5$~GPa) is given (Section~\ref{sec:obs}).
+\item[C6] The Lean heading and tier are relabelled and the \lean{pd\_k} scope note added (Section~\ref{sec:lean}); \texttt{result.json}'s \texttt{tiers.lean\_sample\_and\_controls} is updated accordingly.
+\item[C7] \texttt{prereg\_M2.json} records \texttt{written\_utc} $16{:}30$Z, which is wrong: its file mtime is $16{:}22{:}52$Z, before the dataset download ($16{:}23{:}00$Z) and all runs ($16{:}24$ to $16{:}37$). The order is fine; the file was committed together with the results (commit \texttt{051f87d}), so git does not show it and only the mtimes do. The prereg file is not edited.
+\item[C8] The \texttt{logs/*.log} files are untracked (ignored by \texttt{*.log}); this paper cites \texttt{logs/controls.json} (tracked) and ships the logs in the data copy as \texttt{*.log.txt} (the bundler keeps only listed suffixes).
+\item[C9] The CC BY 4.0 attribution line was added to \texttt{Witnesses.lean} (as a comment) and to \texttt{data/summaries/f1\_inspect.json} (as an \texttt{\_attribution} key); the hashes in \texttt{data/result.json} were updated and \texttt{Witnesses.lean} recompiled, rc~$0$ (Section~\ref{sec:lean}). The producer's \texttt{RESULT.md} (pre-audit text, hash unchanged) is superseded by this paper on C1--C10.
+\item[C10] The audit has been done by a separate AI agent instance (not a person); the \texttt{lean\_runner.py} gate and a statement lock remain owed. The producer's ``what an independent auditor must redo'' list is thereby discharged except for those two items.
+\end{enumerate}
+
+%=====================================================================
+\section{Claim ledger}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files $16$ claims: $2$ at Tier~\tA{} (\texttt{BM-A-0001} the $18$ matrices, \texttt{-0002} the probe and tamper controls), $3$ at \tL{} (\texttt{BM-L-0001..0003}: the Born criterion, the dataset and licence, Born--Huang unread), $8$ at \tC{} (\texttt{BM-C-0001..0008}, the last being the headline) and $3$ at \tX{} (\texttt{BM-X-0001..0003}: float pipelines, context counts with \texttt{ehull} withdrawn, and what was not done). Each carries a content-addressed evidence blob in \texttt{ledger/evidence/}; each Tier~\tA{} claim also carries an \texttt{ai\_audit} field. The gate field \texttt{audit} is left null: the audit was done by an AI agent instance, not by a person. The Elenchus ledger gate (\texttt{ledger/run\_gate.py}, \texttt{ledger/gate\_output.txt}) therefore exits with code~$1$: $0$ blocking findings and $2$ flags \texttt{LEDGER\_UNAUDITED\_TIER\_A}, one per Tier~\tA{} row. This is the honest state.
+
+%=====================================================================
+\section{Limitations}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item \textbf{AI audit only; human audit and statement lock owed.} No person has certified that the Lean statements mean what their gloss says; the \texttt{lean\_runner.py} gate was not run by producer or auditor.
+\item \textbf{Unverified, from the audit.} (a) The physical meaning of the JARVIS fields \texttt{ehull} and \texttt{min\_ir\_mode}, and the convergence state of individual calculations. (b) Born and Huang (1954) was not read; the criterion is taken from Mouhat--Coudert. (c) The producer's own \texttt{controls.py} was not re-run by the auditor, which ran its own controls. (d) The auditor's code and per-entry output are scratch files not shipped here; its reproduction is documented in \texttt{AUDIT.md} but cannot be re-run from this bundle. (e) No Lean certificates exist beyond the $18$ entries plus $2$ controls.
+\item \textbf{Reading.} Everything depends on taking each stored float as the exact rational of its shortest decimal and on testing the symmetric part. A different reading (e.g.\ the tensor as the rounded value of an unknown exact tensor) is what the rounding-robustness analysis addresses, with the limits given there.
+\item \textbf{Zero-stress criterion.} Not valid as a stability statement for a cell under residual stress.
+\item \textbf{Deviations from the preregistration} (logged in \texttt{data/RESULT.md}): sympy on a $14\,615$-entry subset (Bareiss on all, and the auditor's characteristic polynomial on all, close the gap); post hoc additions (half-width floor, null-tensor exclusion, $K$/$G$ sanity, context counts, asymmetry test); two float tolerance conventions fixed in the prereg and used as written; Lean limited to controls and an $18$-entry sample (the prereg called it a stretch); producer scripts not run with \texttt{-I}; the wrong internal timestamp of the prereg (C7).
+\item \textbf{Not run:} the repository guards \texttt{antigravity\_guard.py}, \texttt{test\_rigor\_guard.py} and \texttt{pytest tests/} were not run for this paper.
+\item \textbf{Scope.} Only stored 6x6 tensors of one dataset version (9-24-2025). No claim about any material, any laboratory, any other database, or JARVIS's accuracy.
+\end{itemize}
+
+%=====================================================================
+\section{Reproducibility}\label{sec:repro}
+Repository AutoevolveAI, branch \texttt{worktree-openai-math-discovery}; HEAD when this paper was written: \texttt{abe4718ed552e3c77b7207cadb8095d998e02602}; the M2 audit file, the attribution edits and this paper are uncommitted working-tree files at that time. Copies of the inputs are in \texttt{data/} (\texttt{code/}, \texttt{lean/}, \texttt{logs/}, \texttt{summaries/}, \texttt{RESULT.md}, \texttt{result.json}, \texttt{prereg\_M2.json}, \texttt{AUDIT.md}). \texttt{summaries/} is the lane's \texttt{data/} directory. The hashes in \texttt{result.json} are keyed by the lane's paths (e.g.\ \texttt{data/summary.json}); the log files there are \texttt{*.log} (here \texttt{*.log.txt}). The dataset itself is not shipped.
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+# fetch jdft_3d-9-24-2025.json.zip from figshare article 6815699 (CC BY 4.0), check sha256 of the unzipped json
+# 9dacb55ac8371c7c2bf0332933b55c98e9cca6201e92eb9d6fcd03aab0975907
+python code/controls.py ; python code/run_dataset.py ; python code/analysis2.py ; python code/final_summary.py
+python scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/BornM2/Witnesses.lean
+python -I papers/p4_born_stability_jarvis/ledger/build_ledger.py ; python -I papers/p4_born_stability_jarvis/ledger/run_gate.py
+\end{lstlisting}
+
+%=====================================================================
+\begin{thebibliography}{99}\small
+\bibitem{mc} F.\ Mouhat, F.-X.\ Coudert, \emph{Necessary and sufficient elastic stability conditions in various crystal systems}, Phys.\ Rev.\ B 90, 224104 (2014), arXiv:1410.0065. The criterion, Eqs.~6, 9, 11, 13, 15, 18--20 and footnote~26 (\tL).
+\bibitem{jarvis} K.\ Choudhary et al., \emph{The joint automated repository for various integrated simulations (JARVIS) for data-driven materials design}, npj Comput.\ Mater.\ 6, 173 (2020), arXiv:2007.01831; data: figshare article 6815699, doi:10.6084/m9.figshare.6815699, CC BY 4.0 (\tL).
+\bibitem{jarvis_elastic} K.\ Choudhary, G.\ Cheon, E.\ Reed, F.\ Tavazza, \emph{Elastic properties of bulk and low-dimensional materials using van der Waals density functional}, Phys.\ Rev.\ B 98, 014107 (2018), arXiv:1804.01033; read by the auditor for Table~S3 and its remarks on Born's criterion.
+\bibitem{bh} M.\ Born, K.\ Huang, \emph{Dynamical Theory of Crystal Lattices}, Oxford (1954); cited second-hand through~\cite{mc}, not read.
+\bibitem{wu} Wu et al., Phys.\ Rev.\ B 76, 054115 (2007); the source of the linear orthorhombic criterion (as cited in~\cite{mc}; not read).
+\bibitem{mathlib} The mathlib Community, \emph{The Lean mathematical library}, arXiv:1910.09336 (2019); cited for the library only.
+\end{thebibliography}
+\end{document}

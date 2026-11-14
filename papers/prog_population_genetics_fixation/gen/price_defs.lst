@@ -1,0 +1,14 @@
+def wmean (s : Finset (*@$\iota$@*)) (n f : (*@$\iota$@*) (*@$\to$@*) K) : K :=
+  ((*@$\sum$@*) i (*@$\in$@*) s, n i * f i) / (*@$\sum$@*) i (*@$\in$@*) s, n i
+
+def wcov (s : Finset (*@$\iota$@*)) (n f g : (*@$\iota$@*) (*@$\to$@*) K) : K :=
+  ((*@$\sum$@*) i (*@$\in$@*) s, n i * (f i - wmean s n f) * (g i - wmean s n g)) / (*@$\sum$@*) i (*@$\in$@*) s, n i
+
+def wvar (s : Finset (*@$\iota$@*)) (n f : (*@$\iota$@*) (*@$\to$@*) K) : K :=
+  wcov s n f f
+
+def zbarNext (s : Finset (*@$\iota$@*)) (n w z' : (*@$\iota$@*) (*@$\to$@*) K) : K :=
+  wmean s (fun i => n i * w i) z'
+
+def wbarNext (s : Finset (*@$\iota$@*)) (n w : (*@$\iota$@*) (*@$\to$@*) K) : K :=
+  zbarNext s n w w

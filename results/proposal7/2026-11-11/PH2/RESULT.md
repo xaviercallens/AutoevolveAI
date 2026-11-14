@@ -1,6 +1,6 @@
 # PH-2 RESULT: PARTIAL
 
-Rigorous enclosure of Robertson's problem reached T = 40 (largest output time with relative width <= 1e-6 in every component: 40). Steps 15900, attempts 24487, driver CPU 0.036 core-hours (getrusage; controls extra, small, not metered). Finished flag: False; stopped: None; failed: None.
+Rigorous enclosure of Robertson's problem reached T = 1000 (largest output time with relative width <= 1e-6 in every component: 1000). Steps 2681118, attempts 4129718, driver CPU 7.694 core-hours (getrusage; controls extra, small, not metered). Finished flag: False; stopped: None; failed: None.
 
 ## Enclosure (y(t) in box; y1 = 1 - y2 - y3)
 
@@ -12,6 +12,9 @@ Rigorous enclosure of Robertson's problem reached T = 40 (largest output time wi
 | 4 | 9.055186785842539e-01 | 2.240475687560201e-05 | 9.445891665887049e-02 | 1.31e-19 | 2.30e-15 | 7.10e-19 | 5.16e-20 |
 | 10 | 8.413699238414729e-01 | 1.623390937990472e-05 | 1.586138422491472e-01 | 8.19e-19 | 1.99e-14 | 2.31e-18 | 3.23e-19 |
 | 40 | 7.158270687194050e-01 | 9.185534764557764e-06 | 2.841637457458304e-01 | 7.84e-18 | 3.02e-13 | 1.00e-17 | 2.77e-18 |
+| 100 | 6.172348823960877e-01 | 6.153591274639123e-06 | 3.827589640126376e-01 | 2.31e-17 | 1.16e-12 | 1.87e-17 | 7.11e-18 |
+| 400 | 4.505186684711024e-01 | 3.222901441674611e-06 | 5.494781086274559e-01 | 7.52e-17 | 5.25e-12 | 3.08e-17 | 1.69e-17 |
+| 1000 | 3.368745306607069e-01 | 2.013702318261393e-06 | 6.631234556369748e-01 | 9.41e-16 | 7.87e-11 | 2.39e-16 | 1.58e-16 |
 
 Exact midpoints/radii as rationals: enclosures.json.
 
@@ -93,6 +96,42 @@ No LLNL C CVODE exists on this host; nothing here is a statement about the C lib
 | 1e-10 | 1.0e-10 | 40 | y1 | [2.92e-09, 2.92e-09] | [1.70e+01, 1.70e+01] | True | False |
 | 1e-10 | 1.0e-10 | 40 | y2 | [1.16e-13, 1.16e-13] | [1.16e-03, 1.16e-03] | False | True |
 | 1e-10 | 1.0e-10 | 40 | y3 | [2.92e-09, 2.92e-09] | [2.27e+01, 2.27e+01] | True | False |
+| 0.0001 | 1.0e-07 | 100 | y1 | [7.03e-05, 7.03e-05] | [1.14e+00, 1.14e+00] | True | False |
+| 0.0001 | 1.0e-07 | 100 | y2 | [1.88e-09, 1.88e-09] | [1.87e-02, 1.87e-02] | False | True |
+| 0.0001 | 1.0e-07 | 100 | y3 | [7.03e-05, 7.03e-05] | [1.83e+00, 1.83e+00] | True | False |
+| 1e-06 | 1.0e-09 | 100 | y1 | [2.20e-06, 2.20e-06] | [3.56e+00, 3.56e+00] | True | False |
+| 1e-06 | 1.0e-09 | 100 | y2 | [5.36e-11, 5.36e-11] | [5.33e-02, 5.33e-02] | False | True |
+| 1e-06 | 1.0e-09 | 100 | y3 | [2.20e-06, 2.20e-06] | [5.73e+00, 5.73e+00] | True | False |
+| 1e-08 | 1.0e-11 | 100 | y1 | [3.43e-08, 3.43e-08] | [5.55e+00, 5.55e+00] | True | False |
+| 1e-08 | 1.0e-11 | 100 | y2 | [8.32e-13, 8.32e-13] | [8.27e-02, 8.27e-02] | False | True |
+| 1e-08 | 1.0e-11 | 100 | y3 | [3.43e-08, 3.43e-08] | [8.94e+00, 8.94e+00] | True | False |
+| 1e-10 | 1.0e-10 | 100 | y1 | [2.76e-09, 2.76e-09] | [1.71e+01, 1.71e+01] | True | False |
+| 1e-10 | 1.0e-10 | 100 | y2 | [6.79e-14, 6.79e-14] | [6.79e-04, 6.79e-04] | False | True |
+| 1e-10 | 1.0e-10 | 100 | y3 | [2.76e-09, 2.76e-09] | [2.00e+01, 2.00e+01] | True | False |
+| 0.0001 | 1.0e-07 | 400 | y1 | [2.46e-05, 2.46e-05] | [5.46e-01, 5.46e-01] | False | True |
+| 0.0001 | 1.0e-07 | 400 | y2 | [3.13e-10, 3.13e-10] | [3.12e-03, 3.12e-03] | False | True |
+| 0.0001 | 1.0e-07 | 400 | y3 | [2.46e-05, 2.46e-05] | [4.48e-01, 4.48e-01] | False | True |
+| 1e-06 | 1.0e-09 | 400 | y1 | [2.76e-06, 2.76e-06] | [6.12e+00, 6.12e+00] | True | False |
+| 1e-06 | 1.0e-09 | 400 | y2 | [3.51e-11, 3.51e-11] | [3.50e-02, 3.50e-02] | False | True |
+| 1e-06 | 1.0e-09 | 400 | y3 | [2.76e-06, 2.76e-06] | [5.02e+00, 5.02e+00] | True | False |
+| 1e-08 | 1.0e-11 | 400 | y1 | [3.92e-08, 3.92e-08] | [8.68e+00, 8.68e+00] | True | False |
+| 1e-08 | 1.0e-11 | 400 | y2 | [4.98e-13, 4.98e-13] | [4.96e-02, 4.96e-02] | False | True |
+| 1e-08 | 1.0e-11 | 400 | y3 | [3.92e-08, 3.92e-08] | [7.12e+00, 7.12e+00] | True | False |
+| 1e-10 | 1.0e-10 | 400 | y1 | [2.13e-09, 2.13e-09] | [1.47e+01, 1.47e+01] | True | False |
+| 1e-10 | 1.0e-10 | 400 | y2 | [2.70e-14, 2.70e-14] | [2.70e-04, 2.70e-04] | False | True |
+| 1e-10 | 1.0e-10 | 400 | y3 | [2.13e-09, 2.13e-09] | [1.37e+01, 1.37e+01] | True | False |
+| 0.0001 | 1.0e-07 | 1000 | y1 | [9.12e-05, 9.12e-05] | [2.70e+00, 2.70e+00] | True | False |
+| 0.0001 | 1.0e-07 | 1000 | y2 | [8.35e-10, 8.35e-10] | [8.33e-03, 8.33e-03] | False | True |
+| 0.0001 | 1.0e-07 | 1000 | y3 | [9.12e-05, 9.12e-05] | [1.37e+00, 1.37e+00] | True | False |
+| 1e-06 | 1.0e-09 | 1000 | y1 | [1.60e-06, 1.60e-06] | [4.73e+00, 4.73e+00] | True | False |
+| 1e-06 | 1.0e-09 | 1000 | y2 | [1.42e-11, 1.42e-11] | [1.42e-02, 1.42e-02] | False | True |
+| 1e-06 | 1.0e-09 | 1000 | y3 | [1.60e-06, 1.60e-06] | [2.41e+00, 2.41e+00] | True | False |
+| 1e-08 | 1.0e-11 | 1000 | y1 | [4.22e-08, 4.22e-08] | [1.25e+01, 1.25e+01] | True | False |
+| 1e-08 | 1.0e-11 | 1000 | y2 | [3.76e-13, 3.76e-13] | [3.75e-02, 3.75e-02] | False | True |
+| 1e-08 | 1.0e-11 | 1000 | y3 | [4.22e-08, 4.22e-08] | [6.35e+00, 6.35e+00] | True | False |
+| 1e-10 | 1.0e-10 | 1000 | y1 | [1.99e-09, 1.99e-09] | [1.49e+01, 1.49e+01] | True | False |
+| 1e-10 | 1.0e-10 | 1000 | y2 | [1.77e-14, 1.78e-14] | [1.77e-04, 1.78e-04] | False | True |
+| 1e-10 | 1.0e-10 | 1000 | y3 | [1.99e-09, 1.99e-09] | [1.20e+01, 1.20e+01] | True | False |
 
 Solver error lines in the raw log (rtol=1e-10, atol=1e-13, the preregistered setting, failed at the first output time with no output; an extra NON-preregistered run with atol=1e-10 was added): ['ERROR FAIL 3: local error test failed > max times']
 
@@ -106,7 +145,7 @@ First output time per rtol/component with a provable tolerance violation:
 - rtol 1e-06 atol 1.0e-09 y1: 40.0
 - rtol 1e-06 atol 1.0e-09 y2: none among the reached output times
 - rtol 1e-06 atol 1.0e-09 y3: 0.4
-- rtol 0.0001 atol 1.0e-07 y1: none among the reached output times
+- rtol 0.0001 atol 1.0e-07 y1: 100.0
 - rtol 0.0001 atol 1.0e-07 y2: none among the reached output times
 - rtol 0.0001 atol 1.0e-07 y3: 0.4
 
@@ -157,31 +196,31 @@ Floats: only h choice, eigenvector choice for P, display.
 ## Step history (every 20th step: t, h, nu, eps_end)
 
 - t=2.01471e-05 h=7.556e-06 nu=9.906e+00 eps=1.326e-53
-- t=2.53704 h=5.558e-03 nu=7.727e-01 eps=1.207e-20
-- t=5.27194 h=4.722e-03 nu=3.556e-01 eps=5.167e-20
-- t=7.95012 h=5.582e-03 nu=3.078e-01 eps=1.131e-19
-- t=10.426 h=3.577e-03 nu=1.264e-01 eps=1.859e-19
-- t=12.8803 h=4.584e-03 nu=1.494e-01 eps=2.696e-19
-- t=15.2605 h=2.709e-03 nu=5.330e-02 eps=3.585e-19
-- t=17.5637 h=3.640e-03 nu=7.837e-02 eps=4.494e-19
-- t=19.809 h=3.645e-03 nu=6.985e-02 eps=5.416e-19
-- t=22.0039 h=2.757e-03 nu=3.852e-02 eps=6.331e-19
-- t=24.1566 h=2.428e-03 nu=2.685e-02 eps=7.247e-19
-- t=26.2643 h=4.176e-03 nu=6.558e-02 eps=8.151e-19
-- t=28.3423 h=4.821e-03 nu=7.493e-02 eps=9.046e-19
-- t=30.377 h=4.246e-03 nu=5.841e-02 eps=9.922e-19
-- t=32.3884 h=3.651e-03 nu=4.356e-02 eps=1.079e-18
-- t=34.3716 h=3.216e-03 nu=3.328e-02 eps=1.164e-18
-- t=36.3276 h=2.212e-03 nu=1.439e-02 eps=1.248e-18
-- t=38.2585 h=4.430e-03 nu=4.982e-02 eps=1.330e-18
-- t=40.1129 h=2.271e-03 nu=1.399e-02 eps=1.408e-18
-- t=42.004 h=1.953e-03 nu=8.653e-03 eps=1.488e-18
-- t=43.8767 h=1.720e-03 nu=4.971e-03 eps=1.566e-18
-- t=45.7307 h=2.132e-03 nu=1.043e-02 eps=1.642e-18
-- t=47.5688 h=2.642e-03 nu=1.680e-02 eps=1.717e-18
-- t=49.3914 h=2.499e-03 nu=1.438e-02 eps=1.791e-18
-- t=51.1954 h=2.478e-03 nu=1.363e-02 eps=1.863e-18
-- t=52.9893 h=2.182e-03 nu=9.665e-03 eps=1.935e-18
+- t=254.799 h=1.844e-03 nu=1.138e-03 eps=6.815e-18
+- t=450.397 h=1.508e-03 nu=3.719e-05 eps=8.884e-18
+- t=629.767 h=1.994e-03 nu=4.679e-04 eps=1.047e-17
+- t=799.851 h=1.288e-03 nu=-2.619e-04 eps=5.307e-17
+- t=963.653 h=1.639e-03 nu=-1.882e-05 eps=7.810e-17
+- t=1122.73 h=1.341e-03 nu=-2.145e-04 eps=8.493e-17
+- t=1278.12 h=1.628e-03 nu=-7.081e-05 eps=9.928e-17
+- t=1430.58 h=1.204e-03 nu=-2.661e-04 eps=1.257e-16
+- t=1580.51 h=1.575e-03 nu=-1.137e-04 eps=1.356e-16
+- t=1728.32 h=1.002e-03 nu=-3.172e-04 eps=1.562e-16
+- t=1874.26 h=1.306e-03 nu=-2.071e-04 eps=1.991e-16
+- t=2018.56 h=1.743e-03 nu=-7.630e-05 eps=2.227e-16
+- t=2161.41 h=1.043e-03 nu=-2.683e-04 eps=2.813e-16
+- t=2303 h=1.838e-03 nu=-6.287e-05 eps=2.938e-16
+- t=2443.37 h=1.068e-03 nu=-2.450e-04 eps=2.942e-16
+- t=2582.68 h=9.065e-04 nu=-2.724e-04 eps=2.926e-16
+- t=2721.01 h=1.024e-03 nu=-2.400e-04 eps=2.903e-16
+- t=2858.43 h=9.518e-04 nu=-2.471e-04 eps=2.874e-16
+- t=2995.02 h=1.211e-03 nu=-1.939e-04 eps=2.844e-16
+- t=3130.84 h=1.323e-03 nu=-1.710e-04 eps=2.812e-16
+- t=3265.93 h=1.551e-03 nu=-1.315e-04 eps=2.848e-16
+- t=3400.34 h=8.725e-04 nu=-2.344e-04 eps=2.821e-16
+- t=3534.13 h=9.813e-04 nu=-2.127e-04 eps=2.791e-16
+- t=3667.31 h=1.145e-03 nu=-1.853e-04 eps=2.758e-16
+- t=3799.94 h=1.293e-03 nu=-1.622e-04 eps=2.726e-16
 
 ## CPU ledger
-Driver CPU 130.5 s (checkpoint field cpu_s; cumulative across restarts). Rusty-SUNDIALS runs: a few seconds. Controls: not metered (minutes).
+Driver CPU 27700.0 s (checkpoint field cpu_s; cumulative across restarts). Rusty-SUNDIALS runs: a few seconds. Controls: not metered (minutes).

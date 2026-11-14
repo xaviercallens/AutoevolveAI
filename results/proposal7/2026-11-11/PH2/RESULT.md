@@ -1,6 +1,6 @@
 # PH-2 RESULT: PARTIAL
 
-Rigorous enclosure of Robertson's problem reached T = 1000 (largest output time with relative width <= 1e-6 in every component: 1000). Steps 2681118, attempts 4129718, driver CPU 7.694 core-hours (getrusage; controls extra, small, not metered). Finished flag: False; stopped: None; failed: None.
+Rigorous enclosure of Robertson's problem reached T = 4000 (largest output time with relative width <= 1e-6 in every component: 4000). Steps 2850083, attempts 4389852, driver CPU 8.306 core-hours (getrusage; controls extra, small, not metered). Finished flag: False; stopped: None; failed: None.
 
 ## Enclosure (y(t) in box; y1 = 1 - y2 - y3)
 
@@ -15,6 +15,7 @@ Rigorous enclosure of Robertson's problem reached T = 1000 (largest output time 
 | 100 | 6.172348823960877e-01 | 6.153591274639123e-06 | 3.827589640126376e-01 | 2.31e-17 | 1.16e-12 | 1.87e-17 | 7.11e-18 |
 | 400 | 4.505186684711024e-01 | 3.222901441674611e-06 | 5.494781086274559e-01 | 7.52e-17 | 5.25e-12 | 3.08e-17 | 1.69e-17 |
 | 1000 | 3.368745306607069e-01 | 2.013702318261393e-06 | 6.631234556369748e-01 | 9.41e-16 | 7.87e-11 | 2.39e-16 | 1.58e-16 |
+| 4000 | 1.832022577767093e-01 | 8.942371252775910e-07 | 8.167968479861654e-01 | 5.84e-15 | 5.99e-10 | 6.55e-16 | 5.35e-16 |
 
 Exact midpoints/radii as rationals: enclosures.json.
 
@@ -132,6 +133,18 @@ No LLNL C CVODE exists on this host; nothing here is a statement about the C lib
 | 1e-10 | 1.0e-10 | 1000 | y1 | [1.99e-09, 1.99e-09] | [1.49e+01, 1.49e+01] | True | False |
 | 1e-10 | 1.0e-10 | 1000 | y2 | [1.77e-14, 1.78e-14] | [1.77e-04, 1.78e-04] | False | True |
 | 1e-10 | 1.0e-10 | 1000 | y3 | [1.99e-09, 1.99e-09] | [1.20e+01, 1.20e+01] | True | False |
+| 0.0001 | 1.0e-07 | 4000 | y1 | [2.71e-05, 2.71e-05] | [1.47e+00, 1.47e+00] | True | False |
+| 0.0001 | 1.0e-07 | 4000 | y2 | [5.62e-11, 5.62e-11] | [5.61e-04, 5.61e-04] | False | True |
+| 0.0001 | 1.0e-07 | 4000 | y3 | [2.71e-05, 2.71e-05] | [3.31e-01, 3.31e-01] | False | True |
+| 1e-06 | 1.0e-09 | 4000 | y1 | [1.48e-06, 1.48e-06] | [8.05e+00, 8.05e+00] | True | False |
+| 1e-06 | 1.0e-09 | 4000 | y2 | [8.83e-12, 8.83e-12] | [8.82e-03, 8.82e-03] | False | True |
+| 1e-06 | 1.0e-09 | 4000 | y3 | [1.48e-06, 1.48e-06] | [1.81e+00, 1.81e+00] | True | False |
+| 1e-08 | 1.0e-11 | 4000 | y1 | [3.04e-08, 3.04e-08] | [1.65e+01, 1.65e+01] | True | False |
+| 1e-08 | 1.0e-11 | 4000 | y2 | [1.81e-13, 1.81e-13] | [1.81e-02, 1.81e-02] | False | True |
+| 1e-08 | 1.0e-11 | 4000 | y3 | [3.04e-08, 3.04e-08] | [3.72e+00, 3.72e+00] | True | False |
+| 1e-10 | 1.0e-10 | 4000 | y1 | [2.49e-09, 2.49e-09] | [2.11e+01, 2.11e+01] | True | False |
+| 1e-10 | 1.0e-10 | 4000 | y2 | [1.46e-14, 1.51e-14] | [1.46e-04, 1.51e-04] | False | True |
+| 1e-10 | 1.0e-10 | 4000 | y3 | [2.49e-09, 2.49e-09] | [1.37e+01, 1.37e+01] | True | False |
 
 Solver error lines in the raw log (rtol=1e-10, atol=1e-13, the preregistered setting, failed at the first output time with no output; an extra NON-preregistered run with atol=1e-10 was added): ['ERROR FAIL 3: local error test failed > max times']
 
@@ -196,31 +209,31 @@ Floats: only h choice, eigenvector choice for P, display.
 ## Step history (every 20th step: t, h, nu, eps_end)
 
 - t=2.01471e-05 h=7.556e-06 nu=9.906e+00 eps=1.326e-53
-- t=254.799 h=1.844e-03 nu=1.138e-03 eps=6.815e-18
-- t=450.397 h=1.508e-03 nu=3.719e-05 eps=8.884e-18
-- t=629.767 h=1.994e-03 nu=4.679e-04 eps=1.047e-17
-- t=799.851 h=1.288e-03 nu=-2.619e-04 eps=5.307e-17
-- t=963.653 h=1.639e-03 nu=-1.882e-05 eps=7.810e-17
-- t=1122.73 h=1.341e-03 nu=-2.145e-04 eps=8.493e-17
-- t=1278.12 h=1.628e-03 nu=-7.081e-05 eps=9.928e-17
-- t=1430.58 h=1.204e-03 nu=-2.661e-04 eps=1.257e-16
-- t=1580.51 h=1.575e-03 nu=-1.137e-04 eps=1.356e-16
-- t=1728.32 h=1.002e-03 nu=-3.172e-04 eps=1.562e-16
-- t=1874.26 h=1.306e-03 nu=-2.071e-04 eps=1.991e-16
-- t=2018.56 h=1.743e-03 nu=-7.630e-05 eps=2.227e-16
-- t=2161.41 h=1.043e-03 nu=-2.683e-04 eps=2.813e-16
-- t=2303 h=1.838e-03 nu=-6.287e-05 eps=2.938e-16
-- t=2443.37 h=1.068e-03 nu=-2.450e-04 eps=2.942e-16
-- t=2582.68 h=9.065e-04 nu=-2.724e-04 eps=2.926e-16
-- t=2721.01 h=1.024e-03 nu=-2.400e-04 eps=2.903e-16
-- t=2858.43 h=9.518e-04 nu=-2.471e-04 eps=2.874e-16
-- t=2995.02 h=1.211e-03 nu=-1.939e-04 eps=2.844e-16
-- t=3130.84 h=1.323e-03 nu=-1.710e-04 eps=2.812e-16
-- t=3265.93 h=1.551e-03 nu=-1.315e-04 eps=2.848e-16
-- t=3400.34 h=8.725e-04 nu=-2.344e-04 eps=2.821e-16
-- t=3534.13 h=9.813e-04 nu=-2.127e-04 eps=2.791e-16
-- t=3667.31 h=1.145e-03 nu=-1.853e-04 eps=2.758e-16
-- t=3799.94 h=1.293e-03 nu=-1.622e-04 eps=2.726e-16
+- t=267.89 h=1.897e-03 nu=1.203e-03 eps=7.002e-18
+- t=473.687 h=2.224e-03 nu=1.040e-03 eps=9.057e-18
+- t=662.522 h=1.936e-03 nu=3.744e-04 eps=1.066e-17
+- t=841.664 h=2.127e-03 nu=3.884e-04 eps=6.318e-17
+- t=1014.23 h=1.832e-03 nu=9.303e-05 eps=7.961e-17
+- t=1181.88 h=2.110e-03 nu=1.967e-04 eps=9.374e-17
+- t=1345.73 h=1.078e-03 nu=-3.304e-04 eps=1.239e-16
+- t=1506.47 h=9.460e-04 nu=-3.655e-04 eps=1.309e-16
+- t=1664.63 h=1.817e-03 nu=-2.943e-05 eps=1.447e-16
+- t=1820.5 h=1.748e-03 nu=-6.476e-05 eps=1.798e-16
+- t=1974.48 h=1.804e-03 nu=-5.629e-05 eps=2.042e-16
+- t=2126.75 h=1.368e-03 nu=-1.824e-04 eps=2.752e-16
+- t=2277.53 h=1.705e-03 nu=-9.505e-05 eps=2.932e-16
+- t=2426.94 h=9.532e-04 nu=-2.724e-04 eps=2.943e-16
+- t=2575.12 h=1.107e-03 nu=-2.299e-04 eps=2.927e-16
+- t=2722.19 h=1.068e-03 nu=-2.311e-04 eps=2.902e-16
+- t=2868.24 h=1.543e-03 nu=-1.349e-04 eps=2.872e-16
+- t=3013.36 h=1.367e-03 nu=-1.655e-04 eps=2.839e-16
+- t=3157.59 h=1.411e-03 nu=-1.556e-04 eps=2.810e-16
+- t=3301.03 h=1.100e-03 nu=-2.028e-04 eps=2.842e-16
+- t=3443.72 h=1.509e-03 nu=-1.367e-04 eps=2.811e-16
+- t=3585.71 h=1.276e-03 nu=-1.688e-04 eps=2.778e-16
+- t=3727.03 h=1.063e-03 nu=-1.949e-04 eps=2.744e-16
+- t=3867.74 h=1.714e-03 nu=-1.064e-04 eps=2.709e-16
+- t=4007.84 h=9.685e-04 nu=-1.987e-04 eps=2.675e-16
 
 ## CPU ledger
-Driver CPU 27700.0 s (checkpoint field cpu_s; cumulative across restarts). Rusty-SUNDIALS runs: a few seconds. Controls: not metered (minutes).
+Driver CPU 29900.0 s (checkpoint field cpu_s; cumulative across restarts). Rusty-SUNDIALS runs: a few seconds. Controls: not metered (minutes).

@@ -1,0 +1,244 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\nrm}[1]{\lVert #1\rVert}
+\newtheorem{thm}{Theorem}
+\theoremstyle{remark}
+\newtheorem{rem}{Remark}
+
+\title{A validated enclosure of Robertson's stiff problem on $[0,4000]$\\
+and the true error of a Rust port of CVODE against it}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-11-14}
+\hypersetup{pdftitle={A validated enclosure of Robertson's stiff problem on [0,4000] and the true error of a Rust port of CVODE against it},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small doi:10.5281/zenodo.24216837 \quad (not peer reviewed)\end{center}
+
+
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, the enclosure code, the comparison code and the claim ledger
+were produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{The result was independently audited once by a different AI agent instance (\texttt{data/AUDIT.md}, verdict ACCEPT\_WITH\_CORRECTIONS), not by a human.}
+The audit's eleven corrections are applied (Section~\ref{sec:dev}). \textbf{No human audit exists.} The preregistration hash is self-attested and
+was first committed to version control after the production run had started (Section~\ref{sec:dev}).
+
+\begin{abstract}
+We compute a validated enclosure of Robertson's stiff chemical-kinetics problem ($k=1/25,\,10^4,\,3\cdot10^7$, $y(0)=(1,0,0)$, exact rational constants) at ten output times from $t=0.1$ to $t=4000$, with a hand-written a-posteriori integrator in 160-bit Arb ball arithmetic (Sage 9.5).
+\textbf{The enclosure is rigorous under stated assumptions} (Arb is correct; the log-norm lemma, proved here in prose, is not formalised): the required relative width of $10^{-6}$ is met everywhere and the reported widths are far smaller (at most $6\cdot10^{-10}$, in $y_2$ at $t=4000$).
+\textbf{It was independently re-derived by the auditor's different method (Lohner interval Taylor in MPFI) at $t=1,10,40$ only}; for $40<t\le4000$ it rests on one implementation plus a code audit.
+Against the enclosure we measure the true global error of the \texttt{cvode} crate of rusty-SUNDIALS (a Rust port, \emph{not} C CVODE, which is not installed on the host) for $\mathrm{rtol}=10^{-4},\dots,10^{-10}$.
+For $y_2$ the apparent absence of any tolerance violation is only because $\mathrm{atol}$ dominates the tolerance: measured against $\mathrm{rtol}\,|y_2|$ the error is up to $169\times$ larger.
+We also note that a ``provable violation'' compares a global error with a local-error tolerance.
+No claim is made about general stiff problems, $t\ge10^4$, or C CVODE. Producer and one independent audit are AI agents; no human audit; no Lean.
+\end{abstract}
+
+\paragraph{Markers.} \tL{}: a cited source, taken as stated. \tC{}: executed code with an argument written down but not machine-checked (no Lean here). \tX{}: a recorded absence, an assumption, or a list of what was not done, supporting nothing by itself. There is no Tier A claim in this paper; we never write ``formally verified''. Identifiers \texttt{PH2-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+%=====================================================================
+\section{Problem and conventions}\label{sec:prob}
+Robertson's problem is
+\begin{align}
+\dot y_1&=-k_1y_1+k_2y_2y_3,\notag\\
+\dot y_2&=k_1y_1-k_2y_2y_3-k_3y_2^2,\label{eq:rob}\\
+\dot y_3&=k_3y_2^2,\qquad y(0)=(1,0,0),\notag
+\end{align}
+with $k_1=1/25$, $k_2=10^4$, $k_3=3\cdot10^7$, all exact rationals. Since $\dot y_1+\dot y_2+\dot y_3=0$ identically, $y_1=1-y_2-y_3$ holds exactly and we integrate the planar system for $(a,b)=(y_2,y_3)$,
+\begin{equation}\label{eq:red}
+\dot a=k_1(1-a-b)-k_2ab-k_3a^2,\qquad \dot b=k_3a^2,\qquad (a,b)(0)=(0,0),
+\end{equation}
+a polynomial field $f$ of degree two. The reduction is an equivalence, not an assumption. The Jacobian $J(a,b)=\begin{psmallmatrix}-k_1-k_2b-2k_3a & -k_1-k_2a\\ 2k_3a&0\end{psmallmatrix}$ is \emph{affine} in $(a,b)$.
+An \emph{enclosure at time $t$} is a box $I_1\times I_2\times I_3$ of ball intervals containing the unique solution $y(t)$. The output times are $t\in\{0.1,0.4,1,4,10,40,100,400,1000,4000\}$ (the preregistered list also had $10^4$ and $4\cdot10^4$, which were not reached). The times $0.1$ and $0.4$ are the \emph{doubles} handed to the Rust solver, converted to exact rationals, not $1/10$ and $2/5$.
+The goal set in advance was a relative width $\le10^{-6}$ in every component at every output time, up to $T=40000$.
+
+%=====================================================================
+\section{The method, as the exact theorem the code relies on}\label{sec:method}
+The integrator is a validated one-step method in the family of a-posteriori (logarithmic-norm) enclosures; no novelty is claimed for the lemma. We state precisely what the code uses.
+
+\paragraph{Setting of one step.} Let $f:\R^2\to\R^2$ be a polynomial vector field of degree $\le2$. On a step $[0,h]$ let $z$ be the true solution with $z(0)\in\R^2$, and let $q$ be a \emph{polynomial} (the reference; degree $p-1$ with dyadic coefficients, $p=24$ in the production run) with $q(0)=m$. Let $P$ be a constant invertible $2\times2$ matrix and $\nrm{v}_P:=\nrm{P^{-1}v}_2$. Assume $\nrm{z(0)-m}_P\le\varepsilon_0$.
+Define the defect $D(t):=f(q(t))-q'(t)$, which is a polynomial of degree $\le2p-2$ in $t$ with coefficients $D_k$, and
+\[
+\bar d:=\sum_{k=0}^{2p-2}\nrm{P^{-1}D_k}_2\,h^k\ \ \ge\ \sup_{t\in[0,h]}\nrm{P^{-1}D(t)}_2
+\]
+(triangle inequality and $t^k\le h^k$; no Horner evaluation on intervals, no a-priori tube needed). Let $\rho>0$ and let $U\subset\R^2$ be a box such that for every $t\in[0,h]$ and every $w$ with $\nrm{w}_2\le\rho$, the whole segment $[q(t),\,q(t)+Pw]$ lies in $U$. Let
+\[
+\nu\ \ge\ \sup_{y\in U}\ \lambda_{\max}\!\Big(\tfrac12\big(P^{-1}J(y)P+(P^{-1}J(y)P)^{\!\top}\big)\Big).
+\]
+
+\begin{thm}\label{thm:step}
+If $(\varepsilon_0+\bar d\,h)\,e^{\max(\nu,0)h}<\rho$, then $z$ exists on $[0,h]$ and for all $t\in[0,h]$
+\[
+\nrm{z(t)-q(t)}_P\ \le\ \varepsilon_0e^{\nu t}+\bar d\int_0^te^{\nu s}\,ds\ <\ \rho .
+\]
+\end{thm}
+\begin{proof}
+Put $e=z-q$ and $w=P^{-1}e$, so $w'=P^{-1}(f(z)-f(q))+P^{-1}D$ as long as $z$ exists. \emph{The key identity:} because $f$ is quadratic, $J$ is affine, hence
+\[
+f(z)-f(q)=\int_0^1J(q+s\,e)\,e\,ds=J\!\big(q+\tfrac12e\big)\,e\quad\text{exactly},
+\]
+with no remainder term (the integrand is affine in $s$ and the midpoint rule is exact for affine functions). Thus $w'=\big(P^{-1}J(q+e/2)P\big)w+P^{-1}D$.
+While $\nrm{w}_2\le\rho$, the points $q(t)+se$, $s\in[0,1]$, lie in $U$, so $\langle w,P^{-1}J(q+e/2)Pw\rangle\le\nu\nrm{w}^2$ and the upper Dini derivative satisfies $D^+\nrm{w}\le\nu\nrm{w}+\bar d$. The comparison principle gives $\nrm{w(t)}\le g(t):=\varepsilon_0e^{\nu t}+\bar d\int_0^te^{\nu s}ds$ for as long as the tube condition holds. Moreover $g(t)\le(\varepsilon_0+\bar dt)e^{\max(\nu,0)t}<\rho$ on $[0,h]$.
+Suppose $z$ left the closed tube $\{\nrm{w}\le\rho\}$ or ceased to exist; let $t^*\in(0,h]$ be the first time with $\nrm{w(t^*)}=\rho$ (the solution is continuous and cannot escape without touching the boundary). On $[0,t^*]$ the tube condition holds, so $\rho=\nrm{w(t^*)}\le g(t^*)<\rho$, a contradiction. Hence $z$ stays in a compact set, extends to all of $[0,h]$, and the bound holds.
+\end{proof}
+
+\begin{rem}[Why this is valid for the nonlinear system]
+The one-sided Lipschitz constant $\nu$ is taken over the \emph{whole} box $U$ containing the tube and every segment between $z$ and $q$, not at $q$ alone, and the identity $f(z)-f(q)=J(q+e/2)e$ places the relevant Jacobian inside that box. Nothing in the argument is linear. The defect is an \emph{exact} polynomial: the reference $q$ is a polynomial, $f(q)$ is a polynomial, so $D$ has no truncation remainder; its coefficients come from exact ball Cauchy products of the dyadic coefficients of $q$.
+\end{rem}
+
+\paragraph{Chaining steps.} After a step to the end time, put $m':=\mathrm{mid}(q(h))$ (a dyadic rational), and let $\mathrm{jump}:=q(h)-m'$ (a ball). With the next step's matrix $P'$ and $\varepsilon_{\rm end}$ the bound of Theorem~\ref{thm:step} at $t=h$,
+\[
+\nrm{z(h)-m'}_{P'}\ \le\ \sigma_{\max}\!\big(P'^{-1}P\big)\,\varepsilon_{\rm end}+\nrm{P'^{-1}\,\mathrm{jump}}_2=:\varepsilon_0'.
+\]
+The code uses the exact spectral norm of a $2\times2$ matrix, $\sigma_{\max}^2=\big(F^2+\sqrt{F^4-4\det^2}\big)/2$ with $F$ the Frobenius norm, rather than the preregistered Frobenius norm itself (deviation D5: valid, tighter). The initial value is exact, $\varepsilon_0=0$. At an output time the components obey $|z_i-q_i|\le\nrm{\mathrm{row}_i(P)}_2\,\varepsilon_{\rm end}$ by Cauchy--Schwarz; the output times are hit exactly by truncating the last step, and $y_1$ is the ball $1-I_2-I_3$.
+
+\paragraph{What is \emph{not} used.} Positivity and invariance of the simplex are not used (the region is all of $\R^2$; the preregistration listed an invariance-based restriction, deviation D4, which would only have shrunk the region and is not needed).
+
+\paragraph{Step control.} A step of length $h$ is accepted only if $\bar d\,h\le\tau=10^{-22}$ and the bootstrap condition holds; otherwise $h$ is halved. The basis $P$ is chosen per step from floating-point eigenvectors of $J$ at $q(h/2)$ (real, or real and imaginary parts of a complex eigenvector, normalised columns), with the identity as fallback. These choices affect only efficiency, never validity.
+
+%=====================================================================
+\section{Implementation and ball arithmetic}\label{sec:impl}
+The single file \texttt{code\_producer/ph2\_enclose.py} (about 370 lines) uses Sage~9.5 \texttt{RealBallField(160)} (Arb). Every inequality that enters the theorem is evaluated in balls and checked with \texttt{.upper()} / \texttt{.lower()}: $\bar d$ by ball Cauchy products and \texttt{up()} (round upward); $\nu$ by the closed form $\lambda_{\max}=\tfrac{a+c}2+\sqrt{(\tfrac{a-c}2)^2+b^2}$ of the symmetric part of $P^{-1}JP$, evaluated in balls with $J$ the interval Jacobian over $U$ (exact enclosure, as $J$ is affine); the bootstrap test \texttt{emax.upper() < rho.lower()}; and $\varepsilon_{\rm end}$ rounded up.
+\paragraph{Where floating point occurs, and why it is safe.} (i) The choice of $h$, converted to an exact rational. (ii) The eigenvector basis $P$: doubles are converted \emph{exactly} to balls, $P^{-1}$ is the ball adjugate formula, and a determinant ball containing $0$ is rejected. (iii) The comparison with $\tau$ for step control. (iv) Display. The reference-polynomial coefficients are exact dyadic rationals taken from midpoints of a ball recursion; ``any source is allowed, only the checks matter''. The helpers \texttt{sq} and \texttt{rsqrt} clip lower ends at $0$, valid because the arguments are mathematically nonnegative. Doubles enter balls through \texttt{as\_integer\_ratio}, which is exact.
+\paragraph{Resumability.} The production run was interrupted by session ends and reboots and resumed from checkpoints that store $t,h,m,P$ as exact dyadic rationals, $\varepsilon_{\rm end}$ as its exact upper bound, and the jump as exact midpoint plus a radius added outward; any resumed state is therefore a valid enclosure state. The auditor's resume test (a run to $t=0.4$ interrupted twice) reproduced an uninterrupted run bitwise; this covers $t\le0.4$ only, and for the resumes after $t\approx1000$ the structural argument applies. A crash-only edge case (a kill between the last step onto an output time and the output save) makes the next resume raise a \texttt{NameError}: visible, not silent.
+
+%=====================================================================
+\section{Controls}\label{sec:ctrl}
+Four controls were preregistered (\texttt{code\_producer/controls.py}); results in \texttt{logs/controls.json}.
+\emph{Positive.} C+1, the stiff linear system $y'=Ay$, $A=\begin{psmallmatrix}-1&1\\0&-10^4\end{psmallmatrix}$, $y(0)=(1,1)$ with the exact solution known in balls: contained at $t=0.1,1,10$ at order $p=24$ and $p=6$. C+2, the logistic equation $y'=y(1-y)$ with companion $w'=-2w$ (exact solution $1/(1+9e^{-t})$): contained at $t=1,5,10$.
+\emph{Negative.} C-2, the same low order $p=6$ with the defect term dropped (deliberately unsound): containment is lost at every time for both systems, so the controls have power against a missing defect. C-1, the exact value shifted by the factor $1+10^{-6}$, must be rejected.
+\paragraph{Adjudication.} C-1 is rejected for the linear $y_1$ and for both logistic components at $p=24$, but is \emph{never} rejected for the linear $y_2=e^{-10^4t}$ (at $t=0.1$ this is $e^{-1000}$; the enclosure's relative width is of order $3\cdot10^7$, so a $10^{-6}$ relative shift is far below any representable absolute width). The literal preregistered kill rule would trigger (``C-1 not rejected $\Rightarrow$ BLOCKED''); the auditor adjudicated that the test has \emph{no power} for that component, which is not a soundness failure. In the Robertson run itself $y_2$ has relative width at most $6\cdot10^{-10}$ at $y_2\sim10^{-6}$ to $10^{-5}$, so a $10^{-6}$ relative error would be rejected. At $p=6$ most shifts are not rejected because the low-order boxes are wider than $10^{-6}$ (only the logistic $y$ at $t=10$ is).
+\paragraph{Code version.} \texttt{logs/controls.json} was produced by an earlier version of \texttt{ph2\_enclose.py} (controls at 12:52; the final file is dated 13:34 on 2026-11-11). The auditor reran the controls on the final code (\texttt{code\_auditor/ctrl\_rerun.log}) with identical containment and broken-control verdicts; relative widths differ only around the 8th digit, for the linear $y_2$ and the linear $y_1$ at $t=10$. The auditor's rerun is the control evidence for the production code. \tC{}
+
+%=====================================================================
+\section{Results: the enclosure}\label{sec:res}
+Table~\ref{tab:encl} gives the midpoints of the ten boxes, and Table~\ref{tab:width} their relative widths. All boxes are exact rationals in \texttt{enclosures.json}; the display shows rounded midpoints. The run stopped on its CPU budget (cumulative $29\,900$ s $=8.31$ core-hours, $2\,850\,083$ accepted steps, $4\,389\,852$ attempts; last log line \texttt{stopped: cpu\_cap} at $t\approx4007.8$), not through a failure of the method. The preregistered outcome rule therefore gives \textbf{PARTIAL}: relative width $\le10^{-6}$ holds up to $T=4000$; $T=40000$ was not reached. The largest relative width is $5.99\cdot10^{-10}$ ($y_2$, $t=4000$), at least $1600\times$ below the requirement. \tC{}
+
+\begin{table}[ht]\centering\small
+\caption{Midpoints of the enclosure boxes ($y_1=1-y_2-y_3$ exactly). The last column marks the output times at which the auditor's independent integrator (Section~\ref{sec:indep}) also produced a box; ``--'' means no independent box exists.}\label{tab:encl}
+\begin{tabular}{rrrrc}\toprule
+$t$ & $y_1$ & $y_2$ & $y_3$ & independent box\\\midrule
+\input{table_encl_mid.tex}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]\centering\small
+\caption{Relative widths of the boxes and the number of accepted steps up to each output time.}\label{tab:width}
+\begin{tabular}{rcccr}\toprule
+$t$ & rel.\ width $y_1$ & rel.\ width $y_2$ & rel.\ width $y_3$ & steps\\\midrule
+\input{table_encl_width.tex}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Step history (a subsample).} The checkpoint stores $(t,h,\nu,\varepsilon_{\rm end})$ every 20th step, and RESULT.md lists every 20th of those; we show four rows of that subsample: $t=268$: $h=1.9\cdot10^{-3}$, $\nu=1.2\cdot10^{-3}$, $\varepsilon_{\rm end}=7.0\cdot10^{-18}$; $t=1014$: $1.8\cdot10^{-3}$, $9.3\cdot10^{-5}$, $8.0\cdot10^{-17}$; $t=2127$: $1.4\cdot10^{-3}$, $-1.8\cdot10^{-4}$, $2.8\cdot10^{-16}$; $t=4008$: $9.7\cdot10^{-4}$, $-2.0\cdot10^{-4}$, $2.7\cdot10^{-16}$. The step size stays near $10^{-3}$ throughout, set by the defect tolerance $\tau$ rather than by stability; the error bound $\varepsilon_{\rm end}$ grows slowly to about $3\cdot10^{-16}$ (around $t\approx2400$) and then decreases slightly ($\nu<0$ from $t\approx1345$ on).
+
+\paragraph{Assumptions behind the enclosure.} (1) Arb/Sage~9.5 ball arithmetic is correct. (2) The step theorem (Section~\ref{sec:method}) is argued in prose, not formalised. (3) The code implements the theorem; this was checked by the auditor's line-by-line read (obligations defect, one-sided Lipschitz, bootstrap, jump and basis change, output, rounding, resume: all discharged, the rounding item with the caveat that rigor rests on Arb).
+
+%=====================================================================
+\section{Independent check}\label{sec:indep}
+The auditor wrote a different integrator without reading the producer's step logic: a Lohner interval Taylor method of order 18 with an a-priori enclosure by Moore's lemma, a Lagrange remainder, the mean-value form with forward-mode variational coefficients and a QR-reorthogonalised parallelepiped, in MPFI intervals (128 bits), a different library from Arb and without any logarithmic norm. It reached $t=40$ ($263\,061$ steps, $1\,360$ s). At $t=1,10,40$ \textbf{its boxes lie inside the producer's on all three components}, the midpoints agree to $1\cdot10^{-26}$ (at $t=1$, $y_1,y_3$), $4\cdot10^{-27}$ (at $t=10$) and $1.6\cdot10^{-27}$ (at $t=40$, $y_1,y_3$; $9\cdot10^{-30}$ for $y_2$), and the auditor's radii are about $10^{3}$ to $10^{8}$ times narrower (at $t=40$: $2.4\cdot10^{-25}$ against $2.8\cdot10^{-18}$). At $t=10$ for $y_2$ the producer's midpoint lies outside the auditor's much narrower box; this is consistent, since the auditor's box is inside the producer's. The boxes at $t=0.1,0.4,4$ were \emph{not} compared. \tC{}
+
+\paragraph{Non-rigorous cross-check at $t=4000$.} scipy Radau in double precision (rtol/atol $10^{-12}/10^{-20}$ and $10^{-13}/10^{-22}$) gives $y(4000)=(0.18320225777671084,\ 8.942371252775939\cdot10^{-7},\ 0.8167968479861689)$ at the tighter setting, against the producer's midpoints $(0.1832022577767093,\ 8.942371252775910\cdot10^{-7},\ 0.8167968479861654)$. The two agree to about $8\cdot10^{-15}$ relative in $y_1$ and $4\cdot10^{-15}$ in $y_3$. \textbf{This is outside the producer's $y_1$ and $y_3$ boxes} (radius about $5\cdot10^{-16}$); the discrepancy is explained by double-precision roundoff, since the two Radau runs themselves differ by $7\cdot10^{-16}$ to $3\cdot10^{-15}$ at their own tolerances, and the Radau value is not a validated quantity. Only $y_2$ falls inside the producer's box (relative width $6\cdot10^{-10}$). The cross-check is consistent to about $10^{-14}$ relative and \emph{cannot discriminate at the box's resolution}; it tests nothing about the validity of the box. \tX{} \textbf{For $40<t\le4000$ no independent rigorous check exists.}
+
+%=====================================================================
+\section{The Rust port of CVODE against the enclosure}\label{sec:cmp}
+\paragraph{Solver and settings.} The solver is the \texttt{cvode} crate of rusty-SUNDIALS (a Rust port of CVODE; BDF, Newton iteration, dense LU, analytic Jacobian, scalar absolute tolerance, \texttt{Task::Normal}, one solve through the output times in order), repository branch \texttt{merge-mcp-temp}, HEAD \texttt{af4886f2}, linked through a Cargo \emph{path} dependency (so the binary's source revision is recorded but not enforced). \textbf{There is no C CVODE on this host; nothing here is a statement about the LLNL C library.} The right-hand side uses $\mathrm{fl}(0.04)\ne1/25$ (relative difference $\sim10^{-17}$) and double-precision products; we count this as the solver's own arithmetic, i.e.\ as solver error. The doubles returned by the solver are converted exactly to balls, and the error interval is the ball difference $E_i=|y_{\rm solver,i}-Y_i|$ with $Y_i$ the enclosure, so the enclosure's width is part of the interval (it is negligible here).
+\paragraph{Tolerances.} $\mathrm{rtol}=10^{-4},10^{-6},10^{-8}$ with $\mathrm{atol}=10^{-3}\mathrm{rtol}$; all returned output at all twelve requested times. For $\mathrm{rtol}=10^{-10}$ the preregistered $\mathrm{atol}=10^{-13}$ run failed with \texttt{ErrTestFailure} at the first output time and produced no output; \textbf{the $10^{-10}$ rows come from an extra, non-preregistered run with $\mathrm{atol}=10^{-10}$} (deviation D1). Only ten of the twelve times have an enclosure, so ten are compared. The ratio is $E_i/(\mathrm{rtol}|y_i|+\mathrm{atol})$; the flag ``provably exceeds'' means $\min E_i>\mathrm{rtol}\max|y_i|+\mathrm{atol}$ and ``provably within'' means $\max E_i\le\mathrm{rtol}\min|y_i|+\mathrm{atol}$.
+\paragraph{Global versus local.} The flag ``provably $>$ tol'' compares the \emph{global} error with a per-component tolerance scale. CVODE controls a \emph{local} weighted-RMS error estimate, so these rows document the size of the global error, not a breach of the solver's contract; that global error can exceed the tolerance and grow with the integration length is textbook for BDF codes \cite{hw,sundialsdocs}.
+
+\begin{table}[ht]\centering\small
+\caption{Largest global error over the ten output times, in units of $\mathrm{rtol}\,|y_i|$ (upper end of the error interval), per component; last column: largest $E_2/\mathrm{atol}$ for $y_2$. The $10^{-10}$ row is the non-preregistered $\mathrm{atol}=10^{-10}$ run. Computed by \texttt{code\_writer/analyse.py} from \texttt{comparison.json}.}\label{tab:maxerr}
+\begin{tabular}{ccrrrr}\toprule
+rtol & atol & $y_1$ & $y_2$ & $y_3$ & $y_2$: $E_2/\mathrm{atol}$\\\midrule
+\input{table_maxerr.tex}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Results.} Table~\ref{tab:maxerr} summarises all 120 error intervals. For $y_1$ and $y_3$ the global error exceeds $\mathrm{rtol}\,|y|$ by factors of $2$ to $3$ ($10^{-4}$) up to $136$--$486$ ($10^{-10}$, where the early $y_3\approx4\cdot10^{-3}$ at $t=0.1$ is small), and the provable-exceedance count grows as the tolerance tightens (e.g.\ $y_3$ at $\mathrm{rtol}=10^{-8}$: 10 of 10 output times). The errors of $y_1$ and $y_3$ are equal to three digits at most times (e.g.\ $2.24\cdot10^{-7}$ each at $t=0.1$, $\mathrm{rtol}=10^{-4}$), as expected when a linear invariant is preserved and $y_2$ is tiny. Table~\ref{tab:sel} lists relative errors $E_i/|y_i|$ at four times.
+\textbf{The finding for $y_2$.} The preregistered flag reports ``no provable violation'' for $y_2$ at every tolerance and time, and the first-exceedance table of RESULT.md reads ``none'' for $y_2$. That is \emph{only} because the tolerance for $y_2\le3.6\cdot10^{-5}$ is atol-dominated ($E_2/\mathrm{atol}\le0.16$ throughout). Measured against $\mathrm{rtol}\,|y_2|$ alone, the error of the port exceeds the relative tolerance by up to $4.1\times$ ($10^{-4}$, $t=1000$), $11\times$ ($10^{-6}$, $t=400$), $20\times$ ($10^{-8}$, $t=4000$) and $169\times$ ($10^{-10}$, $t=4000$). So an atol-dominated ``within tolerance'' certificate hides a relative error far above rtol in the small component, which is the one that drives the chemistry. \tC{} (for this port, these settings, this problem)
+
+\begin{table}[ht]\centering\small
+\caption{Relative global error $E_i/|y_i|$ of the Rust port at four output times (upper end of the interval). rtol $10^{-10}$ uses $\mathrm{atol}=10^{-10}$ (non-preregistered).}\label{tab:sel}
+\begin{tabular}{crccc}\toprule
+rtol & $t$ & $y_1$ & $y_2$ & $y_3$\\\midrule
+\input{table_maxerr_sel.tex}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Recalled reference values.} The first-exceedance times by component are in \texttt{RESULT.md}. The SUNDIALS example \texttt{cvRoberts\_dns} prints $y$ at $t=0.4,4,40$ to five digits; we recalled these numbers (they were \emph{not} fetched). That example runs at $\mathrm{rtol}=10^{-4}$ with a vector atol, so the printed values are \emph{solver output}, not the true solution. Their differences from the enclosure midpoints (relative $10^{-6}$ to $5.5\cdot10^{-5}$) are consistent with solver error at $\mathrm{rtol}=10^{-4}$; we draw no conclusion from them. \tX{}
+
+%=====================================================================
+\section{Deviations, preregistration anchoring and audit status}\label{sec:dev}
+\textbf{Deviations from \texttt{PREREG\_ITEM.md}} (all disclosed, none blocks):
+\textbf{D1} the non-preregistered $\mathrm{rtol}=10^{-10}$, $\mathrm{atol}=10^{-10}$ run replaces the failed preregistered one (Section~\ref{sec:cmp});
+\textbf{D2} the driver's CPU cap was raised by the main session at several relaunches (cumulative caps recorded as 21600, 11000, 27700 and 29900 s); the total, $8.31$ core-hours, is within the preregistered $10$; CPU between the last checkpoint and each kill is not in the ledger, which therefore slightly undercounts;
+\textbf{D3} three relaunches followed session ends or reboots (resumption cannot change results, Section~\ref{sec:impl});
+\textbf{D4} the invariance-based region restriction (O1) was not used, which is the safe direction;
+\textbf{D5} spectral instead of Frobenius norm in the basis change;
+\textbf{D6} the controls ran on an earlier version of the code (rerun by the auditor with identical verdicts);
+\textbf{D7} the ``second implementation or second precision'' mentioned in the preregistration draft was not done by the producer; the auditor supplies it up to $t=40$ only.
+Further bookkeeping defect: \texttt{RESULT.md} originally said ``stopped: None'' because \texttt{run()} sets \texttt{res["stopped"]} after \texttt{save()} (\texttt{ph2\_enclose.py}, lines 342--343), so the checkpoint never records it; the true state is \texttt{stopped: cpu\_cap}. The audit also asked for this code line to be moved; we \emph{deliberately left the code unchanged} so that it is byte-identical to the code that produced the run (its hash is recorded in \texttt{result.json}) and corrected only the text.
+\paragraph{Anchoring caveat.} \texttt{PREREG\_ITEM.md} was first committed to git two days after the production launch (2026-11-13, commit \texttt{00328e1}; launch 2026-11-11 13:34). Its freeze rests on file modification times (11:11) and a self-hash (\texttt{PREREG\_ITEM.md.sha256}, which matches). \texttt{logs/cvode\_raw.jsonl} has mtime 13:36, after the freeze; that fits the appended non-preregistered run, but the preregistration's claim that the solver outputs predate the freeze cannot be verified from version control.
+\paragraph{Audit status.} One independent AI audit (Opus agent, producer $\ne$ verifier; \texttt{data/AUDIT.md}), verdict ACCEPT\_WITH\_CORRECTIONS; eleven corrections applied to \texttt{RESULT.md} (correction 8 as in the addendum: ``independent check exists for $t\le40$''). \texttt{result.json} records the hash of \texttt{RESULT.md} \emph{before} the corrections; this is the only recorded hash that no longer matches (\texttt{data/logs/result\_json\_hash\_check.txt}).
+
+%=====================================================================
+\section{Limitations}\label{sec:lim}
+\begin{itemize}\setlength\itemsep{1pt}
+\item \textbf{Not C CVODE.} The compared solver is the Rust port; no statement is made about LLNL CVODE.
+\item \textbf{Provenance of the Rust binary.} Cargo uses a path dependency; the source revision (HEAD \texttt{af4886f2}) is recorded, not pinned, so that the binary was built from it is unverified. \tX{}
+\item \textbf{Arb is assumed correct.} The only second implementation (MPFI) covers $t\le40$. \tX{}
+\item \textbf{The lemma is proved in prose, not formalised}; there is no Lean in this work and we do not claim ``formally verified''. \tX{}
+\item \textbf{$40<t\le4000$} has no independent rigorous check; the Radau comparison cannot test the box. \tX{}
+\item \textbf{Scope.} One problem (Robertson, these constants, this initial value). No claim for general stiff problems, for $t\ge10^4$ or $t=10^{11}$, or for other solver settings (vector atol, other Jacobians).
+\item \textbf{Recalled numbers.} The \texttt{cvRoberts\_dns} values were recalled, not fetched, and are solver output.
+\item \textbf{Cost.} $8.3$ core-hours for $T=4000$; the method does not scale to the long times (up to $4\cdot10^{10}$) at which stiff solvers are routinely run on this problem.
+\item \textbf{AI-produced.} Producer and the one independent audit are AI agents; no human audit.
+\end{itemize}
+
+%=====================================================================
+\section{Related work}\label{sec:related}
+All statements are relative to a limited search (two web and two alphaXiv queries at scouting, repeated at audit; 2026-11-11 and 2026-11-14), and are ``to our knowledge'' only.
+\textbf{Validated stiff integration.} The Nedialkov--Jackson overview of validated interval-Taylor and Hermite--Obreschkoff methods treats the wrapping effect as a stability question and notes that truncation-error formulae make effective validated methods for stiff problems hard \cite{nj} (read at snippet/abstract level only). Neumaier's logarithmic-norm enclosures \cite{neu} aim at removing the step restriction of Lohner-type methods on stiff systems (secondary: not read in full by us); our theorem is of that type. Sandretto and Chapoutot's DynIBEX provides validated Runge--Kutta methods including implicit Radau and singly-implicit schemes, with a stiff test of oil-reservoir type \cite{dynibex} (abstract read). Generic Taylor-tube validated integration is the subject of arXiv:2604.19068 \cite{tube} (listed by the search, not read). VNODE-LP, CAPD, COSY and Ariadne papers, and Flow* and VSPODE-type evaluations on kinetics models mentioned by the auditor's search, were \emph{not individually checked}.
+\textbf{Reference solutions.} The Bari stiff test set \cite{bari} gives reference solutions for Robertson computed with the RADAU code in double precision at tight tolerance (secondary reports: not validated).
+\textbf{CVODE-type error.} That BDF/CVODE global error is not proportional to the tolerance and that error control is local is textbook \cite{hw,sundialsdocs}. Our earlier study of Yukawa crystals used CVODE BDF as a relaxer, not compared with an enclosure \cite{yukawa}. The repository's own rusty-SUNDIALS manuscript reports agreement with the C reference on benchmark problems, which is solver-against-solver agreement and not a comparison with the truth (internal; not cited as a source).
+\textbf{Novelty.} To our knowledge no validated enclosure of Robertson's problem to $t\ge4000$ and no study of CVODE or a port of it against such an enclosure was found. A search is not proof of absence, we make no priority claim, and the authors of the cited works were not contacted. \tX{}
+
+%=====================================================================
+\section{Reproducibility and ledger}\label{sec:ledger}
+Everything is in the bundle: \texttt{data/} (lane records with the corrected \texttt{RESULT.md}, \texttt{AUDIT.md}, preregistration, prior-art screen, \texttt{enclosures.json}, \texttt{comparison.json}, \texttt{cvode\_runs.json}, producer code, the Rust runner source, logs, the auditor's scripts and outputs, the writer's scripts) and \texttt{ledger/} (claims, evidence blobs, the verbatim Elenchus gate output). The 13\,MB checkpoint \texttt{logs/enclosure\_ckpt.json} is not shipped: only its sha-256 (\texttt{data/logs/enclosure\_ckpt.json.SHA256.txt}) is stored. The ledger files the enclosure at $t=0.1,\dots,4000$ (independently confirmed at $t=1,10,40$ only) and the true-error tables of the Rust port at Tier~C; the independent confirmation for $40<t\le4000$, the provenance of the Rust binary, the correctness of Arb, and ``formally verified'' (which is \emph{not} claimed) at Tier~X; and the cited literature at Tier~L. The gate is a bookkeeping check; it licenses nothing.
+
+\begin{thebibliography}{99}\small
+\bibitem{nj} N.~S.~Nedialkov and K.~R.~Jackson, overview of validated methods for initial value problems for ODEs (read at snippet/abstract level only; full bibliographic data not recorded).
+\bibitem{neu} A.~Neumaier, notes on enclosures for initial value problems and stiff systems, \texttt{arnold-neumaier.at/ms/ode.pdf} and \texttt{ivpBounds.pdf} (secondary; not read in full).
+\bibitem{dynibex} J.~Alexandre dit Sandretto and A.~Chapoutot, validated Runge--Kutta methods in DynIBEX, arXiv:1804.04847, and the related paper in \emph{Reliable Computing} 22 (abstracts read; entry written from the search record, details not verified).
+\bibitem{tube} The Taylor tube method for validated initial value problems, arXiv:2604.19068 (2026; listed by an alphaXiv search, not read).
+\bibitem{bari} F.~Mazzia and C.~Magherini, Test Set for IVP Solvers, \texttt{archimede.uniba.it/\string~testset} (secondary reports only).
+\bibitem{hw} E.~Hairer and G.~Wanner, \emph{Solving Ordinary Differential Equations II}, Section~IV.8 (textbook; cited from the prior-art screen, not re-read here; entry from memory).
+\bibitem{sundialsdocs} SUNDIALS/CVODE documentation, on local error control without a global guarantee (cited from the prior-art screen; not re-read here).
+\bibitem{yukawa} X.~Callens, Yukawa-crystal preprint on an exact-potential CVODE consistency study, doi:10.5281/zenodo.23293429.
+\end{thebibliography}
+\end{document}

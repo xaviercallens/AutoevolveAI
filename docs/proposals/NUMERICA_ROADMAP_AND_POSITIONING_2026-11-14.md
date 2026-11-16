@@ -36,15 +36,26 @@ or an assumption. Every number about our own work is traceable to a Zenodo recor
 - Workspace version 6.4.0, BSD-3-Clause, about 15,100 lines of Rust under `crates/`. Crates: `sundials-core`, `cvode`,
   `ida`, `nvector`, `sundials-mcp`, `benchmarks`, `qf-pgpe`, `qf-cmb-cascade`, `rusty-sundials-py`. [C: my own listing]
 - **Claims versus what I found.** The README advertises "formally verified", 34 Lean 4 specs, "zero unsafe" and 134
-  tests. In `proofs/lean4` there are 58 Lean files and 27 occurrences of the word `sorry` across 10 of them (some may
-  be in comments; not audited). Under our own binding rule a file containing `sorry` is not a proof, so "formally
-  verified" is not supportable until a sorry-free, axiom-audited run says otherwise. The README checklist mentions
-  `arkode` and `kinsol` crates that are not in the workspace at this commit. `unsafe` matches 4 times in `crates`
-  (two of them `forbid(unsafe_code)` directives; I did not inspect the others). I did not run the 134 tests.
+  tests. In `proofs/lean4` there are 58 top-level Lean files and 27 occurrences of the word `sorry` in 13 of the 71
+  Lean files (17 in code, 10 in comments; the first draft of this document said "10 of them", which was wrong). Under
+  our own binding rule a file containing `sorry` is not a proof, so "formally verified" is not supportable until a
+  sorry-free, axiom-audited run says otherwise. The README checklist mentions an `arkode` crate and `kinsol-rs`; only a
+  small `arkode` module (about 350 lines) exists, inside `sundials-core`, and no `kinsol` code was found (the first
+  draft said both were missing, which was too strong for `arkode`). `unsafe` matches 4 times in `crates` (two of them
+  `forbid(unsafe_code)` directives, two comments). The first draft said "I did not run the 134 tests"; since then the
+  measurements below were made.
 - **The brainstorm's anchors are not in this checkout:** `crates/sundials-core/src/genetics.rs` (101 tests, Dual-RRK,
   ARS(2,2,2), Haar wavelet, Sherman-Morrison-Woodbury preconditioner), `sundials-enclose`, `sundials-krylov` and
   `sundials-elenchus` do not exist at this commit, and I did not find "Paper E" or "Paper C Edition 2" in our Zenodo
   record. They may live on a branch or another repository. **Treat them as inputs to verify, not as facts.**
+  *Update of 16 November 2026:* `genetics.rs` was found in the separate genetics repository (branch
+  `contrib/programme-n4-isothermal-2026-10-26`, `rust_solver/genetics.rs`, 1,497 lines, 5 test attributes in the file, so
+  the "101 tests" is unverified); Paper E is in the same repository (Zenodo 10.5281/zenodo.23525664); Paper C Edition 2
+  was not found; the three proposed crates do not exist.
+- **Measurements made after this document was drafted (15 November 2026; AI agents, no human audit):**
+  `cargo test --workspace` gives 344 passed, 0 failed, 6 ignored at the then-current `main` (137 passed at the earlier
+  commit); the strict Lean gate passes 4 of the 58 top-level files (3 are candidates for kernel-checked status). The
+  README was corrected in rusty-SUNDIALS pull request 83 (release v11.7.1).
 
 ## 3. The brainstorm, item by item
 

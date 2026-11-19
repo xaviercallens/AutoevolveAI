@@ -38,6 +38,7 @@ from typing import Any
 
 __all__ = [
     "LadderVerdicts",
+    "build_candidate_eval",
     "build_heldout_baseline",
     "compare",
     "load_ladder_verdicts",
@@ -269,3 +270,42 @@ def build_heldout_baseline(
         "models": scored,
         "skipped": skipped,
     }
+
+
+def build_candidate_eval(
+    runs_path: Path,
+    frozen_split_path: Path,
+    k: int,
+    prover: str,
+    arm: str,
+    tag: str = "",
+) -> dict[str, Any]:
+    """The ``heldout_eval.json`` GATE reads next to an adapter: one arm of a ladder run, scored.
+
+    ``prover`` is the base-model key the gate looks up in the baseline (``compare`` is only
+    meaningful against the same prover); ``arm`` is the run's own model key. The run must hold at
+    least ``k`` samples for every scored item or ``score`` raises, so a short run cannot
+    masquerade as a pass@k.
+    """
+    arms = load_ladder_verdicts(runs_path, None, frozen_split_path)
+    if arm not in arms:
+        raise ValueError(f"{runs_path}: no runs for arm {arm!r}; found {sorted(arms)}")
+    # A partial run must not be compared against a full-split baseline: every frozen item
+    # has to have been attempted by this arm.
+    frozen_ids = {str(f["id"]) for f in json.loads(frozen_split_path.read_text())}
+    ran = {str(r["id"]) for r in _runs_of(runs_path) if str(r["model"]) == arm}
+    missing = sorted(frozen_ids - ran)
+    if missing:
+        raise ValueError(
+            f"{runs_path}: arm {arm!r} did not run {len(missing)} frozen item(s), "
+            f"e.g. {missing[:3]}"
+        )
+    doc = arms[arm].scored(k)
+    doc.update(
+        prover=prover,
+        arm=arm,
+        ollama_tag=tag,
+        sources={"runs": str(runs_path), "frozen_split": str(frozen_split_path)},
+        sha256={"runs": _sha256(runs_path), "frozen_split": _sha256(frozen_split_path)},
+    )
+    return doc

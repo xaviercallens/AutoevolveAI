@@ -14,6 +14,15 @@ is DeepSeek-Prover-V2-7B in Ollama. No retrain can move the prover's numbers.
   adapter merged to GGUF for Ollama.
 - **Accept when:** the adapter loads in Ollama and answers a ladder prompt,
   and the FIT journal names the prover's base model.
+- **Status 2026-11-07: FIT wiring done, nothing trained.** `night_training_workflow.py`
+  now has `BASE_MODELS` / `PROVER_KEYS`: `--models deepseek_prover_lora` fits
+  `deepseek-ai/DeepSeek-Prover-V2-7B` (4-bit NF4 path unchanged) and the FIT journal
+  records `base_model` and `prover="deepseek"`; unknown model names BLOCK instead of
+  silently training Qwen. Test: `tests/v2/test_heldout_eval.py` (26 pass). Not done:
+  SFT on kernel-clean proofs (the DATA step still feeds the generic mix), the GGUF
+  merge/export, and the Ollama load. Needs the T4 VM (`socreateai-agora-hermes-node1`,
+  us-east4-b): the local host has no GPU, and the VM's root disk was 100% full on
+  2026-11-07 (put outputs on `/mnt/disks/disk-socrateai-local-1`).
 
 ### 2. P4-5: promotion by benchmark, not by training loss
 - Do: GATE runs `scripts/hardness/run_ladder.py` for base and adapter on the
@@ -21,6 +30,20 @@ is DeepSeek-Prover-V2-7B in Ollama. No retrain can move the prover's numbers.
 - **Accept when:** GATE promotes only if adapter pass@3 > base pass@3 on the
   frozen split with n ≥ 30 true items and 0 false-item acceptances; GATE
   returns BLOCKED below n = 30. Test with one real base-vs-adapter run.
+- **Status 2026-11-07: code done, real run still BLOCKED.** The decision logic
+  already existed (`anse/v2/heldout_eval.compare`, `night_training_workflow._heldout_gate`:
+  n >= 30, FALSE-acceptance veto, min gain, per-tier regression; 12 FALSE controls
+  are inside the frozen split, so the veto can fire). Added: `run_ladder.py
+  --split frozen --samples K --temperature T --tag KEY=OLLAMA_TAG --emit-heldout
+  PATH --prover KEY` (refuses `--samples>1` at temperature 0, where pass@k would
+  equal pass@1 by construction) and `heldout_eval.build_candidate_eval`; tests in
+  `tests/v2/test_heldout_eval.py`.
+- **Still needed for the acceptance run:** (a) `results/v2/heldout_baseline.json`
+  is k=1 greedy; regenerate the base at k=3 with the same temperature
+  (`run_ladder.py --split frozen --samples 3 --temperature 0.6`); (b) an adapter
+  on the prover (blocker 1); (c) run on the T4 VM, which holds both prover GGUFs
+  and the GPU lease, but whose repo copy is stale (no git, no `results/hardness`).
+  The local host has neither Ollama prover models nor `/mnt/disks/.../gpu_lease`.
 
 ### 3. Grow the ladder so tiers separate
 46 true items today (T0 10, T1/T2/T3 12 each). Per-tier rates on 12 items

@@ -84,8 +84,28 @@ Proved (H12, `AlixPopulationGenetics.lean`): in the one-locus haploid model a ro
 fitness by exactly `Var(w)/w̄`, so selection stalls when the population's fitness variance is gone; and (H11)
 neutral drift moves a lineage to fixation only with probability `1/N`. Tested (unconfounded per-generation hazard): after collapse the solve rate falls at L3 (0.0081→0.0048,
 p = 0.015) and L5 (0.0013→0.0001, p = 0.0019). But fresh random immigrants do **not** help — they are culled
-before contributing variance among the survivors. The untested next lever is variance near the optimum:
-perturb the best individuals rather than inject random ones.
+before contributing variance among the survivors. The lever that was registered next — variance near the optimum,
+perturbing the best individuals instead of injecting random ones — has now been **tested and does not clear its
+pre-registered bar** (`results/kge_perturb_best/`, 1000 paired seeds, ten arms, harness controls passed):
+
+* L3 solve rate, Baldwin, budget 4000: baseline 467/1000, perturb-the-best (1–3 mutants of the best written into the
+  worst half on collapse) 485/1000 — paired difference **+0.018** (95% CI +0.001…+0.035, exact McNemar p = 0.044),
+  below the registered smallest effect of interest of +0.04. Verdict computed by `scripts/kge_perturb_best_analysis.py`:
+  *not supported*.
+* The mechanism did not run. Inserted mutants of the best survive a **median of 0 generations**, exactly as random
+  immigrants do; fitness variance rises (13.8 against 0.19 for baseline) but it sits in bad individuals that selection
+  removes at once, so it is not *selectable* variance. Under ordinary admission only 645 of 430,880 mutants of the
+  best (0.15%) beat the worst individual: a collapsed population sits where local mutation is almost always
+  deleterious.
+* Copying the best into the same slots at the same cost *hurts* (440/1000, −0.027), so beating that control is not
+  evidence for the mechanism.
+* No clean dose-response: 1 mutation 474, 3 mutations 486, 10 mutations 461, random immigrants 464 (baseline 467).
+  The two moderate doses are the highest arms but sit about two standard errors above baseline among seven
+  comparisons — a lead for a separately registered test on fresh seeds, not a finding.
+* L5: 45 vs 38 (Holm-significant, +0.007 absolute); L4 47 vs 47; L6 0 in both.
+
+Read together with the hazard result above: the stall after collapse is real, but restoring fitness *variance* does not
+relieve it, because the individuals that carry the variance are the ones selection removes.
 
 ## 2. How to use it — the discipline
 

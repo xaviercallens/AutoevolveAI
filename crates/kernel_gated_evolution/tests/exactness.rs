@@ -238,3 +238,118 @@ fn diversity_is_measured_and_immigration_is_paid_from_the_budget() {
     assert!(saw_collapse, "collapse never observed on L5; the diagnostic is untested");
     assert!(saw_immigration, "immigration never triggered; the intervention is untested");
 }
+
+// ---------------------------------------------------------------------------
+// Perturb-the-best at collapse: invariants the experiment's analysis relies on.
+// ---------------------------------------------------------------------------
+
+fn rung(name: &str) -> Node {
+    target_ladder().into_iter().find(|(n, _)| n.starts_with(name)).map(|(_, t)| t).unwrap()
+}
+
+fn pb_configs() -> Vec<(&'static str, SearchConfig)> {
+    let base = SearchConfig { budget: 1200, tuning: Tuning::Baldwin, ..SearchConfig::default() };
+    let mk = |m: ImmigrationMode| SearchConfig { immigration_mode: m, ..SearchConfig { budget: base.budget, tuning: Tuning::Baldwin, ..SearchConfig::default() } };
+    vec![
+        ("pb13-forced", mk(ImmigrationMode::PerturbBest { kmin: 1, kmax: 3, admit: Admit::Forced })),
+        ("pb13-matched", mk(ImmigrationMode::PerturbBest { kmin: 1, kmax: 3, admit: Admit::Normal })),
+        ("clone", mk(ImmigrationMode::CloneBest)),
+    ]
+}
+
+/// The pairing guarantee that makes the McNemar analysis a PAIRED test: a seed whose population never
+/// collapses must be bit-identical to the baseline under every new mode, because the intervention draws
+/// only from its own stream and the generation clock counts main-loop children.
+#[test]
+fn new_modes_equal_the_baseline_on_every_seed_that_never_collapses() {
+    let points = sample_points(&mut Pcg64::seed_from_u64(20261024), 12);
+    let target = rung("L3");
+    let base_cfg = SearchConfig { budget: 1200, tuning: Tuning::Baldwin, ..SearchConfig::default() };
+    let (mut compared, mut collapsed_seen) = (0usize, 0usize);
+    for seed in 0..30u64 {
+        let base = evolve(seed, &target, &points, &base_cfg);
+        for (name, cfg) in pb_configs() {
+            let r = evolve(seed, &target, &points, &cfg);
+            if base.first_collapse_generation.is_none() {
+                assert_eq!((r.solved, r.evaluations, r.tree_point_evaluations), (base.solved, base.evaluations, base.tree_point_evaluations),
+                    "{name} diverged from baseline on seed {seed} with no collapse");
+                assert_eq!(r.inserted_total, 0, "{name} inserted without a collapse");
+                compared += 1;
+            } else {
+                collapsed_seen += 1;
+            }
+        }
+    }
+    assert!(compared >= 30, "only {compared} no-collapse comparisons; the test would be vacuous");
+    assert!(collapsed_seen > 0, "no seed collapsed, so the intervention path was never exercised");
+}
+
+/// Bookkeeping that the analysis reads: every insertion is eventually accounted for, the budget is a
+/// hard ceiling, an intervention is charged, and the legacy modes still use the legacy clock.
+#[test]
+fn interventions_are_charged_and_accounted() {
+    let points = sample_points(&mut Pcg64::seed_from_u64(20261024), 12);
+    let target = rung("L4");
+    let mut exercised = 0usize;
+    for seed in 0..20u64 {
+        for (name, cfg) in pb_configs() {
+            let r = evolve(seed, &target, &points, &cfg);
+            assert!(r.evaluations <= cfg.budget, "{name} exceeded the budget: {}", r.evaluations);
+            assert!(r.admitted_total <= r.inserted_total, "{name}: admitted more than were charged");
+            assert_eq!(r.survival_gens.len(), r.admitted_total, "{name}: admissions and survival records disagree on seed {seed}");
+            assert!(r.inserted_equal_to_best_fitness <= r.inserted_total);
+            if name != "pb13-matched" {
+                assert_eq!(r.admitted_total, r.inserted_total, "{name}: forced admission must admit every charged candidate");
+            }
+            if r.immigration_events > 0 {
+                exercised += 1;
+                assert!(r.inserted_total + r.dedup_fail >= 1, "{name}: an event inserted nothing and failed nothing");
+                assert!(r.inserted_total <= r.immigration_events * (SearchConfig::default().population_size / 2));
+            }
+        }
+    }
+    assert!(exercised > 0, "no run reached the intervention; the test would be vacuous");
+}
+
+/// The clone control adds no genotype: every clone has exactly the best's fitness, so it can only change
+/// selection pressure and evaluation count, never variance.
+#[test]
+fn clone_control_inserts_only_best_fitness_copies() {
+    let points = sample_points(&mut Pcg64::seed_from_u64(20261024), 12);
+    let target = rung("L4");
+    let cfg = SearchConfig { budget: 1200, tuning: Tuning::Baldwin, immigration_mode: ImmigrationMode::CloneBest, ..SearchConfig::default() };
+    let mut total = 0usize;
+    for seed in 0..20u64 {
+        let r = evolve(seed, &target, &points, &cfg);
+        assert_eq!(r.inserted_equal_to_best_fitness, r.inserted_total, "a clone had a different fitness on seed {seed}");
+        total += r.inserted_total;
+    }
+    assert!(total > 0, "the clone control never fired");
+}
+
+#[test]
+fn perturb_best_stays_within_the_size_cap_and_actually_changes_the_genome() {
+    let mut rng = Pcg64::seed_from_u64(99);
+    let mut changed = 0usize;
+    for _ in 0..1000 {
+        let best = random_tree(&mut rng, 3);
+        let out = perturb_best(&best, 1, 3, &mut rng, 25);
+        assert!(out.size() <= 25, "size {} exceeds the cap", out.size());
+        if out != best {
+            changed += 1;
+        }
+    }
+    assert!(changed > 900, "only {changed}/1000 perturbations changed the genome");
+}
+
+#[test]
+fn the_legacy_default_is_unchanged_by_the_new_field() {
+    let cfg = SearchConfig::default();
+    assert_eq!(cfg.immigration_mode, ImmigrationMode::Legacy);
+    assert!(!cfg.immigration);
+    let points = sample_points(&mut Pcg64::seed_from_u64(20261024), 12);
+    let t = rung("L3");
+    let a = evolve(3, &t, &points, &SearchConfig { budget: 800, ..SearchConfig::default() });
+    let b = evolve(3, &t, &points, &SearchConfig { budget: 800, immigration_mode: ImmigrationMode::Legacy, ..SearchConfig::default() });
+    assert_eq!((a.solved, a.evaluations, a.tree_point_evaluations), (b.solved, b.evaluations, b.tree_point_evaluations));
+}

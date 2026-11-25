@@ -22,10 +22,10 @@
 \newcommand{\ip}[2]{\langle #1,#2\rangle}
 \newtheorem{thm}{Theorem}
 
-\title{A Lean-checked one-step theorem and an independent re-check\\
+\title{Lean-checked step and chain theorems, and an independent re-check\\
 of 2.8 million steps of a validated enclosure of Robertson's problem}
 \author{Xavier Callens (SocrateAI Lab)}
-\date{Preprint v1, 2026-11-25 \\ doi:10.5281/zenodo.24534472}
+\date{Preprint v2, 2026-11-26 \\ doi:10.5281/zenodo.24539567 \\ supersedes v1, doi:10.5281/zenodo.24534472}
 
 \begin{document}
 \maketitle
@@ -34,11 +34,12 @@ of 2.8 million steps of a validated enclosure of Robertson's problem}
 A validated enclosure of Robertson's stiff problem on $[0,4000]$ was published in 2026 with its key step theorem argued in prose
 (doi:10.5281/zenodo.24216837). We (i) state and prove that step theorem in Lean 4 for Robertson's reduced system, with existence,
 uniqueness, a one-sided (logarithmic-norm) Gr\"onwall bound valid for any sign of the constant, tube invariance, chaining through
-basis changes with the exact $2\times2$ spectral norm, and gluing of steps; and (ii) write an independent checker in Rust with Arb
+basis changes with the exact $2\times2$ spectral norm, gluing of steps, and (new in v2) a theorem for the chain of $N$ steps, for any $N$; and (ii) write an independent checker in Rust with Arb
 that recomputes, from exact per-step records, the numerical hypotheses of those theorems for \emph{every} step of the run. All
 $2{,}843{,}424$ steps are certified (one streaming pass, 6 h 21 min, 5.6~MB of checker memory), and the checker's final boxes for $(y_2,y_3)$ lie inside the
-stored checkpoint enclosures, which lie inside the published ones. There is no Lean theorem for the whole chain: the theorems cover a step, the chaining
-between two steps and the gluing of two pieces, and the induction over the steps lives in the checker's code. After $t=400$ the checker's bound is much tighter than the producer's (by a factor $7$ at $t=1000$, $18$ at $t=4000$); we
+stored checkpoint enclosures, which lie inside the published ones. The Lean chain theorem (\texttt{robertson\_multistep}) says that if every step satisfies the one-step hypotheses and the
+initial error bound of each step is chained from the previous one, an exact solution exists on the whole interval and stays inside every step's tube; it has \emph{not} been instantiated with
+the $2.8$ million real steps: the link ``the checker accepted every record'' $\Rightarrow$ ``the Lean hypotheses hold for these records'' is a reviewed correspondence, not a proof. After $t=400$ the checker's bound is much tighter than the producer's (by a factor $7$ at $t=1000$, $18$ at $t=4000$); we
 give evidence, on two record windows and a 281-point sample of $t\le1000$ and with the producer's source, that this comes from interval division in the producer at
 occasional steps, not from optimism in the checker; the range $1000<t\le4000$ was not examined finely. This is a Tier~C
 result: the checker is unverified Rust code, the link between its arithmetic and the Lean hypotheses is a reviewed correspondence
@@ -90,12 +91,20 @@ does not discharge it separately (it is trivially satisfiable for a polynomial o
 \item \textbf{Chaining.} \texttt{chain\_bound} and \texttt{chain\_sigma}: $\nrm{P'^{-1}(z-m')}\le s\,\nrm{P^{-1}(z-q)}+\nrm{P'^{-1}(q-m')}$ with $s^2=(F^2+\sqrt{F^4-4\det^2})/2$,
 the exact $2\times2$ spectral bound (\texttt{sigma\_opNorm\_le}; $F$ the Frobenius norm), given $P'^{-1}P=C$ for an explicit matrix $C$ (a hypothesis discharged by the
 checker); a Frobenius version is also proved. Consecutive solutions glue into one (\texttt{glue\_solutions}, \texttt{robertson\_glue}).
+\item \textbf{The chain of $N$ steps (new in v2).} A structure \texttt{RobChain} collects, for $i<N$, the one-step hypotheses (reference curve with defect, tube set, one-sided bound $\nu_i$, defect bound $d_i$, $\rho_i$,
+tube condition with $\max(\nu_i,0)$) and the chained initial bound $s_i\,g(\varepsilon_{0,i},\nu_i,d_i,h_i)+\nrm{P_{i+1}^{-1}(q_i(t_{i+1})-q_{i+1}(t_{i+1}))}\le\varepsilon_{0,i+1}$, where $g$ is the Gr\"onwall bound and
+$s_i\ge\nrm{P_{i+1}^{-1}P_i}$ is a separate hypothesis. \texttt{robertson\_multistep}, proved by induction on $N$ (one-step existence on the last step started from the glued solution, \texttt{chain\_initial\_bound}, \texttt{glue\_solutions}), concludes that there is a
+solution $z$ with $z(t_0)=z_0$, continuous on $[t_0,t_N]$, with right derivative $f(z)$ on $[t_0,t_N)$, such that on every step $\nrm{P_i^{-1}(z-q_i)}\le g(\varepsilon_{0,i},\nu_i,d_i,t-t_i)$ and $<\rho_i$.
+No continuity of $q$ across step boundaries is assumed: the jump enters only through the chain inequality. Companions: coordinate bounds for the last step (Cauchy--Schwarz on the rows of $P$) and a version with the exact $2\times2$ spectral norm instead of $s_i$.
+Gate: 44 theorems, each with its own axiom report, axioms $\subseteq\{$propext, Classical.choice, Quot.sound$\}$, no \texttt{sorry}; a non-vacuity witness ($N=2$ at the Robertson equilibrium, degenerate: it shows the hypotheses are consistent, not sharp);
+three negative controls (chain without the jump term, $\nu$ instead of $\max(\nu,0)$ in the tube condition, the operator-norm bound reversed) are rejected, each by an application type mismatch at the intended step. The gate was re-run by a session other than the one that wrote the file.
 \end{itemize}
 \textbf{Controls.} Each file has a non-vacuity witness or counterexample (for example $w=\varepsilon_0e^{-t}$ with $\nu=-1$ giving the tight bound) and at least one gate
 negative control, some files several: copies with one changed constant or hypothesis (a wrong Jacobian coefficient, $\nu$ instead of $\max(\nu,0)$, $F^2-\sqrt{\cdot}$ instead of $F^2+\sqrt{\cdot}$, a wrong
-defect sign, a dropped term) are rejected by the gate. The counts per file are in the bundle's results notes. The gate must be given the \texttt{\#print axioms} lines inside each file. The Lean files are standalone: they do not import each other, and the field \texttt{robF} is defined separately in three of them (agreement is textual, checked by reading, not by the kernel). \textbf{There is no Lean theorem for the multi-step result:}
-the induction over $2.8$ million steps, the bookkeeping of $\varepsilon$ and the conclusion that the true solution lies in the final box exist only in the checker's loop.
-The Lean statements were written and read by the same AI agent family; no human has reviewed them.
+defect sign, a dropped term) are rejected by the gate. The counts per file are in the bundle's results notes. The gate must be given the \texttt{\#print axioms} lines inside each file. The Lean files are standalone: they do not import each other, and the field \texttt{robF} is defined separately in three of them (agreement is textual, checked by reading, not by the kernel). \textbf{The multi-step theorem holds for any $N$ but has not been instantiated with the actual data:}
+the $2{,}843{,}424$ tuples $(t_i,q_i,P_i,d_i,\nu_i,\rho_i,\varepsilon_{0,i})$ are not turned into Lean terms and the hypotheses $hq$, $hU$, $h\nu$ are not proved in Lean for them. What connects the checker to the theorem is a reviewed correspondence (checks C0--C7 to the structure's fields),
+matched by reading, not by the kernel. Three fields are not reported as checked by the checker's README: the bound on $\nrm{q}$, the nonnegativity of $\varepsilon_{0},d,\rho$ (implied by the checker's strict positivity but not separately reported) and the initial bound of the first step.
+Uniqueness is not carried to the glued solution. The Lean statements were written and read by the same AI agent family; no human has reviewed them.
 
 \section{The checker}
 A Rust crate with Arb through \texttt{flint3-sys} 3.6.1, 256-bit balls. For each step it takes only exact rational data (start time, $h$, the reference
@@ -162,11 +171,16 @@ it is not what makes the checker sound, which rests on C3 and C5 and on the code
 Tier~C throughout. The checker is unverified code (a verified checker is a much larger project); Arb, FLINT, GMP and MPFR and the \texttt{unsafe} bindings are assumed correct; the checker and the producer use the same mathematics
 (independent code, not an independent method); the stored enclosure is the producer's own output, so agreement of boxes is not independent evidence; the Robertson field and Jacobian in the checker are hard-coded;
 the independent AI audit compared them coefficient by coefficient with the Lean field and found them identical, but the human comparison is still owed; no human has reviewed the Lean statements (the only route to Tier~A). One problem, one precision, one producer.
+What remains, in order of value: instantiate \texttt{RobChain} mechanically for a finite window of the real stream (the first $71$ steps, $t\le0.1$) to test the correspondence; a human review of the Lean statements and of the check-to-field mapping; a finer examination of $1000<t\le4000$ (a replay with sampling diagnostics over the whole run was started and is not part of this version).
+
+\section*{Changes from v1}
+v1 (doi:10.5281/zenodo.24534472) stated, as the main structural limit, that no Lean theorem composed the steps. v2 adds that theorem (\texttt{robertson\_multistep}, bundle directory \texttt{phase1/lean\_multistep\_2026-11-26}, note \texttt{docs/19}) and corrects the abstract, section~3 and this section accordingly.
+The checker, the run, its numbers and the discrepancy analysis are unchanged. The independent AI audit (\texttt{AUDIT.md}) covered v1; the multi-step theorem was not separately audited by an independent reviewer: it was written by one agent, its statement was read and its gate re-run, with the three negative controls, by another session.
 
 \section*{Reproduction and disclosure}
 The evidence bundle contains the Lean files, the checker source, the preregistrations, the run logs and hashes, and the diagnostic scripts, with a manifest of sha256 values. The pipeline is one command
 (documented in the bundle) and takes about 6.5 hours; the cumulative hashes show whether a rerun produces the same stream. The audit did not rerun the producer or the checker (6.5 hours); the stream hashes and the tests were not independently reproduced by it. \textbf{AI disclosure:} this work, including the Lean files, the checker and this text,
 was produced by AI agents (Anthropic Claude models) under the direction of the author, with the agent that wrote each part separate from the one that checked it where stated; it has had one independent AI audit by a model of the same family
-(verdict ACCEPT\_WITH\_CORRECTIONS, 0 blockers, 9 required corrections, all applied; \texttt{AUDIT.md} in the bundle) and no human review; it is not peer reviewed. Prior record: doi:10.5281/zenodo.24216837.
+(on v1: verdict ACCEPT\_WITH\_CORRECTIONS, 0 blockers, 9 required corrections, all applied; \texttt{AUDIT.md} in the bundle; the v2 addition is not covered by it) and no human review; it is not peer reviewed. Prior record: doi:10.5281/zenodo.24216837.
 
 \end{document}

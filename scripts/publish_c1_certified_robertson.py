@@ -4,6 +4,7 @@
 Tokens come from a KEY=VALUE file (``ZENODO_TOKEN``) or the environment and are never printed.
 ``--dry-run`` builds the bundle and metadata and stops before any network write. ``--draft`` creates the deposition,
 uploads the files and reserves a DOI without publishing. ``--update-id`` re-uploads into an existing draft.
+``--new-version`` opens a new-version draft of a published record, replaces its files and metadata (DOI reserved, not published).
 ``--publish-id`` publishes a draft (mints the DOI; irreversible): run it only after the audit is attached and the PDF carries the DOI.
 
 Usage:
@@ -30,13 +31,13 @@ PAPER_DIR = REPO / "papers" / "c1_certified_robertson"
 PAPER_PDF = PAPER_DIR / "main.pdf"
 SOURCE_ROOT = Path("/home/callensxavier_gmail_com/numerica_repo")
 BUNDLE_DIR = Path("/home/callensxavier_gmail_com/c1_bundle")
-BUNDLE_NAME = "c1_certified_robertson_2026-11.tar.gz"
+BUNDLE_NAME = "c1_certified_robertson_v2_2026-11.tar.gz"
 ZENODO = "https://zenodo.org/api"
 KEEP_SUFFIXES = {".lean", ".md", ".json", ".py", ".sh", ".rs", ".toml", ".txt", ".jsonl", ".tex", ".lock", ".log", ".out", ".err"}
 SKIP_DIRS = {"target", ".lake", "__pycache__", "c1_target", "tmp"}
 MAX_BYTES = 5_000_000
-PHASE1 = ("lean_onestep_2026-11-20", "lean_L5_2026-11-21", "lean_L5_2026-11-22", "lean_L6_2026-11-23", "lean_L6b_2026-11-23")
-DOCS = re.compile(r"(10|11|16|17|18)_")
+PHASE1 = ("lean_onestep_2026-11-20", "lean_L5_2026-11-21", "lean_L5_2026-11-22", "lean_L6_2026-11-23", "lean_L6b_2026-11-23", "lean_multistep_2026-11-26")
+DOCS = re.compile(r"(10|11|16|17|18|19)_")
 PRIVATE = re.compile(r"veridials|socrate-?numerica|lanyon|pricing|business case|investor|seed round|go-to-market|trademark", re.I)
 
 
@@ -156,6 +157,7 @@ def main() -> int:
     ap.add_argument("--draft", action="store_true")
     ap.add_argument("--update-id", type=int)
     ap.add_argument("--publish-id", type=int)
+    ap.add_argument("--new-version", type=int, help="id of a published record: create a new-version draft of it and fill it")
     args = ap.parse_args()
     meta = json.loads(args.meta.read_text())
     if args.publish_id:
@@ -180,6 +182,16 @@ def main() -> int:
         report["zenodo"] = summary(dep)
         if report["zenodo"]["doi"]:
             (PAPER_DIR / "zenodo_doi.txt").write_text(report["zenodo"]["doi"] + "\n")
+    elif args.new_version:
+        old = zenodo_request("POST", f"{ZENODO}/deposit/depositions/{args.new_version}/actions/newversion", token)
+        dep = zenodo_request("GET", old["links"]["latest_draft"], token)
+        for f in dep.get("files", []):
+            zenodo_request("DELETE", f"{ZENODO}/deposit/depositions/{dep['id']}/files/{f['id']}", token)
+        upload(token, dep, files)
+        dep = zenodo_request("PUT", f"{ZENODO}/deposit/depositions/{dep['id']}", token, json.dumps(zenodo_metadata(meta)).encode())
+        report["zenodo"] = summary(dep)
+        if report["zenodo"]["doi"]:
+            (PAPER_DIR / "zenodo_doi_v2.txt").write_text(report["zenodo"]["doi"] + "\n")
     elif args.update_id:
         dep = zenodo_request("GET", f"{ZENODO}/deposit/depositions/{args.update_id}", token)
         for f in dep.get("files", []):

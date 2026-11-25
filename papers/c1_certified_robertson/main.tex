@@ -1,0 +1,172 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\nrm}[1]{\lVert #1\rVert}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+\newtheorem{thm}{Theorem}
+
+\title{A Lean-checked one-step theorem and an independent re-check\\
+of 2.8 million steps of a validated enclosure of Robertson's problem}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-11-25 \\ doi:10.5281/zenodo.24534472}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+A validated enclosure of Robertson's stiff problem on $[0,4000]$ was published in 2026 with its key step theorem argued in prose
+(doi:10.5281/zenodo.24216837). We (i) state and prove that step theorem in Lean 4 for Robertson's reduced system, with existence,
+uniqueness, a one-sided (logarithmic-norm) Gr\"onwall bound valid for any sign of the constant, tube invariance, chaining through
+basis changes with the exact $2\times2$ spectral norm, and gluing of steps; and (ii) write an independent checker in Rust with Arb
+that recomputes, from exact per-step records, the numerical hypotheses of those theorems for \emph{every} step of the run. All
+$2{,}843{,}424$ steps are certified (one streaming pass, 6 h 21 min, 5.6~MB of checker memory), and the checker's final boxes for $(y_2,y_3)$ lie inside the
+stored checkpoint enclosures, which lie inside the published ones. There is no Lean theorem for the whole chain: the theorems cover a step, the chaining
+between two steps and the gluing of two pieces, and the induction over the steps lives in the checker's code. After $t=400$ the checker's bound is much tighter than the producer's (by a factor $7$ at $t=1000$, $18$ at $t=4000$); we
+give evidence, on two record windows and a 281-point sample of $t\le1000$ and with the producer's source, that this comes from interval division in the producer at
+occasional steps, not from optimism in the checker; the range $1000<t\le4000$ was not examined finely. This is a Tier~C
+result: the checker is unverified Rust code, the link between its arithmetic and the Lean hypotheses is a reviewed correspondence
+and not a proof, and no human has reviewed the Lean statements. The work is AI-generated under human direction and is not peer reviewed.
+\end{abstract}
+
+\section{Claim, scope and tiers}
+Tier markers: \tC{} computed and audited, \tL{} cited, \tX{} unverified. The Lean files pass a strict gate (compilation, an
+\texttt{\#print axioms} report per theorem, axioms restricted to \texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}, no
+\texttt{sorry}); we record them at Tier~C and call them \emph{Tier A candidates} until a human reviewer has read the statements.
+\textbf{Claimed:} (1) the Lean theorems below compile under that gate; (2) an independent checker certifies every step of the run
+under the hypotheses of those theorems; (3) the discrepancy with the producer's bounds after $t=400$ has the stated cause.
+\textbf{Not claimed:} that the Rust checker is correct (it is not verified); that the checker's Robertson field and Jacobian
+match the Lean ones (they are hard-coded and have not been compared by a person); that the mathematics of the checker's own
+derivations (tube-radius rule, box enclosure, closed-form eigenvalue, defect bound) is proved in Lean (it is not); anything about
+other problems, other precisions or other solvers.
+
+\section{Background}
+The published enclosure \tL{} integrates Robertson's problem
+$y_1'=-0.04y_1+10^4y_2y_3$, $y_2'=0.04y_1-10^4y_2y_3-3\cdot10^7y_2^2$, $y_3'=3\cdot10^7y_2^2$ in the reduced variables $(y_2,y_3)$ with
+$y_1=1-y_2-y_3$. Per step of length $h$ it uses a reference polynomial $q$ (Taylor, order $p=24$), the defect $D=f(q)-q'$ of that
+polynomial, an invertible matrix $P$ chosen per step (an eigenvector basis), and a tube of radius $\rho$ around $q$. Its Theorem~1
+gives, for the scaled error $w=P^{-1}(z-q)$ of an exact solution $z$, the bound
+$\nrm{w(t)}\le \varepsilon_0e^{\nu t}+\bar d\int_0^te^{\nu s}ds<\rho$ under the tube condition
+$(\varepsilon_0+\bar dh)e^{\max(\nu,0)h}<\rho$, where $\nu$ bounds the logarithmic norm of $P^{-1}J(y)P$ over a set containing the tube and
+$\bar d\ge\nrm{P^{-1}D}$. Steps are chained through $\varepsilon_0'=\sigma_{\max}(P'^{-1}P)\,\varepsilon_{\rm end}+\nrm{P'^{-1}\mathrm{jump}}$.
+That paper proved Theorem~1 in prose only; its producer used 160-bit Arb balls in Sage 9.5, and its production run was interrupted and resumed from checkpoints.
+Our regenerated producer, run once without interruption, reproduces the published step counts and final errors at the output times of its log up to $t=4000$.
+
+\section{The Lean side}
+All files are in the evidence bundle (\texttt{lean/}); Lean 4.34.0-rc2 with a partial local Mathlib; gate:
+compile plus \texttt{\#print axioms} per theorem with a whitelist. Every theorem named below passed the gate with exactly
+\{\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}\}.
+\begin{itemize}\itemsep1pt
+\item \textbf{Midpoint identity.} For the quadratic field $f$ of Robertson, $f(z)-f(q)=J\!\big(\tfrac{q+z}2\big)(z-q)$ exactly, in the 3-variable and
+reduced forms (\texttt{robertson\_midpoint\_identity\_3d}, \texttt{\_reduced}), and the written-out matrix is the Fr\'echet derivative of the field on
+$\mathbb{R}^2$ (\texttt{robertson\_hasFDerivAt}); a cubic counterexample shows the identity is a property of quadratics.
+\item \textbf{One-sided Gr\"onwall.} In a real inner-product space, if $w'=Aw+b$, $\ip{w}{Aw}\le\nu\nrm{w}^2$ ($\nu$ of any sign), $\nrm{b}\le d$
+and $\nrm{w(a)}\le\varepsilon_0$, then $\nrm{w(x)}\le\texttt{gronwallBound}(\varepsilon_0,\nu,d)(x-a)$
+(\texttt{onesided\_norm\_le\_gronwallBound}). Mathlib's ready-made lemma bounds $\nrm{A}$ instead, which loses the sign of $\nu$; along the trajectory $\nrm{J}$ is of order $10^3$ to $10^4$ (we measured $\nrm{P^{-1}JP}\le6.5\cdot10^3$ at 6{,}684 records) and the factor $e^{\nrm{A}h}$ over $2.8$ million steps is ruinous, whereas $\nu\le244.7$ only briefly and is negative or tiny for most steps.
+\item \textbf{Scaled error and tube.} \texttt{scaled\_error\_hasDerivAt}: $w=P^{-1}(z-q)$ satisfies $w'=(P^{-1}J(m)P)w+P^{-1}D$ exactly;
+\texttt{truncated\_error\_stays\_in\_tube}: with the field clamped to the tube by a retraction (2-Lipschitz), invariance follows from the
+one-sided theorem with $\max(\nu,0)$ and the tube condition, with no first-exit argument.
+\item \textbf{Existence and uniqueness.} \texttt{robertson\_onestep\_complete}: under the tube condition, a uniform one-sided bound on a set
+$U$ containing every $q(t)+Pu$ with $\nrm{u}\le\rho$, the defect bound and the initial bound, there \emph{exists} a solution of $z'=f(z)$ on the
+step with $z(a)=z_0$, strictly inside the tube, satisfying the sharp Gr\"onwall bound; every continuous, right-differentiable solution with the same initial
+value coincides with it (Picard--Lindel\"of on the clamped field; uniqueness from Mathlib's theorem and a Lipschitz bound of $f$ on balls). A bound on $\nrm{q}$ over the step is also a hypothesis; the checker
+does not discharge it separately (it is trivially satisfiable for a polynomial on a compact interval).
+\item \textbf{Chaining.} \texttt{chain\_bound} and \texttt{chain\_sigma}: $\nrm{P'^{-1}(z-m')}\le s\,\nrm{P^{-1}(z-q)}+\nrm{P'^{-1}(q-m')}$ with $s^2=(F^2+\sqrt{F^4-4\det^2})/2$,
+the exact $2\times2$ spectral bound (\texttt{sigma\_opNorm\_le}; $F$ the Frobenius norm), given $P'^{-1}P=C$ for an explicit matrix $C$ (a hypothesis discharged by the
+checker); a Frobenius version is also proved. Consecutive solutions glue into one (\texttt{glue\_solutions}, \texttt{robertson\_glue}).
+\end{itemize}
+\textbf{Controls.} Each file has a non-vacuity witness or counterexample (for example $w=\varepsilon_0e^{-t}$ with $\nu=-1$ giving the tight bound) and at least one gate
+negative control, some files several: copies with one changed constant or hypothesis (a wrong Jacobian coefficient, $\nu$ instead of $\max(\nu,0)$, $F^2-\sqrt{\cdot}$ instead of $F^2+\sqrt{\cdot}$, a wrong
+defect sign, a dropped term) are rejected by the gate. The counts per file are in the bundle's results notes. The gate must be given the \texttt{\#print axioms} lines inside each file. The Lean files are standalone: they do not import each other, and the field \texttt{robF} is defined separately in three of them (agreement is textual, checked by reading, not by the kernel). \textbf{There is no Lean theorem for the multi-step result:}
+the induction over $2.8$ million steps, the bookkeeping of $\varepsilon$ and the conclusion that the true solution lies in the final box exist only in the checker's loop.
+The Lean statements were written and read by the same AI agent family; no human has reviewed them.
+
+\section{The checker}
+A Rust crate with Arb through \texttt{flint3-sys} 3.6.1, 256-bit balls. For each step it takes only exact rational data (start time, $h$, the reference
+polynomial's coefficients, the basis $P$ as exact rationals, the claimed numbers) and recomputes, ignoring the producer's claims (mode \emph{derive}, exact chain):
+\textbf{C0} continuity, shape, index; \textbf{C1} $P$ is invertible (its inverse is computed exactly in rationals, so $P'^{-1}P=C$ is an exact rational matrix and the hypothesis of \texttt{chain\_sigma} holds
+literally); \textbf{C2} the defect polynomial $D$ and a bound $\bar d$ on $\nrm{P^{-1}D}$ over $[0,h]$ (sum of coefficient moduli times $h^k$); \textbf{C3} the one-sided constant $\nu$ as the largest eigenvalue of the
+symmetric part of $P^{-1}JP$ over a box containing the tube; \textbf{C4} the tube condition with $\rho=8(\varepsilon_0+\bar dh)$; \textbf{C5} the Gr\"onwall end bound evaluated at the \emph{scalar}
+upper bound of $\nu$; \textbf{C6} the chaining bound with the exact $2\times2$ spectral norm; \textbf{C7} the output box. A step is certified only if all pass.
+\textbf{What is not proved:} that these Rust formulas are the Lean hypotheses (a human-reviewed correspondence; the Neumann-type inverse enclosure used in a secondary mode, the box enclosure by Horner
+evaluation and the closed-form eigenvalue have no Lean proof); the hard-coded field and Jacobian.
+\textbf{What gates a step in the headline mode} (derive, exact chain): continuity and shape (C0), invertibility (C1), the tube condition (C4) and finiteness. C4 adds little on its own: since $\rho=8(\varepsilon_0+\bar dh)$,
+it reduces to $\nu_+h<\ln 8$, so the largest ratio $0.1314$ (step index 26) only says $\nu_+h\approx0.05$ there; it is not a robustness margin. C2, C3, C5 and C7 are derivations that fail only on non-finite values; their correctness
+rests on the code.
+\textbf{Controls.} \emph{Record corruptions}, by mode: in the headline mode, doubling $h$ is rejected (C0, at the corrupted step; on a stream of 11{,}382 records the first failure is the corrupted index) and a singular $P$ is rejected (C1);
+corrupting the producer's claimed $d$, $\nu$ or carried error has no effect there, because no claim is consumed. In the secondary \emph{claims} mode (the producer's $d,\nu,\varepsilon_0$ verified and consumed) dropping $d$ and lowering $\nu$ are rejected at C2 and C3 at every step,
+which shows that the checker's own derived $d$ and $\nu$ are non-trivially larger than the corrupted claims; a halved carried error is rejected at C6 in the claims mode only, and a wrong claimed inverse is rejected at C1 in the modes that use a claimed inverse (derive with the Frobenius or spectral chain, and claims) but not in the exact mode, where the inverse is computed exactly and a wrong claimed one only raises a non-gating note.
+\emph{Mutation of the checker's source} (one change each, on a throwaway copy, first 265 steps, headline mode; bundle \texttt{mutation/}): a wrong Jacobian coefficient is rejected at 209 of 265 steps and a wrong field coefficient at 236 of 265;
+but taking the \emph{smaller} eigenvalue for $\nu$ is \textbf{accepted} at all 265 steps (final $\varepsilon_{\rm end}$ falls by seven orders of magnitude) and truncating the defect to the first $p$ coefficients is accepted (median $d$ changes by $0.06\%$).
+The former is caught only by comparing the checker's $\nu$ with the producer's recorded $\nu$ (relative differences $10^3$ to $10^5$ against $4\cdot10^{-5}$ unmutated); the latter is not reliably caught by anything here. So in the headline mode certification of C2/C3 rests on the checker's code being right and on this cross-check against the producer.
+A stricter first window needed one documented tolerance (a $10^{-6}$ relative tolerance on the producer's $\nu$ claim in the claims mode); the exact mode used for the headline needs none.
+
+\section{Result}
+Streaming pass over the regenerated producer output (the producer and the checker are piped; records are never stored): \textbf{2{,}843{,}424 of 2{,}843{,}424 steps certified, none rejected}; all ten comparisons with the
+stored enclosures hold (ours inside stored; the stored boxes come from the producer's final checkpoint, have the published midpoints and radii smaller by about $1.6\cdot10^{-9}$ relative (an audit check), so they lie inside the published ones, and only the reduced components $(y_2,y_3)$ are compared). Wall time 22{,}852~s; producer 214~MB, checker 5.6~MB maximum resident memory.
+Largest tube ratio $0.1314$ and largest $\nu$ $+244.7$, both at step index 26 (see the remark on C4 above). Cumulative sha256 of the record stream at the last output time:
+\texttt{eb8e6e62d6d8d40552bd7b6dac41002a90bee5af06a2aeddb24ed9d4455ffe66}; the hashes at all ten output times are in the bundle.
+\begin{center}\small
+\begin{tabular}{@{}rrrrr@{}}
+\toprule
+$t$ & last step index (0-based) & producer $\varepsilon$ & checker $\varepsilon_{\rm end}$ & our radius / stored radius \\
+\midrule
+0.1 & 70 & 3.283e-22 & 3.089e-22 & 0.941 \\
+0.4 & 135 & 6.109e-22 & 5.804e-22 & 0.950 \\
+1 & 264 & 2.366e-21 & 2.301e-21 & 0.973 \\
+4 & 927 & 2.990e-20 & 2.937e-20 & 0.982 \\
+10 & 2371 & 1.726e-19 & 1.698e-19 & 0.983 \\
+40 & 11381 & 1.404e-18 & 1.382e-18 & 0.985 \\
+100 & 34218 & 3.571e-18 & 3.518e-18 & 0.985 \\
+400 & 185577 & 8.470e-18 & 8.335e-18 & 0.984 \\
+1000 & 560306 & 7.921e-17 & 1.105e-17 & 0.140 \\
+4000 & 2843423 & 2.677e-16 & 1.513e-17 & 0.057 \\
+\bottomrule
+\end{tabular}
+\end{center}
+(The step counts are $71,136,265,928,2372,11382,34219,185578,560307,2843424$, one more than the indices.) At $t=0.1$ and $0.4$ the output times are the doubles $3602879701896397/2^{55}$ and $3602879701896397/2^{53}$.
+The Frobenius chain bound, the only one proved in Lean before the exact spectral bound, fails the tube check from step 132 on every window longer than $t=0.1$; the exact
+bound is what makes the long run possible.
+
+\section{The discrepancy after $t=400$, and its cause}
+An enclosure tighter than the producer's is acceptable only if understood. In a rerun to $t=1000$ printing every 2{,}000th step (a diagnostic copy of the checker), our $\nu$ equals the producer's claimed $\nu$
+at the printed five significant digits at 213 of 281 samples; the other 68 differ by $2$ to $4\cdot10^{-8}$ (one-sided, ours smaller), first at step 426{,}000, a consequence of the producer's larger tube after its largest leap. The difference is a set of
+discrete leaps in the producer's claimed error, not a different growth rate: for 4{,}310 consecutive transitions in two extracted windows the producer's $\varepsilon_0$ never exceeds the exact chain
+value (exact $\sigma_{\max}$ times its own previous bound plus the exact jump norm) by more than $0.1\%$, but inside steps 425{,}749 to 425{,}752 its recorded $\varepsilon_{\rm end}$ exceeds the Gr\"onwall value of its own recorded $\varepsilon_0,\nu,\bar d$ by factors $1.04$, $1.12$,
+$1.34$, $2.04$ (about the growth of the step too, since $\nu\approx0$).
+The cause: the producer records the \emph{upper} end of its $\nu$ ball and evaluates $g=(e^{\nu h}-1)/\nu$ with $\nu$ a ball. When the ball is wide (lower end near $-2.6\cdot10^{-3}$) but its upper end is slightly negative,
+ball division treats numerator and denominator as independent and the upper end becomes $|e^{\nu_{\rm lo}h}-1|/|\nu_{\rm up}|$, up to $\approx 540$ at step 425{,}752 and a few hundred times $h$ at the other leap steps, against the true value $\approx h=1.6\cdot10^{-3}$: sound but extremely pessimistic.
+This is exactly what the producer's source does (\texttt{ph2\_enclose.py}, lines 236--248: $\nu$ is a ball, \texttt{nu.upper()} is recorded, and $g$ is computed by ball division whenever \texttt{nu.upper()<0}).
+A consistency check of this reading (it inverts the producer's own $\varepsilon_{\rm end}$ under the model, so it is consistent with it, not an independent proof): the lower end implied by the producer's own $\varepsilon_{\rm end}$ at the 15 leap steps of the window around step 425{,}000 is $-2.636\cdot10^{-3}$ to $-2.645\cdot10^{-3}$ although their
+$\nu_{\rm up}$ ranges from $-8\cdot10^{-9}$ to $-8\cdot10^{-6}$, and $-3.517\cdot10^{-3}$ to $-3.520\cdot10^{-3}$ at the 3 leap steps near step 289{,}000. The Lean theorem takes a scalar $\nu$ and the checker evaluates the bound at the scalar upper end, so it has no such artefact.
+\textbf{Limits:} established on two record windows and a 281-point sample of $t\le1000$; the radius ratio falls further from $0.140$ at $t=1000$ to $0.057$ at $t=4000$, a range not examined finely, only through the final comparison. This analysis explains the producer's looseness;
+it is not what makes the checker sound, which rests on C3 and C5 and on the code being right.
+
+\section{Limits and what remains}
+Tier~C throughout. The checker is unverified code (a verified checker is a much larger project); Arb, FLINT, GMP and MPFR and the \texttt{unsafe} bindings are assumed correct; the checker and the producer use the same mathematics
+(independent code, not an independent method); the stored enclosure is the producer's own output, so agreement of boxes is not independent evidence; the Robertson field and Jacobian in the checker are hard-coded;
+the independent AI audit compared them coefficient by coefficient with the Lean field and found them identical, but the human comparison is still owed; no human has reviewed the Lean statements (the only route to Tier~A). One problem, one precision, one producer.
+
+\section*{Reproduction and disclosure}
+The evidence bundle contains the Lean files, the checker source, the preregistrations, the run logs and hashes, and the diagnostic scripts, with a manifest of sha256 values. The pipeline is one command
+(documented in the bundle) and takes about 6.5 hours; the cumulative hashes show whether a rerun produces the same stream. The audit did not rerun the producer or the checker (6.5 hours); the stream hashes and the tests were not independently reproduced by it. \textbf{AI disclosure:} this work, including the Lean files, the checker and this text,
+was produced by AI agents (Anthropic Claude models) under the direction of the author, with the agent that wrote each part separate from the one that checked it where stated; it has had one independent AI audit by a model of the same family
+(verdict ACCEPT\_WITH\_CORRECTIONS, 0 blockers, 9 required corrections, all applied; \texttt{AUDIT.md} in the bundle) and no human review; it is not peer reviewed. Prior record: doi:10.5281/zenodo.24216837.
+
+\end{document}

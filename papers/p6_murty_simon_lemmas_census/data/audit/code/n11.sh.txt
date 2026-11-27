@@ -1,0 +1,7 @@
+#!/bin/bash
+cd /tmp/msaudit/d2c
+for k in 0 1 2 3; do
+  taskset -c $((k+2)) bash -c "nauty-geng -cq 11 $k/4 | ./target/release/d2c /tmp/msaudit/out/d2c_n11_p$k.g6 2> /tmp/msaudit/out/n11_p$k.log" &
+done
+wait
+cat /tmp/msaudit/out/n11_p*.log

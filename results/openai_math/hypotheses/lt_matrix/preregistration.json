@@ -1,0 +1,54 @@
+{
+  "lab": "matrix-valued sharp 1D Lieb-Thirring (openai/math family 262, matrix and equality-case manuscripts of 2026-10-05)",
+  "timestamp_utc": "2026-10-08T11:01:47.449952+00:00",
+  "stage": "preregistration: instruments built and controls passed; NO campaign row exists yet",
+  "documents": {
+    "docs/OPENAI_MATH_LT_MATRIX.md": "ca6d6c24294f9d48df44dc64845ed9a404690f0d1418315246bcd7a6eb9e6be9",
+    "docs/OPENAI_MATH_SELECTION_2026-10-08.md": "54b9ec6a360ae1bf8ff7cac4e0dbf93ade95a51a400f2b41126e0de655f990f7"
+  },
+  "frozen_instruments_sha256": {
+    "instrument.py": "effb5de7e215e7d1b713d6c9f1a8fe09f4b6fa0c088aafd3b3e1c5076aaf9fac",
+    "controls.py": "061a5d17fd242d3a974399bdfc9ffacb4f2bc6f08f91ff22967b0c1fb1d603cc",
+    "campaign.py": "00fd51fd7ecafa4cf89ae43ca9699418b0969fdd88fd51a632c00fd1e1872c5b"
+  },
+  "controls_result_sha256": "4fcbfd6af4976434e138a7a3074524afc9e68a4cdce7355bea21556ec0ed4290",
+  "controls_summary": {
+    "C1": true,
+    "C2_C3": true,
+    "C4": true,
+    "C5": true,
+    "C6": true,
+    "C7": true
+  },
+  "constants": {
+    "0.75": 0.3060529181207677,
+    "1.0": 0.24503506463190752,
+    "1.25": 0.21051859546975216,
+    "1.4": 0.1957595433855075,
+    "1.5": 0.18750000000000006,
+    "3.0": 0.1254908243173787
+  },
+  "verdict_rule": {
+    "VOID": "any control failed",
+    "VIOLATION_CERTIFIED": "refined-grid excess > 1e-5 AND finite-difference (Richardson) excess > 5e-6 on the stored parameters",
+    "UNDECIDED": "1e-7 < refined-grid excess <= 1e-5, or the two solvers disagree",
+    "NO_VIOLATION_FOUND": "every restart excess <= 1e-7 (not a proof; the budget is stated)"
+  },
+  "hypotheses": {
+    "H-LT1": "sup R over m = 2, 3 matrix potentials <= L1(gamma) for gamma in {0.75, 1.0, 1.25, 1.4}; kill: VIOLATION_CERTIFIED with controls passing",
+    "H-LT2": "near-maximisers (R >= (1-1e-3) L1) are direct sums of scalar sech^2 solitons in one constant unitary basis; kill: near-maximiser with R >= (1-1e-4) L1 and commutator statistic > 0.05",
+    "H-LT3": "embedded scalar extremiser is a local maximum in matrix directions; kill: positive second variation beyond noise confirmed at finite epsilon",
+    "H-LT4": "negative controls C5/C7 exceed L1 at gamma = 3; positive controls C1-C4, C6 pass (already satisfied at preregistration)",
+    "H-LT5": "dual kinetic form at gamma = 1: Sum ||psi_j'||^2 >= (pi^2/4) int tr rho^3 for orthonormal families of C^m-valued functions; kill: explicit family with quotient < pi^2/4 (1 - 1e-6) after exact re-evaluation"
+  },
+  "smoke_values_seen_before_registration": {
+    "controls": "see controls.json (all pass); scalar search reaches L1 within 4e-6 at gamma=1.0, 1.25 best seed; matrix gamma=3/2 within 2.6e-7; gamma=3 exceeds L1 by +15.9% for m=1 and m=2",
+    "no_matrix_search_at_gamma_in_(0.5,1.5)_has_been_run": true
+  },
+  "assets": [
+    "Elenchus MAIEUTICS/HYPOTHESES (method)",
+    "Elenchus ledger.py (claims)",
+    "Mensura interval/abstaining verdict style",
+    "LeanMaster Lean environment (statement checks)"
+  ]
+}

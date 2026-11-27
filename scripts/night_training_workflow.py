@@ -43,6 +43,7 @@ from typing import Any
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
+sys.path.insert(0, str(REPO / "scripts" / "shared_gpu_lease"))
 sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
 from gpu_lease import gpu_lease  # noqa: E402
 
@@ -56,12 +57,23 @@ DISK2 = Path("/mnt/disks/disk-socrateai-local-1/AutoevolveAI")
 LAKE = DISK2 / "datalake"
 RUNS = DISK2 / "training_runs"
 JOURNALS = RUNS / "journals"
+LTM_MIX_PATH = REPO / "data" / "training" / "ltm_mix.jsonl"
 
 # Held-out set (card C-7 / P4-5): the frozen hardness ladder scored per prover and per tier.
 # Built from results/hardness/baseline.json by --write-heldout-baseline; GATE consumes it.
 HELDOUT_BASELINE = REPO / "results/v2/heldout_baseline.json"
 HARDNESS_DIR = REPO / "results/hardness"
 CANDIDATE_EVAL_NAME = "heldout_eval.json"  # written next to the adapter by a ladder run
+
+# FIT base model per journal model name. A Qwen adapter cannot move the pipeline prover's
+# numbers (TODO 1, trainer/prover mismatch), so the prover arm names the prover's own HF
+# weights and the ladder key GATE compares it against (the key in heldout_baseline.json).
+BASE_MODELS: dict[str, str] = {
+    "qwen_lora": "Qwen/Qwen2.5-Coder-7B-Instruct",
+    "deepseek_prover_lora": "deepseek-ai/DeepSeek-Prover-V2-7B",
+}
+PROVER_KEYS: dict[str, str] = {"deepseek_prover_lora": "deepseek"}
+SMOKE_BASE_ID = "Qwen/Qwen2.5-0.5B-Instruct"
 
 T4_TOTAL_MIB = 15360
 MIN_HELDOUT_N = 30  # below this, a per-model pass-rate difference is noise
@@ -175,9 +187,49 @@ def step_artifact(model: str, journal: ModelJournal) -> bool:
     return True
 
 
-def step_data(model: str, journal: ModelJournal, smoke: bool) -> list[dict] | None:
+def _is_verified_row(r: dict[str, Any]) -> bool:
+    v = r.get("verdict")
+    if v is True:
+        return True
+    if isinstance(v, str) and v.upper() == "PASSED":
+        return True
+    return bool(r.get("verified") is True and v is not False)
+
+
+def step_data(
+    model: str,
+    journal: ModelJournal,
+    smoke: bool,
+    corpus_override: Path | None = None,
+) -> list[dict] | None:
+    import subprocess
+
     t0 = time.time()
-    corpus = LAKE / "data/redis/redis_ltm_lora_dataset.jsonl"
+    corpus = corpus_override or LTM_MIX_PATH
+    mix_report: dict[str, Any] = {}
+
+    if corpus_override is None:
+        proc = subprocess.run(
+            [sys.executable, str(REPO / "scripts" / "ltm_learning_mix.py"), "--out", str(corpus)],
+            capture_output=True,
+            text=True,
+        )
+        if proc.returncode == 0 and proc.stdout.strip():
+            try:
+                mix_report = json.loads(proc.stdout)
+            except json.JSONDecodeError:
+                mix_report = {}
+        elif not corpus.exists():
+            journal.record(
+                StepRecord(
+                    Step.DATA,
+                    Outcome.BLOCKED,
+                    f"ltm_learning_mix.py failed (rc={proc.returncode}) and {corpus} is absent: {proc.stdout.strip()}",
+                    seconds=time.time() - t0,
+                )
+            )
+            return None
+
     if not corpus.exists():
         journal.record(
             StepRecord(
@@ -216,30 +268,65 @@ def step_data(model: str, journal: ModelJournal, smoke: bool) -> list[dict] | No
     # Provenance gate. Card P4-2 makes this the single chokepoint for real
     # training; until it lands, only a smoke run may proceed, and only because
     # its output is never promotable.
-    verified = [r for r in rows if str(r.get("verdict", "")).upper() == "PASSED"]
+    verified = [r for r in rows if _is_verified_row(r)]
+    unverified_count = len(rows) - len(verified)
+    unverified_share = (unverified_count / len(rows)) if rows else 0.0
+
     if not verified and not smoke:
         journal.record(
             StepRecord(
                 Step.DATA,
                 Outcome.BLOCKED,
-                f"{len(rows)} rows carry no attestation verdict; the verified-data "
+                f"{len(rows)} rows in {corpus} carry no attestation verdict; the verified-data "
                 "gate (card P4-2) has not landed. Refusing to train for real on "
                 "unverified rows.",
-                data={"rows": len(rows), "verified": 0},
+                data={
+                    "corpus_file": str(corpus),
+                    "rows": len(rows),
+                    "verified": 0,
+                    "unverified_share": round(unverified_share, 4),
+                },
                 seconds=time.time() - t0,
             )
         )
         return None
 
-    use = verified if verified else rows
+    if rows and unverified_share > 0.30 and not smoke:
+        journal.record(
+            StepRecord(
+                Step.DATA,
+                Outcome.BLOCKED,
+                f"unverified share {unverified_share:.2%} ({unverified_count}/{len(rows)}) in {corpus} exceeds 30% dilution cap",
+                data={
+                    "corpus_file": str(corpus),
+                    "rows": len(rows),
+                    "verified": len(verified),
+                    "unverified_share": round(unverified_share, 4),
+                },
+                seconds=time.time() - t0,
+            )
+        )
+        return None
+
+    use = rows if verified else rows
+    eff_dil = mix_report.get("effective_dilution", round(unverified_share, 4))
+    dil_cap = mix_report.get("dilution_cap", 0.3)
+    dil_suffix = f" [effective_dilution={eff_dil}, dilution_cap={dil_cap}, unverified_share={unverified_share:.4f}]"
     journal.record(
         StepRecord(
             Step.DATA,
             Outcome.OK,
-            f"{len(use)} row(s)"
+            f"{len(use)} row(s) from {corpus}{dil_suffix}"
             + ("" if verified else " UNVERIFIED — smoke only, not promotable"),
-            data={"rows": len(rows), "verified": len(verified), "used": len(use),
-                  "excluded_frozen_split": excluded},
+            data={
+                "corpus_file": str(corpus),
+                "rows": len(rows),
+                "verified": len(verified),
+                "unverified_share": round(unverified_share, 4),
+                "used": len(use),
+                "excluded_frozen_split": excluded,
+                "dilution_report": mix_report,
+            },
             seconds=time.time() - t0,
         )
     )
@@ -259,7 +346,14 @@ def step_fit(
         )
         return None
 
-    base_id = "Qwen/Qwen2.5-0.5B-Instruct" if smoke else "Qwen/Qwen2.5-Coder-7B-Instruct"
+    if model not in BASE_MODELS:
+        journal.record(
+            StepRecord(Step.FIT, Outcome.BLOCKED,
+                       f"no base model registered for {model!r}; known: {sorted(BASE_MODELS)}",
+                       seconds=time.time() - t0)
+        )
+        return None
+    base_id = SMOKE_BASE_ID if smoke else BASE_MODELS[model]
     # 7B in fp16 is ~14.2 GiB of weights alone and cannot fit a 15 GiB T4
     # (FIT OOM'd on 2026-09-27). Non-smoke runs load 4-bit NF4 (~5 GiB).
     need = 3_000 if smoke else 7_000
@@ -356,6 +450,7 @@ def step_fit(
 
             result = {
                 "base_model": base_id,
+                "prover": PROVER_KEYS.get(model),
                 "steps": steps,
                 "trainable_params": trainable,
                 "loss_first": losses[0],
@@ -580,13 +675,20 @@ def main(argv: list[str] | None = None) -> int:
         help="build results/v2/heldout_baseline.json from results/hardness/*.json and exit "
              "(no GPU; this is the file GATE compares against)",
     )
+    parser.add_argument(
+        "--k", type=int, default=1,
+        help="pass@k for --write-heldout-baseline; must equal the k of the candidate eval "
+             "(compare refuses a k mismatch). Needs >= k samples per item in baseline.json.",
+    )
     args = parser.parse_args(argv)
+    if args.k < 1:
+        parser.error("--k must be >= 1")
 
     logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(message)s",
                         datefmt="%H:%M:%S")
 
     if args.write_heldout_baseline:
-        write_heldout_baseline()
+        write_heldout_baseline(k=args.k)
         return 0
 
     ok, desc, free = gpu_state()

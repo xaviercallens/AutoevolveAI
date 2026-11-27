@@ -1,0 +1,83 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "MS-L-0001",
+   "statement": "Das-Fox, 'A proof of the Murty--Simon conjecture on diameter-2-critical graphs', arXiv:2610.39032 v1 (28 Oct 2026, unrefereed). D2C = diameter 2 and deleting any edge destroys diameter 2. Lemma 1.2 (as read by the auditor from the full text): for every D2C graph G on n>=3 vertices and every maximal matching M (inclusion-maximal), |E(G) minus M| <= number of non-edges. Lemma 1.3: if equality holds for every maximal matching then G is triangle-free. Both are unconditional for-all statements. Theorem 1.1: a D2C graph on n vertices has at most floor(n^2/4) edges. AI statement of the paper: GPT-5.6 Sol found a proof of the floor(n^2/4) bound (Lemma 1.2) and an equality-case proof for even n only; the all-n equality proof (Lemma 1.3) is the authors' own work. Taken as stated; the paper text is third-party and not shipped.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:9b44c00de575a619da1f2ba6e7324d8aec2af2a6865e8350bfced14b811edafd",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "MS-L-0002",
+   "statement": "Prior art: Dailly-Foucaud-Hansberg, 'Strengthening the Murty-Simon conjecture on diameter 2 critical graphs', arXiv:1812.08420 (Discrete Math 2019): computer search on all graphs of order <= 11, structural facts, no per-order counts; reports that Fan (1987) proved the Murty-Simon conjecture for n <= 24 and n = 26 (Fan not read here). OEIS A330333 'Number of diameter-2-critical graphs with n nodes': 1, 2, 3, 5, 10, 30, 103, 519, 3746 (offset 3), M. Zivkovic Dec 2019, a(11) added by S. A. Irvine 2026-09-05 (checked on oeis.org 2026-11-01). MacDougall-Eggleton (1997) list the D2C graphs up to n=7 (via the auditor; not read here).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:12c33ba7fac94e0369d3f36974b090b116ccc1c070df3b811d4ccc788decf2fa",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "MS-C-0001",
+   "statement": "Census of D2C graphs, 3<=n<=11, by two independent implementations. Producer: nauty-geng -c piped to a C filter (explicit criticality test). Auditor: fresh geng, Rust filter with a common-neighbour characterisation, cross-checked by explicit BFS edge deletion for n<=10 (0 disagreements on 11,989,762 connected graphs), and a full fresh enumeration of all 1,006,700,565 connected graphs at n=11. Connected graphs (= A001349): 2, 6, 21, 112, 853, 11117, 261080, 11716571, 1006700565. D2C graphs: 1, 2, 3, 5, 10, 30, 103, 519, 3746 (total 4419), equal to OEIS A330333; canonical D2C sets (nauty labelg) are equal for n=3..11, symmetric difference 0. Controls: positives C4, C5, Petersen, K23, K33, K45, K15 accepted; negatives K3, K4, K5, K4-e, C6, C7, P4 rejected (both implementations). This is a recomputation of published counts.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "MS-L-0002"
+   ],
+   "evidence": "sha256:c513f0c6594a6a0f3b14c9b763f3e22943cda7e4f689304e6ac8a8fca566b16f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "MS-C-0002",
+   "statement": "Per-graph test of Das-Fox Lemmas 1.2 and 1.3 and of Theorem 1.1 on all 4419 D2C graphs with 3<=n<=11: 776,217 maximal matchings tested (2, 5, 15, 39, 147, 788, 5142, 50991, 719088 for n=3..11), recomputed identically by the producer (Python) and the auditor (own enumerator, equal to brute force on the 51 D2C graphs with n<=8 plus 14 control graphs). 0 violations of Lemma 1.2; 0 violations of Lemma 1.3; max edges = floor(n^2/4) at every n, attained uniquely by the balanced K_{ceil(n/2),floor(n/2)}. Exactly one graph per n is an equality case for ALL maximal matchings: the balanced K_{a,b}, triangle-free, so Lemma 1.3 is nearly vacuous in this range. Auditor finding: equality for even ONE maximal matching holds only at K_{a,b}; triangle-containing D2C graphs stay below the bound of Lemma 1.2 by at least 1 at n=6 and at least 10 at n=11 (D2C graphs with a triangle: 1, 4, 20, 87, 488, 3685 for n=6..11). Perturbed statements (strict <, bound minus 1, empty matching) fail as they must. Sanity check only: Theorem 1.1 was already reported proved for n<=24 and n=26 by Fan (1987, per DFH, not read).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "MS-L-0001",
+    "MS-C-0001"
+   ],
+   "evidence": "sha256:639d14263c41bf4994c95db2512489549b5493d720b5d961eec15f3b8cc45638",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "MS-C-0003",
+   "statement": "Auditor reproduction of the structural facts of Dailly-Foucaud-Hansberg on the D2C list: 13 non-bipartite D2C graphs at floor((n-1)^2/4)+1 edges outside the C5+ family (n=7: 3, n=8: 8, n=9: 2; none at n=10, 11), 3 of them without a dominating edge; 10 graphs at that bound with a dominating edge, all with n<=9; only H5 (n=6, 8 edges) above that bound; maximum degree n-1 only in stars (0 exceptions).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "MS-C-0001",
+    "MS-L-0002"
+   ],
+   "evidence": "sha256:755518790e8864bde33c5d190fbdee15642b3d0fa08e8cad6243374fe9dff9ec",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "MS-X-0001",
+   "statement": "Intermediate lemmas of Das-Fox (2.4, 2.5, 2.13, 3.1, 3.2): 0 violations on all 4419 graphs by the producer's own implementation of the paper's definitions (critical non-edge, I, I', C_l). The auditor did NOT recompute these; a misreading of those definitions would not affect the checks of Lemmas 1.2, 1.3 and Theorem 1.1. Tier X (unaudited producer numbers).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:807bd920fdddc20312295e3550ac6e2df737995da5ebf95197b19093b7173cc0",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "MS-X-0002",
+   "statement": "NOT done / not verified: the Das-Fox proof logic; anything for n>=12 (n=12 has about 1.65e11 connected graphs, about 16 wall-hours on 4 cores, not run); Fan (1987); the producer's reconstructed Figure 1 graph; Lean or any proof-assistant check; a human audit. Provenance caveats: PREREG_ITEM.md (sha256 b731521c...) and RESULT.md were committed together in c981c12, so the claim that it was written before any computation is self-attested and not verifiable from git; the producer ran 4 geng|filter pipelines = 8 processes on cores 2-5 (not <=4 processes as written in RESULT.md).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:eadc6786a2b50fc7841ce8c08dba0f7c6d2e068faf610f8f0ba19ed4f3458606",
+   "audit": null
+  }
+ ]
+}

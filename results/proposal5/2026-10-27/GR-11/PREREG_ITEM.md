@@ -1,0 +1,9 @@
+# GR-11 item addendum (written before any run; parent preregistration unchanged, sha 140a28ad...ae9be)
+
+Literature/novelty (2026-10-31): AutoGraphForge (arXiv 2609.03478) read: invariants, census up to 9 vertices, no Written-on-the-Wall spectral conjectures, no pre-emption. Roucairol-Cazenave 2409.18626 read (it does not state the open conjectures). Third-party, unverified 2026-10 repos/issues (shiiiIIiIiiin/graffiti-results; google-deepmind/formal-conjectures #6900/#6902/#6903; agnt.gg) claim 198, 219, 252, 254, 262, 322, 712, 714 and 290, 292, 295 resolved; nothing found for 20, 21, 39, 40, 129, 143, 154, 195, 284, 698.
+Primary source: Written on the Wall, July 2004 PDF (sha256 d2c779d2c28418b30ab1b4f84bf7112c0e000bca1f2d6a3c48d0baba78af7733) in /home/callensxavier_gmail_com/gr11_thirdparty/wow/. It is a scanned bitmap (no text layer, no OCR installed); read by eye page by page.
+
+Scope: definitions are pinned from the primary source only where read. Pinned: Graffiti 20 (number of positive eigenvalues <= sum of positive eigenvalues) and 21 (number of negative eigenvalues <= sum of positive eigenvalues), adjacency eigenvalues (WoW p.19). Conjectures 39/40 (deviation of the distance matrix) and the gravity/harmonic/temperature/derivative ones are NOT pinned in the time available -> per the kill criterion they are not run (reported BLOCKED).
+Test: all connected graphs n<=10 (geng -c), n=11 only if wall time allows, cores 4,5. Violation = count > S+ + 1e-6 (|eig|<1e-9 counted zero). Near ties (|S+ - count|<=1e-6) are counted; equality ties are expected. Any violation is rechecked exactly (Tier A).
+Positive control: Graffiti 29 (Randic index <= number of negative eigenvalues) must fire at n=7 and not for n<=6. Negative controls: lambda1 >= average degree and sum|lambda| >= n_pos+n_neg must never fire.
+Kill: 20 core-hours exceeded, or definitions unpinned. Tier X (floats).

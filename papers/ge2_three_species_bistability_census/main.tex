@@ -1,0 +1,176 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,
+  frame=single,framesep=3pt,xleftmargin=4pt,xrightmargin=4pt,upquote=true,aboveskip=4pt,belowskip=2pt}
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\R}{\mathbb{R}}
+\newtheorem{prop}{Proposition}
+
+\title{A certified partial census of bistability in three-species open bimolecular\\
+mass-action networks with at most three internal reactions}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-11-11}
+\hypersetup{pdftitle={A certified partial census of bistability in three-species open bimolecular mass-action networks with at most three internal reactions},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small doi:10.5281/zenodo.24131124 \quad (not peer reviewed)\end{center}
+
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its search and checking code and its claim ledger were
+produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{The census was independently audited once by a different AI agent instance (\texttt{data/AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.}
+The audit's corrections are applied (Section~\ref{sec:dev}). \textbf{No human audit exists.} The preregistration hash is self-attested and has no independent timestamp.
+
+\begin{abstract}
+We enumerate all mass-action networks on three species $X,Y,Z$ built from the nine complexes of molecularity at most two, with at most three internal reactions and, for every species, an inflow and a linear removal: $62{,}269$ labelled networks, $10{,}523$ up to species relabelling. For each we look for a certificate. \textbf{$754$ networks carry an exact rational bistability witness} (positive rational parameters and two distinct positive rational equilibria, both exactly Routh--Hurwitz stable), independently re-verified by an auditing AI agent. \textbf{$5{,}071$ carry a certified exclusion} (at most one positive equilibrium for all parameters, by a determinant-sign criterion of Craciun--Feinberg type, proved for our quadratic fields by a midpoint identity). $807$ more have two exact equilibria but no stable pair was found (\emph{not} independently verified), and \textbf{$3{,}891$ ($37.0\%$) are UNDECIDED}: the census is \emph{partial}, and an undecided network is search evidence only, never an absence. Among connected-support networks, $727$ are certified bistable, $175$ of them minimal under edge deletion; of these $79$ contain a species that is never a reactant and are effectively two-species cascades, and $96$ are irreducible by our screen. Exactly nine networks with two internal reactions are bistable; they are listed with one exact witness each. The census reproduces Peng's two-species classification (arXiv:2610.32739, $27$ of $681$), which is Peng's result, not ours. A consistency check against the inheritance theorem of Joshi--Shiu shows that at least $57$ further three-reaction networks are bistable although not certified here. We make no claim of new mechanisms and no biological claim; novelty relative to the cited literature is ``to our knowledge'' only (Section~\ref{sec:related}). Producer and auditor are AI agents; no human audit.
+\end{abstract}
+
+\paragraph{Markers.} \tL{}: a cited source, taken as stated. \tC{}: executed code with an argument written down but not machine-checked (no Lean here). \tX{}: search output, a recorded absence, or a list of what was not done, supporting nothing by itself. There is no Tier A claim in this paper. Identifiers \texttt{GE2-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+%=====================================================================
+\section{The class and its equations}\label{sec:class}
+Fix species $X_1,X_2,X_3=X,Y,Z$. The nine \emph{complexes} are $X,Y,Z,2X,2Y,2Z,X{+}Y,X{+}Z,Y{+}Z$ (nonzero, molecularity $\le2$). An \emph{internal reaction} is a directed edge $\alpha\to\beta$ between two distinct complexes ($72$ edges). A \emph{network} is a set of $m\le3$ distinct internal edges together with, for every species $S$, the inflow $0\to S$ (rate $a_S$) and the removal $S\to0$ (rate $\rho_S$). With mass action, writing $x=(x_1,x_2,x_3)$,
+\begin{equation}\label{eq:ode}
+\dot x_i=f_i(x)=a_i-\rho_i x_i+\sum_{e}k_e\,(\beta_e-\alpha_e)_i\,x^{\alpha_e},
+\end{equation}
+where all parameters $a_i,\rho_i,k_e$ are positive reals (no normalisation). A positive equilibrium is a zero of $f$ in the open orthant; $f$ is a polynomial of degree at most two. \textbf{Definition.} A network is \emph{bistable} if some positive parameter vector gives two distinct positive equilibria that are both linearly stable (all Jacobian eigenvalues with negative real part). Stable equilibria are nondegenerate. Because every species has inflow and removal, the stoichiometric subspace is $\R^3$ and every equilibrium is in the single compatibility class.
+
+\paragraph{Buckets.} Bucket A: at most two species occur in the internal reactions (a species occurring only in flows decouples; these networks reduce to the two-species class of Peng \cite{peng}). Bucket B: all three species occur but the species-interaction graph (species joined if they occur in the same reaction) is disconnected. Bucket C: connected support on three species. ``Connected support'' does not mean ``genuinely three-species'': Section~\ref{sec:struct} shows that $79$ of the $175$ minimal bistable networks in bucket C contain a never-reactant species.
+
+\paragraph{Two-species class (control).} $\{X,Y,2X,X{+}Y,2Y\}$, $20$ edges, $m\le3$: $1351$ labelled networks, $681$ orbits under $S_2$, exactly the class of Peng \cite{peng}.
+
+%=====================================================================
+\section{Enumeration and the Burnside count}\label{sec:enum}
+\texttt{GE2-C-0001} \tC{}. Labelled networks with $m=0,1,2,3$ internal edges number $1+72+\binom{72}{2}+\binom{72}{3}=1+72+2556+59640=62269$. The symmetric group $S_3$ acts on species; the canonical form of a network is the lexicographic minimum, over the six permutations, of its sorted edge-index tuple. Orbits have sizes $1,2,3,6$ ($7,9,266,10241$ orbits) and the sizes sum to $62269$; the orbit count is $10523$, and Burnside's lemma gives $10523$ independently. The auditor wrote its own enumerator (\texttt{data/code\_auditor/enum.py}, no producer code) and obtained $62269$, $10523$ and, for the two-species class, $1351$ and $681$. The census has one row per orbit (\texttt{data/census.jsonl}). Bucket sizes: A $681$, B $220$, C $9622$ orbits.
+
+%=====================================================================
+\section{Exclusion: a determinant-sign criterion}\label{sec:excl}
+The criterion belongs to the Jacobian/injectivity tradition for fully open networks (Craciun--Feinberg \cite{cf05,cf06}; Joshi--Shiu \cite{js12}; \texttt{GE2-L-0003} \tL{}). We do not claim it as new and did not read those papers in this session; we prove the version we use, which is short because $f$ is quadratic.
+
+\begin{prop}\label{prop:jac}
+Let $f$ be as in \eqref{eq:ode} and let $J(x)=Df(x)$. If $\det(-J)$, as a polynomial in the variables $(x,\rho,k)$, has only nonnegative coefficients and the coefficient of $\rho_1\rho_2\rho_3$ is $1$, then for every positive parameter vector $f$ has at most one zero in the open positive orthant.
+\end{prop}
+\emph{Proof.} Let $x,y$ be positive zeros. Since $f$ has degree $\le2$, $Df$ is affine, so $\int_0^1 Df(y+t(x-y))\,dt=J(\tfrac{x+y}2)$ and
+\[0=f(x)-f(y)=J\!\left(\tfrac{x+y}2\right)(x-y).\]
+The midpoint $m=\frac{x+y}2$ is positive. By hypothesis $\det(-J(m))$ is a sum of products of positive quantities, with the term $\rho_1\rho_2\rho_3>0$ present, so $\det J(m)\neq0$ and $x=y$. \qed
+
+Here $-J=\operatorname{diag}(\rho)-\sum_e k_e(\beta_e-\alpha_e)\nabla(x^{\alpha_e})^{\!\top}$, and the coefficients of $\det(-J)$ are computed symbolically for each network (sympy). A network passing the test is labelled MONOSTATIONARY\_JAC ($5071$ orbits, $28{,}158+1444+346=29{,}948$ labelled; \texttt{GE2-C-0003} \tC{}). A second, sign-pattern rule (monomial-difference signs row by row) was implemented and \emph{excluded nothing beyond} the determinant test. The auditor judged the argument sound, re-derived $60/60$ random excluded rows (all coefficients nonnegative) and $40/40$ random non-excluded rows (a negative coefficient), and a numerical search on $30$ excluded rows ($40$ parameter draws, $30$ starts each) found no second positive root. The remaining excluded rows were computed by the producer only and sampled by the auditor, not re-derived one by one.
+
+%=====================================================================
+\section{Witness search and exact certification}\label{sec:wit}
+\paragraph{Search (existence only).} Two equilibria $p\neq q$ force a linear system in $(\rho,k)$: $\rho_i(p_i-q_i)=\sum_ek_e(\beta_e-\alpha_e)_i(p^{\alpha_e}-q^{\alpha_e})$, and then $a_i=\rho_ip_i-H_i(p)$ is linear in $(\rho,k)$. For each non-excluded network we sample pairs $(p,q)$ log-uniformly in $[10^{-2},10^2]^3$ (half of the pairs with $q=p\exp N(0,0.5)$ coordinatewise), take the kernel of that system by SVD, draw random kernel combinations, accept those with $\rho,k,a>0$ and floating Routh--Hurwitz at $p$ and $q$, rationalise $p,q$ (denominator $\le10^4$), solve the kernel exactly (sympy) and take a rational combination near the float vector. Budget: $2\times10^5$ pairs times $4$ combinations per network, fixed seed per network.
+
+\paragraph{Exact certificate (BISTABLE\_CERT, \texttt{GE2-C-0002} \tC{}).} Each witness file (\texttt{data/witnesses/G*.json}) holds rational $a,\rho,k$ and two distinct positive rational equilibria $p,q$. The checker substitutes in exact fractions, verifies $f(p)=f(q)=0$, and applies Routh--Hurwitz exactly at both points ($3\times3$: $c_1>0$, $c_3>0$, $c_1c_2>c_3$ for the characteristic polynomial of $J$; $2\times2$: trace $<0$, determinant $>0$). The interval enclosures recorded in the files are degenerate, $[p,p]$. The auditor's verifier, written from scratch, accepted $781/781$ files ($754$ three-species and $27$ two-species).
+
+\paragraph{MULTISTATIONARY\_CERT.} Two distinct exact positive equilibria but no pair with both stable found; $807$ orbits. Their witnesses were not audited, so we call them \emph{certified by the producer, not independently verified}. \textbf{UNDECIDED:} neither an exclusion nor any witness; $3891$ orbits.
+
+%=====================================================================
+\section{Results}\label{sec:results}
+\begin{table}[h]\centering\small
+\begin{tabular}{lrrrrr}\toprule
+bucket (orbits) & MONOSTAT. (JAC) & BISTABLE\_CERT & MULTISTAT.\_CERT & UNDECIDED\\\midrule
+A (681) & 245 & 27 & 102 & 307\\
+B (220) & 61 & 0 & 0 & 159\\
+C (9622) & 4765 & 727 & 705 & 3425\\\midrule
+total (10523) & 5071 & 754 & 807 & 3891 ($37.0\%$)\\\bottomrule
+\end{tabular}
+\caption{Census verdicts per bucket (orbits). Labelled counts: JAC $29{,}948$; bistable $162+0+4338=4500$; multistationary-only $4788$; undecided $23{,}033$. Sum $62{,}269$. Bucket-A counts equal the two-species control exactly.}\label{tab:main}
+\end{table}
+The undecided fraction $37.0\%$ stayed under the preregistered stop line ($50\%$). The headline \texttt{GE2-C-0007} \tC{} is the table: a \emph{partial} census; only the $754$ and $5071$ rows are certified, and the $807$ are not independently verified.
+
+\subsection{Minimal and irreducible networks}\label{sec:struct}
+\texttt{GE2-C-0005} \tC{}. A bistable network is \emph{minimal} if no proper edge subset is itself BISTABLE\_CERT (looked up through canonical forms). In bucket C, $175$ of the $727$ bistable networks are minimal (the producer's aggregator and a third script by the writer agree; $202$ in all buckets). Nine have two internal reactions and are listed in Table~\ref{tab:two}; the other $718-552=166$ three-reaction networks of bucket C have no certified bistable proper subnetwork, and $552$ of the $718$ do.
+
+\begin{table}[h]\centering\scriptsize
+\resizebox{\linewidth}{!}{\input{table_two_edge.tex}}
+\caption{The nine bistable networks with two internal reactions (up to relabelling), with the two stable positive equilibria of one exact witness each. All parameters are positive rationals given in full in \texttt{data/witnesses/<id>.json}; every other species flow is as in Section~\ref{sec:class}. All nine are irreducible in our screen: every species is a reactant somewhere and no equation decouples. This was not checked against the literature.}\label{tab:two}
+\end{table}
+
+\paragraph{Cascades versus irreducible mechanisms.} Of the $175$ minimal bucket-C networks, $79$ contain a species that is never a reactant; the other two species then form an autonomous two-species subsystem and the bistability lives in a two-species projection, so these are cascades, not three-species mechanisms. The other $96$ are irreducible by this screen (we did not test equivalence with a two-species mechanism with a modified, non-mass-action rate law, which a quasi-steady-state reduction would produce). In bucket C these $79$ are also the only bistable networks with a never-reactant species, so none of the $552$ non-minimal ones has one. We attach no mechanistic interpretation beyond the listed reactions.
+
+\subsection{Inheritance consistency check}\label{sec:inherit}
+\texttt{GE2-C-0006} \tC{}. By Thm~3.1 of Joshi--Shiu \cite{atoms} (\tL{}), if a subnetwork $N$ of $G$ has the same stoichiometric subspace and admits multiple exponentially stable positive steady states then so does $G$; here all flows are present, so the hypothesis holds for every supernetwork. In the census, $609$ three-reaction orbits (all buckets) contain a BISTABLE\_CERT two-reaction subnetwork: the census certifies $552$ of them, has $38$ as MULTISTATIONARY\_CERT and $19$ as UNDECIDED, and none is excluded (no contradiction). By the theorem those $57$ are bistable; we do \emph{not} add them to the headline counts, which count only what carries a witness. The check shows that the UNDECIDED and MULTISTATIONARY\_CERT classes contain bistable networks, i.e.\ the $754$ is a lower bound for this search, not a count of the bistable networks.
+
+%=====================================================================
+\section{Controls}\label{sec:ctl}
+\texttt{GE2-C-0004} \tC{}. \emph{Positive control:} the identical pipeline on the two-species class gives exactly $27$ BISTABLE\_CERT among $681$ orbits, the same set (up to $S_2$) as the bistable networks of Peng's Table~1 \cite{peng}, and $245$ JAC exclusions (Peng: $245$; here all $\rho$ are free, so agreement is informative but the criteria differ). Bucket A of the three-species census reproduces $245/27/102/307$. \emph{Negative controls:} the empty network and $X\to Y$ and the cycle $X\rightleftarrows Y\rightleftarrows Z$ (four edges, deficiency zero weakly reversible, an external control outside the class) never give BISTABLE\_CERT. \emph{Corrupted witnesses:} for an uncorrupted witness the checker passes; with $p$ perturbed by $1/1000$, or one $\rho$ multiplied by $1.1$, it fails; the auditor's independent verifier does the same and also rejects $+I$ as not Hurwitz. The auditor's numerical falsifier had a positive control (three roots found on witness \texttt{G01312}) and its first-pass ``three hits'' were duplicates of one root under a too-tight dedupe tolerance.
+
+%=====================================================================
+\section{Deviations from the preregistration}\label{sec:dev}
+Preregistration: \texttt{data/PREREG\_ITEM.md}, hash in \texttt{PREREG\_ITEM.md.sha256} (self-attested, no independent timestamp). Three deviations, stated plainly.
+\begin{enumerate}\itemsep=0pt
+\item \textbf{N0056 removed as a negative control.} The preregistration listed N0056 ($X\to X{+}Y$, $X{+}Y\to2X$) as a network that must never be bistable; Peng's Table~1 lists it as bistable, so the preregistered control was wrong.
+\item \textbf{Stage-1 sampling defect.} The bucket-A control exposed that stage~1 could not sample networks with a species never changed by internal reactions ($p_i=q_i$ is forced, probability zero). The fix (set $q_i=p_i$ for such species) was applied in code and rerun as stage~3 on the $766$ affected non-bistable, non-excluded rows: $27$ became BISTABLE\_CERT and $148$ MULTISTATIONARY\_CERT. Stage-1 rows remain in the logs; \texttt{census.jsonl} keeps the highest stage ($9757$ rows from stage 1, $766$ from stage 3).
+\item \textbf{Stage 2 not run; some rules not implemented.} The preregistered stage~2 ($10^6$ pairs for multistationary-only networks) was not run, and the DIV/ROOT/FLUX rules of Peng were not implemented (they are alphabet-specific).
+\end{enumerate}
+The three \emph{audit corrections} to the producer's \texttt{RESULT.md} are applied in \texttt{data/RESULT.md} and in this text: (i) bucket C is ``connected support $3$'', not ``genuinely three-species''; (ii) the outcome is ``$754$ exact witnesses independently re-verified ($781/781$ including control); `new' means new within this class'', not checked against Joshi--Shiu-type classifications; (iii) the $807$ MULTISTATIONARY\_CERT rows are not independently re-verified.
+
+%=====================================================================
+\section{Related work and novelty}\label{sec:related}
+Read in this work (\texttt{data/PRIOR\_ART\_ADDENDUM.md}, \texttt{GE2-L-0002} \tL{}, \texttt{GE2-X-0002} \tX{}):
+\begin{itemize}\itemsep=0pt
+\item Peng \cite{peng}: two species, at most three internal reactions, inflow and linear removal, $27$ of $681$ bistable. The two-species classification is Peng's; our two-species run is a control. Peng's methods (nullcline graph, DIV/ROOT/FLUX) are planar-specific.
+\item Joshi--Shiu \cite{atoms}: inheritance of stable steady states (Thm~3.1); enumeration of the $386$ reversible bimolecular two-non-flow-reaction fully open networks, $35$ multistationary, $11$ atoms --- multistationarity, not stability. Our two-reaction results are a stability statement in the same family; we did \emph{not} compare edge by edge (Section~7 of that paper not read).
+\item Joshi--Shiu \cite{js16}: networks with one species or at most two reactions; Cor.~5.5: at-most-bimolecular networks with exactly two reactions (flows counted) are not multistable. Our networks have six flow reactions, so this does not apply.
+\item Tang--Xu \cite{tx}: smallest multistable networks among two-reaction networks (no flows, no census).
+\end{itemize}
+Not read: Siegal-Gaskins et al.\ (a 2009 census of $40{,}680$ small gene-regulatory networks via network ancestry, cited in \cite{atoms}; different kinetics), Banaji--Pantea, Banaji--Boros--Hofbauer (read as abstract and grep only by the producer), and the Lixiviant manuscript. \textbf{To our knowledge} there is no published census of exact-witness bistability for three-species at-most-bimolecular open networks with at most three internal reactions; this is a recorded search (alphaXiv, web), not a proof of absence, and the authors of the cited papers were not contacted. The method (witness search, determinant-sign exclusion, subnetwork inheritance) is standard.
+
+%=====================================================================
+\section{Claim ledger}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files $13$ claims in \texttt{ledger/ledger.json} with content-addressed evidence in \texttt{ledger/evidence/}: \tL{} (Peng's table; inheritance and small-network results; the determinant-sign tradition), \tC{} (enumeration; the $754$ witnesses; the $5071$ exclusions; controls; structure; inheritance consistency; headline \texttt{GE2-C-0007}), \tX{} (the $3891$ undecided and the unaudited $807$; completeness and novelty not claimed; what was not done). The Elenchus gate (\texttt{ledger/run\_gate.py}, output in \texttt{ledger/gate\_output.txt}) reports $13$ claims checked, no findings; this is bookkeeping and licenses nothing.
+
+%=====================================================================
+\section{Limitations}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item \textbf{Partial.} $3891$ ($37.0\%$) are UNDECIDED. This is search evidence only (sampling $2\times10^5$ pairs per network); it is never an absence of bistability. The inheritance check shows at least $57$ bistable networks lie outside the $754$.
+\item \textbf{The $807$ MULTISTATIONARY\_CERT rows are not independently verified.} Sampling audit only for the JAC exclusions ($60+40+30$ checks); the remaining $5071$ rows rest on the producer's run of a proved rule.
+\item \textbf{No claim of new mechanisms.} Some minimal networks are cascades (79 of 175); irreducibility is relative to one screen; no literature check of the nine two-reaction networks beyond Section~\ref{sec:related}.
+\item \textbf{No biological claim.} The link to genetic switches is motivation only; mass-action kinetics with a shared linear-removal form is a modelling choice, parameters are free positive rationals, and nothing is fitted to data.
+\item \textbf{Novelty is ``to our knowledge''} and limited to what was read (Section~\ref{sec:related}); Section~7 of \cite{atoms}, the cited classifications of \cite{cf05,cf06,js12} and several related preprints were not read.
+\item \textbf{AI producer and one independent AI audit; no human audit}; the preregistration hash is self-attested; no Lean formalisation.
+\item \textbf{Compute.} About $4.5$ of the $15$ core-hours cap ($4.231$ for the three-species run in all stages, $0.280$ for the two-species control), cores $1$--$6$, detached resumable runs; no reboot detected, wall-clock not tracked precisely.
+\end{itemize}
+
+%=====================================================================
+\section{Reproducibility}\label{sec:repro}
+Repository AutoevolveAI, branch \texttt{worktree-openai-math-discovery}; HEAD when this paper was written: commit \texttt{1063788}; the paper and data are uncommitted working-tree files at that time. All scripts and results are in \texttt{data/} (sha256 in \texttt{BUNDLE\_MANIFEST.txt}).
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+python3 -I data/code_auditor/verify.py <base-dir>    # exact re-check of every witness (auditor's verifier)
+python3 -I data/code_auditor/enum.py ; python3 -I data/code_auditor/jac.py
+python3 -I data/code_writer/inherit_check.py data/census.jsonl   # structure + inheritance counts
+python3 -I ledger/gen_table.py ; python3 -I ledger/build_ledger.py ; python3 -I ledger/run_gate.py
+\end{lstlisting}
+Some scripts take a base directory argument or paths relative to the lane directory (\texttt{results/proposal7/2026-11-11/GE2}); the auditor's own run logs were not saved to the bundle.
+
+\begin{thebibliography}{9}\small
+\bibitem{peng} Peng, \emph{Bistability with equal and independent removal in small bimolecular networks}, arXiv:2610.32739 (23 Oct 2026), unrefereed.
+\bibitem{atoms} B.~Joshi and A.~Shiu, \emph{Atoms of multistationarity in chemical reaction networks}, J.\ Math.\ Chem.\ 51 (2013) 153--178, arXiv:1108.5238.
+\bibitem{js16} B.~Joshi and A.~Shiu, \emph{Which small reaction networks are multistationary?}, arXiv:1603.06441.
+\bibitem{tx} X.~Tang and H.~Xu, \emph{Multistability of small reaction networks}, arXiv:2008.03846.
+\bibitem{cf05} G.~Craciun and M.~Feinberg, \emph{Multiple equilibria in complex chemical reaction networks: I. The injectivity property}, SIAM J.\ Appl.\ Math.\ 65 (2005) 1526--1546.
+\bibitem{cf06} G.~Craciun and M.~Feinberg, \emph{Multiple equilibria in complex chemical reaction networks: II. The species-reactions graph}, SIAM J.\ Appl.\ Math.\ 66 (2006) 1321--1338.
+\bibitem{js12} B.~Joshi and A.~Shiu, \emph{Simplifying the Jacobian criterion for precluding multistationarity in chemical reaction networks}, SIAM J.\ Appl.\ Math.\ 72 (2012) 857--876, arXiv:1106.1578.
+\end{thebibliography}
+\end{document}

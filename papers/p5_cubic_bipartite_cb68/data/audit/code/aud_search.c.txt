@@ -1,0 +1,152 @@
+/* aud_search.c -- auditor's independent implementation for the EG-CB68 audit.
+ * Written from Tranquilli arXiv 2608.02675 v1 Sec. 3.1 and the auditor's own coverage derivation.
+ * The producer's code was read (for review) but not copied; only its transcript-hash encoding is
+ * reproduced so that decision sequences can be compared exactly.
+ *
+ * usage: aud_search CAP MODE [no8] [no16] [comp FILE]
+ *   MODE 0: root {0,1,2};  1: triangle + {0,4,6};  2: triangle + {0,6,7}
+ * Levi graph: vertex ids 0..63 points, 64..127 blocks; visited set = char array.
+ * Cycle test formulation: tentatively INSERT the block, then look for a simple cycle of length L
+ * through the new block vertex (post-insertion), via precomputed per-state endpoint tables of
+ * simple paths between old points (computed lazily, keyed by start point). */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <time.h>
+typedef uint64_t u64;
+#define NP 64
+static int CAP, MODE, F8 = 1, F16 = 1;
+static FILE *compf;
+static int nblocks, npoints;
+static int bl[NP][3];
+static int inc[NP][3], deg[NP];
+static u64 n_states, n_att, n_str, n_c8, n_c16, n_comp, n_leafv[NP + 1];
+static u64 H = 1469598103934665603ULL;
+static void mix(u64 x) { for (int i = 0; i < 8; i++) { H ^= (x >> (8 * i)) & 0xff; H *= 1099511628211ULL; } }
+
+static int collinear(int x, int y) {
+    for (int i = 0; i < deg[x]; i++) {
+        int b = inc[x][i];
+        for (int j = 0; j < 3; j++) if (bl[b][j] == y) return 1;
+    }
+    return 0;
+}
+static void put(int a, int b, int c) {
+    int k = nblocks++;
+    bl[k][0] = a; bl[k][1] = b; bl[k][2] = c;
+    inc[a][deg[a]++] = k; inc[b][deg[b]++] = k; inc[c][deg[c]++] = k;
+    if (c + 1 > npoints) npoints = c + 1;
+}
+static void take(int a, int b, int c, int oldnp) { nblocks--; deg[a]--; deg[b]--; deg[c]--; npoints = oldnp; }
+
+/* simple-path endpoint table, computed on the Levi graph of the CURRENT state */
+static char vis[128];
+static u64 acc;
+static void walk(int v, int steps) {        /* v is a Levi vertex id */
+    if (steps == 0) { if (v < 64) acc |= 1ULL << v; return; }
+    if (v < 64) {
+        for (int i = 0; i < deg[v]; i++) { int w = 64 + inc[v][i]; if (!vis[w]) { vis[w] = 1; walk(w, steps - 1); vis[w] = 0; } }
+    } else {
+        int b = v - 64;
+        for (int j = 0; j < 3; j++) { int w = bl[b][j]; if (!vis[w]) { vis[w] = 1; walk(w, steps - 1); vis[w] = 0; } }
+    }
+}
+static u64 tab6[NP], tab14[NP]; static unsigned stamp6[NP], stamp14[NP]; static unsigned cur_stamp = 1;
+static u64 reach(int x, int len) {
+    u64 *t = len == 6 ? tab6 : tab14; unsigned *s = len == 6 ? stamp6 : stamp14;
+    if (s[x] != cur_stamp) { memset(vis, 0, sizeof vis); vis[x] = 1; acc = 0; walk(x, len); t[x] = acc; s[x] = cur_stamp; }
+    return t[x];
+}
+/* does adding block {a,b,c} (old part = members < oldn) close a simple cycle of length 2+len through it? */
+static int closes(int a, int b, int c, int oldn, int len) {
+    int m[3] = {a, b, c};
+    for (int i = 0; i < 3; i++) {
+        if (m[i] >= oldn) continue;
+        u64 r = reach(m[i], len);
+        for (int j = i + 1; j < 3; j++) if (m[j] < oldn && (r >> m[j] & 1)) return 1;
+    }
+    return 0;
+}
+
+typedef struct { int q, r; } cand;
+static int cmpc(const void *x, const void *y) {
+    const cand *u = x, *v = y; return u->q != v->q ? u->q - v->q : u->r - v->r;
+}
+static unsigned stamp_counter = 1;
+static void grow(void) {
+    n_states++;
+    unsigned my_stamp = ++stamp_counter; cur_stamp = my_stamp;
+    int p = 0;
+    while (p < npoints && deg[p] == 3) p++;
+    if (p == npoints) {
+        n_comp++; n_leafv[npoints]++; mix(0xC0C0ULL);
+        if (compf) {
+            fprintf(compf, "%d", npoints);
+            for (int k = 0; k < nblocks; k++) fprintf(compf, " %d,%d,%d", bl[k][0], bl[k][1], bl[k][2]);
+            fputc('\n', compf);
+        }
+        return;
+    }
+    /* largest existing block through p having p as its least element */
+    int lq = -1, lr = -1;
+    for (int i = 0; i < deg[p]; i++) {
+        int k = inc[p][i];
+        if (bl[k][0] != p) continue;
+        if (bl[k][1] > lq || (bl[k][1] == lq && bl[k][2] > lr)) { lq = bl[k][1]; lr = bl[k][2]; }
+    }
+    /* candidate pool: old points > p with deficient degree and not collinear with p, then the fresh labels */
+    int oldn = npoints, pool[NP + 2], np = 0;
+    for (int x = p + 1; x < oldn; x++) if (deg[x] < 3 && !collinear(p, x)) pool[np++] = x;
+    int nold = np;
+    pool[np++] = oldn; pool[np++] = oldn + 1;
+    cand cs[2400]; int nc = 0;
+    for (int i = 0; i < np; i++) for (int j = i + 1; j < np; j++) {
+        int q = pool[i], r = pool[j];
+        if (i >= nold && !(q == oldn && r == oldn + 1)) continue;   /* (fresh, fresh) only as (f, f+1) */
+        if (j >= nold && i < nold && r != oldn) continue;            /* (old, fresh) only with fresh = f */
+        if (r >= CAP) continue;                                       /* labels must be < CAP */
+        if (!(q > lq || (q == lq && r > lr))) continue;               /* strictly after the last block */
+        cs[nc].q = q; cs[nc].r = r; nc++;
+    }
+    qsort(cs, nc, sizeof(cand), cmpc);
+    for (int t = 0; t < nc; t++) {
+        int q = cs[t].q, r = cs[t].r;
+        n_att++;
+        u64 code = ((u64)q << 16) | ((u64)r << 8);
+        if (r < oldn && collinear(q, r)) { n_str++; mix(code | 1); continue; }
+        cur_stamp = my_stamp;
+        if (F8 && closes(p, q, r, oldn, 6)) { n_c8++; mix(code | 2); continue; }
+        if (F16 && closes(p, q, r, oldn, 14)) { n_c16++; mix(code | 3); continue; }
+        mix(code | 4);
+        put(p, q, r);
+        grow();
+        take(p, q, r, oldn);
+        cur_stamp = my_stamp;
+    }
+}
+
+int main(int argc, char **argv) {
+    if (argc < 3) { fprintf(stderr, "usage\n"); return 1; }
+    CAP = atoi(argv[1]); MODE = atoi(argv[2]);
+    for (int i = 3; i < argc; i++) {
+        if (!strcmp(argv[i], "no8")) F8 = 0;
+        else if (!strcmp(argv[i], "no16")) F16 = 0;
+        else if (!strcmp(argv[i], "comp")) compf = fopen(argv[++i], "w");
+        else { fprintf(stderr, "bad arg\n"); return 1; }
+    }
+    if (CAP > 60 || MODE < 0 || MODE > 2) return 1;
+    clock_t c0 = clock();
+    if (MODE == 0) put(0, 1, 2);
+    else { put(0, 1, 3); put(1, 2, 4); put(0, 2, 5); if (MODE == 1) put(0, 4, 6); else put(0, 6, 7); }
+    grow();
+    if (compf) fclose(compf);
+    printf("{\"cap\":%d,\"mode\":%d,\"f8\":%d,\"f16\":%d,\"states\":%llu,\"attempted\":%llu,\"structural\":%llu,"
+           "\"c8\":%llu,\"c16\":%llu,\"completions\":%llu,\"hash\":\"%016llx\",\"cpu\":%.2f,\"comp_by_v\":[",
+           CAP, MODE, F8, F16, (unsigned long long)n_states, (unsigned long long)n_att, (unsigned long long)n_str,
+           (unsigned long long)n_c8, (unsigned long long)n_c16, (unsigned long long)n_comp, (unsigned long long)H,
+           (double)(clock() - c0) / CLOCKS_PER_SEC);
+    for (int v = 0; v <= CAP && v <= NP; v++) printf("%s%llu", v ? "," : "", (unsigned long long)n_leafv[v]);
+    printf("]}\n");
+    return 0;
+}

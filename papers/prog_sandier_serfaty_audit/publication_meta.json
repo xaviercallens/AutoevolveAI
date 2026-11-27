@@ -1,0 +1,73 @@
+{
+ "title": "The Sandier-Serfaty triangular-lattice conjecture: an independent reproduction of a claimed finite certificate, an adversarial audit of the claimed reduction, and a Lean statement (no proof of the conjecture is claimed)",
+ "version": "v1",
+ "description": "<p>The Sandier&ndash;Serfaty conjecture asks whether the triangular lattice minimizes the renormalized Coulomb energy W of a point set in the plane against a uniform neutralizing background. A preprint in the openai/math release (AI-generated, not peer reviewed) claims a proof by a reduction to square tori plus a finite certificate in exact interval arithmetic. <b>This work does not prove, verify or refute that claim and is not peer review.</b> Every claim is filed in an Elenchus claim ledger with tiers A (kernel-checked Lean), L (cited literature, statements read on the cited page, proofs not re-checked), C (argument not machine-checked) and X (computation, never supporting a mathematical claim by itself).</p><p><b>Tier X &ndash; independent reproduction of the finite certificate.</b> The unchanged C++ certificate was re-executed on a different toolchain and host (g++ 11.4.0, Boost 1_74, Python 3.10.12 instead of g++ 13.3.0, Boost 1_83, Python 3.12.13): wrapper exit 0, terminal OK, stage validation passed, source hashes unchanged, and all 22 printed integer pairs equal the saved record. Three one-line loosenings of the certificate were run on copies as negative controls: two are rejected by the program's own assertion, one passes; the outcomes of the last two were predicted in writing before they finished, while the fitted break-even multipliers (about 22.6 for the midpoint constant, 1.86 for the Lipschitz allowance of the negative-part assertion) were fitted to coarsened printed pairs and are not blind. The reproduction rests on the manuscript's analytic bounds and tests none of them; runtime trust is assumed.</p><p><b>Tier C &ndash; adversarial audit of the reduction (by an AI agent).</b> Sections 2&ndash;5 of the manuscript were re-derived step by step (31 numbered steps and 14 certificate-stage rows): no step was classified as a gap, with stated limits: the spline pieces outside [p, R0] and the grid-stage values rest on code reading only, no negative control exercised the Hessian stage, the internal proofs of the cited Sandier&ndash;Serfaty and B&eacute;termin&ndash;Sandier results were not re-checked, and a strong minimum principle used by the manuscript has no verified reference. Independent exact-rational and 45-digit re-computations (calibration identity 6K+&lambda;+2&pi;&mu; = W(E_tri), &lambda;, &mu;, K, B(&ell;), tail constants) agree with the certificate's printed values, with negative controls falling outside.</p><p><b>Tier A (non-degeneracy only) and Tier C (fidelity) &ndash; a Lean statement.</b> The conjecture is stated as Lean Props (manuscript normalization, explicit value, and the original SS2012 normalization). Ten non-degeneracy lemmas are kernel-checked (Lean 4.34.1, Mathlib d13f23b7; axioms within propext, Classical.choice, Quot.sound; planted sorry and planted-axiom controls are caught); the statements themselves are <b>not proved</b>, their fidelity to the manuscript and to SS2012 is a Tier C comparison, and the existence of the puncture limit, the inhabitation of the triangular side and the equivalence of the two normalizations are not formalized.</p><p><b>LeanFlow improvement.</b> A Lean data-certificate generator, fail-closed for the sources it renders itself (88 tests pass), turns printed interval data into Lean-checked integer arithmetic; it accepts the 13 inequalities about the positive run's printed pairs and rejects 3 of 10 about the loosened run's. Its Tier A covers the arithmetic on the printed integers only. An independent audit found that the exported checker for arbitrary Lean sources was fail-open (a source using #exit and a forged axiom report was accepted); it is fixed with a per-run sentinel and an #exit refusal, with new tests, and the generator's results were re-run unchanged. The checker is not a sandbox.</p><p>The step that would conclude the conjecture from the manuscript's analytic bounds, the cited results and the certificate run is stated only conditionally.</p><p>The Elenchus ledger gate reports 0 blocking findings and 7 flags (exit code 1), one LEDGER_UNAUDITED_TIER_A for each Tier A row. Everything resting on the openai/math manuscript is conditional on it. The work was produced by AI agents (Claude) under the author's direction; producer, auditor and re-compiling agents are instances of the same AI pipeline, no human has audited the statements, the audit or this text, and the author is responsible for the content.</p>",
+ "keywords": [
+  "Sandier-Serfaty conjecture",
+  "renormalized energy",
+  "Coulomb gas",
+  "triangular lattice",
+  "Abrikosov lattice",
+  "logarithmic energy on the sphere",
+  "interval arithmetic",
+  "reproduction",
+  "audit",
+  "Lean 4",
+  "LeanFlow",
+  "epistemic tiers",
+  "AI-assisted research"
+ ],
+ "notes": "Preprint v1 (2026-10-25), revised the same day after an independent audit by a second agent instance of the same pipeline (verdict ACCEPT_WITH_CORRECTIONS; papers/prog_sandier_serfaty_audit/AUDIT.md, corrections in REVISION.md). Programme lane P1 of the 2026-10-25 programmes (preregistration committed before any attempt). Lean: AutoevolveAI formal_cert/Programmes/SandierSerfatyStatement.lean (sha256 35add509990d50ebbdbbb70476fc652867d236a62534eda3d1021a414c21ae4d after a docstring-only revision, previously d899416e3ed4189b10342e346a50454c629d4fffea057fe8a48ea19bf17476ff; statement-region sha256 38974cc16e90e77ac1553bedf6907ff2eb53f7689df00a9a82668d11574f0421) and SandierSerfatyStatementControls.lean (sha256 aa94aca898a83529624931dd73dc7f0a3ab0ab31e78c9393de8c597661613895), Lean 4.34.1, Mathlib d13f23b723b8a846827a245b89c10fc7d3f11612 (pinned openai/math stack); AutoevolveAI files uncommitted on base 9d245742c1655852103abb28f585e21af54851e6. LeanFlow: commit 84e0c2899830fba671022eefcd408af9ecd565c8 (audit fix: per-run sentinel and #exit refusal in the checker for arbitrary sources, commit 2c168be2de8104dddc48daecee1423c8d8f076b7, plus a docstring/documentation follow-up) on top of 542cea97aa78e30d8935ec81278aeb697a9f5dc7, branch feat/lean-data-certificates-2026-10-25 (local, not pushed at the time of writing); 'fail-closed' is claimed only for generator-rendered sources. Subject manuscript: openai/math preprint Triangular-minimality-for-planar-Coulomb-renormalized-energy-September-23-2026 (checkout HEAD adc7f1241b42e322a6451854ab7e4b4c146bf78a; verification sources certificate.cpp 53d46bba38d671690b07b9893ea08feb5bdcea8039280c609be783f9e66a3bb2, core.hpp c7f76596cde648ae35707a242406a6b02d6b41bad6b19123aeca3aaec47dced3, grids.hpp 4640e0a32eb20071800d408fc2b7b47269cdfcecfa99c862940c7afbbdaaa50b, run-certificate.py cbef4f4c082102a826e4b92c298c94fdfe3b5ff6622702b6226478142e1c7075). Literature statements read via alphaXiv extractions (SS2012 arXiv:1011.4617v2, BS2018 arXiv:1404.4485v5, BHS2012 arXiv:1202.4037v1); citation_check.py was run at the revision stage on pdftotext primary text of the arXiv PDFs for five theorem-type passages (verbatim passages accepted, the ledger's rejoined excerpts refused as non-verbatim, tampered controls refused); conjectures and the BS value formula are outside its scope. Producer, auditor, Lean author and paper-stage agent are all AI agent instances; no human has reviewed the work. Record order: the sibling records cited in related_identifiers (reserved DOIs 10.5281/zenodo.23646103, 23646105, 23646107, 23646111, 23646117) must be published before or together with this one, otherwise those links do not resolve.",
+ "related_identifiers": [
+  {
+   "identifier": "10.5281/zenodo.23646103",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23646105",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23646107",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23646111",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23646117",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23295142",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "arXiv:1011.4617",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:1404.4485",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:1202.4037",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "https://github.com/openai/math",
+   "relation": "references",
+   "scheme": "url"
+  }
+ ]
+}

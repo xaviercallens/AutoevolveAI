@@ -1,0 +1,64 @@
+{
+  "title": "The triangular lattice minimises the planar Yukawa energy at every density and for every finite mixture of screening lengths: kernel-checked corollaries of planar universal optimality, a human proof, and an exact-potential CVODE consistency study",
+  "version": "v1",
+  "description": "<p>The openai/math release contains a Lean 4 proof (AI-generated, Comparator-accepted, not peer reviewed) that the triangular lattice minimises the lower g-energy among all locally finite planar configurations of density one, for every smooth completely monotone g of squared distance. This preprint applies it to the <b>planar Yukawa</b> interaction e^{-&kappa;r}/r, the 3D-screened Coulomb potential between particles confined to a plane (2D dusty-plasma and colloidal crystals). It is not the 2D Debye&ndash;H&uuml;ckel Green function K<sub>0</sub>(&kappa;r), which is not treated.</p><p>Every claim is filed in an Elenchus claim ledger (25 claims) with tiers A (kernel-checked Lean), L (verified literature), C (argument or human proof, not machine-checked) and X (floating-point exploration, never supporting a claim).</p><p><b>Tier A</b>, conditional on upstream's universal_energy_minimum and on the fidelity of its definitions (axioms within propext, Classical.choice, Quot.sound; planted sorry and planted-axiom controls caught; independent recompiles by separate AI agent instances):</p><ul><li>e^{-&kappa;r}/r is admissible for every &kappa; &gt; 0, so the triangular lattice minimises its energy at density one, and the minimum is finite;</li><li>the same at every density &rho; &gt; 0 for the rescaled lattice (for a single &kappa; this is a reparametrisation);</li><li>the same for every finite mixture &sum; w<sub>i</sub> e^{-&kappa;<sub>i</sub>r}/r with w<sub>i</sub> &ge; 0, &kappa;<sub>i</sub> &gt; 0;</li><li>negative controls: the admissibility lemma needs the sign condition on the weights; g<sub>1</sub> &minus; 2g<sub>2</sub> is not admissible, so the theorem does not apply to it (this does not show that optimality fails for it).</li></ul><p>The mathematics is classical (complete monotonicity of the Yukawa potential in r&sup2;; completely monotone functions form a convex cone closed under products). Only the kernel-checked corollaries are new. A step-by-step human proof (Tier C) is given beside each Lean statement.</p><p><b>Tier X</b>: this corrects the truncation erratum recorded in doi:10.5281/zenodo.23295142 for the CVODE study of doi:10.5281/zenodo.23293429. With the exact, untruncated potential and a rigorous tail bound (rusty-SUNDIALS crate qf-yukawa-crystal), absolute energies move by the erratum amounts (1.77e-2 at &kappa; = 1), while the square&ndash;triangular gap moves by only -2.2e-6. 24 published relaxed stages were re-relaxed under the exact potential, and none fell below the exact triangular energy beyond f64 resolution (one stage, the perfect lattice at &kappa; = 1, sits at gap 0 within rounding). That is a subset of the published study, and annealing was not re-run. Controls: an independent 40-digit mpmath sum agrees to 1.7e-16; the published shifted-force values fail the agreement test; the square lattice is a saddle point. Hugging Face: no dusty-plasma or colloid particle dataset was found on the Hub. The OC20 shard used for the disordered initial conditions (colabfit/OC20_IS2RES_val_id, CC-BY-4.0) is matched by sha256 to revision 6a1dfef1. It supplies disorder, not physics.</p><p>The Elenchus ledger gate exits 1 with 0 blocking findings and 11 flags. Each flag is a Tier A row whose statement adequacy no human has audited (only AI agents audited it). The work was produced by AI agents (Claude) under the author's direction; the author is responsible for the content. It has not been reviewed by human experts.</p>",
+  "keywords": [
+    "Lean 4",
+    "formal verification",
+    "universal optimality",
+    "triangular lattice",
+    "Yukawa interaction",
+    "screened Coulomb",
+    "completely monotone functions",
+    "dusty plasma",
+    "colloids",
+    "CVODE",
+    "SUNDIALS",
+    "Hugging Face",
+    "epistemic tiers",
+    "AI-assisted research"
+  ],
+  "notes": "Preprint v1, 2026-10-25. Lean: AutoevolveAI formal_cert/Autoresearch/{Yukawa,YukawaMix}.lean (pinned openai/math Lean 4.34.1, Mathlib d13f23b7; files uncommitted at the time of writing, sha256 in the paper). Numerics: rusty-SUNDIALS branch physics/ar-yukawa-2026-10-25, code cc5a8aed81b3228bd9e9eb69f2c326f926903a34, results 7f2a45c32a9eb9722ca36c334329cb7a5a541951 (local, not pushed). Ledger gate: Elenchus c9ae8cd, exit 1, 0 blocks, 11 flags (LEDGER_UNAUDITED_TIER_A). All Tier A optimality statements are conditional on upstream universal_energy_minimum (AI-generated, not peer reviewed). Revised after an independent AI audit (papers/ar_yukawa_crystal/AUDIT.md, REVISION.md): wording and traceability only; no Tier A statement or reported number changed. The Lean files must be committed before upload so that the cited sha256 values are reproducible from git.",
+  "related_identifiers": [
+    {
+      "identifier": "10.5281/zenodo.23293429",
+      "relation": "references",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "10.5281/zenodo.23295142",
+      "relation": "references",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "10.5281/zenodo.23285631",
+      "relation": "references",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "10.4007/annals.2022.196.3.3",
+      "relation": "references",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "10.60732/b4005525",
+      "relation": "references",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "arXiv:2010.09990",
+      "relation": "references",
+      "scheme": "arxiv"
+    },
+    {
+      "identifier": "https://github.com/openai/math",
+      "relation": "references",
+      "scheme": "url"
+    },
+    {
+      "identifier": "10.1021/acscatal.0c04525",
+      "relation": "references",
+      "scheme": "doi"
+    }
+  ]
+}

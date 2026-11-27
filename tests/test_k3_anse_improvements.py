@@ -432,21 +432,30 @@ class TestK3ModulesImport:
             solve_g_flux_tadpole_lll,
             compute_picard_fuchs_period,
         )
+        assert callable(compute_donaldson_balanced_metric)
+        assert callable(compute_weil_petersson_curvature)
+        assert callable(solve_g_flux_tadpole_lll)
+        assert callable(compute_picard_fuchs_period)
 
     def test_eguchi_hanson_imports(self):
         from anse.physics.eguchi_hanson_k3 import compute_eguchi_hanson_c2_gluing
+        assert callable(compute_eguchi_hanson_c2_gluing)
 
     def test_kerr_symplectic_imports(self):
         from anse.physics.kerr_symplectic_projection import (
             integrate_kerr_geodesic_symplectic,
             SymplecticProjectionKerrIntegrator,
         )
+        assert callable(integrate_kerr_geodesic_symplectic)
+        assert SymplecticProjectionKerrIntegrator is not None
 
     def test_riemannian_trust_region_imports(self):
         from anse.geometry.riemannian_trust_region import (
             riemannian_trust_region_newton,
             yoshida4_integrate,
         )
+        assert callable(riemannian_trust_region_newton)
+        assert callable(yoshida4_integrate)
 
     def test_physics_package_exports(self):
         from anse.physics import (
@@ -454,6 +463,9 @@ class TestK3ModulesImport:
             compute_eguchi_hanson_c2_gluing,
             integrate_kerr_geodesic_symplectic,
         )
+        assert callable(compute_donaldson_balanced_metric)
+        assert callable(compute_eguchi_hanson_c2_gluing)
+        assert callable(integrate_kerr_geodesic_symplectic)
 
     def test_geometry_package_exports(self):
         from anse.geometry import (
@@ -462,6 +474,10 @@ class TestK3ModulesImport:
             TrustRegionResult,
             YoshidaResult,
         )
+        assert callable(riemannian_trust_region_newton)
+        assert callable(yoshida4_integrate)
+        assert TrustRegionResult is not None
+        assert YoshidaResult is not None
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -1,0 +1,22 @@
+/-- All moments from exponential integrability. -/
+theorem integrable_pow_mul (hk : Measurable k) (hm : Measurable m) (hk0 : (*@$\forall$@*)(*@$^{m}$@*) x (*@$\partial$@*)(*@$\mu$@*), 0 (*@$\le$@*) k x)
+    (hm0 : (*@$\forall$@*)(*@$^{m}$@*) x (*@$\partial$@*)(*@$\mu$@*), 0 (*@$\le$@*) m x) (hint : (*@$\forall$@*) c : (*@$\mathbb{R}$@*), 0 < c (*@$\to$@*) Integrable (fun x => Real.exp (-(c * k x)) * m x) (*@$\mu$@*))
+    (n : (*@$\mathbb{N}$@*)) {c : (*@$\mathbb{R}$@*)} (hc : 0 < c) : Integrable (fun x => k x ^ n * Real.exp (-(c * k x)) * m x) (*@$\mu$@*) := -- proof elided
+
+/-- **Laplace mixtures (general).** `t (*@$\mapsto$@*) (*@$\int$@*) e^{-t k(x)} m(x) d(*@$\mu$@*)(x)` is completely monotone on `(0, (*@$\infty$@*))` when
+`k, m (*@$\ge$@*) 0` a.e. are measurable and `e^{-c k} m` is integrable for every `c > 0`. -/
+theorem laplace (hk : Measurable k) (hm : Measurable m) (hk0 : (*@$\forall$@*)(*@$^{m}$@*) x (*@$\partial$@*)(*@$\mu$@*), 0 (*@$\le$@*) k x) (hm0 : (*@$\forall$@*)(*@$^{m}$@*) x (*@$\partial$@*)(*@$\mu$@*), 0 (*@$\le$@*) m x)
+    (hint : (*@$\forall$@*) c : (*@$\mathbb{R}$@*), 0 < c (*@$\to$@*) Integrable (fun x => Real.exp (-(c * k x)) * m x) (*@$\mu$@*)) :
+    IsCompletelyMonotoneOn (fun t => (*@$\int$@*) x, Real.exp (-(t * k x)) * m x (*@$\partial$@*)(*@$\mu$@*)) := -- proof elided
+
+/-- **Laplace transform of a measure on `[0, (*@$\infty$@*))`** (easy direction of Bernstein(*@--@*)Widder). -/
+theorem laplace_measure {(*@$\mu$@*) : Measure (*@$\mathbb{R}$@*)} (h(*@$\mu$@*) : (*@$\forall$@*)(*@$^{m}$@*) x (*@$\partial$@*)(*@$\mu$@*), 0 (*@$\le$@*) x)
+    (hint : (*@$\forall$@*) c : (*@$\mathbb{R}$@*), 0 < c (*@$\to$@*) Integrable (fun x => Real.exp (-(c * x))) (*@$\mu$@*)) :
+    IsCompletelyMonotoneOn (fun t => (*@$\int$@*) x, Real.exp (-(t * x)) (*@$\partial$@*)(*@$\mu$@*)) := -- proof elided
+
+/-- **Locally uniform limits.** -/
+theorem of_tendstoLocallyUniformlyOn {F G : (*@$\mathbb{N}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)} {f : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)}
+    (hF : (*@$\forall$@*) k, IsCompletelyMonotoneOn (F k))
+    (hG : (*@$\forall$@*) n : (*@$\mathbb{N}$@*), TendstoLocallyUniformlyOn (fun k => iteratedDeriv n (F k)) (G n) atTop (Ioi 0))
+    (hf : EqOn f (G 0) (Ioi 0)) :
+    IsCompletelyMonotoneOn f (*@$\wedge$@*) (*@$\forall$@*) n : (*@$\mathbb{N}$@*), EqOn (iteratedDeriv n f) (G n) (Ioi 0) := -- proof elided

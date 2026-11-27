@@ -15,6 +15,117 @@ All notable changes to AutoevolveAI / SuperGravity are documented here.
   evaluation counts for the same effective sample size, and ESS/tau were not computed for the JAX chains.
 - `tests/test_mcmc_jax_sampler.py` (known 2-D Gaussian recovered; wrong-width/wrong-mean expectations rejected; seed reproducible).
 
+## [14.13.0] — H11 toward fixation; the H12 prediction tested (2026-10-25)
+
+Summary: Paper J edition 5 (DOI [10.5281/zenodo.23640856](https://doi.org/10.5281/zenodo.23640856)).
+- **Lean**: `AlixPopulationGenetics.lean` now 16 declarations, all gated. New: a harmonic function's expectation is
+  conserved by every step; distributions stay nonnegative; `xav_wf_fixation_by_time_le` — Wright–Fisher fixation by
+  generation t is at most i/N for every t, with no limit taken.
+- **Engine**: `evolve` records diversity per generation (collapse = ≤2 distinct fitness values) and first-collapse
+  generation; `--immigration` replaces the worst half with random trees on collapse, paid from the budget. 11 tests.
+- **Result**: per-generation solve hazard (unconfounded by early stopping) falls after collapse at L3 (0.0081→0.0048,
+  p = 0.015) and L5 (0.0013→0.0001, p = 0.0019); n.s. at L4. Random immigration helps on no rung (L3 94 vs 90,
+  p = 0.45). Instrumented runs reproduce earlier counts exactly. Registered next: perturb the best, not inject random.
+- Zenodo returned 500 then 502 mid-deposit; the existing draft was adopted (never a blind retry), no duplicate record.
+
+## [14.12.0] — Population-genetic foundations proved: H11 and H12 (2026-10-25)
+
+Summary: Paper J edition 4 (DOI [10.5281/zenodo.23639141](https://doi.org/10.5281/zenodo.23639141)). `formal/ANSE/AlixPopulationGenetics.lean`,
+11 declarations over ℚ, 0 `sorry`, whitelist axioms only, gated through `lean_runner`:
+- **H12** — one locus, two alleles, haploid selection with constant positive fitnesses: mean fitness never
+  decreases, with exact increment `p(1-p)(w₁-w₂)²/w̄`, whose numerator is the population fitness variance
+  (`kal_increment_is_variance`). Not Fisher's general theorem.
+- **H11** — a maximum principle for finite chains whose interior states reach 0 in one step; Wright–Fisher
+  satisfies it, its rows sum to 1, `j/N` is harmonic (binomial mean), so `i/N` is the unique harmonic function
+  with boundary 0 and 1. The step to fixation probability is NOT formalised.
+- Registered, untested prediction for KGE: stalled runs should be those whose population fitness variance has
+  collapsed.
+
+## [14.11.0] — Kernel-Gated Evolution: exact lifetime learning of constants (2026-10-25)
+
+Summary: Paper J edition 3 (DOI [10.5281/zenodo.23638652](https://doi.org/10.5281/zenodo.23638652)).
+`tune_constants` and `--tuning none|baldwin|lamarck`: each constant locus is set to its required value
+`v* = v + (want − out)/B` when that value agrees at every sample point — the Baldwin effect made exact.
+Over 1,200 paired seeds it never lost a solve the plain population found (L1 0.550→0.835, p = 1e-17;
+L3 0.255→0.450, p = 4e-12; L5 0.015→0.060, p = 0.004); 40/40 gated solutions kernel-proved. At matched
+total work (plain population at 11,000 evaluations) it stays ahead on L3 (0.450 vs 0.395) and L5 (0.060 vs
+0.040), level on L4; L6 unsolved by every arm. Baldwin and Lamarck coincide on all 1,200 seeds: exact tuning
+is all-or-nothing. 10 Rust tests.
+
+## [14.10.0] — Kernel-Gated Evolution: Hub benchmark, Lean-proved identities, guidelines (2026-10-25)
+
+Summary: Paper J edition 2 (DOI [10.5281/zenodo.23636412](https://doi.org/10.5281/zenodo.23636412),
+concept 10.5281/zenodo.23635678). Kernel-Gated Evolution (codename ALIX) is benchmarked outside its
+calibration ladder on five SRSD-Feynman laws from the Hugging Face Hub against random search, a restart
+hill-climber and exact polynomial regression; every one of the 39 distinct recovered laws is proved by the
+Lean kernel with a planted wrong candidate rejected in every batch. The population wins outright on one
+law and loses to a naive baseline on three (all at most four leaves), which becomes the operational
+guideline *choose the search layer by target size, keep the gate*.
+
+### Added
+- `formal/ANSE/AlixKalSpec.lean`: the dosage identities for `+`, `−`, `*`, the backward-pass chain rule,
+  the required-value identity, and the checkpoint's one-sidedness — six theorems, zero `sorry`, one axiom-free.
+- `kge solve` (any prefix target over `{+,-,*}`; outside the grammar is refused), `random_search` baseline,
+  `--points-file` replay; 8 Rust tests.
+- `scripts/kge_select_hf_problems.py` (AST walk, never `eval`, over 120 untrusted equation strings; 8 fit),
+  `scripts/kge_traditional_baseline.py` (exact degree-3 regression: ambiguous on 12 points, exact on 40),
+  `scripts/kge_gate_rust_solutions.py --names`, `scripts/kge_figures.py` (seven figures from artifacts),
+  `scripts/fill_paper_j_results.py`, `scripts/verify_paper_j_claims.py` (provenance gate; blocked two deposits).
+- `docs/KGE_GUIDELINES.md` and `crates/kernel_gated_evolution/README.md` for end users.
+
+### Fixed
+- `kge solve` recorded the budget as the hill-climber's evaluation count; now its real count. Re-run with the
+  same seeds before deposit (rates unchanged by construction).
+
+## [14.9.0] — Kernel-Gated Evolution: Rust crate and foundation paper (2026-10-25)
+
+Summary: Paper J edition 1 (DOI 10.5281/zenodo.23635679). `crates/kernel_gated_evolution` implements
+mutation-selection, a one-sided apoptotic checkpoint and exact per-locus dosage over exact rationals, with
+the Lean kernel as arbiter via `anse/formal/lean_runner.py`. Ladder at 200 seeds L1 0.550 … L6 0.000;
+31/31 solutions kernel-proved in 5 invocations; restart hill-climber beats the population on L1/L2 and
+loses from L3 (49 vs 9, p = 9e-8); cross-implementation gap attributed by replay on the prototype's points.
+
+## [14.8.1] — Paper I edition 2: the second repair fails its bar (2026-10-25)
+
+Summary: Preserving `B·v` exactly (verified at 1,614/1,614) reaches 73/200, not significantly above random
+crossover (p = 0.136); nothing survives Bonferroni over five comparisons. DOI 10.5281/zenodo.23626924.
+Also: two defects fixed in `verify_theorem_axioms` (a compile failure no longer reports `has_sorry=True`;
+unique temp file instead of a shared fixed name).
+
+## [14.8.0] — Recombination does not help, and the verifier limit was our own (2026-10-24)
+
+Summary: Paper I edition 1 (DOI 10.5281/zenodo.23622869). `verify_file` had made a Lean batch look atomic by
+discarding the kernel's per-declaration axiom report on a nonzero exit; `verify_file_per_declaration` and the
+rewired `verify_batch_against_spec` verify a batch of eight in one invocation at any failure rate. Over 200
+paired seeds mutation-only solved 94/200 against crossover's 58/200 (p = 2.98e-4); the homology repair was
+refuted by its own control (p = 0.408).
+
+## [14.4.0] — AlphaEvolve + Biomimetic Genetic Algorithm, Gemini 4 Argon Strong Hardness & Continual RL (2026-10-14)
+
+Summary: Integrates AlphaEvolve SEARCH/REPLACE diff evolution with structural AST Genetic Programming,
+4D NSGA-II Pareto-front non-dominated sorting, epsilon-Lexicase parent selection, diploid dominance
+masking, and Artificial Immune System (AIS) negative selection into ANSE Phase 3 (`UC7` + Gate `G7`),
+coupled with Gemini 4 Argon (`gemini-3.1-pro-preview`) Strong AI Coding Hardness (`ARGOS-CYBER-001..005`,
+`ARGOS-EPIST-006`, `ARGOS-HARD-007..010`).
+
+### Added
+- `anse/autopoiesis/alphaevolve_biomimetic.py`: `AlphaEvolveBiomimeticEngine` with AlphaEvolve `SEARCH/REPLACE`
+  diff blocks, AST subtree crossover (`ast_crossover`), structural GP mutations (`apply_memoization_mutation`,
+  `apply_strength_reduction_mutation`, `apply_loop_comprehension_mutation`), 4D NSGA-II non-dominated sorting
+  (`compute_pareto_fronts`), $\epsilon$-Lexicase parent selection (`select_parent_lexicase`), diploid dominance
+  masking (`DiploidGenome`), and Artificial Immune System negative selection (`ArtificialImmuneDetector`).
+- `run_phase3_evolution.py`: Use Case 7 (`UC7: AlphaEvolve + Biomimetic Genetic Algorithm Evolution`) and Gate `G7`
+  (`95.72x` speedup on `find_duplicates`, `48.61x` on `fibonacci`, `0` oracle mismatches).
+- `scripts/run_alphaevolve_physics_math_kernel.py`: Evolutionary pass on Symplectic Kepler Orbit integrator (`2.14x`
+  speedup preserving $|\Delta H/H_0| < 10^{-4}$) and DEC 1-Form Hodge Laplacian (`490.97x` speedup preserving
+  $\|d_1 d_0\|_F = 0.0$).
+- `antigravity_harness/core/argos_hardener.py` & `anse/core/self_healing.py`: Gemini 4 Argon Strong AI Coding
+  Hardness AST detectors (`ARGOS-HARD-007` silent exception swallowing, `ARGOS-HARD-008` input-ignoring specification
+  gaming, `ARGOS-HARD-009` sandbox/timer monkey-patching, `ARGOS-HARD-010` dynamic `__import__`/`ctypes.CDLL` escape)
+  and `SelfHealingCodeLoop.generate_and_evolve_hardened()`.
+- `scripts/setup_nightly_cron.sh` & `scripts/nightly_retrain_at_5am.py`: Daily 05:00 AM Dream Consolidation and
+  11-step Continual Learning Retraining pipeline (`P(Promote) = 0.9968`, `Quality = 2.94 / 3.0`).
+
 ## [14.3.0] — Cloud TPU support as a detected environment (2026-10-09)
 
 Summary: AutoevolveAI now detects a Cloud TPU as part of its capability profile and ships a JAX
@@ -94,6 +205,15 @@ port of the DESI DR2 BAO grid-posterior kernel that runs on it. Validated on `gw
   hangs on a clean HEAD checkout too. Neither was caused by or fixed here.
 - `antigravity_guard.py` / `test_rigor_guard.py`: exit 1 on pre-existing files (ruff backlog, hollow K3
   tests); no finding in new files.
+
+## [Unreleased] — dyadic triangular Hilbert preprint (2026-10-08)
+
+- Preprint and Zenodo record doi:10.5281/zenodo.23232389: C* >= 3 for the absolute dyadic triangular Hilbert
+  sum via an exact product rule for tensor products; conjecture C* = 3. `papers/dyadic_triangular_hilbert/`,
+  `scripts/openai_math/hypotheses/tensor/`, `scripts/publish_dyadic_hilbert.py`.
+- Review-driven corrections before publication (Lemma 3.2, absolute-sum scope, signed-form check, citations).
+- `--publish-id` no longer rebuilds the local archive.
+- Nightly retrain: steps inherit the launching interpreter; retrain reports from the 2026-10-08 test runs.
 
 ## [14.2.0] — openai_math sub-project: study, D0 index, Riemann/Hilbert hypothesis lab, night LTM cycle (2026-10-07)
 

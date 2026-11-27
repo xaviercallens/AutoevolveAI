@@ -1,0 +1,403 @@
+% Chapter 1: the Elenchus method, explained simply.
+\xdef\labelcourant{ch:elenchus}
+\chapter{The Elenchus method, explained simply}
+
+If I had to explain to someone who is not a scientist what I did this year, I would not start with the theorems. I
+would start with a question anyone can ask: \emph{how can you tell whether a machine is telling the truth?} AI agents
+write quickly and well. They also write false things, with the same confidence. This chapter tells the story of the
+method we ended up adopting so that we no longer take them at their word. There is nothing magical about it. It comes
+down to a few rules that a cook, a judge or a bridge inspector already knows.
+
+\section{A Greek name for a simple idea}
+
+\emph{Elenchos}, in ancient Greek, means examination by questioning, the kind Socrates practised. Socrates was not
+trying to prove that he was right. He questioned the person in front of him until he found the place where their
+claims contradicted each other. What withstood the examination deserved to be believed, at least for a while; the
+rest had to be abandoned.
+
+We took up the idea and turned it into engineering. Instead of a philosopher asking questions, there are \emph{rules}
+that every result must get through before it is published, and \emph{programs} that ask some of the questions for us.
+The method was written down in September 2026, in a paper that describes how a small AI-assisted laboratory works,
+from choosing the questions all the way to publication.\reference{``A laboratory method for AI-assisted science'',
+18 September 2026. \doi{10.5281/zenodo.22829767}} It was then applied, more and more strictly, to every contribution
+in this book.
+
+Here are the rules, one by one.
+
+\begin{encadre}[The seven rules of Elenchus, on one page]
+\begin{enumerate}[leftmargin=1.6em]
+\item \textbf{Write down the claim before the test}, and say in advance what would bring it down.
+\item \textbf{Give every claim a level}: A, L, C or X, depending on who checked it.
+\item \textbf{Run a test that must fail and a test that must succeed}, to check that the test works.
+\item \textbf{Keep the one who makes separate from the one who checks.}
+\item \textbf{Publish the negative results}, with the same care as the others.
+\item \textbf{Hand the logic to an impartial judge}, the Lean kernel, and know how it can be fooled.
+\item \textbf{Keep a ledger} of every claim, with its level and its evidence, and let it say ``no'' when something is
+missing.
+\end{enumerate}
+\end{encadre}
+
+\section{Rule 1: write down the claim before the test}
+
+A dishonest archer shoots his arrow first and then paints the target around it. He always hits the bull's-eye. In
+science the temptation is the same: you do a calculation, you look at the result, and then you decide afterwards what
+you were looking for. The remedy has long been known in medicine, where it is called \emph{preregistration}: before
+running the experiment, you write down, dated and archived, what you predict, and what, if you observe it, will prove
+you were wrong.
+
+In this project, every important hypothesis was preregistered in a file, before the calculation. The file states the
+claim, the probability the author gave it of surviving the test, and the ``stopping rule'': what would kill it. For
+example, the conjecture we shall call QU-1 (it comes back later in this chapter) was recorded with an estimated
+chance of survival of 0.6, that is, a little better than even.
+
+Preregistering does not guarantee that you are not wrong. It guarantees that you cannot \emph{tell yourself} that you
+were not wrong. And it forces an extra kind of honesty: when the real work departs from what was announced, you have
+to say so. Several papers in this book have a section called ``deviations from the preregistration''. One of them, in
+Chapter~\ref{ch:c07}, reports that one of its own preregistered sub-hypotheses was simply false.
+
+\section{Rule 2: every claim carries a level}
+
+The second rule is the most visible one in this book: every claim carries a label that says \emph{who checked it}.
+There are four levels, and each has its own picture.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  niv/.style={rectangle,rounded corners=3pt,minimum width=5.3cm,minimum height=1.55cm,text width=4.9cm,
+    align=left,inner sep=6pt,font=\small},
+  lettre/.style={circle,minimum size=0.95cm,font=\sffamily\bfseries\large,text=white,inner sep=0pt}]
+  \node[niv,fill=okvert!14!ivoire,draw=okvert,line width=0.8pt] (A) at (0,0)
+    {\lettreniv{okvert}{A}\textbf{``The judge has looked.''}\\ A program, the Lean kernel, checked every logical step.};
+  \node[niv,fill=okbleu!12!ivoire,draw=okbleu,line width=0.8pt] (L) at (5.75,0)
+    {\lettreniv{okbleu}{L}\textbf{``It is written in a serious book.''}\\ A published result, read and cited precisely.};
+  \node[niv,fill=okorange!14!ivoire,draw=okorange,line width=0.8pt] (C) at (0,-1.95)
+    {\lettreniv{okorange}{C}\textbf{``A line of reasoning.''}\\ Carried out here by AI agents; nobody has checked it by machine.};
+  \node[niv,fill=okpourpre!14!ivoire,draw=okpourpre,line width=0.8pt] (X) at (5.75,-1.95)
+    {\lettreniv{okpourpre}{X}\textbf{``A pencil sketch.''}\\ A calculation with decimal numbers: it points the way, it proves nothing.};
+\end{tikzpicture}
+\caption{The four confidence levels, with the everyday words used throughout the book.}
+\label{fig:niveaux}
+\end{figure}
+
+\paragraph{\niveau{A} ``the judge has looked''} A program, the Lean \emph{kernel}, has checked every one of the logical
+steps of the proof. It is not the computer that ``thinks''; it checks that no step is skipped. To earn this level,
+three checks must pass: the proof uses only three basic rules of logic, always the same ones (their technical names
+are \texttt{propext}, \texttt{Classical.choice} and \texttt{Quot.sound}); a second program has reread the proof from
+end to end, which is called the \emph{replay}; and a search for the shortcuts that make it possible to get round the
+judge found nothing. When the replay is missing, the book writes \niveau{As}.
+
+\paragraph{\niveau{L} ``it is written in a serious book''} The result has been published in the scientific
+literature, and we have read it and cited it with page and line. We have not redone the proof, but others reviewed it
+before us.
+
+\paragraph{\niveau{C} ``a line of reasoning, carried out here by AI agents, that nobody has checked by machine''}
+This is a written argument, often correct, that nobody has submitted to the judge. In the sciences, such an argument
+is usually a researcher's; in this book, it was almost always carried out by one AI agent and reread by another. That
+is one more reason to be careful.
+
+\paragraph{\niveau{X} ``a pencil sketch''} This is a calculation done by computer with decimal numbers, like the ones
+on a pocket calculator. These numbers are rounded at every operation; they give a very good idea, and sometimes a
+wrong one. A simulation, however huge, remains a sketch.
+
+\medskip
+A complete claim often mixes several levels. In that case, \emph{it is only as strong as its weakest link}. An example
+at the end of the chapter will show this.
+
+\begin{analogie}
+Think of the labels on a jar of jam. ``Home-made'' does not say the same thing as ``inspected by the food safety
+office'', nor as ``grandmother's recipe, never tested''. No label is shameful; what would be dishonest is to stick
+``inspected'' on a jar that nobody has opened. The picture stops there: an inspected jar can still be bad, and a
+level~A theorem is only worth as much as its statement, and the judge itself can, very rarely, be wrong; it is the
+question of the statement that stays open, as we shall see.
+\end{analogie}
+
+\section{Rule 3: a test that must fail, and a test that must succeed}
+
+A smoke detector that never goes off is very reassuring, right up to the day of the fire. That is why you press its
+test button: you check that it \emph{can} go off. Scientists call this \emph{controls}. A positive control is a case
+where you know the answer must be ``yes''; a negative control, a case where you know it must be ``no''. If the test
+answers ``yes'' to both, it is worthless.
+
+In the autumn work, no measurement is reported without its two controls. A few examples that will come back in the
+chapters:
+\begin{itemize}
+\item To check that the Lean judge really refuses an unfinished proof, we deliberately submit a proof \emph{with a
+hole} in it, marked ``to be finished'' (in Lean, this word is written \texttt{sorry}). The control succeeds when the
+hole is detected.
+\item To check a calculation certificate, we also give it a case where it \emph{must} fail. In the example at the end
+of the chapter, the same method, applied to another parameter where the expected result is different, ``fails, as it
+should''.
+\item To check an auditor, we hide mistakes in the work we hand over. In Chapter~\ref{ch:c07}, the auditor planted
+mistakes in a copy of the files, and they were caught. In Chapter~\ref{ch:c13}, a deliberately damaged copy of a large
+certificate was rejected.
+\end{itemize}
+Even the cover of this book has its controls: the program that draws it checks that every cell has six sides and an
+area of~1, and then checks that this test fails on a slightly deformed lattice.
+
+\begin{analogie}[A picture: the smoke detector]
+A test that has never failed has never been tested. Before believing an ``all is well'', you check that the device
+knows how to say ``watch out''. The picture has a limit: a detector that sounds during the test can still miss a fire
+of another kind. A control shows that the test works on \emph{this} case, not on all of them.
+\end{analogie}
+
+\section{Rule 4: the one who makes is not the one who checks}
+
+The cook who tastes his own sauce always finds it to his liking: he knows what he meant to put in it. That is why you
+ask someone else to taste it, someone who does not know the recipe and has no reason to please the cook.
+
+In the work of the end of the year, the AI agent that produces a result is not the one that checks it. A second agent, launched
+separately, receives the files, recompiles them, redoes the calculations with its own programs and gives a written
+verdict in an audit file. The verdicts have precise names: ``accepted with corrections'', ``confirmed with
+corrections''. Then the author applies the corrections, and a second file, the revision file, keeps a record of them.
+For example, the audit of the distances between galaxies (Chapter~\ref{ch:c01}) found thirteen defects of attribution
+and scope, corrected before publication; the audit of one of the last papers of the year, on screened forces, led to twelve
+revisions.\reference{\doi{10.5281/zenodo.23663551}}
+
+This separation has an obvious limit, and we say so: the taster is also an AI, often from the same maker. It does not
+know the recipe, but it may have the same taste buds. That is one reason why an audit by an AI is not a human review
+(we come back to this below).
+
+\begin{analogie}[A picture: the recipe tasted by someone else]
+You do not ask the cook whether the dish is good; you have it tasted by someone who did not cook it, and you write
+down what they say. The picture stops where science begins: here the taster does not just give an opinion, it makes
+the recipe again on its own and compares the two dishes, gram by gram.
+\end{analogie}
+
+\section{Rule 5: we publish the negative results}
+
+A negative result is an idea that does not work: a formula that the data contradict, a refuted conjecture, a method
+that does not extend. It is very tempting to put them away in a drawer. But a drawer full of hidden failures distorts
+the picture everyone has of a subject: you only see what succeeded.
+
+This book does the opposite. Three of the twenty contributions are ``lessons'' in the strict sense, and many others
+contain a refutation. In Chapter~\ref{ch:c05}, measurements on superfluid helium contradict a formula that the
+project itself had proposed a few weeks earlier. In Chapters~\ref{ch:c12} and~\ref{ch:c11}, a beautiful idea (``the
+triangular lattice is also the best in the quantum world'') is disproved, first by calculation, then with a
+certificate. In Chapter~\ref{ch:c20}, a claim from the batch of 19 October is withdrawn because the measurement
+contradicts it.
+
+A negative result done well is not a failure: it is a map that says ``do not go this way''. It often teaches more than
+the success we were hoping for.
+
+\section{Rule 6: an impartial judge, and how it can be fooled}
+
+\subsection{The judge}
+
+Lean is a language in which mathematical proofs are written in so much detail that a computer can check them. At the
+centre of Lean is a small program, the \emph{kernel}, whose only job is to check each step: does this one really
+follow from the previous one, according to the accepted rules? The kernel cannot invent a proof. It can only say
+``yes, every step is correct'' or ``no, something is wrong here''.
+
+It is a marker that does not tire, does not flatter and is rarely wrong. It does not tire: it rereads the hundredth
+page with the same attention as the first; the audit in Chapter~\ref{ch:c15} had it reread 88,400 declarations. It does
+not flatter: it does not know who wrote the proof, a famous AI or a beginner, and it does not care. It is rarely wrong:
+its code is small and public, designed so that it can be reread; but rarely does not mean never.
+
+\begin{analogie}[A picture: the trial]
+Imagine a trial. The AI agent that produced the result is the defence: it argues that it is true. The agent that
+audits it is the prosecution: it looks for the flaw. The Lean kernel is the judge, and this judge has one peculiarity:
+it reads only the written evidence and the law, never the speeches. Fine words do not impress it. But the judge does
+not decide everything. It does not say whether the trial was about the right question: it is up to the human, at the
+end, to decide what the verdict means and whether it deserves to be published. The picture stops there: a real judge
+weighs testimony, whereas the kernel weighs nothing, it checks.
+\end{analogie}
+
+\subsection{Four ways to fool the judge, and how we notice}
+
+The judge is impartial, but it is not safe from trickery. The year taught us four tricks, and each one gave us a rule.
+
+\paragraph{The homework handed in with a page ``to be finished''} In Lean, you can write \texttt{sorry} in place of
+part of a proof: it is a way of saying ``I will come back to this later''. The program then agrees to compile the file,
+and it \emph{finishes without an error}. During the summer, one paper claimed that its Lean checks had succeeded
+because the program had finished without an error. But a \texttt{sorry} also finishes without an error. The remedy:
+never trust a mere ``finished without an error'', but ask the judge for the list of what each theorem rests on. If a
+hole is hiding in it, it shows up under the name \texttt{sorryAx}.
+
+\paragraph{The rule slipped in on the quiet} In Lean, you can also declare an \emph{axiom}: a rule that is accepted
+without proof. If you accept a false rule, you can prove anything, including $1=2$. One of the pieces of work in this
+book showed this on purpose (Chapter~\ref{ch:c18}): a file ``proving'' $1=2$ thanks to a hidden axiom compiles without
+the slightest error, and only the audit of the axioms unmasks it. Hence the rule: the list of axioms of every theorem
+must be limited to the three basic rules mentioned above.
+
+\paragraph{The document slipped into the file without going before the judge} This is the subtlest trick, and it was
+found by our own audits. Lean allows, through an option reserved for developers, a declaration to be added
+\emph{without having it checked} by the kernel. During the audit of OpenAI's proofs about the equations of fluids
+(Chapter~\ref{ch:c15}), the auditor deliberately made such a document, which ``proves'' an absurdity, and observed a
+negative result that it put at the top of its report: \emph{the list of axioms does not detect this
+forgery}.\reference{Audit A2, 26 October 2026, \nolinkurl{AXIOMS.md} and \nolinkurl{SOUNDNESS_SCAN.md}.} The list is
+clean; the judge has simply never seen the document.
+
+The counter-measure is the \emph{replay}: a second program, \texttt{leanchecker}, rereads from the beginning every
+declaration that has been recorded and submits it to the kernel again. On 26 October, at the same time as the replay of
+our own modules, we repeated the experiment on a control forgery. The list of axioms answered that the document
+``depends on no axioms'': the usual check would have let it through. The replay, on the other hand, stopped with an
+error, with the message ``the type of the declaration does not match''.\reference{Replay of 26 October 2026,
+\nolinkurl{results/kernel_replay_2026-10-26/}, control \texttt{KRForged}.} The replay was run on 93 of our proof
+modules, and all of them passed; a search for the four known bypass options in 871 files found nothing.
+
+\begin{analogie}[A picture: the bridge inspection]
+A bridge carries a plate: ``inspected and compliant''. The plate is the list of axioms: it says what the file
+contains. But a file can contain a page that the inspector never signed. The replay is the inspector coming back and
+going round the bridge again, bolt by bolt, without looking at the plate. The picture has a limit: a bridge wears out,
+a proof does not. Once the replay has passed, there is no need to do it again, unless the files or the tools change.
+\end{analogie}
+
+\paragraph{The right proof of the wrong question} The last trick is not really a trick, and it is the most important.
+The judge checks that the proof proves the written statement. It does not check that the written statement says what
+we \emph{tell people} it says. If I write in Lean ``every square is a rectangle'' but get the definition wrong, the
+judge will happily validate a theorem of no interest. Only a reader who compares the formal statement with the
+question that was asked can catch this kind of mistake. This step, which we call the \emph{audit of the statement},
+has not yet been done by any human for the results in this book. The ledger, the next rule, says so every time.
+
+\section{Rule 7: the ledger of claims}
+
+Every paper from the end of the year comes with a \emph{ledger}: a file that contains one line per claim. Each line
+carries an identifier, the level, the statement in words, a digital fingerprint of the proof (a kind of barcode that
+changes if the smallest file is modified), and a ``human audit'' box. Here, translated, is a real line from the
+ledger of the audit of the proofs about fluids (Chapter~\ref{ch:c15}):
+
+\begin{encadre}[One line of the ledger]
+\small
+\textsf{\textbf{P2NS-A-0001}} \quad \niveau{A} \quad \textsf{human audit: none}\par\smallskip
+\emph{Statement:} the Lean theorem \texttt{navier\_stokes\_breakdown\_R3} states that, for every positive viscosity,
+there exist an initial velocity and a force, smooth and decaying very fast, for which no smooth solution of bounded
+energy of the Navier--Stokes equations exists. Our own audit of the axioms gives exactly the three basic rules; the
+module was rebuilt from the sources, and its 53,752 declarations were replayed by the kernel. \emph{A statement about
+the Lean term only.}\par\smallskip
+\emph{Proof:} fingerprint \texttt{sha256:0c86f9d7\dots}
+\end{encadre}
+
+A program, the \emph{ledger gate}, reads all the lines and refuses to say ``all is well'' as long as something is
+missing. For this paper, its answer is: four times the signal \texttt{LEDGER\_UNAUDITED\_TIER\_A}, ``the kernel has
+checked the proof, and no person has yet certified that the statement means what its gloss says'', then exit
+code~1, which means ``no''.
+
+That is intentional. Almost all the ledgers in this book end this way, because the human audit of the statements has
+not been done. The author chose to publish anyway, and to write so in every paper. This is already the case for the
+paper in Chapter~\ref{ch:c03}, whose ledger lists twenty-two claims. Publishing with the red flag raised, and showing
+it, is more honest than lowering the flag.
+
+\section{What an AI audit is not}
+
+It has to be said clearly, because the year caught us out on this point: \textbf{an audit by an AI agent is not peer
+review}. Peer review, in science, is the examination of a piece of work by human researchers in the field, who stake
+their judgement and their reputation on it. Nothing in this book has received that examination.
+
+On 19 and 20 October, papers appeared with the label ``peer reviewed in five rounds''. On 21 October, one of them
+published a second edition that withdraws this label: the attached review file ``was produced by a script that calls
+no reviewer''.\reference{Withdrawal of 21 October 2026: \doi{10.5281/zenodo.23525655}} As early as 19 October, another
+record had withdrawn a ``review report'' written by a program, with imaginary reviewers.\reference{\doi{10.5281/zenodo.23468458}}
+A month earlier, the audit of the workshop itself had found a ``peer review'' script that never called a model.
+
+Hence two rules, which we now apply to the letter. A review file must show that a reviewer was really called: who,
+when, and with what answer. And we write ``audited by an AI agent'', never ``peer reviewed'', as long as no human in
+the field has done it.
+
+\section{An example: an idea that goes up and down the levels}
+
+Here, to finish, is the story of a single claim, from rough draft to ledger. It is told in detail in
+Chapters~\ref{ch:c12} and~\ref{ch:c11}; here we follow only its levels.
+
+\paragraph{The idea} We know (it is the thread of the second part) that the triangular lattice minimises the energy
+of points that repel one another when they are \emph{at rest}. But in the quantum world, points are never completely
+still: even at absolute zero, they vibrate a little. This minimal vibration has an energy, the \emph{zero-point
+energy}. The natural idea, christened QU-1, was: ``the triangular lattice also minimises the zero-point energy''. At
+this stage it is a conjecture: not even an argument, an intuition. It is preregistered, with an estimated chance of
+survival of~0.6.
+
+\paragraph{The pencil sketch \niveau{X}} Before trying to prove it, we test it by calculation. Two formulas, programmed in four ways
+and then a fifth time by the auditor, compute the zero-point energy of many lattices. Result: for eight of the twelve forces tested, another
+lattice, a stable one, has a lower zero-point energy than the triangular lattice. QU-1 is refuted, but only ``in
+pencil'': decimal numbers, however well they agree, prove nothing.\reference{Numerical refutation, 26 October 2026:
+\doi{10.5281/zenodo.23653833}}
+
+\paragraph{The certificate \niveau{A} for the logic, \niveau{C} for the whole} For one of the forces, the Gaussian bell,
+we want a proof. We deform the triangular lattice very slightly, by a small \emph{shear}, the way you push the top of
+a stack of cards. A rigorous calculation by enclosures, which guarantees at every step that the true value lies in an
+interval (this is called ball arithmetic), shows that the zero-point energy \emph{decreases} for every small enough
+shear: so the triangular lattice is not even a local minimum. The calculation split the problem into 206,468 cells,
+and none of them failed. The Lean kernel checks the logic of the argument and the exact arithmetic of the
+certificate.\reference{Certificate, 26 October 2026: \doi{10.5281/zenodo.23655392}}
+
+But the enclosures themselves were computed by a program \emph{outside} the kernel, and some of the steps that link
+the pieces together are reasoning written by AI agents, which neither a machine nor a human has checked (level~C). So the paper writes, honestly: ``the main result is level~C as a whole;
+only its logic and its arithmetic are level~A''. That is the weakest-link rule.
+
+\paragraph{The controls} The same method, applied to a narrower bell for which the ``pencil'' calculations do not
+predict a decrease, does not manage to certify a decrease, ``as it should''. Proofs with deliberate holes, a planted
+axiom and a falsified certificate were submitted to the judge, which refused them all.
+
+\paragraph{The audit and the ledger} A distinct agent redid the calculations; a later paper extended the result to
+screened forces, with an audit and twelve revisions.\reference{Screened forces, 26 October 2026:
+\doi{10.5281/zenodo.23663551}} And the ledger gate still answers ``no'': no person has yet certified that the Lean
+statements say what their glosses say.
+
+\begin{encadre}[What the example shows]
+Within a few weeks, the same idea was an intuition, a preregistered hypothesis, a refutation in pencil, and then a
+mixed certificate in which every piece carries its level. At no point did we write ``proved'' for something that was
+not. That is Elenchus: not always being right, but knowing at every moment \emph{how far} you are right, and saying
+so.
+\end{encadre}
+
+\section{Even the biggest: checking another AI's proof}
+
+The rules do not apply only to our own agents. They apply, just as strictly, to the work of the big laboratories. In
+2026, OpenAI published proofs produced by an AI and checked by computer. It would have been tempting to take
+them as they were: they came from a renowned team, and the Lean judge had accepted them. Even so, we examined them as
+we examine our own, before building on them.
+
+\paragraph{A claim about electric charges} The publication also claims to prove the Sandier--Serfaty conjecture, about
+the most economical arrangement of charges in a neutralising background, by a reduction and a very large calculation
+certificate. An agent ran this certificate again: it reproduced in about eight minutes. It checked that a deliberately
+damaged copy is rejected (that is the negative control), and it read the reduction step by step without finding a
+gap. Chapter~\ref{ch:c13} tells this story, and its title says it: \emph{no proof is claimed}. Neither proved, nor
+verified, nor refuted by us; reproduced and audited, which is different. Along the way, the audit found and repaired a
+gap in \emph{our} certificate tool. Then four of the twelve stages of the certificate were redone inside the kernel
+(Chapter~\ref{ch:c14}); the other eight are still waiting.
+
+\paragraph{Theorems about fluids} OpenAI also published, in Lean, ``blow-up'' theorems for the Navier--Stokes and Euler
+equations, which describe how fluids flow. An agent rebuilt them independently: 2,440 modules recompiled, 88,400
+declarations replayed by the kernel, no loophole found, and the statements compared with the official texts of the
+problems (Chapter~\ref{ch:c15}). This work does not claim that a Millennium Prize Problem has been solved, and the
+credit for the proofs belongs to their authors. It only says, in a way anyone can check, what was checked and what
+was not.
+
+\begin{analogie}[A picture: the roadworthiness test]
+A new car from a big manufacturer still goes through its roadworthiness test. This is not a suspicion against the
+manufacturer; it is the rule, the same for everyone. The picture stops there: the inspector of a car knows the list
+of points to check, whereas for a new proof, part of the work consists in inventing that list.
+\end{analogie}
+
+\section{The levels of the twenty, at a glance}
+
+The table at the end of the book gives, for each contribution, its rigour score in the selection grid, from 0 to 3.
+Sixteen score 3: a proof checked by the judge and replayed, or a calculation certificate rechecked by a different
+program. One scores 2 (checked by the judge, without replay), two score 1, and one scores 0: the calculation
+instrument rusty-SUNDIALS, all of whose numbers are decimal numbers. That is intentional: an instrument does not have
+to be a theorem.
+
+This count has to be read with care. The score is that of the \emph{best} piece of each work, not of the work as a
+whole; nor is it quite an Elenchus level, since a certificate rechecked without a replay by the judge counts as much
+as a replay. The level badges in each chapter are what count. A level~A contribution almost always also contains
+simulations (X), citations (L) and arguments (C), and its main conclusion is only as strong as its weakest link, as
+in the example of QU-1. That is why every chapter has a section ``How we made sure it is not wrong'', which goes
+through the levels piece by piece, and a section ``What this does not say''.
+
+\section{The rules applied to this book}
+
+This book tries to follow its own rules. Its sources are fixed in advance: a number that does not appear in the file
+of a piece of work is not used here. The twenty contributions were chosen with a grid that was written and frozen
+before a single score was given, and applied in the same way to every candidate (this is the equivalent of
+preregistration). Every chapter follows the same plan, whatever the field, so that no result is presented better
+than another simply because it is more appealing. The mistakes and the withdrawals have their own chapter at the end.
+And this book, like its results, has not been reviewed by an outside human scientist: so it, too, carries a raised
+flag.
+
+\section{What the method does not do}
+
+Elenchus is not a guarantee. It does not replace human review; it does not say whether a question is worth asking; it
+does not prevent mistakes, it makes mistakes easier to find. And it does not apply itself: the relapse of 19 October
+came one month \emph{after} the method had been written down. A rule on paper protects against nothing. What protects
+you is running it, every single time, including when you are in a hurry and pleased with yourself.
+
+The twenty chapters that follow are its application. Read the level before the sentence.

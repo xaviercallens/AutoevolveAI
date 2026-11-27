@@ -1,0 +1,418 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "P2SS-A-0001",
+   "statement": "Level L2 for stage init_constants (Constants.lean): the real numbers log 2, pi, p = sqrt(2/sqrt 3)/2, R0 = 2p/sqrt 3 and a = 2p lie in the interval enclosures [u/Q, v/Q], Q = 2^144, whose integer endpoints are the literals ln2C, piC, pC, RC, aC of the file (log_two_mem, pi_mem, p_mem, R_mem, a_mem). Proved from Mathlib (log series bound, Machin's formula, Real.hasSum_arctan) plus kernel-decided rational comparisons. A statement about real numbers and those literals; that the literals are what the C++ printed is a separate observation (P2SS-X-0001).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:eded763003909fdd12cefc99bce80c3e93973554afdbe1f1076fa611b2544bda",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-A-0002",
+   "statement": "Level L1 for stage init_constants: the Lean transcription of the C++ loops (200-term atanh series for log 2, Machin with 150 terms per arctangent for pi, sqrt chain for p, R0, a) over the Lean interval operations, evaluated by the kernel (decide +kernel), equals the integer endpoint literals ln2C, piC, pC, RC, aC (ln2_comp_eq, pi_comp_eq, p_comp_eq, R_comp_eq, a_comp_eq).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:68cbeaa2bdd8f8e9625e5eee11111fbcfc34637f6e22b5b2921eec0d9a26f40f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-A-0003",
+   "statement": "Level L1 for stage bcons/eps: bcons_comp_eq, the kernel evaluation of the transcribed interval log (range reduction + 200-term atanh), pow, the combinatorial factors, Horner evaluation, the 38 edge values VR_m and bcons = -log R + (pi/2) R^2 + sum VR_m + eps equals the literal bconsC. Inputs co[1..38] (stage cs) are premises written into the file.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:4a54c909bfead41e295dc99b9ef311c77a944a9279dbf690f537f78ae9938170",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-A-0004",
+   "statement": "Level L1 for stage calcLam: calcLam_chunk_sums (the exact sums of the 300 + 300 chunk values), calcLam_eq (the scalar part of calcLam gives exactly the C++ lambda and mu), and calcLam_stage in Chain.lean (conjunction of all 600 chunk theorems chunkEacc/chunkFacc over midpoint steps 150c..150c+149 and calcLam_eq). Conditional on the table enclosures (nodes and cells, stage 3, written into the files as literals) and on l.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:803f73021ff4b604204a6695de67e0858523d5839e431e6ec0f9baff85c0611a",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-A-0005",
+   "statement": "Level L1 for stage calcK: calcK_mesh (the sample counts are 3103 and 1552), calcK_K_eq (K = 2(kc + [-er, er]), er = h^2 (R/2) |ss|/24, equals the C++ K) and calcK_stage in Chain.lean (conjunction of the 97 midpoint-sum chunk theorems chunkS, the 194 G_ss-hull chunk theorems chunkF, calcK_mesh and calcK_K_eq). Conditional on the table enclosures (stage 3) and on l.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:a6f7399ed4b30c50b7ae5a8d9bcfae6ea4cef92d70d497fd6c22ffa7ee6e6df1",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-A-0006",
+   "statement": "premises_chain (Chain.lean): the premises written into the calcK file (kp, kR, klam, kmu) equal the Constants outputs (pC, RC) and the calcLam outputs (lambdaC, muC); the K literal of Asserts equals the calcK output; bconsC = bconC; eps = [-rat(1e-11).v, rat(1e-11).v]; the bcons eps equals the calcK eps. This links the stage outputs to the premises of the next stage.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:e51b9bf14b85d0d5daf11d047dbf1e52750c42319bc4fabeb6c165f6a7438202",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-A-0007",
+   "statement": "Level E (endpoint arithmetic) on the exact C++ endpoints (Asserts.lean): printed_pairs (each of the 22 pairs of certificate-record.txt equals (floor(1e7 u/Q), ceil(1e7 v/Q)) of the exact interval), rat_consts_eq, cpp_asserts (every assertion that the C++ makes after calcK (lambda range, K<0, f(l)>0, slope, the two global_grid assertions, the inside_hess minima) plus the |c_1| < 1 check, evaluated on the exact endpoints; the core_test bound check of stage 4 (core.hpp:274) is NOT covered, and the table separation check (core.hpp:251) is checked only window by window) and grid_margins. Arithmetic about the stated integers only; it does not show the C++ computed them (stages 3, 4, 9-12 are not ported).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:4994965d2434e13063e5f62d8a7ae162d608cab367d3063cce58fbe333db8888",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-A-0008",
+   "statement": "Conditional level L2 for the assertions (Asserts.lean): lambda_real, K_real, fl_real, slope_real, gmf_real, neglhs_real state the real meaning of the assertions (-6.731 < lambda < -6.729, K < 0, f(l) > 0, -pi B(l) - lambda/2 > 0, gmin - factor > 0, negative-part left-hand side < 0) conditional on the real quantity lying in its interval. That the intervals enclose the manuscript's quantities is not part of these theorems.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:672316e255e191d4deca9553d26e53a000b0b5d38dda55de7a0e4dbf75f42d99",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-A-0009",
+   "statement": "Soundness of the Lean interval operations over the reals (IV.lean): if reals lie in the input intervals the real result lies in the output interval, for +, -, negation, x, inv, /, rat, ofInt, and hull (add_sound, neg_sound, sub_sound, mul_sound, inv_sound, div_sound, rat_sound, ofInt_sound, hull_sound_left).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:35837efa8d98978cdafb433c292ce2e24ca426380edce2dcb36f84e40595c74b",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-A-0010",
+   "statement": "ProgSandierSerfaty.Reduction.signed_endpoints (SignedEndpoints.lean) and its helper lemmas gPrim_neg and integral_ge_of_negPart: for an even, interval-integrable G(d,.) with K < 0, 2 g_d(x) >= K for x >= 0 and the lintegral of ofReal(-G) over (0,infinity) at most ofReal(-K), one has K <= g_d(d tan a) + g_d(d tan b) for |a|,|b| < pi/2, a + b > 0 (g_d = interval integral of G(d,.) from 0 to x). Abstract G; no use of the concrete radial data of the manuscript.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:96044bd029d1acde92805a6d6a14cc742ec61a3900edfbf1ffb988ea45349d8e",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-A-0011",
+   "statement": "assembly_algebra (the final algebraic step of the manuscript's Proposition dual:assembly: sector bounds J(S) >= K + lambda A(S) + mu theta(S), total area N, total angle 2 pi N, at most 6N sectors, K <= 0 give sum J >= N(6K + lambda + 2 pi mu); the geometric inputs are hypotheses) and b_lt_dstar (0.28209 < 1/(2 sqrt pi)).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:bb47d590af272026043697b191173b35571f2fa416632ae066ec697d3f6d1f37",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-A-0012",
+   "statement": "Constant bridge to the P1 statement file (Bridge.lean): tri_eq_triScale (the certificate's tri equals ProgSandierSerfaty.triScale), a_mem_triScale (aC contains triScale) and p_mem_triScale (pC contains triScale/2).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:5badb7b419fc335f37c93b7c886f806170f20e0554d9a290d470af9c391effe8",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-A-0013",
+   "statement": "Honest refutations of the planted claims (Controls.lean, CalcControls.lean): the Lean kernel proves ctl_ln2_199_ne (199-term log 2 differs from the C++ endpoints), ctl_pi_noslack_ne, ctl_pi_shift_false (pi lower endpoint + 2^100 ulps is not below the Machin enclosure), ctl_pair_false ((121,162) is not the pair of gmf), ctl_gmf_121_false, ctl_erdrop_x2_false, ctl_det_false, ctl_G_eight_to_four (H^2/8 -> H^2/4 in the lookup) and, at stage level, ctl_calcK_er12_ne (K with /24 -> /12) and ctl_calcLam_evipp12_ne (calcLam with the /24 -> /12 allowance). These are proofs that the perturbed claims are false, i.e. the stage statements are not vacuous.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:32b579ab3634f689f0be7c58a235c083b4049c62b964f60bc235865515c1223c",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-A-0014",
+   "statement": "Controls for signed_endpoints (Controls.lean): ctl_signed_without_sum_false (for G = 1, K = -1, d = 1, a = b = -pi/4 the conclusion fails, so the hypothesis a + b > 0 is load-bearing) and ctl_signed_hyps (the same G = 1 satisfies every other hypothesis, so the theorem applies to it: non-vacuity).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:b78189f0feb612820661f5c993f726892817b0cfa33829727945354311baaf15",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-A-0016",
+   "statement": "LeanFlow tactic decide_kernel (commit 06084ef5c40057c66c476feba18ea3da8fb150ba): the 12 assertions about the exact endpoints (lambda in (-6.731,-6.729), K < 0, f(l) > 0, slope > 0, gmin - factor >= 1.20e-5, drneg + er_drop + K <= -4.585e-4, g_dd, g_xx, det > 0, |c_1| < 1 both sides) are each accepted by the Lean kernel; every theorem 'does not depend on any axioms'. Arithmetic about the stated integers only (level E).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:8e646efd326c16a54327e4b64fb1b958a7ec3a32f59a8fadffbf4a8e3920efbc",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-A-0017",
+   "statement": "ChainLink.lean (new file added after the audit; the 52 locked files are unchanged): slope_eq (the slope literal slopeC of Asserts equals -pi*bconsC - lambdaC/2 recomputed with the Lean interval operations) and fl_eq (the f(l) literal flC equals f0lC - lambdaC*kl*kl/2 - muC; conditional on f0lC, a table value of the unported stage 3). Links the stage-8 literals to the L1 outputs.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:a6d62ddfb22c3f10e4455027c285e5012295430e2b295d763c02d64b24ada2c6",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-L-0001",
+   "statement": "Sandier-Serfaty 2012 (arXiv:1011.4617v2): the triangular lattice is the unique minimizer among lattices (Theorem 2, p.5) and its minimality among all configurations is Conjecture 1 (p.5); 'its minimization in general remains open' (abstract). Transcription of the P1 excerpt; the cited page was read by the P1 paper-stage agent, the passage was not re-read here and citation_check.py was not run in this paper.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:2a14fa6d55142970bef08acbb5e619ca29438e5114bfad61e52eb7bde017d45a",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-C-0001",
+   "statement": "Scope: the Sandier-Serfaty conjecture is NOT formally proved by this work, nor is any claim of the openai/math manuscript (AI-generated, not peer reviewed) beyond the items listed. Kernel-checked: 4 of 12 certificate stages re-executed (level L1: init_constants, bcons/eps, calcLam, calcK, the last two conditional on the table enclosures, which are premises), 1 of 12 with a real-number statement (level L2: init_constants), the executable assertions on the exact C++ endpoints (level E), one reduction lemma (signed_endpoints), one algebraic step and one numeric fact. Nothing joins the certificate to the reduction in Lean. The conjecture was open in the human literature (L-0001); we did not search for later resolutions.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "P2SS-A-0002",
+    "P2SS-A-0003",
+    "P2SS-A-0004",
+    "P2SS-A-0005",
+    "P2SS-A-0006",
+    "P2SS-A-0007",
+    "P2SS-A-0001",
+    "P2SS-A-0010",
+    "P2SS-L-0001"
+   ],
+   "evidence": "sha256:4b83c7b479c1e3c351c5c1f5337eaa240832baf1a92fe89b0590f0d26a869a1b",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-C-0002",
+   "statement": "Classification of the 12 stage rows by checking level (CERTIFICATE_PORT.md): L1 complete: init_constants, bcons/eps, calcLam, calcK (4/12). L2 complete: init_constants (1/12). Level E only (assertions on the exact endpoints): the assertions after calcK, global_grid outer, global_grid negative, inside_hess, the lattice-sum bound |c_1| < 1 and the 22 printed pairs. Not ported: cs, table, core_test, bdsup, and the computations of global_grid and inside_hess. The classification is an argument from the theorem statements of A-0001..A-0008 and A-0016; the choice of row granularity (12 rows) is ours.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "P2SS-A-0001",
+    "P2SS-A-0002",
+    "P2SS-A-0003",
+    "P2SS-A-0004",
+    "P2SS-A-0005",
+    "P2SS-A-0007",
+    "P2SS-A-0008",
+    "P2SS-A-0016"
+   ],
+   "evidence": "sha256:8a49010b2ebbfe60aaaf0b4267807ce5c68036b8c1574dfcc15cac3f3f814b8e",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-C-0003",
+   "statement": "Fidelity of the transcription C++ -> Lean for the ported stages: argued from bit equality of the Lean kernel evaluation with the integer endpoints printed by the C++ (A-0002..A-0005 are equalities to those literals) and from reading the transcribed code (IV.mul uses the min/max of the four endpoint products where the C++ uses a nine-way sign split; the argument is that both choose the same two products). Not proved: a transcription that differs from the C++ on inputs not exercised would not be caught. L1 does not relate the numbers to the manuscript's real quantities (that is level L2).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "P2SS-A-0002",
+    "P2SS-A-0003",
+    "P2SS-A-0004",
+    "P2SS-A-0005",
+    "P2SS-A-0009"
+   ],
+   "evidence": "sha256:091b61755368e3005c1d1b05eb7fdea0244fe5a24d7cb896e65260425ac8faab",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-C-0004",
+   "statement": "What the chain does not check: (i) the tiling of the index sets by the chunk ranges (97 chunks of 32 for 3103 midpoint indices, 194 chunks of 8 for 1552 hull indices, 300 + 300 chunks of 150 for 45000 steps) is guaranteed by the generator, not by Lean; the ranges are visible in the statements and were checked contiguously by a script (X-0007); (ii) the inputs taken as given: the table enclosures (nodes and cells), co[m] (lattice coefficients), l, and the display of the 22 pairs; (iii) that the intervals contain the manuscript's real quantities for any stage other than init_constants; (iv) the stages not ported.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "P2SS-A-0004",
+    "P2SS-A-0005",
+    "P2SS-A-0006",
+    "P2SS-A-0008"
+   ],
+   "evidence": "sha256:ceed6fa429db2ed898e7f92efd9bc13ead9ad85e74d66554142d54bdf8f2a51c",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-C-0005",
+   "statement": "Fidelity of signed_endpoints to the manuscript's Lemma dual:signed-endpoints (03-geometry.tex lines 567-611, SHA-256 1b8446c6849e...): K < 0, d0 > 0, G even and locally integrable for d >= d0, g_d(x) = int_0^x G(d,s) ds, 2 g_d(x) >= K for x >= 0, int_0^infinity max{0,-G} <= -K imply the conclusion for |a|,|b| < pi/2, a + b > 0; the negative-part hypothesis is a lintegral valued in [0,infinity] so that an infinite integral violates it instead of producing the Bochner junk value 0. Item-by-item comparison by an AI agent; no human has compared the Lean statement with the TeX. Prior fixed deviation: the lemma is stated for an abstract G and uses neither SandierSerfatyStatement.lean nor the P3 library.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "P2SS-A-0010",
+    "P2SS-A-0014"
+   ],
+   "evidence": "sha256:34f22dfef23027ebb96ff864f7748d4b02c945c4ca502f768b414097bfe44e29",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-C-0006",
+   "statement": "Trust base of level L1: the checks use decide +kernel, i.e. the Lean kernel evaluates the transcribed computation (including the arbitrary-precision integer literal arithmetic that the kernel implements natively, which stays in the trusted base), whereas native_decide would trust the compiled evaluator and add an axiom. #print axioms of the L1 theorems shows none or only propext. This removes the C++ compiler, Boost, OpenMP and the hardware that ran the C++ from the trust base of the ported stages; it does not remove the transcription fidelity (C-0003).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "P2SS-A-0002",
+    "P2SS-A-0004",
+    "P2SS-A-0005"
+   ],
+   "evidence": "sha256:c73c1d9256088a6916f20d294684574d9014f040c1a952225c759c2a8a7ee549",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-C-0007",
+   "statement": "What remains of the analytic reduction: of the 31 numbered steps audited in P1 (R1-R10, G1-G7, K1-K8, T1-T6), only G6 is complete in Lean and only the algebraic part of G7; the other 29 steps and the geometric part of G7 are untouched (30 items). The assessment of what Mathlib lacks (weak div/curl equations with point charges, torus Green function, Voronoi tessellation of periodic point sets, midpoint-rule remainder; present: the Weierstrass function file, a trapezoidal-rule file) is an estimate; the pinned-Mathlib scan (X-0008) is a string search, not a proof of absence.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "P2SS-A-0010",
+    "P2SS-A-0011"
+   ],
+   "evidence": "sha256:d2ec7ed88492501c7621f87a1507f54d6066f439bb90baf179cd846d05720006",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-C-0008",
+   "statement": "Limitations: one AI agent wrote the generators and the Lean files and ran the original checks. A separate AI agent instance (not a person) audited the paper (AUDIT.md, verdict ACCEPT_WITH_CORRECTIONS; STATEMENT_LOCK.json): it rebuilt 13 modules from source in its own olean directory with byte-identical oleans, re-ran the three must-fail files (7 + 2 + 2 errors, rc 1) and the axiom aggregates (615, 294, 44 reports), and type-checked Chain.lean; the other 28 chunk files, CalcK.lean and CalcLam.lean were NOT rebuilt independently; LeanFlow was not re-run. No human audit of any statement (an agent audit is not the certification the LEDGER_UNAUDITED_TIER_A flag asks for); the gmin, drneg, factor, er_drop and Hessian endpoints come from an instrumented copy of the C++ (counters and endpoint prints only; its log reproduces all 22 record pairs), the others from a dump driver over the unmodified headers; CalcKCore.lean was rewritten byte-identically by its generator after its olean was built; compile times were measured at machine load average 12-16.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "P2SS-A-0002"
+   ],
+   "evidence": "sha256:d50b6815bf6c7d8bb988b990dd8af48f6e31e3b6e1afc86acb5faaa43299ede7",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-X-0001",
+   "statement": "Origin of the endpoint literals: the integer endpoints and the per-stage operation counts come from the C++ certificate. A dump driver (cpp/dump_driver.cpp) was compiled against the unmodified corpus headers (core.hpp c7f76596..., grids.hpp 4640e0a3...) and run once (user time 500.75 s, wall 8:37); the endpoints of gmin, drneg, factor, er_drop and the Hessian hulls and all operation counts come from an instrumented copy (counters and endpoint prints only; single thread, wall 19:00) whose log reproduces all 22 pairs of certificate-record.txt. Totals: 1,685,129 of 1,238,829,689 IV mul+inv (0.136 %).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "P2SS-A-0007"
+   ],
+   "evidence": "sha256:e4f14e0e1cbcf6209e9893faf6a275424a52218308a6f6bf6b1ae24e6cfcab87",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-X-0002",
+   "statement": "Compilation record under pinned Lean 4.34.1 + Mathlib d13f23b7 (cores 4,5): of the 54 saved compile transcripts 51 have rc 0 and the 3 must-fail files rc 1; only the transcript of Controls.lean contains a sorry warning (the planted ctl_sorry_pi); audit aggregate over AxiomsAll.lean: 615 reports, 603 with [propext], 6 with no axioms, 6 with [propext, Classical.choice, Quot.sound], none outside the whitelist.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "P2SS-A-0002"
+   ],
+   "evidence": "sha256:828b73fef02220411c8ffda3639878498caa7b09af8587738402bd711c3000a7",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-X-0003",
+   "statement": "Must-fail files (rc 1): ControlsReject.lean has exactly 7 errors, CalcKReject.lean 2, CalcControlsReject.lean 2; every error line is mapped to one planted claim (rej_pi_shift, rej_ln2_199, rej_pair, rej_gmf_121, rej_erdrop_x2, rej_det, rej_G_eight_to_four; rej_S0_ulp, rej_F0_ulp; rej_calcK_er12, rej_calcLam_evipp12) and there is no other error. 10 are 'decide proved that the proposition is false'; rej_pi_shift is 'decide failed ... did not reduce' (its falsity is proved by the honest control ctl_pi_shift_false). A decide rejection is an observation of the failing run, not a kernel-checked negation; the negations are the A-0013 rows.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "P2SS-A-0013"
+   ],
+   "evidence": "sha256:f291ed5a92013128ee03d0ae944ea4c7ac76ce43d84a0223e48346272ebdd7db",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-X-0004",
+   "statement": "LeanFlow decide_kernel on the 12 assertions: exact endpoints -> status ok, code verified, tier A, no axioms; planted copy (gmin - factor >= 1.21e-5 instead of 1.20e-5) -> rejected, false-statement, failing exactly cert_5, whose theorem then depends on sorryAx. The planted-run observation is a decide rejection, not a negation proof.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "P2SS-A-0016"
+   ],
+   "evidence": "sha256:30bf6406ea02bc4af713c9d3fe4d5d1d656f102021b951ec3bc8a9c0165d0dcf",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-X-0005",
+   "statement": "LeanFlow test suite at commit 06084ef5c40057c66c476feba18ea3da8fb150ba, rerun at the paper stage read-only (python -I -B -m pytest, no cache): 94 passed in 23.84 s (88 before the decide_kernel commit).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:8c97e63850f64e829a09205bb6f09116e349805071c5c69a4fb19c5018f2449d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-X-0006",
+   "statement": "Measured cost of the remaining stages at level L1: process time of the ported files (calcK chunk files S0-3, F0-7: 1,251.3 s; with CalcK.lean and CalcKCore.lean 1,281.8 s; calcLam 20 chunk files 9,910.1 s, with CalcLam.lean and CalcLamCore.lean 10,080.6 s); rate 148 ops/s lower bound (1,682,203 IV mul+inv of calcK+calcLam over all those files), 612 ops/s upper bound (kernel benchmark); projection 854-2,240 core-hours (counts x measured rates); measured at machine load average 12-16, so ranges.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "P2SS-A-0004",
+    "P2SS-A-0005"
+   ],
+   "evidence": "sha256:e75a07fa381f33a1b1f299bc1253b90c81f4f9a3fa12313861b1f01556174802",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-X-0007",
+   "statement": "Tiling of the chunk ranges in Chain.lean (script over the statement text): chunkS 97 chunks cover [0,3103), chunkF 194 chunks cover [0,1552), chunkEacc 300 and chunkFacc 300 chunks each cover [0,45000), contiguous from 0 with no gap or overlap. Lean does not check this.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "P2SS-A-0004",
+    "P2SS-A-0005"
+   ],
+   "evidence": "sha256:f37c6ca1e99fac5b6a18e4ada912fcf7253e0eac72ce7ae8d6511d4240da638e",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-X-0008",
+   "statement": "String search of the pinned Mathlib (d13f23b7): TrapezoidalRule.lean and Elliptic/Weierstrass.lean exist; the word 'midpoint' occurs in MeasureTheory/Integral only in TrapezoidalRule.lean (a docstring naming the single-trapezoid formula); 'voronoi' occurs once in Mathlib (a docstring of GeometryOfNumbers.lean); no file mentions a torus Green function. A string search is not a proof of absence.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "P2SS-A-0010"
+   ],
+   "evidence": "sha256:909a6cdf14ee71489855055c5b85603a7347d8f60fdcb8283a3cc6d5cd51b000",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-X-0009",
+   "statement": "Observation of the axiom gate on the planted cheats (Controls.lean): ctl_sorry_pi 'proves' the shifted-pi claim with sorry and ctl_axiom_pi with a planted axiom; both files compile with rc 0, and #print axioms reports sorryAx, respectively ProgSandierSerfaty.Cert.Controls.ctl_cheat. Both are OUTSIDE the allowlist, which is what the gate must report. This is a control observation, not a Tier A theorem (re-filed from Tier A after the audit); no genuine theorem imports Controls.lean except the must-fail file ControlsReject.lean.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "P2SS-A-0013"
+   ],
+   "evidence": "sha256:2f9a7f05787352a6a4fc70f31a8972450a44f1f0c9eed601d4a770683c1e167c",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "P2SS-X-0010",
+   "statement": "Consistency of the table premises (auditor's script check_windows, reported in AUDIT.md section 2): all 891 windows (97 + 194 + 300 + 300) with 9,673 node literals and 8,782 cell literals equal entries of dump/dump.txt, each window a contiguous run of table indices with its cells exactly those between its nodes; the scalar copies equal the dump. Lean does not check this. A 1-ulp shift of every node f lower endpoint is absorbed by the outward rounding of h*G and accepted by the chunk theorem (auditor's plant), so stage-output bit equality alone would not detect it.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "P2SS-A-0004",
+    "P2SS-A-0005"
+   ],
+   "evidence": "sha256:d83db0e98ecec15e072c61c335f41426dc64626a041197e4402373491c70f330",
+   "audit": null
+  }
+ ]
+}

@@ -1,0 +1,40 @@
+{
+ "id": "H3",
+ "attempts": 1,
+ "status": "KEEP",
+ "tier": "C (human proof, self-checked only; producer!=verifier review not done) + X (numerics)",
+ "keep_criteria": {
+  "mixture_vs_closed_form_lt_1e-8": true,
+  "derivative_signs_strictly_positive_n0_8": true,
+  "negative_controls_fired": {"signed_weight_w(1-2e^-a)": true, "gauss_minus_gauss_e^-t-0.5e^-2t": true, "morse": true},
+  "positive_control_coulomb_ok": true
+ },
+ "max_rel_error": 2.1355785616734423e-21,
+ "max_rel_error_note": "mixture (mpmath quad, dps 40) vs mpmath Struve/Neumann closed form, 50 radii in [0.01,50] r0. Vs scipy closed form: 1.2247563269880566e-13, which equals the scipy-vs-mpmath closed-form diagnostic 1.2247563143011436e-13 (scipy precision limit, not a mixture error).",
+ "laplace_identity_max_rel_error": 1.9112241703444294e-41,
+ "hankel_identity_max_rel_error": 0.0,
+ "hankel_note": "mpmath quadosc agrees to working precision at r in {0.1,1,5}; independent truncated zero-partition quadrature (399 zeros of J0) at r=1 gives 0.754628 vs 0.754610, difference consistent with the truncation tail; a perturbed integrand 1/(1+1.01k) gives 0.752459, so the check is not vacuous.",
+ "dlmf_11_5_2_route_B_max_rel_error": 2.8186011565399727e-41,
+ "derivative_signs_ok": true,
+ "derivative_check": "(-1)^n d^n/dt^n of the CLOSED FORM by mpmath.diff (independent of the mixture), n=0..8, 13 t in [1e-3,1e3] r0^2, all strictly positive; max rel deviation from the exact mixture derivative 1.351406464503506e-21.",
+ "asymptotics": {"V(1e-6)-(ln(2/r)-gamma)": 9.999962671393704e-07, "r*V(r) at r=1000": 0.9999990000089998},
+ "proof_corrections": [
+  "Fubini step: J0 changes sign, so 'everything is nonnegative / Tonelli' is false, and the crude bound |J0|<=1 gives the divergent int w(a)/(2a) da (log at a->0). Fix: Tonelli on |integrand| with the a-integral first gives int |J0(kr)|/(1+r0 k) dk < inf since |J0(x)|=O(x^-1/2); then Fubini.",
+  "Shorter independent route B: DLMF 11.5.2, H0(x)-Y0(x) = (2/pi) int_0^inf e^{-xu}(1+u^2)^{-1/2} du, makes V completely monotone in r; sqrt(t) is Bernstein, so V(sqrt t) is CM in t. CM is thus immediate from a textbook formula.",
+  "Constants of the proposed route are correct: V-hat = 2pi/(k(1+r0 k)), w(a) = (1/r0) erfcx(sqrt(a)/r0), Weber factor e^{-r^2/(4a)}/(2a). The Gradshteyn-Ryzhik equation number for the Hankel integral was not verified (identity checked numerically)."
+ ],
+ "lattice_caveat": "V ~ 1/r: latticeEnergy = +inf in ENNReal and upstream's theorem reads inf <= inf for the raw sum (same as Coulomb s=1). The jellium/renormalised energy relevant to TMD Wigner crystals is NOT covered. Contentful corollary (Tier C, not numerically checked): g_eps(t) = V(sqrt t) e^{-eps t} is admissible with finite lattice sum for every eps>0, r0>0. All conditional on upstream's theorem (AI-generated, not peer reviewed).",
+ "literature": [
+  "No paper found stating complete monotonicity of the Rytova-Keldysh potential in r^2 or its Gaussian-mixture weight (alphaXiv, 4 queries). Weak evidence: route B shows it is textbook-immediate; only the connection to universal optimality may be new.",
+  "1904.01553 Anisotropic Keldysh interaction",
+  "2606.23033 Strongly anisotropic Rytova-Keldysh interaction and the ground state of 2D excitons",
+  "2511.03353 The hexagonal lattice is universally locally optimal (CM potentials of squared distance)",
+  "2110.08728 Universally optimal lattice phase transitions and energy minimizers of CM potentials",
+  "1908.09714 Crystallization for Coulomb and Riesz interactions as a consequence of Cohn-Kumar",
+  "2601.16319 Optical probing of Wigner crystallization in monolayer WSe2 (context only)",
+  "Montgomery 1988 (from recall, not from the search): triangular lattice minimises theta functions, hence CM-in-r^2 lattice sums among lattices"
+ ],
+ "H3L_prior": 0.25,
+ "H3L_prior_statement": "Lean (pinned 4.34.1): generic positive-Gaussian-mixture => AdmissiblePotential lemma applied to the mixture-DEFINED Keldysh potential (generic lemma alone ~0.30). Struve/Neumann-form statement ~0.02 (no Struve H0 / Neumann Y0 in Mathlib).",
+ "wall_clock": "single attempt, about 35 min, core 7"
+}

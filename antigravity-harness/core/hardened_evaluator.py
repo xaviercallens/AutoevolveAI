@@ -26,10 +26,11 @@ import ast
 import hashlib
 import hmac
 import os
-import secrets
 import time
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
-from typing import Any, Callable
+from pathlib import Path
+from typing import Any
 
 try:
     from anse.validator.deep_think_validator import audit_solution_with_deep_think
@@ -87,7 +88,8 @@ class HardenedEvaluator:
                 if (
                     body
                     and isinstance(body[0], ast.Expr)
-                    and isinstance(body[0].value, (ast.Str, ast.Constant))
+                    and isinstance(body[0].value, ast.Constant)
+                    and isinstance(body[0].value.value, str)
                 ):
                     body = body[1:]
                 if not body:
@@ -122,7 +124,18 @@ class HardenedEvaluator:
                 if func_id in ("MagicMock", "Mock", "fake_evaluation"):
                     violations.append(f"Illegal mock call '{func_id}' in benchmark.")
                 if func_id == "sleep":
-                    violations.append(f"Illegal 'sleep' call found.")
+                    violations.append("Illegal 'sleep' call found.")
+                if isinstance(node.func, ast.Name) and node.func.id in ("eval", "exec"):
+                    violations.append(f"Argos Cyber-Defense: dynamic code execution '{node.func.id}()' is forbidden.")
+                if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+                    mod_id = node.func.value.id
+                    attr_id = node.func.attr
+                    if (mod_id, attr_id) in (("os", "system"), ("os", "popen"), ("pickle", "loads"), ("pickle", "load")):
+                        violations.append(f"Argos Cyber-Defense: unsafe call '{mod_id}.{attr_id}' is forbidden.")
+                    if mod_id == "subprocess" and attr_id in ("run", "Popen", "call", "check_output"):
+                        for kw in node.keywords:
+                            if kw.arg == "shell" and isinstance(kw.value, ast.Constant) and kw.value.value is True:
+                                violations.append(f"Argos Cyber-Defense: subprocess.{attr_id}(..., shell=True) is forbidden.")
 
             # Check for trivial scalar difference stubs (e.g. 1.5 - 1.5 == 0.0)
             if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Sub):
@@ -145,7 +158,7 @@ class HardenedEvaluator:
 
     def mint_token(self, benchmark_id: str, latency_ms: float, error: float) -> str:
         """Mints an HMAC SHA-256 cryptographic proof token."""
-        msg = f"{benchmark_id}".encode("utf-8")
+        msg = f"{benchmark_id}".encode()
         token = hmac.new(self.secret_key, msg, hashlib.sha256).hexdigest()[:32]
         return token
 
@@ -286,7 +299,7 @@ def validate_numeric_provenance(
         p = Path(dataset_input)
         if not p.exists():
             return False, [f"Dataset file does not exist: {p}"]
-        with open(p, "r", encoding="utf-8") as f:
+        with open(p, encoding="utf-8") as f:
             for i, line in enumerate(f):
                 if line.strip():
                     try:
@@ -300,7 +313,6 @@ def validate_numeric_provenance(
         return False, ["Dataset contains zero records."]
 
     fields = required_measured_fields or ["opt_lat", "base_lat", "opt_e", "base_e"]
-    n = len(records)
 
     for field_name in fields:
         values = []
@@ -343,7 +355,6 @@ def audit_reward_distribution(
     H-2 / M-3 Gate: Audits DPO reward distribution for degenerate or inverted pairs.
     """
     import json
-    from pathlib import Path
 
     violations: list[str] = []
     records: list[dict[str, Any]] = []
@@ -352,7 +363,7 @@ def audit_reward_distribution(
         p = Path(dataset_input)
         if not p.exists():
             return False, [f"Dataset file does not exist: {p}"], {}
-        with open(p, "r", encoding="utf-8") as f:
+        with open(p, encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     records.append(json.loads(line))
@@ -367,7 +378,6 @@ def audit_reward_distribution(
         cid = r.get("case_id", f"record_{i}")
         rc = r.get("reward_chosen")
         rr = r.get("reward_rejected")
-        rd = r.get("reward_delta")
 
         if rc is None or rr is None:
             violations.append(f"Record {cid} missing reward values.")
@@ -425,7 +435,6 @@ def detect_renamed_symbols(
     """
     import ast
     import subprocess
-    from pathlib import Path
 
     def get_names(code: str) -> set[str]:
         try:

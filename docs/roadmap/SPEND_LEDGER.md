@@ -1,0 +1,31 @@
+# Spend ledger (proxy; see SPEND_POLICY.md)
+
+The proxy is the `subagent_tokens` figure that each finished agent reports (output + context of that agent), summed per
+day. It is NOT the subscription meter. It becomes percent-of-allowance only after the owner supplies a calibration
+reading from `/usage`. Entries below are appended by the daily cycle.
+
+## Week 1 (31 Oct - 6 Nov)
+
+Status before the policy: about 60 agent runs since the weekly reset, including roughly 10 Opus audits (typically
+110k-260k reported tokens each) and the producers/writers (typically 90k-400k each). The main loop's own tokens are
+not included. A conservative reading is that this week is already at or above the 15% cap.
+
+| Date | Agents finished | Reported subagent tokens (sum, approx.) | Opus audits | Notes |
+|---|---|---|---|---|
+| 2026-10-31 .. 2026-11-01 | ~60 | ~10M (rough, from notifications; not recomputed) | ~10 | 13 papers published |
+
+| 2026-11-01 (after calibration) .. 2026-11-02 | ~14 | ~2.0M (rough, from notifications) | 2 | AIC-LUO and BIO-BISTAB audits + writers; statement-lock tool; private direction prior-art, Level-0 pilot, paper study; GitHub housekeeping |
+
+Estimated position on 2026-11-02 (proxy only, ~0.5M per meter point): about 20% + 4 points = about 24% of the weekly meter,
+i.e. NORMAL mode (< 42%). This is an estimate: the owner is asked for a fresh `/usage` reading to re-anchor.
+
+Re-anchor 2026-11-02: owner reading 36% (Fable 27%); the proxy estimate above (24-28%) was too low. Mode: ECONOMY by the pacing rule.
+
+## Calibration (owner to fill in or report)
+
+| Date | Monthly % used (from /usage) | Weekly % used | Proxy tokens at that moment | Tokens per 1% |
+|---|---|---|---|---|
+| 2026-11-01 | not shown by /usage (the meter is weekly) | 20% (all models), Fable 3%; resets 7 Nov 08:59 UTC | ~10M (rough) | ~0.5M (rough) |
+| 2026-11-02 | not shown | 36% (all models), Fable 27%; resets 7 Nov 08:59 UTC | ~12M (rough) | ~0.125M for the last day (main loop included): the earlier ~0.5M figure was too optimistic |
+
+Cap in meter terms: 60% of the weekly meter (assumption: weekly limit = monthly allowance / 4). Next re-anchor: 7 Nov.

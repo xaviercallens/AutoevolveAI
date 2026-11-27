@@ -1,0 +1,11 @@
+#!/bin/bash
+F=/tmp/egaudit/fifo_r34
+O=/tmp/egaudit/out
+rm -f $F; mkfifo $F
+date -u > $O/r34.start
+taskset -c 2 /tmp/egaudit/prod/cb_search 34 0 A -cert $F > $O/r34_certrun.json &
+taskset -c 3 tee >(taskset -c 2,3 sha256sum > $O/r34_stream.sha) < $F | taskset -c 3 /tmp/egaudit/mine/aud_check 34 0 > $O/r34_aud.out 2>&1
+wait
+sleep 5
+rm -f $F
+date -u > $O/r34.done

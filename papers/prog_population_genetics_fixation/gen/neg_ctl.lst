@@ -1,0 +1,18 @@
+theorem ctl_neg_identity_no_absorption :
+    InteriorHarmonic (idKernel 2) (fun j => ((j : (*@$\mathbb{N}$@*)) : (*@$\mathbb{R}$@*)) / 2) (*@$\wedge$@*)
+    ((*@$\forall$@*) n, kPow (idKernel 2) n 1 (Fin.last 2) = 0) (*@$\wedge$@*)
+    (*@$\neg$@*) Tendsto (fun n => kPow (idKernel 2) n 1 (Fin.last 2)) atTop ((*@$\mathcal{N}$@*) (1 / 2)) := -- proof elided
+
+theorem ctl_neg_flipped_value : flipFix 3 2 1 = 1 / 7 (*@$\wedge$@*) flipFix 3 2 1 (*@$\ne$@*) moranFix 3 2 1 := -- proof elided
+
+theorem ctl_neg_flipped_not_harmonic :
+    moranUp 3 2 1 * flipFix 3 2 2 + moranDown 3 2 1 * flipFix 3 2 0
+      + (1 - moranUp 3 2 1 - moranDown 3 2 1) * flipFix 3 2 1 (*@$\ne$@*) flipFix 3 2 1 := -- proof elided
+
+theorem ctl_neg_neutral_not_harmonic :
+    moranUp 3 2 1 * (2 / 3) + moranDown 3 2 1 * 0
+      + (1 - moranUp 3 2 1 - moranDown 3 2 1) * (1 / 3) (*@$\ne$@*) (1 / 3 : (*@$\mathbb{R}$@*)) := -- proof elided
+
+theorem ctl_neg_wrong_limits :
+    (*@$\neg$@*) Tendsto (fun n => kPow (moranP 3 2) n 1 (Fin.last 3)) atTop ((*@$\mathcal{N}$@*) (1 / 3)) (*@$\wedge$@*)
+    (*@$\neg$@*) Tendsto (fun n => kPow (moranP 3 2) n 1 (Fin.last 3)) atTop ((*@$\mathcal{N}$@*) (1 / 7)) := -- proof elided

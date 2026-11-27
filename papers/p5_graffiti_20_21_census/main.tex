@@ -1,0 +1,110 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\tx}[1]{\texttt{#1}}
+
+\title{A finite consistency check of Written-on-the-Wall conjectures 20 and 21\\
+on all connected graphs with $4\le n\le 11$\\
+{\large (the statement is claimed proved in the literature; not a new result)}}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-11-01}
+\hypersetup{pdftitle={A finite consistency check of Written-on-the-Wall conjectures 20 and 21 on all connected graphs with 4 <= n <= 11 (the statement is claimed proved)},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small doi:10.5281/zenodo.23856042 \quad (not peer reviewed)\end{center}
+
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its code, its claim ledger and the audit were produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{This version was audited by a separate AI agent instance (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.} The audit's eight corrections are applied (Section~\ref{sec:corr}). No human audit exists. There is no Lean in this paper.
+
+\begin{abstract}
+\noindent\textbf{Frame.} Since the adjacency matrix has trace $0$, $S^+=E/2$, where $S^+$ is the sum of the positive eigenvalues and $E$ the graph energy. Written-on-the-Wall (WoW, Graffiti) conjectures 20 ($n_+\le S^+$) and 21 ($n_-\le S^+$) are therefore, together, exactly $E(G)\ge 2\max(n_+,n_-)$. Kumar and Pragada (arXiv:2607.19817, 22 Jul 2026, \emph{unrefereed}, AI used for ideation; we did \emph{not} check the proof) claim $E(G)\ge 2(n-\alpha(G))$ (Fajtlowicz's Graffiti \#543) and, with the classical inertia bound, deduce $E\ge2\max(n_+,n_-)$; they state that this resolves the Aouchiche--Hansen 2010 conjectures \#20, \#21. The smaller-count version ($S^+\ge\min(n_+,n_-)$) has been a theorem since Fajtlowicz 1987 ($E\ge\operatorname{rank}$). \textbf{This census is a finite consistency check of a claimed theorem, not a new result.}
+
+\noindent\textbf{What was run.} All $1{,}018{,}690{,}325$ connected graphs with $4\le n\le 11$ (nauty \texttt{geng -c}) were scanned in double precision (Tier~\tX{}): $0$ violations of 20 or 21. Conjecture 21 is tight exactly at $K_n$ among connected graphs ($n\le10$ exhaustively, $n=11$ via a flag band); each tie was decided exactly (Tier~\tC{}). The smallest \emph{non}-$K_n$ margins for 21 are certified and shrink with $n$: $0.2143,0.1463,0.1249,0.0941,0.0806,0.0645,0.0561$ for $n=5..11$. An independent audit recomputed all $n\le10$ and $12.2\%$ of $n=11$ with different code and exact inertia, matching with $0$ violations.
+\end{abstract}
+
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{What this is NOT.} Not a new result and not a proof; not a statement about $n\ge12$; not interval-certified (the scan uses floating point, Tier~\tX{}; soundness rests on an argument, Section~\ref{sec:sound}); not formalised in Lean. The producer's earlier note ``nothing found for 20, 21'' was a literature miss.}}
+
+\paragraph{Markers.} \tL{}: a cited source, taken as stated. \tC{}: executed exact code with the argument written down, not machine-checked. \tX{}: floating-point or recorded-absence evidence. Identifiers \texttt{GR11-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+\section{Statement, frame and priority}\label{sec:prior}
+For a graph $G$ with adjacency eigenvalues $\lambda_i$ let $n_+$, $n_-$ be the numbers of strictly positive and negative eigenvalues (with multiplicity), and $S^+=\sum_{\lambda_i>0}\lambda_i$. WoW (July 2004, p.~19; read by eye from a scanned bitmap) states: \textbf{20}: $n_+\le S^+$; \textbf{21}: $n_-\le S^+$. Since $\operatorname{tr}A=0$, $E=\sum|\lambda_i|=2S^+$, so 20 and 21 together are $E\ge2\max(n_+,n_-)$.
+
+\begin{itemize}\itemsep=1pt
+\item \textbf{Claimed proof (\tL).} Kumar--Pragada \cite{kp}, Thm.~1.2: $E(G)\ge2(n-\alpha(G))$. With $\alpha\le\min(n-n_+,n-n_-)$ this gives $E\ge2\max(n_+,n_-)$, which they say ``resolves [Aouchiche--Hansen, Conjectures \#20, \#21, Table 6]''. The deduction is elementary; Theorem~1.2 is an unrefereed preprint whose proof we did not check.
+\item \textbf{Older partial result (\tL).} The WoW comment on p.~19 cites Fajtlowicz 1987: $E\ge\operatorname{rank}=n_++n_-$, i.e.\ $S^+\ge\min(n_+,n_-)$ for every graph. Hence whichever of 20, 21 has the smaller count has been a theorem since 1987.
+\item \textbf{Not evidence of openness.} Zhang \cite{zhang} calls ``$E\ge2\min(n_+,n_-)$'' open; this is evidently a slip for $\max$ and should not be read as evidence that the problem is open. Roucairol--Cazenave \cite{rc} do not treat 20 or 21.
+\end{itemize}
+The statements are for all graphs; the scan covers connected graphs only, which loses nothing since $n_+,n_-,S^+$ are additive over components.
+
+\section{Method}\label{sec:method}
+\paragraph{Scan (\tX{}).} \texttt{data/code/scan.py}: \texttt{nauty-geng -c -q n [res/mod]}, batched graph6 decoding, \texttt{numpy.linalg.eigvalsh}; $n_\pm$ count eigenvalues beyond $\pm10^{-9}$, $S^+$ the sum of those above $10^{-9}$. Margins $m_{20}=S^+-n_+$, $m_{21}=S^+-n_-$. A violation is $m<-10^{-6}$; graphs with $m<10^{-6}$ are written to a flag file. For $n=11$ the $1{,}006{,}700{,}565$ graphs were split into $40$ \texttt{geng} residue classes (cost $12.48$ core-hours, cores $4,5$ only); the part counts sum to exactly the OEIS A001349 value. Graph counts for $n=4..11$: $6,21,112,853,11117,261080,11716571,1006700565$.
+\paragraph{Exact decision (\tC{}).} \texttt{exact\_check.py}: integer characteristic polynomial (sympy), exact inertia by Descartes' rule (valid because the polynomial is real-rooted), $S^+$ enclosed by rigorous root isolation. \emph{Deviation:} the addendum promised Sturm sequences; the code uses Descartes' rule, equivalent for real-rooted polynomials (audit correction~8).
+\paragraph{Controls.} Positive: Graffiti 29 (WoW p.~23: Randi\'c index $\le$ number of negative \emph{distance} eigenvalues, ``disproved by Alon, Saks, Seymour, Shearer, Winkler'') must first fire at $n=7$ and not for $n\le6$: it does (graph6 \texttt{FEhf?}; counts $0,0,0,1,1,23,18$ for $n=4..10$, $1862$ at $n=11$). It caught two decoding bugs in the first version of the code, fixed before any reported number. Negative: $\lambda_1\ge$ average degree and $\sum|\lambda|\ge n_++n_-$ are theorems and fired $0$ times.
+
+\section{Results}\label{sec:results}
+\begin{table}[h]\centering\small
+\begin{tabular}{@{}rrrcc@{}}\toprule
+$n$ & connected graphs & viol.\ 20 / 21 & min $m_{20}$ & min non-$K_n$ $m_{21}$ (certified)\\ \midrule
+4 & 6 & 0 / 0 & 0.2361 (P$_4$) & 0.2361 (P$_4$)\\
+5 & 21 & 0 / 0 & 0.2361 & 0.2143 \tx{DQw}\\
+6 & 112 & 0 / 0 & 0.4495 & 0.1463 \tx{EQjO}\\
+7 & 853 & 0 / 0 & 0.4587 & 0.1249 \tx{FQhVO}\\
+8 & 11117 & 0 / 0 & 0.5388 & 0.0941 \tx{GQhTUg}\\
+9 & 261080 & 0 / 0 & 0.6631 & 0.0806 \tx{HQhTQji}\\
+10 & 11716571 & 0 / 0 & 0.6538 & 0.0645 \tx{IQhTQiitO}\\
+11 & 1006700565 & 0 / 0 & 0.8283 & 0.0561 \tx{JQhTQiiTVT?} (part 39)\\ \bottomrule
+\end{tabular}
+\caption{Scan results (\tX{}) and the certified margins (\tC{}; sympy enclosures of width $10^{-25}$, re-run for this paper, \texttt{data/audit/out/exact\_margin\_rerun\_2026-11-01.txt}). The producer's \texttt{min\_gap21} statistic included $K_n$ and could not show the shrinking margin. The $n=11$ minimum for 21 over the other $39$ parts is the producer's float value; part 31 (which contains $K_{11}$) has non-$K_{11}$ minimum $0.465$ (auditor).}\label{tab:res}
+\end{table}
+\paragraph{Scope.} For $n\le3$: $K_1$ (all zero) and $K_2$ (spectrum $\{1,-1\}$) give equality in \emph{both} 20 and 21, $K_3$ gives equality in 21, $P_3$ is strict. So the ``smallest margin $0.236$ for 20'' holds for $n\ge4$ only (attained at $P_4$); over all connected graphs 20 is tight at $K_1$, $K_2$. Hence the range $4\le n\le11$.
+\paragraph{Equality.} $K_n$ has spectrum $\{n-1,(-1)^{n-1}\}$, so $S^+=n-1=n_-$: equality in 21, exact by hand and confirmed by the integer characteristic polynomial for $K_4,K_9,K_{10},K_{11}$. Among connected graphs, 21 is tight only at $K_n$ ($n\le10$ exhaustively; $n=11$ by the flag band: the single flagged graph over all $40$ parts is $K_{11}$, in part 31, decided exactly). Disconnected unions of cliques also give equality. The raw strict $<0$ float tally showed $K_9,K_{10},K_{11}$ at $-9\cdot10^{-16}$ to $-1.8\cdot10^{-15}$ (float noise), each decided exactly as equality. At $n=11$ the smallest non-$K_{11}$ margin for 21 is $0.05606$ (part 39), not ``none flagged within $10^{-6}$''.
+
+\section{Rounding soundness (whole census)}\label{sec:sound}
+For an integer symmetric matrix the product of the nonzero eigenvalues is $\pm$ the lowest nonzero characteristic-polynomial coefficient, an integer of absolute value $\ge1$. The other $k\le10$ nonzero eigenvalues have $\sum\lambda^2\le2m\le110$, so by AM--GM their product is at most $(110/k)^{k/2}\le11^5$. Hence every nonzero $|\lambda|\ge1/161051\approx6.2\cdot10^{-6}$ for $n\le11$. With backward error about $10^{-14}$ the $10^{-9}$ threshold classifies every eigenvalue correctly, so $n_\pm$ are exact for all $1.0\cdot10^{9}$ graphs \emph{assuming LAPACK backward stability}. Weyl's inequality bounds the error of $S^+$ by about $10^{-12}$, far below the $10^{-6}$ flag band. Misclassifying a true zero would only lower a margin (false flag), never hide a violation. The scan is nevertheless \textbf{not interval-certified} (Tier~\tX{}). Corroboration (auditor, $134.8$M graphs): $0$ mismatches between float and exact inertia; smallest nonzero $|\lambda|=0.0038$; largest \texttt{dgeev} vs \texttt{dsyevd} difference in $S^+$ is $4.8\cdot10^{-14}$. Regular graphs tie exactly at Randi\'c $R=n/2$ in control 29, which is why its $+10^{-9}$ tolerance is needed.
+
+\section{The independent audit}\label{sec:audit}
+A separate AI agent instance (not a person; \texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS) recomputed with its own graph6 decoder, exact inertia from the integer characteristic polynomial (Faddeev--LeVerrier, guarded below $2^{52}$, plus Descartes), $S^+$ from \texttt{dgeev} cross-checked with \texttt{dsyevd}, BFS distances, and certified sympy enclosures for the minimisers (cores $4,5$, about $4.9$ core-hours). Results: all $11{,}989{,}760$ graphs with $n\le10$ match with $0$ violations; $n=11$ parts $31,39,12,5,7$ of $40$ ($122{,}811{,}341$ graphs, $12.2\%$) match the producer's logs in every count and margin (to $10^{-14}$); the producer's unmodified \texttt{scan.py 11 39 40} rerun is identical except the time. The other $35$ $n=11$ parts rest on the producer's run plus the argument of Section~\ref{sec:sound}; the $1862$ firings of control 29 were reproduced on $5$ of $40$ parts ($245$ firings). Control-29 firings at $n=7,8,9,10$ and four at $n=11$ are genuine under exact distance-matrix inertia. Hashes of the three auditor scripts are in \texttt{AUDIT.md} and match the shipped copies.
+
+\section{Audit corrections applied}\label{sec:corr}
+The producer's \texttt{data/RESULT.md} and \texttt{data/result.json} are kept unmodified (pre-audit); this paper supersedes them.
+(1) The novelty statement is replaced by Section~\ref{sec:prior}. (2) Certified non-$K_n$ margins for 21 are in Table~\ref{tab:res}. (3) The $n=11$ smallest non-$K_n$ margin is $0.05606$. (4) The range is $4\le n\le11$. (5) The equality statement is restricted to connected graphs and $K_n$. (6) The zero-eigenvalue bound $6.2\cdot10^{-6}$ is added (Section~\ref{sec:sound}). (7) The stale ``$n=11$ NOT run'' text of \texttt{RESULT.md} (below its UPDATE) and ``Auditor must redo 2'' are superseded; $n=11$ was run (all $40$ parts). (8) Descartes versus Sturm is recorded as a deviation (Section~\ref{sec:method}).
+
+\section{Limitations and what is not done}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item Kumar--Pragada's proof was not checked; it is an unrefereed preprint. Nothing of ours depends on it except the framing.
+\item AI audit only; no human audit. Tier~\tX{} for the scan (not interval-certified); \tC{} for exact decisions; \tL{} for literature; no Lean.
+\item $35$ of the $40$ $n=11$ parts and most of the control-29 total were not recomputed independently.
+\item WoW conjectures 39, 40, 129, 143, 154, 195, 284, 698 remain \textbf{BLOCKED} (definitions not pinned from the scan). Third-party claims (unrefereed GitHub material) that others are ``already resolved'' were not checked. Only 20, 21 and control 29 were pinned.
+\item Deviations from the preregistration (\texttt{PREREG\_ITEM.md} sha256 \texttt{5a02b566\dots c3d85}; addendum~2 for $n=11$, sha256 \texttt{3fd041d3\dots b10b}): Descartes instead of Sturm; the WoW source is a scanned bitmap read by eye (no OCR). The scan PDF is not shipped.
+\end{itemize}
+
+\section{Claim ledger and reproducibility}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files the claims with hashed evidence; the Elenchus gate (\texttt{ledger/run\_gate.py}, verbatim output in \texttt{ledger/gate\_output.txt}) checks bookkeeping only and licenses nothing. Reproduce: \texttt{scan.py n res mod flagfile}; \texttt{exact\_check.py 11 flagfile}; \texttt{run11.py w}; \texttt{agg11.py}; auditor: \texttt{audit\_scan.py}, \texttt{exact\_margin.py}, \texttt{exact\_c29.py} (\texttt{data/audit/code}; run scripts as \texttt{.sh.txt}). Inputs are copies of \texttt{results/proposal5/2026-10-27/GR-11/} and of the auditor's scratch directory; nothing was committed, pushed or uploaded.
+
+\begin{thebibliography}{9}\small
+\bibitem{kp} H.\ Kumar, S.\ Pragada, \emph{Energy and independence number}, arXiv:2607.19817 (v1, 22 Jul 2026), unrefereed; Thm.~1.2 and the corollary on \#20, \#21. (\tL)
+\bibitem{zhang} S.\ Zhang, \emph{Extremal values for the square energies of graphs}, arXiv:2409.15504 (2024). (\tL)
+\bibitem{rc} M.\ Roucairol, T.\ Cazenave, \emph{Refutation of spectral graph theory conjectures with search algorithms}, arXiv:2409.18626 (2024). (\tL)
+\bibitem{wow} S.\ Fajtlowicz, \emph{Written on the Wall} (July 2004 version), pp.\ 19, 23; Fajtlowicz 1987 as cited there; Aouchiche--Hansen 2010 as cited by \cite{kp}. Not re-read in the originals. (\tL)
+\bibitem{nauty} B.\ D.\ McKay, A.\ Piperno, Practical graph isomorphism II, J.\ Symbolic Comput.\ 60 (2014) 94--112 (\texttt{geng}).
+\end{thebibliography}
+\end{document}

@@ -1,0 +1,16 @@
+noncomputable def bdP (N : (*@$\mathbb{N}$@*)) (p q : (*@$\mathbb{N}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) (i j : Fin (N + 1)) : (*@$\mathbb{R}$@*) :=
+  (if (j : (*@$\mathbb{N}$@*)) = (i : (*@$\mathbb{N}$@*)) + 1 then p i else 0) + (if (j : (*@$\mathbb{N}$@*)) + 1 = (i : (*@$\mathbb{N}$@*)) then q i else 0) +
+    (if (j : (*@$\mathbb{N}$@*)) = (i : (*@$\mathbb{N}$@*)) then 1 - p i - q i else 0)
+
+noncomputable def moranUp (N : (*@$\mathbb{N}$@*)) (r : (*@$\mathbb{R}$@*)) (i : (*@$\mathbb{N}$@*)) : (*@$\mathbb{R}$@*) :=
+  r * i / (r * i + ((N : (*@$\mathbb{R}$@*)) - i)) * (((N : (*@$\mathbb{R}$@*)) - i) / N)
+
+noncomputable def moranDown (N : (*@$\mathbb{N}$@*)) (r : (*@$\mathbb{R}$@*)) (i : (*@$\mathbb{N}$@*)) : (*@$\mathbb{R}$@*) :=
+  ((N : (*@$\mathbb{R}$@*)) - i) / (r * i + ((N : (*@$\mathbb{R}$@*)) - i)) * ((i : (*@$\mathbb{R}$@*)) / N)
+
+noncomputable def moranP (N : (*@$\mathbb{N}$@*)) (r : (*@$\mathbb{R}$@*)) : Fin (N + 1) (*@$\to$@*) Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*) :=
+  bdP N (moranUp N r) (moranDown N r)
+
+noncomputable def geomS (r : (*@$\mathbb{R}$@*)) (n : (*@$\mathbb{N}$@*)) : (*@$\mathbb{R}$@*) := (*@$\sum$@*) k (*@$\in$@*) range n, r(*@$^{-}$@*)(*@$^{1}$@*) ^ k
+
+noncomputable def moranFix (N : (*@$\mathbb{N}$@*)) (r : (*@$\mathbb{R}$@*)) (i : (*@$\mathbb{N}$@*)) : (*@$\mathbb{R}$@*) := geomS r i / geomS r N

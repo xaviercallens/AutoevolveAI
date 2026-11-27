@@ -1,0 +1,790 @@
+{
+ "rubric": "results/discovery_journal_2026/RUBRIC.md (frozen 2026-10-26)",
+ "arc_spine": "AI proposes -> numerics explore -> Lean judges -> humans decide meaning",
+ "picks": [
+  {
+   "pick": 1,
+   "id": "Z-BAO-P1",
+   "title": "Kernel-checked enclosures of DESI DR2 BAO distances",
+   "domain": "cosmology",
+   "date": "2026-10-08",
+   "primary_doi": "10.5281/zenodo.23247730",
+   "all_dois": [
+    "10.5281/zenodo.23247730"
+   ],
+   "repos": [],
+   "lesson": false,
+   "total": 19,
+   "score_breakdown": {
+    "c1_rigour": 3,
+    "c2_independent_check": 3,
+    "c3_reproducibility": 3,
+    "c4_synthesis": 3,
+    "c5_honesty_learning": 2,
+    "c6_novelty": 3,
+    "c7_value_to_people": 2
+   },
+   "score_justifications": {
+    "c1_rigour": "memory certified-numerics-p1.md + results/certified_numerics/P1_bao/verification.md: an untrusted solver's integer tables are re-checked by the Lean kernel (decide +kernel, no native_decide); 55 theorems axiom-audited",
+    "c2_independent_check": "P1 verification.md CONFIRMED_WITH_CORRECTIONS; 13 attribution and scope defects fixed before publication (memory)",
+    "c3_reproducibility": "the independent verifier recompiled Core/Fit/EdS/FitOm101 with matching axiom output (verification.md section 2)",
+    "c4_synthesis": "cosmology + mathematics + numerics (CVODE, astropy) + formal: 4 pillars",
+    "c5_honesty_learning": "scope: one parameter point, Om = 0.29743 is the rusty-SUNDIALS fit, not DESI's",
+    "c6_novelty": "the integer-certificate method is reused by P2/P3 (23284020) (memory certified-numerics-p2-p3.md)",
+    "c7_value_to_people": "distances across the universe with a machine-checked error bar"
+   },
+   "what_it_is": "Astronomers measure the distances to very far galaxies with a 'standard ruler' left in the early universe (baryon acoustic oscillations). Turning a measurement into a distance needs an integral that a computer only approximates. Here a fast solver produced the numbers together with a table of whole-number checks, and the Lean proof checker then confirmed, step by step, that the true distance lies inside a narrow interval (relative width about 0.03%) at each of DESI's seven redshifts. Caveats: it is done at one value of the matter density, the project's own fit and not DESI's; it certifies a calculation, not a new measurement; the audit was by an AI agent, not a person.",
+   "analogy_suggestion": "A shop's till total re-added receipt by receipt by an auditor who trusts only pencil and paper.",
+   "what_was_checked_and_how": "Elenchus Tier A: the Lean kernel re-checks the untrusted solver's integer table (decide +kernel, no native_decide), 55 theorems with only the three standard axioms; an independent AI verifier recompiled everything (CONFIRMED_WITH_CORRECTIONS). The solver values themselves stay Tier X.",
+   "arc_phase": "Phase 3 (Oct 1-11): Elenchus in practice: certified numerics and the openai/math corollaries",
+   "arc_role": "Numerics explore, Lean judges: the first time a simulator's own output became a kernel-checked statement. The integer-certificate method was reused at once in P2/P3.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 2,
+   "id": "Z-BAO-P23",
+   "title": "Kernel-checked constraints from DESI DR2 BAO: Omega_m bands and H0 >= 73 excluded",
+   "domain": "cosmology",
+   "date": "2026-10-10",
+   "primary_doi": "10.5281/zenodo.23284020",
+   "all_dois": [
+    "10.5281/zenodo.23284020"
+   ],
+   "repos": [],
+   "lesson": false,
+   "total": 19,
+   "score_breakdown": {
+    "c1_rigour": 3,
+    "c2_independent_check": 3,
+    "c3_reproducibility": 3,
+    "c4_synthesis": 3,
+    "c5_honesty_learning": 2,
+    "c6_novelty": 2,
+    "c7_value_to_people": 3
+   },
+   "score_justifications": {
+    "c1_rigour": "registry ED-04 (206 Lean files) + memory certified-numerics-p2-p3.md: interval evaluation and planner boxes re-checked by the Lean kernel, axiom audit control C7/C11",
+    "c2_independent_check": "P2 and P3 verification.md, both CONFIRMED_WITH_CORRECTIONS (registry ED-04)",
+    "c3_reproducibility": "independent recompiles into a separate olean dir (P2 verification.md section 2, 3 of 29 slabs rebuilt; P3 verification.md section 2)",
+    "c4_synthesis": "cosmology + mathematics + numerics + formal: 4 pillars",
+    "c5_honesty_learning": "certified version of a known tension; the preregistered slab layout H8 failed and was amended (disclosed)",
+    "c6_novelty": "extends the P1 method to a likelihood",
+    "c7_value_to_people": "the Hubble tension, a well-known open puzzle, bounded by a proof checker"
+   },
+   "what_it_is": "Two families of measurements of how fast the universe expands disagree (the 'Hubble tension'; the local, distance-ladder side sits near 73 km/s per megaparsec, the threshold this paper tests). Combining DESI distance data with what the first minutes of the universe tell us about light elements, this paper proves with Lean that, inside the standard flat model and its stated simplifications (radiation ignored, a fitting formula for the ruler, Gaussian errors), every expansion rate of 73 or more fits the data far worse than the best fit. It also certifies which matter densities are excluded. This is a certified version of a tension already known from ordinary statistics, not a new measurement; one pre-planned way of slicing the calculation failed and was replaced, and the paper says so.",
+   "analogy_suggestion": "Checking that a radio picks up no station anywhere on the dial above 73, band by band, with a notary signing each band.",
+   "what_was_checked_and_how": "Elenchus Tier A for the bounds (kernel-checked interval evaluation, axiom audit controls); two independent AI verifiers (CONFIRMED_WITH_CORRECTIONS), with 3 of 29 slab files rebuilt by the P2 verifier.",
+   "arc_phase": "Phase 3 (Oct 1-11): Elenchus in practice: certified numerics and the openai/math corollaries",
+   "arc_role": "The same method scaled from one distance to a whole likelihood: a famous open puzzle stated as a kernel-checked inequality.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 3,
+   "id": "Z-UO-TIERED",
+   "title": "Planar universal optimality, tiered: Lean consequences and a CVODE N-body check (v1/v2)",
+   "domain": "physics",
+   "date": "2026-10-11",
+   "primary_doi": "10.5281/zenodo.23293429",
+   "all_dois": [
+    "10.5281/zenodo.23293429"
+   ],
+   "repos": [],
+   "lesson": false,
+   "total": 19,
+   "score_breakdown": {
+    "c1_rigour": 3,
+    "c2_independent_check": 3,
+    "c3_reproducibility": 3,
+    "c4_synthesis": 3,
+    "c5_honesty_learning": 2,
+    "c6_novelty": 3,
+    "c7_value_to_people": 2
+   },
+   "score_justifications": {
+    "c1_rigour": "results/kernel_replay_2026-10-26/replay.jsonl: Triangular.UniversalOptimality (D3) replayed rc 0",
+    "c2_independent_check": "results/discovery/ledger/manuscript_audit_2026-10-11.md: ACCEPT_WITH_CORRECTIONS (B1-B3 fixed), re-audit RESOLVED_WITH_MINOR (memory yukawa-cvode-tiered-paper.md)",
+    "c3_reproducibility": "D3 verification.md: verifier recompiled all five theorems; replay rc 0",
+    "c4_synthesis": "physics + mathematics + CVODE N-body numerics + formal: 4 pillars",
+    "c5_honesty_learning": "reports the annealing failure at kappa = 1; the truncation erratum is owed and fixed later in 23646105",
+    "c6_novelty": "its ledger + CVODE consistency-check design is reused by 23646103/05/07 (registry ED-09..11)",
+    "c7_value_to_people": "why repelling particles settle into triangles, shown by simulation"
+   },
+   "what_it_is": "In September 2026 OpenAI released an AI-generated, computer-checked proof that, for a broad family of repulsive forces, the triangular arrangement has the lowest energy of all ways to place points on a plane at a given density. This paper derives consequences in Lean (for instance that the optimum is not unique: removing one point changes neither the density nor the energy), and checks one physical case, particles with a screened (Yukawa) repulsion, with an N-body simulation. Caveats, all stated: everything rests on the AI-generated upstream theorem, whose statement no person has audited; the simulation's cut-off of the force shifted energies by more than the gap being measured (an erratum fixed later in 10.5281/zenodo.23646105); simulated annealing failed to find the lattice at the weaker screening.",
+   "analogy_suggestion": "Oranges on a market stall: the proof says the neat stack is best; the simulation shakes the stall to see whether the oranges find it on their own.",
+   "what_was_checked_and_how": "Elenchus ledger with 22 claims: Tier A rows kernel-checked and replayed (rc 0 on 2026-10-26), CVODE numerics Tier X, literature Tier L, proposals Tier C; an independent AI audit (ACCEPT_WITH_CORRECTIONS) and a re-audit. The ledger gate exits 1 because the Tier A rows lack a human statement audit; the owner published with those flags open and said so.",
+   "arc_phase": "Phase 3 (Oct 1-11): Elenchus in practice: certified numerics and the openai/math corollaries",
+   "arc_role": "The template of the whole loop: AI proposes (the upstream theorem), numerics explore (CVODE), Lean judges (Tier A), the human decides (publication with the flags shown).",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 4,
+   "id": "ED-10",
+   "title": "The triangular lattice minimises the planar Yukawa energy",
+   "domain": "physics",
+   "date": "2026-10-25",
+   "primary_doi": "10.5281/zenodo.23646105",
+   "all_dois": [
+    "10.5281/zenodo.23646105"
+   ],
+   "repos": [],
+   "lesson": false,
+   "total": 19,
+   "score_breakdown": {
+    "c1_rigour": 3,
+    "c2_independent_check": 3,
+    "c3_reproducibility": 3,
+    "c4_synthesis": 3,
+    "c5_honesty_learning": 3,
+    "c6_novelty": 2,
+    "c7_value_to_people": 2
+   },
+   "score_justifications": {
+    "c1_rigour": "results/kernel_replay_2026-10-26/replay.jsonl: Autoresearch.Yukawa and YukawaMix replayed rc 0",
+    "c2_independent_check": "papers/ar_yukawa_crystal/AUDIT.md ACCEPT_WITH_CORRECTIONS + REVISION.md",
+    "c3_reproducibility": "the auditor recompiled with the pinned Lean (AUDIT.md section 1)",
+    "c4_synthesis": "physics + mathematics + CVODE numerics + formal: 4 pillars",
+    "c5_honesty_learning": "publishes the exact-potential fix of the shifted-force erratum of 23293429 (registry ED-10)",
+    "c6_novelty": "a new corollary family",
+    "c7_value_to_people": "dusty plasmas and colloids form triangular crystals"
+   },
+   "what_it_is": "Charged dust in plasmas and charged colloids repel each other with a screened (Yukawa) force. The paper proves in Lean that this force belongs to the family the upstream theorem covers, at every density and for any finite mixture of screening lengths. If the upstream AI-generated theorem is right, the triangular lattice is then the lowest-energy arrangement for these systems. It also corrects the earlier simulation erratum by using the exact, untruncated force.",
+   "analogy_suggestion": "Showing that a new key is cut from the same blank as keys already known to open the lock.",
+   "what_was_checked_and_how": "Elenchus Tier A, replayed in the kernel (rc 0); an independent AI audit recompiled the files (ACCEPT_WITH_CORRECTIONS, revision recorded); simulations Tier X. Ledger gate exit 1: no human statement audit.",
+   "arc_phase": "Phase 5 (Oct 23-26): the kernel-checked programme with independent audits",
+   "arc_role": "A correction carried through to the end: the erratum of an earlier paper fixed in a later one, inside the same audited loop.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 5,
+   "id": "ED-14",
+   "title": "Sandier-Serfaty triangular-lattice claim: reproduction and audit (no proof claimed)",
+   "domain": "mathematics",
+   "date": "2026-10-26",
+   "primary_doi": "10.5281/zenodo.23653827",
+   "all_dois": [
+    "10.5281/zenodo.23653827"
+   ],
+   "repos": [],
+   "lesson": false,
+   "total": 19,
+   "score_breakdown": {
+    "c1_rigour": 3,
+    "c2_independent_check": 3,
+    "c3_reproducibility": 3,
+    "c4_synthesis": 2,
+    "c5_honesty_learning": 2,
+    "c6_novelty": 3,
+    "c7_value_to_people": 3
+   },
+   "score_justifications": {
+    "c1_rigour": "results/kernel_replay_2026-10-26/replay.jsonl (final, 93 rows): Programmes.SandierSerfatyStatement replayed rc 0 (source sha256 35add509 = the published file, publication_meta.json); the LeanFlow data certificate (SSA-A-0007) is not in the replay, and the reproduced certificate is upstream's own code, not an independent checker",
+    "c2_independent_check": "papers/prog_sandier_serfaty_audit/AUDIT.md (3 blocking corrections, incl. a fail-open LeanFlow defect) + REVISION.md",
+    "c3_reproducibility": "certificate re-run reproduced in 478 s with untouched sources; the auditor traced every number (AUDIT.md; memory programmes-workflow-2026-10-25.md)",
+    "c4_synthesis": "mathematics + formal + numerics (domain mathematics): 3 pillars",
+    "c5_honesty_learning": "'does not prove, verify or refute that claim'",
+    "c6_novelty": "its fail-closed LeanFlow data-certificate generator is reused unmodified by 23655392 (registry ED-20); its reproduction underlies 23655002 and 23656804",
+    "c7_value_to_people": "checking an AI-generated proof claim before anyone relies on it"
+   },
+   "what_it_is": "OpenAI's release also claims a proof that the triangular lattice minimises the energy of charged points in a neutralising background (the Sandier-Serfaty conjecture), through a reduction plus a large computer certificate. This work re-ran that certificate (it reproduced in about 8 minutes), checked that a deliberately broken copy is rejected, and read the reduction step by step without finding a gap. It explicitly does not prove, verify or refute the conjecture. The audit also found and fixed a hole in the project's own certificate tool.",
+   "analogy_suggestion": "Re-running a stranger's long sum on your own calculator and reading their reasoning line by line, while saying plainly that this is not a referee's approval.",
+   "what_was_checked_and_how": "Reproduction Tier X, reduction Tier C, Lean statement and non-degeneracy lemmas Tier A, replayed in the kernel (rc 0, final replay record); the LeanFlow data certificate is not in the replay; independent AI audit with three required corrections, applied.",
+   "arc_phase": "Phase 5 (Oct 23-26): the kernel-checked programme with independent audits",
+   "arc_role": "Humans decide meaning: checking an AI's claimed proof before anyone builds on it, and naming what remains unchecked.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 6,
+   "id": "ED-17",
+   "title": "Feynman-Bijl single-mode bound in Lean and a diffraction test on He-4 data",
+   "domain": "physics",
+   "date": "2026-10-26",
+   "primary_doi": "10.5281/zenodo.23653846",
+   "all_dois": [
+    "10.5281/zenodo.23653846"
+   ],
+   "repos": [],
+   "lesson": false,
+   "total": 19,
+   "score_breakdown": {
+    "c1_rigour": 3,
+    "c2_independent_check": 3,
+    "c3_reproducibility": 3,
+    "c4_synthesis": 3,
+    "c5_honesty_learning": 3,
+    "c6_novelty": 2,
+    "c7_value_to_people": 2
+   },
+   "score_justifications": {
+    "c1_rigour": "results/kernel_replay_2026-10-26/replay.jsonl: Programmes.FeynmanBijl.Basic replayed rc 0",
+    "c2_independent_check": "papers/prog_superfluid_structure_factor/AUDIT.md ACCEPT_WITH_CORRECTIONS + REVISION.md",
+    "c3_reproducibility": "independent recompile with a private olean build; He-4 numbers re-derived (AUDIT.md)",
+    "c4_synthesis": "physics + mathematics + formal + data analysis/numerics: 4 pillars",
+    "c5_honesty_learning": "a published refutation: He-4 data refute the Bogoliubov envelope at all 21 roton-region points",
+    "c6_novelty": "a new formalization and test",
+    "c7_value_to_people": "superfluid helium measured with neutrons tests a textbook formula"
+   },
+   "what_it_is": "In superfluid helium, the classic Feynman-Bijl single-mode inequality bounds the energy of sound-like ripples by a quantity that neutron scattering measures (the structure factor). The paper proves that bound in Lean, then tests against published neutron data an 'envelope' formula proposed by this project earlier in the month. The data refute the envelope in the roton region (all 21 points there). One positive formal result and one negative physical result in the same paper.",
+   "analogy_suggestion": "Proving that your ruler is straight, then using it to show that your own earlier sketch was crooked.",
+   "what_was_checked_and_how": "Elenchus Tier A for the bound (replayed, rc 0); the helium data are Tier L (a published table); the trapped-gas data were read from a figure (Tier X); an independent AI audit re-derived the numbers.",
+   "arc_phase": "Phase 5 (Oct 23-26): the kernel-checked programme with independent audits",
+   "arc_role": "Humans decide meaning: the proof stands, but measured nature overrules the project's own formula.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 7,
+   "id": "ED-18",
+   "title": "Fixation probabilities as absorption limits, kernel-checked (Wright-Fisher, Moran, Price)",
+   "domain": "genetics/biology",
+   "date": "2026-10-26",
+   "primary_doi": "10.5281/zenodo.23653850",
+   "all_dois": [
+    "10.5281/zenodo.23653850"
+   ],
+   "repos": [],
+   "lesson": false,
+   "total": 19,
+   "score_breakdown": {
+    "c1_rigour": 3,
+    "c2_independent_check": 3,
+    "c3_reproducibility": 3,
+    "c4_synthesis": 3,
+    "c5_honesty_learning": 2,
+    "c6_novelty": 3,
+    "c7_value_to_people": 2
+   },
+   "score_justifications": {
+    "c1_rigour": "results/kernel_replay_2026-10-26/replay.jsonl: Programmes.PopGen.* replayed rc 0",
+    "c2_independent_check": "papers/prog_population_genetics_fixation/AUDIT.md ACCEPT_WITH_CORRECTIONS + REVISION.md",
+    "c3_reproducibility": "the CVODE run reproduces byte for byte; 14 Tier A rows recompiled (AUDIT.md)",
+    "c4_synthesis": "biology + mathematics + CVODE numerics + formal: 4 pillars",
+    "c5_honesty_learning": "textbook results newly kernel-checked; the path-measure identification is Tier C",
+    "c6_novelty": "Absorption and MoranModel are reused by 23660071 (EvoGraph imports PopGen; papers/p3_isothermal_theorem/AUDIT.md)",
+    "c7_value_to_people": "the chance that a new mutation takes over a population"
+   },
+   "what_it_is": "When a new mutation appears in a population, what is the chance it eventually takes over? Classic answers exist for the standard textbook models (Wright-Fisher, Moran) and for the Price equation. This work proves those classic results in Lean, as limits of many random steps, and checks them against a simulation. These are known results: what is new is that a proof checker has verified them, and the next paper reused the pieces.",
+   "analogy_suggestion": "Re-deriving the odds of a long dice game and having a referee check every line.",
+   "what_was_checked_and_how": "Elenchus Tier A, replayed (rc 0); an independent AI audit recompiled the 14 Tier A rows and reproduced the simulation byte for byte; the link to a path measure is Tier C (stated).",
+   "arc_phase": "Phase 5 (Oct 23-26): the kernel-checked programme with independent audits",
+   "arc_role": "The method leaves physics: Elenchus applied to biology, with reusable building blocks.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 8,
+   "id": "ED-23",
+   "title": "The isothermal theorem of evolutionary graph theory, kernel-checked",
+   "domain": "genetics/biology",
+   "date": "2026-10-26",
+   "primary_doi": "10.5281/zenodo.23660071",
+   "all_dois": [
+    "10.5281/zenodo.23660071"
+   ],
+   "repos": [],
+   "lesson": false,
+   "total": 19,
+   "score_breakdown": {
+    "c1_rigour": 3,
+    "c2_independent_check": 3,
+    "c3_reproducibility": 3,
+    "c4_synthesis": 3,
+    "c5_honesty_learning": 3,
+    "c6_novelty": 2,
+    "c7_value_to_people": 2
+   },
+   "score_justifications": {
+    "c1_rigour": "papers/p3_isothermal_theorem/AUDIT.md: the auditor ran a leanchecker kernel replay (rc 0); EvoGraph modules rc 0 in replay.jsonl",
+    "c2_independent_check": "papers/p3_isothermal_theorem/AUDIT.md ACCEPT_WITH_CORRECTIONS + REVISION.md",
+    "c3_reproducibility": "the auditor recompiled and recomputed every number with its own exact-rational script (AUDIT.md)",
+    "c4_synthesis": "biology + mathematics + formal + exact numerics: 4 pillars",
+    "c5_honesty_learning": "reports that its own preregistered 'birth-death chain' clause was false (registry ED-23)",
+    "c6_novelty": "a newly kernel-checked theorem",
+    "c7_value_to_people": "which network shapes help or hinder natural selection"
+   },
+   "what_it_is": "In evolution on a network (who can replace whom), a classic theorem says that if every individual is replaced at the same overall rate, the network neither helps nor hinders natural selection: it behaves like a well-mixed population. The paper proves this in Lean for birth-death updating and a generalisation, and reports openly that one of its own pre-registered sub-claims was false. The converse direction and other update rules are not proved.",
+   "analogy_suggestion": "If every seat at a card table is refilled equally often, the seating plan does not change who tends to win.",
+   "what_was_checked_and_how": "Elenchus Tier A: the auditor recompiled from source, ran its own axiom audit and a kernel replay with leanchecker (rc 0), and planted errors that were caught; exact-rational numerics Tier X.",
+   "arc_phase": "Phase 5 (Oct 23-26): the kernel-checked programme with independent audits",
+   "arc_role": "Reuse and humility in one paper: it imports the previous paper's Lean, and it records its own pre-registration error.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 9,
+   "id": "Z-UO-BOOK",
+   "title": "The Triangular Lattice and Universal Optimality (student textbook)",
+   "domain": "education/textbook",
+   "date": "2026-10-11",
+   "primary_doi": "10.5281/zenodo.23295142",
+   "all_dois": [
+    "10.5281/zenodo.23295142"
+   ],
+   "repos": [],
+   "lesson": false,
+   "total": 18,
+   "score_breakdown": {
+    "c1_rigour": 3,
+    "c2_independent_check": 3,
+    "c3_reproducibility": 3,
+    "c4_synthesis": 2,
+    "c5_honesty_learning": 2,
+    "c6_novelty": 2,
+    "c7_value_to_people": 3
+   },
+   "score_justifications": {
+    "c1_rigour": "results/kernel_replay_2026-10-26/replay.jsonl: Triangular.OpenDisk and OpenDiskAny (D4) replayed rc 0",
+    "c2_independent_check": "results/discovery/D4/verification.md ACCEPT_WITH_CORRECTIONS; the whole-book AI audit led to 20 fixes (memory textbook-universal-optimality.md)",
+    "c3_reproducibility": "D4 verification.md: all four theorems recompiled by the verifier, rc 0",
+    "c4_synthesis": "inventory flags lean + numerics (domain education): 3 pillars",
+    "c5_honesty_learning": "AI-generated source theorem, not peer reviewed; inherits the truncation erratum",
+    "c6_novelty": "a new textbook",
+    "c7_value_to_people": "a student textbook from definition to laboratory"
+   },
+   "what_it_is": "A 105-page textbook for students that follows one theorem, that the triangular arrangement has the least energy, from its definitions to the laboratory. Each result appears three times: as a step-by-step human proof, as a Lean statement and as Python and Rust tests. Five chapters were written independently from one shared fact sheet and then audited as a whole (20 fixes). The source theorem is AI-generated and not peer reviewed, and the book inherits the simulation erratum noted above.",
+   "analogy_suggestion": "A cookbook in which every recipe comes with a photo, a lab analysis and a tasting.",
+   "what_was_checked_and_how": "New Lean content (open versus closed disks) recompiled by an independent verifier and replayed (rc 0); whole-book AI audit; no ledger of its own.",
+   "arc_phase": "Phase 3 (Oct 1-11): Elenchus in practice: certified numerics and the openai/math corollaries",
+   "arc_role": "Humans decide meaning: the method turned into teaching, with its limits printed inside.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 10,
+   "id": "ED-09",
+   "title": "The bilayer dipolar-exciton interaction is completely monotone",
+   "domain": "physics",
+   "date": "2026-10-25",
+   "primary_doi": "10.5281/zenodo.23646103",
+   "all_dois": [
+    "10.5281/zenodo.23646103"
+   ],
+   "repos": [],
+   "lesson": false,
+   "total": 18,
+   "score_breakdown": {
+    "c1_rigour": 3,
+    "c2_independent_check": 3,
+    "c3_reproducibility": 3,
+    "c4_synthesis": 3,
+    "c5_honesty_learning": 2,
+    "c6_novelty": 2,
+    "c7_value_to_people": 2
+   },
+   "score_justifications": {
+    "c1_rigour": "results/kernel_replay_2026-10-26/replay.jsonl: Autoresearch.DipolarExciton, DipolarExcitonMultipolar, DipolarExcitonStep1 replayed rc 0",
+    "c2_independent_check": "papers/ar_dipolar_exciton/AUDIT.md ACCEPT_WITH_CORRECTIONS + REVISION.md",
+    "c3_reproducibility": "the auditor recompiled, re-ran the gate and an independent Epstein-sum check (AUDIT.md, audit/)",
+    "c4_synthesis": "physics + mathematics + CVODE numerics + formal: 4 pillars",
+    "c5_honesty_learning": "corollaries conditional on the upstream AI-generated theorem; CVODE is Tier X",
+    "c6_novelty": "a new admissibility result",
+    "c7_value_to_people": "excitons in stacked 2D materials should crystallise in triangles"
+   },
+   "what_it_is": "Excitons are bound pairs of an electron and a hole; in stacked two-dimensional materials they line up as tiny dipoles that repel each other. The paper proves in Lean that this bilayer repulsion has the technical property ('complete monotonicity') the upstream theorem needs, so the triangular lattice is optimal at every density, conditional on the AI-generated upstream theorem. A simulation with exact long-range sums is a consistency check, not a proof.",
+   "analogy_suggestion": "Checking that a new ingredient meets the label rules, so that an existing guarantee on the recipe applies to it.",
+   "what_was_checked_and_how": "Elenchus Tier A, replayed (rc 0); independent AI audit with its own recompilation and an independent numerical check; simulation Tier X.",
+   "arc_phase": "Phase 5 (Oct 23-26): the kernel-checked programme with independent audits",
+   "arc_role": "AI proposes a physical application, Lean checks the hypothesis, numerics stay advisory.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 11,
+   "id": "ED-11",
+   "title": "The Rytova-Keldysh interaction is a positive Gaussian mixture",
+   "domain": "physics",
+   "date": "2026-10-25",
+   "primary_doi": "10.5281/zenodo.23646107",
+   "all_dois": [
+    "10.5281/zenodo.23646107"
+   ],
+   "repos": [],
+   "lesson": false,
+   "total": 18,
+   "score_breakdown": {
+    "c1_rigour": 3,
+    "c2_independent_check": 3,
+    "c3_reproducibility": 3,
+    "c4_synthesis": 3,
+    "c5_honesty_learning": 2,
+    "c6_novelty": 2,
+    "c7_value_to_people": 2
+   },
+   "score_justifications": {
+    "c1_rigour": "results/kernel_replay_2026-10-26/replay.jsonl: Autoresearch.KeldyshCM replayed rc 0",
+    "c2_independent_check": "papers/ar_keldysh_tmd/AUDIT.md ACCEPT_WITH_CORRECTIONS + REVISION.md",
+    "c3_reproducibility": "'the numerics are bit-identical on rerun' (AUDIT.md)",
+    "c4_synthesis": "physics + mathematics + numerics + formal: 4 pillars",
+    "c5_honesty_learning": "Struve link Tier C; producer and verifier not separated at paper stage (registry caveat)",
+    "c6_novelty": "a new admissibility result",
+    "c7_value_to_people": "the force between charges in atomically thin semiconductors"
+   },
+   "what_it_is": "In atomically thin semiconductors the force between charges is not the usual Coulomb law but the Rytova-Keldysh law, because the thin layer screens it. The paper shows that this force is a positive mixture of bell-shaped (Gaussian) pieces, which makes it admissible for the upstream optimality theorem; the admissibility step is in Lean. One identification with a classical special-function form is a human argument only, and producer and verifier were not separated at the paper stage.",
+   "analogy_suggestion": "Showing that a complicated sound is a sum of pure tones, each of which a known rule already covers.",
+   "what_was_checked_and_how": "Elenchus Tier A for admissibility (replayed, rc 0), Tier C for the Struve-form link; independent AI audit found the numerics bit-identical on rerun.",
+   "arc_phase": "Phase 5 (Oct 23-26): the kernel-checked programme with independent audits",
+   "arc_role": "The tiers kept apart inside one result: what the kernel checked and what a human argued are labelled differently.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 12,
+   "id": "ED-15",
+   "title": "Does the triangular lattice minimise the harmonic zero-point energy? (numerical counterexample)",
+   "domain": "physics",
+   "date": "2026-10-26",
+   "primary_doi": "10.5281/zenodo.23653833",
+   "all_dois": [
+    "10.5281/zenodo.23653833"
+   ],
+   "repos": [],
+   "lesson": true,
+   "total": 18,
+   "score_breakdown": {
+    "c1_rigour": 3,
+    "c2_independent_check": 3,
+    "c3_reproducibility": 3,
+    "c4_synthesis": 3,
+    "c5_honesty_learning": 3,
+    "c6_novelty": 2,
+    "c7_value_to_people": 1
+   },
+   "score_justifications": {
+    "c1_rigour": "results/kernel_replay_2026-10-26/replay.jsonl (final, 93 rows): Programmes.ZeroPoint.Basic replayed rc 0 (source sha256 7d59f181 = the published file, publication_meta.json); the 8 Tier A rows certify none of the E_zp statements, the headline is Tier X",
+    "c2_independent_check": "papers/prog_zero_point_optimality/AUDIT.md ACCEPT_WITH_CORRECTIONS + REVISION.md",
+    "c3_reproducibility": "the auditor's fifth, real-space implementation reproduces E_zp to about 1e-12 (AUDIT.md)",
+    "c4_synthesis": "physics + mathematics + formal + numerics: 4 pillars",
+    "c5_honesty_learning": "a published counterexample: QU-1 fails for 8 of 12 potentials",
+    "c6_novelty": "a new counterexample",
+    "c7_value_to_people": "abstract for a non-specialist"
+   },
+   "what_it_is": "A natural guess (called QU-1 here) was that the triangular lattice, which minimises the static energy of many repulsive forces, also minimises the quantum 'zero-point' vibration energy. The paper tested the guess before trying to prove it, and it fails numerically for 8 of the 12 completely monotone forces tried: for the Gaussian exp(-pi r^2) a slightly rhombic lattice has a lower zero-point energy (by about 1.3e-2), and two formulas in four implementations agree. These are floating-point results, not a proof that the guess is false; four forces were not refuted on the points sampled, and a first-reported best competitor was only marginally stable and was corrected. The Lean part checks 19 finite and algebraic lemmas (derivatives, rotation symmetry) and certifies none of the energy statements.",
+   "analogy_suggestion": "Testing a promised rule on twelve cases before trying to prove it, and finding that eight of them break it.",
+   "what_was_checked_and_how": "Headline Tier X (floating point, four implementations); Lean lemmas Tier A, replayed in the kernel (rc 0, final replay record); independent AI audit (ACCEPT_WITH_CORRECTIONS) reproduced the Gaussian refutations with its own real-space code; ledger gate exit 1 (no human statement audit).",
+   "arc_phase": "Phase 5 (Oct 23-26): the kernel-checked programme with independent audits",
+   "arc_role": "Numerics explore and refute first: the preregistered falsification gate that the certified counterexamples then built on.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 13,
+   "id": "ED-20",
+   "title": "The triangular lattice is not a local minimum of zero-point energy for exp(-pi r^2)",
+   "domain": "physics",
+   "date": "2026-10-26",
+   "primary_doi": "10.5281/zenodo.23655392",
+   "all_dois": [
+    "10.5281/zenodo.23655392"
+   ],
+   "repos": [],
+   "lesson": true,
+   "total": 18,
+   "score_breakdown": {
+    "c1_rigour": 3,
+    "c2_independent_check": 3,
+    "c3_reproducibility": 3,
+    "c4_synthesis": 3,
+    "c5_honesty_learning": 3,
+    "c6_novelty": 2,
+    "c7_value_to_people": 1
+   },
+   "score_justifications": {
+    "c1_rigour": "papers/p3_zero_point_physical/data/leanchecker_replay.json: Programmes.ZeroPointCert.Basic replayed by leanchecker rc 0; the integrals are ball arithmetic outside the kernel",
+    "c2_independent_check": "papers/p2_certified_zero_point/AUDIT.md ACCEPT_WITH_CORRECTIONS + REVISION.md",
+    "c3_reproducibility": "the certificate keeps its sign when re-run with coarser cells; an independent float reimplementation agrees (AUDIT.md)",
+    "c4_synthesis": "physics + mathematics + formal + certified numerics: 4 pillars",
+    "c5_honesty_learning": "a certified counterexample",
+    "c6_novelty": "a certified linear-response method",
+    "c7_value_to_people": "abstract for a non-specialist"
+   },
+   "what_it_is": "A natural guess (called QU-1 here) was that the triangular lattice also minimises the quantum 'zero-point' vibration energy. For one bell-shaped repulsion the paper proves that a tiny shear of the triangular lattice lowers that energy, so the lattice is not even a local minimum. Lean holds the logic and the exact fractions; the integrals are enclosed by rigorous interval ('ball') arithmetic outside the Lean kernel.",
+   "analogy_suggestion": "A marble that seems to rest at the bottom of a bowl, until a gentle nudge shows it sits on a saddle.",
+   "what_was_checked_and_how": "Lean part replayed in the kernel (rc 0); ball-arithmetic certificate re-run by the auditor with coarser cells (sign kept) and cross-checked by an independent floating-point code; independent AI audit.",
+   "arc_phase": "Phase 5 (Oct 23-26): the kernel-checked programme with independent audits",
+   "arc_role": "Numerics found the counterexample first (QU-1 refuted numerically); this paper upgrades it to a certified one.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 14,
+   "id": "ED-22",
+   "title": "Toward a machine-checked Sandier-Serfaty certificate: 4 of 12 stages in the Lean kernel",
+   "domain": "mathematics",
+   "date": "2026-10-26",
+   "primary_doi": "10.5281/zenodo.23656804",
+   "all_dois": [
+    "10.5281/zenodo.23656804"
+   ],
+   "repos": [],
+   "lesson": false,
+   "total": 17,
+   "score_breakdown": {
+    "c1_rigour": 3,
+    "c2_independent_check": 3,
+    "c3_reproducibility": 3,
+    "c4_synthesis": 2,
+    "c5_honesty_learning": 2,
+    "c6_novelty": 2,
+    "c7_value_to_people": 2
+   },
+   "score_justifications": {
+    "c1_rigour": "results/kernel_replay_2026-10-26/replay.jsonl (final, 93 rows; CalcLamE9 and CalcLamF0-F9 were not yet in the 71-row snapshot): Programmes.SandierSerfaty.CalcK*/CalcLam* replayed rc 0; the auditor's rebuilt oleans are byte-identical (AUDIT.md)",
+    "c2_independent_check": "papers/p2_sandier_serfaty_lean/AUDIT.md ACCEPT_WITH_CORRECTIONS + REVISION.md",
+    "c3_reproducibility": "the auditor rebuilt a sample independently with byte-identical oleans (AUDIT.md)",
+    "c4_synthesis": "mathematics + formal + numerics (domain mathematics): 3 pillars",
+    "c5_honesty_learning": "partial: 4 of 12 stages; 'the conjecture is not formally proved'",
+    "c6_novelty": "a decide_kernel tactic and a measured cost",
+    "c7_value_to_people": "checking an AI proof step by step, with its measured cost"
+   },
+   "what_it_is": "Continuing the previous item, four of the twelve stages of that certificate were re-executed inside the Lean kernel and one reduction lemma was proved; the cost of the remaining stages was measured. The conjecture is not formally proved, and the paper says so in its title.",
+   "analogy_suggestion": "Rebuilding four floors of a twelve-storey building to code, and timing how long the rest would take.",
+   "what_was_checked_and_how": "Elenchus Tier A for the four stages (replayed, rc 0; the auditor's rebuild gave byte-identical files); independent AI audit.",
+   "arc_phase": "Phase 5 (Oct 23-26): the kernel-checked programme with independent audits",
+   "arc_role": "Lean judges an AI's certificate piece by piece; progress reported as a fraction, not a victory.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 15,
+   "id": "ED-24",
+   "title": "Independent rebuild, kernel replay and audit of openai/NavierStokesAndEuler",
+   "domain": "mathematics",
+   "date": "2026-10-26",
+   "primary_doi": "10.5281/zenodo.23661381",
+   "all_dois": [
+    "10.5281/zenodo.23661381"
+   ],
+   "repos": [],
+   "lesson": false,
+   "total": 17,
+   "score_breakdown": {
+    "c1_rigour": 3,
+    "c2_independent_check": 3,
+    "c3_reproducibility": 3,
+    "c4_synthesis": 1,
+    "c5_honesty_learning": 2,
+    "c6_novelty": 2,
+    "c7_value_to_people": 3
+   },
+   "score_justifications": {
+    "c1_rigour": "zenodo_inventory.json 23661381: 88,400 declarations replayed in the kernel (leanchecker, papers/p2_navier_stokes_audit/AUDIT.md toolchain); no soundness escape",
+    "c2_independent_check": "papers/p2_navier_stokes_audit/AUDIT.md ACCEPT_WITH_CORRECTIONS + REVISION.md",
+    "c3_reproducibility": "every technical claim reproduced with the auditor's own scripts (AUDIT.md)",
+    "c4_synthesis": "mathematics + formal (numerics flag no): 2 pillars",
+    "c5_honesty_learning": "'not a claim that a Clay problem is solved'; fidelity reported with a caveat",
+    "c6_novelty": "a full independent rebuild",
+    "c7_value_to_people": "an independent check of an AI lab's claimed proof on a famous prize problem"
+   },
+   "what_it_is": "OpenAI published Lean proofs of 'breakdown' theorems for the Navier-Stokes and Euler equations of fluids. This work rebuilt all 2,440 modules independently, replayed 88,400 declarations in the Lean kernel, found no soundness escape, and compared the statements with the official problem texts. It is not a claim that a Clay Millennium problem is solved; credit for the proofs belongs to the corpus authors.",
+   "analogy_suggestion": "Re-assembling a famous machine from its blueprint in your own workshop to check that it runs, without claiming you invented it.",
+   "what_was_checked_and_how": "Kernel replay with leanchecker (Tier A for the replay facts); statement fidelity is a human-style comparison (Tier C); independent AI audit reproduced every technical claim with its own scripts.",
+   "arc_phase": "Phase 5 (Oct 23-26): the kernel-checked programme with independent audits",
+   "arc_role": "Trust in AI made concrete: an outside, reproducible check of an AI lab's flagship proof.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 16,
+   "id": "Z-RIESZ",
+   "title": "Riesz-energy, finiteness and every-density corollaries of openai/math universal optimality",
+   "domain": "mathematics",
+   "date": "2026-10-10",
+   "primary_doi": "10.5281/zenodo.23285631",
+   "all_dois": [
+    "10.5281/zenodo.23285631"
+   ],
+   "repos": [
+    {
+     "name": "triangular-universal-optimality-lean",
+     "visibility": "PUBLIC"
+    }
+   ],
+   "lesson": false,
+   "total": 16,
+   "score_breakdown": {
+    "c1_rigour": 3,
+    "c2_independent_check": 3,
+    "c3_reproducibility": 3,
+    "c4_synthesis": 1,
+    "c5_honesty_learning": 2,
+    "c6_novelty": 3,
+    "c7_value_to_people": 1
+   },
+   "score_justifications": {
+    "c1_rigour": "results/kernel_replay_2026-10-26/replay.jsonl: Triangular.Riesz, RieszFinite, AnyDensity replayed rc 0; whitelist axioms",
+    "c2_independent_check": "results/discovery/D1, D2 verification.md CONFIRMED_WITH_CORRECTIONS; referee ACCEPT_WITH_CORRECTIONS, all applied (memory discovery-triangular-riesz.md)",
+    "c3_reproducibility": "the verifiers recompiled independently (D1 verification.md) and the 2026-10-26 replay matches",
+    "c4_synthesis": "mathematics + formal (numerics no): 2 pillars",
+    "c5_honesty_learning": "conditional on the upstream AI-generated theorem; informative only for Riesz s > 2",
+    "c6_novelty": "its admissibility corollaries are reused by the exciton, Yukawa and Keldysh papers and the textbook (registry ED-08..11)",
+    "c7_value_to_people": "abstract for a non-specialist"
+   },
+   "what_it_is": "Three consequences of the upstream theorem, checked in Lean: optimality for every inverse-power repulsion ('Riesz' energies), finiteness of that energy for powers above 2 (so the statement is not empty), and optimality at every density, not only density one. Mathematically these follow quickly, and the upstream manuscript already mentions inverse powers; the value is that they are named, kernel-checked statements that later papers did build on. Conditional on the AI-generated upstream theorem.",
+   "analogy_suggestion": "Turning a general warranty into signed certificates for each specific model.",
+   "what_was_checked_and_how": "Elenchus Tier A, recompiled by independent verifiers and replayed (rc 0); referee audit applied.",
+   "arc_phase": "Phase 3 (Oct 1-11): Elenchus in practice: certified numerics and the openai/math corollaries",
+   "arc_role": "The first bricks of the kernel-checked programme: small, honest, reusable.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 17,
+   "id": "G-RUSTY",
+   "title": "rusty-SUNDIALS: AI-assisted pure-Rust translation of SUNDIALS CVODE",
+   "domain": "numerics/software",
+   "date": "2026-05-11",
+   "primary_doi": null,
+   "all_dois": [],
+   "repos": [
+    {
+     "name": "rusty-SUNDIALS",
+     "visibility": "PUBLIC"
+    }
+   ],
+   "lesson": false,
+   "total": 16,
+   "score_breakdown": {
+    "c1_rigour": 0,
+    "c2_independent_check": 3,
+    "c3_reproducibility": 3,
+    "c4_synthesis": 2,
+    "c5_honesty_learning": 3,
+    "c6_novelty": 3,
+    "c7_value_to_people": 2
+   },
+   "score_justifications": {
+    "c1_rigour": "its numerics are Tier X by the Elenchus rule; its Lean specification files include vacuous axioms (memory openai-math-crosswalk.md)",
+    "c2_independent_check": "PR #60 (merged 2026-09-27) adds the separate agents' audit docs/audit/fusion-2026-09-27/{A_paper_claims,B_numerics,C_lean_provenance}.md and RETRACTION_NOTICE.md, with the retractions applied (gh pr view 60; memory fusion-project-audit.md)",
+    "c3_reproducibility": "non-producer auditors re-ran its CVODE runs with byte-identical output (papers/prog_population_genetics_fixation/AUDIT.md; papers/ar_sigma3_enstrophy/AUDIT.md)",
+    "c4_synthesis": "numerics + Lean specs: mathematics, formal, numerics = 3 pillars",
+    "c5_honesty_learning": "PR #60 publishes an audit with retractions of fusion claims (memory fusion-project-audit.md)",
+    "c6_novelty": "the numerics backbone of 23293429, 23646103/05/07/11 and 23653850 (registry code fields)",
+    "c7_value_to_people": "open stiff-ODE solver used for plasma and population models"
+   },
+   "what_it_is": "An AI-assisted translation into the Rust language of SUNDIALS CVODE, a widely used solver for 'stiff' differential equations, the workhorse of chemistry, plasma and biology simulations. It became the numerical backbone of many of the year's papers, and independent auditors re-ran its results byte for byte. Its numbers are never treated as proof (floating point), some of its Lean specification files contain empty ('vacuous') axioms that must not be built on, and an audit of its fusion material led to retractions.",
+   "analogy_suggestion": "A rebuilt engine that powers much of the fleet, with an inspection report listing the parts that turned out to be fake.",
+   "what_was_checked_and_how": "Elenchus Tier X (floating point) for every output; independent AI audit of the fusion work merged with retractions (PR #60); reruns by auditors in later papers matched.",
+   "arc_phase": "Phase 1 (May-Aug): agents and over-claims",
+   "arc_role": "Numerics explore: the instrument that makes the experiments possible, kept in its place below the proof checker.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 18,
+   "id": "Z-GWAYA",
+   "title": "GWAYA fail-closed verification gate for LLM-generated code (v3, v3.1)",
+   "domain": "AI methodology/verification",
+   "date": "2026-10-03",
+   "primary_doi": "10.5281/zenodo.23119953",
+   "all_dois": [
+    "10.5281/zenodo.23119953",
+    "10.5281/zenodo.23120120"
+   ],
+   "repos": [
+    {
+     "name": "GWAYA-GwenLayaOpenModel",
+     "visibility": "PUBLIC"
+    }
+   ],
+   "lesson": false,
+   "total": 15,
+   "score_breakdown": {
+    "c1_rigour": 2,
+    "c2_independent_check": 1,
+    "c3_reproducibility": 2,
+    "c4_synthesis": 2,
+    "c5_honesty_learning": 3,
+    "c6_novelty": 2,
+    "c7_value_to_people": 3
+   },
+   "score_justifications": {
+    "c1_rigour": "zenodo_inventory.json 23119953: shows a Lean file proving 1 = 2 from a hidden axiom compiles with exit 0 and is rejected only by the axiom audit",
+    "c2_independent_check": "repo CLAIM_AUDIT files are the author's own audits (CLAIM_AUDIT_3120_author.md)",
+    "c3_reproducibility": "description: bundle with sources, tests, raw results and SHA-256",
+    "c4_synthesis": "inventory flags lean + numerics: 3 pillars",
+    "c5_honesty_learning": "withdraws v1/v2 benchmark figures; reports that the gate accepted semantic bugs",
+    "c6_novelty": "a new fail-closed gate",
+    "c7_value_to_people": "a filter that stops AI-written code that only looks correct"
+   },
+   "what_it_is": "A 'fail-closed' gate for code written by language models: code is accepted only if real compilers, a parser, the Rust type checker and the Lean kernel with an axiom audit all pass. It demonstrates that a Lean file 'proving' 1 = 2 through a hidden assumption compiles without error and is caught only by the axiom audit. Earlier benchmark figures were withdrawn; on a small author-built test set it made no in-scope errors, but it still accepted code with semantic bugs.",
+   "analogy_suggestion": "A door that opens only when every guard has signed, though the guards still cannot tell whether the visitor is honest about why they came.",
+   "what_was_checked_and_how": "The 1 = 2 demonstration is a Lean fact with an axiom check; the gate's error rates are measured on the author's own corpus (self-check); reproduction bundle with sources, tests and checksums.",
+   "arc_phase": "Phase 3 (Oct 1-11): Elenchus in practice: certified numerics and the openai/math corollaries",
+   "arc_role": "Lean judges code, not only mathematics: the lesson that 'it compiled' proves nothing until the axioms are audited.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 19,
+   "id": "G-AUTOEVOLVE",
+   "title": "AutoevolveAI / ANSE: verification-first harness for LLM-agent science",
+   "domain": "AI methodology/verification",
+   "date": "2026-09-19",
+   "primary_doi": null,
+   "all_dois": [],
+   "repos": [
+    {
+     "name": "AutoevolveAI",
+     "visibility": "PUBLIC"
+    }
+   ],
+   "lesson": false,
+   "total": 14,
+   "score_breakdown": {
+    "c1_rigour": 1,
+    "c2_independent_check": 1,
+    "c3_reproducibility": 1,
+    "c4_synthesis": 2,
+    "c5_honesty_learning": 3,
+    "c6_novelty": 3,
+    "c7_value_to_people": 3
+   },
+   "score_justifications": {
+    "c1_rigour": "github AutoevolveAI: a harness; claims about it are human argument; its only sound Lean gate is lean_runner.py (memory verification-traps.md)",
+    "c2_independent_check": "internal audits docs/remediation/AUDIT_2026-09-25.md and -26.md (honesty_files)",
+    "c3_reproducibility": "public code (1,004 .py files)",
+    "c4_synthesis": "Lean (164 files) + Rust/numerics: mathematics, formal, numerics = 3 pillars",
+    "c5_honesty_learning": "README publishes that an internal audit found 14 components reporting success without doing the work",
+    "c6_novelty": "hosts lean_pinned.py, the ledger gate and the publish scripts used by every programme paper (papers/*/ledger, memory)",
+    "c7_value_to_people": "a test bench built so that wrong AI claims fail"
+   },
+   "what_it_is": "The project's own laboratory bench: the harness that runs local models, Lean checks, GPU jobs and the claim ledger used by the later papers. Its README publishes that an internal audit found 14 components that reported success without doing the work; the audit notes show, for example, a 'peer review' script that never called a reviewer and proof checks fooled by exit codes. Those findings shaped the gates used afterwards. Not peer reviewed.",
+   "analogy_suggestion": "A kitchen whose own inspection found ovens that displayed 'done' without heating, and which fixed the thermometers before cooking again.",
+   "what_was_checked_and_how": "Internal audits (self-check), public code; the sound Lean gate it hosts checks axioms, not exit codes.",
+   "arc_phase": "Phase 2 (Sep 1-28): the formal turn and the first public corrections",
+   "arc_role": "The turn from agents that report success to gates that can fail: the infrastructure behind Phases 3 and 5.",
+   "private_repo_warning": false
+  },
+  {
+   "pick": 20,
+   "id": "L-STELLARATOR",
+   "title": "RK4 cools at resolved step sizes, it does not heat (edition 2, refuting the stellarator paper's premise)",
+   "domain": "numerics/software",
+   "date": "2026-10-21",
+   "primary_doi": "10.5281/zenodo.23532458",
+   "all_dois": [
+    "10.5281/zenodo.23478809",
+    "10.5281/zenodo.23480005",
+    "10.5281/zenodo.23481378",
+    "10.5281/zenodo.23482410",
+    "10.5281/zenodo.23483052",
+    "10.5281/zenodo.23483564",
+    "10.5281/zenodo.23483643",
+    "10.5281/zenodo.23532458"
+   ],
+   "repos": [],
+   "lesson": true,
+   "total": 13,
+   "score_breakdown": {
+    "c1_rigour": 1,
+    "c2_independent_check": 1,
+    "c3_reproducibility": 2,
+    "c4_synthesis": 2,
+    "c5_honesty_learning": 3,
+    "c6_novelty": 2,
+    "c7_value_to_people": 2
+   },
+   "score_justifications": {
+    "c1_rigour": "zenodo_inventory.json 23532458: '18 of 18 declarations clean' with a gate JSON; the inventory text does not state the axiom footprint: lower value",
+    "c2_independent_check": "'This paper has not been reviewed by anyone other than the author'",
+    "c3_reproducibility": "files: paper_a_v2_experiment.py, figures script, harness, results JSON, Lean",
+    "c4_synthesis": "numerics + mathematics + formal: 3 pillars",
+    "c5_honesty_learning": "refutes edition 1's own motivating hypothesis; withdraws its confidence figures and the Villani/Landau theorem",
+    "c6_novelty": "a preregistered 2000-orbit falsification with controls that can fail",
+    "c7_value_to_people": "fusion-plasma simulation: a feared error turned out to be the opposite one"
+   },
+   "what_it_is": "A batch of papers deposited on 19 October claimed, among other things, that a standard simulation method (RK4) slowly 'heats' charged particles in a fusion device's magnetic trap until they escape. Edition 2 tested that claim with 2,000 orbits per energy band and controls able to fail: the claim is false. At the step sizes used RK4 cools the particles, and its real failure is the opposite one: it traps particles that should escape. Confidence figures and a theorem from edition 1 were withdrawn, and the paper says no one but the author has reviewed it.",
+   "analogy_suggestion": "Blaming the thermostat for overheating the house, then measuring and finding that it keeps the house too cold.",
+   "what_was_checked_and_how": "Tier X experiment with a falsification rule fixed in advance and six passing controls; Lean results for the linear case (axiom footprint not stated in the record); no independent review.",
+   "arc_phase": "Phase 4 (Oct 17-21): relapse and withdrawal",
+   "arc_role": "Relapse and recovery: an over-claim from the 19 October batch withdrawn two days later by measuring it.",
+   "private_repo_warning": false
+  }
+ ]
+}

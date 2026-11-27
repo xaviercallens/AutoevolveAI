@@ -1,0 +1,42 @@
+{
+ "title": "Toward a machine-checked proof of the claimed Sandier-Serfaty certificate: 4 of 12 stages re-executed in the Lean kernel, one reduction lemma proved, and the measured cost of the rest (a partial formalization; the conjecture is not formally proved)",
+ "version": "v1",
+ "description": "<p>The Sandier&ndash;Serfaty conjecture asks whether the triangular lattice minimizes the renormalized Coulomb energy of a planar point set against a uniform background. A preprint in the openai/math release (AI-generated, not peer reviewed) claims a proof from an analytic reduction plus a finite certificate in exact interval arithmetic with twelve stages. An earlier record (doi:10.5281/zenodo.23653827) reproduced that certificate by running its C++ code. <b>This record starts to formalize it in Lean 4 and reports exactly how far that went. The conjecture is not formally proved, and nothing here says that it is.</b></p><p><b>Two checking levels.</b> L1 (kernel re-execution): a Lean transcription of a stage's interval computation, evaluated by the Lean kernel (decide +kernel, no native_decide), gives bit for bit the integer endpoints printed by the C++ binary. L2 (real-number statement): a Lean theorem that a real number lies in the interval. A third, weaker level E: the executable assertions evaluated on the exact C++ endpoints (arithmetic about given integers only).</p><p><b>Counts, from the saved logs.</b> 4 of 12 stages are complete at L1 (init_constants, bcons/eps, calcLam, calcK; calcLam and calcK conditional on the table enclosures, which are premises, and bcons on the lattice coefficients). 1 of 12 is complete at L2 (init_constants: log 2, pi, p, R0, a as real numbers). Together the ported stages re-execute 1,685,129 of 1,238,829,689 interval multiplications and inversions of the C++ run (0.136 %). All 22 printed integer pairs and every assertion that the C++ makes after calcK (lambda range, K<0, f(l)>0, slope, the two global_grid assertions, the inside_hess minima) plus the |c_1|<1 check are kernel-checked as arithmetic on the exact endpoints (level E); the core_test bound check of stage 4 (core.hpp:274) is not covered, and the table separation check is checked only window by window. Two theorems added after the audit (ChainLink.lean) tie the stage-8 slope and f(l) literals to the L1 outputs. Eleven planted false claims are rejected (three must-fail files, rc 1), each mapped to one planted theorem, and the honest refutations are kernel-checked theorems. The chunk tiling of the stages is guaranteed by the generator, not checked in Lean (a script finds the ranges contiguous).</p><p><b>One reduction lemma.</b> The manuscript's Lemma dual:signed-endpoints is proved completely in Lean as signed_endpoints (Lean statement and the manuscript's wording side by side), with an algebraic step of the assembly proposition and a numerical fact; the lemma is stated for an abstract kernel G and is not connected to the certificate. Of the 31 numbered reduction steps audited earlier, one is complete in Lean and the algebraic part of a second.</p><p><b>Cost of the rest.</b> L1 for the unported computations (stage rows 2-4 and 9-12) is projected at about 854-2,240 core-hours (counts from an instrumented C++ run times measured kernel rates, at a machine load average of 12-16; the lower end is not conservative: an independent rebuild on a quiet machine compiled 2.2-2.7 times faster, so 854 is not a lower bound); the larger gap is L2 for the analytic content and the reduction, a multi-month project. LeanFlow gained a fail-closed decide_kernel tactic (94 tests pass).</p><p><b>Limitations.</b> One AI agent wrote the generators and the Lean files. A separate AI agent instance (not a person) audited the work (AUDIT.md, verdict ACCEPT_WITH_CORRECTIONS): it rebuilt 13 modules from source with byte-identical oleans, re-ran the three must-fail files and the axiom aggregates and type-checked Chain.lean; the other 28 chunk files, CalcK.lean and CalcLam.lean were not rebuilt independently. Some endpoints come from an instrumented copy of the C++ (counters and endpoint prints only); no human has audited any statement. The Elenchus ledger gate reports 0 blocking findings and 16 flags (exit code 1), one LEDGER_UNAUDITED_TIER_A for each Tier A row; they stay open because an agent audit is not a person's certification. Everything resting on the openai/math manuscript is conditional on it.</p>",
+ "keywords": [
+  "Sandier-Serfaty conjecture",
+  "renormalized energy",
+  "Coulomb gas",
+  "triangular lattice",
+  "Lean 4",
+  "formal verification",
+  "interval arithmetic",
+  "kernel re-execution",
+  "partial formalization",
+  "LeanFlow",
+  "epistemic tiers",
+  "AI-assisted research"
+ ],
+ "notes": "Preprint v1 (2026-10-26), revised after an independent AI audit (a separate agent instance, not a person; verdict ACCEPT_WITH_CORRECTIONS; papers/p2_sandier_serfaty_lean/AUDIT.md and results/proposal2/2026-10-26/A1/STATEMENT_LOCK.json, which records sha256 of all 52 Lean files, equal to result.json). The audit rebuilt 13 modules byte-identically, re-ran the must-fail files and the axiom aggregates and type-checked Chain.lean; the 28 other chunk files, CalcK.lean and CalcLam.lean were not rebuilt independently. No human has audited any statement; the 16 LEDGER_UNAUDITED_TIER_A flags remain open. Revision (REVISION.md) applied the audit's two blocking corrections (assertion coverage wording; the unaudited wording) and non-blocking N1-N6; a new file ChainLink.lean (sha256 ecb144e19dfde7001fa608e8e2f62e6e43a6a6a169ab5bfa946346add4a1d136, uncommitted) was added without modifying any locked file. Proposal 2, item A1 (A1a certificate port, A1b one reduction lemma); preregistered priors: all stages 0.2 (outcome: 4/12, not reached), one lemma 0.35 (reached), A1 complete 0.02 (not reached; kill criterion applies). Deviations from the preregistered wording: signed_endpoints uses neither SandierSerfatyStatement.lean nor the P3 library (abstract G, as in the manuscript); the stages were compiled with scripts/certified_numerics/lean_pinned.py and LeanFlow was used for the 12 assertions only. Lean: AutoevolveAI formal_cert/Programmes/SandierSerfaty/ (52 files, committed at d4cc150a7c2e34058c24e92d08c2485b4d683f08, as are the A1 results; only papers/p2_sandier_serfaty_lean/ is uncommitted; sha256 of every file in papers/p2_sandier_serfaty_lean/data/result.json), Lean 4.34.1, Mathlib d13f23b723b8a846827a245b89c10fc7d3f11612 (pinned openai/math stack). LeanFlow commit 06084ef5c40057c66c476feba18ea3da8fb150ba (decide_kernel; 94 tests passed on a read-only rerun at the paper stage), local worktree, contained in no remote-tracking branch at the time of writing. The cost projection and rates are generated by papers/p2_sandier_serfaty_lean/gen_inputs.py from the saved compile logs; figures of the source notes that differ from the recomputation (calcK chunk files 1251.3 s over 12 files, not 13; lower throughput bound 148 ops/s, not 155; per-G cost ranges derived from the per-file compile logs instead of trial chunks) were replaced by the recomputed ones. Subject manuscript: openai/math preprint Triangular-minimality-for-planar-Coulomb-renormalized-energy-September-23-2026 (verification sources certificate.cpp 53d46bba..., core.hpp c7f76596cde648ae35707a242406a6b02d6b41bad6b19123aeca3aaec47dced3, grids.hpp 4640e0a32eb20071800d408fc2b7b47269cdfcecfa99c862940c7afbbdaaa50b). Literature statements: Sandier-Serfaty arXiv:1011.4617 (excerpt transcribed from the earlier record; citation_check not run here); the Mathlib reference (arXiv:1910.09336) was checked on the arXiv text. Producer, Lean author, ledger author and paper-stage agent are all AI agent instances of the same pipeline; no human has reviewed the work. Record order: the earlier record 10.5281/zenodo.23653827 (continued here) and 10.5281/zenodo.23655002 (cited for context) must be published for those links to resolve.",
+ "related_identifiers": [
+  {
+   "identifier": "10.5281/zenodo.23653827",
+   "relation": "continues",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23655002",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "arXiv:1011.4617",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "https://github.com/openai/math",
+   "relation": "references",
+   "scheme": "url"
+  }
+ ]
+}

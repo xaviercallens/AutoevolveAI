@@ -1,0 +1,94 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "BIST-L-0001",
+   "statement": "Peng, arXiv:2610.32739 v1 (23 Oct 2026, 'Bistability with equal and independent removal in small bimolecular networks', math.DS, unrefereed): network class (complexes X, Y, 2X, X+Y, 2Y; at most 3 directed edges), models E and F, bistability target (two positive equilibria with trace<0, det>0), 681 orbits, 27 bistable networks with Table 2 rational witnesses, exclusion by JAC 245, DIV 216, ROOT 179, FLUX 14, Lemma 3, Theorem 2. Taken as stated; the paper text is third-party and not shipped. The paper is internally inconsistent on the label count (1351 in Sec. 1, '1362 labels' in Sec. 5; 1362 = 1351 + 11).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:1448cad559fd5df54b7c24eca4954f1885fdd21cbd6f69644fad7c007a99ed27",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BIST-L-0002",
+   "statement": "Related literature (alphaXiv and web search 2026-11-01, limited): Tang-Xu, 'Multistability of Small Reaction Networks', arXiv:2008.03846 (title and authors checked on arxiv.org 2026-11-02); Joshi-Shiu; Banaji-Boros-Hofbauer; arXiv:1909.11940, 2207.04971, 2608.01116, 2406.11586 (not verified here, not listed as identifiers). No earlier enumeration of this exact 681/27 class was found; the search was not exhaustive. No independent verification or critique of 2610.32739 was found.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:b1df82f08e6577ccc2f94dc40d64886570a62b1658580e468f7029addefd232c",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BIST-C-0001",
+   "statement": "Enumeration (producer and auditor, own code each): 1351 labelled edge sets, 11 fixed by species exchange, 681 orbits with sizes 1/10/100/570; first-appearance numbering in lexicographic order reproduces all 27 Table-1 identifiers; the 27 sets lie in 27 distinct orbits.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "BIST-L-0001"
+   ],
+   "evidence": "sha256:8ee2804240f5ccddaa5be970f49dc06f99519b51e7d95fb1d9ed35dadd2db717",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BIST-C-0002",
+   "statement": "The 27 Table-2 rational witnesses (rho = 1): producer by Groebner elimination, square-free resultant, Sturm count and rational interval signs; auditor by certified Arb root isolation (python-flint, 400 bits). Each has exactly 3 positive equilibria = 2 sinks (tr<0, det>0) + 1 saddle (det<0), 0 undecided signs. Rows N0514, N0524, N0548, N0554 (k1=17; k2=100/9, 100/9, 100/159, 100/159; k3=2600/2809, 650/729, 2600/2809, 2600/2809) confirmed against the PDF image by the auditor; the author's catalogue was not used.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "BIST-C-0001"
+   ],
+   "evidence": "sha256:fc10112c2b926b61f6c88555d3f1a01b60a7080449b37274c68f4b49d97499d0",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BIST-C-0003",
+   "statement": "Exclusion certificates, conditional on the paper's Lemma 3 (and its Sard step) and the JAC midpoint identity, which are pen-and-paper and not machine-checked: JAC excludes 245 and DIV a further 216 (producer and auditor agree; split by network size 0 edges 1/0, 1 edge 8/2, 2 edges 54/33, 3 edges 182/181 equals the paper's table); 0 of the 27 positives excluded. ROOT: the auditor, taking the Sylvester resultant at the actual degree of each polynomial in the eliminated variable, passes 179 of the remaining 193 negatives (13 with 2 edges, 166 with 3 edges), 0 positives, 0 FLUX networks; the producer's fixed degree-2 (4x4) reading passes only 105, so the gap of 88 comes from the producer's reading of 'nominal degree'. FLUX 14/14 reproduced by the auditor (cone rays plus copositivity: 11 entrywise nonnegative; N0391 and N0646 positive definite; N0610 copositive, not PSD). Total 245+216+179+14 = 654.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "BIST-L-0001",
+    "BIST-C-0001"
+   ],
+   "evidence": "sha256:cececac3e4c7a984003a9e170078c7e6e8d1728f96887e714623fa446a14b835",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BIST-C-0004",
+   "statement": "Controls (exact): Sec. 4 baseline (Y->2X, 2X->X+Y, X+Y->Y; a = 4/99, b = 1/90) has equilibria x = 1/10, 1/5, 3/5 with det 25/9, -20/9, 100/9 and the fold at a ~ 0.04610; negatives (empty, X->Y, X<->Y, X+Y<->2X) give exactly 1 positive equilibrium; N0056 gives exactly 1 at the producer's tested parameters and 0 at a=1/3, b=2/7, k=3/2, h=5/4, rho=1 (consistent with the paper's bound of at most 2); scaling the inflow a by 2, 5, 20, 100, 1000 destroys bistability in all 27 witnesses.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "BIST-C-0002"
+   ],
+   "evidence": "sha256:25b91d3edf180f8ff48d01fc359f50cb44d43f3b8d9e878b3f0ae5b6665eb11a",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BIST-X-0001",
+   "statement": "Random search (Tier X, evidence only): producer 125,000 log-uniform samples per network over all 681 (85.1M); all 27 positives re-found with an exact-verified two-sink point; 654 negatives with 0 candidates (depends on the producer's pipeline). Auditor 20,000 samples per network on the 27 positives and 193 ROOT/FLUX negatives (4.4M): all 27 re-found (lowest hit rate 0.39%); the float pipeline flagged 247 samples on 10 negative networks, all rejected by exact Arb re-check (0 with >= 2 sinks, 0 undecided). 0 bistable negatives.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:0678e23c5302c2b479ccce2e0d19d662c649af08d854c121f768d55118f205c3",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BIST-X-0002",
+   "statement": "NOT done / not verified: Lemma 3 and its Sard step, the JAC midpoint identity (read, not machine-checked); Theorem 2 (deletion-minimality, inheritance) and B_E = B_F beyond counts; the author's supplementary certificates and code (not used); Lean or any proof-assistant check; an exhaustive prior-art search; a human audit. Provenance: PREREG_ITEM.md is self-attested (sha256 recorded, written before computation per the producer, no independent timestamp).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:cdb4315df81b8282db2a49011e69f5bf5182f41fc9abe685528ba2ae27289827",
+   "audit": null
+  }
+ ]
+}

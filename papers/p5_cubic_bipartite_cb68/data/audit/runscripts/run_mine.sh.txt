@@ -1,0 +1,12 @@
+#!/bin/bash
+# core 2: route 2 (mode 0) caps 29..34 ; core 3: route 1 caps 30..35 both orbits then producer rebuild route 1
+M=/tmp/egaudit/mine/aud_search
+P=/tmp/egaudit/prod/cb_search
+O=/tmp/egaudit/out
+mkdir -p $O
+( for c in 29 30 31 32 33 34; do taskset -c 2 $M $c 0 > $O/mine_R_cap$c.json; done; echo done > $O/coreA.done ) &
+( for c in 30 31 32 33 34 35; do for o in 1 2; do taskset -c 3 $M $c $o > $O/mine_T_cap${c}_o$o.json; done; done
+  for c in 30 31 32 33 34; do for o in 1 2; do taskset -c 3 $P $c $o A > $O/prod_T_cap${c}_o${o}_A.json; done; done
+  for c in 29 30 31 32; do taskset -c 3 $P $c 0 A > $O/prod_R_cap${c}_A.json; done
+  echo done > $O/coreB.done ) &
+wait

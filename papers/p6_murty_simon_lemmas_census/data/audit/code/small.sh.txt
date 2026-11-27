@@ -1,0 +1,13 @@
+#!/bin/bash
+# n=3..10 with BFS cross-check for n<=9, cn-only for 10
+cd /tmp/msaudit/d2c && cargo build --release -q || exit 1
+mkdir -p /tmp/msaudit/out
+for n in 3 4 5 6 7 8 9; do
+  echo -n "n=$n "
+  nauty-geng -cq $n | taskset -c 2 ./target/release/d2c /tmp/msaudit/out/d2c_n$n.g6 bfs 2>&1
+done
+for k in 0 1 2 3; do
+  taskset -c $((k+2)) bash -c "nauty-geng -cq 10 $k/4 | ./target/release/d2c /tmp/msaudit/out/d2c_n10_p$k.g6 bfs 2> /tmp/msaudit/out/n10_p$k.log" &
+done
+wait
+cat /tmp/msaudit/out/n10_p*.log

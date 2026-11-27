@@ -1,0 +1,14 @@
+\begin{Verbatim}[fontsize=\scriptsize,frame=single,framesep=1.5mm]
+noncomputable def yukawaMix {ι : Type*} (s : Finset ι) (w κ : ι → ℝ) : ℝ → ℝ :=
+  fun t => ∑ i ∈ s, w i * g (κ i) t
+
+theorem yukawaMix_admissible {ι : Type*} (s : Finset ι) {w κ : ι → ℝ} (hw : ∀ i ∈ s, 0 ≤ w i)
+    (hκ : ∀ i ∈ s, 0 < κ i) : AdmissiblePotential (yukawaMix s w κ) := by
+
+theorem triangular_yukawaMix_optimal {ι : Type*} (s : Finset ι) {w κ : ι → ℝ} (hw : ∀ i ∈ s, 0 ≤ w i)
+    (hκ : ∀ i ∈ s, 0 < κ i) (C : Set Plane) (hC : LocallyFinite C) (hd : DensityOne C) :
+    latticeEnergy (yukawaMix s w κ) ≤ energy (yukawaMix s w κ) C :=
+
+theorem latticeEnergy_yukawaMix_lt_top {ι : Type*} (s : Finset ι) {w κ : ι → ℝ} (hw : ∀ i ∈ s, 0 ≤ w i)
+    (hκ : ∀ i ∈ s, 0 < κ i) : latticeEnergy (yukawaMix s w κ) < ⊤ := by
+\end{Verbatim}

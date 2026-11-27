@@ -1,0 +1,29 @@
+{
+  "lane": "TRI_D3",
+  "verdict": "BLOCKED_BY_VERSION_DRIFT",
+  "meaning": "The triangular-lattice proof closure (229 files) does not compile under LeanMaster's Lean 4.34.0-rc2 / Mathlib 85e3a25e with upstream's autoImplicit=false after the one declared rename (Finset.prod_le_prod\u2080 -> Finset.prod_le_prod). It stops at the first non-rename failure.",
+  "files": {
+    "total": 229,
+    "compiled": 59,
+    "failed_first": [
+      "Construction.BlockOperators"
+    ],
+    "not_attempted": 169
+  },
+  "failure": {
+    "Construction.BlockOperators": "/home/callensxavier_gmail_com/AutoevolveAI/.claude/worktrees/openai-math-discovery/results/openai_math/hypotheses/night_2026-10-08/TRI_D3/src/OAI/Analysis/Triangular/Construction/BlockOperators.lean:60:73: error: unsolved goals"
+  },
+  "diagnosis": "At Construction/BlockOperators.lean:60, `convert hh.le using 1` leaves the goal `\u2211' i, |jet (if \u219122 = 22 then h else H) ...| = \u2211' p, |jet h ...|`: after `simp only [tailFixedColumn_apply, Fin.isValue]` the condition `((22 : Fin 23).val = 22)` is no longer reduced in this Mathlib. This is tactic-behaviour drift, not a renamed identifier. A fix needs a proof edit, which the preregistration does not allow (declared renames only, cap 5); none was made.",
+  "no_axioms_run": "No axiom report or statement comparison was run: the closure is incomplete, so no claim about the final triangular theorems follows.",
+  "does_not_establish": [
+    "that the triangular-lattice proofs are wrong (the failure is consistent with version drift, not evidence of an error in them)",
+    "anything about the final triangular theorems under this toolchain",
+    "what upstream's pinned toolchain (Lean 4.34.1, Mathlib d13f23b7) would do"
+  ],
+  "next_options": [
+    "obtain upstream's pinned toolchain (a download/build the user must approve; same request as the Comparator one)",
+    "a preregistered proof-level patch lane with its own disclosure (not done here)"
+  ],
+  "renames_used": "1 of at most 5",
+  "code_sha256": "cb1f7a96a9daf754d8702bfea720d866b3c0402ea04993d5ccb7324d0cace671"
+}

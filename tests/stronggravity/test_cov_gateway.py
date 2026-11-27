@@ -1,4 +1,8 @@
-"""Hermetic branch-coverage tests for gateway.py (no network, no real Redis)."""
+"""Hermetic branch-coverage tests for gateway.py (no network, no real Redis).
+
+Requires the 'gateway' optional dependency group:
+    uv sync --extra gateway
+"""
 
 from __future__ import annotations
 
@@ -11,9 +15,12 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock
 
-import fakeredis
-import httpx
 import pytest
+
+# Skip entire module at collection time if gateway extras are not installed.
+fakeredis = pytest.importorskip("fakeredis", reason="pip install 'autoevolveai[gateway]'")
+httpx = pytest.importorskip("httpx", reason="pip install 'autoevolveai[gateway]'")
+
 import redis.asyncio as aioredis
 from fastapi.testclient import TestClient
 

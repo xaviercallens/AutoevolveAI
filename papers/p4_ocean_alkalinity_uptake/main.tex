@@ -1,0 +1,233 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,breaklines=true,
+  frame=single,framesep=3pt,xleftmargin=4pt,xrightmargin=4pt,upquote=true,aboveskip=4pt,belowskip=2pt}
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tA}{\tier{A}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\lean}[1]{\texttt{#1}}
+\newcommand{\COtwo}{CO$_2$}
+\newcommand{\R}{\mathbb{R}}
+
+\title{Certified enclosures of the \COtwo{} uptake per unit alkalinity\\
+in seawater equilibrium chemistry\\
+{\large (a model computation; the value $\approx0.8$ is long known)}}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-10-31}
+\hypersetup{pdftitle={Certified enclosures of the CO2 uptake per unit alkalinity in seawater equilibrium chemistry (a model computation; the value ~0.8 is long known)},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small doi:10.5281/zenodo.23848689 \quad (not peer reviewed)\end{center}
+
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its Python and Lean code and its claim ledger were
+produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{This version was independently audited by a different AI agent instance (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.}
+The audit's ten corrections are applied in this text (Section~\ref{sec:corr}). No human audit and no Lean statement lock exist; both are owed (Section~\ref{sec:lim}).
+
+\begin{abstract}
+For seawater in equilibrium with a fixed fugacity of \COtwo{}, adding one mole of alkalinity (total alkalinity, TA) raises dissolved inorganic carbon (DIC) by
+$\eta=\partial\mathrm{DIC}/\partial\mathrm{TA}$ moles. We compute rigorous interval-arithmetic enclosures of $\eta$ over the box
+$T\in[0,30]\,^\circ$C, $S\in[30,38]$, $f\mathrm{CO_2}\in[280,560]\,\mu$atm, $\mathrm{TA}=(S/35)\,\mathrm{TA}_{35}$, $\mathrm{TA}_{35}\in[2200,2400]\ \mu$mol\,kg$^{-1}$,
+in a carbonate--borate--water model on the total pH scale, with constants as printed in the Dickson--Sabine--Christian Guide~\cite{guide}.
+With the constants exactly as printed, $\eta\in[0.7036,\,0.9557]$ over the whole box (Tier~\tC{}, given the constants); the true range contains a value $\ge0.94428$ and a value $\le0.74271$.
+An independent AI audit certifies the same interval and a tighter one, $[0.7410,\,0.9455]$. Algebra (the closed form, $0<\eta<1$) is checked in Lean (Tier~\tA{}, statement lock owed).
+\textbf{The value $\eta\approx0.8$ and its dependence on temperature, salinity and $p$\COtwo{} are long known}; what is added is an enclosure with stated constants and a monotone closed form.
+\textbf{What this is NOT:} no tonnes of \COtwo{} removed, no climate effect, no statement on ecological safety, no deployment advocacy. It is equilibrium thermodynamics of a model: no gas-exchange kinetics, no CaCO$_3$ saturation, no mixing, no organic alkalinity, surface pressure only.
+Also reported: a dilute-water (soil) pH scan (Tier~\tX{}), and a partial reproduction of the alkalinity-front retardation arithmetic of Jessen et al., for which the printed numbers are not all mutually consistent.
+\end{abstract}
+
+\medskip
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{What this is NOT.} Not a statement about tonnes of \COtwo{} removed, about any climate effect, about the ecological or biogeochemical safety of ocean alkalinity enhancement (OAE) or enhanced weathering (EW), or about whether anyone should deploy either. Not a new phenomenon: $\eta\approx0.8$ is textbook-level. Not verified against the primary papers for the constants (Section~\ref{sec:const}). Part~(b) (soil/dilute water) is Tier~\tX{} only.}}
+
+\paragraph{Markers.} \tA{}: kernel-checked Lean, axioms within $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$, controls caught, no statement lock yet. \tL{}: a cited source, taken as stated. \tC{}: executed code with the argument written down, not machine-checked. \tX{}: floating-point or sampled comparisons, supporting nothing by themselves. Identifiers \texttt{CK2-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+%=====================================================================
+\section{Model, quantity and scope}\label{sec:model}
+\paragraph{Model.} Carbonate, borate and water alkalinity on the total pH scale, with $h=[\mathrm H^+]$ (mol\,kg$^{-1}$, total scale):
+\[
+\mathrm{DIC}=C\Bigl(1+\frac{K_1}{h}+\frac{K_1K_2}{h^2}\Bigr),\qquad
+\mathrm{TA}=C\Bigl(\frac{K_1}{h}+\frac{2K_1K_2}{h^2}\Bigr)+\frac{B_TK_B}{K_B+h}+\frac{K_W}{h}-h,\qquad C=K_0\,f\mathrm{CO_2}.
+\]
+Sulfate, fluoride, phosphate and silicate are set to zero (their effect is quantified in Section~\ref{sec:caveats}). The total scale means $-h$ already stands for $-[\mathrm H^+]_F-[\mathrm{HSO_4^-}]$. Total boron $B_T=0.000416\,S/35$ mol\,kg$^{-1}$. $f\mathrm{CO_2}$ is the independent variable (no fugacity coefficient). The TA definition is the carbonate--borate--water one just written; any other definition of TA (organic alkalinity, nutrient contributions) changes $\eta$ (Section~\ref{sec:caveats}).
+\paragraph{Quantity.} At fixed $f\mathrm{CO_2}$ ($C$ fixed), $\eta=(\partial\mathrm{DIC}/\partial h)/(\partial\mathrm{TA}/\partial h)$, which gives
+\[
+\eta=\frac{C\,(K_1/h^2+2K_1K_2/h^3)}{C\,(K_1/h^2+4K_1K_2/h^3)+B_TK_B/(K_B+h)^2+K_W/h^2+1}
+=\frac{h+2K_2}{(h+4K_2)+h^3R/(CK_1)},
+\]
+$R=B_TK_B/(K_B+h)^2+K_W/h^2+1$. Lean proves that the two forms agree (\lean{eta\_rewrite}) and $0<\eta<1$ for $h,K_1,K_2,C>0$, $R\ge0$. The producer's closed form was checked against a 50-digit numerical derivative of $\mathrm{DIC}(\mathrm{TA})$ at $50$ random points (worst relative difference $1.3\cdot10^{-16}$) and, independently, by the auditor at three points including both extreme corners (agreement $5\cdot10^{-9}$, limited by the auditor's numerical-derivative step, not by the closed form).
+\paragraph{Mean-value remark.} A finite alkalinity addition $\Delta\mathrm{TA}$ has an efficiency equal to a mean of $\eta$ over the TA segment; it lies in the enclosure if the whole segment lies in the box.
+\paragraph{Scope.} Equilibrium thermodynamics of a model. $\eta$ is a model derivative, not a measurement-and-verification protocol.
+
+%=====================================================================
+\section{Prior art}\label{sec:prior}
+To our knowledge $\eta\approx0.8$ at $25\,^\circ$C, and its dependence on temperature, salinity, $p$\COtwo{} and TA, is long known (for instance Zeebe and Wolf-Gladrow~\cite{zwg}; Renforth and Henderson 2017; the OAE efficiency literature), and the closed form is a ratio of buffer derivatives. None of these was re-read for this paper and no systematic literature search was made (neither by the producer nor by the auditor). The only addition attempted is a rigorous enclosure with stated constants and a monotone closed form.
+
+%=====================================================================
+\section{Method}\label{sec:method}
+\begin{enumerate}\itemsep=1pt
+\item $\mathrm{TA}(h)$ is strictly decreasing in $h$, so $h$ is bracketed rigorously (interval sign test of $\mathrm{TA}(h)-\mathrm{TA}$ at both ends, bisection tightening, \texttt{mpmath.iv}, 30 digits). The bracket is split into $24$ pieces. On each piece where an interval test certifies $\mathrm d\eta/\mathrm dh>0$, $\eta$ is evaluated at the two ends only. Lean proves the algebraic identity $N'D-ND'=A\,(2Ah^2K_2+Q)$ for hand-supplied $N'$, $D'$ and $Q\le0$ (\lean{eta\_deriv\_identity}, \lean{Q\_nonpos}); \textbf{that $N'$ and $D'$ are the $h$-derivatives of $N$ and $D$ was checked by hand, by the producer and by the auditor, not in Lean.}
+\item Global enclosure by branch-and-bound over $(T,S,f\mathrm{CO_2},\mathrm{TA}_{35})$: the upper bound is the largest live-cell upper bound once every other cell is pruned against a rigorous point lower bound, and symmetrically for the lower bound. A cell is discarded only if its rigorous bound is beaten by a rigorous point bound (soundness re-read by the auditor). Constants per cell are enclosed by hulls over $24\times6$ sub-intervals. \textbf{Both U0 runs stopped at the evaluation cap ($3000$ evaluations, about $1300$ live cells) and not at convergence, so the bounds are sound but not tight.}
+\item Constants (Section~\ref{sec:const}): Weiss 1974 ($K_0$), Lueker et al.\ 2000 ($K_1,K_2$), Dickson 1990 ($K_B$), Millero 1995 ($K_W$), Uppstrom 1974 ($B_T$), as printed in the Guide~\cite{guide}.
+\item Scenarios: U0, constants exactly as printed; U1 and U2, the pK values of $K_0,K_1,K_2,K_B,K_W$ widened by $\pm1\sigma$ and $\pm2\sigma$ ($\sigma=0.002,0.0075,0.015,0.01,0.01$, the values shipped in PyCO2SYS \texttt{uncertainty.pKs\_OEDG18}, a secondary source). These are input intervals, not probability statements.
+\end{enumerate}
+The preregistration (\texttt{prereg\_K2.json}, sha256 \texttt{24b99955\dots50000}, verified by the auditor) was, by the producer's statement, written and hashed before any attempt; it was committed together with the results (commit \texttt{e0fbdba}), so git cannot confirm the order.
+
+%=====================================================================
+\section{Results}\label{sec:results}
+\subsection{(a) Seawater box, Tier \tC{} (given the pinned constants; not replayed in Lean)}
+\begin{center}\small\begin{tabular}{p{0.20\linewidth}p{0.36\linewidth}p{0.34\linewidth}}\toprule
+scenario & producer's enclosure & independent audit\\\midrule
+U0 (as printed) & $[0.7036,\,0.9557]$ (certificate $[0.703565,\,0.955707]$ rounded inward; rounded outward $[0.7035,0.9558]$) & certified, $223$ cells, union $[0.70390,\,0.95563]$; \emph{tighter} $[0.7410,\,0.9455]$ certified ($3039$ cells); $[0.7425,0.9445]$ not certifiable ($101$ corner cells unresolved at depth $30$, interval dependency)\\
+U1 ($\pm1\sigma$ in pK) & $[0.6826,\,0.9618]$ & certified, $167$ cells, union $[0.68333,\,0.96155]$\\
+U2 ($\pm2\sigma$ in pK) & $[0.6616,\,0.9676]$ & certified, $140$ cells, union $[0.66166,\,0.96494]$\\\bottomrule
+\end{tabular}\end{center}
+All three producer enclosures are sound (every point of the box lies inside). The U2 row was re-run with the current code (Section~\ref{sec:u2}) and is unchanged.
+\paragraph{Sharp side (correction 1).} The rigorous one-sided point bounds give: the true range contains a value $\ge0.94428$ and a value $\le0.74271$ (the producer's point bounds are $0.9442832\ldots$ and $0.7427075\ldots$; the auditor's 50-digit corner values are $0.944283244$ at $(0\,^\circ$C$,\,S\,30,\,560\,\mu$atm$,\,2200)$ and $0.742707543$ at $(30\,^\circ$C$,\,38,\,280,\,2400)$). The producer's earlier rounded statements ``$\ge0.9443$'' and ``$\le0.7427$'' do not follow from these bounds and are withdrawn. The U0 enclosure therefore overshoots the true range by at most $0.0115$ above and $0.0392$ below.
+\paragraph{U1 and U2 (correction 2).} The U1/U2 enclosures are wider than U0 by about $0.02$/$0.04$ at the lower end, but this is mostly \emph{interval overestimation}: the pK intervals are never subdivided. At the two extreme corners, over all $32$ sign combinations of $\pm1\sigma$ ($\pm2\sigma$) on the five pK values, the attained values (point values, 50 digits, auditor) span $[0.7374,\,0.9468]$ (U1) and $[0.7322,\,0.9491]$ (U2), so the pK uncertainty moves the attained range by about $0.005$ ($0.010$) at the bottom. This is Tier~\tX{}: point values, not a certified $9$-dimensional run; it was not proved that the extremes sit at corners, and no tight certified U1/U2 exists (a $9$-D adaptive run with the pK offsets as extra dimensions did not finish in $10$ min).
+\paragraph{Reading.} Per mole of alkalinity added, about $0.70$ to $0.96$ mol of DIC is taken up at equilibrium over this box in the model. On grids, $\eta$ is larger when cold, at low salinity-normalised alkalinity and at high $p$\COtwo{} (lower pH): finite differences on a $5^4$ grid have uniform signs ($\eta$ decreases with $T$, $S$, $\mathrm{TA}_{35}$ and increases with $f\mathrm{CO_2}$), and corners plus a $7^4$ interior grid give the range $[0.742708,\,0.944283]$. \textbf{These monotone trends are a numerical observation (Tier~\tX{}), not certified} (correction 10).
+
+\subsection{(b) Dilute and soil water, Tier \tX{}}
+Same algebra without borate, with freshwater $K_1$, $K_2$ (Millero 1979 as transcribed in PyCO2SYS; the coefficients $290.9097/-14554.21/-45.0575$ and $207.6548/-11843.79/-33.6485$ were matched by the auditor to PyCO2SYS \texttt{p1atm.py} and give pK$_1=6.351$, pK$_2=10.329$ at $25\,^\circ$C). For $f\mathrm{CO_2}=420\,\mu$atm and $0$--$30\,^\circ$C: $\eta<0.01$ below pH about $4.5$ to $4.7$, $\eta<0.1$ below about $5.0$ to $5.2$, $\eta=0.5$ at about $5.5$ to $5.7$ (outer pH intervals of width $0.13$, \texttt{data/data/soil\_result.json}); at $f\mathrm{CO_2}=10\,000\,\mu$atm every threshold is about $0.7$ pH units lower. Reading: in this regime $\eta\approx[\mathrm{HCO_3^-}]/([\mathrm{HCO_3^-}]+h)$; the auditor's closed-form estimate $h^2=CK_1$ puts $\eta=0.5$ at pH $5.60$ ($25\,^\circ$C) and $5.54$ ($0\,^\circ$C), inside the producer's range. \textbf{Limitations (correction 7):} freshwater $K_1,K_2$ are not pinned to a primary source; the pK uncertainty $\pm0.02$ is an assumption; activity corrections at soil-water ionic strength are ignored; and $K_W$ is the seawater expression evaluated at $S=0$ including the Guide's $-0.015$ total-scale shift, which does not apply in fresh water ($K_W$ about $1.5\%$ low, negligible below pH~$6$).
+
+\subsection{(c) Alkalinity-front retardation (arithmetic of Jessen et al.)}
+Jessen et al.~\cite{jessen} (preprint, ``Subsoil acidity causes long delays in inorganic carbon sequestration by Enhanced Weathering'') describe a downward-progressing front of alkalinity delayed by cation-exchange retardation $R=1+\Delta q/\Delta c$. With the delay $T(\mathrm{CEC},L,q)=(L/q)(\varepsilon_w+k\,\mathrm{CEC})$, $k=10\,\Delta\beta(1-\varepsilon)\rho/\Delta c$, equal to $LR/v$ with $v=q/\varepsilon_w$ (Lean: \lean{delay\_via\_R}), the delay is increasing in CEC, $L$, $k$ and decreasing in $q$ (Lean: \lean{delay\_mono\_cec}, \lean{delay\_mono\_L}, \lean{delay\_mono\_k}, \lean{delay\_anti\_q}; Tier~\tA{}, algebra only).
+\paragraph{Reproduction (control P4; correction 6).} The printed inputs (as read by the producer and re-read by the auditor from Supplementary Text~2) are $\Delta\beta=(0.55-0.2)+(0.12-0.03)=0.44$, $\varepsilon=0.3$, $\rho=2.65$, $\varepsilon_w=0.1$, $\Delta c=0.80$ meq\,L$^{-1}$, unretarded velocity $5$ m\,yr$^{-1}$, with CEC $0.56$ (sum of exchangers) and $1.6$ (direct). They give $\Delta q=45.71$ and $130.59$ meq\,L$^{-1}$, $R=58.13$ and $164.24$, $v=8.60$ and $3.04$ cm\,yr$^{-1}$ and $11.6$ to $32.8$ yr\,m$^{-1}$. \textbf{$R$ and $v$ pass within printed rounding} (printed $R=58$ and $165$, $v=8.7$ and $3.0$ cm\,yr$^{-1}$). However the printed $\Delta q$ values ($45.4$, $131.3$) have ratio $0.3458$, whereas $\Delta q$ is proportional to CEC, which requires $0.56/1.6=0.35$; the printed $R$ and $v$ follow from the printed $\Delta q$ (for example $1+45.4/0.8=57.75$ gives $8.66$ cm\,yr$^{-1}$). The printed upper value ``34 yr\,m$^{-1}$'' is not reproduced ($32.8$ from the inputs, $33.3$ even from the printed $3.0$ cm\,yr$^{-1}$). \textbf{P4 is therefore a partial pass}, not a pass to the digit as preregistered. This is stated neutrally; the authors were not contacted, and the Jessen PHREEQC model and Dataverse files were not examined.
+\paragraph{Table.} Delay in yr\,m$^{-1}$ over CEC and flux is in \texttt{data/data/delay\_result.json} (for instance CEC $[1,2]$, $q\in[0.5,1]$ m\,yr$^{-1}$, $L=1$ m: $[10.3,\,41.0]$). A $\pm10\%$ sensitivity on $\Delta\beta$ and $\Delta c$ is Tier~\tX{}.
+
+%=====================================================================
+\section{Constants and their provenance}\label{sec:const}
+\textbf{The primary sources were not read} by the producer or by the auditor: Lueker et al.\ 2000 (the auditor's attempt returned HTTP 403, and an eScholarship hit was an unrelated Scripps report), Weiss 1974 (an unofficial copy was found, the fetch failed), Dickson 1990 (no open copy found), Millero 1995, Uppstrom 1974 and Millero 1979 (not searched). The constants therefore rest on the Guide's transcription~\cite{guide} (read; eqs.\ 30, 37, 40, 43, 62) and on PyCO2SYS 1.8.3.4 (GPL-3; used only, not redistributed).
+\begin{itemize}\itemsep=1pt
+\item The Guide's five printed check values at $S=35$, $25\,^\circ$C ($\ln K_0=-3.5617$, $\log_{10}K_1=-5.8472$, $\log_{10}K_2=-8.9660$, $\ln K_B=-19.7964$, $\ln K_W=-30.434$) are reproduced by the producer (5 of 5) and by the auditor, who typed the equations himself from the Guide text and obtained $-3.561652$, $-5.8471529$, $-8.9659515$, $-19.796402$, $-30.433844$.
+\item The producer's constants agree with PyCO2SYS's for $K_0,K_1,K_2,K_B$ to $10^{-14}$, an independent confirmation of the transcription (not of the Guide's own fidelity to the primary papers). $K_W$ differs by $-1.49\%$ (the Guide subtracts $0.015$ from the constant term to approximate the SWS-to-total conversion; PyCO2SYS converts exactly) and $B_T$ by $+0.07\%$ (the Guide rounds Uppstrom's $0.0004157$ to $0.000416$).
+\item \textbf{No second CO2SYS-type package} (mocsy, seacarb) is available. The auditor's independent implementation is his own 50-digit \texttt{model.py} (constants typed from the Guide, own root solver and closed form). His PyCO2SYS cross-check at $202$ points (seed $777$, including both extreme corners): worst relative difference $4.4\cdot10^{-5}$ with sulfate $=$ fluoride $=0$, and $1.4\cdot10^{-10}$ when PyCO2SYS is fed the Guide's $K_W$ and $B_T$.
+\item \textbf{Interval library.} \texttt{python-flint}/Arb is not installed for the auditor, so he too used \texttt{mpmath.iv} (30 digits): the code is independent, the interval library is not.
+\end{itemize}
+
+%=====================================================================
+\section{Omitted terms and caveats (correction 4)}\label{sec:caveats}
+\begin{itemize}\itemsep=1pt
+\item \textbf{Sulfate and fluoride} omitted: $\eta$ changes by $+2\cdot10^{-6}$ to $+7.2\cdot10^{-5}$ over $202$ sampled points (Tier~\tX{}, PyCO2SYS, auditor; the producer's ``at most $6.8\cdot10^{-5}$'' was a $100$-sample maximum). With total-scale $h$ the $\mathrm{HSO_4^-}$ term is already contained in $-h$; the real omissions are HF and the $K_B$/$K_W$ scale conversions.
+\item \textbf{Phosphate $2$ and silicate $100\ \mu$mol\,kg$^{-1}$} lower $\eta$ by $0.0004$ to $0.0015$ (up to $0.0022$ at $3/150$ with sulfate and fluoride). Even then the result stays inside the U0 enclosure (minimum $0.7427-0.0022=0.7405>0.7036$).
+\item \textbf{Boron.} The Lee et al.\ 2010 alternative ($B_T=0.0004326\,S/35$, about $+4\%$) lowers $\eta$ by $0.0004$ to $0.0007$ at the extreme corners ($-7.2\cdot10^{-4}$ and $-4.3\cdot10^{-4}$); Uppstrom's unrounded $0.0004157$ changes it by $+1.3\cdot10^{-5}$ and $+7.8\cdot10^{-6}$; the $K_W$ shift by $-4.6\cdot10^{-5}$ and $-2.1\cdot10^{-6}$.
+\item \textbf{Not bounded:} organic alkalinity (unbounded in principle for coastal waters) and pressure (surface, $1$ atm only). Fugacity coefficient: none, because $f\mathrm{CO_2}$ is the input.
+\item The claim is \textbf{model-conditional on the total pH scale and on the TA definition stated in Section~\ref{sec:model}.}
+\end{itemize}
+
+%=====================================================================
+\section{Controls}\label{sec:controls}
+\begin{center}\small\begin{tabular}{p{0.30\linewidth}p{0.62\linewidth}}\toprule
+control & result\\\midrule
+P1 PyCO2SYS $1.8.3.4$ (Lueker, total scale, sulfate $=$ fluoride $=0$), $500$ random points, $\eta$ from a central $1\ \mu$mol\,kg$^{-1}$ difference & PyCO2SYS value inside the U0 enclosure of a small neighbourhood box ($T\pm0.5$, $S\pm0.25$, $f\pm5$, $\mathrm{TA}_{35}\pm5$) at $500/500$; float agreement worst $4.1\cdot10^{-5}$. Point-box containment $0/500$ is expected (the point box is $10^{-9}$ wide; the offset is $4\cdot10^{-5}$). The neighbourhood form was chosen, and P1b added, after seeing the offset.\\
+P1b PyCO2SYS fed the Guide's $K_W$ and $B_T$ & $100/100$ inside the point enclosure ($+10^{-6}$), worst relative difference $6.7\cdot10^{-10}$: the $4\cdot10^{-5}$ offset is explained by those two inputs.\\
+P2 closed form vs $50$-digit numerical derivative & $50$ points, worst relative difference $1.3\cdot10^{-16}$.\\
+P3 Guide printed check values & $5/5$ reproduced.\\
+P4 Jessen arithmetic & partial pass (Section~4.3).\\
+N1 $K_1\leftrightarrow K_2$ swapped & $100/100$ PyCO2SYS values excluded by the corrupted model.\\
+N2 wrong-sign borate term & $100/100$ excluded.\\
+N3 $p$\COtwo{} unit error (420 read as atm) & box guard rejects; forced solve returns no root.\\
+N4 $K_1$ coefficient $3633.86\to3733.86$ & $\log_{10}K_1=-6.1826$, P3 value rejected.\\
+N5 planted \lean{sorry}/axiom in \texttt{Controls.lean} & compiles, rc $0$; \texttt{\#print axioms} shows \lean{sorryAx}, resp.\ \lean{CarbonateK2.ctl\_cheat}: caught.\\\bottomrule
+\end{tabular}\end{center}
+
+%=====================================================================
+\section{Lean (Tier \tA{}: algebra only)}\label{sec:lean}
+Module \texttt{formal\_cert/Programmes/CarbonateK2/Core.lean} (copy in \texttt{data/lean/}), compiled with \texttt{scripts/certified\_numerics/lean\_pinned.py} (Lean~4.34.1 with the pinned Mathlib), rc~$0$, $14$ theorems, each \texttt{\#print axioms} exactly $\{$\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}$\}$. Statements: \lean{eta\_rewrite}; \lean{eta\_pos}, \lean{eta\_lt\_one}; \lean{eta\_deriv\_identity} and \lean{Q\_nonpos}; \lean{delay\_mono\_cec}, \lean{delay\_mono\_L}, \lean{delay\_anti\_q}, \lean{delay\_mono\_k}, \lean{delay\_via\_R}; \lean{jessen\_R\_sum}, \lean{jessen\_R\_direct}, \lean{jessen\_yr\_per\_m\_sum}, \lean{jessen\_yr\_per\_m\_direct} (exact rational instances: $R\in(58,59)$, $(164,165)$; yr\,m$^{-1}\in(11,12)$, $(32,33)$). \texttt{leanchecker Programmes.CarbonateK2.Core}: rc~$0$ (producer $68$ s; auditor $64$ s). Escape grep (\lean{sorry}, \lean{admit}, \lean{native\_decide}, \lean{axiom}, \lean{unsafe}, \lean{implemented\_by}, \lean{extern}, \lean{opaque}, \lean{set\_option}, \lean{macro}, \lean{elab}, \lean{csimp}): no match (auditor).
+\paragraph{Scope (correction 3).} \textbf{Lean proves algebra only, and nothing about the constants, the root $h$ or the enclosures.} In \lean{eta\_deriv\_identity} the expressions $N'$ and $D'$ are supplied by hand (no \lean{HasDerivAt}); that they are the derivatives of $N$ and $D$ was checked by hand by the producer and the auditor, \textbf{not in Lean}. The interval monotonicity test $2CK_1K_2/h^2>|Q|$ is then a correct sufficient condition for $\mathrm d\eta/\mathrm dh>0$ \emph{given} that hand check. \textbf{No statement lock exists} (the repository has no \texttt{tools/statement\_lock.py}, and no file outside K2 mentions \texttt{CarbonateK2}): Tier~\tA{} pending lock. No person has certified that the statements mean what their gloss says.
+\paragraph{Controls.} \texttt{Controls.lean} compiles with rc~$0$ and is caught by the axiom gate (\lean{ctl\_sorry}: \lean{sorryAx}; \lean{ctl\_axiom}: \lean{CarbonateK2.ctl\_cheat}); the auditor repeated this.
+\begin{itemize}\scriptsize\itemsep=0pt
+\item \texttt{Core.lean}: \texttt{df5d68d91ec6076bbdb8dccec5d6c3f5750bcce91dcd3c7d49e629271f0db51f}
+\item \texttt{Controls.lean}: \texttt{1510f654e97b804a8a2b12e3a4d12eb16f071b7581b832ce24f097081d014bb8}
+\end{itemize}
+
+%=====================================================================
+\section{Independent AI audit}\label{sec:audit}
+A different AI agent instance (\texttt{AUDIT.md}, 2026-10-31; verdict ACCEPT\_WITH\_CORRECTIONS; none of the producer's code used for the numerics; scripts in \texttt{data/audit\_scripts/}, sources and small outputs only, no oleans) did the following.
+\begin{itemize}\itemsep=1pt
+\item Re-derived the closed form and the derivatives $N'=-A(2h+6K_2)$, $D'=-A(2h+12K_2)-2RB/(K_B+h)-2R_W/h$ (notation of \texttt{AUDIT.md} \S1), matching the hand-supplied expressions in Lean.
+\item Rigorous 4-D enclosure check with a different method: constants enclosed by a mean-value (centred) form with analytic $T$, $S$ derivatives (checked against \texttt{mp.diff} to $10^{-30}$), $\eta=1/(1+g)$ as a plain interval evaluation on $4$ $h$-pieces with adaptive bisection, TA interval widened outward by $10^{-12}$ relative. Results in Section~\ref{sec:results}.
+\item Re-read the branch-and-bound pruning (sound; both U0 runs hit the cap of $3000$ evaluations; \texttt{k2lib.eta\_box} converts interval endpoints with \texttt{float()}, round-to-nearest, error at most $1$ ulp, no reported digit affected).
+\item Constants: typed five equations from the Guide, matched the producer's, reproduced the $5$ check values; PyCO2SYS cross-check at $202$ points.
+\item Omitted terms (Section~\ref{sec:caveats}); Lean recompilation, axiom audit, \texttt{leanchecker} replay, controls caught; Jessen arithmetic; wording check (no tonnes, climate, safety or deployment sentence found); PyCO2SYS licence GPL-3 confirmed; all $28$ file hashes in \texttt{result.json} match.
+\end{itemize}
+Not done by anyone: the primary-paper coefficients; a tight certified U1/U2; an independent interval library; a statement lock; the Jessen PHREEQC/Dataverse model; a literature novelty search; freshwater activity corrections.
+
+%=====================================================================
+\section{Audit corrections applied}\label{sec:corr}
+The audit required ten corrections to the producer's report (\texttt{data/RESULT.md}, the producer's \emph{pre-audit} text, superseded by this paper). Numbering as in \texttt{AUDIT.md}:
+\begin{enumerate}\itemsep=1pt
+\item \textbf{Sharp side.} ``$\ge0.94428$'' and ``$\le0.74271$''; overshoot $0.0115$ above and $0.0392$ below. U0 $[0.7036,0.9557]$ kept (the producer's certificate rounded inward; certified by the auditor), plus the auditor's tighter $[0.7410,0.9455]$ (Section~\ref{sec:results}).
+\item \textbf{U1/U2.} The widening is mostly interval overestimation; attained shifts about $0.005$ and $0.010$ (Tier~\tX{}).
+\item \textbf{Lean scope.} Hand-written $N'$, $D'$; algebra only; no statement lock (Section~\ref{sec:lean}).
+\item \textbf{Caveats.} Sulfate/fluoride $7.2\cdot10^{-5}$ (202 samples); nutrients; Lee boron; organic alkalinity and pressure not bounded (Section~\ref{sec:caveats}).
+\item \textbf{Method.} Cap of $3000$ evaluations with about $1300$ live cells (Section~\ref{sec:method}).
+\item \textbf{P4.} Partial pass; $\Delta q$ ratio; ``34 yr\,m$^{-1}$'' not reproduced (Section~4.3).
+\item \textbf{(b) $K_W$} at $S=0$ with the seawater shift (Section~4.2).
+\item \textbf{U2 seed.} See Section~\ref{sec:u2}.
+\item \textbf{Prereg ordering} by producer statement only (Section~\ref{sec:method}).
+\item \textbf{Monotone trends} are a numerical observation, not certified (Section~\ref{sec:results}).
+\end{enumerate}
+
+%=====================================================================
+\section{U2 and the earlier root-finder seed}\label{sec:u2}
+The producer's report states that U2 was run with an earlier version of the float root seed in \texttt{k2lib.float\_root} (an Anderson solver, later replaced by bisection) and that the archived U2 file hash belongs to that earlier code. The $h$ bracket is verified by interval signs, so the seed does not affect rigor. Correction~8 asked for a re-run with the current code if cheap. It was: \texttt{run\_seawater.py data U2} on cores $6,7$ (the same $3000$-evaluation cap, $467.5$ s wall time against $693.8$ s archived). The result is the identical enclosure $[0.6616290773537888,\,0.9675833420943311]$ with the same one-sided point bounds ($0.9323619\ldots$, $0.7888157\ldots$), the log differs from the archived \texttt{enc\_U2.log} only in the final wall-time figure, and the JSON file differs from the archived one only in the \texttt{seconds} field, so its sha256 differs ($857f833b\ldots$ against $156ac9b4\ldots$). The archived file (whose hash is recorded in \texttt{result.json}) is left as it was; the re-run copies are in \texttt{data/rerun\_U2/}. The auditor's independent check also certifies the U2 enclosure.
+
+%=====================================================================
+\section{Claim ledger}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files $12$ claims at Tiers~\tA{} (\texttt{CK2-A-0001}, \texttt{-0002}), \tL{}, \tC{} (the last \tC{} row being the headline) and \tX{}. Each carries a content-addressed evidence blob in \texttt{ledger/evidence/}; each Tier~\tA{} claim also carries an \texttt{ai\_audit} field. The gate field \texttt{audit} is left null: the audit was done by an AI agent, not a person, so the Elenchus gate keeps \texttt{LEDGER\_UNAUDITED\_TIER\_A} open for each Tier~\tA{} row. \texttt{ledger/run\_gate.py} runs the unmodified gate; the verbatim output and exit code are in \texttt{ledger/gate\_output.txt}.
+
+%=====================================================================
+\section{Limitations and what remains unverified}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item \textbf{Model only; no real-world claim.} No tonnes, climate effect, ecological safety or deployment advice. Equilibrium thermodynamics: no gas-exchange kinetics, no CaCO$_3$ precipitation or saturation state, no mixing.
+\item \textbf{Constants not verified against primary papers}; they rest on the Guide transcription plus PyCO2SYS (Section~\ref{sec:const}). The kill criterion of the preregistration (constants not pinned to primary sources $\Rightarrow$ Tier~\tX{}) was applied per part: (a) is reported as Tier~\tC{} \emph{with this caveat}, (b) as Tier~\tX{}.
+\item \textbf{AI audit only; human audit and Lean statement lock owed.} No second CO2SYS package; interval library not independent.
+\item \textbf{U0 is loose} (branch-and-bound stopped at the cap); \textbf{U1/U2 are loose} (pK intervals not subdivided); no tight certified U1/U2.
+\item \textbf{Monotone trends} and the sharp-side corner values are Tier~\tX{}/point bounds.
+\item \textbf{Literature novelty} not searched; \textbf{Jessen} PHREEQC model and Dataverse files not examined (licence not verified).
+\item \textbf{Deviations from the preregistration.} P4 tolerance relaxed to printed rounding (and then found a partial pass); P1 operationalised as a neighbourhood box and P1b added after seeing the $4\cdot10^{-5}$ offset; the time box ($\approx4$ agent-hours) was exceeded because the branch-and-bound was redesigned twice (the first grid enclosures were far too loose, $\eta\in[0.69,0.96]$ with $12\%$ TA spread per cell); the \texttt{grid} entry in \texttt{seawater\_result.json} is a leftover of the abandoned design and is not used.
+\item \textbf{Outcome.} PARTIAL: (a) certified given the pinned constants, (b) Tier~\tX{}, (c) algebra in Lean and arithmetic reproduced with an inconsistency in the source.
+\end{itemize}
+
+%=====================================================================
+\section{Reproducibility}\label{sec:repro}
+Repository AutoevolveAI, branch \texttt{worktree-openai-math-discovery}, HEAD \texttt{c574b58} (full: {\scriptsize\texttt{c574b58aba67a9041406570e20d557a6c45a25a6}}) at writing; the K2 outputs, the Lean files and this paper are uncommitted working-tree files; nothing was pushed. Copies of the inputs are in \texttt{data/} (\texttt{RESULT.md}, \texttt{result.json}, \texttt{summary.json}, \texttt{prereg\_K2.json}, \texttt{AUDIT.md}, \texttt{code/}, \texttt{data/}, \texttt{logs/}, \texttt{lean/}, \texttt{audit\_scripts/}). The producer and the auditor ran on cores $6,7$ only. The bundler keeps only listed file suffixes, so \texttt{.log} and \texttt{.sha256} files are also stored as byte-identical \texttt{.txt} copies in \texttt{data/}; compiled Lean objects and third-party PDFs are not shipped. PyCO2SYS (GPL-3) is imported by some scripts but not redistributed.
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+cd results/proposal4/2026-10-27/K2
+taskset -c 6,7 .venv/bin/python -I code/run_seawater.py data U0   # also U1, U2
+taskset -c 6,7 .venv/bin/python -I code/run_seawater.py data controls
+taskset -c 6,7 .venv/bin/python -I code/run_soil_delay.py data
+.venv/bin/python -I code/controls_P2_P3.py
+python -I scripts/certified_numerics/lean_pinned.py compile formal_cert/Programmes/CarbonateK2/Core.lean
+python -I papers/p4_ocean_alkalinity_uptake/ledger/build_ledger.py
+python -I papers/p4_ocean_alkalinity_uptake/ledger/run_gate.py
+\end{lstlisting}
+
+%=====================================================================
+\begin{thebibliography}{99}\small
+\bibitem{guide} A.\ G.\ Dickson, C.\ L.\ Sabine, J.\ R.\ Christian (eds.), \emph{Guide to Best Practices for Ocean \COtwo{} Measurements}, PICES Special Publication 3 (2007), Ch.~5 sec.~7 (eqs.\ 30, 37, 40, 43, 62 and the printed check values) (\tL; the PDF is not redistributed).
+\bibitem{jessen} S.\ Jessen, R.\ Jakobsen, M.\ Looms, P.\ Ambus, D.\ Postma, \emph{Subsoil acidity causes long delays in inorganic carbon sequestration by Enhanced Weathering}, preprint, Supplementary Text~2 (\tL; recorded in the preregistration as arXiv~2607.01835, not re-verified from the PDF text; the PDF is not redistributed).
+\bibitem{zwg} R.\ E.\ Zeebe, D.\ Wolf-Gladrow, \emph{\COtwo{} in Seawater: Equilibrium, Kinetics, Isotopes}, Elsevier (2001); P.\ Renforth, G.\ Henderson, Rev.\ Geophys.\ 55 (2017): named as prior art only, not re-read.
+\bibitem{prim} Primary sources of the constants, \emph{not read}: Weiss 1974; Lueker, Dickson, Keeling 2000; Dickson 1990; Millero 1995; Uppstrom 1974; Millero 1979; Lee et al.\ 2010 (boron alternative, via the auditor's variant only).
+\end{thebibliography}
+\end{document}

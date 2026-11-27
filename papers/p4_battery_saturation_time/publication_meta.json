@@ -1,0 +1,23 @@
+{
+ "title": "Certified surface-saturation times for constant-flux sphere diffusion with Chen2020 parameters (a model computation; the series is classical)",
+ "version": "v1",
+ "description": "<p>For diffusion in a sphere with uniform start x<sub>0</sub> and constant surface flux, the surface stoichiometry is x<sub>s</sub> = x<sub>0</sub> + &beta;F(&tau;) with the <b>classical</b> series F(&tau;) = 3&tau; + 1/5 &minus; 2&sum; e<sup>&minus;&alpha;<sub>n</sub><sup>2</sup>&tau;</sup>/&alpha;<sub>n</sub><sup>2</sup>, tan &alpha;<sub>n</sub> = &alpha;<sub>n</sub>. With the negative-particle parameters printed from the Chen2020 set shipped in PyBaMM 26.10.1.1 we compute rigorous enclosures (python-flint/Arb, 300 bits) of the first time t* at which x<sub>s</sub> reaches x*, for C = 1..4, x<sub>0</sub> in {0.05, 0.25, 0.5} and x* in {1, 29866/33133 &asymp; 0.9014} (24 cases, relative width at most 9.8e-14). The rigorous enclosures are exact rational bounds on &tau;; the seconds bounds are rounded outward after an audit found that round-to-nearest conversion had broken containment (fixed and re-verified in exact rational arithmetic).</p><p><b>The certificate adds little beyond the closed-form long-time formula</b> t* = (R<sup>2</sup>/3D)[(x*&minus;x<sub>0</sub>)/(C&beta;) &minus; 1/5], which holds up to a relative correction between 8.5e-36 and 8.9e-5 (below 1e-12 in 11 of 24 cases). The value is the rigorous enclosure, an independent auditor's solver (mpmath interval arithmetic, no shared code) that reproduces it, and a model-versus-model observation (Tier X): PyBaMM's SPM and SPMe agree with the enclosure, but in PyBaMM's DFN the maximum over the electrode thickness of the surface concentration crosses 0.9014 up to 37% earlier than the certified SPM time at 1C, with a mesh dependence of about 1.5&ndash;6%, and the DFN fails to integrate at 3C and above because its state leaves its valid range (electrolyte depletion, then a surface concentration above c<sub>max</sub> and a NaN exchange current).</p><p><b>What was checked.</b> Positive and negative controls (short-time asymptotics, a two-sided sum-rule bracket, mpmath and a finite-volume solver, a 10% change of the diffusivity, planted wrong roots and a wrong flux sign), and PyBaMM SPM first-crossing times within 4.2e-4 (20 radial points) and 1.7e-5 (100) of the enclosures. Independently audited by a different AI agent instance (AUDIT.md, ACCEPT_WITH_CORRECTIONS, corrections applied); no human audit. Tiers: C (Arb and mpmath enclosures), L (series, parameters), X (PyBaMM, finite volume, DFN); no Lean, Tier A none; the Elenchus ledger gate exits 0 with no findings.</p><p><b>Limitations and non-claims.</b> x* = 0.9014 is the parameter set's 100% state-of-charge balancing limit, not a saturation; only x* = 1 is saturation. The start states are hypothetical; one parameter set; the SPM is known to be inaccurate at high C-rate. Crank and Chen et al. 2020 were read by neither producer nor auditor. The preregistered second half of the N3 control was not run, and the preregistration has a sign slip in the flux boundary condition (the code uses the correct sign). <b>No claim about faster charging, safety, lithium plating or real cells.</b> PyBaMM (BSD-3-Clause) is the only third-party software used and is not redistributed.</p>",
+ "keywords": [
+  "certified numerics",
+  "interval arithmetic",
+  "diffusion in a sphere",
+  "single particle model",
+  "PyBaMM",
+  "Chen2020 parameters",
+  "epistemic tiers",
+  "AI-assisted research"
+ ],
+ "notes": "Preprint v1 (2026-10-31), independently AI-audited (AUDIT.md), not human-audited. Proposal 4, item E2 (lane records committed in 'cf7610a'). Branch worktree-openai-math-discovery; the audit, the outward-rounding fix, this paper and the auditor's scratch material were uncommitted working-tree files; nothing pushed or uploaded. No Lean. Ledger gate: see ledger/gate_output.txt. PyBaMM (BSD-3-Clause) and its Chen2020 parameter values were used only through printed values; no wheel, venv or third-party text is included. data/data/certified_t_star_prefix_roundtonearest.json is the pre-fix output kept for transparency.",
+ "related_identifiers": [
+  {
+   "identifier": "arXiv:1905.12553",
+   "relation": "references",
+   "scheme": "arxiv"
+  }
+ ]
+}

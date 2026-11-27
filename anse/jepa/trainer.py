@@ -330,9 +330,9 @@ class JEPATrainer:
         self.model.eval()
         predictions: list[float] = []
         actuals: list[float] = []
-        for h_ctx, _h_tgt, energy_actual in loader:
-            z_ctx = self.model.ctx_encoder(self.model.prepare_input(h_ctx.to(self.device), "h_context"))  # type: ignore
-            energy_pred = self.model.energy_head(z_ctx)  # type: ignore
+        for _h_ctx, h_tgt, energy_actual in loader:
+            z_tgt = self.model.ctx_encoder(self.model.prepare_input(h_tgt.to(self.device), "h_target"))  # type: ignore
+            energy_pred = self.model.energy_head(z_tgt)  # type: ignore
             predictions.extend(float(v) for v in energy_pred.flatten().tolist())
             actuals.extend(float(v) for v in energy_actual.flatten().tolist())
         return predictions, actuals
@@ -490,9 +490,9 @@ class JEPATrainer:
             total_energy_loss += metrics["energy_head_loss"]
             n_batches += 1
 
-            # Energy prediction accuracy
-            z_ctx = self.model.ctx_encoder(self.model.prepare_input(h_ctx, "h_context"))  # type: ignore
-            energy_pred = self.model.energy_head(z_ctx)  # type: ignore
+            # Energy prediction accuracy (energy_actual is the target state's energy)
+            z_tgt = self.model.ctx_encoder(self.model.prepare_input(h_tgt, "h_target"))  # type: ignore
+            energy_pred = self.model.energy_head(z_tgt)  # type: ignore
             diff = (energy_pred - energy_actual).abs()
             n_correct += (diff < energy_accuracy_threshold).sum().item()
             n_total += h_ctx.shape[0]

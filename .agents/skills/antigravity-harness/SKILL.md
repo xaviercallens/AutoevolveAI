@@ -79,3 +79,18 @@ To export recorded agent trajectories into fine-tuning datasets:
 uv run python -m antigravity_harness dpo --output results/dpo_dataset.jsonl
 ```
 Creates pairs formatted for Hugging Face `TRL` DPOTrainer.
+
+### Protocol E: Subproject RunuX Hardening & Metrics Ratchet
+When operating inside `sub_projects/rust_linux_mini_kernel/rust-linux-mini-kernel`:
+1. **Target Directory Enforcement**:
+   ```bash
+   export CARGO_TARGET_DIR=/media/xavkal/3ada43de-fc4a-43bd-a9f8-cf396fd17033/tmp/runux_target
+   ```
+2. **Oracle Gate & Ratchet Check**:
+   ```bash
+   uv run python scripts/metrics.py measure
+   uv run python scripts/metrics.py ratchet --baseline docs/roadmap/metrics/metrics.baseline.json
+   ```
+3. **Lean 4 Spec Verification**:
+   Verify individual files directly via `lean specs/lean4/MVK/<Phase>/<File>.lean` (never run `lake build` in `formal/` to prevent Mathlib disk bloat).
+

@@ -1,0 +1,164 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "PH2-L-0001",
+   "statement": "Validated stiff integration, taken as stated and at the depth read: Nedialkov-Jackson overview of validated interval-Taylor / Hermite-Obreschkoff methods (wrapping effect as a stability question; truncation-error formulae make validated stiff methods hard), read at snippet/abstract level; Neumaier's logarithmic-norm enclosures (arnold-neumaier.at/ms/ode.pdf, ivpBounds.pdf), secondary; Sandretto-Chapoutot DynIBEX validated Runge-Kutta incl. implicit Radau, arXiv:1804.04847, abstract read; arXiv:2604.19068 (Taylor tube method) listed by search, not read. VNODE-LP, CAPD, COSY, Ariadne, Flow*, VSPODE papers were not individually checked.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:3d2cd18bf43dd891d99186f68975205c52371576494a4e87bbe9a49a43ed766e",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH2-L-0002",
+   "statement": "Textbook and documentation statement, taken as stated: BDF/CVODE error control is local, there is no global error guarantee, and the global error need not be proportional to the tolerance (Hairer-Wanner II Sec. IV.8; SUNDIALS documentation).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:b36674fca8261d388cd3046ebb59a12e25516117062a9c176f4e586fd1519557",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH2-L-0003",
+   "statement": "Reference solutions of the Bari stiff test set for Robertson were computed with RADAU in double precision at tight tolerance and are not validated (secondary reports).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:ce96cf20227201049ffbbf34d6abad8f475521ad7930fda18cbc0cca3ade259c",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH2-C-0001",
+   "statement": "Step theorem. For a quadratic planar field f, a polynomial reference q, an invertible P, defect bound dbar >= sup ||P^-1 (f(q)-q')||, a box U containing every segment [q(t), q(t)+Pw] with |w| <= rho, and nu >= sup_U lambda_max(sym(P^-1 J P)): if (eps0 + dbar h) exp(max(nu,0) h) < rho then the solution exists on [0,h] and ||z-q||_P <= eps0 e^{nu t} + dbar int_0^t e^{nu s} ds. Proof by the first-exit argument and f(z)-f(q) = J(q+e/2) e, exact because J is affine; the defect is an exact polynomial (no remainder). The code (ph2_enclose.py, lines 77-88, 98-113, 187-255) implements the obligations; the auditor read each obligation (defect, one-sided Lipschitz, bootstrap, jump and basis change, output, rounding, resume) and judged them discharged. The proof is in prose, not formalised.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:4922d973f7c93f3309324198a56b07dd19a1dde85b708cca3a6468b9bef60f40",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH2-C-0002",
+   "statement": "Controls. Positive: the stiff linear system (exact solution known in balls) and the logistic equation are contained at all tested times at p=24 and p=6. Negative: with the defect term dropped (p=6) containment is lost at every time for both systems. The (1+1e-6) shift is rejected for the linear y1 and both logistic components at p=24 but never for the linear y2 (relative width ~3e7): adjudicated as a test without power, not a soundness failure. controls.json was produced by an earlier code version; the auditor's rerun on the final code gives the same verdicts.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PH2-C-0001"
+   ],
+   "evidence": "sha256:6c025d6294da7c35c637dced478b6c6fd5a98ab3abafc91fa7c1e86c38d84c26",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH2-C-0003",
+   "statement": "Enclosure. Under the assumptions that Arb (Sage 9.5) ball arithmetic is correct and the step theorem holds, the solution of Robertson's problem (k=1/25, 1e4, 3e7; y(0)=(1,0,0)) lies in the exact-rational boxes of enclosures.json at t = 0.1, 0.4, 1, 4, 10, 40, 100, 400, 1000, 4000, with relative width <= 1e-6 required and <= 5.99e-10 reported (y2 at t=4000); 2,850,083 steps, 8.31 core-hours, stopped on the CPU cap (outcome PARTIAL; T=40000 not reached). Independently confirmed at t = 1, 10, 40 only (PH2-C-0004).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PH2-C-0001",
+    "PH2-C-0002"
+   ],
+   "evidence": "sha256:8b9da2bed89ad42fecfdf95d699b5fa3d92fb6056af8067463c47989b836680d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH2-C-0004",
+   "statement": "Independent re-derivation at t = 1, 10, 40. The auditor's Lohner interval Taylor integrator (MPFI, 128 bits, order 18, no logarithmic norm, no producer step logic) produced boxes lying inside the producer's boxes on all three components at t=1, 10 and 40 (midpoints agree to about 1e-26 to 1e-30; auditor radii 1e3 to 1e8 times narrower; at t=10 y2 the producer's midpoint lies outside the auditor's narrower box, consistent with inclusion). No box was compared at t = 0.1, 0.4, 4.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PH2-C-0003"
+   ],
+   "evidence": "sha256:9ee5ba826c009e822994783bfbc4cd3ca4b97489fa6670ce7ac88adecf865cce",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH2-C-0005",
+   "statement": "True global error of the rusty-SUNDIALS cvode crate (a Rust port of CVODE, NOT C CVODE; HEAD af4886f2, BDF, Newton, dense LU, analytic Jacobian, scalar atol) against the enclosure: 120 error intervals (4 rtol x 10 output times x 3 components), by exact ball subtraction of the solver's doubles from the boxes. rtol 1e-4, 1e-6, 1e-8 use atol = 1e-3 rtol; rtol 1e-10 uses atol = 1e-10 (non-preregistered; the preregistered atol 1e-13 run failed with ErrTestFailure). Largest error over the ten times in units of rtol*|y| for (y1,y2,y3): 2.7, 4.1, 2.2 (1e-4); 8.1, 10.9, 8.2 (1e-6); 16.6, 20.3, 13.8 (1e-8); 136, 169, 486 (1e-10).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PH2-C-0003"
+   ],
+   "evidence": "sha256:c9efccbb89c34dd0adc89f6b1a6bb4c9a75f71733842cb300bd4e7f2aa7fb0c7",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH2-C-0006",
+   "statement": "For y2 the preregistered 'provably exceeds tolerance' flag is never raised only because the tolerance for y2 (<= 3.6e-5) is atol-dominated (largest error / atol = 0.16); against rtol*|y2| alone the port's error is up to 4.1x (1e-4), 11x (1e-6), 20x (1e-8), 169x (1e-10, t=4000) the relative tolerance. The flag compares a global error with a local-error tolerance scale; it documents the global error and is not a breach of the solver's contract. For this port, these settings and this problem only.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PH2-C-0005",
+    "PH2-L-0002"
+   ],
+   "evidence": "sha256:02e42062853b52b57e3227c73c05aed2e8645d181f5bd261307343eff37b639d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH2-C-0007",
+   "statement": "HEADLINE. A validated enclosure of Robertson's problem at ten output times from 0.1 to 4000 (relative width <= 1e-6 required, <= 6e-10 reported), rigorous under the stated assumptions (Arb correct; log-norm step theorem proved in prose, not formalised), independently re-derived by a different method at t = 1, 10, 40 only; and the true error of a Rust port of CVODE (not C CVODE) for rtol 1e-4..1e-10 against it, including the atol-dominance finding for y2. Producer and one independent audit are AI agents; no human audit; the preregistration was first committed after the run started (mtimes and self-hash only); no Lean.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "PH2-C-0001",
+    "PH2-C-0002",
+    "PH2-C-0003",
+    "PH2-C-0004",
+    "PH2-C-0005",
+    "PH2-C-0006"
+   ],
+   "evidence": "sha256:6ab3ab321d023dc2157548ec20977b60b82395df392e33003ab467f565c93b20",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH2-X-0001",
+   "statement": "NOT independently confirmed: the enclosure for 40 < t <= 4000. The auditor's integrator reached t=40 only; the non-rigorous double-precision Radau cross-check at t=4000 agrees to ~1e-14 relative but lies OUTSIDE the producer's y1 and y3 boxes (offset ~8e-15 against radius ~5e-16, within the Radau runs' own spread) and cannot test the box. Single implementation plus code audit only.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:62b5855921c77f3d7a41dfa9868d7a5c9c8285ad2018999075b21207119fc6ed",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH2-X-0002",
+   "statement": "NOT established: the provenance of the Rust binary (Cargo path dependency; HEAD af4886f2 recorded, not pinned); the correctness of Arb/Sage 9.5 beyond the MPFI cross-check to t=40; the step theorem is not formalised (no Lean). 'Formally verified' is NOT claimed. NOT a statement about LLNL C CVODE, general stiff problems, or t >= 1e4.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:bd0fc7197dc20ec4aa882f87877d1f29d704613592c2a647a093626e184c361b",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH2-X-0003",
+   "statement": "The cvRoberts_dns values (t = 0.4, 4, 40, five digits) in RESULT.md were recalled, not fetched, and are SOLVER OUTPUT at rtol=1e-4 with vector atol, not the true solution; no conclusion is drawn from them.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:46c9358cfce3d129d81348359eeadcac754e846625891453e46a7d2a15763de7",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "PH2-X-0004",
+   "statement": "Novelty is NOT a certified fact: 'to our knowledge' no validated Robertson enclosure to t >= 4000 and no CVODE-versus-enclosure study was found, in a limited search (2 web + 2 alphaXiv queries at scouting, repeated at audit); VNODE-LP, CAPD, COSY, Ariadne papers not individually checked; authors not contacted; no priority claim. Also unverifiable from version control: the preregistration freeze (PREREG_ITEM.md first committed 2026-11-13, after the 2026-11-11 launch; mtimes and a self-hash only).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:71b7715e663de6925292215fa71fc93c19cfb28d9e55e15dbf0c43131b91460e",
+   "audit": null
+  }
+ ]
+}

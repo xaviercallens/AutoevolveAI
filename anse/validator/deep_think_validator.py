@@ -40,6 +40,20 @@ class ReviewState(TypedDict):
     final_verdict: str
 
 def call_llm(prompt: str) -> str:
+    env_type = os.environ.get("ENV_TYPE", "local_cpu")
+    if env_type in ("gemini_argos", "gemini_argon"):
+        from antigravity_harness.core.argos_hardener import ArgosInteractionsClient
+
+        client = ArgosInteractionsClient()
+        res = client.create_interaction(
+            prompt,
+            system_instruction=(
+                "You are the Gemini 4 Argon Red Team Auditor for the ANSE physics and mathematics simulator. "
+                "You verify physical bounds, cyber-safety, and epistemic reasoning strictly."
+            ),
+        )
+        return str(res.get("text", "NONE"))
+
     llm = get_llm()
     response = llm.invoke([
         SystemMessage(content="You are the Red Team Auditor for the ANSE physics and mathematics simulator. You verify reasoning strictly."),

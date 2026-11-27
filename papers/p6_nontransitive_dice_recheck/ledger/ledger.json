@@ -1,0 +1,94 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "DICE-L-0001",
+   "statement": "Easlick, arXiv:2610.40321 v1 (29 Oct 2026, 'Computer-Assisted Results for n-Sided Non-Transitive Dice Taking Face Values in [n]', unrefereed): Defs. 1-2, eqs. 1, 3, 4 (dice = multisets of n faces in [n], strict beating, minimal winning probability 1/2+1/n^2 for even n and 1/2+1/(2n^2) for odd n), Theorem 1 (n=6), Conjecture 1, Sec. 3 and Appendices B-J (graph statistics n=3..10, printed cycles). 'Maximum length n' is not formally defined in the paper; read here through the proof of Theorem 1 as 'an n-cycle exists and no longer cycle exists'. Taken as stated; the paper text is third-party and not shipped (data/result.json lists its external hash).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:e4c0a1245d8d3d035f0540745e1503b643441635d6a3085d52d28eb18265ff27",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "DICE-L-0002",
+   "statement": "Related literature (alphaXiv and web search 2026-11-01, limited): Conrey-Gabbard-Grant-Liu-Morrison, 'Intransitive Dice', arXiv:1311.6511 (closest setting: proper dice, faces in [n], face sum n(n+1)/2; not cited by Easlick); Angel-Davis arXiv:1610.08595; Hur-Kim arXiv:2006.12866; Schaefer-Schweig arXiv:1602.00969 and 1706.08986; Rooney arXiv:2505.21950. None treats n-cycles in this graph; no earlier statement of the n=6 theorem was found, but the search was limited. Only arXiv:2610.40321 and arXiv:1311.6511 were verified on arxiv.org by the paper's author and listed as related identifiers.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:804a6d2bfb3a4833f046087f9a3d17b18fddee9ead387db66d6936a617597bc8",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "DICE-C-0001",
+   "statement": "Graph statistics of G_n for n=3..10 by two independent implementations (producer numpy/scipy for n<=9, exact integers, brute-force double-sum cross-check n<=6; auditor C, histogram/cumulative encoding, iterative Tarjan, n<=10, 200000 random pairs per n cross-checked, 0 mismatches). dice/edges/SCCs/nontrivial SCC: n=3 10/3/10/none; n=4 35/67/35/none; n=5 126/620/126/none; n=6 462/5491/450/two of 7 vertices, 10 edges; n=7 1716/89153/636/one 1081 v, 53389 e; n=8 6435/956307/2115/one 4321 v, 674108 e; n=9 24310/12528131/3860/one 20451 v, 10933011 e; n=10 (auditor only) 92378/157244770/10588/one 81791 v, 147620052 e. All equal the paper's numbers (Sec. 3, App. B-J). Vertex lists of the n>=7 SCCs were not compared.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "DICE-L-0001"
+   ],
+   "evidence": "sha256:c997c88e082f5d89240971374b67fed0ca9aea90816e5f0ce825a91eacb2a6d4",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "DICE-C-0002",
+   "statement": "The map f_n(x)=(n+1-x_n,...,n+1-x_1) is an involution on dice and sends every edge a->b to f(b)->f(a), checked on all edges for n=3..10 by the auditor (0 violations; fixed points 70 at n=9, 126 at n=10) and for n<=6 by the producer. n=3,4,5: all SCCs trivial, so G_n has no directed cycle and no n-cycle.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "DICE-C-0001"
+   ],
+   "evidence": "sha256:f5a021b8c225e983d364b3af21d5d89ba0929ae7b00436e2441614b9cef941de",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "DICE-C-0003",
+   "statement": "n=6 (Theorem 1 part): exhaustive simple-cycle enumeration (producer; auditor's own DFS) in the two 7-vertex SCCs gives per SCC exactly three 3-cycles and one 6-cycle, none of length 4, 5, 7; over G_6 six 3-cycles and exactly two 6-cycles. Every edge of each 6-cycle is exactly 19/36 (Fractions). f swaps the two 6-cycles (f of one, reversed, is a rotation of the other). SCC vertex labels (1-based lexicographic) {88,89,151,207,217,277,291} and {118,119,160,235,286,385,391} equal the paper's Appendix E. With n=3,4,5 cycle-free, n=6 is the smallest n>=3 with an n-cycle and its longest cycle has length 6.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "DICE-C-0001",
+    "DICE-C-0002"
+   ],
+   "evidence": "sha256:18ef425784e24915f9b378822d067396c47d60a504384f6571b7e9265b1ea335",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "DICE-C-0004",
+   "statement": "The paper's printed cycles for n=7 (14 dice), n=8 (29), n=9 (10) and n=10 (110) were parsed from the text and checked in print order with exact Fractions: all dice distinct, every edge at the minimal probability (25/49, 33/64, 41/81, 51/100). The n=10 check is the auditor's only. Consequence under the proof's reading of 'maximum length n': one exact-checked cycle longer than n shows the property fails, so it fails at n=7,8,9,10 (the n=10 case needs only the 110-cycle, not the 157M-edge graph). Conjecture 1 (n=6 is the largest n with a uniform minimal cycle of maximum length n) is therefore open only for n>=11 under this reading; under the alternative reading 'an n-cycle exists' it is false at n=7 (exact-checked 7-cycle). No proof of Conjecture 1 is claimed.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "DICE-C-0001"
+   ],
+   "evidence": "sha256:16d875a2e181e5e6958d2e82820e428623c732aa55f6c19c17087075a5cb70e4",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "DICE-X-0001",
+   "statement": "Searches and context controls (Tier X): randomized walk search in G_7 found exact-checked cycles (the check is exact, the search is not exhaustive) of every length 3..28, including 7, 8 and 14. Maximin context controls (orthogonal to the claim, not recomputed by the auditor): best 3-cycle winning probability for m-sided dice in [m] is 3/5 (m=5), 7/12 (m=6), 29/49 (m=7), all below (sqrt5-1)/2; m=4 has no 3-cycle. Controls recomputed by the auditor: Efron 2/3, Moon-Moser 5/9, 62/62 single-face perturbations break the 6-cycle, near-miss pairs W=20 and W=18 rejected by the predicate.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:10ce62b739fb1acb1f8c186766175400f743dfbf187748ee135f38c5d21896c5",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "DICE-X-0002",
+   "statement": "NOT done / not verified: n>=11 and any proof of Conjecture 1; full vertex lists of the n>=7 SCCs in the paper's appendices (only sizes and counts); an exhaustive prior-art search; Lean or any proof-assistant check; a human audit. Provenance caveats: PREREG_ITEM.md was committed in the same commit as the results (7c2b106), so version control cannot show it was written first (self-attested; sha256 recorded); the preregistered W=20 near-miss control was actually run on a W=36 pair (key ctrl_predicate_rejects_W20 is mislabelled; the auditor ran W=20 and W=18).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:f35a0e18a443cb380527e81b52d1f07e2e737d4ae3b7db5fceb760ed734c52ee",
+   "audit": null
+  }
+ ]
+}

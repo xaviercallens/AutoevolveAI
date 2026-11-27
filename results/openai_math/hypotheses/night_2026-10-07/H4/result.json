@@ -1,0 +1,66 @@
+{
+  "lane": "H4",
+  "date": "2026-10-07 (night; runs 2026-10-08 04:29-05:33 UTC)",
+  "status": "PARTIAL",
+  "verdict": "PARTIAL: instrument cannot reach the known regime. Instrument controls C1-C3 and N1 pass; P4 (>= 4 confirmed cycles at degree 6) FAILS at eps = 0.003 (max 1 confirmed at all 3 preregistered levels); N2 incomplete (out of budget). No claim about H4 beyond the controls.",
+  "H4_refuted": false,
+  "contradicts_upstream_deg5": "no red flag: stage 3b degree-5 SDI design (seeds 400, 401; 1500 trials, scale 1.0) gives max k = 1 sign change (histograms {0: 807, 1: 281} and {0: 759, 1: 310}); theory-level only, no degree-5 ODE count was run (that follow-up requires P4)",
+  "stage3b_deg5_sdi": {"seed400": {"histogram": {"0": 807, "1": 281}, "best_k": 1}, "seed401": {"histogram": {"0": 759, "1": 310}, "best_k": 1}, "files": ["design_runs/sdi_deg5_seed400.json", "design_runs/sdi_deg5_seed401.json"]},
+  "code": "scripts/openai_math/hypotheses/night/h4_v2.py",
+  "code_sha256_at_run": "cc84b8a94201e58218c59d136695d03e4d2fdaa3238974e1ef595fdf9947e748 (matches preregistration)",
+  "tests": "tests/openai_math/test_night_h4.py with /usr/bin/python3: 11 passed, 1 skipped (Hypothesis not installed for /usr/bin/python3), 26.4 s",
+  "deviations": "deviations.md D1-D8 (scheduling, matched-N2 rule, eps order 0.003 first, chunking, count shell timeout 540 s, N2 stopped out of budget, one MANUAL diagnostic count)",
+  "paper_access": "full text still NOT obtained; alphaXiv MCP retried twice at 04:33 UTC, both rate_limit_error. Family is the preregistered reconstruction.",
+  "controls": {
+    "C1_vdp": {"pass": true, "radau_confirmed": [2.0440649681881586], "dop853": [2.0440649681881586], "seconds": 105.9, "file": "controls/vdp.json"},
+    "C2_avg_quintic": {"pass": true, "radau_confirmed": [1.0004091258115977, 2.0045343040231174], "dop853": [1.0004091258115977, 2.0045343040231174], "seconds": 105.5, "file": "controls/avg_quintic.json"},
+    "C3_negative_deg34": {"pass": true, "n_samples": 20, "max_radau": 1, "max_dop853": 1, "count_deadline_hits": 0, "files": "controls/negative_*.json (chunks 00_02, 02_03, 03_04, 04_05, 05_06, 06_08, 08_10, 10_12, 12_14, 14_16, 16_18, 18_20; chunks 02_04 and 04_06 were killed at a 200 s shell cap and rerun as single samples, D4)"},
+    "N1_sdi_deg4": {"pass": true, "seed200_histogram": {"0": 175}, "seed201_histogram": {"0": 169}, "files": ["controls/N1_sdi_deg4_seed200.json", "controls/N1_sdi_deg4_seed201.json"]},
+    "N2_canard_deg4": {"status": "INCOMPLETE (out of budget)", "eps": 0.003, "curve_points_done": 42, "curve_points_total": 48, "counts_done": 0, "note": "large-Y A-curve points took > 235 s each; chunks 42:44 and 44:46 killed at 470 s. Not passed, not failed."},
+    "P4_positive_lane": {"pass": false, "eps_tested": [0.003], "max_confirmed_deg6": 1}
+  },
+  "stage2a_design": {
+    "seed100": {"best_k": 1}, "seed101": {"best_k": 2, "strength": 0.00015121024753431364},
+    "seed102": {"best_k": 2, "strength": 0.0005074148818646471}, "seed103": {"best_k": 1},
+    "seed104_primary": {"best_k": 3, "strength": 0.0004166203175585001, "c_high": [0.06715677160487617, -0.7379975246919829, -0.17361682563272798, 0.4889996327338291]},
+    "chosen_F0": "primary family (only k = 3 design)",
+    "files": "design_runs/sdi_deg6_seed10{0,1,2,3}.json, design_runs/sdi_deg6_seed104_primary.json"
+  },
+  "stage2b_canard_eps_0.003": {
+    "curve": "48/48 points ok (canard/eps_0.003/deg6_curve_*.json); A_spread_ulps 5.87e15 (resolved overall)",
+    "A_curve_shape": "A(Y) decreases monotonically from -3.17e-6 (Y = 0.0083) to a maximum |A| at Y = 2.4655 (A = -6.3989764754877779e-4), then relaxes to a plateau A = -6.39897460179e-4 for Y >= 4.2 that is flat to ~1e-16 (sampled jitter, not structure)",
+    "sdi_zeros_mapped_to_Y": {"x_R=0.916": 2.3457, "x_R=1.219": 6.7930, "x_R=1.371": 16.6221},
+    "reading": "the first SDI zero matches the visible hump (Y ~ 2.35 vs A max at 2.47); the second and third SDI zeros fall inside the plateau, where the A variation is below the integration error of the two-sided map. At eps = 0.003 the instrument resolves 1 of the 3 SDI features.",
+    "level_top3": [[-0.0006398974601792535, 9], [-0.0006398974601793424, 7], [-0.0006398974601791811, 7]],
+    "level_note": "predicted crossings 9/7/7 are plateau noise; search aid only",
+    "counts": {
+      "L1": {"a": -0.0006398974601792535, "n_confirmed": 1, "confirmed_Y": [1.8312715419644285], "unconfirmed": 14, "unconfirmed_reason": "sign_disagreement (all 14)", "timeouts": 0, "seconds": 478.7},
+      "L2": {"a": -0.0006398974601793424, "n_confirmed": 1, "confirmed_Y": [1.8312715419644285], "unconfirmed": 14, "unconfirmed_reason": "sign_disagreement (all 14)", "timeouts": 0, "seconds": 378.42},
+      "L3": {"a": -0.0006398974601791811, "n_confirmed": 1, "confirmed_Y": [1.8312713021729257], "unconfirmed": 16, "unconfirmed_reason": "sign_disagreement (all 16)", "timeouts": 0, "seconds": 322.09}
+    },
+    "max_confirmed": 1
+  },
+  "manual_not_evidence": {
+    "label": "MANUAL, not preregistered, never enters the verdict (D8)",
+    "a": -0.0006398975538645,
+    "n_confirmed": 2,
+    "confirmed_Y": [1.936812646829454, 2.9951066271987616],
+    "unconfirmed": 0,
+    "seconds": 59.11,
+    "reading": "a level between the hump maximum and the plateau gives the 2 cycles the visible hump predicts, with full 3-solver confirmation: the counter works where the A curve is already resolved. Consistent with a resolution limit at the 2nd/3rd SDI features; does not exclude a reconstruction error or an eps-regime failure (|I_ext|/eps ~ 2 at eps 0.003, paper not obtained)",
+    "file": "canard/eps_0.003/MANUAL_deg6_count_hump_mid.json"
+  },
+  "not_run": [
+    "stage 2b at eps 0.006, 0.01, 0.004, 0.002, 0.0015 (out of budget)",
+    "N2 counts (out of budget)",
+    "stage 3 perturbation search (requires P4)",
+    "stage 3b ODE follow-up at degree 5 (requires P4; moot since SDI k <= 1)"
+  ],
+  "next_steps": [
+    "the canard window at the 2nd/3rd SDI zeros is below double resolution of the two-sided displacement at eps = 0.003; reaching it needs either larger eps (0.006-0.01, where SDI asymptotics are weaker) or higher-precision integration (mpmath / arb Taylor integrator) of D near the plateau",
+    "an F0 with SDI zeros at smaller x_R (smaller J(x_hi)) would widen the exp(-J/eps) window",
+    "obtain the De Maesschalck-Dumortier full text to check the reconstruction",
+    "instrument design flaw for the next preregistration: `level` ranked 3 levels inside the plateau jitter band (spread ~1e-16) as top levels, and the global A_spread_ulps passed although the region holding the 2nd/3rd SDI zeros was unresolved; add a local resolution check and exclude levels within the jitter band"
+  ],
+  "updated_utc": "2026-10-08T05:35:00Z"
+}

@@ -1,0 +1,204 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "CK3-A-0001",
+   "statement": "CarbonK3.Core (discrete nonnegative emission measures only): with irf(t) = a0 + sum_i a_i exp(-r_i t) and excess(t) = sum_j w_j irf(t - z_j): irf_cm (a0, a_i, r_i >= 0 implies the IRF is completely monotone on (0, inf)); excess_cm_after (w_j >= 0, z_j <= T implies s -> excess(s + T) is CM); excess_antitone; excess_convexOn; excess_tendsto (limit a0 * sum_j w_j when all r_i > 0); neg_ctl_not_cm (1 - exp(-t) is not CM). These do not formalise continuous emission paths, T2, T3 or the peak enclosures; excess has no Heaviside factor and equals the model excess only for t >= max z_j.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:b12f8871d5055d82566399890c6f5bfdf3563dabfb34f4faf7f8f4674521bd62",
+   "audit": null,
+   "ai_audit": {
+    "auditor": "independent AI audit agent (separate instance, producer != verifier), 2026-10-31",
+    "human": false,
+    "report": "papers/p4_carbon_impulse_response/AUDIT.md",
+    "verdict": "ACCEPT_WITH_CORRECTIONS",
+    "scope": "own compile of Core.lean with #print axioms, own olean + leanchecker replay, escape-hatch grep, Controls caught by the axiom gate, check that IsCompletelyMonotoneOn is the genuine definition",
+    "not_scope": "statement adequacy (the Lean statements mean what their gloss says) not certified by a person; discrete nonnegative emission measures only; dependency oleans reused, not rebuilt",
+    "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"
+   }
+  },
+  {
+   "schema_version": 1,
+   "id": "CK3-A-0002",
+   "statement": "Lean controls: Controls.lean compiles with rc 0 (planted controls) but its axiom audit reports sorryAx for CarbonK3.ctl_sorry and the smuggled axiom CarbonK3.ctl_cheat for CarbonK3.ctl_axiom, which a compile exit code alone would accept.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:0fc58f7ecf9e1d715d11e19e1b2e673ac8ef21a11833da09da24a9d3ccbf5731",
+   "audit": null,
+   "ai_audit": {
+    "auditor": "independent AI audit agent (separate instance, producer != verifier), 2026-10-31",
+    "human": false,
+    "report": "papers/p4_carbon_impulse_response/AUDIT.md",
+    "verdict": "ACCEPT_WITH_CORRECTIONS",
+    "scope": "own compile of Core.lean with #print axioms, own olean + leanchecker replay, escape-hatch grep, Controls caught by the axiom gate, check that IsCompletelyMonotoneOn is the genuine definition",
+    "not_scope": "statement adequacy (the Lean statements mean what their gloss says) not certified by a person; discrete nonnegative emission measures only; dependency oleans reused, not rebuilt",
+    "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"
+   }
+  },
+  {
+   "schema_version": 1,
+   "id": "CK3-L-0001",
+   "statement": "Joos et al. 2013, ACP 13, 2793, doi:10.5194/acp-13-2793-2013 (CC BY 3.0): Table 5, row IRFCO2: a0..a3 = 0.2173, 0.2240, 0.2824, 0.2763 (sum exactly 1) and tau1..tau3 = 394.4, 36.54, 4.304 yr; eq. (7) and text: the IRF is the fraction of an added pulse still airborne, and the change in the atmospheric inventory is the convolution of emissions with the IRF; eq. (11): the fit is valid only for 0 <= t <= 1000 yr.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:6f159388e88aca80ead353fe9431efa3fe29e65ff86ca7f2914c7a3b18f607a1",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "CK3-L-0002",
+   "statement": "Seshadri, arXiv:1502.00805v3 (Global and Planetary Change 2017): eq. (2) u = uP + int_0^t m(z) h(t-z) dz with m in concentration units; eq. (1) prints 0.276/0.282/0.224/0.217 (sum 0.999) with tau 4.30/36.5/394 (text uses tau1 = 4.4); emission family m = m0 (1+r)^(min(t,tg)-t0) exp(-(t-t0)/tau_m); Sect. 3.2 uses (1+r)^t ~ e^{rt} and considers only r > 1/tau_m; Fig. 5 parameters tg-t0 = 60 yr, r = 0.015 %/year, tau_m = 50 yr fall outside that case under either reading; the printed eq. (4) omits the boundary term involving m(0).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [
+    "CK3-L-0001"
+   ],
+   "evidence": "sha256:9d2ba1be6ca4c6805e7c13ff3fce59e9d849738e8e3bce6414c77ae17763a1b0",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "CK3-L-0003",
+   "statement": "Ibragimov 1956 (Teor. Veroyatn. Primen. 1(2), 283-288; Theory Probab. Appl. 1), 'On the composition of unimodal distributions': convolution with every unimodal density preserves unimodality iff the kernel is log-concave (strong unimodality). Consequences used only as prior art: the one-sided exponential is log-concave (T2 is a special case); a CM kernel that is not a single exponential is strictly log-convex, so for integrable kernels some unimodal input gives a non-unimodal output.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:f132c62439bccdbafae826a74b7273edf30f211df8707eab713085b6c83e92f6",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "CK3-C-0001",
+   "statement": "T1 (continuous emissions, paper proof): for m >= 0 supported on [0,T] and t > T, u(t) = a0 W + sum_i b_i exp(-t/tau_i) with W = int m and b_i = a_i int exp(z/tau_i) m(z) dz >= 0, hence (-1)^n u^(n) >= 0: u is completely monotone on (T, inf), non-increasing, convex, with limit a0 W (a property of the fitted formula beyond its 0-1000 yr window). Elementary; checked by hand by the auditor; the discrete case is the Tier A row CK3-A-0001. Numerical support (Tier X): P5, 200/200 random histories antitone and convex; N1, 181/200 violate with a negative coefficient.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "CK3-L-0001"
+   ],
+   "evidence": "sha256:5b3283c28ccd74f01236fe634c69252dd0eeef635129497ee0a932ba92ff7fdc",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "CK3-C-0002",
+   "statement": "T2 (single exponential): for h = exp(-t/tau) and m >= 0 weakly unimodal, u is non-decreasing then non-increasing (quasi-concave); its maximisers form an interval; it never has two local maxima separated by a strictly lower value. Proof via g = exp(t/tau) u' with dg = exp(t/tau) dm. The wording 'at most one local maximum' is false for non-strict maxima (impulse c*tau at 0 plus constant emission c gives u constant). A special case of Ibragimov's strong unimodality (Tier L, secondary sources).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "CK3-L-0003",
+    "CK3-L-0001"
+   ],
+   "evidence": "sha256:16cbb55fde5b963fdd242e0bec0c0a93a3dd438c6c618bb3e3d315b6ee5eb1b5",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "CK3-C-0003",
+   "statement": "T3 (staircase window): h CM, h(0) = 1, strictly decreasing, not a single exponential; rho(x) = h(x+d)/h(x) strictly increasing (Cauchy-Schwarz on the Bernstein measure) from h(d) to L (L = 1 iff a0 > 0). Staircase m = A on [0,d), A-B on [d,z3), 0 after, theta = B/A in (0,1): for theta in (h(d), L) and z3 > d + x*, u has exactly two local maxima (at d and z3) and one minimum (at d + x*, rho(x*) = theta), using u'(z3+) = -A(1-h(z3)) + B(1-h(z3-d)) < 0; for theta <= h(d) or theta >= L exactly one. Weakly unimodal (non-increasing) path. Paper proof, checked by hand and in floats by the auditor (Joos d = 5, a0 = 0 two-exponential IRF).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "CK3-C-0001",
+    "CK3-L-0001"
+   ],
+   "evidence": "sha256:cee1578d0eead3993f04cf2dd28f103a09aa7298f7dc2bfa2f3bf8935cc4a83c",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "CK3-C-0004",
+   "statement": "(b) Certified peak times and delays for Seshadri's emission family with Joos Table 5: closed-form u' and u'' in mpmath interval arithmetic (60 digits), exact rational bisection with certified signs u'(lo) > 0 > u'(hi) and u'' < 0 on the 0.01-yr initial bracket (unique local maximum inside the bracket, enclosure width < 1e-19 yr); t1 certified from the sign of ln(1+r) - 1/tau_m; 63 scenarios (3 IRFs x 3 r x 7 tau_m) all CERTIFIED; origin t0 = 0 (differs from Seshadri's). Global uniqueness is NOT certified (Tier X, CK3-X-0001). Positive control: closed-form peak 75 ln(5/3) enclosed.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "CK3-L-0001",
+    "CK3-L-0002"
+   ],
+   "evidence": "sha256:8f02c37a214473346ee359c1aa8fcf42ee7f96a55a93e686f45b1e18aca4bdf0",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "CK3-C-0005",
+   "statement": "(c) Certified instances for the Joos IRF (exact rationals, mpmath intervals at 60 digits, half-width < 1e-56): five-point certificates u(s1) < u(s2) > u(s3) < u(s4) > u(s5) for I1 (continuous piecewise-linear, weakly unimodal; s = 10, 21, 32, 303, 320), I2 (continuous, strictly increasing on [0,10] and strictly decreasing on [10,310]; s = 10, 21, 40, 305, 330; meets the strict definition) and S1 (non-increasing staircase; s = 1, 5, 11, 200, 500); all four differences positive in each (min 0.278 for I2). Two local maxima separated by a strictly lower value. A first attempt for S1 with s3 = 100 failed and is recorded.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "CK3-L-0001"
+   ],
+   "evidence": "sha256:5b7f296b4c9b56bd8835321a687bed6ab308e670c1976af963ed45171b778d21",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "CK3-C-0006",
+   "statement": "What the independent AI auditor recomputed with its own code: (c) instances with Sage RealBallField at 400 bits (all 15 u values agree to the 20 printed digits, radii <= 5e-116, lower bounds of the differences I1 3.780/0.3130/7.794/0.5732, I2 3.780/0.2776/4.435/0.5618, S1 3.370/0.3216/6.586/3.349); (b) t2 and t1 for all 21 Joos scenarios with mpmath at 50 digits and a float scan (agreement <= 6.0e-20 with the enclosures; one +- change each; this is NOT an independent interval certificate of uniqueness); Seshadri variants for 3 cells; T3/T2 float numerics. NOT done: the other 36 Seshadri-variant cells, the float maps in (c), the 3-maximum cases.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "CK3-C-0004",
+    "CK3-C-0005"
+   ],
+   "evidence": "sha256:87d56be45e8039f3ee89427f6c919914b81c9e5b99bea55e4ed422e752a04243",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "CK3-C-0007",
+   "statement": "Controls, run before the headline: P1 coefficient sums (Joos 1, Seshadri printed 0.999); P2 single exponential never more than 1 maximum in 1500 paths; P3 closed form vs quadrature 50/50; P4 CARBON-1 arithmetic 5091/6250; P5 post-cessation antitone and convex 200/200; N1 negative coefficient 181/200 violate; N2 wrong sign rejected 50/50; N3 single exponential vs Joos on the same emission, 1 vs 2 maxima; N4 planted sorry/axiom caught by the axiom gate (CK3-A-0002).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "CK3-C-0005"
+   ],
+   "evidence": "sha256:f46e6ef097e9cd066da65b532dbf54579bba0b9ee7c5f924c603fdce9a90b6e1",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "CK3-C-0008",
+   "statement": "HEADLINE. In the linear IRF model u = int m h: (a) after emissions cease u is completely monotone with limit a0 W (Lean for discrete emission measures, Tier A pending lock; paper proof otherwise); (b) certified peak times and delays for 63 Seshadri-family scenarios (global uniqueness Tier X); (c) for every CM, strictly decreasing, non-single-exponential IRF (in particular the Joos IRF) there are weakly unimodal emission paths with two local maxima separated by a strictly lower value, with the explicit window B/A in (h(d), L) necessary and sufficient within the staircase family, and three certified Joos instances (one strictly unimodal); for a single exponential u is quasi-concave. The mechanism is classical (Ibragimov, read from secondary sources); this is a model result, not a statement about the real carbon cycle, tonnes, climate or policy, and not a new phenomenon class. PARTIAL outcome.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "CK3-C-0001",
+    "CK3-C-0003",
+    "CK3-C-0004",
+    "CK3-C-0005",
+    "CK3-C-0006",
+    "CK3-C-0007",
+    "CK3-A-0001",
+    "CK3-L-0001",
+    "CK3-L-0002",
+    "CK3-L-0003"
+   ],
+   "evidence": "sha256:b492fafe1fb5bde246bce2a5dc0c7e64c32e560ed7fd5305f2aa2b8ae3fe809d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "CK3-X-0001",
+   "statement": "Float scans, not certificates: the scan of u' on [0,6000] yr (beyond the 1000-yr fit window) shows exactly one +- sign change in all 63 scenarios (global peak uniqueness); plateau-family table of maxima counts; 1500 random continuous unimodal paths with the Joos IRF (17 / 1364 / 117 / 2 with 0 / 1 / 2 / 3 maxima; the 3-maximum cases are float-grid counts, uncertified and unchecked by the audit); a0 = 0 and two-term IRF checks; the auditor's own float scans on [0,3000] (21 Joos scenarios, 6 of 42 Seshadri-variant cells).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:1ab94b126c96212e1b33b8f342ac3120f9ee70245240b9759073b8427c68c9d6",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "CK3-X-0002",
+   "statement": "NOT done or not establishable here, recorded so the absences are explicit: statement lock for the Lean statements; human audit; a systematic literature search (carbon-cycle IRF unimodality, peak-warming-delay literature); checking Ibragimov's original text; a sufficient condition for 'at most one peak' beyond the single exponential; Lean for continuous emissions, T2, T3, part (b); ordering of the preregistration against the work (git history does not show it; the hash matches); comparison with Seshadri's figures beyond order of magnitude (Tier X, time origin differs).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:77827e300a8a51373e25524d84e36a8546c0a585ea20406a7970ce5358831c2c",
+   "audit": null
+  }
+ ]
+}

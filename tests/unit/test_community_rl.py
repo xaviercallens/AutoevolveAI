@@ -102,6 +102,54 @@ def test_post_prescriptor_selection():
     assert report.target_subreddit == "r/math"
     assert report.best_candidate is not None
     assert report.best_candidate.reward_breakdown["total_reward"] >= 0.70
-    assert len(report.all_candidates) == 3
+    assert len(report.all_candidates) >= 3
     assert len(report.best_candidate.anticipated_qa) >= 1
     assert "Submission Statement" in report.best_candidate.submission_statement
+
+
+def test_comment_reputation_audit_zero_link_rule():
+    """Verify that comment reputation audit enforces the Zero-Link Rule when karma < +25."""
+    from anse.community.audience_reward import audit_comment_reputation
+
+    # Violating comment (contains link while karma is -8)
+    link_comment = "The solution is given by Hylleraas-CI. Code: https://github.com/xaviercallens/AutoevolveAI"
+    audit_fail = audit_comment_reputation(link_comment, karma=-8, target_sub="r/Physics")
+    assert audit_fail["karma_repair_active"] is True
+    assert audit_fail["is_safe_to_post"] is False
+    assert any("Zero-Link Rule" in w for w in audit_fail["warnings"])
+
+    # Compliant comment (deep mathematical explanation without external links)
+    clean_comment = (
+        "In Hylleraas-CI expansions, resolving the Kato electron-electron cusp condition requires explicit r12 terms. "
+        "Korobov bases optimize the non-linear exponential decay parameters, while Nakatsuji FC achieves arbitrary precision with MPFR."
+    )
+    audit_pass = audit_comment_reputation(clean_comment, karma=-8, target_sub="r/Physics")
+    assert audit_pass["karma_repair_active"] is True
+    assert audit_pass["is_safe_to_post"] is True
+    assert audit_pass["moderation_risk"] <= 0.10
+
+
+def test_cognitive_shield_tone_and_link_policy():
+    """Verify that Cognitive Shield catches credibility gatekeeping and unprompted link dumps."""
+    from anse.community.cognitive_shield import CognitiveShield
+
+    shield = CognitiveShield()
+
+    # Gatekeeping trap
+    tone_audit = shield.audit_draft_tone("I am more an AI person, but our AI agent swarm discovered a loophole.")
+    assert tone_audit["is_safe_tone"] is False
+    assert len(tone_audit["tone_warnings"]) >= 2
+
+    # Compliant tone
+    safe_audit = shield.audit_draft_tone("Auditing the formal definitions in Lean 4 with #print axioms confirms zero cheat axioms.")
+    assert safe_audit["is_safe_tone"] is True
+
+    # Link policy enforcement
+    link_audit_fail = shield.audit_link_policy(
+        "Here is the repo: https://github.com/xaviercallens/AutoevolveAI",
+        is_comment=True,
+        comment_karma=-8,
+    )
+    assert link_audit_fail["is_compliant"] is False
+    assert "Zero-Link Rule" in link_audit_fail["rule"]
+

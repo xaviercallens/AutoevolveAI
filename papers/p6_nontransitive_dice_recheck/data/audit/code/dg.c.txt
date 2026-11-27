@@ -1,0 +1,48 @@
+// Independent auditor implementation (C). Dice as face-count histograms.
+// W(x,y) = sum_v cx[v] * #{faces of y < v} = sum_v cx[v]*Cy[v-1].
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+static int n, N, T;
+static unsigned char *tup;   // N*n nondecreasing tuples (lex order)
+static unsigned char *cum;   // N*(n+1): cum[d*(n+1)+v] = #faces <= v
+static int cnt=0; static unsigned char cur[16];
+static void gen(int pos,int lo){ if(pos==n){ memcpy(tup+(size_t)cnt*n,cur,n); cnt++; return;} for(int v=lo;v<=n;v++){cur[pos]=v;gen(pos+1,v);} }
+static long long binom(int a,int b){long long r=1;for(int i=1;i<=b;i++)r=r*(a-b+i)/i;return r;}
+static inline int W(int a,int b){
+  const unsigned char *ca=cum+(size_t)a*(n+1),*cb=cum+(size_t)b*(n+1); int s=0;
+  for(int v=1;v<=n;v++){ int c=ca[v]-ca[v-1]; s+=c*cb[v-1]; } return s; }
+static int Wbrute(const unsigned char*x,const unsigned char*y){int s=0;for(int i=0;i<n;i++)for(int j=0;j<n;j++)s+=x[i]>y[j];return s;}
+static int64_t *off; static int *adj;
+static int *idx,*low,*comp,*stk,*cs_v; static int64_t *cs_e; static char *onst;
+static int rank_of(const unsigned char *x){ // binary search in lex-sorted tup
+  int lo=0,hi=N-1; while(lo<=hi){int m=(lo+hi)/2; int c=memcmp(tup+(size_t)m*n,x,n); if(c==0) return m; if(c<0) lo=m+1; else hi=m-1;} return -1; }
+int main(int argc,char**argv){
+  n=atoi(argv[1]); T=n*n/2+1; N=(int)binom(2*n-1,n);
+  tup=malloc((size_t)N*n); gen(0,1); if(cnt!=N){printf("count mismatch\n");return 1;}
+  cum=malloc((size_t)N*(n+1));
+  for(int d=0;d<N;d++){ unsigned char *c=cum+(size_t)d*(n+1); memset(c,0,n+1); for(int i=0;i<n;i++) c[tup[(size_t)d*n+i]]++; for(int v=1;v<=n;v++) c[v]+=c[v-1]; }
+  off=calloc(N+1,sizeof(int64_t)); int selfl=0; long long sym_viol=0, wsum_gt=0;
+  for(int a=0;a<N;a++){ for(int b=0;b<N;b++){ int w=W(a,b); if(a==b){ if(w==T) selfl++; continue;} if(w==T) off[a+1]++; } }
+  for(int a=0;a<N;a++) off[a+1]+=off[a]; int64_t E=off[N];
+  adj=malloc(sizeof(int)*(E?E:1)); int64_t *pos=malloc(sizeof(int64_t)*N); memcpy(pos,off,sizeof(int64_t)*N);
+  for(int a=0;a<N;a++) for(int b=0;b<N;b++) if(a!=b && W(a,b)==T) adj[pos[a]++]=b;
+  int bad=0; srand(12345); for(int k=0;k<200000;k++){int a=rand()%N,b=rand()%N; if(W(a,b)!=Wbrute(tup+(size_t)a*n,tup+(size_t)b*n)) bad++;}
+  // f antiautomorphism on all edges + reverse check: f maps edge a->b to f(b)->f(a)
+  int *fm=malloc(sizeof(int)*N); unsigned char y[16];
+  for(int a=0;a<N;a++){ for(int i=0;i<n;i++) y[i]=n+1-tup[(size_t)a*n+(n-1-i)]; fm[a]=rank_of(y); }
+  long long fbad=0; for(int a=0;a<N;a++) for(int64_t e=off[a];e<off[a+1];e++){ int b=adj[e]; if(W(fm[b],fm[a])!=T) fbad++; }
+  int ffix=0; for(int a=0;a<N;a++){ if(fm[fm[a]]!=a) fbad++; if(fm[a]==a) ffix++; }
+  idx=malloc(sizeof(int)*N); low=malloc(sizeof(int)*N); comp=malloc(sizeof(int)*N); stk=malloc(sizeof(int)*N); onst=calloc(N,1);
+  cs_v=malloc(sizeof(int)*N); cs_e=malloc(sizeof(int64_t)*N);
+  for(int i=0;i<N;i++) idx[i]=-1; int counter=0,sp=0,nc=0;
+  for(int s=0;s<N;s++){ if(idx[s]>=0) continue; int csp=0; cs_v[csp]=s; cs_e[csp]=off[s]; csp++; idx[s]=low[s]=counter++; stk[sp++]=s; onst[s]=1;
+    while(csp){ int v=cs_v[csp-1]; if(cs_e[csp-1]<off[v+1]){ int w=adj[cs_e[csp-1]++]; if(idx[w]<0){ idx[w]=low[w]=counter++; stk[sp++]=w; onst[w]=1; cs_v[csp]=w; cs_e[csp]=off[w]; csp++; } else if(onst[w] && idx[w]<low[v]) low[v]=idx[w]; }
+      else { csp--; if(csp){ int u=cs_v[csp-1]; if(low[v]<low[u]) low[u]=low[v]; } if(low[v]==idx[v]){ int w; do{ w=stk[--sp]; onst[w]=0; comp[w]=nc; }while(w!=v); nc++; } } } }
+  int *csz=calloc(nc,sizeof(int)); int64_t *cedg=calloc(nc,sizeof(int64_t));
+  for(int v=0;v<N;v++){ csz[comp[v]]++; for(int64_t e=off[v];e<off[v+1];e++) if(comp[adj[e]]==comp[v]) cedg[comp[v]]++; }
+  printf("n=%d T=%d dice=%d (C(2n-1,n)=%lld) edges=%lld selfloops=%d sccs=%d brute_mismatch=%d f_violations=%lld f_fixed=%d\n",n,T,N,binom(2*n-1,n),(long long)E,selfl,nc,bad,fbad,ffix);
+  printf("nontrivial:"); for(int c=0;c<nc;c++) if(csz[c]>1) printf(" (%d,%lld)",csz[c],(long long)cedg[c]); printf("\n");
+  if(argc>2){ FILE*f=fopen(argv[2],"wb"); fwrite(&N,4,1,f); fwrite(&n,4,1,f); fwrite(tup,1,(size_t)N*n,f); fwrite(comp,4,N,f); fwrite(off,8,N+1,f); fwrite(adj,4,E,f); fclose(f);}
+  return 0; }

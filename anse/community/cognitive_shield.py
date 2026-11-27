@@ -49,7 +49,11 @@ class CognitiveShield:
         ]
         self._collab_markers = [
             "github", "reproduce", "try this", "collab", "contribute",
-            "interesting paper", "great work", "extend this", "citation", "benchmark code"
+            "interesting paper", "great work", "extend this", "citation", "benchmark code",
+            "read that paper", "read the paper", "read your paper", "kill to read", "love to read",
+            "where can i read", "paper link", "link to paper", "link to the paper", "drop the link",
+            "fantastic", "awesome work", "super interesting", "where is the paper", "is there a paper",
+            "preprint link", "paper please", "share the paper", "link please",
         ]
         self._technical_markers = [
             "baseline", "proof", "theorem", "complexity", "ablation", "dataset",
@@ -94,16 +98,30 @@ class CognitiveShield:
         collab_hits = [m for m in self._collab_markers if m in text]
         if not collab_hits:
             return None
-        reply = (
-            "Thank you for your interest! We are actively welcoming open collaboration and independent reproductions. "
-            "The codebase, benchmarks, and issue trackers are available on GitHub and Zenodo. Feel free to open an issue or PR "
-            "if you'd like to test on different hardware or explore an extension."
-        )
+        paper_request_markers = [
+            "read that paper", "read the paper", "read your paper", "kill to read", "love to read",
+            "where can i read", "paper link", "link to paper", "link to the paper", "drop the link",
+            "where is the paper", "is there a paper", "preprint link", "paper please", "share the paper", "link please",
+        ]
+        is_paper_req = any(m in text for m in paper_request_markers)
+        if is_paper_req:
+            reply = (
+                "Thank you so much for your interest! The preprint and reproduction code (including the Lean 4 formalization, "
+                "Rust CVODE relaxation solvers, and Poisson summation derivations) are open-source: "
+                "Preprint DOI: 10.5281/zenodo.23295142 | Repo: https://github.com/xaviercallens/SocrateAI-Scientific-MechanicaFluidorum. "
+                "We would love to hear your thoughts, and especially welcome critical feedback on where our analysis might be challenged!"
+            )
+        else:
+            reply = (
+                "Thank you for your interest! We are actively welcoming open collaboration and independent reproductions. "
+                "The codebase, benchmarks, and issue trackers are available on GitHub and Zenodo. Feel free to open an issue or PR "
+                "if you'd like to test on different hardware or explore an extension."
+            )
         return ShieldAssessment(
             category=CommentCategory.COLLABORATION_INTEREST,
-            hostility_score=0.05,
+            hostility_score=0.02 if is_paper_req else 0.05,
             recommended_action="reply_collaborate",
-            rationale="Constructive researcher seeking collaboration or code reproduction.",
+            rationale="Constructive researcher seeking paper access, collaboration, or code reproduction.",
             suggested_reply=reply,
         )
 
@@ -182,3 +200,74 @@ class CognitiveShield:
 
         response += "All scripts, test suites, and raw data are open-source for full independent reproduction."
         return response
+
+    def audit_draft_tone(self, text: str) -> dict[str, Any]:
+        """
+        Audits candidate post/comment text for academic credibility gatekeeping hazards
+        and self-defeating framing traps (e.g. 'I am more an AI person', 'AI agent swarm').
+        """
+        text_l = text.lower()
+        warnings: list[str] = []
+        suggestions: list[str] = []
+
+        gatekeeping_traps = {
+            "i am more an ai person": "Disclaims domain authority and prompts gatekeeping from theorists on r/math / r/Physics.",
+            "our ai agent swarm": "Triggers immediate anti-AI skepticism; frame around objective theorem syntax and solver quenches.",
+            "ai agent swarm": "Triggers immediate anti-AI skepticism; frame around objective theorem syntax and solver quenches.",
+            "our team discovered a loophole": "Sounds combative; frame as 'auditing boundary terms and statement adequacy in Lean 4'.",
+            "our team audited this and found": "Without tenure/paper, claims of team audits prompt downvotes; state the formal verification steps directly.",
+            "we completely solved": "Absolute claims trigger instant backlash; frame as bounded empirical observations.",
+        }
+
+        for trap, warning in gatekeeping_traps.items():
+            if trap in text_l:
+                warnings.append(f"Gatekeeping Trigger: '{trap}' — {warning}")
+
+        is_safe = len(warnings) == 0
+        if not is_safe:
+            suggestions.append(
+                "Recommendation: Rewrite from the perspective of an objective technical investigator. "
+                "Cite concrete axioms (#print axioms), specific numerical solvers (CVODE), and exact physical scales (Mach > 0.3)."
+            )
+
+        return {
+            "is_safe_tone": is_safe,
+            "tone_warnings": warnings,
+            "suggestions": suggestions,
+        }
+
+    def audit_link_policy(
+        self,
+        text: str,
+        is_comment: bool = True,
+        comment_karma: int = -8,
+        is_reply_to_request: bool = False,
+    ) -> dict[str, Any]:
+        """
+        Enforces Phase 1 Karma Repair (Zero-Link Rule) and Organic Pull protocol.
+        """
+        has_links = bool(re.search(r"https?://|doi\.org|github\.com|zenodo\.", text))
+        karma_repair_active = comment_karma < 25
+
+        if is_comment:
+            if karma_repair_active and has_links:
+                return {
+                    "is_compliant": False,
+                    "phase": "Phase 1: Karma Repair (-8 to +25)",
+                    "rule": "Strict Zero-Link Rule",
+                    "reason": f"Active comment karma is {comment_karma} (< +25). Any external link risks AutoMod filtering or cynical downvotes. Remove all links.",
+                }
+            if not is_reply_to_request and has_links:
+                return {
+                    "is_compliant": False,
+                    "phase": "Phase 2: Organic Pull Protocol",
+                    "rule": "Wait for Demand Rule",
+                    "reason": "External links dropped unprompted in comments trigger marketing cynicism. Explain the math/physics and provide links only when requested.",
+                }
+
+        return {
+            "is_compliant": True,
+            "phase": "Compliant",
+            "rule": "Zero-Link or Authorized Organic Delivery",
+            "reason": "No unprompted links detected or user explicitly requested paper/code.",
+        }

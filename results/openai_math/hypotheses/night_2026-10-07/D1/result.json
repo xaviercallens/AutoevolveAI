@@ -1,0 +1,94 @@
+{
+  "lane": "D1",
+  "todo": 28,
+  "status": "DONE",
+  "upstream_commit": "adc7f1241b42e322a6451854ab7e4b4c146bf78a",
+  "controls": {
+    "n": 98,
+    "n_pass": 98,
+    "all_pass": true,
+    "file": "controls.json"
+  },
+  "n_holes": 45,
+  "mechanical_counts": {
+    "MATCHES": 37,
+    "DIFFERS": 6,
+    "SORRIED_IN_CHALLENGE": 2
+  },
+  "eye_counts": {
+    "MATCHES": 37,
+    "EQUIVALENT_BY_READING": 6,
+    "SORRIED_IN_CHALLENGE": 2
+  },
+  "eye_disagreements": [
+    {
+      "hole": "OAI.Problem358.IsSupported",
+      "mechanical": "DIFFERS",
+      "eye": "EQUIVALENT_BY_READING",
+      "note": "Mechanical DIFFERS is a lexer artefact: `containerᶜ` vs `Yᶜ` were each lexed as one identifier (U+1D9C is in \\w), but Lean lexes `Y` followed by the postfix `ᶜ`. With container->Y (a bound renaming) the bodies are identical. Solution file OAI/Analysis/Brenier/Basic.lean imports only Mathlib (no OAI instances/notation visible); open lines identical on both sides; every renaming in the map is a binder on both sides (read)."
+    },
+    {
+      "hole": "OAI.Problem358.HasExactlyThreeAtoms",
+      "mechanical": "DIFFERS",
+      "eye": "EQUIVALENT_BY_READING",
+      "note": "The only difference (eye_aid: 2 inserted tokens) is redundant parentheses: solution `(w i) • Measure.dirac (y i)` vs challenge `weights index • Measure.dirac (atoms index)`. Application binds tighter than •, so the parse is the same. Solution file OAI/Analysis/Brenier/Basic.lean imports only Mathlib (no OAI instances/notation visible); open lines identical on both sides; every renaming in the map is a binder on both sides (read)."
+    },
+    {
+      "hole": "OAI.DefocusingNLS.schrodingerFlow",
+      "mechanical": "DIFFERS",
+      "eye": "EQUIVALENT_BY_READING",
+      "note": "All 7 differing spans (eye_aid) lie in proof fields: the Memℓp proof inside toFun (a tactic block vs `(lp.memℓp f).mono' (by intro n; simp)`) and the norm_map' tactic proof, plus the absorbed trailing `run_cmd` line (instrument defect). The data `fun n => schrodingerMultiplier t n * f n`, map_add' and map_smul' are token-identical. The differing fields are Prop-valued, so by reading the structures are definitionally equal (proof irrelevance). Not elaborated."
+    },
+    {
+      "hole": "OAI.DefocusingNLS.sobolevOddPower",
+      "mechanical": "DIFFERS",
+      "eye": "EQUIVALENT_BY_READING",
+      "note": "The only difference is the column-0 `run_cmd Lean.modifyEnv ...` line after the challenge definition. The extractor wrongly absorbed it (run_cmd is missing from COMMAND_STARTS). The equation-compiler bodies are token-identical. Free identifiers (sobolevProduct, fourierConjugate, FourierL2) resolve to the same OAI constants."
+    },
+    {
+      "hole": "OAI.KServer.serviceCost",
+      "mechanical": "DIFFERS",
+      "eye": "EQUIVALENT_BY_READING",
+      "note": "All 7 differing spans are bound renamings that the single-bijection rule rejects: the challenge uses `requests` both as the arrow binder `(requests : List X) →` (->σ) and as the match tail variable (->rs). Also labels->j and index->i. Read in full: `| request :: requests, labels => dist (s (labels 0)) request + serviceCost (serve s (labels 0) request) requests (fun index => labels index.succ)` is alpha-equivalent to `| r :: rs, j => dist (s (j 0)) r + serviceCost (serve s (j 0) r) rs (fun i => j i.succ)`. Solution file OAI/Combinatorics/KServer/Basic.lean imports only Mathlib; context identical (open scoped BigOperators, universe u)."
+    },
+    {
+      "hole": "OAI.KServer.pathProbability",
+      "mechanical": "DIFFERS",
+      "eye": "EQUIVALENT_BY_READING",
+      "note": "Same cause as serviceCost (requests -> σ in the arrow binder and -> rs in the pattern; history->h, labels->j, index->i). `(A history request).val (labels 0) * pathProbability A (history ++ [(request, labels 0)]) requests (fun index => labels index.succ)` is alpha-equivalent to the solution's. Solution file OAI/Combinatorics/KServer/Basic.lean imports only Mathlib; context identical (open scoped BigOperators, universe u)."
+    }
+  ],
+  "meaning_pinned_false": [
+    "OAI.DefocusingNLS.sobolevProduct",
+    "OAI.elementaryPositivityWitness"
+  ],
+  "code": {
+    "scripts/openai_math/d1_hole_bodies.py": "82b5147337fadabe61ce95380f9acf0651d0dc0ca45fbb7efdbf3f6211a38de1",
+    "tests/openai_math/test_d1_hole_bodies.py": "539d03bb94a16f4cabf7bc9bc4f5995c6a14840b7d8ae8b8ff93fc5b1e31d127",
+    "matches_preregistered_sha256": true
+  },
+  "instrument_defects_found": [
+    "run_cmd missing from COMMAND_STARTS: a following column-0 run_cmd line is absorbed into the declaration (DefocusingNLS sobolevOddPower, schrodingerFlow, sobolevProduct challenge text). Can only cause a false DIFFERS.",
+    "U+1D9C (ᶜ) is matched by \\w and lexed into the identifier (Brenier IsSupported). Can only cause a false DIFFERS.",
+    "Single global bijection: a name used for two different binders on one side (KServer `requests`) cannot map to two names (σ, rs), which gives a false DIFFERS. bound_identifiers is also scope-insensitive: a name bound in one place and used free elsewhere in the same declaration could be accepted as renamed, which is a false-MATCHES vector. The eye check covers it: in every renaming map of the 37 MATCHES, each renamed name is a local binder at every occurrence (all challenge/solution texts read).",
+    "shadow_candidates does not resolve `open X` against the enclosing namespace stack, so an empty list is not proof that nothing shadows. eye_aid.py redoes this with resolution (deviations.md item 1)."
+  ],
+  "deviations": "deviations.md item 1: advisory eye aids (eye_aid.py, mathlib_scan.py) plus listings visible_instances.json/closure_instances.json. Frozen script not edited; mechanical verdicts unchanged.",
+  "not_checked": [
+    "Nothing elaborated or compiled (no Lean). Expr-level comparison is deferred to D2.",
+    "Instances and notation that the solution closure adds can change how token-identical text elaborates. Only the instance/notation lines visible at each solution declaration were listed (visible_instances.json) and read in part. All that were read are on OAI-local types or are file-local.",
+    "eye_aid/mathlib_scan only scan namespaces opened on the solution side alone. Opens present only on the challenge side (e.g. DefocusingNLS: Set Filter Topology MeasureTheory ProbabilityTheory) were not scanned for captures on the challenge side.",
+    "The Mathlib capture scan used LeanMaster's Mathlib checkout (rev 85e3a25e), not upstream's pin (d13f23b7).",
+    "Comparator's definitionHoleMatches behaviour (name/levels/type/safety only) and the full comparison of non-hole constants were read from upstream source in an earlier session and not re-verified here (Compare.lean is not in the local clone)."
+  ],
+  "outputs": [
+    "definition_holes.json",
+    "definition_holes.md",
+    "eye_review.json",
+    "eye_aid.json",
+    "mathlib_scan.json",
+    "visible_instances.json",
+    "controls.json",
+    "chunks/"
+  ]
+}

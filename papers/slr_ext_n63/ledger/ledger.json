@@ -1,0 +1,93 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "SLR63-A-0001",
+   "statement": "Lean covering statement for the stated n=63 certificate (SLRN63.lean): for the typed v : Fin 63 -> N and s : Fin 63 -> Q (the certificate's a_i/520), v is injective (v_injective), positive (v_pos) and for every real t there are i and an integer k with |s_i + v_i t - k| < 1/64 (cover). Full compile rc 0 (3327.6 s) through lean_pinned.py (compile + #print axioms); cover and v_injective depend on propext, Classical.choice, Quot.sound; v_pos on propext; no sorry/admit/native_decide/axiom in the source. First compile failed on v_injective (maxRecDepth), fixed with set_option maxRecDepth 1000000. A second run of the same compile (same runner, byte-identical regenerated file) also gave rc 0 (2028.2 s), identical axioms; both runs by the main session, not an independent auditor. Certifies this Lean statement only, not its physical or conjecture-level meaning beyond the stated covering.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:5b43cf72517623908dd3a3e1cb3cf2e63b1f83b06eb3bbc0ea9dd2ae963ded1c",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR63-L-0001",
+   "statement": "Definition and prior ranges, taken as stated from the sources: shifted lonely runner conjecture (BCS arXiv:2603.24784 Conj. 1.1(ii)); distinct positive integer velocities, shifts in R/Z, gamma(v;s)=max_t min_i ||s_i+v_i t||; fails for n=5..17 (BCS) and n>=95 (Poliakova arXiv:2609.23952); Zhang arXiv:2608.13599 lists the middle range open; earlier note doi:10.5281/zenodo.23842167 covers n=18..38.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:80d83355ceb80545b61e3018f6894df911922af7543c35123e8a45f9cd67d6a8",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR63-C-0001",
+   "statement": "Three exact checkers accept cert_n063.json (n=63, 63 distinct positive velocities in 1..128, D=520, delta=1/64): checker 1 slr_exact.py and checker 2 check_cover.c (producer, same author, COVERED, 3961 endpoints), checker 3 audit63.py (independent AI auditor, exact Fractions/integers: COVERED at 1/64). Exact gamma = 66/4225 at t = 4291/8450, gap 1/64 - gamma = 1/270400; cover fails at r = gamma and at r = 1/65.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "SLR63-L-0001"
+   ],
+   "evidence": "sha256:80f259be8c1bcf662aff8c7b4876071c56dd5fbe88a75c0c988d40a988c7d575",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR63-C-0002",
+   "statement": "Controls: positive control Poliakova rule at N=96 (n=95) COVERED by both producer checkers; negative controls: s=0 with [63] rejected, duplicated velocity rejected, cert not covered at radius 1/65, perturbation by +-1/(2D) breaks 83 of 126 (auditor), +-1/(10 sum v) breaks 3 of 126 (producer).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "SLR63-C-0001"
+   ],
+   "evidence": "sha256:f4a1520f6c2777f930fb7b9adf6751755fba315904970f0cae1fbeaab220a842",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR63-C-0003",
+   "statement": "HEADLINE. The shifted lonely runner conjecture (BCS Conj. 1.1(ii)) fails at n = 63: explicit exact certificate, gamma(v;s) = 66/4225 < 1/64, so E_63 >= 1/66 only. Shifted conjecture only; nothing about the unshifted lonely runner conjecture; one n only; sporadic; to our knowledge first in 39..94. Producer and independent auditor are AI agents; no human audit. Filed C because an assembly argument is capped at C; the Lean covering statement is filed separately as SLR63-A-0001 and is not an input to this C row.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "SLR63-L-0001",
+    "SLR63-C-0001",
+    "SLR63-C-0002"
+   ],
+   "evidence": "sha256:93ff0a59dc1ee18bcda17da21fadc33c3f04a54b1b6eb4d0fb263d88324fbfaf",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR63-X-0001",
+   "statement": "Search and negative sweeps: CP-SAT pool of 3-smooth multiples of 4 and {3,5}-smooth odds, J=8: INFEASIBLE for N=95..65 and 63..60, FOUND at N=64; J=16 infeasible N=47,46,44, UNKNOWN elsewhere; larger pools UNKNOWN. Statements are about that pool, menu and N only. NOT re-run by the auditor. Supports no claim about the conjecture for other n.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:627e565149120269ebd1367d70d7e16a42c4542e30caa1f94ad86e073848c2c0",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR63-X-0002",
+   "statement": "Scoop check, a recorded search and not a proof of absence: alphaXiv recency searches (producer 2026-11-07; auditor 2026-11-08, one with published_after 2026-10-01) and a web search found no paper covering n in 39..94. Residual risk: later listings, unpublished work. Authors not contacted.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:49db63bf55c4e31c94692e6cb628a5a5e4256507be652582c4c5fc25d7d263fc",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "SLR63-X-0003",
+   "statement": "NOT done: statement lock (LeanMaster); anse/formal/lean_runner.py gate on SLRN63.lean; human audit; re-run of the CP-SAT sweeps by the auditor; independent Lean compile by the auditor.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:7081672110f6dcbc27dff8b5808d4d2ec7ef81ffca89e65f6ccbbbaa67150b7c",
+   "audit": null
+  }
+ ]
+}

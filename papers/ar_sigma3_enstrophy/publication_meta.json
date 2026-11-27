@@ -1,0 +1,32 @@
+{
+ "title": "A cutoff-independent enstrophy bound for the sigma = 3 dispersive dyadic shell model: kernel-checked conservation of the second invariant along solutions, CVODE controls, and an illustration on The Well data",
+ "version": "v1",
+ "description": "<p>We study the truncated, complexified dyadic shell model of the QuantumFluids project: shells n = 0..N+1, k<sub>n</sub> = 2<sup>n</sup>, and a linear dispersive term &minus;i&omega;<sub>n</sub>v<sub>n</sub>. Its second invariant H = &Sigma; 2<sup>&minus;n</sup>&omega;<sub>n</sub>|v<sub>n</sub>|<sup>2</sup> + &Sigma; 2<sup>&minus;n</sup>k<sub>n</sub> Im(conj(v<sub>n</sub>)<sup>2</sup>v<sub>n+1</sub>) is conserved for every real dispersion law. For &omega;<sub>n</sub> = Dk<sub>n</sub><sup>3</sup> (&sigma; = 3), its quadratic part equals 2D&Omega;. Every claim is filed in an Elenchus claim ledger with tiers A (kernel-checked Lean), L (cited literature), C (human argument, not machine-checked) and X (floating-point exploration, which never supports a claim).</p><p><b>Tier A</b> (Lean v4.34.0-rc2 with the QuantumFluids Mathlib build; axioms within propext, Classical.choice, Quot.sound; planted sorry and planted-axiom controls caught by the axiom audit). We prove:</p><ul><li>the rate identity of H along the full vector field, including the dispersion/cubic cross terms;</li><li>the chain rule;</li><li>constancy of H and of the energy on [0,T] along any solution;</li><li>hence 2D&Omega;(t) &le; H<sub>3</sub>(0) + (2E(0))<sup>3/2</sup> for every t in [0,T] and every cutoff N.</li></ul><p>These results are <b>conditional</b>:</p><ul><li>existence of solutions is a hypothesis, not a theorem;</li><li>N is fixed;</li><li>the model definitions are the QuantumFluids owner's design;</li><li>the Lean files were checked by the producing agent and recompiled by a second agent instance; a separate AI-agent instance then ran an independent audit (AUDIT.md: recompile, its own planted sorry and axiom caught, numerics and tests rerun, hand proof re-derived); no human has audited statement adequacy.</li></ul><p>No openai/math result is used.</p><p><b>Tier C</b>:</p><ul><li>a step-by-step human demonstration written for undergraduates;</li><li>the corollary &Omega;(t) &le; &Omega;(0) + S(0)<sup>3/2</sup>/D, which is cutoff-uniform only for data with N-uniform &Omega;(0) and S(0);</li><li>the reduction to Waleffe's dyadic Burgers chain on real data with D = 0 (Tier L).</li></ul><p><b>Tier X</b>: a new rusty-SUNDIALS module integrates the model with CVODE (BDF).</p><ul><li>Conservation converges with tolerance, while a perturbed coupling breaks it.</li><li>Every &sigma; = 3 run (n<sub>max</sub> &le; 7) stays within the bound, with ratio at most 1. The maximum ratio is 0.360 on decaying data, 0.631 on data-initialised runs, and 0.995 on near-extremal top-shell data, where the supremum equals the t = 0 value to within 3.2e-7.</li><li>A &sigma; = 2 control grows like 2<sup>n</sup>.</li><li>Shell spectra from the HuggingFace dataset polymathic-ai/turbulent_radiative_layer_2D (The Well, CC-BY-4.0, revision 2ee77565) initialise 24 runs, all within the bound. This is an illustration only.</li></ul><p>No breakthrough is claimed: the inequality is a short corollary of the owner's dispersive_norm_le. The new part is the Lean proof of the cross-term cancellation and of the chain rule along solutions. The ledger gate reports 0 blocking findings and 7 flags (exit 1), one for each Tier A row whose statement adequacy no human has audited.</p><p>The work was produced by AI agents (Claude) under the author's direction; the author is responsible for the content.</p>",
+ "keywords": [
+  "Lean 4",
+  "formal verification",
+  "dyadic shell model",
+  "Katz-Pavlovic model",
+  "enstrophy",
+  "dispersive regularisation",
+  "conservation law",
+  "Hamiltonian shell model",
+  "CVODE",
+  "rusty-SUNDIALS",
+  "The Well",
+  "HuggingFace",
+  "turbulent radiative layer",
+  "epistemic tiers",
+  "AI-assisted research"
+ ],
+ "notes": "Preprint v1 (2026-10-25). Lean: AutoevolveAI results/autoresearch/2026-10-25/H7/contribution/Autoresearch_EnstrophyFlow.lean (sha256 4cd746897f58f7a18eb27e95f703b43d49ec0eb5c5f38753cd5f0bc1a99a8dd4) and H7/Autoresearch_Enstrophy.lean (sha256 c7c9f24cfe2e623f36600d11e11841e7cbd75f4b3801fa602681980735c97f03), Lean v4.34.0-rc2, QuantumFluids qf-lake build, owner repo SocrateAI-Scientific-QuantumFluids commit 10f74daf1b39d2ac51a785452329fff0003cfc83. Numerics: rusty-SUNDIALS branch physics/ar-sigma3-shell-2026-10-25, code commit 99f5df89e8d8380ea1a9f065ae87308e779224fc, results e869e5fc4e38df24bc93ee2c22e19f2e68920041, probes dfa9a0880450a7601e1ecdcb735b5897c6319ffd, based on 47ef5044c10b04c64d8c86f483f1aa47c400ab28 (not pushed at the time of writing). HuggingFace dataset polymathic-ai/turbulent_radiative_layer_2D at revision 2ee7756575ff6f90981d0308cbcb6a2ab5995bdc, file data/test/turbulent_radiative_layer_tcool_0.32.hdf5 (sha256 06cbd36c1dbea84e70906a363d20143b228765ee37850ec65351e247cf7df747). Verification: the paper-stage recompile was done by another AI agent instance, and a separate AI-agent instance then ran an independent audit (papers/ar_sigma3_enstrophy/AUDIT.md, verdict ACCEPT_WITH_CORRECTIONS; corrections applied, see REVISION.md). No human has reviewed the work; the ledger audit fields remain null.",
+ "related_identifiers": [
+  {"identifier": "10.5281/zenodo.23293429", "relation": "references", "scheme": "doi"},
+  {"identifier": "10.5281/zenodo.23295142", "relation": "references", "scheme": "doi"},
+  {"identifier": "arXiv:math/0410380", "relation": "references", "scheme": "arxiv"},
+  {"identifier": "arXiv:2412.00568", "relation": "references", "scheme": "arxiv"},
+  {"identifier": "arXiv:2011.10073", "relation": "references", "scheme": "arxiv"},
+  {"identifier": "10.3847/2041-8213/ab8d2c", "relation": "references", "scheme": "doi"},
+  {"identifier": "https://huggingface.co/datasets/polymathic-ai/turbulent_radiative_layer_2D/tree/2ee7756575ff6f90981d0308cbcb6a2ab5995bdc", "relation": "references", "scheme": "url"}
+ ]
+}

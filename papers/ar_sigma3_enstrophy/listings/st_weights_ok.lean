@@ -1,0 +1,3 @@
+-- owner ShellHamiltonian.lean lines 72-73
+theorem weights_ok (k : ℕ → ℝ) (n : ℕ) :
+    ((1 / 2 : ℝ) ^ (n + 1) * k (n + 1)) * (2 * k n) = ((1 / 2 : ℝ) ^ n * k n) * k (n + 1) := ...

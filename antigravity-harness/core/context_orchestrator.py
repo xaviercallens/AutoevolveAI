@@ -24,12 +24,13 @@ class ContextTier(StrEnum):
 
 @dataclass
 class ContextBudget:
-    """Token budget distribution for Gemini context window."""
+    """Token budget distribution for Gemini 4 Argon / Gemini 3.8 context window."""
 
-    max_tokens: int = 1_000_000  # Gemini 1.5/2.0 context window
+    max_tokens: int = 1_000_000  # Gemini 4 Argon / Gemini 3.8 1M context window
     system_reserve: int = 50_000
     scratchpad_reserve: int = 150_000
     active_turn_reserve: int = 200_000
+    thought_reserve: int = 0
     codebase_budget: int = field(init=False)
 
     def __post_init__(self) -> None:
@@ -38,6 +39,18 @@ class ContextBudget:
             - self.system_reserve
             - self.scratchpad_reserve
             - self.active_turn_reserve
+            - self.thought_reserve
+        )
+
+    @classmethod
+    def for_gemini_argos(cls, max_tokens: int = 1_000_000) -> ContextBudget:
+        """Create a 1M-token context budget reserving 100k tokens for Gemini 4 Argon extended thinking."""
+        return cls(
+            max_tokens=max_tokens,
+            system_reserve=50_000,
+            scratchpad_reserve=150_000,
+            active_turn_reserve=150_000,
+            thought_reserve=100_000,
         )
 
 
@@ -204,6 +217,39 @@ class ContextOrchestrator:
                 "parts": [{"text": combined_prompt}],
             }
         ]
+
+    def build_interactions_payload(
+        self,
+        system_instruction: str,
+        codebase: dict[str, str],
+        user_prompt: str,
+        *,
+        model: str = "gemini-4-argon",
+        previous_interaction_id: str | None = None,
+        priority_files: set[str] | None = None,
+    ) -> dict[str, Any]:
+        """
+        Constructs a modern Google GenAI `client.interactions.create` payload for Gemini 4 Argon
+        with packed codebase context and optional stateful `previous_interaction_id`.
+        """
+        from antigravity_harness.core.argos_hardener import resolve_gemini_argos_model
+
+        packed_code = self.pack_codebase(codebase, priority_files=priority_files)
+        code_sections = [
+            f"### File: {path} (Tier: {tier.value})\n```python\n{content}\n```"
+            for path, (content, tier) in packed_code.items()
+        ]
+        context_block = "\n\n".join(code_sections)
+        input_text = f"## Repository Context\n{context_block}\n\n## Task\n{user_prompt}" if context_block else user_prompt
+
+        payload: dict[str, Any] = {
+            "model": resolve_gemini_argos_model(model),
+            "input": input_text,
+            "system_instruction": system_instruction,
+        }
+        if previous_interaction_id:
+            payload["previous_interaction_id"] = previous_interaction_id
+        return payload
 
     def slide_conversation_window(
         self,

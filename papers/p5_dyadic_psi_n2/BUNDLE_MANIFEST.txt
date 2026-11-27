@@ -1,0 +1,21 @@
+BUNDLE_MANIFEST (dry run only; nothing uploaded) 2026-10-31
+Staging tree: /home/callensxavier_gmail_com/dh_stage/repo (copy of papers/p5_dyadic_psi_n2 and results/proposal5/2026-10-27/DH-Psi2 WITHOUT the compiled binary code/psi_exhaust and without __pycache__,
+plus what scripts/publish_ar_paper.py hard-codes: scripts/certified_numerics/lean_pinned.py, results/autoresearch/2026-10-25/{program.md,preregistration.json};
+scripts/publish_ar_paper.py and scripts/publish_universal_optimality_tiered.py are only the runner (the first loads the second), not bundled). No formal_cert files: this paper has no Lean.
+Command (unmodified script, run from the staging root): python3 -I scripts/publish_ar_paper.py --paper-dir papers/p5_dyadic_psi_n2 --lane-dir results/proposal5/2026-10-27/DH-Psi2 --dry-run
+(--lane-dir is required with --paper-dir; the script uses REPO = parent of its scripts dir, so it must be run from a tree whose layout it expects.)
+Bundle: /home/callensxavier_gmail_com/zenodo-bundles/p5_dyadic_psi_n2/p5_dyadic_psi_n2_2026-10-25.tar.gz (157339 bytes, 432 members in MANIFEST.json, 433 tar entries with MANIFEST.json), plus MANIFEST.json and the PDF (sha256 bd9bb043846cdd92913227fc4b655dfeaeb2b7ef549601baf6bec316bdb22fdf).
+Bundle built before this BUNDLE_MANIFEST.txt was added to the paper dir (the file is not itself a member), as for the sibling papers.
+Members by prefix (extracted tar, 433 files incl. MANIFEST.json):
+        1 MANIFEST.json
+      240 papers/p5_dyadic_psi_n2 (main.tex, AUDIT.md, publication_meta.json, ledger/ incl. 10 evidence blobs, data/)
+      189 results/proposal5/2026-10-27 (DH-Psi2: RESULT.md, result.json, AUDIT.md, data/ incl. 160 chunks, logs/, code/*.py)
+        2 results/autoresearch/2026-10-25
+        1 scripts/certified_numerics
+Checks on the extracted bundle (/home/callensxavier_gmail_com/dh_extract): no secret patterns (hf_, sk-, ghp_, AKIA, private keys, ZENODO_TOKEN, token file path); no file > 300 kB;
+no ELF or other binaries (file(1) on every member: only Python and shell/text sources); no third-party full text and no PDFs in the tar; no Lean files.
+The compiled binary code/psi_exhaust (untracked, machine-specific -march=native build, 28832 bytes) and the auditor's builds (gauge_enum, psi_exhaust_rebuilt) are not shipped; the C sources travel as .c and .c.txt, the shell scripts as .sh.txt (the bundler keeps no .c or .sh suffix).
+Known unchanged items: data/RESULT.md and data/result.json (and results/proposal5/2026-10-27/DH-Psi2/RESULT.md, result.json) are the producer's PRE-AUDIT text: RESULT.md still says "Conjecture 1" and "two independent full enumerations", result.json still has the tier wording of auditor correction 3 and lists
+code/psi_exhaust in files_sha256 (auditor correction 4). The paper (main.tex, Section "Audit corrections applied") supersedes them; their hashes are recorded, so they were not edited. ledger/hash_check_paper_copy.txt: 198 of 199 files_sha256 entries match the shipped copies, 1 missing (the binary), 0 mismatches.
+Ledger gate: ledger/gate_output.txt, exit code 0, 10 claims, no findings (no Tier A rows).
+Staging paper dir vs repo paper dir: diff -rq reports no difference (after this file was copied in).

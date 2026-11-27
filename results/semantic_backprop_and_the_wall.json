@@ -1,0 +1,58 @@
+{
+  "what_this_is": "two more operators tested (semantic backpropagation and a matched-difficulty decoy), and the observation that redirects the line: every operator fails at the same rung",
+  "the_identity_that_motivated_it": {
+    "derivation": "out = A + B*v, and the forward pass yields v and out, so v* = v + (want - out)/B",
+    "verified": "24303 of 24303 (address, point) pairs with B != 0: splicing v* makes the tree exact",
+    "inert_pairs": 0.048,
+    "note": "B == 0 marks points the address cannot affect, so there is no requirement to meet there -- genuine don't-cares and extra freedom, not missing data"
+  },
+  "first_attempt_failed_for_a_measurable_reason": {
+    "design": "require an EXACT match of the required vector on every constrained point",
+    "splice_failures": "23991 of about 24000 attempts, a 99.96% failure rate",
+    "cause": "a required vector is twelve arbitrary rationals and essentially no library subtree produces exactly that, so the arm degenerated to mutation-only through its own fallback while spending 26x the evaluations",
+    "fix": "nearest match instead of exact. Exactness was never needed for soundness, since the Lean kernel still decides acceptance, so the splice is free to be a heuristic"
+  },
+  "and_my_control_was_broken": {
+    "defect": "the decoy target was drawn FROM THE LIBRARY, making it matchable by construction: 200 failures against the treatment's 23991",
+    "why_it_mattered": "the control was easier than its treatment for a reason unrelated to the hypothesis, so it measured difficulty rather than correctness",
+    "fix": "the decoy is now fresh random rationals, so both arms face the same matching problem"
+  },
+  "results_12_seeds": {
+    "L3_minus_wq": {
+      "size": 9,
+      "mutation_only": "7/12",
+      "semantic_backprop": "6/12",
+      "decoy": "5/12",
+      "median_fitness_evals_when_solved": {
+        "mutation_only": 1203,
+        "semantic_backprop": 388.5,
+        "decoy": 1736
+      },
+      "median_tree_point_evals": {
+        "mutation_only": 24834,
+        "semantic_backprop": 478434,
+        "decoy": 602298
+      }
+    },
+    "L4_minus_hwq": {
+      "size": 11,
+      "mutation_only": "1/12",
+      "semantic_backprop": "0/12",
+      "decoy": "0/12"
+    },
+    "L5_minus_half_hwq": {
+      "size": 13,
+      "mutation_only": "0/12",
+      "semantic_backprop": "0/12",
+      "decoy": "0/12"
+    }
+  },
+  "the_metric_artifact": "At L3 semantic backpropagation reaches a solution in a median 388.5 fitness evaluations against mutation-only's 1203 -- a 3.1x win in the budgeted currency. Its tree-point cost is 478434 against 24834, which is 19x. Reporting the 3.1x alone would be true and thoroughly misleading: the operator spends its savings about six times over in probe cost it does not charge itself. This is why both metrics are reported for every arm.",
+  "the_finding_that_redirects_the_line": "EIGHT operators have now been tested -- mutation, random crossover, homologous, anti-homologous, contribution-preserving, same-sites-unscaled, semantic backpropagation, and its matched decoy -- and ALL of them collapse between L3 (size 9, solve rates around 0.3-0.6) and L4 (size 11, at most 1 of 12). A cliff that every variation mechanism hits in the same place is not a property of any operator. The bottleneck is the landscape or the representation, not the variation mechanism, and further operator design is the wrong place to spend effort.",
+  "why_a_200_seed_run_was_not_done": "The decisive observations do not need power: both semantic arms are 0 of 12 at L4 and L5 where mutation manages 1 of 12, and the efficiency claim is refuted by its own cost column rather than by a p-value. Scaling to 200 seeds would refine a null.",
+  "not_established": [
+    "12 seeds, so the L3 differences (7 vs 6 vs 5) are noise and are not interpreted.",
+    "One library size (16 sampled subtrees plus 7 terminals) and at most 3 probed addresses. A larger library might match better, at proportionally more cost in the column that already shows 19x.",
+    "The cliff's CAUSE is not established here, only its operator-independence. L4 requires assembling a three-factor product with no partial credit, which is a plausible deceptive landscape, but that is a hypothesis and not a measurement."
+  ]
+}

@@ -1,0 +1,27 @@
+def AdmissiblePotential (g : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) : Prop :=
+  ContDiffOn (*@$\mathbb{R}$@*) ((*@$\top$@*) : (*@$\mathbb{N}$@*)(*@$\infty$@*)) g (Set.Ioi 0) (*@$\wedge$@*)
+  ((*@$\forall$@*) t : (*@$\mathbb{R}$@*), 0 < t (*@$\to$@*) 0 (*@$\le$@*) g t) (*@$\wedge$@*)
+  (*@$\forall$@*) (r : (*@$\mathbb{N}$@*)) (t : (*@$\mathbb{R}$@*)), 0 < t (*@$\to$@*) 0 (*@$\le$@*) (-1 : (*@$\mathbb{R}$@*)) ^ r * iteratedDeriv r g t
+
+def diskEnergy (g : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) (C : Set Plane) (R : (*@$\mathbb{R}$@*)) : (*@$\mathbb{R}$@*)(*@$\ge$@*)0(*@$\infty$@*) :=
+  (diskCount C R : (*@$\mathbb{R}$@*)(*@$\ge$@*)0(*@$\infty$@*))(*@$^{-}$@*)(*@$^{1}$@*) *
+    (*@$\sum$@*) x (*@$\in$@*) diskPoints C R, (*@$\sum$@*) y (*@$\in$@*) (diskPoints C R).erase x,
+      ENNReal.ofReal (g ((*@$\Vert$@*)x - y(*@$\Vert$@*) ^ 2))
+
+def energy (g : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) (C : Set Plane) : (*@$\mathbb{R}$@*)(*@$\ge$@*)0(*@$\infty$@*) :=
+  Filter.liminf (diskEnergy g C) atTop
+
+def latticeEnergy (g : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) : (*@$\mathbb{R}$@*)(*@$\ge$@*)0(*@$\infty$@*) :=
+  (*@$\sum$@*)' a : {x : Plane // x (*@$\in$@*) triangularLattice (*@$\wedge$@*) x (*@$\ne$@*) 0},
+    ENNReal.ofReal (g ((*@$\Vert$@*)a.val(*@$\Vert$@*) ^ 2))
+
+theorem universal_energy_minimum (g : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) (C : Set Plane)
+    (hg : AdmissiblePotential g) (_hC : LocallyFinite C) (hd : DensityOne C) :
+    latticeEnergy g (*@$\le$@*) energy g C (*@$\wedge$@*) latticeEnergy g = energy g A := -- proof elided
+
+def DensityRho ((*@$\rho$@*) : (*@$\mathbb{R}$@*)) (C : Set Plane) : Prop :=
+  Tendsto (fun R : (*@$\mathbb{R}$@*) => (diskCount C R : (*@$\mathbb{R}$@*)) / (Real.pi * R ^ 2)) atTop ((*@$\mathcal{N}$@*) (*@$\rho$@*))
+
+theorem triangular_optimal_any_density (h : (*@$\mathbb{R}$@*) (*@$\to$@*) (*@$\mathbb{R}$@*)) (hh : AdmissiblePotential h) {(*@$\rho$@*) : (*@$\mathbb{R}$@*)} (h(*@$\rho$@*) : 0 < (*@$\rho$@*)) :
+    LocallyFinite ((Real.sqrt (*@$\rho$@*))(*@$^{-}$@*)(*@$^{1}$@*) (*@$\bullet$@*) A) (*@$\wedge$@*) DensityRho (*@$\rho$@*) ((Real.sqrt (*@$\rho$@*))(*@$^{-}$@*)(*@$^{1}$@*) (*@$\bullet$@*) A) (*@$\wedge$@*)
+      (*@$\forall$@*) C : Set Plane, LocallyFinite C (*@$\to$@*) DensityRho (*@$\rho$@*) C (*@$\to$@*) energy h ((Real.sqrt (*@$\rho$@*))(*@$^{-}$@*)(*@$^{1}$@*) (*@$\bullet$@*) A) (*@$\le$@*) energy h C := -- proof elided

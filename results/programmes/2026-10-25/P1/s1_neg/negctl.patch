@@ -1,0 +1,33 @@
+--- /mnt/disks/disk-socrateai-local-1/callensxavier_home_data/SocrateAI-Scientific-Agora-LeanMaster/lean4basesource/openai-math/preprints/Triangular-minimality-for-planar-Coulomb-renormalized-energy-September-23-2026/verification/grids.hpp	2026-10-07 19:24:34.355645663 +0000
++++ /home/callensxavier_gmail_com/programmes-2026-10-25/P1/negctl/verification/grids.hpp	2026-10-25 20:26:33.077191347 +0000
+@@ -298,7 +298,7 @@
+         if (width>dmax) dmax=width;
+     }
+     const IV H(0,hmax),Dh(0,dmax);
+-    const IV er0=2*Smax*pow(H,2)*chi/24;
++    const IV er0=2*Smax*pow(H,2)*chi; /* NEGCTL: midpoint-rule constant 1/24 removed (loosened to 1) */
+     const IV eri=2*(pow(Dh,2)*Smax*Gdd+pow(H,2)*Gs)/8;
+     const IV factor=er0+IV(0,eri.v);
+     const IV er_drop=Smax*(H/4*Gs+Dh/2*Gd);
+--- /mnt/disks/disk-socrateai-local-1/callensxavier_home_data/SocrateAI-Scientific-Agora-LeanMaster/lean4basesource/openai-math/preprints/Triangular-minimality-for-planar-Coulomb-renormalized-energy-September-23-2026/verification/run-certificate.py	2026-10-07 19:24:34.355645663 +0000
++++ /home/callensxavier_gmail_com/programmes-2026-10-25/P1/negctl/verification/run-certificate.py	2026-10-25 20:26:33.081191636 +0000
+@@ -47,7 +47,7 @@
+     lines = text.splitlines()
+     errors = []
+     header = re.fullmatch(
+-        r"CERTIFICATE BP=144 M=38 BOOST=(\S+) OMP_MAX_THREADS=32",
++        r"CERTIFICATE BP=144 M=38 BOOST=(\S+) OMP_MAX_THREADS=(?:32|2)",
+         lines[0] if lines else "",
+     )
+     if header is None:
+@@ -142,8 +142,8 @@
+         if built.returncode == 0:
+             receipt["executable_sha256"] = sha256(executable)
+             env = os.environ.copy()
+-            env["OMP_NUM_THREADS"] = "32"
+-            receipt["environment"] = {"OMP_NUM_THREADS": "32"}
++            env["OMP_NUM_THREADS"] = os.environ.get("OMP_NUM_THREADS", "32")
++            receipt["environment"] = {"OMP_NUM_THREADS": env["OMP_NUM_THREADS"]}
+             receipt["run_command"] = [str(executable)]
+             receipt["run_cwd"] = str(output_dir)
+             receipt["run_start_utc"] = utc()

@@ -1,0 +1,228 @@
+import Programmes.SandierSerfatyL1.Jet.Data
+
+/-!
+# Jets and `basis()` of the triangular-minimality certificate, level L1 (kernel transcription)
+
+Generated (copied verbatim) by `results/proposal2/2026-10-26/A1-continuation/scripts/gen_coretest.py` (do not edit).
+Transcribes from `verification/core.hpp` (SHA-256 `c7f76596...`): the jet type `J` (4 Taylor coefficients, lines
+94-144: `+ - *`, `inv`, `pow` with the exact-zero affine shortcut, `log` via the interval `log` of `Bcons.lean`,
+`sqrt`, `der`), `cpol`, `sm`, `PQt`, `hor` (lines 173-181), `basis` (lines 182-200) and one cell of `core_test`
+(lines 268-275). Association order follows the C++ overloads: `IV*J` is `J*IV` (componentwise), `x/y` is
+`x * y.inv()`, `int` operands become `IV(n)`; additions of intervals are exact, so their order is irrelevant.
+The C++ throws where an interval is not admissible (`inv` of an interval containing 0, `log`/`sqrt` of a non-positive
+interval); here those cases give junk values, so a Lean result that equals the C++ printed endpoints certifies the
+C++ run, which did not throw.
+Data (`Data.lean`): the outputs of `init_after_co` and a few constants, as literals; `InitCheck.lean` recomputes them
+in the kernel from `co[1..38]`, `p`, `R`, `π`, `ln 2`.
+-/
+
+namespace ProgSandierSerfaty.L1.Jet
+
+open ProgSandierSerfaty.Cert ProgSandierSerfaty.Cert.IV
+
+def z0 : IV := ofInt 0
+def o1 : IV := ofInt 1
+
+structure J where
+  a0 : IV
+  a1 : IV
+  a2 : IV
+  a3 : IV
+deriving DecidableEq, Repr
+
+def jc (x : IV) : J := ⟨x, z0, z0, z0⟩
+def jz : J := jc z0
+def jneg (a : J) : J := ⟨neg a.a0, neg a.a1, neg a.a2, neg a.a3⟩
+def jadd (a b : J) : J := ⟨add a.a0 b.a0, add a.a1 b.a1, add a.a2 b.a2, add a.a3 b.a3⟩
+def jsub (a b : J) : J := jadd a (jneg b)
+/-- `J + IV`. -/
+def jaddi (a : J) (b : IV) : J := ⟨add a.a0 b, a.a1, a.a2, a.a3⟩
+/-- `J * J` (truncated Cauchy product, core.hpp:119). -/
+def jmul (a b : J) : J :=
+  ⟨mul a.a0 b.a0,
+   add (mul a.a0 b.a1) (mul a.a1 b.a0),
+   add (add (mul a.a0 b.a2) (mul a.a1 b.a1)) (mul a.a2 b.a0),
+   add (add (add (mul a.a0 b.a3) (mul a.a1 b.a2)) (mul a.a2 b.a1)) (mul a.a3 b.a0)⟩
+/-- `J * IV` (componentwise). -/
+def jmuli (a : J) (b : IV) : J := ⟨mul a.a0 b, mul a.a1 b, mul a.a2 b, mul a.a3 b⟩
+
+/-- `J::inv` (core.hpp:131). -/
+def jinv (a : J) : J :=
+  let h := IV.inv a.a0
+  let z1 := mul (neg (mul a.a1 h)) h
+  let z2 := mul (neg (add (mul a.a1 z1) (mul a.a2 h))) h
+  let z3 := mul (neg (add (add (mul a.a1 z2) (mul a.a2 z1)) (mul a.a3 h))) h
+  ⟨h, z1, z2, z3⟩
+
+/-- `J::pow` binary exponentiation (`v = J(1); while (k) { if (k&1) v = v*x; k >>= 1; if (k) x = x*x; }`). -/
+def jpowLoop : Nat → Nat → J → J → J
+  | 0, _, _, v => v
+  | f + 1, k, x, v =>
+    if k = 0 then v else
+    let v' := if k % 2 = 1 then jmul v x else v
+    let k' := k / 2
+    jpowLoop f k' (if k' = 0 then x else jmul x x) v'
+
+/-- binomial coefficients as the C++ computes them: `c = 1; for i < j: c = c*(k-i)/(i+1)`. -/
+def binC (k : Nat) : Nat → Nat
+  | 0 => 1
+  | j + 1 => binC k j * (k - j) / (j + 1)
+
+/-- `J::pow(k)`, `k ≥ 0` (core.hpp:132-140): affine shortcut when `A[2]`, `A[3]` are the zero interval. -/
+def jpow (a : J) (k : Nat) : J :=
+  if a.a2 = ⟨0, 0⟩ ∧ a.a3 = ⟨0, 0⟩ then
+    let term := fun (j : Nat) => if j ≤ k then mul (mul (powI a.a0 (k - j)) (powI a.a1 j)) (rat (binC k j : Int) 1) else z0
+    ⟨term 0, term 1, term 2, term 3⟩
+  else jpowLoop 64 k a (jc o1)
+
+def logT (a : IV) : IV := (logI a).getD z0
+
+/-- `J::log` (core.hpp:142). -/
+def jlog (a : J) : J :=
+  let iz := jinv a
+  let y1 := mul (mul (mul (ofInt 1) a.a1) iz.a0) (IV.inv (ofInt 1))
+  let y2 := mul (add (mul (mul (ofInt 1) a.a1) iz.a1) (mul (mul (ofInt 2) a.a2) iz.a0)) (IV.inv (ofInt 2))
+  let y3 := mul (add (add (mul (mul (ofInt 1) a.a1) iz.a2) (mul (mul (ofInt 2) a.a2) iz.a1)) (mul (mul (ofInt 3) a.a3) iz.a0))
+    (IV.inv (ofInt 3))
+  ⟨logT a.a0, y1, y2, y3⟩
+
+/-- `J::sqrt` (core.hpp:143). -/
+def jsqrt (a : J) : J :=
+  let y0 := IV.sqrt a.a0
+  let d := IV.inv (mul (ofInt 2) y0)
+  let y1 := mul (sub a.a1 z0) d
+  let y2 := mul (sub a.a2 (mul y1 y1)) d
+  let y3 := mul (sub a.a3 (add (mul y1 y2) (mul y2 y1))) d
+  ⟨y0, y1, y2, y3⟩
+
+/-- `der()`. -/
+def jder (a : J) : J := ⟨a.a1, mul (ofInt 2) a.a2, mul (ofInt 3) a.a3, z0⟩
+
+def absI (a : IV) : IV := if 0 ≤ a.u then a else if a.v ≤ 0 then neg a else ⟨0, max (-a.u) a.v⟩
+
+/-- `IV::mid`: `[⌊(u+v)/2⌋, ⌈(u+v)/2⌉]`. -/
+def midI (a : IV) : IV := ⟨(a.u + a.v) / 2, -((-(a.u + a.v)) / 2)⟩
+
+def sumI : List IV → IV := List.foldl add z0
+def sumJ : List J → J := List.foldl jadd jz
+
+/-- `cpol(t, coeff)` (core.hpp:173): re-expansion of the polynomial at the midpoint, Horner in `h = t - mid`. -/
+def cpol (t : J) (coeff : List IV) : J :=
+  let m := midI t.a0
+  let h := jaddi t (neg m)
+  let n := coeff.length
+  let cc := (List.range n).map fun j =>
+    sumI ((List.range (n - j)).map fun i =>
+      mul (mul (rat (comb (j + i) j : Int) 1) (coeff.getD (j + i) z0)) (powI m i))
+  cc.foldr (fun c z => jaddi (jmul z h) c) (jc z0)
+
+/-- `sm(t, seg)` with `seg` the sign selector `-1 / 0 / 1`. -/
+def sm (t : J) (s : Int) : J :=
+  if s < 0 then jc z0 else if 0 < s then jc o1 else cpol t [z0, z0, z0, rat 10 1, rat (-15) 1, rat 6 1]
+
+/-- `PQt(t)` (core.hpp:179). -/
+def PQt (t : J) : J × J :=
+  let h := jmuli t (IV.inv dv)
+  (jmuli (cpol h [z0, o1, z0, rat (-6) 1, rat 8 1, rat (-3) 1]) dv,
+   jmuli (cpol h [z0, z0, o1, rat (-3) 1, rat 3 1, neg o1]) (mul (mul dv dv) (IV.inv (ofInt 2))))
+
+/-- `hor(J x, coeff)`. -/
+def horJ (x : J) (coeff : List IV) : J := coeff.foldr (fun c z => jaddi (jmul z x) c) jz
+
+def zip3 : List IV → List IV → List IV → List (IV × IV × IV)
+  | a :: as, b :: bs, c :: cs => (a, b, c) :: zip3 as bs cs
+  | _, _, _ => []
+
+/-- `z = t*t - p*p` (the Horner variable of segment 2). -/
+def z2Of (t : J) : J := jaddi (jmul t t) (neg (mul dp dp))
+
+/-- The 38 mode jets `bm[i]` of `basis` before the cutoff factor `cu` (core.hpp:186-189); `pq = PQt(t - R)`. -/
+def bm0Of (t : J) (seg : Nat) (pq : J × J) : List J :=
+  if seg < 1 then List.replicate 38 jz
+  else if seg = 1 then
+    let h := jaddi t (neg dp)
+    (zip3 dTp0 dTp1 dTp2).map fun x => jadd (jaddi (jmuli h x.2.1) x.1) (jmul (jmuli h x.2.2) h)
+  else if seg = 2 then dEdge.map (horJ (z2Of t))
+  else if seg < 5 then
+    (zip3 dVR dAlp dBeta).map fun x => jadd (jaddi (jmuli pq.1 x.2.1) x.1) (jmuli pq.2 x.2.2)
+  else dVR.map jc
+
+/-- `basis(t, seg)` (core.hpp:182-200) with the mode jets `bm0` supplied: `(B, D)` with `D` of length 39. -/
+def basisW (t : J) (seg : Nat) (bm0 : List J) : J × List J :=
+  let g := jadd (jneg (jlog t)) (jmul (jmuli t dPi2) t)
+  let pq := PQt (jaddi t (neg dR))
+  let b0 := if seg < 3 then g else if seg < 5 then jadd (jaddi (jmuli pq.1 dcR1) db0c) (jmuli pq.2 dcR2) else jc db0c
+  let cu := sm (jmuli (jaddi t (neg dsmall)) (IV.inv dcut)) (if seg = 1 then 0 else if seg < 1 then -1 else 1)
+  let gc := sm (jmuli (jaddi t (neg dR)) (IV.inv (rat 10 100))) (if 3 ≤ seg ∧ seg ≤ 6 then 0 else if seg < 3 then -1 else 1)
+  let cer := sm (jmuli (jaddi (jaddi t (neg dR)) (neg (rat 1 1000))) (IV.inv (rat 75 1000)))
+    (if seg = 4 ∨ seg = 5 then 0 else if seg < 4 then -1 else 1)
+  let omg := jaddi (jneg gc) o1
+  let bm := bm0.map (jmul cu)
+  let mm := ((List.range 38).zip coList).map fun x =>
+    jmul (jmuli (jpow t (6 * (x.1 + 1))) (mul x.2 (ofInt (if (x.1 + 1) % 2 = 1 then -1 else 1)))) omg
+  let D := List.zipWith jsub bm mm
+  if seg < 4 then (jadd g (sumJ mm), (if 3 ≤ seg then jsub b0 g else jz) :: D)
+  else if 6 ≤ seg then (jadd b0 (sumJ bm), List.replicate 39 jz)
+  else
+    let D0 := jsub b0 g
+    let sd := D.foldl jadd D0
+    let omc := jaddi (jneg cer) o1
+    (jadd (jadd g (sumJ mm)) (jmul cer sd), (D0 :: D).map (jmul omc))
+
+/-- `basis(t, seg)` (core.hpp:182-200): `(B, D)` with `D` of length 39. -/
+def basis (t : J) (seg : Nat) : J × List J := basisW t seg (bm0Of t seg (PQt (jaddi t (neg dR))))
+
+/-- `ks = {6, 6, 12, ..., 228}`. -/
+def ksL : List Nat := 6 :: (List.range 38).map (fun i => 6 * (i + 1))
+
+/-- The jet `{[lo.u, hi.v], 1}` of cell `j` of `n` of segment `seg` (core.hpp:272). -/
+def ttOf (seg j n : Nat) : J :=
+  let aa := dBreaks.getD seg z0
+  let bb := dBreaks.getD (seg + 1) z0
+  let w := sub bb aa
+  let lo := add aa (mul (mul w (ofInt j)) (IV.inv (ofInt n)))
+  let hi := add aa (mul (mul w (ofInt (j + 1))) (IV.inv (ofInt n)))
+  ⟨⟨lo.u, hi.v⟩, o1, z0, z0⟩
+
+/-- One cell of `core_test` from a given basis `(B, D)` at `tt`. -/
+def ctOfBasis (tt : J) (bd : J × List J) : IV × IV × IV :=
+  let bi := jadd (jder bd.1) (jmuli (jinv tt) o1)
+  let norm := add (add (absI bi.a0) (absI bi.a1)) (absI bi.a2)
+  let r := (bd.2.zip ksL).foldl (fun acc dk =>
+    let d := dk.1
+    let v1 := add (add (add (add z0 (absI d.a0)) (absI d.a1)) (absI d.a2)) (absI d.a3)
+    (add acc.1 (mul (powI (ofInt ((dk.2 : Int) + 1)) 3) v1), add acc.2 (mul (powI (ofInt ((dk.2 : Int) + 1)) 2) v1))) (z0, z0)
+  (norm, r.1, r.2)
+
+/-- One cell of `core_test` (core.hpp:272): `(‖B̃₁‖ part, Σ(k+1)³‖D_k‖, Σ(k+1)²‖D_k‖)` on cell `j` of `n` of
+segment `seg`. -/
+def ctCell (seg j n : Nat) : IV × IV × IV := ctOfBasis (ttOf seg j n) (basis (ttOf seg j n) seg)
+
+/-- The same cell with the 38 mode jets supplied (used with kernel-checked witnesses for segment 2, whose Horner
+evaluations of degree up to 114 are split into one theorem per mode). -/
+def ctCellW (seg j n : Nat) (bm0 : List J) : IV × IV × IV := ctOfBasis (ttOf seg j n) (basisW (ttOf seg j n) seg bm0)
+
+theorem map_eq_range_getD {α β : Type} (f : α → β) (d : α) :
+    ∀ l : List α, l.map f = (List.range l.length).map (fun i => f (l.getD i d))
+  | [] => rfl
+  | a :: l => by
+    rw [List.length_cons, List.range_succ_eq_map, List.map_cons, List.map_cons, List.map_map, map_eq_range_getD f d l]
+    rfl
+
+theorem dEdge_length : dEdge.length = 38 := by decide
+
+theorem bm0Of_seg2 (t : J) (pq : J × J) : bm0Of t 2 pq = dEdge.map (horJ (z2Of t)) := by
+  unfold bm0Of
+  rw [if_neg (by decide), if_neg (by decide), if_pos rfl]
+
+/-- For segment 2 the cell is `ctCellW` with the 38 Horner values `horJ z (edge_m)`. -/
+theorem ctCell_seg2 (j n : Nat) : ctCell 2 j n =
+    ctCellW 2 j n ((List.range 38).map fun m => horJ (z2Of (ttOf 2 j n)) (dEdge.getD m [])) := by
+  unfold ctCell basis
+  rw [bm0Of_seg2, map_eq_range_getD _ [] dEdge, dEdge_length]
+  rfl
+
+/-- `nsamp(aa, bb, h) = max(1, ⌈((bb-aa)/h).v / Q⌉)`. -/
+def nsampI (aa bb h : IV) : Int := max 1 (-((-(div (sub bb aa) h).v) / Q))
+
+end ProgSandierSerfaty.L1.Jet

@@ -1,0 +1,3 @@
+-- Autoresearch_EnstrophyFlow.lean lines 70-71
+theorem enstrophy_bound (D : ℝ) (N : ℕ) (v : ℕ → ℂ) :
+    2 * D * enstrophy N v ≤ ham3 D N v + (2 * energy N v) ^ (3 / 2 : ℝ) := ...

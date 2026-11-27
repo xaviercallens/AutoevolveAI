@@ -1,0 +1,20 @@
+#!/bin/bash
+# Copy of producer code/c_runs.sh with B and O pointed into /tmp/dhaudit; both halves run sequentially on core 4.
+set -e
+B=/tmp/dhaudit/psi_exhaust_rebuilt
+O=/tmp/dhaudit/c_enum
+mkdir -p "$O"
+for H in 0 1; do
+LO=$((H * 16384))
+HI=$((LO + 16384))
+CORE=4
+taskset -c $CORE "$B" 3 1 $LO $HI > "$O/PSI_h$H.json"
+taskset -c $CORE "$B" 1 1 $LO $HI > "$O/R_h$H.json"
+taskset -c $CORE "$B" 4 1 $LO $HI > "$O/PLANT4_h$H.json"
+taskset -c $CORE "$B" 1 0 $LO $HI > "$O/HF_R_h$H.json"
+taskset -c $CORE "$B" 3 0 $LO $HI > "$O/HF_PSI_h$H.json"
+taskset -c $CORE "$B" 3 1 0 0 200 > "$O/bruteforce_PSI_h$H.json"
+taskset -c $CORE "$B" 4 1 0 0 100 > "$O/bruteforce_PLANT4_h$H.json"
+taskset -c $CORE "$B" 3 0 0 0 100 > "$O/bruteforce_HF_PSI_h$H.json"
+echo done > "$O/DONE_h$H"
+done

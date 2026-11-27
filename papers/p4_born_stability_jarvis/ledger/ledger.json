@@ -1,0 +1,203 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "BM-A-0001",
+   "statement": "BornM2W (Witnesses.lean): 12 theorems notpd_0..notpd_11 of the form exists x, x != 0 and quad S x <= 0 for 12 explicit rational 6x6 matrices S (symmetrised stored decimals of 12 JARVIS-DFT entries, jid in each comment; 4 of them pass the incorrect linear orthorhombic criterion), and 6 pairs pd_k / pd_k_pivots for 6 further matrices: the LDL^T identity x^T S x = sum_k d_k (l_k . x)^2 with explicit rational d_k and unit lower-triangular L, and 0 < d_k for every k. quad C x = sum_i sum_j x_i C_ij x_j. The file now begins with a CC BY 4.0 attribution comment (correction C9) and was recompiled after that edit: rc 0, 24 axiom lines, each within the whitelist. These are statements about 18 explicit matrices; the step from the pd_k identity to positive definiteness (L unit lower-triangular) is not a Lean theorem. That the matrices equal the dataset's symmetrised tensors is a Python and hash step (Tier C), checked by the auditor by jid.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:bc73fecef248ac8fe270108c4ad782dcc55b9172f6add950a28006fcad38f925",
+   "audit": null,
+   "ai_audit": {
+    "auditor": "independent AI audit agent (separate instance, producer != verifier), 2026-10-31",
+    "human": false,
+    "report": "papers/p4_born_stability_jarvis/AUDIT.md",
+    "verdict": "ACCEPT_WITH_CORRECTIONS",
+    "scope": "own recompile of byte-identical copies under /tmp, #print axioms, leanchecker replay (Probe and Witnesses rc 0, negative control rc 1), escape-hatch grep, parsing of all 18 matrices and 12 witnesses and comparison with its own symmetrised literal tensors by jid",
+    "not_scope": "the anse/formal/lean_runner.py gate and a statement lock were not run; statement adequacy (that the Lean statements mean what their gloss says) not certified by a person; pd_k proves the LDL^T identity and positive pivots, positive definiteness then follows from unit lower-triangularity outside Lean",
+    "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"
+   }
+  },
+  {
+   "schema_version": 1,
+   "id": "BM-A-0002",
+   "statement": "BornM2 (Probe.lean): foot_witness, a witness x != 0 with x^T C x <= 0 for the Mouhat-Coudert footnote-26 tensor (C11 = 1/2, C22 = C33 = 1, C12 = -1, C13 = C23 = 0; shear constants not given in the footnote, set to 1 here), and dia_pd, 578 * sum x_i^2 <= x^T C x for a diamond-type tensor (this does imply positive definiteness in Lean terms). Controls: Tamper1.lean (wrong witness), Tamper2.lean (lower bound 600 > 578) and Tamper3.lean (altered pivot) are rejected by the kernel (rc 1, errors: unsolved goal 2 <= 0, linarith failure, ring failure); the auditor's leanchecker negative control on a missing module gives rc 1.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:2aaaeb842cfcf0533999cb5f78010a2e3cce848379040e2344f2be9154ef107c",
+   "audit": null,
+   "ai_audit": {
+    "auditor": "independent AI audit agent (separate instance, producer != verifier), 2026-10-31",
+    "human": false,
+    "report": "papers/p4_born_stability_jarvis/AUDIT.md",
+    "verdict": "ACCEPT_WITH_CORRECTIONS",
+    "scope": "own recompile of byte-identical copies under /tmp, #print axioms, leanchecker replay (Probe and Witnesses rc 0, negative control rc 1), escape-hatch grep, parsing of all 18 matrices and 12 witnesses and comparison with its own symmetrised literal tensors by jid",
+    "not_scope": "the anse/formal/lean_runner.py gate and a statement lock were not run; statement adequacy (that the Lean statements mean what their gloss says) not certified by a person; pd_k proves the LDL^T identity and positive pivots, positive definiteness then follows from unit lower-triangularity outside Lean",
+    "note": "AI audit, not a person: the gate field audit is left null so LEDGER_UNAUDITED_TIER_A stays open; no statement lock"
+   }
+  },
+  {
+   "schema_version": 1,
+   "id": "BM-L-0001",
+   "statement": "Mouhat and Coudert, Phys. Rev. B 90, 224104 (2014), arXiv:1410.0065: an unstressed crystal is elastically stable iff the quadratic form E = (1/2) V0 sum C_ij e_i e_j is positive for all e != 0, i.e. the 6x6 stiffness matrix C is positive definite (all eigenvalues > 0, equivalently all leading principal minors > 0); under load the relevant matrix is B, not C (Eq. 20); the closed-form class conditions (Eqs. 6, 9, 11, 13, 15, 18); Eq. 19 is the linear orthorhombic criterion of Wu et al., PRB 76, 054115 (2007), which they call incorrect; footnote 26 gives the counterexample C11 = 1/2, C22 = C33 = 1, C12 = -1, C13 = C23 = 0.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:3195e6c3d2500b9bbd17cdcb8c1f7de72c8203af7f1cd8c54ee726ba676302d9",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BM-L-0002",
+   "statement": "Dataset and licence. JARVIS-DFT 3D dataset (figshare article 6815699, DOI 10.6084/m9.figshare.6815699; version 11 is 10.6084/m9.figshare.6815699.v11), file jdft_3d-9-24-2025.json.zip; the unzipped json has sha256 9dacb55ac8371c7c2bf0332933b55c98e9cca6201e92eb9d6fcd03aab0975907 and the zip's md5 c3179161ef0d029cf1fa70da463aac6e equals the figshare API's computed_md5. Licence CC BY 4.0 (figshare API, read by the producer before download and again by the auditor). Attribution: Choudhary et al., npj Comput. Mater. 6, 173 (2020), arXiv:2007.01831; elastic-tensor workflow: Choudhary et al., Phys. Rev. B 98, 014107 (2018), arXiv:1804.01033. Stored units are GPa (the auditor matched five published values of Table S3 to the printed digits). The dataset is not redistributed here; at most 22 of its tensors appear in the shipped Lean and json files, with an attribution line.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:0a0f77163e639ba5359114e3570db7a5d2845b3aece88c622867c7b1e6952747",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BM-L-0003",
+   "statement": "Born and Huang, Dynamical Theory of Crystal Lattices (Oxford, 1954), as the source that Mouhat and Coudert cite for the positive-definiteness criterion. Not read by the producer or the auditor; the criterion is taken from Mouhat-Coudert 2014.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [
+    "BM-L-0001"
+   ],
+   "evidence": "sha256:ae85f05144c1830ad276ed351c549137c8c62e57553511d8cf37c257592ba130",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BM-C-0001",
+   "statement": "Headline counts. Of 93,902 records, 59,400 have elastic_tensor = 'na', 34,502 carry a 6x6 list, 179 of these hold NaN or infinity and are excluded: N = 34,323. Reading each stored float as the exact rational of its shortest decimal and testing S = (C + C^T)/2: 22,842 are positive definite and 11,481 (33.45 %) are not, each of the latter with an exact rational witness x != 0, x^T S x <= 0 (204 of them on the boundary: first non-positive pivot exactly 0). Three exact methods agree on every one of the 34,323 entries: the producer's LDL^T and Bareiss elimination over Fractions, and the auditor's strict sign alternation of the exact characteristic polynomial (own code). The auditor re-checked all 11,481 witnesses on its own S (x != 0, x^T S x <= 0, equal to the stored value) and found 0 mismatches over 34,323 entries and 10 fields. sympy leading minors on a 14,615-entry subset agree (0 mismatches). The auditor's code and per-entry output are not shipped.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:4107fbbfb109ceea1e68c299e8c63528bca7e5d21017f047c739dfba14ad6264",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BM-C-0002",
+   "statement": "Null tensors. 234 stored tensors are numerically zero (max |entry| < 1e-6; the largest below the cut is 6.8e-12 and the smallest above is 0.333), all NOT PD. Excluding them, 11,247 of 34,089 (32.99 %) are not PD (robustly not PD 11,225). 12 tensors have a literal zero row.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "BM-C-0001"
+   ],
+   "evidence": "sha256:a32552f2ef1805e2b5adbddc30a6e48752083c61be1ce19d696e8e2e63abcdb3",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BM-C-0003",
+   "statement": "Rounding robustness (correction C1). Each printed value may vary within +-1/2 unit of its last printed place. Producer (Frobenius sufficient test): ROBUST_PD 22,708; ROBUST_NOT_PD 11,244; undecided 371. Auditor, exact Rohn (1994) vertex test over the 32 matrices S - T_z D T_z (z_1 = 1): ROBUST_PD 22,809; ROBUST_NOT_PD 11,244; certified truly ambiguous 55 (33 nominally PD, 22 nominally NOT PD); undecided 215, of which 210 are null tensors. With the half-width floored at 0.05: 22,809 / 11,216 / ambiguous 286 (33 PD + 253 NOT PD) / undecided 12. 33,399 tensors print every entry at 1 decimal; 874 tensors have an entry printed with more than 6 places.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "BM-C-0001"
+   ],
+   "evidence": "sha256:e656e1caed2c4f0ee3a018a511759d52566587193d7ef5bad9a15d956dc11afb",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BM-C-0004",
+   "statement": "The incorrect linear orthorhombic criterion (Mouhat-Coudert Eq. 19, applied to all entries regardless of class): 23,184 tensors pass it; 342 (1.00 % of N) pass it yet are exactly NOT PD (328 robustly); 0 fail it while PD (consistent with necessity). Class conditions: on the 30,203 entries to which a closed-form class condition applies, 555 disagree with exact PD of the full tensor (544 class-stable but not PD, 11 class-unstable but PD). Auditor's split of the 544 by block (correction C3): 184 have a Voigt diagonal entry <= 0, 299 a non-PD normal 3x3 block, 55 a non-PD shear block, 6 fail only through normal-shear couplings; 483 come from stored tensors that violate the class equalities the formulae assume, 61 from off-diagonal couplings. The VASP-to-Voigt permutation [0,1,2,4,5,3] was confirmed by the auditor (identity map would give 1,046 disagreements).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "BM-C-0001",
+    "BM-L-0001"
+   ],
+   "evidence": "sha256:3850df41cfb4f685a6743893d3e2d4321c1553af602f8f32f463c7b61b00c10d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BM-C-0005",
+   "statement": "Controls, run and logged before any dataset number: positive (Cu, Si, diamond PD in exact, Bareiss and float; the footnote-26 tensor passes the incorrect linear criterion, fails exact PD, rational witness found; three known-unstable cubic tensors NOT PD); negative (sign flips of C11 and C44 flip the verdict; symmetry breaking detected; a singular tensor C11 = C12 is NOT PD and rounding-undecided; a tensor 0.1 GPa from the boundary is PD but undecided); random cross-check LDL^T vs Bareiss on 6,000 random rational matrices, sympy on 400. The producer log has 24 lines, every check PASS and ALL_CONTROLS_PASS True (logs/controls.json is the tracked record; the .log files are untracked and shipped as .log.txt copies, correction C8). The auditor ran 14 controls of its own (all PASS); it did not re-run the producer's controls.py.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:4636797a2ffe3498e9fbc9faf2fee5fbdcaeb9ad88a01e05975e45ba044ad3a4",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BM-C-0006",
+   "statement": "Dataset observations, neutral (the owner has not forwarded these to the dataset authors): 59,400 records with elastic_tensor = 'na'; 179 tensors with NaN or infinity; 234 numerically zero tensors; 12 with a literal zero row; 922 not exactly symmetric (232 of them null tensors; 598 have max |C_ij - C_ji| > 1 GPa, median 19.5 GPa; for 7 the verdict depends on which triangle is mirrored); 874 with an entry printed with more than 6 places; 18 with an entry above 1e4 GPa, smallest float eigenvalue -6.3e5. Read-sanity (a positive control for reading the dataset): Voigt K and G recomputed from the tensor match the stored bulk_modulus_kv / shear_modulus_gv within 1 % for 97.9 % / 98.1 % of entries (median relative error 3e-5).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "BM-C-0001"
+   ],
+   "evidence": "sha256:491029b458e7fa10157c74537d87c2271fe07227a6a8d95ffce8ad63a784732f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BM-C-0007",
+   "statement": "Provenance of the preregistration (correction C7): prereg_M2.json (sha256 2c3127f9...5d0fb) records written_utc 16:30Z, which is wrong; its file mtime is 16:22:52Z, before the dataset download (16:23:00Z) and all runs (16:24 to 16:37). The file was committed together with the results (051f87d), so git does not show the order; only the mtimes do. Outcome by the preregistered rule: KEEP. Deviations are logged in RESULT.md (sympy on a subset; post hoc additions; Lean limited to controls plus an 18-entry sample).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:90a02816bded9b464a13cdcdef22917b352da95c851c4aaf309e5f12a320efcf",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BM-C-0008",
+   "statement": "HEADLINE. Under the stated reading (every stored float taken as the exact rational of its shortest decimal; verdict for S = (C + C^T)/2; zero-stress Born criterion), 11,481 of the 34,323 finite 6x6 elastic tensors of JARVIS-DFT dft_3d (33.45 %; 32.99 % without the 234 null tensors) are not positive definite, each with an exact rational witness, by three exact methods and an independent AI audit. This is a statement about stored DFT tensors, not about materials: many entries are raw DFT outputs including hypothetical, unrelaxed and dynamically unstable structures, so a substantial fraction is expected; it does NOT say JARVIS-DFT is wrong and says nothing about any material being unstable in a laboratory. Finite-difference noise, residual stress, magnetism and convergence remain possible reasons for individual entries. Novelty: to our knowledge no exact-rational Born audit of the whole JARVIS elastic dataset has been published (not an exhaustive search). Filed C because the enumeration is not kernel-checked; Lean covers 18 explicit matrices only.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "BM-C-0001",
+    "BM-C-0002",
+    "BM-C-0003",
+    "BM-C-0005",
+    "BM-A-0001",
+    "BM-A-0002",
+    "BM-L-0001",
+    "BM-L-0002"
+   ],
+   "evidence": "sha256:e53eb5f44f8dae31b23d9df58a7e7f863d97b7fbe0da11550c83cea4f7bd268b",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BM-X-0001",
+   "statement": "Float pipelines versus the exact verdict: numpy eigvalsh(S).min() > 0 disagrees with the exact verdict on 0 of 34,323 tensors; with absolute tolerance -1e-8 on 236 (all call a not-PD tensor stable; 234 are the null tensors); with relative tolerance -1e-6 * lambda_max on 3 (2 not null). Reproduced by the auditor with its own numpy call. Float verdicts are not evidence of anything about the exact verdict.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:e0807179519c2ea11af1604d04ae61b6ef52de441158f5f3ec4181d1d3153131",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BM-X-0002",
+   "statement": "Context only, no association claimed: among entries with min_ir_mode a negative lowest IR mode is stored for 40 of 480 NOT-PD tensors (8.3 %) versus 221 of 2,959 PD tensors (7.5 %) (2 null tensors among the 480); NOT-PD fraction is 11.3 % (1,048 of 9,258) for entries with an ICSD id versus 41.1 % (10,199 of 24,831) without. The meaning of min_ir_mode was not verified. The ehull bins of the producer's RESULT.md (30.3 % vs 33.0 %) are WITHDRAWN (correction C2): the field was not verified to be an energy above hull (median 1.55, ICSD-linked median 1.46); the producer's JSON files still contain those bins.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:5d15dd344787bb35549afe41d66930eca979b71d4708f828ac2fb42ccac09951",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "BM-X-0003",
+   "statement": "NOT done or not verified: the binding anse/formal/lean_runner.py gate and a statement-lock entry for the Lean statements; the auditor did not re-run the producer's controls.py (it ran its own); Born-Huang 1954 not read; the physical meaning of the JARVIS fields ehull and min_ir_mode and the convergence state of individual calculations; Lean certificates for the other 11,469 unstable entries and for a larger stable sample (verified in Python only); repository guards antigravity_guard.py, test_rigor_guard.py and pytest tests/ were not run for this paper; no human audit. Recorded so the absences are explicit.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:1dfa298aaef6a8b615fc522b906607f30a09ca036fb9bbb48acaf2eaa4d5a708",
+   "audit": null
+  }
+ ]
+}

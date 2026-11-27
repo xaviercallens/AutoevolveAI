@@ -1,0 +1,316 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "EG-A-0001",
+   "statement": "Transport of P7's absorption limit (Transport.lean): EvoGraph.two_absorbing_limit, for a stochastic kernel P on a finite type with absorbing bot != top, h harmonic off {bot,top}, h bot = 0, h top = 1 and positive one-step variance off {bot,top}: P^t(s,top) -> h s and P^t(s,bot) -> 1 - h s; obtained from ProgPopGen.fixation_limit by conjugating with an enumeration of the state type, nothing re-proved. Also sPow_top_mono: P^t(s,top) is non-decreasing in t.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:b52035b544600cc858fb5d85d59349b7453901c771486d6d69614f60ce317d3f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-A-0002",
+   "statement": "Birth-death configuration chain (BirthDeath.lean): bd_absorbing (bdK mu W r is stochastic with absorbing empty set and univ for row-stochastic W, mu > 0, r > 0, 0 < n), up_eq (P+(S) = r cutOut(S)/F(S)), down_eq (P-(S) = cutIn(S)/F(S)), expect_eq (first-step expectation).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:732cf5239e512c6b9e8f405da354d6175cb94c84e49f111afe8123a9d0cfda82",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-A-0003",
+   "statement": "Forward bias (BirthDeath.lean): for row-stochastic W and mu stationary (sum_i mu_i W_ij = mu_j), flow_balance (net flow of mu W across every set S is 0), cut_balance (cutOut S = cutIn S) and forward_bias: upP S = r * downP S for EVERY configuration S.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "EG-A-0002"
+   ],
+   "evidence": "sha256:3a5802b11a2351bcf57b3a0d053645ed88cc163e379d7937e0821873106f9d31",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-A-0004",
+   "statement": "Harmonicity (BirthDeath.lean): moranFix_card_harmonic (for stationary mu, S -> moranFix n r |S| satisfies the first-step equation of the configuration chain at every non-empty S) and moranFix_card_var_pos (positive one-step variance at S whenever an edge i in S -> j not in S has mu_i W_ij > 0).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "EG-A-0002",
+    "EG-A-0003"
+   ],
+   "evidence": "sha256:3f71d56c22f3fb434ae78ecfd69e2c2b88a69e5f346f329b90a6b2513e4ede6c",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-A-0005",
+   "statement": "cutPositive_of_strongly_connected (BirthDeath.lean): if mu > 0 and the digraph {(a,b): W a b > 0} is strongly connected (TransGen), then every proper non-empty S has an edge leaving it with mu_i W_ij > 0. Only this direction is proved.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:1032bebef51cb51741f18b3ca778445e3d18e30a64fa342b538ba273fbf47cd2",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-A-0006",
+   "statement": "stationary_fixation (BirthDeath.lean): 0 < n, 0 < r, mu > 0, W row-stochastic, mu W = mu, cut positivity => for every S, P^t(S,univ) -> moranFix n r |S| and P^t(S,empty) -> 1 - moranFix n r |S| (n-step kernel limits of the configuration chain).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "EG-A-0001",
+    "EG-A-0002",
+    "EG-A-0003",
+    "EG-A-0004",
+    "EG-A-0005"
+   ],
+   "evidence": "sha256:396e5daec0b20668cacd3debe0a92979a24e2bb410b505aedcda455953d8212c",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-A-0007",
+   "statement": "Isothermal theorem for birth-death updating (BirthDeath.lean): isothermal_fixation (mu = 1, W doubly stochastic, strongly connected: P^t(S,univ) -> moranFix n r |S| for every S), isothermal_fixation_single (r != 1, single mutant at any node v: limit (1 - r^-1)/(1 - r^-n)), isothermal_fixation_neutral (r = 1: |S|/n), isothermal_fixation_uniform (uniformly placed single mutant), bd_fixation_mono (P^t(S,univ) non-decreasing in t).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "EG-A-0006"
+   ],
+   "evidence": "sha256:77ad8a396ad856924f8dc40728bbffdfb71e276e6a1a1ad0fad60b2966c2fbc5",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-A-0008",
+   "statement": "Positive controls (Examples.lean): wellMixed_up / wellMixed_down (for W = J/n and every n, S: upP = moranUp n r |S| and downP = moranDown n r |S|, an exact lumping onto P7's Moran chain); wellMixed3_fixation (n = 3, r = 2: limit 4/7); starStationary_fixation (star n = 3 with stationary mu = (1/2,1/4,1/4): limit from the centre 4/7).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "EG-A-0006",
+    "EG-A-0007"
+   ],
+   "evidence": "sha256:f78aa84876457b5c5246921b4cf466eaae47d7288f2ce4e1a6ac9bc490231845",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-A-0009",
+   "statement": "Negative controls, star graph n = 3 (centre 0, W_0j = 1/2, W_j0 = 1), r = 2, mu = 1 (Examples.lean): star_not_isothermal (centre column sum 2), star_bias (upP {0} = downP {0} = 1/2, ratio 1 != r), star_fixation_centre (5/12), star_fixation_leaf (2/3), star_fixation_uniform (7/12), star_ne_moran (5/12, 7/12 and 2/3 each differ from moranFix 3 2 1 = 4/7).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "EG-A-0001"
+   ],
+   "evidence": "sha256:0e8e2c43b6ec47ce3d7c03ae62c36a36fcd2edb6c3b72a38ec51bad40612ed5f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-A-0010",
+   "statement": "Negative controls (Examples.lean): cycle4_not_lumpable (isothermal 4-cycle W_{i,i+-1} = 1/2 without self-loops, r = 2, mu = 1: configurations {0,1} and {0,2} have the same number of mutants, upP = 1/3 resp. 2/3, yet upP = 2 downP at both) so the one-step probability of a count increase is not a function of the count; identity_no_fixation (W = I on 2 nodes is doubly stochastic but not strongly connected, P^t({0},univ) = 0 for all t, no convergence to moranFix 2 2 1).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "EG-A-0003"
+   ],
+   "evidence": "sha256:35d48c184c744187b514daa1a027f48d81df29c63ffa8e3dcb4134435c67ecde",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-A-0011",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "audit": null,
+   "statement": "Planted controls (EvoGraphPlantedControls.lean; imported by nothing) are CAUGHT by #print axioms: EvoGraphControls.ctl_sorry (false claim: star centre -> 4/7) reports sorryAx; ctl_axiom (false: uniform single mutant on the star -> 4/7) and ctl_axiom_lumpable (false: upP {0,1} = upP {0,2} on the 4-cycle) report the planted axiom EvoGraphControls.ctl_cheat. The file compiles with rc 0, so exit status is not the gate.",
+   "evidence": "sha256:13dfb9b418728eb38758dbd70bd3a01ca596a3f5ba29c0e57a9f604d001e61bd"
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-L-0001",
+   "statement": "Keller and Ugurlu (arXiv:2403.12598v2) CLAIM that the Lieberman-Hauert-Nowak (2005) proof projects the configuration chain onto the mutant count, treats it as a birth-and-death process, and that this projection need not be Markovian (abstract, p. 1; Section 1.2, p. 4; Section 2.2, p. 7), and that therefore 'the isothermal theorem remains unproven till today' (p. 4). This ledger records the claim as the authors' claim; it does not endorse 'unproven' (see EG-C-0005).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:cc5648ac8f2f62053814cc84c32cc09da00ee224a24951bfee57cc6ea758a852",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-L-0002",
+   "statement": "Keller and Ugurlu (arXiv:2403.12598v2): Definition 2.1 (selection policy pi with pi W = pi), Theorem 3.1 (for every micSMP with stationary selection and every initial distribution on X_j the fixation probability is the Moran value), proved by the martingale r^{-M_k} and optional stopping (p. 9), Theorem 3.2 (p^-/p^+ is constant iff mu is the stationary vector, then 1/r; p. 10), and the equivalence 'isothermal iff bistochastic' (Section 2.3, p. 7).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:31d5a176ce8213b662b6ba27925b28ce364a1a1440f822f380c58550371fd6bc",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-L-0003",
+   "statement": "Pattni, Broom, Rychtar and Silvers (arXiv:1505.06021v1, 22 May 2015): Lemma 1 (Constant Forward Bias, Appendix A.2, p. 11): for processes whose transitions change at most one site and have forward and backward moves at every interior state, 'fixation probability equals the Moran value with ratio c' is equivalent to 'P+_S/P-_S = d for all S', with c = d; the proof of (b) => (a) removes holding, lumps the resulting jump chain onto |S| (Kemeny-Snell Thm 6.3.2) and solves the birth-death walk (p. 12). Proposition 2 (p. 6) and the remark on p. 7: for birth-death with fitness-proportional birth (BDB), W is rho-equivalent to the Moran process for all r iff f_R(W) is a circulation, i.e. 'the Isothermal theorem from [LHN05]' for right-stochastic matrices; the forward bias equals r when U = f_R(W) is doubly stochastic (p. 14). They assume strong connectivity and allow self-loops (p. 2, 5).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:6eebe98bd4b078ce13f07f0c84f0e75b4d817b683e0b209df0934337bbce0c01",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-L-0004",
+   "statement": "Bibliographic data for Lieberman, Hauert and Nowak (2005): E. Lieberman, C. Hauert, M. A. Nowak, 'Evolutionary dynamics on graphs', Nature 433(7023):312-316, January 2005, doi:10.1038/nature03204, as listed in the reference list of Keller and Ugurlu (p. 18) and in an IDEAS/RePEc record. The paper itself was NOT read by the authors of this preprint; everything said here about its argument is second-hand through EG-L-0001 and EG-L-0003. (Keller and Ugurlu's abstract names the venue 'Nature Communications'; their own reference list gives Nature.)",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:1ef036745fcab73eb741a736d510b5ea7d6c68721f5e10f356ceaa41e0ff6b17",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-C-0001",
+   "statement": "PREREGISTRATION DEVIATION. The preregistered N4 statement (preregistration.json, 2026-10-26) reads: 'prove that if the graph is isothermal ... the number of mutants is a birth-death chain with the Moran ratio r, hence fixation probability (1 - r^-1)/(1 - r^-N) ...'. The clause 'the number of mutants is a birth-death chain' is false as a Markov-chain statement for the chain with holding: kernel-checked cycle4_not_lumpable shows the one-step increase probability is a function of the configuration and not of the count. The proved replacements are the per-configuration forward bias upP = r downP (forward_bias) and the harmonicity of moranFix n r |S| on configurations; the fixation conclusion is proved in full. Not claimed: that the count is Markov, in particular not claimed to be non-Markov from every initial law (cycle4_not_lumpable refutes strong lumpability only).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "EG-A-0003",
+    "EG-A-0007",
+    "EG-A-0010",
+    "EG-L-0001"
+   ],
+   "evidence": "sha256:795e91f447e3b5efd774a6dd694b0af5b3884586cc54c65a7cf8bbf6efed558d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-C-0002",
+   "statement": "Step-by-step human proof of the isothermal theorem (model; forward bias P+ = r P- per configuration from cut balance; harmonicity of S -> moranFix(|S|) by a telescoping first-step computation; absorption limit by transport of P7; strong connectivity implies cut positivity; why the count does not lump). Each step is paired with the Lean declaration of EG-A-0001..0007 and EG-A-0010; the human text itself is not machine-checked.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "EG-A-0001",
+    "EG-A-0002",
+    "EG-A-0003",
+    "EG-A-0004",
+    "EG-A-0005",
+    "EG-A-0006",
+    "EG-A-0007",
+    "EG-A-0010"
+   ],
+   "evidence": "sha256:01dbbc52ce01736f1e7ef134576f2519b5e91c21f0e8e87d69f6b7a29b624ad1",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-C-0003",
+   "statement": "On the isothermal 4-cycle (r = 2, no self-loops) the HOLDING-REMOVED jump chain does lump onto the count: P+/(P+ + P-) = (1/3)/(1/2) = 2/3 at {0,1} and (2/3)/1 = 2/3 at {0,2}, as Pattni et al.'s Lemma 1 requires; what fails to lump is the chain with holding (holding probability 1/2 at {0,1} and 0 at {0,2}). So cycle4_not_lumpable does not contradict the theorem or Pattni et al.'s route; it contradicts only the claim that the count of the lazy chain is Markov. Hand computation from upP, downP values in cycle4_not_lumpable, cutOut/cutIn/F.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "EG-A-0010",
+    "EG-L-0003"
+   ],
+   "evidence": "sha256:db555782a995b26fa6a5aa73ce68a9f882ae6e3fd70d4271fcf014f59b3176fc",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-C-0004",
+   "statement": "Bridge to probability (not formalised, as in P7): P^t(S,univ) is by definition the t-step transition probability of the configuration chain; since univ is absorbing it equals P(T_univ <= t) (consistent with the kernel-checked monotonicity bd_fixation_mono), and its limit is the fixation probability P(T_univ < infinity). No path space is built in Lean.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "EG-A-0007"
+   ],
+   "evidence": "sha256:d975f4a4ccc5dbd3f1fa43dcfd0d432bb4128debc78bb2000be0ff898f81e455",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-C-0005",
+   "statement": "Relation to the literature (our reading; not machine-checked). (i) Keller and Ugurlu locate a gap in the projection argument and prove the theorem by a martingale (EG-L-0001, EG-L-0002); Pattni et al. (2015) give a proof through per-configuration forward bias and lumping of the jump chain (EG-L-0003). So a valid route to the theorem existed before 2024 and we do not endorse the phrase 'unproven' (the gap is in projecting the chain with holding; we did not read LHN 2005 and cannot say how it argued). (ii) The Lean proof uses the per-configuration forward-bias hypothesis (Pattni et al.'s condition (b)), but then proceeds by harmonicity of moranFix(|S|) on configurations and P7's absorption limit, which is closer in spirit to the Keller-Ugurlu martingale r^{-M_k} than to Pattni et al.'s lumping. (iii) stationary_fixation matches Keller-Ugurlu Theorem 3.1 in statement (selection weight a left eigenvector of W, fixation probability the Moran value) up to normalisation of mu; it is proved in Lean here, in the n-step-kernel sense of P7.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "EG-L-0001",
+    "EG-L-0002",
+    "EG-L-0003",
+    "EG-A-0003",
+    "EG-A-0006"
+   ],
+   "evidence": "sha256:1542562802483daa58bec904a63eb3429fb9440e3048cf4dd414b1bd4ce90df9",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-C-0006",
+   "statement": "Biological relevance (motivation only; every sentence is Tier C): the model is the standard evolutionary-graph-theory setting in which structure is a weighted replacement digraph and a graph is compared with the well-mixed Moran process (Pattni et al. p. 1-2); the theorem says that, for birth-death updating with fitness-proportional birth, balanced (doubly stochastic, strongly connected) replacement structure does not change the single-mutant fixation probability. Hence an amplifier or suppressor of selection under this updating must break the balance. The star control shows an unbalanced graph that differs from the Moran value at ONE fitness (r = 2, n = 3: 7/12 vs 4/7); one value of r does not establish that the star amplifies for all r. Tissue architecture is cited only as the usual motivation for studying structured populations; no tissue data enter this preprint and no biological prediction is made. Death-birth and other updatings, mutation, and time-dependent structure are not covered.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "EG-A-0007",
+    "EG-A-0009",
+    "EG-L-0003"
+   ],
+   "evidence": "sha256:69ba0c756de9154c2d4eecd49e44ada5f52981b597b53c3194c45f3003e9a1ec",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-C-0007",
+   "statement": "Novelty: none claimed for the mathematics (Lieberman-Hauert-Nowak 2005; Pattni et al. 2015; Keller-Ugurlu 2024). We are not aware of a prior machine-checked formalisation of the isothermal theorem, but no systematic search of Lean/Coq/Isabelle libraries or the proof-assistant literature was done; absence by search is not proof. Scope of the Lean statements: sufficiency only (isothermal => Moran); birth-death with fitness at birth only; row-stochastic W (general weights reduce to this through Pattni et al.'s map f_R, not formalised); limit of the n-step kernel (no path measure); exact star values for n = 3 only.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:3477e234edd491ac817de4492ada447e931f9dbddbf99e0195d9bfcff8ec1b90",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-C-0008",
+   "statement": "Dependencies: the N4 modules import only Mathlib and P7's Programmes.PopGen.Absorption and Programmes.PopGen.MoranModel (doi:10.5281/zenodo.23653850, unchanged, sha256 recorded); no result of openai/math is used. The P7 Tier A statements are used as they are; their own status (producer compile, same-pipeline recompile, independent AI audit ACCEPT_WITH_CORRECTIONS, no human audit) is stated in the P7 preprint.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "EG-A-0001"
+   ],
+   "evidence": "sha256:5ccc3e6084ae7afc37d5007e0d8a5ef61ab37347a28e8f6f526ab76c9078fe31",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-C-0009",
+   "statement": "Review status: the Lean files were compiled by their producer and re-compiled at the paper stage by the same AI pipeline. An independent adversarial AI auditor (producer != verifier; not a human) recompiled the modules from source into its own olean directory, re-ran #print axioms, ran a leanchecker kernel replay (rc 0; a debug.skipKernelTC forgery control was rejected), recomputed the star and 4-cycle values with an independent exact-rational script and checked both cited sources: verdict ACCEPT_WITH_CORRECTIONS (papers/p3_isothermal_theorem/AUDIT.md; statement lock results/proposal3/2026-10-26/N4/STATEMENT_LOCK.json). There has been no human audit, so the ledger audit fields stay null. Every Tier A tag means 'kernel-checked, statement adequacy not audited by a human'.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:989c3e511dc881b920cbfbce3faa58b6616f98227476f5648998ee357e910e7b",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-X-0001",
+   "statement": "Independent exact-rational numerics (numerics_evograph.py, Fractions, Gaussian elimination on all 2^n configurations, r = 2, mu = 1 unless stated): W_H n = 3 (4/7) and n = 4 (8/15), the 4-cycle and a random rational doubly stochastic 4x4 matrix reproduce the Moran value from every single mutant; star n = 3 gives (5/12, 2/3, 2/3), mean 7/12 (matches the Lean values); star n = 4 gives (392/1265, 168/253, 168/253, 168/253), mean 728/1265 != 8/15 (numerics only, not kernel-checked); a random row-stochastic non-doubly-stochastic matrix differs; the star n = 3 with stationary mu gives 4/7; the 4-cycle (up,down) at {0,1},{0,2} = (1/3,1/6),(2/3,1/3). result.json labels the n = 4 numbers Tier C; this ledger files all numerics as Tier X (computed by an unverified script, never supporting a claim). Re-running the script reproduced numerics_evograph.json (git reports no change).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:5f68dea09d78f4b2b8aadf399f5def2a743585fdf5f8879a18d39e081a059cbd",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "EG-X-0002",
+   "statement": "Paper-stage recompile by the same AI pipeline (not independent): the five EvoGraph files compiled again with lean_pinned.py (taskset -c 4,5, no olean written), rc 0 for all five, #print axioms lines identical to the producer transcripts (23 lines for the claimed modules, 3 planted lines reporting sorryAx and ctl_cheat).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:14fd0f5b9cf53c2a4d7f451b7ff1444e2317b269178d14fa92e57e6a2abf9529",
+   "audit": null
+  }
+ ]
+}

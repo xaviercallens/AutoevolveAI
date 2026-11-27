@@ -1,0 +1,109 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\makeatletter\g@addto@macro{\UrlBreaks}{\do\_\do\.\do\/}\makeatother
+\emergencystretch=3em
+\tolerance=2000
+\newcommand{\tier}[1]{\textsf{[#1]}}
+\newcommand{\tL}{\tier{L}}
+\newcommand{\tC}{\tier{C}}
+\newcommand{\tX}{\tier{X}}
+\newcommand{\tx}[1]{\texttt{#1}}
+\newcommand{\bb}{\beta}
+
+\title{An independent exact recheck of a claimed finite counterexample\\
+to Gale's conjecture in $\mathbb{R}^3$\\
+{\large (a recheck of a result by others; no novelty is claimed)}}
+\author{Xavier Callens (SocrateAI Lab)}
+\date{Preprint v1, 2026-11-01}
+\hypersetup{pdftitle={An independent exact recheck of a claimed finite counterexample to Gale's conjecture in R^3 (a recheck of a result by others)},
+  pdfauthor={Xavier Callens}}
+
+\begin{document}
+\maketitle
+\begin{center}\small doi:10.5281/zenodo.23859706 \quad (not peer reviewed)\end{center}
+
+\begin{center}\small Zenodo DOI to be assigned on release \quad (not peer reviewed)\end{center}
+
+\noindent\textbf{AI-assistance disclosure and audit status.} This preprint, its code, its claim ledger and the audit were produced by AI agents (Claude, Anthropic) under the author's direction; the author is responsible for the content.
+\textbf{This version was audited by a separate AI agent instance (\texttt{AUDIT.md}, ACCEPT\_WITH\_CORRECTIONS), not by a human.} The audit's corrections are applied (Section~\ref{sec:corr}). No human audit exists. There is no Lean in this paper.
+
+\begin{abstract}
+\noindent\textbf{Frame.} V.~Voronov (arXiv:2610.28828, 20 Oct 2026) claims a counterexample to Gale's conjecture $\bb_{n,n+1}=\bb_{n+1}(B^n)$ ($n\ge2$) in $\mathbb{R}^3$: a set $V$ of $101$ points (Appendix~A, seven decimals) with $\bb_4(V)>0.88928>\bb_4(S^2)$. The counterexample is Voronov's; \textbf{we claim nothing new and do not claim to have disproved Gale's conjecture.} We re-derived the finite part of his Theorem~2 from the printed coordinates with different code, and checked the ball bound only as far as stated below.
+
+\noindent\textbf{What was rechecked.} Exactly (Tier~\tC{}): $303$ appendix numbers give $101$ distinct points; $D^2=100000021020030$ (units $10^{-14}$), attained only by one pair; exactly $2030$ pairs have distance $>0.88928\,D$, none on the threshold (weakest included ratio $0.8892809651$, strongest excluded $0.8892597950$); the $2030$-edge distance graph is \emph{not} $4$-colourable, with DRAT and LRAT certificates checked by three checkers and a producer/auditor split of encoder, solver and checker; it is $5$-colourable; it contains a minimal non-$4$-colourable subgraph on $425$ edges; and $\bb_4(V)=0.88928096513\ldots$ \emph{exactly} for this rounded set. The configuration is fragile: moving one coordinate by $10^{-3}$ makes it $4$-colourable. Tier~\tL{}: the upper bound $\bb_4(B^3)\le\sigma_3=\sqrt{(3+\sqrt3)/6}=0.88807$ and the wording of Gale's conjecture are taken from the paper; $\operatorname{diam}T=\sigma_3$ behind the bound is only sampled in floating point (Tier~\tX{}).
+\end{abstract}
+
+\noindent\fbox{\parbox{0.96\linewidth}{\small\textbf{What this is NOT.} Not a new result; not a proof of anything beyond the finite combinatorial and metric facts above; not a formal proof (no Lean, Tier~A not reached); not a check of Gale's 1953 wording, of the optimality of $\sigma_3$ for the ball, or of dimensions $4$--$6$ or of the author's search code; not human-audited. The refutation, if it stands, is Voronov's.}}
+
+\paragraph{Markers.} \tL{}: a cited source, taken as stated. \tC{}: executed exact code with the argument written down, certificates machine-checked by trusted third-party checkers, not formalised. \tX{}: floating-point or recorded-absence evidence. Identifiers \texttt{GALE-$\cdot$-nnnn} refer to \texttt{ledger/ledger.json}.
+
+\section{The claim and its status}\label{sec:claim}
+For a bounded $A\subset\mathbb{R}^n$ let $\bb_k(A)=\inf\max_i \operatorname{diam}A_i/\operatorname{diam}A$ over partitions into $k$ parts, and $\bb_{n,k}=\max_A\bb_k(A)$ (Voronov, Definitions 1, 2). Gale's conjecture, as quoted by Voronov from Gale (1953): $\bb_{n,n+1}=\bb_{n+1}(B^n)$ for every $n\ge2$ (\tL{}; Gale 1953 was not read). Voronov's Theorem~2 \cite{vor}: for the $101$-point set $V$ of his Appendix~A, every partition into four parts has a part of diameter $>0.88928\operatorname{diam}V$, while $\bb_4(S^2)=\sigma_3=\sqrt{(3+\sqrt3)/6}\approx0.88807$ (tetrahedral partition; optimality is credited to Kalai, \tL{}). The paper states that it has not been independently reviewed and has no Lean formalisation. We found no independent verification, refutation or comment in the literature on 2026-11-01 (alphaXiv lists only the paper and the unrelated-in-content arXiv:2610.39078 \cite{bor}; MathWorld restates the claim, which is a report and not a check).
+
+\section{Exact geometry (\tC{})}\label{sec:geom}
+\paragraph{Extraction.} The $303$ numbers of Appendix~A were extracted by two tools different from the producer's \texttt{pdftotext}: PyMuPDF word boxes (clustered into rows, read row-major) and pdfminer.six; both give $303$ tokens, equal as multisets, and row-major order equals the author's repository points rounded half-even to seven decimals (maximum rounding error $4.96\cdot10^{-8}$). The coordinates are third-party and are \emph{not} reproduced here; \texttt{data/third\_party\_hashes.json} gives hashes and fetch instructions.
+
+\paragraph{Distances (exact rationals).} $101$ distinct points. $D^2=100000021020030\cdot10^{-14}$, $D=1.0000001051$, attained only by the pair $(19,56)$. With threshold $88928/100000$ compared exactly as $\mathrm{dist}^2>(88928/100000)^2D^2$ there are exactly $2030$ edges and no pair on the threshold. Degrees range over $28..52$, the $4$-core is all $101$ vertices, the maximum clique has size $4$ (so non-$4$-colourability is not from a $K_5$).
+\begin{table}[h]\centering\small
+\begin{tabular}{@{}lll@{}}\toprule
+quantity & value & \\ \midrule
+weakest included pair (rank $2030$) & ratio $0.8892809651305$ & $\mathrm{ratio}^2$ margin $1.7165\cdot10^{-6}$, \textbf{ratio margin $9.65\cdot10^{-7}$}\\
+strongest excluded pair & ratio $0.8892597950$ & gap to $0.88928$: $2.02\cdot10^{-5}$\\
+$\sigma_3=\sqrt{(3+\sqrt3)/6}$ & $0.8880738340$ & $0.88928>\sigma_3$ exactly: $(6t^2-3)^2>3$, $6t^2-3>0$\\ \bottomrule
+\end{tabular}
+\caption{Extreme ratios (\tC{}). The first version of the producer's record gave the ratio margin as $9.65\cdot10^{-8}$; that was ten times too small (audit correction~1).}\label{tab:marg}
+\end{table}
+\paragraph{Rounding robustness.} If every coordinate moves by at most $\delta=5\cdot10^{-8}$ (half a unit in the seventh decimal), each distance and $D$ move by at most $2\sqrt3\,\delta\approx1.7\cdot10^{-7}$, so each ratio moves by at most about $(1+0.889)\cdot1.7\cdot10^{-7}\approx3.3\cdot10^{-7}$. This is below the included margin $9.65\cdot10^{-7}$ and the excluded gap $2.02\cdot10^{-5}$: \emph{any} coordinate set that rounds to Appendix~A gives the same $2030$-edge graph. Direct confirmation: the author's $17$-figure repository points give the identical edge set (symmetric difference $0$), with a different diameter pair $(12,37)$ and weakest ratio $0.8892811623939$ (the author's stored $0.889281162393$).
+
+\section{Non-4-colourability (\tC{})}\label{sec:sat}
+\paragraph{Producer.} Direct encoding (at-least-one, pairwise at-most-one, $2030\times4$ conflict clauses; $404$ variables, $8828$ clauses with a symmetry unit for vertex~$0$), Glucose4 with a DRUP proof, checked by drat-trim (\texttt{s VERIFIED}); the same without the symmetry unit (backward and forward drat-trim both \texttt{s VERIFIED}); CaDiCaL 1.9.5 on a ladder encoding: UNSAT; own exhaustive DSATUR backtracking: not $4$-colourable ($745$ nodes). An independent parser rebuilt the clause set from the edge list and found both CNF files equal to it.
+\paragraph{Auditor (own code, no producer code).} A $2$-bit encoding (one pair of variables per vertex, four $4$-literal clauses per edge, $202$ variables, $8120$ clauses, no symmetry breaking); encoder controls $K_4$ (4-colourable), $K_5$ (not), Moser spindle (4-colourable) and a planted $4$-colourable graph with $101$ vertices and $2030$ edges pass. PicoSAT~0.6.6: UNSAT (also on a direct encoding without at-most-one). CaDiCaL~3.0.1: UNSAT, DRAT proof \texttt{s VERIFIED} by drat-trim; LRAT proof verified by \texttt{lrat-check.c} (\texttt{c VERIFIED}) and by the auditor's own Python LRAT checker (about $40$ lines, RUP hints only, RAT rejected; $6246$ lemmas). Negative control: with one hint removed from one line both LRAT checkers reject the proof. The producer's no-symmetry proof converted to LRAT by \texttt{drat-trim -L} passes both checkers ($294$ lemmas in the Python checker).
+\paragraph{Colourings.} The graph is $5$-colourable (colouring validated edge by edge), so its chromatic number is $5$.
+\paragraph{Controls (producer).} $K_4$ ($k=4$ SAT, $k=3$ UNSAT), $K_5$ ($k=4$ UNSAT), $K_6$ ($k=5$ UNSAT), Gr\"otzsch ($k=3$ UNSAT, $k=4$ SAT), Moser spindle ($k=3$ UNSAT, $k=4$ SAT), Petersen ($k=3$ SAT, $k=2$ UNSAT), with all three routes agreeing and every UNSAT proof checked; a bogus or empty proof is rejected by drat-trim; three planted $4$-colourable graphs with $101$ vertices and $2030$ edges are found $4$-colourable. (The preregistered expectation ``Moser spindle $k=3$ SAT'' was wrong; the spindle has chromatic number $4$. Recorded as deviation~1 in \texttt{data/RESULT.md}.)
+
+\section{The value of $\bb_4(V)$, sweep, criticality, fragility (\tC{})}\label{sec:struct}
+\paragraph{Exact value.} Sorting all $5050$ pairs by length, the $2029$ longest pairs form a $4$-colourable graph; PicoSAT found a colouring, decoded and validated edge by edge (class sizes $21/20/37/23$), whose longest monochromatic pair is exactly pair number $2030$. Hence for this rounded set $\bb_4(V)=\sqrt{39541040058709/50000010510015}=0.88928096513\ldots$ is an \emph{equality}, not merely a lower bound. (The producer had written ``$\ge$''; audit correction~3.)
+\paragraph{Threshold sweep.} Not $4$-colourable at $t=0.888$, $0.888073$ ($2054$ edges), $0.889$ ($2039$), $0.88928$ ($2030$); $4$-colourable at $0.889281$ ($2025$ edges) and at $0.8893,0.8895,0.890,0.892,0.895,0.90$.
+\paragraph{Criticality.} A deletion-based search gives a non-$4$-colourable subgraph with $425$ edges on all $101$ vertices. The auditor verified exhaustively that all $425$ single-edge deletions are $4$-colourable (validated colourings), so it is edge-critical; minimum size was not examined. Deleting any one vertex from the full graph leaves a $4$-colourable graph (all $101$ cases).
+\paragraph{Fragility.} Moving one coordinate of a random point by $10^{-3}$ ($20$ trials) made all $20$ graphs $4$-colourable (edge counts $1885$--$2028$); $50$ random $60$-vertex induced subgraphs were all $4$-colourable. The configuration is finely tuned, which is consistent with the margin sizes of Section~\ref{sec:geom} and with an optimised search result.
+
+\section{From the graph to the statement (argued, not formalised)}\label{sec:chain}
+\begin{enumerate}\itemsep=1pt
+\item $V$ is finite, so $\bb_4(V)$ is a minimum over the finitely many $4$-partitions. A $4$-partition is a $4$-colouring of the vertex set. (\tC{}, argued.)
+\item Let $G_t$ have an edge for each pair with distance $>t\,D$. If $G_t$ is not $4$-colourable, every $4$-partition has a part containing an edge, hence of diameter $>tD$; so $\bb_4(V)>t$ with the ratio taken relative to $D=1.0000001051$ (the threshold multiplies $D$, as applied above). With $t=0.88928$ this is Voronov's claim. (\tC{}, argued.)
+\item $0.88928>\sigma_3$ exactly (Table~\ref{tab:marg}). So $\bb_4(V)>\sigma_3$.
+\item Upper bound for the ball (\tL{}). $\bb_4(B^3)\le\sigma_3$ follows from the cone partition of the unit-diameter ball over a regular tetrahedron: each cone lies in $\operatorname{conv}(\{0\}\cup T)$ with $T$ a spherical triangle of radius $1/2$, whose diameter is $\max(\operatorname{diam}T,1/2)=\operatorname{diam}T$; this reduction is rigorous. The chord from a vertex of $T$ to the midpoint of the opposite side is $\tfrac12\sqrt{2+2/\sqrt3}=\sigma_3$, so $\operatorname{diam}T\ge\sigma_3$ analytically. The equality $\operatorname{diam}T=\sigma_3$ is asserted by the paper and supported here only by dense floating-point sampling ($6000$ boundary and $4000$ interior points, maximum $0.888073833977$, equal to $\sigma_3$ to $2\cdot10^{-16}$): Tier~\tX{}, not proved. The \emph{optimality} $\bb_4(B^3)=\sigma_3$ (Kalai) is Tier~\tL{} and is not needed. The tier of this step stays \tL{}.
+\end{enumerate}
+Steps (1)--(3) concern $V$ only; the statement ``$\bb_{3,4}>\bb_4(B^3)$'' needs step~(4). We stress that the conclusion about Gale's conjecture is Voronov's and rests on step~(4) as he states it.
+
+\section{Audit corrections applied}\label{sec:corr}
+The producer's \texttt{data/RESULT.md} and \texttt{data/result.json} are kept unmodified (pre-audit); this paper supersedes them on the audit's corrections: (1) the ratio margin is $9.65\cdot10^{-7}$, not $9.65\cdot10^{-8}$; (2) the rounding statement is replaced by the robustness argument of Section~\ref{sec:geom} (any coordinate set rounding to Appendix~A gives the same graph; the $17$-figure set gives the identical edge set); (3) $\bb_4(V)$ is determined exactly for the rounded set; (4) the weakest-edge margin is larger than any rounding effect; (5) the ball bound is reduced rigorously to $\operatorname{diam}T$, which is sampled; \texttt{upper\_bound\_ball} stays \tL{}; (6) the sampled tetrahedral-triangle value is $0.888073833977$ (whole triangle), replacing the producer's coarser $0.8865$ sanity value. The remark that the paper's Section~4 says ``verivication'' is a typo, noted for completeness; whether to contact the author is the owner's decision.
+
+\section{Limitations and what is not done}\label{sec:lim}
+\begin{itemize}\itemsep=1pt
+\item AI audit only; no human audit. No Lean: the graph-to-$\bb_4$ step and the UNSAT statement are not formalised (Tier~A not reached).
+\item Unverified: Gale's 1953 wording (taken from Voronov's quotation); $\operatorname{diam}T=\sigma_3$ (sampled); optimality of $\sigma_3$ for the ball (not needed).
+\item Not done: a \texttt{kissat} run (the build was refused by the session's permission classifier); a formally verified checker such as \texttt{cake\_lpr}; dimensions $4$--$6$; the author's search code.
+\item Trusted components: drat-trim, \texttt{lrat-check.c} (same author family as drat-trim), the auditor's Python LRAT checker, PicoSAT, CaDiCaL~3.0.1, Glucose4 and CaDiCaL~1.9.5 (producer; the proofs are checked, the solvers are not trusted), PyMuPDF, pdfminer.six, Python integers and \texttt{fractions}.
+\item The statements are for the \emph{rounded} Appendix~A set (and, by Section~\ref{sec:geom}, every set rounding to it); we did not recertify the author's $17$-figure set beyond its edge set.
+\item Deviations from the preregistration (\texttt{PREREG\_ITEM.md} sha256 \texttt{f3ad4621\dots c82e278}) are listed in \texttt{data/RESULT.md}: the Moser expectation; a control arithmetic slip; two geometry controls run after the headline; a crashed sphere-sampling step replaced by an analytic value plus a sample; a larger threshold list; added checks.
+\end{itemize}
+
+\section{Claim ledger and reproducibility}\label{sec:ledger}
+\texttt{ledger/build\_ledger.py} files the claims with hashed evidence; the Elenchus gate (\texttt{ledger/run\_gate.py}, verbatim output in \texttt{ledger/gate\_output.txt}) checks bookkeeping only and licenses nothing. Producer code and derived outputs are in \texttt{data/code}, \texttt{data/derived}, \texttt{data/sat} (CNF and proofs, stored with a \texttt{.txt} suffix), \texttt{data/logs} (\texttt{.log.txt}); the auditor's scripts and small outputs (CNF, DRAT and LRAT proofs, the corrupted-proof control) are in \texttt{data/audit}. \textbf{The Appendix~A coordinates, the raw appendix text, the author's repository CSVs and the PDF are not shipped} (arXiv non-exclusive licence; the author's repository has no licence file); \texttt{data/third\_party\_hashes.json} gives their hashes and fetch instructions, and \texttt{data/code/geom.py} regenerates every derived file from the raw appendix text. The edge-index lists and CNF files are derived outputs and contain no coordinates. Inputs are copies of \texttt{results/proposal6/2026-11-01/GALE-101/} and of the auditor's scratch directory; nothing was committed, pushed or uploaded.
+
+\begin{thebibliography}{9}\small
+\bibitem{vor} V.\ Voronov, \emph{A counterexample to Gale's conjecture in $\mathbb{R}^3$}, arXiv:2610.28828 (v1, 20 Oct 2026), unrefereed; Definitions 1, 2, Conjecture 1, Theorem 2, Appendix A. Code: \url{https://github.com/vsvor/Gale-conjecture}. (\tL)
+\bibitem{bor} A.\ Arman, A.\ Bondarenko, A.\ Prymak, D.\ Radchenko, \emph{Borsuk number in four dimensions is at most seven}, arXiv:2610.39078 (29 Oct 2026). Listed by alphaXiv next to \cite{vor}; not examined and not used. (\tL)
+\bibitem{gale} D.\ Gale, 1953, and J.\ Kalai's survey, as cited and quoted in \cite{vor}; not re-read in the originals. (\tL)
+\end{thebibliography}
+\end{document}

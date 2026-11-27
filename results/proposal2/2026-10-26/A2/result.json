@@ -1,0 +1,57 @@
+{
+  "item": "A2",
+  "date": "2026-10-26",
+  "wording": "independently rebuilt and audited (statement fidelity, axioms, soundness escapes, kernel replay). This is NOT a claim that a Clay problem is solved.",
+  "corpus": {
+    "path": "/mnt/disks/disk-socrateai-local-1/callensxavier_home_data/SocrateAI-Scientific-Agora-LeanMaster/lean4basesource/openai-navierstokes",
+    "head": "f9e8bc5b38b6e212696e8a30e3e91517af887bbd",
+    "toolchain": "leanprover/lean4:v4.34.0-rc2 (commit 6a10ac8c22beadecabdbb0919c2b50214762f91d)",
+    "lean_sha256": "e8baaa71855a616dc351028f3ad2200051b0671f423a1696a100e809302d5550"
+  },
+  "escapes_or_mismatches_found": [],
+  "prominent_caveats": [
+    "#print axioms alone does not detect a declaration forged with debug.skipKernelTC (control A2Forged prints 'does not depend on any axioms'); the axiom verdict relies on the full-corpus kernel replay, which passed.",
+    "Comparator, lean4export and nanoda were NOT run; statement identity and kernel replay were checked by our own implementations (elaborated-term closure diff; Lean.Replay over all corpus declarations) plus the toolchain's leanchecker on the root modules.",
+    "Mathlib 85e3a25e oleans (from Mathlib's cache) were reused and trusted, not rebuilt or replayed.",
+    "(D) requires periodic pressure in the solution class (Clay errata reading); weaker than a main-text-only reading."
+  ],
+  "provenance": {
+    "mathlib": "reused exact revision 85e3a25e006c35636f0e53b0e9296caca2685bc0 (all 9 library packages match lake-manifest), copied from /mnt/disks/disk-socrateai-local-1/leanmaster/lake-v434/packages; 0 Mathlib modules rebuilt",
+    "build_config_deviation": "Comparator [[require]] and manifest entries Comparator, lean4export removed in the build copy only (no corpus module imports them)"
+  },
+  "steps": {
+    "A2a_rebuild": {
+      "verdict": "PASS",
+      "modules_built": {"NavierStokes_closure": 609, "Euler_closure": 1829, "ComparatorChallenges": 2},
+      "warnings": 0, "errors": 0,
+      "wall_s": {"NavierStokes.ComparatorSolution": 3300, "Euler.Solution": 5109, "ComparatorChallenges.NavierStokes": 33, "ComparatorChallenges.Euler": 12}
+    },
+    "A2b_axioms": {
+      "verdict": "PASS",
+      "print_axioms": {
+        "NavierStokes.Comparator.navier_stokes_breakdown_R3": "'NavierStokes.Comparator.navier_stokes_breakdown_R3' depends on axioms: [propext, Classical.choice, Quot.sound]",
+        "NavierStokes.Comparator.navier_stokes_breakdown_periodic": "'NavierStokes.Comparator.navier_stokes_breakdown_periodic' depends on axioms: [propext, Classical.choice, Quot.sound]",
+        "Euler.euler_breakdown_R3": "'Euler.euler_breakdown_R3' depends on axioms: [propext, Classical.choice, Quot.sound]",
+        "Euler.exists_compact_smooth_euler_singularity": "'Euler.exists_compact_smooth_euler_singularity' depends on axioms: [propext, Classical.choice, Quot.sound]"
+      },
+      "controls": {"sorry": "caught", "axiom": "caught", "implemented_by+native_decide_false_claim": "caught (native_decide aux axiom)", "skipKernelTC_forged_False": "NOT caught by #print axioms; caught by leanchecker and A2Replay"},
+      "statement_identity": {"NS_constants": 5599, "Euler_constants": 5521, "differing_after_alpha_normalisation": 0, "mutation_control": "caught (1 differing constant)"}
+    },
+    "A2c_soundness_scan": {
+      "verdict": "PASS (no escape found)",
+      "source_scan": {"closure_modules": 2585, "all_files": 2659, "escape_hits": 0, "sorry_hits": "4, all in ComparatorChallenges placeholders (not imported by solutions)", "planted_controls": "all categories caught"},
+      "env_scan": {"corpus_flags_in_proof_closure": 0, "closure_axioms": ["propext", "Quot.sound", "Classical.choice"], "corpus_axioms_in_env": 0, "corpus_unsafe_rec_compiler_aux": {"NS": 12, "Euler": 39, "in_proof_closure": 0}},
+      "kernel_replay": {"NS": {"modules": 609, "declarations": 53752, "result": "REPLAY OK", "ms": 621964}, "Euler": {"modules": 1829, "declarations": 34648, "result": "REPLAY OK", "ms": 933056}, "forged_control": "rejected"}
+    },
+    "A2d_fidelity2": {
+      "verdict": "AGREES with H9: (C) faithful; (D) faithful to errata-corrected Clay text (periodic pressure caveat); no disagreements",
+      "clay_pdf_sha256": "c1b5f27b1a64705cfaf1afceea513db5deedca8a18ca56ab32e7f86445a06d0c"
+    },
+    "A2e_independent_checker": {
+      "verdict": "PASS (leanchecker); nanoda unavailable",
+      "leanchecker_modules_rc0": ["NavierStokes.ComparatorSolution", "NavierStokes.ComparatorR3Theorem", "NavierStokes.ComparatorTheorem", "NavierStokes.ComparatorDefinitions", "Euler.Solution", "Euler.SolutionDefinitions", "ComparatorChallenges.NavierStokes", "ComparatorChallenges.Euler"]
+    }
+  },
+  "prereg_statements": {"A2a": true, "A2b_clean": true, "A2c_agrees": true},
+  "timing": {"start_utc": "2026-10-26T01:55Z", "package_copy_utc": "01:56-02:22", "build_utc": "02:28:08-04:49:02", "ns_replay_wall": "11:33", "euler_replay_wall": "15:42", "euler_env_audit_utc": "07:12:54-07:27:02", "end_utc": "2026-10-26T07:35Z", "note": "wall span ~5h40m; part of 03:55-07:11 was idle waiting in the session, not compute"}
+}

@@ -1,0 +1,8 @@
+#!/bin/bash
+# usage: run.sh n N mode(full|strict) pre(full|pre)  -> r_n{n}_N{N}_{mode}_{pre}.txt / .log
+cd /tmp/lrspecaudit/rs
+tag="r_n$1_N$2_$3_$4"
+t0=$(date +%s.%N)
+taskset -c 6,7 ./target/release/nt $1 $2 2 $tag.txt $3 $4 2> $tag.log
+t1=$(date +%s.%N)
+echo "wall_s $(echo "$t1 - $t0" | bc)" >> $tag.log

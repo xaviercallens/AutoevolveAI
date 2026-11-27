@@ -1,0 +1,27 @@
+theorem stationary_fixation {(*@$\mu$@*) : Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)} {W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)} {r : (*@$\mathbb{R}$@*)} (hn : 0 < n)
+    (hr : 0 < r) (h(*@$\mu$@*) : (*@$\forall$@*) i, 0 < (*@$\mu$@*) i) (hW : RowStochastic W) (hstat : (*@$\forall$@*) j, (*@$\sum$@*) i, (*@$\mu$@*) i * W i j = (*@$\mu$@*) j)
+    (hcut : CutPositive (*@$\mu$@*) W) (S : Finset (Fin n)) :
+    Tendsto (fun t => sPow (bdK (*@$\mu$@*) W r) t S univ) atTop ((*@$\mathcal{N}$@*) (moranFix n r S.card)) (*@$\wedge$@*)
+    Tendsto (fun t => sPow (bdK (*@$\mu$@*) W r) t S (*@$\emptyset$@*)) atTop ((*@$\mathcal{N}$@*) (1 - moranFix n r S.card)) := -- proof elided
+
+theorem isothermal_fixation {W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)} {r : (*@$\mathbb{R}$@*)} (hn : 0 < n) (hr : 0 < r)
+    (hW : Isothermal W) (hsc : StronglyConnected W) (S : Finset (Fin n)) :
+    Tendsto (fun t => sPow (bdK (fun _ => 1) W r) t S univ) atTop ((*@$\mathcal{N}$@*) (moranFix n r S.card)) := -- proof elided
+
+theorem isothermal_fixation_single {W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)} {r : (*@$\mathbb{R}$@*)} (hn : 0 < n) (hr : 0 < r)
+    (hr1 : r (*@$\ne$@*) 1) (hW : Isothermal W) (hsc : StronglyConnected W) (v : Fin n) :
+    Tendsto (fun t => sPow (bdK (fun _ => 1) W r) t {v} univ) atTop
+      ((*@$\mathcal{N}$@*) ((1 - r(*@$^{-}$@*)(*@$^{1}$@*)) / (1 - r(*@$^{-}$@*)(*@$^{1}$@*) ^ n))) := -- proof elided
+
+theorem isothermal_fixation_neutral {W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)} (hn : 0 < n) (hW : Isothermal W)
+    (hsc : StronglyConnected W) (S : Finset (Fin n)) :
+    Tendsto (fun t => sPow (bdK (fun _ => 1) W 1) t S univ) atTop ((*@$\mathcal{N}$@*) ((S.card : (*@$\mathbb{R}$@*)) / n)) := -- proof elided
+
+theorem isothermal_fixation_uniform {W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)} {r : (*@$\mathbb{R}$@*)} (hn : 0 < n) (hr : 0 < r)
+    (hr1 : r (*@$\ne$@*) 1) (hW : Isothermal W) (hsc : StronglyConnected W) :
+    Tendsto (fun t => ((*@$\sum$@*) v : Fin n, sPow (bdK (fun _ => 1) W r) t {v} univ) / n) atTop
+      ((*@$\mathcal{N}$@*) ((1 - r(*@$^{-}$@*)(*@$^{1}$@*)) / (1 - r(*@$^{-}$@*)(*@$^{1}$@*) ^ n))) := -- proof elided
+
+theorem bd_fixation_mono {(*@$\mu$@*) : Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)} {W : Fin n (*@$\to$@*) Fin n (*@$\to$@*) (*@$\mathbb{R}$@*)} {r : (*@$\mathbb{R}$@*)} (hn : 0 < n) (hr : 0 < r)
+    (h(*@$\mu$@*) : (*@$\forall$@*) i, 0 < (*@$\mu$@*) i) (hW : RowStochastic W) (t : (*@$\mathbb{N}$@*)) (S : Finset (Fin n)) :
+    sPow (bdK (*@$\mu$@*) W r) t S univ (*@$\le$@*) sPow (bdK (*@$\mu$@*) W r) (t + 1) S univ := -- proof elided

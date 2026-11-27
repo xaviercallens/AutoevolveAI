@@ -1,0 +1,86 @@
+{
+ "title": "The Feynman-Bijl single-mode bound in Lean, and a diffraction test of the Bogoliubov envelope on published structure factors of superfluid 4He and trapped Bose gases",
+ "version": "v1",
+ "description": "<p>The Feynman&ndash;Bijl argument bounds the lowest excitation energy of a Bose fluid at wavevector k by &#295;<sup>2</sup>k<sup>2</sup>/(2mS(k)), with S(k) the static structure factor. This preprint formalises its single-mode core in Lean 4.34.1 with Mathlib and applies the one-sided diffraction test S(k) &le; &radic;(k/2k<sub>*</sub>) (k<sub>*</sub> = 2mc/&#295;) of an earlier preprint to published data. Every claim is filed in an Elenchus claim ledger with tiers A (kernel-checked Lean), L (cited literature; excerpts: prose as extracted, mathematics transcribed linearly), C (human argument, not machine-checked) and X (floating-point arithmetic or values read from a figure, which never supports a claim).</p><p><b>Tier A</b> (Lean 4.34.1 and Mathlib, pinned toolchain; axioms within propext, Classical.choice, Quot.sound; planted sorry and planted-axiom controls caught; independently recompiled by a separate AI auditor with a private olean build, axioms identical, planted controls and two auditor mutations caught; <b>no human audit</b>): on a finite-dimensional complex inner product space with a symmetric H and an eigenvector &psi;, the identity &lang;&psi;,[&rho;<sup>&dagger;</sup>,[H,&rho;]]&psi;&rang; = A(&rho;) + A(&rho;<sup>&dagger;</sup>) holds with no extra hypothesis. With the k &harr; &minus;k symmetry and the f-sum value taken as <i>hypotheses</i>, the trial state &rho;&psi;/||&rho;&psi;|| has excess energy f/(2NS) and an eigenvector overlapping &rho;&psi; obeys &lambda; &minus; E<sub>0</sub> &le; &#295;<sup>2</sup>k<sup>2</sup>/(2mS); a gap form gives 0 &lt; &lambda; &minus; E<sub>0</sub> under two further hypotheses. A kernel-checked counterexample shows that the symmetry hypothesis cannot be dropped from the halving step (A(&rho;) = 1 &ne; 1/2 = f/2); that the final bound also fails in that example is a hand computation (Tier C), not a Lean theorem. A kernel-checked witness shows that all hypotheses hold together and the bound is attained. The Bogoliubov link (the Feynman energy from S<sub>B</sub> equals the Bogoliubov energy; S<sub>B</sub> &le; &radic;(k/2k<sub>*</sub>)) is re-proved on the pinned stack. The physics (f-sum rule from the canonical commutation relations, the symmetry, momentum conservation) is not in Lean.</p><p><b>Tier X data analysis, Tier C reading</b>: for 4He, 99 points of Table 14.1 of the Donnelly&ndash;Barenghi compilation (a secondary source; 1.4&ndash;4 K, not T = 0; no printed error bars) with k<sub>*</sub> = 3.00379 &Aring;<sup>-1</sup> from c = 238.3 m/s: 63 points refuted, 29 consistent, 7 undecided, all 21 points in the roton/peak region 1.7&ndash;2.4 &Aring;<sup>-1</sup> refuted by a factor 1.62&ndash;2.49. The refutation threshold (0.082, the gap between the two datasets' peak maxima) was defined after seeing the data and is a deviation from the preregistration; the strict-run endpoint (Q = 5.129 is refuted by 0.0830) and the counts above 2.4 &Aring;<sup>-1</sup> depend on its third decimal (refuted 60&ndash;64 for thresholds 0.07&ndash;0.10), while the roton-region result does not (smallest margin 0.328, about 4 thresholds) and also holds on the Donnelly&ndash;Barenghi recommended subset (X-ray for Q &lt; 1, neutron for Q &gt; 1). Read conditionally, this says only that 4He is not a Bogoliubov gas, which is textbook; no novelty is claimed for the physics or for the Feynman&ndash;Bijl argument. For trapped Bose gases only values read from figures exist (Tier X): the three absolute points of Stamper-Kurn et al. lie below a local-density-averaged bound with low test power (no &lsquo;BEC consistent&rsquo; claim), and the Steinhauer et al. points were multiplied by 2.3 by the authors, so no decisive test is possible. A trapped-gas positive control shows that single-k<sub>*</sub> bounds fail their own control and only the LDA-averaged bound is valid.</p><p>No rusty-SUNDIALS or LeanFlow change was made in this lane (the numerics are Python), so none is claimed. The Elenchus ledger gate reports 0 blocking findings and 11 flags (exit code 1), one for each Tier A row whose statement adequacy no human has audited. The work was produced by AI agents (Claude) under the author's direction and was audited by a separate AI agent (verdict ACCEPT_WITH_CORRECTIONS, corrections applied); no human has audited it; the author is responsible for the content.</p>",
+ "keywords": [
+  "Lean 4",
+  "formal verification",
+  "Feynman-Bijl bound",
+  "static structure factor",
+  "f-sum rule",
+  "superfluid helium-4",
+  "Bogoliubov theory",
+  "Bose-Einstein condensate",
+  "Bragg spectroscopy",
+  "epistemic tiers",
+  "AI-assisted research"
+ ],
+ "notes": "Preprint v1 (2026-10-25), lane P6 of the 2026-10-25 programmes round. Lean: AutoevolveAI formal_cert/Programmes/FeynmanBijl/Basic.lean (sha256 a8ed4357bce846e675af161a81dbeddeedcba07c0a2e7f2ae09fce21c5cb6432), NegativeControls.lean (182f8135dd3c778703a8523e46724f600227a3bdcaadc4da5a8bc843373bfc3a), PositiveControls.lean (1555d75cda679a600b667ac0f559b7bd72f9cee3982c644531ee6f81d4bffc05) and Controls.lean with planted sorry/axiom (a0f2e8edab9b5aa211fd1a5b39d8836cc22220b483390413edda46135e0c0099), compiled under the pinned openai/math fd4aeeb2ee4fc729c18d98444fed42fd0529eeeb build environment (Lean 4.34.1, Mathlib d13f23b723b8a846827a245b89c10fc7d3f11612); no openai/math theorem is imported. AutoevolveAI files uncommitted on base 9d245742c1655852103abb28f585e21af54851e6. He-4 values are a secondary compilation (web edition, sha256 b5a3bc07c0fceef753fb4168e5918c5b6cb817c5783a85d688e4906f92f304b8; primary PRB tables not seen); Bose-gas values are read from figures. Feynman 1954, Bijl 1940, Bogoliubov 1947 and the primary He-4 papers were not read by the authors and are cited as given by the sources that were. No rusty-SUNDIALS or LeanFlow change. Independent AI audit (separate agent, stage AUDIT; papers/prog_superfluid_structure_factor/AUDIT.md): all four Lean files recompiled with a private olean build, rc 0, sha256 equal to the values above, 21/21, 4/4 and 3/3 #print axioms lines each exactly [propext, Classical.choice, Quot.sound], planted ctl_sorry/ctl_axiom and two auditor mutations caught; Elenchus elenchus_check.py could not be run by the auditor (no Mathlib on its search path); no human audit, every Tier A ledger row has audit null (ledger gate: 0 blocking, 11 LEDGER_UNAUDITED_TIER_A flags, exit code 1). Corrections C1-C4 and notes N1-N7 of the audit are applied in this version (REVISION.md). Steinhauer journal reference PRL 88, 120407 is confirmed as ref. [4] of Shammass et al. (I. Shammass, S. Rinott, A. Berkovitz, R. Schley, J. Steinhauer, arXiv:1207.3440).",
+ "related_identifiers": [
+  {
+   "identifier": "10.5281/zenodo.23646117",
+   "relation": "continues",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23646103",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23646105",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23646107",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23646111",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23295142",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "arXiv:cond-mat/9906035",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:cond-mat/0111438",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:2012.09067",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:2501.08730",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:1207.3440",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "https://pages.uoregon.edu/rjd/vapor15.htm",
+   "relation": "references",
+   "scheme": "url"
+  },
+  {
+   "identifier": "https://github.com/openai/math/tree/fd4aeeb2ee4fc729c18d98444fed42fd0529eeeb",
+   "relation": "references",
+   "scheme": "url"
+  }
+ ]
+}

@@ -1,0 +1,23 @@
+theorem gap_witness {e0 e1 : E} (h0 : (*@$\Vert$@*)e0(*@$\Vert$@*) = 1) (h1 : (*@$\Vert$@*)e1(*@$\Vert$@*) = 1) (h01 : (*@$\langle$@*)e0, e1(*@$\rangle$@*)_(*@$\mathbb{C}$@*) = 0) :
+    (ketBra e1 e1).IsSymmetric (*@$\wedge$@*)
+    ketBra e1 e1 e0 = ((0 : (*@$\mathbb{R}$@*)) : (*@$\mathbb{C}$@*)) (*@$\bullet$@*) e0 (*@$\wedge$@*)
+    ((*@$\forall$@*) x : E, (0 : (*@$\mathbb{R}$@*)) * (*@$\Vert$@*)x(*@$\Vert$@*) ^ 2 (*@$\le$@*) ((*@$\langle$@*)x, ketBra e1 e1 x(*@$\rangle$@*)_(*@$\mathbb{C}$@*)).re) (*@$\wedge$@*)
+    ((*@$\forall$@*) v : E, ketBra e1 e1 v = ((0 : (*@$\mathbb{R}$@*)) : (*@$\mathbb{C}$@*)) (*@$\bullet$@*) v (*@$\to$@*)
+      (*@$\langle$@*)v, (ketBra e1 e0 + ketBra e0 e1) e0(*@$\rangle$@*)_(*@$\mathbb{C}$@*) = 0) (*@$\wedge$@*)
+    (1 : (*@$\mathbb{R}$@*)) = (*@$\Vert$@*)(ketBra e1 e0 + ketBra e0 e1) e0(*@$\Vert$@*) ^ 2 / 1 (*@$\wedge$@*)
+    (*@$\langle$@*)e0, comm (adjoint (ketBra e1 e0 + ketBra e0 e1))
+        (comm (ketBra e1 e1) (ketBra e1 e0 + ketBra e0 e1)) e0(*@$\rangle$@*)_(*@$\mathbb{C}$@*)
+      = (((1 : (*@$\mathbb{R}$@*)) * 1 ^ 2 * 1 ^ 2 / (1 / 2) : (*@$\mathbb{R}$@*)) : (*@$\mathbb{C}$@*)) (*@$\wedge$@*)
+    excess (ketBra e1 e1) 0 e0 (adjoint (ketBra e1 e0 + ketBra e0 e1))
+      = excess (ketBra e1 e1) 0 e0 (ketBra e1 e0 + ketBra e0 e1) (*@$\wedge$@*)
+    ketBra e1 e1 ((ketBra e1 e0 + ketBra e0 e1) e0)
+      = (((1 : (*@$\mathbb{R}$@*)) ^ 2 * 1 ^ 2 / (2 * (1 / 2) * 1) : (*@$\mathbb{R}$@*)) : (*@$\mathbb{C}$@*)) (*@$\bullet$@*) ((ketBra e1 e0 + ketBra e0 e1) e0) := ... -- proof elided
+
+theorem gap_witness_applies {e0 e1 : E} (h0 : (*@$\Vert$@*)e0(*@$\Vert$@*) = 1) (h1 : (*@$\Vert$@*)e1(*@$\Vert$@*) = 1) (h01 : (*@$\langle$@*)e0, e1(*@$\rangle$@*)_(*@$\mathbb{C}$@*) = 0) :
+    (*@$\exists$@*) i, (*@$\langle$@*)(ketBra_self_symm e1).eigenvectorBasis rfl i,
+          (ketBra e1 e0 + ketBra e0 e1) e0(*@$\rangle$@*)_(*@$\mathbb{C}$@*) (*@$\ne$@*) 0 (*@$\wedge$@*)
+      0 < (ketBra_self_symm e1).eigenvalues rfl i - 0 (*@$\wedge$@*)
+      (ketBra_self_symm e1).eigenvalues rfl i - 0 (*@$\le$@*) (1 : (*@$\mathbb{R}$@*)) ^ 2 * 1 ^ 2 / (2 * (1 / 2) * 1) := ... -- proof elided
+
+theorem orthonormal_pair_fin2 :
+    (*@$\exists$@*) e0 e1 : EuclideanSpace (*@$\mathbb{C}$@*) (Fin 2), (*@$\Vert$@*)e0(*@$\Vert$@*) = 1 (*@$\wedge$@*) (*@$\Vert$@*)e1(*@$\Vert$@*) = 1 (*@$\wedge$@*) (*@$\langle$@*)e0, e1(*@$\rangle$@*)_(*@$\mathbb{C}$@*) = 0 := ... -- proof elided

@@ -1,0 +1,17 @@
+BUNDLE_MANIFEST (dry run only; nothing uploaded) 2026-10-31
+Staging tree: /home/callensxavier_gmail_com/e2_stage/repo (copy of papers/p4_battery_saturation_time and results/proposal4/2026-10-27/E2 (without __pycache__),
+plus what scripts/publish_ar_paper.py hard-codes: scripts/certified_numerics/lean_pinned.py, results/autoresearch/2026-10-25/{program.md,preregistration.json};
+the script also imports scripts/publish_universal_optimality_tiered.py, which sits in the staging tree only as the runner and is not a bundle member;
+no formal_cert directory: there is no Lean in this paper).
+Command (unmodified script, run from the staging root): python3 -I scripts/publish_ar_paper.py --paper-dir papers/p4_battery_saturation_time --lane-dir results/proposal4/2026-10-27/E2 --dry-run
+(--lane-dir is required with --paper-dir.) Exit code 0.
+Bundle: /home/callensxavier_gmail_com/zenodo-bundles/p4_battery_saturation_time/p4_battery_saturation_time_2026-10-25.tar.gz (121605 bytes, 92 members in MANIFEST.json, 93 tar entries with MANIFEST.json; the 2026-10-25 in the name is the script's fixed tag, not a date of this work),
+plus MANIFEST.json and the PDF (sha256 78020cf86090bb809f5436e2308a0a6a88b748f102235c246acf28ff7986eb75).
+Bundle built before this BUNDLE_MANIFEST.txt was added to the paper dir (the file is not itself a member), as for the sibling papers.
+Members by prefix (tar entries): 1 MANIFEST.json; 63 papers/p4_battery_saturation_time (main.tex, table_cert.tex, publication_meta.json, AUDIT.md, ledger/ incl. 9 evidence blobs, data/ incl. data/audit/ with the auditor's scratch scripts and small outputs, data/logs/ as .log.txt);
+26 results/proposal4/2026-10-27/E2 (RESULT.md, result.json, prereg_E2.json/.sha256, AUDIT.md, code/*.py, data/*.json; the lane's logs/*.log are dropped by the suffix filter there and travel in the paper data as data/logs/*.log.txt); 2 results/autoresearch/2026-10-25; 1 scripts/certified_numerics.
+Checks on the extracted bundle (/home/callensxavier_gmail_com/e2_extract): no secret patterns (hf_, sk-, ghp_, AKIA, private keys, ZENODO_TOKEN, token file path); no PDF, .gz, .so, .whl or .png member; every file is under 1 MB.
+NOT in the bundle on purpose: PyBaMM and its virtual environment (/home/callensxavier_gmail_com/e2_thirdparty/, BSD-3-Clause, not redistributed), any third-party text (Crank, Chen et al. 2020, Marquis et al., Subramanian et al. were not read or are not included), compiled binaries. main.pdf is shipped as the separate PDF of the dry run; build1.log and build2.log are in the paper dir but are not members (.log suffix).
+Known items: data/RESULT.md, data/result.json and the lane copies are the POST-audit text of the lane (corrections applied, hashes regenerated: 36 files); data/data/certified_t_star_prefix_roundtonearest.json, data/data/cert_controls_prefix.json and data/logs/run_cert_prefix_roundtonearest.log.txt are the pre-fix outputs kept for transparency; data/audit/my_cert.json is the auditor's run against the pre-fix floats (the post-fix run is data/data/auditor_mpmath_iv_enclosure.json).
+Gate: ledger/gate_output.txt: "9 claims checked, no findings", exit_code=0.
+Staging paper dir vs repo paper dir: diff -rq reports no difference (after this file was copied in).

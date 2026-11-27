@@ -3,13 +3,15 @@
 Autonomous Nightly Model Retraining Pipeline (Scheduled after 05:00 AM).
 
 Orchestrates the complete overnight retraining of:
-1. Nightly REM Dream Consolidation (Hippocampus Replay, Laya LoRA, Latent MCTS)
-2. Redis Long-Term Memory (LTM) Sync from brain transcripts
+1. Wake Episode Harvesting & Redis Long-Term Memory (LTM) Sync from brain transcripts
+2. Nightly REM Dream Consolidation (Hippocampus Replay, Laya LoRA, Latent MCTS)
 3. Qwen2.5-0.5B LoRA Adapter fine-tuning on Redis LTM conversations
 4. RL EnergyCriticPolicy multi-disciplinary DPO / reward retraining
 5. System 1.5 EB-JEPA World Model continual physics training
 6. Autonomous ANSE V2 Autopoietic Engine validation
-7. Automated synchronization of updated checkpoints to SocrateAI GCP Data Lake & Cartography
+7. Retrained Models Capability & Typical Use Cases Evaluation
+8. Kev SAAW Post-Retraining Calibrated Decision Gate
+9. Automated synchronization of updated checkpoints to SocrateAI GCP Data Lake & Cartography
 """
 
 from __future__ import annotations
@@ -23,6 +25,16 @@ import sys
 import time
 from pathlib import Path
 from typing import Any
+import os
+
+# Interpreter for every pipeline step. Default: the interpreter running this script, so a
+# launch with a training-capable venv (torch + peft) is inherited by every step. Night
+# 2026-10-08: "uv run python" in a worktree without a synced training extra built a fresh
+# env without peft and the Qwen LoRA step failed. Set AUTOEVOLVE_NIGHTLY_USE_UV=1 to restore
+# the old behaviour.
+STEP_PYTHON: list[str] = (
+    ["uv", "run", "python"] if os.environ.get("AUTOEVOLVE_NIGHTLY_USE_UV") == "1" else [sys.executable]
+)
 
 sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
 
@@ -74,32 +86,16 @@ def run_pipeline_step(name: str, cmd: list[str]) -> dict[str, Any]:
     }
 
 
-def wait_until_target_time(target_hour: int = 5, target_minute: int = 5) -> None:
-    """Sleep until the next occurrence of target_hour:target_minute (default 05:05 AM)."""
+def log_schedule_status(target_hour: int = 5, target_minute: int = 5) -> None:
+    """Log current schedule alignment for cron and automated execution."""
     now = datetime.datetime.now()
     target = now.replace(hour=target_hour, minute=target_minute, second=0, microsecond=0)
     if target <= now:
-        # If target has passed today, schedule for tomorrow morning
         target += datetime.timedelta(days=1)
-
     wait_seconds = (target - now).total_seconds()
-    log_both(f"🕒 Current time: {now.strftime('%Y-%m-%d %H:%M:%S')}")
-    log_both(f"🎯 Target retraining time: {target.strftime('%Y-%m-%d %H:%M:%S')}")
-    log_both(f"⏳ Sleeping for {wait_seconds:.0f} seconds ({wait_seconds/3600:.2f} hours)...")
-
-    # Sleep in chunks to allow responsive logging and health tracking
-    while True:
-        remaining = (target - datetime.datetime.now()).total_seconds()
-        if remaining <= 0:
-            break
-        sleep_duration = min(remaining, 600)  # log countdown every 10 minutes
-        time.sleep(sleep_duration)
-        now_check = datetime.datetime.now()
-        rem_hours = (target - now_check).total_seconds() / 3600
-        if rem_hours > 0:
-            log_both(f"⏳ Nightly countdown: {rem_hours:.2f} hours remaining until 05:05 AM retraining.")
-
-    log_both("⏰ Target time reached! Commencing Nightly Model Retraining Pipeline...")
+    log_both(f"🕒 Current execution time: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    log_both(f"🎯 Target scheduled time: {target.strftime('%Y-%m-%d %H:%M:%S')} ({wait_seconds/3600:.2f}h remaining)")
+    log_both("Commencing Nightly Model Retraining Pipeline...")
 
 
 def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) -> dict[str, Any]:
@@ -112,19 +108,19 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
     results: list[dict[str, Any]] = []
 
     with gpu_lease(LEASE_HOLDER, "nightly retrain: dream + LTM LoRA + RL + JEPA + v2 validation", ttl_s=6 * 3600, timeout_s=3600):
-        # 1. REM Sleep Dream Phase: Hippocampus Replay, Laya LoRA & Latent MCTS
+        # 1. Harvest Wake Episodes & Sync brain transcripts to Redis LTM
         results.append(
             run_pipeline_step(
-                "Nightly REM Dream Consolidation & Laya LoRA",
-                ["uv", "run", "python", "scripts/nightly_dream_phase.py"],
+                "Wake Episode Harvest & Redis LTM Sync",
+                [*STEP_PYTHON, "scripts/sync_conversations_to_redis.py"],
             )
         )
 
-        # 2. Sync brain transcripts to Redis LTM
+        # 2. REM Sleep Dream Phase: Hippocampus Replay, Laya LoRA & Latent MCTS
         results.append(
             run_pipeline_step(
-                "Redis Long-Term Memory Sync",
-                ["uv", "run", "python", "scripts/sync_conversations_to_redis.py"],
+                "Nightly REM Dream Consolidation & Laya LoRA",
+                [*STEP_PYTHON, "scripts/nightly_dream_phase.py"],
             )
         )
 
@@ -132,7 +128,7 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
         results.append(
             run_pipeline_step(
                 "Qwen LoRA LTM Retraining",
-                ["uv", "run", "python", "scripts/execute_local_redis_ltm_lora.py", "--steps", str(lora_steps), "--max-len", "160"],
+                [*STEP_PYTHON, "scripts/execute_local_redis_ltm_lora.py", "--steps", str(lora_steps), "--max-len", "160"],
             )
         )
 
@@ -140,7 +136,7 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
         results.append(
             run_pipeline_step(
                 "Reinforcement Learning Critic Retraining",
-                ["uv", "run", "python", "scripts/retrain_multidisciplinary_rl.py"],
+                [*STEP_PYTHON, "scripts/retrain_multidisciplinary_rl.py"],
             )
         )
 
@@ -148,7 +144,7 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
         results.append(
             run_pipeline_step(
                 "JEPA World Model Continual Learning",
-                ["uv", "run", "python", "-m", "anse.physics.advanced_world_models"],
+                [*STEP_PYTHON, "-m", "anse.physics.advanced_world_models"],
             )
         )
 
@@ -156,12 +152,36 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
         results.append(
             run_pipeline_step(
                 "ANSE V2 Autopoietic Engine Validation",
-                ["uv", "run", "python", "scripts/run_v2_autopoiesis.py"],
+                [*STEP_PYTHON, "scripts/run_v2_autopoiesis.py"],
             )
         )
 
-    # 7. Kev SAAW Post-Retraining Decision Gate
-    # Write intermediate telemetry of steps 1-6 so Kev evaluates fresh data
+        # 6b. Run AlphaEvolve + Biomimetic Physics & Mathematics Kernel Evolution
+        results.append(
+            run_pipeline_step(
+                "AlphaEvolve Biomimetic Physics & Math Kernel Evolution",
+                [*STEP_PYTHON, "-m", "scripts.run_alphaevolve_physics_math_kernel"],
+            )
+        )
+
+        # 6c. Retrain LinUCB Scientific Communication Policy
+        results.append(
+            run_pipeline_step(
+                "Scientific Communication LinUCB Policy Retraining",
+                [*STEP_PYTHON, "scripts/retrain_communication_policy.py"],
+            )
+        )
+
+        # 7. Retrained Models Capability & Typical Use Cases Evaluation
+        results.append(
+            run_pipeline_step(
+                "Retrained Models Capability & Use Case Evaluation",
+                [*STEP_PYTHON, "scripts/evaluate_retrained_models_use_cases.py"],
+            )
+        )
+
+    # 8. Kev SAAW Post-Retraining Decision Gate
+    # Write intermediate telemetry of steps 1-7 so Kev evaluates fresh data
     interim_summary = {
         "status": "SUCCESS" if all(r["success"] for r in results) else "PARTIAL_FAILURE",
         "timestamp": datetime.datetime.now().isoformat(),
@@ -174,7 +194,7 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
     decision_step = run_pipeline_step(
         "Kev Post-Retrain Calibrated Decision Gate",
         [
-            "uv", "run", "python", "scripts/kev_decision_gate.py",
+            *STEP_PYTHON, "scripts/kev_decision_gate.py",
             "--report", str(interim_report_path),
             "--gate",
         ],
@@ -206,7 +226,7 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
             results.append(
                 run_pipeline_step(
                     "GCP Data Lake Synchronization & Cartography",
-                    ["uv", "run", "python", "scripts/deploy_models_and_datalake.py"],
+                    [*STEP_PYTHON, "scripts/deploy_models_and_datalake.py"],
                 )
             )
         else:
@@ -242,22 +262,14 @@ def execute_nightly_retraining(lora_steps: int = 10, skip_deploy: bool = False) 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Nightly Model Retraining Pipeline after 05:00 AM")
-    parser.add_argument("--wait", action="store_true", help="Sleep until 05:05 AM before running")
-    parser.add_argument("--now", action="store_true", help="Run immediately without waiting")
-    parser.add_argument("--hour", type=int, default=5, help="Target hour (default 5)")
-    parser.add_argument("--minute", type=int, default=5, help="Target minute (default 5)")
+    parser.add_argument("--now", action="store_true", default=True, help="Run immediately (default for automated runners)")
+    parser.add_argument("--hour", type=int, default=5, help="Target scheduled hour (default 5)")
+    parser.add_argument("--minute", type=int, default=5, help="Target scheduled minute (default 5)")
     parser.add_argument("--lora-steps", type=int, default=10, help="Number of LoRA steps for Qwen LTM on CPU (default 10)")
     parser.add_argument("--skip-deploy", action="store_true", help="Skip deployment to GCP Data Lake")
     args = parser.parse_args()
 
-    if args.wait:
-        wait_until_target_time(target_hour=args.hour, target_minute=args.minute)
-    elif not args.now:
-        # Default behavior: if currently before target hour (e.g. 23:00), wait until 05:05 AM
-        now = datetime.datetime.now()
-        if now.hour != args.hour:
-            wait_until_target_time(target_hour=args.hour, target_minute=args.minute)
-
+    log_schedule_status(target_hour=args.hour, target_minute=args.minute)
     summary = execute_nightly_retraining(lora_steps=args.lora_steps, skip_deploy=args.skip_deploy)
     return 0 if summary["status"] == "SUCCESS" else 1
 

@@ -9,7 +9,6 @@ Default device: local CPU.
 from __future__ import annotations
 
 import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -305,4 +304,166 @@ class LayaSystemOneDecisionEngine:
             "device": "cpu-fallback",
             "model": "laya-heuristic-fallback",
         }
+
+
+# ---------------------------------------------------------------------------
+# Peer-Review Hardening (Reviewer 2 Feedback: W1, W2, W3, W5, W8)
+# ---------------------------------------------------------------------------
+
+
+def audit_laya_lora_parameters(
+    num_layers: int = 22,
+    hidden_dim: int = 768,
+    lora_rank: int = 8,
+    lora_alpha: float = 16.0,
+    target_projections: tuple[str, ...] = ("q_proj", "v_proj"),
+    choice_hidden_dim: int = 256,
+    num_choices: int = 40,
+    score_hidden_dim: int = 128,
+) -> dict[str, Any]:
+    """Compute and verify the exact itemized LoRA + classification head parameter count (Reviewer 2 W1).
+
+    Resolves the 1,536-parameter discrepancy in Eq. (2) (540,672 vs 539,136) and itemizes
+    each head's weights and biases explicitly, alongside the effective update scaling alpha/r.
+    """
+    params_per_lora_matrix = hidden_dim * lora_rank + lora_rank * hidden_dim  # A (d x r) + B (r x d)
+    num_projections = len(target_projections)
+    lora_total = num_layers * num_projections * params_per_lora_matrix
+
+    # Head 1: NoulHead = Linear(d, 1) -> d + 1
+    noul_head_params = hidden_dim * 1 + 1
+
+    # Head 2: ChoiceHead = Linear(d, h_c) + ReLU + Linear(h_c, C)
+    choice_head_params = (hidden_dim * choice_hidden_dim + choice_hidden_dim) + (
+        choice_hidden_dim * num_choices + num_choices
+    )
+
+    # Head 3: ScoreHead = Linear(d, h_s) + ReLU + Linear(h_s, 1)
+    score_head_params = (hidden_dim * score_hidden_dim + score_hidden_dim) + (score_hidden_dim * 1 + 1)
+
+    heads_total = noul_head_params + choice_head_params + score_head_params
+    trainable_total = lora_total + heads_total
+    scaling_factor = lora_alpha / float(lora_rank)
+
+    return {
+        "backbone": "answerdotai/ModernBERT-base",
+        "num_layers": num_layers,
+        "hidden_dim": hidden_dim,
+        "lora_rank": lora_rank,
+        "lora_alpha": lora_alpha,
+        "scaling_factor_alpha_over_r": scaling_factor,
+        "target_projections": list(target_projections),
+        "params_per_adapted_matrix": params_per_lora_matrix,
+        "lora_params_per_layer": num_projections * params_per_lora_matrix,
+        "lora_total_params": lora_total,
+        "legacy_eq2_discrepancy_resolved": lora_total - 539_136,
+        "heads": {
+            "NoulHead": noul_head_params,
+            "ChoiceHead": choice_head_params,
+            "ScoreHead": score_head_params,
+            "heads_total_params": heads_total,
+        },
+        "total_trainable_params": trainable_total,
+    }
+
+
+def wilson_ci_95(
+    successes: int,
+    total: int,
+    min_recommended_n: int = 500,
+    z: float = 1.959963984540054,
+) -> dict[str, Any]:
+    """Compute the 95% Wilson score confidence interval for binomial accuracy (Reviewer 2 W2).
+
+    Flags `statistically_adequate = (total >= min_recommended_n)` so small-sample prototype runs
+    (e.g. 11/12 = 91.7%, CI [64.6%, 98.5%]) are never reported without their confidence band.
+    """
+    if total <= 0 or not (0 <= successes <= total):
+        raise ValueError(f"Invalid binomial counts: successes={successes}, total={total}")
+    p_hat = successes / float(total)
+    z2 = z * z
+    denom = 1.0 + z2 / total
+    center = (p_hat + z2 / (2.0 * total)) / denom
+    half = (z / denom) * ((p_hat * (1.0 - p_hat) / total + z2 / (4.0 * total * total)) ** 0.5)
+    return {
+        "successes": successes,
+        "total": total,
+        "accuracy": p_hat,
+        "ci_low": max(0.0, center - half),
+        "ci_high": min(1.0, center + half),
+        "statistically_adequate": total >= min_recommended_n,
+        "min_recommended_n": min_recommended_n,
+    }
+
+
+def calibrate_noul_threshold(
+    probabilities: list[float],
+    labels: list[bool],
+) -> dict[str, Any]:
+    """Calibrate the binary gating threshold tau_noul by maximizing F1 on validation data (Reviewer 2 W5).
+
+    Replaces the uncalibrated fixed tau_noul = 0.30 heuristic that caused 100% false blocking of PASS cases.
+    """
+    if len(probabilities) != len(labels) or not probabilities:
+        raise ValueError("probabilities and labels must be non-empty sequences of equal length")
+
+    candidates = sorted({round(p, 6) for p in probabilities} | {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9})
+    best_tau = 0.5
+    best_f1 = -1.0
+    best_acc = 0.0
+    curve: list[dict[str, float]] = []
+
+    for tau in candidates:
+        tp = sum(1 for p, y in zip(probabilities, labels) if p >= tau and y)
+        fp = sum(1 for p, y in zip(probabilities, labels) if p >= tau and not y)
+        fn = sum(1 for p, y in zip(probabilities, labels) if p < tau and y)
+        tn = sum(1 for p, y in zip(probabilities, labels) if p < tau and not y)
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        f1 = (2.0 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0.0
+        acc = (tp + tn) / len(labels)
+        curve.append({"tau": tau, "f1": f1, "accuracy": acc, "precision": precision, "recall": recall})
+        if f1 > best_f1 or (f1 == best_f1 and acc > best_acc):
+            best_f1 = f1
+            best_acc = acc
+            best_tau = tau
+
+    return {
+        "optimal_tau_noul": best_tau,
+        "best_f1": best_f1,
+        "best_accuracy": best_acc,
+        "curve": curve,
+    }
+
+
+def build_provenance_comparative_row(
+    model_name: str,
+    *,
+    provenance: str,
+    p50_warm_ms: float,
+    first_call_cold_ms: float | None = None,
+    energy_wh_per_1k: float,
+    environment: str,
+    citation: str | None = None,
+) -> dict[str, Any]:
+    """Construct a comparative benchmark row enforcing measured ('✓') vs estimated ('~') provenance (Reviewer 2 W3, W8)."""
+    if provenance not in ("measured", "literature"):
+        raise ValueError("provenance must be 'measured' or 'literature'")
+    if provenance == "literature" and not citation:
+        raise ValueError("literature-sourced rows require an explicit citation string")
+    if not environment.strip():
+        raise ValueError("environment specification (device, threads/GPU, tokens, precision) is required")
+
+    symbol = "✓" if provenance == "measured" else "~"
+    return {
+        "model": model_name,
+        "provenance": provenance,
+        "symbol": symbol,
+        "p50_warm_ms": f"{symbol} {p50_warm_ms:.1f}",
+        "first_call_cold_ms": f"{symbol} {first_call_cold_ms:.1f}" if first_call_cold_ms is not None else "N/A",
+        "energy_wh_per_1k": f"{symbol} {energy_wh_per_1k:.2f}",
+        "environment": environment,
+        "citation": citation or "Measured in this work (SHA-256 receipt verified)",
+    }
+
 

@@ -1,0 +1,21 @@
+lemma erfcx_le_one {x : (*@$\mathbb{R}$@*)} (hx : 0 (*@$\le$@*) x) : erfcx x (*@$\le$@*) 1 := -- proof elided
+
+lemma erfcx_le_inv {x : (*@$\mathbb{R}$@*)} (hx : 0 < x) : erfcx x (*@$\le$@*) 1 / (Real.sqrt Real.pi * x) := -- proof elided
+
+lemma w_le {r0 : (*@$\mathbb{R}$@*)} (hr0 : 0 < r0) (a : (*@$\mathbb{R}$@*)) : w r0 a (*@$\le$@*) 1 / r0 := -- proof elided
+
+lemma w_le_sqrt {r0 a : (*@$\mathbb{R}$@*)} (hr0 : 0 < r0) (ha : 0 < a) :
+    w r0 a (*@$\le$@*) 1 / (Real.sqrt Real.pi * Real.sqrt a) := -- proof elided
+
+lemma keldysh_integrable {r0 : (*@$\mathbb{R}$@*)} (hr0 : 0 < r0) (n : (*@$\mathbb{N}$@*)) {c : (*@$\mathbb{R}$@*)} (hc : 0 < c) :
+    IntegrableOn (fun a => (1 / (4 * a)) ^ n * Real.exp (-(c * (1 / (4 * a)))) * (w r0 a / (2 * a)))
+      (Ioi 0) := -- proof elided
+
+lemma hasDerivAt_G (h : MixtureData (*@$\mu$@*) k m) (n : (*@$\mathbb{N}$@*)) {t : (*@$\mathbb{R}$@*)} (ht : 0 < t) :
+    HasDerivAt (G (*@$\mu$@*) k m n) (G (*@$\mu$@*) k m (n + 1) t) t := -- proof elided
+
+lemma G_sign (h : MixtureData (*@$\mu$@*) k m) (n : (*@$\mathbb{N}$@*)) (t : (*@$\mathbb{R}$@*)) : 0 (*@$\le$@*) (-1 : (*@$\mathbb{R}$@*)) ^ n * G (*@$\mu$@*) k m n t := -- proof elided
+
+theorem keldysh_admissible {r0 : (*@$\mathbb{R}$@*)} (hr0 : 0 < r0) : AdmissiblePotential (keldysh r0) := -- proof elided
+
+theorem keldysh_pos {r0 t : (*@$\mathbb{R}$@*)} (hr0 : 0 < r0) (ht : 0 < t) : 0 < keldysh r0 t := -- proof elided

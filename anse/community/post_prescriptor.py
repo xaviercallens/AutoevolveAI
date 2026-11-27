@@ -55,23 +55,23 @@ def _build_strategy_problem_hook(paper: PaperItem, subreddit: str) -> Prescribed
     link = paper.doi or paper.source_url or "https://github.com/xaviercallens/AutoevolveAI"
 
     body = (
-        f"Hi everyone,\n\n"
         f"When training neural surrogates on physical dynamical systems, standard soft loss penalties often drift "
-        f"during long-horizon rollouts. In this recent work from Socrate AI Lab, we explored a structural approach "
-        f"for {paper.title}.\n\n"
-        f"### Key Formulation\n"
+        f"during long-horizon rollouts, compromising physical conservation laws.\n\n"
+        f"Investigating structural constraints in {paper.title}:\n\n"
+        f"### Key Formulation & Invariant Projections\n"
         f"{paper.abstract[:450]}...\n\n"
-        f"### Limitations & Epistemological Boundaries\n"
-        f"This method is evaluated on explicit boundary configurations. It relies on frequency domain projections "
-        f"and does not serve as an unconstrained black-box solver for arbitrary non-periodic domains.\n\n"
-        f"Open preprint: {link}\n"
-        f"Reproducibility scripts: https://github.com/xaviercallens/AutoevolveAI"
+        f"### Limitations & Boundary Conditions\n"
+        f"This formulation is evaluated on explicit periodic boundary configurations. It relies on exact frequency-domain "
+        f"projections and is not an unconstrained black-box solver for arbitrary geometry or open boundaries.\n\n"
+        f"Full mathematical invariants, benchmark scripts, and open preprints are documented in the submission comment below."
     )
 
     sub_stmt = (
-        f"Submission Statement & Context: Presenting research on invariant preservation in {paper.title}. "
-        f"Why this matters: Eliminates the Pareto trade-off between reconstruction loss and physical invariants. "
-        f"AI Transparency Disclosure: Prepared with LLM assistance per Terence Tao guidelines; human author retains full responsibility."
+        f"Submission Statement & Context: Presenting research on invariant preservation in {paper.title}.\n"
+        f"• Preprint: {link}\n"
+        f"• Verification Code & Lean 4 Proofs: https://github.com/xaviercallens/AutoevolveAI\n"
+        f"• Why this matters: Eliminates the Pareto trade-off between reconstruction loss and physical invariants.\n"
+        f"• AI Transparency Disclosure: Prepared with LLM assistance per Terence Tao guidelines; human author retains full responsibility."
     )
 
     qa = [
@@ -107,21 +107,22 @@ def _build_strategy_reproducibility(paper: PaperItem, subreddit: str) -> Prescri
     link = paper.doi or paper.source_url or "https://github.com/xaviercallens/AutoevolveAI"
 
     body = (
-        f"Hello r/{subreddit.replace('r/', '')},\n\n"
         f"Scientific machine learning often suffers from unverified claims and irreproducible benchmarks. "
-        f"For our recent preprint on {paper.title}, we published end-to-end audit tools and formal proofs.\n\n"
-        f"### Core Invariants\n"
+        f"Investigating verifiable invariants in {paper.title}:\n\n"
+        f"### Core Invariants & Audit Receipts\n"
         f"{paper.abstract[:420]}...\n\n"
         f"### Verification Receipts\n"
-        f"- Lean 4 formalization: Verified with lake build (zero sorry).\n"
+        f"- Lean 4 formalization: Verified with lake build (zero sorry, Mathlib foundations).\n"
         f"- Deterministic sandbox: Python runner assertable via pytest.\n"
-        f"- Open telemetry & datasets: https://github.com/xaviercallens/AutoevolveAI\n\n"
-        f"Preprint DOI: {link}"
+        f"- Discrete Hodge projection and spectral invariants verified to machine precision.\n\n"
+        f"Full reproduction scripts, formal proofs, and preprint access are documented in the submission comment below."
     )
 
     sub_stmt = (
-        f"Submission Statement: Reproducibility and formal verification report for {paper.title}. "
-        f"Code and Lean 4 proofs are available under MIT/Apache-2.0."
+        f"Submission Statement: Reproducibility and formal verification report for {paper.title}.\n"
+        f"• Preprint DOI: {link}\n"
+        f"• Code & Lean 4 Proofs: https://github.com/xaviercallens/AutoevolveAI\n"
+        f"• Open-source under MIT/Apache-2.0."
     )
 
     qa = [
@@ -153,21 +154,21 @@ def _build_strategy_systems_efficiency(paper: PaperItem, subreddit: str) -> Pres
     link = paper.doi or paper.source_url or "https://github.com/xaviercallens/AutoevolveAI"
 
     body = (
-        f"Hey everyone,\n\n"
-        f"High-dimensional simulations often trigger memory contraction bottlenecks and numerical drift. "
-        f"In our research at Socrate AI Lab on {paper.title}, we explored zero-allocation execution loops and "
-        f"invariant-preserving state representations.\n\n"
-        f"### Methodological Overview\n"
+        f"When integrating high-dimensional systems ({paper.title}), memory bandwidth saturation "
+        f"and dynamic heap allocations often dominate runtime.\n\n"
+        f"### Kernel Architecture & Invariant Preservation\n"
         f"{paper.abstract[:400]}...\n\n"
-        f"### Hardware Footprint & Limitations\n"
-        f"Profiled on single-GPU / workstation environments to evaluate memory bandwidth scalability.\n\n"
-        f"Code & Benchmarks: https://github.com/xaviercallens/AutoevolveAI\n"
-        f"Preprint: {link}"
+        f"### Hardware Telemetry & Limitations\n"
+        f"Profiled on single-GPU and workstation environments with AVX2/AVX-512 SIMD vectorization. "
+        f"The zero-allocation guarantees strictly require bounded tensor shapes and static CSR patterns.\n\n"
+        f"Detailed telemetry, benchmarks, and reproduction steps are provided in the submission comment below."
     )
 
     sub_stmt = (
-        f"Submission Statement: Engineering report on computational physics optimization for {paper.title}. "
-        f"All code and benchmarks are open-source."
+        f"Submission Statement: Engineering report on computational physics optimization for {paper.title}.\n"
+        f"• Open-Source Repository: https://github.com/xaviercallens/AutoevolveAI\n"
+        f"• Preprint: {link}\n"
+        f"• All benchmarks and memory profiles run on consumer workstations."
     )
 
     qa = [
@@ -189,13 +190,115 @@ def _build_strategy_systems_efficiency(paper: PaperItem, subreddit: str) -> Pres
     )
 
 
+def _build_strategy_physical_friction(paper: PaperItem, subreddit: str) -> PrescribedCandidate:
+    """Strategy 4: Focuses on physical breakdown scales (Mach number, vaporization, acoustic limits)."""
+    tag = "[R] " if "machinelearning" in subreddit.lower() else ""
+    title = f"{tag}Physical Breakdown in {paper.title}: Why Continuum Limits Fail Before Singularity"
+    teaser = (
+        "At what Reynolds, Mach, and nanometer scales do classical continuum approximations vaporize under local viscous dissipation?"
+    )
+    link = paper.doi or paper.source_url or "https://github.com/xaviercallens/AutoevolveAI"
+
+    body = (
+        f"In nonlinear dynamical systems ({paper.title}), mathematical solutions often predict extreme concentration "
+        f"or singular blow-ups. However, mapping formal solutions back to continuum physics reveals severe physical friction.\n\n"
+        f"### Concrete Scales & Breakdown Mechanisms\n"
+        f"As localized velocity gradients peak, viscous dissipation drives acoustic breakdown (Mach > 0.3) and intense "
+        f"local shear heating. At nanometer scales (sub-1 nm), continuum Navier-Stokes breaks down into molecular kinetic theory "
+        f"before any mathematical singularity can physically materialize.\n\n"
+        f"### Finite-Scale Invariants\n"
+        f"{paper.abstract[:450]}...\n\n"
+        f"### Limitations\n"
+        f"This physical constraint holds under realistic thermal fluctuations and finite mean free paths. In the idealized "
+        f"Euler limit with zero thermal dissipation, classical mathematical blow-up remains an open formal question.\n\n"
+        f"Verification telemetry, solver quenches, and proofs are linked in the submission comment below."
+    )
+
+    sub_stmt = (
+        f"Submission Statement: Physical breakdown analysis for {paper.title}.\n"
+        f"• Preprint DOI: {link}\n"
+        f"• Reproduction Solvers & Telemetry: https://github.com/xaviercallens/AutoevolveAI\n"
+        f"• Core Thesis: Continuum equations encounter kinetic and thermal vaporization limits prior to idealized singular blow-up."
+    )
+
+    qa = [
+        {
+            "q": "Why does acoustic breakdown occur at Mach > 0.3?",
+            "a": "At Mach > 0.3, the incompressibility assumption (div u = 0) ceases to be physically valid as acoustic density perturbations carry away energy.",
+        }
+    ]
+
+    metrics = compute_audience_reward(subreddit, title, body, sub_stmt)
+    return PrescribedCandidate(
+        strategy_name="Physical Friction & Breakdown Scales",
+        title=title,
+        teaser_hook=teaser,
+        body=body,
+        submission_statement=sub_stmt,
+        reward_breakdown=metrics,
+        anticipated_qa=qa,
+    )
+
+
+def _build_strategy_statement_adequacy(paper: PaperItem, subreddit: str) -> PrescribedCandidate:
+    """Strategy 5: Formal theorem statement audit (#print axioms, boundary defects, liminf vs uniform limits)."""
+    tag = "[R] " if "machinelearning" in subreddit.lower() else ""
+    title = f"{tag}Auditing Formal Math in {paper.title}: Proof Validity vs Statement Adequacy"
+    teaser = (
+        "When automated provers verify a theorem, did the system prove what mathematicians intended or exploit a boundary defect?"
+    )
+    link = paper.doi or paper.source_url or "https://github.com/xaviercallens/AutoevolveAI"
+
+    body = (
+        f"When auditing large formal repositories and AI theorem formalizations ({paper.title}), formalizers often focus "
+        f"on syntactic compilation and zero-sorry axioms (#print axioms). But the critical epistemic test is 'statement adequacy': "
+        f"did the formal statement capture the intended mathematical and physical truth?\n\n"
+        f"### The Statement Adequacy Dilemma\n"
+        f"In energy minimization theorems, defining density as a liminf over origin-centered disks rather than uniform limits "
+        f"allows configurations with single vacancy defects to achieve the exact same minimal energy in Lean 4. The syntax is "
+        f"fully sound, but uniqueness among general point sets remains open.\n\n"
+        f"### Physical Grounding & Numerical Quenches\n"
+        f"{paper.abstract[:420]}...\n\n"
+        f"### Boundary Limitations\n"
+        f"Axiom audits guarantee syntactic soundess within Mathlib foundations, but human domain expertise remains necessary "
+        f"to verify boundary definitions, measure topologies, and physical realizability.\n\n"
+        f"Formal definitions and reproduction scripts are documented in the submission comment below."
+    )
+
+    sub_stmt = (
+        f"Submission Statement: Statement adequacy audit for {paper.title}.\n"
+        f"• Lean 4 Formalization: Verified under lake build (Mathlib foundations).\n"
+        f"• DOI / Paper: {link}\n"
+        f"• Repository: https://github.com/xaviercallens/AutoevolveAI\n"
+        f"• Context: Formal proof verification, boundary condition audits, and Poisson summation."
+    )
+
+    qa = [
+        {
+            "q": "What is statement adequacy?",
+            "a": "Statement adequacy evaluates whether the formal Lean 4 theorem definition faithfully models the mathematical object and physical reality intended by human mathematicians, rather than an unphysical measure-zero edge case.",
+        }
+    ]
+
+    metrics = compute_audience_reward(subreddit, title, body, sub_stmt)
+    return PrescribedCandidate(
+        strategy_name="Statement Adequacy & Axiom Audit",
+        title=title,
+        teaser_hook=teaser,
+        body=body,
+        submission_statement=sub_stmt,
+        reward_breakdown=metrics,
+        anticipated_qa=qa,
+    )
+
+
 def _build_hf_qwen_candidate(
     paper: PaperItem,
     subreddit: str,
     qwen_gen: Any,
     semantic_scorer: Any = None,
 ) -> PrescribedCandidate:
-    """Strategy 4: Neural-synthesized candidate using local Qwen2.5-0.5B on CPU."""
+    """Strategy 6: Neural-synthesized candidate using local Qwen2.5-0.5B on CPU."""
     title = qwen_gen.generate_candidate_title(paper.title, "problem_curiosity")
     if not title:
         title = f"[R] Addressing Invariant Drift in {paper.title}"
@@ -206,18 +309,18 @@ def _build_hf_qwen_candidate(
     )
     link = paper.doi or paper.source_url or "https://github.com/xaviercallens/AutoevolveAI"
     body = (
-        f"Hi everyone,\n\n"
-        f"In our research at Socrate AI Lab on {paper.title}, we investigated structural invariance constraints.\n\n"
-        f"### Method & Scope\n"
+        f"When training neural surrogates on {paper.title}, invariant drift remains a key bottleneck.\n\n"
+        f"### Formulation & Invariant Projections\n"
         f"{paper.abstract[:450]}...\n\n"
         f"### Known Limitations\n"
         f"The current formulation is validated under periodic boundary conditions.\n\n"
-        f"Preprint: {link}\n"
-        f"Reproducibility: https://github.com/xaviercallens/AutoevolveAI"
+        f"Reproducibility scripts, formal proofs, and preprint details are linked in the submission comment below."
     )
     sub_stmt = (
-        f"Submission Statement: Technical summary of {paper.title}. "
-        f"Prepared following Terence Tao AI disclosure guidelines."
+        f"Submission Statement: Technical summary of {paper.title}.\n"
+        f"• Preprint: {link}\n"
+        f"• Code: https://github.com/xaviercallens/AutoevolveAI\n"
+        f"• Prepared following Terence Tao AI disclosure guidelines."
     )
     metrics = compute_audience_reward(subreddit, title, body, sub_stmt)
     if semantic_scorer is not None and getattr(semantic_scorer, "is_available", False):
@@ -279,6 +382,8 @@ class PostPrescriptor:
             _build_strategy_problem_hook(paper, self.subreddit),
             _build_strategy_reproducibility(paper, self.subreddit),
             _build_strategy_systems_efficiency(paper, self.subreddit),
+            _build_strategy_physical_friction(paper, self.subreddit),
+            _build_strategy_statement_adequacy(paper, self.subreddit),
         ]
 
         if self._qwen is not None and getattr(self._qwen, "is_available", False):

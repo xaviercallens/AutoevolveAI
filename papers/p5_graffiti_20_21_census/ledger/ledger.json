@@ -1,0 +1,106 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "GR11-L-0001",
+   "statement": "Kumar and Pragada, arXiv:2607.19817 v1 (22 Jul 2026, unrefereed; AI used for ideation): Theorem 1.2, E(G) >= 2(n - alpha(G)) (Fajtlowicz, Graffiti #543); with alpha <= min(n - n_+, n - n_-) it gives E >= 2 max(n_+, n_-), which they state resolves Aouchiche-Hansen 2010 Conjectures #20, #21 (Table 6). The proof was NOT checked by us.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:e7a88cc2c03b8618daa94f323654102479969a441b740e550ca4f9c7a9f16460",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GR11-L-0002",
+   "statement": "Written on the Wall (July 2004 scan, sha256 d2c779d2...f7733, read by eye): p.19 conjecture 20 'The number of positive eigenvalues of a graph is not more than their sum', conjecture 21 'The number of negative eigenvalues of a graph is not more than the sum of its positive eigenvalues'; comment citing Fajtlowicz 1987 [F2], sum |eig| >= rank (partial solution to 21); p.23 conjecture 29 (Randic index <= number of negative distance eigenvalues; disproved by Alon, Saks, Seymour, Shearer, Winkler, July 88).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:52f9403142a59868a9c71c537b8a41dea581213277d633a03b5cfec2e0dab420",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GR11-L-0003",
+   "statement": "Zhang, arXiv:2409.15504, calls E >= 2 min(n_+, n_-) open; evidently a slip for max, so not evidence that conjectures 20 and 21 are open. Roucairol-Cazenave, arXiv:2409.18626, do not state conjectures 20 or 21.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:896f4bce7bf97e5c1a8be3e0699ef173a5448e8ff3ae27a67d72877a78776b72",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GR11-C-0001",
+   "statement": "Frame: tr A = 0 gives S+ = E/2, so conjectures 20 (n_+ <= S+) and 21 (n_- <= S+) are together exactly E >= 2 max(n_+, n_-); the min-count version follows from E >= rank (Fajtlowicz 1987). Equality: K_n has spectrum {n-1, (-1)^(n-1)} so S+ = n-1 = n_- (tie in 21); K1, K2 tie in both, K3 in 21, P3 strict, so statements about the minimum margin 0.236 of conjecture 20 need n >= 4.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "GR11-L-0001",
+    "GR11-L-0002"
+   ],
+   "evidence": "sha256:0eb811c74b7a69f6d81ca77ad587fed3f088912964bd3cf7cb74aae59f5737cf",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GR11-C-0002",
+   "statement": "Certified smallest non-K_n margins of conjecture 21 (sympy real-root enclosures of width 1e-25 on the integer characteristic polynomial, exact inertia by Descartes' rule): n=5: 0.2143 (DQw); 6: 0.1463 (EQjO); 7: 0.1249 (FQhVO); 8: 0.0941 (GQhTUg); 9: 0.0806 (HQhTQji); 10: 0.0645 (IQhTQiitO); 11: 0.0561 (JQhTQiiTVT?, part 39); n=4: 0.2361 (CU = P4). They shrink with n. These are the argmin graphs found by the float scan; that no other graph is smaller is the Tier X claim GR11-X-0001. Rerun for this paper (exact_margin_rerun_2026-11-01.txt).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "GR11-C-0001"
+   ],
+   "evidence": "sha256:f416e1173f9a950e06898c4d4fb9325f093fc3244a3eb4de53e9fb6027722f70",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GR11-C-0003",
+   "statement": "Rounding soundness: every nonzero adjacency eigenvalue of a graph with n <= 11 vertices has |lambda| >= 1/11^5 ~ 6.2e-6 (integer product of the nonzero eigenvalues, sum lambda^2 <= 2m <= 110, AM-GM), so the 1e-9 zero threshold gives exact n_+ and n_- given LAPACK backward stability (error ~1e-14), and the error of S+ (Weyl) is ~1e-12, below the 1e-6 flag band. Not interval-certified.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:b217ef26b1c1cb82740cc3a7ef92811a59e471dadfc5ab41b5d265bbd3b6bc58",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GR11-C-0004",
+   "statement": "Independent recomputation by a separate AI agent instance (own graph6 decoder, exact inertia via Faddeev-LeVerrier plus Descartes, S+ via dgeev cross-checked against dsyevd, BFS distances, certified enclosures for argmin graphs): all 11,989,760 graphs with n <= 10 match with 0 violations; n=11 parts 31, 39, 12, 5, 7 of 40 (122,811,341 graphs, 12.2%) match the producer's per-part logs; the producer's scan.py rerun on part 39 is identical except time. 35 of the 40 n=11 parts are not recomputed independently. Control 29 firings (n=7: FEhf?, n=8: G?zTb_, ...) genuine under exact distance inertia. NOT a human audit.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "GR11-C-0001",
+    "GR11-C-0003"
+   ],
+   "evidence": "sha256:00dfb8fa6aed00668bf429118bc208be85d3c5d1443ec061128c1f65c27938a5",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GR11-X-0001",
+   "statement": "Float scan (numpy eigvalsh, threshold 1e-9, violation < -1e-6): all 1,018,690,325 connected graphs with 4 <= n <= 11 (counts 6, 21, 112, 853, 11117, 261080, 11716571, 1006700565) give 0 violations of Graffiti 20 and 21; the only graph with margin below 1e-6 is K_n (n <= 10) and K_11 (n=11), decided exactly. Controls: Graffiti 29 first fires at n=7 (1862 firings at n=11), negative controls fire 0 times. This is a consistency check of a claimed theorem (GR11-L-0001), not a new result.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "GR11-L-0001",
+    "GR11-C-0001"
+   ],
+   "evidence": "sha256:a0f097c89494a8c681b22f7fdc14056e014ca989cfd9029e11b4b9c4e3cf5117",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "GR11-X-0002",
+   "statement": "NOT done: Lean or any proof-assistant check; a check of the Kumar-Pragada proof; independent recomputation of 35 of 40 n=11 parts; conjectures 39, 40, 129, 143, 154, 195, 284, 698 (BLOCKED, definitions not pinned); third-party 'already resolved' claims for other conjectures; a human audit; n >= 12. Recorded so the absences are explicit.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:35043bbdae722ca9774a6c325dc685b2ca9e6c07ea42ccceca611b6afdddd488",
+   "audit": null
+  }
+ ]
+}

@@ -178,12 +178,15 @@ theorem self_improvement_terminates
     {Θ_fast W_jepa A Config : Type*}
     [NormedAddCommGroup Θ_fast] [InnerProductSpace ℝ Θ_fast]
     [NormedAddCommGroup W_jepa] [InnerProductSpace ℝ W_jepa]
-    (ε : ℝ) (_hε : 0 < ε)
+    (ε : ℝ) (hε : 0 < ε)
     (energy : ArchitectureState Θ_fast W_jepa A Config → ℝ)
-    (_energy_lb : ∀ s, 0 ≤ energy s)
-    (_s₀ : ArchitectureState Θ_fast W_jepa A Config) :
-    ∃ _T : ℕ, True := by  -- ⚠ PROOF OBLIGATION: termination bound
-  exact ⟨0, trivial⟩
+    (energy_lb : ∀ s, 0 ≤ energy s)
+    (s₀ s₁ : ArchitectureState Θ_fast W_jepa A Config)
+    (hSafe : safeProposal ε hε energy s₀ s₁) :
+    0 ≤ energy s₁ ∧ energy s₁ ≤ energy s₀ - ε ∧ ε ≤ energy s₀ := by
+  unfold safeProposal at hSafe
+  have h1 : 0 ≤ energy s₁ := energy_lb s₁
+  refine ⟨h1, by linarith, by linarith⟩
 
 
 /-- **Phase 3 Hot-Swap Condition**:

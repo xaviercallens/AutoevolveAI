@@ -1,0 +1,3 @@
+-- Autoresearch_EnstrophyFlow.lean lines 132-133
+theorem re_B_zero (k : ℕ → ℝ) (v : ℕ → ℂ) :
+    ((starRingEnd ℂ) (v 0) * shellBc k 0 v).re = -(k 0 * R v 0) := ...

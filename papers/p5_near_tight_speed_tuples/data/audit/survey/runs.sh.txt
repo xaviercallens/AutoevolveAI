@@ -1,0 +1,8 @@
+#!/bin/bash
+cd /tmp/lrspecaudit/survey
+export OMP_NUM_THREADS=2
+for a in "4 200" "6 110" "8 40" "7 50" "7 56"; do
+  set -- $a
+  /usr/bin/time -f "%e s" taskset -c 6,7 ./survey $2 $1 > s_n$1_N$2.txt 2> s_n$1_N$2.time
+done
+echo done > ALLDONE

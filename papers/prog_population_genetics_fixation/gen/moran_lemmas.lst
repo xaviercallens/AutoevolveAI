@@ -1,0 +1,17 @@
+theorem moranFix_harmonic_nat {N : (*@$\mathbb{N}$@*)} {r : (*@$\mathbb{R}$@*)} (hr : 0 < r) {i : (*@$\mathbb{N}$@*)} (h1 : 0 < i) :
+    moranUp N r i * moranFix N r (i + 1) + moranDown N r i * moranFix N r (i - 1)
+      + (1 - moranUp N r i - moranDown N r i) * moranFix N r i = moranFix N r i := -- proof elided
+
+theorem moran_var_pos_nat {N : (*@$\mathbb{N}$@*)} {r : (*@$\mathbb{R}$@*)} (hN : 0 < N) (hr : 0 < r) {i : (*@$\mathbb{N}$@*)} (h1 : 0 < i)
+    (h2 : i < N) :
+    0 < moranUp N r i * (moranFix N r (i + 1) - moranFix N r i) ^ 2
+      + moranDown N r i * (moranFix N r (i - 1) - moranFix N r i) ^ 2
+      + (1 - moranUp N r i - moranDown N r i) * (moranFix N r i - moranFix N r i) ^ 2 := -- proof elided
+
+theorem moranFix_closed {N : (*@$\mathbb{N}$@*)} {r : (*@$\mathbb{R}$@*)} (hr1 : r (*@$\ne$@*) 1) (i : (*@$\mathbb{N}$@*)) :
+    moranFix N r i = (1 - r(*@$^{-}$@*)(*@$^{1}$@*) ^ i) / (1 - r(*@$^{-}$@*)(*@$^{1}$@*) ^ N) := -- proof elided
+
+theorem moranFix_neutral (N i : (*@$\mathbb{N}$@*)) : moranFix N 1 i = (i : (*@$\mathbb{R}$@*)) / N := -- proof elided
+
+theorem moran_closed_tendsto_neutral {N : (*@$\mathbb{N}$@*)} (hN : 0 < N) (i : (*@$\mathbb{N}$@*)) :
+    Tendsto (fun r : (*@$\mathbb{R}$@*) => (1 - r(*@$^{-}$@*)(*@$^{1}$@*) ^ i) / (1 - r(*@$^{-}$@*)(*@$^{1}$@*) ^ N)) ((*@$\mathcal{N}$@*)[(*@$\ne$@*)] 1) ((*@$\mathcal{N}$@*) ((i : (*@$\mathbb{R}$@*)) / N)) := -- proof elided

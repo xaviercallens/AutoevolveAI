@@ -1,0 +1,15 @@
+commit: acfca0acc16c707913e414085c6d0ca002d5e1d4
+binary sha256: 36c3ece966511bf95eada45b92e0a8383524f411e8b2842def7b02fa8319bd0b
+started: 2026-10-31T20:11:59+01:00
+seeds: 0..999   budget: 4000 (A8: 8000)   tuning: baldwin   population: 40   points: default pcg64(20261024)
+registered kill rule: scripts/kge_perturb_best_analysis.py (docstring)
+commands (binary above, run from its directory; seeds 0..999 in every arm):
+  A0 ./kge ladder --seeds 1000 --tuning baldwin --budget 4000 --immigration-mode none                      (all six rungs)
+  A2 ./kge ladder --seeds 1000 --tuning baldwin --budget 4000 --immigration-mode pb13-forced               (all six rungs)
+  A1/A3/A4/A5/A6/A7: same, --immigration-mode random|pb13-matched|clone|pb10-forced|pb1-forced|pb3-forced, --rungs L3_minus_wq,L4_minus_hwq,L5_minus_half_hwq
+  A8 ... --budget 8000 --immigration-mode none --rungs L3_minus_wq
+  A9 ... --budget 4000 --immigration-mode none --rungs L3_minus_wq --scramble-spec
+analysis: scripts/kge_perturb_best_analysis.py --dir <dir with A0..A9.json> --stored-none results/kge_rust_ladder_baldwin_instrumented.json --stored-random results/kge_rust_ladder_baldwin_immigration.json
+NOTE: the analysis script gained (a) the easy-rung equivalence guard and (b) a skip for rungs an arm did not run, both
+after the arms were launched and before any per-seed result was read; the kill rule itself was not changed.
+A9.log/A9.done were also written by a failed launch into the repository root of the working tree (untracked, harmless).

@@ -1,0 +1,287 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "YK-A-0001",
+   "statement": "Upstream OAI.AtomicTriangular.universal_energy_minimum (openai/math, AI-generated, Comparator-accepted, not peer reviewed): for every g with AdmissiblePotential g and every C with LocallyFinite C and DensityOne C, latticeEnergy g <= energy g C and latticeEnergy g = energy g A. Certifies the statement about upstream's definitions only.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:685bd8236bdcb691f34d58f63d2cbfab5331054402ebd32ec06ba71eb42b263b",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-A-0002",
+   "statement": "TriangularRiesz.riesz_admissible (s > 0: t^(-s/2) is admissible) and TriangularRiesz.latticeEnergy_riesz_lt_top (s > 2: latticeEnergy (riesz s) < top). Prior published work doi:10.5281/zenodo.23285631.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:2b3ef447fc63267012153ec4a261ef28a5c0c4d6ec44dcf5f4664bcaec8bff5d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-A-0003",
+   "statement": "TriangularDensity.universal_any_density and triangular_optimal_any_density (D2, doi:10.5281/zenodo.23285631): for rho > 0 and admissible h, (sqrt rho)^-1 A is locally finite, has DensityRho rho, and minimises energy h among locally finite DensityRho-rho configurations.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "YK-A-0001",
+    "YK-A-0002"
+   ],
+   "evidence": "sha256:c7206acd364f36939682b13909caf6c6139e784d7afb412560022fe4a172e3ac",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-A-0004",
+   "statement": "AutoresearchYukawa.admissible_mul (products of admissible potentials are admissible, pointwise Leibniz sign lemma mul_sign), admissible_congr (admissibility depends only on values on (0, inf)), phi_admissible (kappa > 0: exp(-kappa sqrt t) is admissible).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "YK-A-0002"
+   ],
+   "evidence": "sha256:a217fe0598c346075127ead3c13dacd0047350c1561bdfafcc58183f59cc70ad",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-A-0005",
+   "statement": "AutoresearchYukawa.yukawa_admissible and triangular_yukawa_optimal: for kappa > 0, g kappa t = exp(-kappa sqrt t)/sqrt t is AdmissiblePotential, hence latticeEnergy (g kappa) <= energy (g kappa) C for every locally finite density-one C.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "YK-A-0001",
+    "YK-A-0004"
+   ],
+   "evidence": "sha256:4a4a64b0fd9d9fa2451c35ca6ac50815d1e32d4c3fa70902976c034a83ce447b",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-A-0006",
+   "statement": "AutoresearchYukawa.latticeEnergy_yukawa_lt_top: for kappa > 0, latticeEnergy (g kappa) < top (via g <= (2/kappa^2) t^(-3/2)), so YK-A-0005 is not top <= top.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "YK-A-0002"
+   ],
+   "evidence": "sha256:0ceed53c5f8936bc41b521acf433e1dea16324afe5c04b5b2cf80c46a8b85b44",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-A-0007",
+   "statement": "Negative control AutoresearchYukawa.c_not_admissible: exp(-kappa sqrt t) cos t is not admissible (negative at t = pi), so admissibility is not vacuously satisfied. The theorem does not apply to it; this does not show that triangular optimality fails for it.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:d9be97846005240d659233be8319bdc92ea26b5b912a5e89e80bb978b7317f12",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-A-0008",
+   "statement": "AutoresearchYukawaMix.admissible_add, admissible_smul (c >= 0), admissible_zero, admissible_sum (finite nonnegative combinations): upstream's AdmissiblePotential is closed under these operations.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "YK-A-0002"
+   ],
+   "evidence": "sha256:5486284ab8a1c530de981a863378d9a445d1a9fe5228350e041e3efb9c64ba06",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-A-0009",
+   "statement": "AutoresearchYukawaMix.g_rescale (pointwise, t > 0: g kappa (t/rho) = sqrt rho * g (kappa/sqrt rho) t), yukawa_optimal_any_density and latticeEnergy_yukawa_rho_lt_top: at every density rho > 0 the rescaled triangular lattice minimises the planar Yukawa energy among locally finite density-rho configurations, with finite minimum.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "YK-A-0003",
+    "YK-A-0005",
+    "YK-A-0006"
+   ],
+   "evidence": "sha256:8113c958e01e1bb58cb0a883f21339955db5806656192f8970ba5fb3a2c66d1d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-A-0010",
+   "statement": "AutoresearchYukawaMix.yukawaMix_admissible, triangular_yukawaMix_optimal, latticeEnergy_yukawaMix_lt_top, yukawaMix_optimal_any_density, latticeEnergy_yukawaMix_rho_lt_top: every finite mixture sum_i w_i exp(-kappa_i r)/r with w_i >= 0, kappa_i > 0 is admissible, minimised by the triangular lattice at density one and (rescaled) at every density, with finite minimum.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "YK-A-0001",
+    "YK-A-0003",
+    "YK-A-0005",
+    "YK-A-0006",
+    "YK-A-0008",
+    "YK-A-0009"
+   ],
+   "evidence": "sha256:c8c997af03718d1bf4f75cf11ebcf632bea6404122d775eb43b5885de34dba20",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-A-0011",
+   "statement": "Negative control AutoresearchYukawaMix.signedMix_not_admissible: g_1 - 2 g_2 is not admissible (value 2e^-1(e^(1/2) - 2) < 0 at t = 1/4). So the admissibility lemma yukawaMix_admissible needs the sign condition on the weights, and the optimality theorem does not apply to g_1 - 2 g_2. This does not show that triangular optimality fails for it.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:08b96f21f8c21e0c9de3981262b65680deaedf6f7292dfcaca03e4694716e456",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-L-0001",
+   "statement": "CKMRV Definition 1.3: universal optimality is minimising p-energy for every completely monotonic function of squared distance; density is bookkeeping (rescaling by rho^(-1/d)).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:78ae913dea8ab7e04713bc817049578ea45d778aa4f852e61da2b865d7e7c47e",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-L-0002",
+   "statement": "CKMRV Section 1: a lattice has p-energy sum_{x in Lambda minus 0} p(|x|) (no factor 1/2), assuming absolute convergence.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:ced999be7e04e2af28b6a7dc3fb80cc96e67f92821118d23400336c9c6db12a6",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-L-0004",
+   "statement": "CKMRV footnote 2: if p is completely monotonic on (0, inf) then so is r -> p(r^(1/2)); more generally if p and q' are completely monotonic then so is p o q (each term of the k-th derivative has sign (-1)^k).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:b88db7d352e4293742eabb5bf4e955bef43e78e61ecd1a927fd2f0d8727e1a55",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-L-0003",
+   "statement": "Upstream manuscript (OpenAI, Universal optimality of the triangular lattice, 2026-09-23), Section 1: the theorem permits singular potentials and divergent lattice sums, and identifies the minimum value, not all minimizers.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:48e5db8e01b99180d7263be08ee4f2969e17793f3bc93362e20de85d85937629",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-L-0005",
+   "statement": "CKMRV Section 1 (arXiv:1902.05438 version, p. 8, remark after Theorem 1.4): uniqueness of the minimiser cannot hold among all configurations, because removing a single particle changes neither the density nor the energy (so a lattice with a vacancy has the same energy).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:9cf2ec9e861abd71625b7c88a126205c6ee9c7640091a9cef602b655c28040c8",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-C-0001",
+   "statement": "Human demonstration (paper Section 3): t^(-1/2) and exp(-kappa sqrt t) are completely monotone on (0, inf); Leibniz gives closure under products; e^x >= x^2/2 gives g <= (2/kappa^2) t^(-3/2) and a convergent lattice sum; sums and nonnegative multiples preserve the sign pattern; rescaling t -> t/rho preserves it. A prose proof, not machine-checked; it mirrors the Lean proofs of YK-A-0004..0011 step by step.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:a69a85b7859c811ef4e30ebd3811a291b9d34bd3bc49371469a09f327c7c669f",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-C-0002",
+   "statement": "Physics reading: g kappa (r^2) = exp(-kappa r)/r is the planar Yukawa (3D-screened Coulomb) pair interaction between particles confined to a plane, with kappa in units of the inverse density-one length; it is not the 2D Debye-Hueckel Green function K0(kappa r). Upstream latticeEnergy and diskEnergy count ordered pairs (no 1/2), so they are twice the per-particle energies of the numerics. The theorem is classical (T = 0), concerns the liminf disk-averaged energy, and fixes the minimum value, not the minimiser. Novelty is formal only: complete monotonicity of the Yukawa potential in r^2 and the convex-cone/product closure of completely monotone functions are classical.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "YK-A-0005",
+    "YK-L-0002",
+    "YK-L-0003",
+    "YK-L-0005"
+   ],
+   "evidence": "sha256:fe9762e023a480b7c03e36ed59d71c4768459769af0b5d84a3b718e1e4c01e22",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-C-0003",
+   "statement": "Hugging Face search (2026-10-25, public, unauthenticated) for dusty plasma, complex plasma, colloid, colloidal, yukawa and wigner crystal found no particle-position dataset of a dusty plasma or colloid (absence by search, not proof); OC20 (colabfit/OC20_IS2RES_val_id) supplies disordered initial conditions, not physics.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:ab0edfb6aa08f46f78453a81566d6f18d424d1e493cfd66e6b061fd37794e621",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-X-0001",
+   "statement": "Exact (untruncated) lattice energies per particle, (1/2) sum, density one: kappa=1 tri 1.625321339606275 square 1.634855495317198; kappa=2 tri 0.39354284893239105 square 0.40097424876505744. Exact minus published shifted-force (r_c = 8): 0.01771212 (kappa=1 tri), 9.482107e-06 (kappa=2 tri). Square-minus-triangular gap changes by -2.2e-06 (kappa=1) and -3.235e-09 (kappa=2). Consistency evidence only.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "YK-C-0002"
+   ],
+   "evidence": "sha256:7db1ba7ea8b5640273d68a41b4a6118d6b8f52eee9d7357cad47ff71f8c4fb43",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-X-0002",
+   "statement": "Positive controls: independent 40-digit mpmath direct sum and Ewald splitting agree with the Rust f64 values to at most 1.66e-16 (threshold 1e-9); Rust direct vs Ewald and image-summed box vs lattice sum agree to the 1e-15/1e-16 level.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:8444c57c192eb1f19f6ead2d9b84b6d64b39c0fc795a0a739f0b577ecdd6c03a",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-X-0003",
+   "statement": "Negative controls: published shifted-force lattice energies fail the 1e-9 test against the exact ones by the erratum amount; the square lattice in a 17x17 box under the exact potential has 72 (kappa=2) and 64 (kappa=1) negative Hessian modes and relaxes to an energy above e_tri.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:6363176486597728810b5984a91e993866b70777e171c5571d031ab9948b0770",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-X-0004",
+   "statement": "Relaxed comparison: 24 relaxed stages from 21 published seeds re-relaxed under the exact potential with CVODE; 0 fall below the exact triangular energy beyond f64 resolution (below_exact_floor is exact_gap < 0 with zero tolerance; 1 stage(s) sit at exact_gap = 0.0, the perfect lattice, within f64 noise: the perfect lattice in the kappa=1 box differs from the lattice sum by -2.2e-16); no negative Hessian modes; gaps change by at most 5.3e-7 (kappa=1) and about 1e-10 (kappa=2). A subset (11 of 50 stages at kappa=1, 13 of 100 at kappa=2); annealing not re-run.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "YK-C-0002"
+   ],
+   "evidence": "sha256:dac1107bd1565c1c607031d98a17940c5aa1c4bd03e9fd37ecfeef19888fc040",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-X-0005",
+   "statement": "OC20 shard provenance: local co_10.parquet sha256 9e4249ba20cf4cdc46f69e7fe6deb19be286dd19c9f1cf85d350816d2b1e748b equals the Hub LFS sha256 at revision 6a1dfef12aec878b4cda99edd54b16a6a254e135 of colabfit/OC20_IS2RES_val_id (license cc-by-4.0); original download date not recorded; the local file mtime 2026-10-10 20:04 UTC is a latest possible download date. The dataset card at that revision (data/oc20_card.json) gives the dataset DOI 10.60732/b4005525 and the journal DOI 10.1021/acscatal.0c04525.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:cf9ea4adeebf1ee6d831144e7841805231f999c492f98bbdc0634da86dd0d544",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "YK-X-0006",
+   "statement": "Sampled sign checks (mpmath, 40 digits): (-1)^n g_1^(n) > 0 at orders 0..6 on 159 points of t in [0.05, 4] (figures/fig_signs.json); (-1)^n g^(n) >= 0 at orders 0..8 on t = k/20, k = 1..80, for g_1 + 0.5 g_3 and its rho = 3 rescaling (contribution/numeric_gate_mix.json); g_1 - 2 g_2 violates the pattern (value -0.2585 at t = 1/4). Exploration only.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:5dc88b9d1c418a59d31b7557a6aa0683cbe3d7871cda3165477052ee641ee476",
+   "audit": null
+  }
+ ]
+}

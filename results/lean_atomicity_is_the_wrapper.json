@@ -1,0 +1,98 @@
+{
+  "measurement": "a Lean compile is NOT atomic per declaration; the wrapper made it look that way",
+  "the_correction": "LL.md recorded as F7 that 'a Lean compile is atomic: one failing obligation fails the whole file and yields no per-declaration rows'. That was verify_file's behaviour, not Lean's. It returns a single aggregate failure the instant returncode != 0, discarding the per-declaration axiom lines the kernel had already printed.",
+  "the_decisive_observation": {
+    "command": "lake env lean <one file with 8 candidates, indices 2 and 5 false>",
+    "exit_code": 1,
+    "axiom_lines_printed": 8,
+    "false_candidates_show": "sorryAx",
+    "verbatim": [
+      "'At0.At0_m' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "'At2.At2_m' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]"
+    ],
+    "reading": "A failed tactic proof is admitted as sorryAx and reported by name, which is exactly what the gate already rejects on. Nothing needed isolating."
+  },
+  "consequences": [
+    "Isolation costs ZERO extra invocations. The bisection (11 and 15 at 2 and 4 failures of 8) and the flat fall-back that replaced it (9) were both solving a problem the wrapper invented.",
+    "The batching break-even (1-p)^b > 1/b no longer binds: the saving is b at ANY failure rate, so the high-failure regime an evolutionary search occupies stops being a barrier.",
+    "results/lean_numeric_screen.json's headline justification is void. The screen is still sound and still removes elaboration work, but it was motivated as an escape from a limit that was an artifact of this wrapper."
+  ],
+  "why_dropping_the_exit_code_is_still_sound": [
+    "The source-forgery scan still runs, rejecting #exit truncation and #print string spoofing.",
+    "Every declared theorem must have its OWN axioms line; one that never elaborated prints nothing and fails as unchecked.",
+    "That line must be free of sorryAx and of non-whitelisted axioms.",
+    "A nonzero exit therefore only says some declaration failed, which the per-name checks catch. Nothing is accepted that verify_file would have accepted."
+  ],
+  "measured": [
+    {
+      "scenario": "0 of 8 false",
+      "actually_false": 0,
+      "invocations": 1,
+      "wall_clock_s": 10.38,
+      "named_failures": [],
+      "all_culprits_correct": true,
+      "false_accepted": []
+    },
+    {
+      "scenario": "1 of 8 false",
+      "actually_false": 1,
+      "invocations": 1,
+      "wall_clock_s": 10.21,
+      "named_failures": [
+        "Nw3"
+      ],
+      "all_culprits_correct": true,
+      "false_accepted": []
+    },
+    {
+      "scenario": "2 of 8 false",
+      "actually_false": 2,
+      "invocations": 1,
+      "wall_clock_s": 10.88,
+      "named_failures": [
+        "Nw0",
+        "Nw5"
+      ],
+      "all_culprits_correct": true,
+      "false_accepted": []
+    },
+    {
+      "scenario": "4 of 8 false",
+      "actually_false": 4,
+      "invocations": 1,
+      "wall_clock_s": 12.73,
+      "named_failures": [
+        "Nw0",
+        "Nw2",
+        "Nw4",
+        "Nw6"
+      ],
+      "all_culprits_correct": true,
+      "false_accepted": []
+    },
+    {
+      "scenario": "8 of 8 false",
+      "actually_false": 8,
+      "invocations": 1,
+      "wall_clock_s": 14.19,
+      "named_failures": [
+        "Nw0",
+        "Nw1",
+        "Nw2",
+        "Nw3",
+        "Nw4",
+        "Nw5",
+        "Nw6",
+        "Nw7"
+      ],
+      "all_culprits_correct": true,
+      "false_accepted": []
+    }
+  ],
+  "reference_single_candidate_median_s": 6.36,
+  "not_established": [
+    "One run per scenario; invocation counts are exact, wall-clock is a single sample on a host whose same-input spread reached 2.81x.",
+    "n=8 and one spec only.",
+    "--json was not needed: plain stdout already carries the per-declaration lines."
+  ]
+}

@@ -1,0 +1,350 @@
+{
+ "schema_version": 1,
+ "claims": [
+  {
+   "schema_version": 1,
+   "id": "KT-A-0001",
+   "statement": "Upstream OAI.AtomicTriangular.universal_energy_minimum (openai/math, AI-generated, not peer reviewed): for every g with AdmissiblePotential g and every C with LocallyFinite C and DensityOne C, latticeEnergy g <= energy g C (energies in [0, infinity]). Kernel footprint within the allowlist; certifies the statement about upstream's definitions only.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:e86885fc2a4f8c1cf6df81709791158661892636b66be07287d01e0f978ed64a",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-A-0002",
+   "statement": "AutoresearchYukawa.admissible_mul and admissible_congr (H2 lane, imported): the product of two AdmissiblePotential functions is admissible; admissibility depends only on values on (0, infinity).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:170b6243a8b7f0e3543aa00b460c726b034a3c666cf48db9394047e93c774832",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-A-0003",
+   "statement": "AutoresearchKeldysh.laplace_admissible and laplace_iteratedDeriv: for any measure mu and measurable k, m with k >= 0, m >= 0 a.e. and every moment k^n e^{-ck} m integrable (c > 0), t -> integral of exp(-t k) m dmu is AdmissiblePotential, and its n-th iterated derivative at t > 0 equals the integral of (-k)^n exp(-t k) m.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:c7c415064959032b7eb05539dc0a806ee426d1fe7b4dd42de055a56fa2a2d295",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-A-0004",
+   "statement": "Controls of the generic lemma: expNeg_admissible (exp(-eps t) is admissible for eps >= 0, Dirac instance) and signedMix_not_admissible (exp(-t) - 2 exp(-2t) is not admissible: it is negative at t = log(3/2), so m >= 0 is load-bearing).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "KT-A-0003"
+   ],
+   "evidence": "sha256:cc15f28705d88c8ec891bdce5e390859f4fa14d80b6129b573ac6ef7ed1fc105",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-A-0005",
+   "statement": "erfcx_le_one (erfcx x <= 1 for x >= 0), erfcx_le_inv (erfcx x <= 1/(sqrt(pi) x) for x > 0), keldysh_integrable (for r0 > 0, every moment (1/(4a))^n e^{-c/(4a)} w(a)/(2a) is integrable on (0, infinity)), where erfcx is DEFINED in Lean by (2/sqrt pi) * integral over y > 0 of exp(-(y^2 + 2xy)).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:3dcf74566cd8b7a9f58732326d28a893b4765eb9e649708e3bad73c458309601",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-A-0006",
+   "statement": "keldysh_admissible and keldysh_pos: for r0 > 0 the mixture-defined keldysh r0 (t = r^2, keldysh r0 t = integral over a > 0 of w(a)/(2a) exp(-t/(4a)), w(a) = (1/r0) erfcx(sqrt a / r0)) is AdmissiblePotential and strictly positive for t > 0 (non-vacuity).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "KT-A-0003",
+    "KT-A-0005"
+   ],
+   "evidence": "sha256:c1c1c963cfb3bda961d1c75e0e1714af97c66f2c6bc74d47344713aad25b93a0",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-A-0007",
+   "statement": "triangular_keldysh_optimal: for r0 > 0 and every locally finite density-one C, latticeEnergy (keldysh r0) <= energy (keldysh r0) C in [0, infinity]. Expected to read top <= top (KT-C-0002); finiteness is not proved.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "KT-A-0001",
+    "KT-A-0006"
+   ],
+   "evidence": "sha256:ec3a0fc6dabaf714ff37327a76e2dc75c30eeb73ebcc5c448e5ea8b3fd43a07b",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-A-0008",
+   "statement": "keldyshReg_admissible and triangular_keldyshReg_optimal: for r0 > 0, eps >= 0, keldysh r0 t * exp(-eps t) is admissible and its triangular lattice energy is <= energy of every locally finite density-one C, in [0, infinity]. Finiteness of the lattice energy for eps > 0 is NOT proved (KT-C-0003).",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [
+    "KT-A-0001",
+    "KT-A-0002",
+    "KT-A-0004",
+    "KT-A-0006"
+   ],
+   "evidence": "sha256:6327576ed2e19c163b63d241252d770414ad36b0aa2b3fe032df65eeb9a0ae4a",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-A-0009",
+   "statement": "Planted controls (separate file KeldyshCMControls.lean, importing the built module) are caught by #print axioms: ctl_sorry depends on sorryAx and ctl_axiom depends on the planted axiom ctl_cheat; both compile with rc 0, so exit status is not the gate.",
+   "tier": "A",
+   "kind": "lean_axioms",
+   "depends_on": [],
+   "evidence": "sha256:b2ff12b91be323d56d157ffc6fcb219ea6e242b5c2c2fd5948c64969be132d64",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-L-0001",
+   "statement": "Berkelbach-Hybertsen-Reichman (arXiv:1305.4972v1) Eq. (3): V2D(rho) = pi e^2/((eps1+eps2) rho0) [H0(rho/rho0) - Y0(rho/rho0)] (form derived by Keldysh, their ref. [26] JETP Lett. 29, 658 (1979)); in vacuum rho0 = 2 pi chi2D (Cudazzo et al., their ref. [27] PRB 84, 085406 (2011)).",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:47cac0cb85c47498ae8bb1f90a5444a641b4a7f2b4d1173dc62a246f8dd7a6a5",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-L-0002",
+   "statement": "Berkelbach et al. Table I (DFT+RPA) chi2D: MoS2 6.60, MoSe2 8.23, WS2 6.03, WSe2 7.18 Angstrom; text: MoS2 GW chi2D = 5.0 Angstrom, rho0 approx 30-40 Angstrom. Table II experimental lattice constants a: 3.16, 3.30, 3.16, 3.29 Angstrom.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:cc86061cd5ce0ad47ac506e5c4e78d32823dd58eff7bce4d41f19d77fa11a5c6",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-L-0003",
+   "statement": "Sandier-Serfaty (arXiv:1011.4617v2) Lemma 3.3: W(Lambda) = -(1/2) log(sqrt(2 pi b) |eta(tau)|^2); Remark 1.5: W approx -0.2011 (triangular), -0.1958 (square); Theorem 2: the triangular lattice uniquely minimises W among lattices.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:7567d77cac26acd335bf6a5a99e1c32c09eede3826d2e13debe3c08485cfa425",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-L-0004",
+   "statement": "DLMF 11.5.2 with nu = 0 and 11.2.5: H0(z) - Y0(z) = (2/pi) integral_0^infinity e^{-zt} (1+t^2)^{-1/2} dt for Re z > 0.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:011229f3e0d69441590e05aeed675e569cc8da52ab56df8854c42a040d48dc33",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-L-0005",
+   "statement": "HuggingFace colabfit/JARVIS_C2DB at revision 432aeba9e505b59d0b3605c6346ac3816c754c02 is licensed CC-BY-4.0 and cites Haastrup et al. (doi:10.1088/2053-1583/aacfc1) and ColabFit doi:10.60732/37c26dae, per its README.",
+   "tier": "L",
+   "kind": "citation",
+   "depends_on": [],
+   "evidence": "sha256:1474af65e4904d1811e5276765d8e6319d24b2bf267a0a2836bbd44c375967bb",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-C-0001",
+   "statement": "Identification (Theorem 2, Step 7 of the paper): for r0 > 0, r > 0, (pi/(2 r0)) [H0 - Y0](r/r0) = integral over a > 0 of w(a)/(2a) exp(-r^2/(4a)) da with w(a) = (1/r0) e^{a/r0^2} erfc(sqrt a / r0). Main route (stage-5 revision, suggested by the stage-4 audit): DLMF 11.5.2 (nu = 0) gives V(r) = (1/r0) int_0^inf e^{-r u/r0} (1+u^2)^{-1/2} du; insert the subordination formula e^{-rho sqrt t} = int_0^inf e^{-t a} rho/(2 sqrt pi) a^{-3/2} e^{-rho^2/(4a)} da (standard, uncited) and swap integrals by Tonelli (all integrands positive); the inner integral int_0^inf u (1+u^2)^{-1/2} e^{-lam u^2} du = (1/2) sqrt(pi/lam) erfcx(sqrt lam) is elementary (v = sqrt(1+u^2)); a = 1/(4b) turns the weight erfcx(1/(2 r0 sqrt a))/(2 r0 a) da into w(b)/(2b) db. Second route: Hankel representation of 2 pi/(k(1+r0 k)) (improper/distributional inversion, table integral uncited), erfc Laplace pair and Weber integral (standard, uncited), Fubini justified by integrating in a first. Human proof, not machine-checked.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "KT-L-0004"
+   ],
+   "evidence": "sha256:6da551fbe091ca391772c06e3128addac793b3e6264049d4b51dccc595af6673",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-C-0002",
+   "statement": "latticeEnergy (keldysh r0) is expected to be infinite (V(r) ~ 1/r at large r and the 2D lattice sum of 1/r diverges), so triangular_keldysh_optimal is expected to read top <= top. Not proved or disproved in Lean.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "KT-L-0001"
+   ],
+   "evidence": "sha256:c36f90b6d0c9a68a7d8d93c3ba6841e4e35bd40c49d3edd4ca545a41f45be1b7",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-C-0003",
+   "statement": "For eps > 0, latticeEnergy (keldyshReg r0 eps) < top is expected (Gaussian decay, logarithmic but integrable singularity is irrelevant since lattice points are at distance >= 1). Not attempted in Lean; needed before triangular_keldyshReg_optimal is non-trivial in Lean.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [],
+   "evidence": "sha256:48514c2eff97cc9916da65ca4ff82690cf98a8128fa0302237c44f51eb6fbf73",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-C-0004",
+   "statement": "Units: with eps1 = eps2 = 1 and e^2/(4 pi eps0) = 1, Berkelbach Eq. (3) becomes V(r) = (pi/(2 r0)) [H0 - Y0](r/r0), the potential used here; Fourier transform 2 pi/(k(1+r0 k)).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "KT-L-0001"
+   ],
+   "evidence": "sha256:1f217dfab15bc44700decdad85f488c8e47047ee76c5883704a80eca0b8657ea",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-C-0005",
+   "statement": "Large-r0 map: as r0 -> infinity, 2 pi/(k(1+r0 k)) ~ (1/r0) 2 pi/k^2, the 2D log kernel; at density one, after rescaling Sandier-Serfaty's cell of area 2 pi to area 1 (which shifts W by a lattice-independent constant), r0 (E_sq - E_tri) -> W_sq - W_tri = (1/2)[q(e^{i pi/3}) - q(i)], q(tau) = log(sqrt(Im tau) |eta(tau)|^2).",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "KT-L-0003"
+   ],
+   "evidence": "sha256:2df3ed8fcaa470b80dbf9661b9022554a620412a57ec660cc892a6e20d0f33ff",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-C-0006",
+   "statement": "Jellium shift: for the neutralised Keldysh energy, E_K - E_C = + pi rho r0 + O(r0^2) for every Bravais lattice, because lim_{k->0} [2 pi/k - 2 pi/(k(1+r0 k))] = 2 pi r0; the lattice-independent term dominates E_K/E_C, and the structure-sensitive quantity is E_sq - E_tri.",
+   "tier": "C",
+   "kind": "argument",
+   "depends_on": [
+    "KT-C-0004"
+   ],
+   "evidence": "sha256:98cad7d81c09bacacdb1d41ba887f217af530215ea0b2ee72d31082b7ef4b8a8",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-X-0001",
+   "statement": "Fidelity of the Lean erfcx definition: mpmath (dps 30) integral form vs e^{x^2} erfc x at x in {0, 0.01, 0.3, 1, 2.5, 7, 50}: max rel. err 1.34e-31; perturbed integrand exp(-(y^2 + x y)) differs by >= 5.6e-3 at x > 0 (negative control).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "KT-A-0005"
+   ],
+   "evidence": "sha256:644358335731c7b76f51c21c724c8e2d646f4b5165ac7ccfde4ca3209c1b5634",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-X-0002",
+   "statement": "V(r) cross-check on 28 points (r0 in {0.05, 0.3, 1, 4}, r in [0.1, 12]): Rust DLMF 11.5.2 quadrature vs mpmath (pi/(2 r0))[H0 - Y0]: max rel. err 1.8e-16; Rust Gaussian mixture (Lean definition) vs mpmath: 2.4e-15; kernel identity Vhat_sr + Vhat_lr = 2 pi/(k(1+r0 k)): 1.8e-15. Prior-round mpmath check of the mixture vs closed form (50 radii): 2.1e-21.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "KT-C-0001",
+    "KT-L-0004"
+   ],
+   "evidence": "sha256:2c03afd358fc9d8c8c593030500abff8693c2a6f5b14da1d49018c10e6440e67",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-X-0003",
+   "statement": "Coulomb-limit positive controls: r0 = 0 lattice Ewald vs jellium.rs N = 288 box differs by 6.9e-14; vs ten-digit Bonsall-Maradudin/Alves et al. Madelung values: 5.0e-10 (tri), 8.3e-10 (sq); at r0 = 1e-9, E_K - E_C = 3.14e-09; (E_K - E_C)/(pi r0) = 0.99999998 at r0 = 1e-8.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "KT-C-0006"
+   ],
+   "evidence": "sha256:51efea0f9e810577665d5f7f6cc6adda668d3a01efa7ca6ef63946a7ba04bc89",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-X-0004",
+   "statement": "Ewald-parameter independence (alpha in {0.8, 1.6, 3.2}, r0 in {0 ... 1e4}, tri and sq): max rel. spread 3.5e-15. Negative controls caught: wrong-sign reciprocal half gives spread >= 5.3e-02; dropped background gives >= 0.216. Density scaling E(4, 0.7) = 2 E(1, 1.4) to 9.7e-16.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:1fa67f814c05e65b4817e616cac6a04032b704bcc4b7ae039d259da3fef9a969",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-X-0005",
+   "statement": "Large-r0 control: r0 (E_sq - E_tri) approaches the Dedekind-eta value 0.0052922513 with relative deviation -3.4e-03 at r0 = 1e2 down to -3.4e-07 at r0 = 1e6 (no fitted constant).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "KT-C-0005",
+    "KT-L-0003"
+   ],
+   "evidence": "sha256:c3a0fbb3932e38946143a6c239343095185d61bf6b4e83e1d160a998f20b8e0d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-X-0006",
+   "statement": "E_sq - E_tri > 0 at all 51 sampled r0 sqrt(n) in [1e-3, 1e2] (minimum 5.27e-05 at r0 = 100; Coulomb value 1.0383e-2). Two lattices only; not a proof and not a comparison with general configurations.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "KT-C-0006"
+   ],
+   "evidence": "sha256:37859692374f78191e36aee7dadd9d4af5c00f55ce86f7ae41ae208a290c2ed2",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-X-0007",
+   "statement": "Material illustration in vacuum (eps1 = eps2 = 1), r0 = 2 pi chi2D: at n = 1e12 cm^-2, E_tri = -172.97 (MoS2), -159.17 (MoSe2), -178.52 (WS2), -167.74 (WSe2) meV per electron vs -282.31 meV for Coulomb; E_sq - E_tri = 0.961, 0.857, 1.002, 0.922 meV. Static classical Madelung energies only; density grid illustrative.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "KT-L-0002",
+    "KT-C-0004",
+    "KT-C-0006"
+   ],
+   "evidence": "sha256:3e4132b1972ebc5e9f7c8e2410aafaf88e1a437c7cfd80eb3121557d3c9f0322",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-X-0008",
+   "statement": "HuggingFace illustration: colabfit/JARVIS_C2DB (revision 432aeba9e505b59d0b3605c6346ac3816c754c02) has energy and band gap only, no alpha_2D (22 Hub queries found no dataset with alpha_2D). Its 2H rows c2db_atoms_3238/3150/3223/3118 have PBE lattice constants 3.184/3.320/3.186/3.319 Angstrom vs experimental 3.16/3.30/3.16/3.29 (Berkelbach Table II). Used for phase identification and lattice-constant cross-check only.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "KT-L-0002",
+    "KT-L-0005"
+   ],
+   "evidence": "sha256:85a0574547ee611d2d787220efe358675229db69d200750cb3da35985a98721d",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-X-0009",
+   "statement": "Paper-stage reruns by a separate agent instance (not independent human verification): cargo test of qf-yukawa-crystal at the rusty commit gives 28 passed, 0 failed, 1 ignored; keldysh_jellium scan output is bit-identical to the Stage-2 scan.json; the Lean recompile of KeldyshCM.lean (no olean written) exits rc 0 in 848.1 s with #print axioms output identical to the producer's compile_keldysh.json. Yukawa.lean sha256 unchanged (a16397de...) and older than H2's compile_yukawa.json.",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [],
+   "evidence": "sha256:8d492aa2ce8995a5035a89583de2b8d817f11e923a7112acd2961fee590661db",
+   "audit": null
+  },
+  {
+   "schema_version": 1,
+   "id": "KT-X-0010",
+   "statement": "Route (e) of Theorem 2 checked with mpmath (dps 30): Struve form vs the DLMF 11.5.2 Laplace form, the subordinated weight form and the Gaussian mixture at four (r0, r) points, the inner erfcx integral at four lambda and the subordination formula at two points: max rel. err 2.1e-17. Negative controls caught: inner integrand e^(-lam u) in place of e^(-lam u^2) misses the closed form by >= 0.37; subordination with a^(-1/2) in place of a^(-3/2) misses e^(-rho sqrt t) by >= 0.82 (relative).",
+   "tier": "X",
+   "kind": "numeric",
+   "depends_on": [
+    "KT-C-0001",
+    "KT-L-0004"
+   ],
+   "evidence": "sha256:defa92b980c9ef0091ddf79064cc153c86ef3b1c73b98a281e73ba1762209239",
+   "audit": null
+  }
+ ]
+}

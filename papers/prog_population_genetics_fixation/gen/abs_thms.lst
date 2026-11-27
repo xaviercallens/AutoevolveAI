@@ -1,0 +1,31 @@
+theorem kPow_harmonic (P : Fin (N + 1) (*@$\to$@*) Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)) (g : Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*))
+    (hg : (*@$\forall$@*) k, (*@$\sum$@*) j, P k j * g j = g k) : (*@$\forall$@*) n i, (*@$\sum$@*) j, kPow P n i j * g j = g i := -- proof elided
+
+theorem second_moment {P : Fin (N + 1) (*@$\to$@*) Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)} (hP : AbsorbingChain P)
+    {h : Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)} (hall : (*@$\forall$@*) k, (*@$\sum$@*) j, P k j * h j = h k) (k : Fin (N + 1)) :
+    (*@$\sum$@*) j, P k j * h j ^ 2 = h k ^ 2 + (*@$\sum$@*) j, P k j * (h j - h k) ^ 2 := -- proof elided
+
+theorem interiorMass_tendsto_zero {P : Fin (N + 1) (*@$\to$@*) Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)} (hP : AbsorbingChain P)
+    {h : Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)} (hh : InteriorHarmonic P h)
+    (hvar : (*@$\forall$@*) k : Fin (N + 1), 0 < (k : (*@$\mathbb{N}$@*)) (*@$\to$@*) (k : (*@$\mathbb{N}$@*)) < N (*@$\to$@*) 0 < (*@$\sum$@*) j, P k j * (h j - h k) ^ 2)
+    (i : Fin (N + 1)) : Tendsto (fun n => interiorMass P n i) atTop ((*@$\mathcal{N}$@*) 0) := -- proof elided
+
+theorem absorption_tendsto {P : Fin (N + 1) (*@$\to$@*) Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)} (hP : AbsorbingChain P)
+    (hN : 0 < N) {g : Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)} (hg : InteriorHarmonic P g) (g0 : g 0 = 0)
+    (g1 : g (Fin.last N) = 1)
+    (hI : (*@$\forall$@*) i, Tendsto (fun n => interiorMass P n i) atTop ((*@$\mathcal{N}$@*) 0)) (i : Fin (N + 1)) :
+    Tendsto (fun n => kPow P n i (Fin.last N)) atTop ((*@$\mathcal{N}$@*) (g i)) := -- proof elided
+
+theorem fixation_limit {P : Fin (N + 1) (*@$\to$@*) Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)} (hP : AbsorbingChain P) (hN : 0 < N)
+    {h : Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)} (hh : InteriorHarmonic P h) (h0 : h 0 = 0) (h1 : h (Fin.last N) = 1)
+    (hvar : (*@$\forall$@*) k : Fin (N + 1), 0 < (k : (*@$\mathbb{N}$@*)) (*@$\to$@*) (k : (*@$\mathbb{N}$@*)) < N (*@$\to$@*) 0 < (*@$\sum$@*) j, P k j * (h j - h k) ^ 2)
+    (i : Fin (N + 1)) :
+    Tendsto (fun n => kPow P n i (Fin.last N)) atTop ((*@$\mathcal{N}$@*) (h i)) (*@$\wedge$@*)
+    Tendsto (fun n => kPow P n i 0) atTop ((*@$\mathcal{N}$@*) (1 - h i)) := -- proof elided
+
+theorem harmonic_unique_of_var {P : Fin (N + 1) (*@$\to$@*) Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)} (hP : AbsorbingChain P)
+    (hN : 0 < N) {h : Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)} (hh : InteriorHarmonic P h) (h0 : h 0 = 0)
+    (h1 : h (Fin.last N) = 1)
+    (hvar : (*@$\forall$@*) k : Fin (N + 1), 0 < (k : (*@$\mathbb{N}$@*)) (*@$\to$@*) (k : (*@$\mathbb{N}$@*)) < N (*@$\to$@*) 0 < (*@$\sum$@*) j, P k j * (h j - h k) ^ 2)
+    {g : Fin (N + 1) (*@$\to$@*) (*@$\mathbb{R}$@*)} (hg : InteriorHarmonic P g) (g0 : g 0 = 0) (g1 : g (Fin.last N) = 1) :
+    (*@$\forall$@*) i, g i = h i := -- proof elided

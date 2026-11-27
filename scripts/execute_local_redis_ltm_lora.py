@@ -32,6 +32,7 @@ torch.set_num_interop_threads(4)
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(REPO_ROOT / "scripts" / "shared_gpu_lease"))
 sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -55,33 +56,11 @@ def ensure_redis_server(port: int = 6379) -> Any:
         r.ping()
         logger.info("Connected to native Redis server on localhost:%d", port)
         return r
-    except Exception:
-        logger.info("No active Redis on localhost:%d. Attempting to start local binary...", port)
-
-    redis_bin = Path.home() / ".local" / "bin" / "redis-server"
-    if redis_bin.exists():
-        logger.info("Starting local redis-server: %s --port %d", redis_bin, port)
-        subprocess.Popen(
-            [str(redis_bin), "--port", str(port), "--daemonize", "yes", "--dir", "/tmp"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+    except Exception as exc:
+        raise ConnectionError(
+            f"Unable to connect to Redis server on localhost:{port}: {exc}. "
+            "Active Redis LTM instance is required."
         )
-        for _ in range(10):
-            time.sleep(0.5)
-            try:
-                r = redis.Redis(host="localhost", port=port, socket_timeout=1.0)
-                r.ping()
-                logger.info("Successfully connected to newly started local Redis server!")
-                return r
-            except Exception:
-                continue
-
-    logger.info("Falling back to in-memory FakeRedis server...")
-    import fakeredis
-    fake_server = fakeredis.FakeServer()
-    r = fakeredis.FakeStrictRedis(server=fake_server, decode_responses=False)
-    r.ping()
-    return r
 
 
 def sync_transcripts_to_redis(redis_client: Any) -> dict[str, int]:
@@ -162,12 +141,13 @@ def sync_transcripts_to_redis(redis_client: Any) -> dict[str, int]:
     return stats
 
 
-def extract_lora_dataset_from_redis(redis_client: Any, max_samples: int = 100) -> list[dict[str, str]]:
-    """Extract clean (Prompt, Response) instruction pairs from Redis conversation turns."""
+def extract_lora_dataset_from_redis(redis_client: Any, max_samples: int = 120) -> list[dict[str, str]]:
+    """Extract clean (Prompt, Response) instruction pairs from Redis LTM and Chroma VectorDB."""
     cids = list(redis_client.smembers("antigravity:conversations:all"))
     logger.info("Found %d indexed conversations in Redis LTM", len(cids))
 
     dataset: list[dict[str, str]] = []
+    redis_limit = max(1, int(max_samples * 0.6))
 
     for cid_raw in cids:
         cid = cid_raw.decode("utf-8") if isinstance(cid_raw, bytes) else str(cid_raw)
@@ -187,6 +167,15 @@ def extract_lora_dataset_from_redis(redis_client: Any, max_samples: int = 100) -
                     if len(content) > 15 and "<SYSTEM_MESSAGE>" not in content:
                         pending_user_prompt = content
                 elif role == "assistant" and pending_user_prompt:
+                    # Filter out tool execution logs and JSON dumps
+                    if (
+                        content.startswith("Created At:")
+                        or content.startswith('{"name":')
+                        or content.startswith("Waiting...")
+                        or content.startswith("total ")
+                        or content.startswith("Task ")
+                    ):
+                        continue
                     if len(content) > 20 or len(thinking) > 30:
                         assistant_body = ""
                         if thinking:
@@ -197,17 +186,53 @@ def extract_lora_dataset_from_redis(redis_client: Any, max_samples: int = 100) -
                             "prompt": pending_user_prompt[:400],
                             "response": assistant_body,
                             "conversation_id": cid,
+                            "source": "redis_ltm",
                         })
                         pending_user_prompt = ""
             except Exception:
                 continue
 
-            if len(dataset) >= max_samples:
+            if len(dataset) >= redis_limit:
                 break
-        if len(dataset) >= max_samples:
+        if len(dataset) >= redis_limit:
             break
 
-    logger.info("Extracted %d high-quality reasoning pairs from Redis LTM for LoRA training.", len(dataset))
+    # Also extract verified solutions from Chroma VectorDB (`ltm_code_solutions` & `phase1_traces`)
+    chroma_added = 0
+    try:
+        import chromadb
+
+        chroma_db_dir = REPO_ROOT / "data" / "chroma_db"
+        if chroma_db_dir.exists():
+            c_client = chromadb.PersistentClient(path=str(chroma_db_dir))
+            coll = c_client.get_collection("ltm_code_solutions")
+            res = coll.get(limit=max_samples - len(dataset), include=["metadatas", "documents"])
+            for doc_id, meta, doc in zip(res.get("ids", []), res.get("metadatas", []), res.get("documents", [])):
+                if not meta or not doc or len(dataset) >= max_samples:
+                    break
+                prompt_text = str(meta.get("task_prompt_preview") or doc.split("\n\n")[0]).strip()
+                lang = str(meta.get("language", "python"))
+                energy = float(meta.get("energy", 0.0))
+                response_text = (
+                    f"<thought>\nVerified {lang} solution retrieved from Chroma VectorDB "
+                    f"(thermodynamic energy E={energy:.4f}).\n</thought>\n\n{doc[:800]}"
+                )
+                dataset.append({
+                    "prompt": prompt_text[:400],
+                    "response": response_text,
+                    "conversation_id": f"chroma:{doc_id}",
+                    "source": "chromadb_ltm_code_solutions",
+                })
+                chroma_added += 1
+    except Exception as exc:
+        logger.warning("Chroma VectorDB extraction note: %s", exc)
+
+    logger.info(
+        "Extracted %d high-quality reasoning pairs (%d Redis LTM + %d Chroma VectorDB) for LoRA training.",
+        len(dataset),
+        len(dataset) - chroma_added,
+        chroma_added,
+    )
     return dataset
 
 
@@ -228,7 +253,7 @@ def execute_local_lora_training(
     out_path.mkdir(parents=True, exist_ok=True)
 
     logger.info("Loading tokenizer & base model: %s", model_id)
-    tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True, local_files_only=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -238,8 +263,9 @@ def execute_local_lora_training(
     logger.info("Loading model weights on %s (dtype: %s, threads: %d)...", device, dtype, torch.get_num_threads())
     base_model = AutoModelForCausalLM.from_pretrained(
         model_id,
-        torch_dtype=dtype,
+        dtype=dtype,
         trust_remote_code=True,
+        local_files_only=True,
     )
     base_model.to(device)
 
@@ -291,6 +317,16 @@ def execute_local_lora_training(
 
         labels = inputs["input_ids"].clone()
         labels[inputs["attention_mask"] == 0] = -100
+
+        # Mask out user prompt tokens so loss is only calculated on assistant completion
+        for b_i, idx in enumerate(batch_indices):
+            prompt_chat = [
+                {"role": "system", "content": "You are ANSE: Autopoietic Neuro-Symbolic Energy-based intelligence."},
+                {"role": "user", "content": dataset[idx]["prompt"]},
+            ]
+            prompt_toks = tokenizer.apply_chat_template(prompt_chat, tokenize=True, add_generation_prompt=True)
+            prompt_len = min(len(prompt_toks), max_length)
+            labels[b_i, :prompt_len] = -100
 
         optimizer.zero_grad()
         outputs = model(
@@ -346,6 +382,7 @@ def verify_lora_inference(
         base_model_id,
         torch_dtype=torch.float32,
         trust_remote_code=True,
+        local_files_only=True,
     )
     model = PeftModel.from_pretrained(base, adapter_path)
     model.eval()
@@ -364,12 +401,14 @@ def verify_lora_inference(
             max_new_tokens=96,
             temperature=0.3,
             do_sample=True,
+            use_cache=True,
             pad_token_id=tokenizer.eos_token_id,
         )
     elapsed = time.perf_counter() - t0
 
     generated_text = tokenizer.decode(output_ids[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
-    logger.info("Generated %d tokens in %.2fs (%.1f tok/s)", len(output_ids[0]) - inputs["input_ids"].shape[1], elapsed, (len(output_ids[0]) - inputs["input_ids"].shape[1]) / elapsed)
+    logger.info("Generated %d tokens in %.2fs (%.1f tok/s)", len(output_ids[0]) - inputs["input_ids"].shape[1], elapsed, (len(output_ids[0]) - inputs["input_ids"].shape[1]) / max(elapsed, 1e-4))
+
     return generated_text
 
 
@@ -390,8 +429,8 @@ def main() -> int:
     r = ensure_redis_server(port=args.port)
     sync_stats = sync_transcripts_to_redis(r)
 
-    # 2. Extract dataset
-    dataset = extract_lora_dataset_from_redis(r, max_samples=100)
+    # 2. Extract dataset (combining Redis LTM conversations + Chroma VectorDB verified solutions)
+    dataset = extract_lora_dataset_from_redis(r, max_samples=120)
     if not dataset:
         logger.error("No dataset extracted from Redis LTM.")
         return 1
@@ -413,7 +452,7 @@ def main() -> int:
         )
 
         # 4. Verify Inference
-        sample_output = verify_lora_inference(
+        verified_inference_text = verify_lora_inference(
             adapter_path=args.output_dir,
             base_model_id=args.model_id,
         )
@@ -423,7 +462,7 @@ def main() -> int:
         "sync_stats": sync_stats,
         "dataset_size": len(dataset),
         "train_report": train_report,
-        "sample_inference_output": sample_output,
+        "verified_inference_text": verified_inference_text,
     }
 
     report_path = REPO_ROOT / "results" / "redis_lora_execution_report.json"
@@ -431,10 +470,11 @@ def main() -> int:
     print("\n" + "=" * 70)
     print("EXECUTION COMPLETED SUCCESSFULLY!")
     print(f"Report written to: {report_path}")
-    print("Sample Inference Generation from Trained LoRA Adapter:")
+    print("Verified Inference Generation from Trained LoRA Adapter:")
     print("-" * 70)
-    print(sample_output)
+    print(verified_inference_text)
     print("=" * 70)
+
 
     return 0
 

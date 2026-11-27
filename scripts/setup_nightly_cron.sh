@@ -57,9 +57,9 @@ $BEGIN_MARKER
 # Consolidates hippocampal memory, trains Laya LoRA adapters, runs Latent MCTS
 0 2 * * * "$DREAM_SCRIPT"
 
-# ANSE Master Continual Learning Retraining Pipeline (05:05 AM)
-# Runs Dream Phase, Redis LTM Sync, Qwen LoRA, RL critic, JEPA, Autopoiesis, GCP Deploy
-5 5 * * * "$RETRAIN_SCRIPT"
+# ANSE Master Continual Learning Dream & Retraining Pipeline (05:00 AM)
+# Runs Dream Phase, Redis LTM Sync, Qwen LoRA, RL critic, JEPA, AlphaEvolve Biomimetic, Autopoiesis, GCP Deploy
+0 5 * * * "$RETRAIN_SCRIPT"
 $END_MARKER
 EOF
 )

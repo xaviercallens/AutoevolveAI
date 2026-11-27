@@ -1,0 +1,56 @@
+{
+  "challenge": "EuclideanFiveColor",
+  "config": "ComparatorChallenges/EuclideanFiveColor.json",
+  "solution_module": "OAI.Geometry.PlaneColoring.Five",
+  "solution_closure_files": 70,
+  "theorem_names": [
+    "OAI.EuclideanFiveColor.no_proper_five_coloring"
+  ],
+  "holes": [
+    {
+      "hole": "OAI.EuclideanFiveColor.ProperColoring",
+      "challenge": [
+        {
+          "file": "ComparatorChallenges/EuclideanFiveColor.lean",
+          "line": 7,
+          "end_line": 8,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "solution": [
+        {
+          "file": "OAI/Geometry/PlaneColoring/Coloring.lean",
+          "line": 7,
+          "end_line": 8,
+          "kind": "def",
+          "modifiers": [],
+          "attributes": []
+        }
+      ],
+      "challenge_has_sorry": false,
+      "challenge_sorry_only": false,
+      "challenge_text": "def ProperColoring (colorCount : ℕ) (coloring : ℂ → Fin colorCount) : Prop := ∀ point otherPoint : ℂ, ‖point - otherPoint‖ = 1 → coloring point ≠ coloring otherPoint",
+      "challenge_context": [],
+      "solution_has_sorry": false,
+      "solution_text": "def ProperColoring (k : ℕ) (c : ℂ → Fin k) : Prop := ∀ x y : ℂ, ‖x - y‖ = 1 → c x ≠ c y",
+      "solution_context": [],
+      "context_differs": false,
+      "renaming": {
+        "colorCount": "k",
+        "coloring": "c",
+        "point": "x",
+        "otherPoint": "y"
+      },
+      "textually_identical": false,
+      "kind": {
+        "challenge": "def",
+        "solution": "def"
+      },
+      "verdict": "MATCHES",
+      "reason": "token-identical up to bound-variable renaming",
+      "shadow_candidates": []
+    }
+  ]
+}

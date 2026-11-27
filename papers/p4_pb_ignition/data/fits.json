@@ -1,0 +1,65 @@
+{
+  "_note": "Every coefficient below is copied verbatim (as a decimal string) from the source named in its block. Nothing is guessed. Strings are converted to Arb balls containing the exact decimal.",
+  "bosch_hale_DT_reactivity": {
+    "source": "Wurzel-Hsu public code github.com/swurzel/lawson-criterion-paper commit 4ae563bfc409db5fb4afb2f9930a3a4fafba4f0d, lib/reactions.ini section [T(d,n)4He] (sha256 be8bf1b8...e88d), formula lib/reactivity.py _reactivity_bosch_hale (Bosch-Hale 1992 eqs 12-14 per the code comment). Primary paper Bosch & Hale, Nucl. Fusion 32, 611 (1992) NOT obtained (closed access).",
+    "units": "C1 in cm^3/s, T in keV, BG in keV^1/2, mcsquared in keV",
+    "BG": "34.3827", "mcsquared": "1124656",
+    "C1": "1.17302e-9", "C2": "1.51361e-2", "C3": "7.51886e-2", "C4": "4.60643e-3",
+    "C5": "1.35000e-2", "C6": "-1.06750e-4", "C7": "1.36600e-5",
+    "T_min_keV": "0.2", "T_max_keV": "100",
+    "E_total_keV": "17.6e3", "f_charged_code": "0.2", "f_charged_text": "3.5/17.6"
+  },
+  "bosch_hale_DT_cross_section": {
+    "source": "same code file, CM cross-section coefficients of section [T(d,n)4He] and [T(d,n)4He_HIGH_ENERGY]; used ONLY in the Tier X float cross-check of the 'integrated' code path",
+    "low": {"A1": "6.927e4", "A2": "7.454e8", "A3": "2.050e6", "A4": "5.2002e4", "A5": "0", "B1": "6.38e1", "B2": "-9.95e-1", "B3": "6.981e-5", "B4": "1.728e-4", "E_min": "0.5", "E_max": "550"},
+    "high": {"A1": "-1.4714e6", "A2": "0", "A3": "0", "A4": "0", "A5": "0", "B1": "-8.4127e-3", "B2": "4.7983e-6", "B3": "-1.0748e-9", "B4": "8.5184e-14", "E_min": "550", "E_max": "4700"},
+    "m1_keV": "1875612.94257", "m2_keV": "2808921.13298"
+  },
+  "nevins_swain_pB11_reactivity_highT": {
+    "source": "Wurzel-Hsu public code (same commit), lib/reactions.ini section [11B(p,4He)4He4He] P1..P7, EG, Mrc2 and lib/reactivity.py _reactivity_nevins_swain_pb11 (high-T branch + resonant term 5.41e-21 T^-3/2 exp(-148/T) m^3/s). Primary paper Nevins & Swain, Nucl. Fusion 40, 865 (2000) NOT obtained (IOP bot challenge / paywall); abstract (via WebFetch of the IOP landing page) states validity 50 keV <= T <= 500 keV for the high-temperature form.",
+    "output_units": "m^3/s as implemented in the code (code adds the m^3/s resonant term without conversion; values ~3.4e-22 m^3/s at 300 keV)",
+    "P1": "4.4467e-14", "P2": "-5.9357e-2", "P3": "2.0165e-1", "P4": "1.0404e-3",
+    "P5": "2.7621e-3", "P6": "-9.1653e-6", "P7": "9.8305e-7",
+    "EG_MeV": "22.589", "Mrc2_keV": "859526",
+    "res_coeff_m3s": "5.41e-21", "res_E_keV": "148",
+    "T_min_keV": "50", "T_max_keV": "500",
+    "E_total_keV_code": "8.7e3"
+  },
+  "nevins_swain_pB11_S_factor_lowE": {
+    "source": "Wurzel-Hsu code [11B(p,4He)4He4He] C0,C1,C2,AL,EL,delEL; independently reprinted (identical values) in Wang, Li, Wu, Cui, arXiv 2601.00241 Table I (E <= 0.4 MeV), which states it follows Nevins-Swain. Used only for the Tier X NS fit-vs-integral consistency check.",
+    "C0": "197", "C1": "0.240", "C2": "2.31e-4", "AL": "1.82e4", "EL": "148", "delEL": "2.35",
+    "D0": "330", "D1": "66.1", "D2": "-20.3", "D5": "-1.58",
+    "A0": "2.57e6", "A1": "5.67e5", "A2": "1.34e5", "A3": "5.68e5",
+    "E0": "581.3", "E1": "1083", "E2": "2405", "E3": "3344",
+    "delE0": "85.7", "delE1": "234", "delE2": "138", "delE3": "309", "B": "4.38",
+    "boundaries_keV": ["400", "642"],
+    "units": "S in MeV b, energies in keV, A_k in MeV b keV^2 (as used in lib/cross_section.py)"
+  },
+  "wang2026_pB11_S_factor": {
+    "source": "Wang, Li, Wu, Cui, 'Revisiting p-11B Fusion: Updated Cross-sections, Reactivity, and Energy Balance', arXiv 2601.00241v1 (1 Jan 2026), eqs (1)-(6) and Table I, read in full via alphaXiv on 2026-10-27. Licence of the arXiv preprint not stated in the text read; coefficients are cited, not redistributed as a dataset.",
+    "E1_MeV": "0.4", "E2_MeV": "0.7", "E3_MeV": "10.0", "EG_MeV": "22.589",
+    "seg1": {"C0": "197", "C1": "0.240", "C2": "2.31e-4", "AL": "1.82e4", "EL_keV": "148", "dEL_keV": "2.35", "units": "C0,C1,C2,AL in MeV b; (E/1keV) dimensionless"},
+    "seg2": {"D0": "330.2", "D1": "102.436", "D2": "-58.481", "D5": "0.0933", "units": "MeV b; x=(E-E1)/100 keV"},
+    "seg3": {"B": "0.209689",
+             "A": ["2.0235e6", "4.0102e6", "1.3220e6", "4.9451e6", "4.3430e5"],
+             "E_MeV": ["0.6222", "1.3884", "2.4924", "3.5286", "4.7036"],
+             "dE_MeV": ["0.0996", "0.4499", "0.2386", "0.3985", "0.1525"],
+             "units": "B, A_k in MeV b; Breit-Wigner A_k/(((E-E_k)/1keV)^2+(dE_k/1keV)^2)"},
+    "reactivity_definition": "eq (6): <sigma v> = (8/pi)^1/2 mu^-1/2 (kT)^-3/2 int_0^inf sigma E exp(-E/kT) dE; model support 0-10 MeV (sigma := 0 above 10 MeV, our reading of the stated fit range)"
+  },
+  "bremsstrahlung": {
+    "wurzel_hsu_text_CB_W_m3_keVmhalf": "5.34e-37",
+    "wurzel_hsu_code_CB": "1.69e-32 cm^3 J eV^-1/2 s^-1 (NRL formulary) => 1.69e-38*sqrt(1000) W m^3 keV^-1/2; keV conversion uses 6.24e18 eV/J",
+    "ochs_fisch_eq14_prefactor": "7.56e-11 eV cm^3/s times x^1/2, x=Te/E_rest, E_rest=5.11e5 eV",
+    "relativistic_form": "gamma = Zeff(1+1.78 t^1.34) + 2.12 t (1 + 1.1 t + t^2 - 1.25 t^2.5), t = Te/m_e c^2 (Wurzel-Hsu eq D2; Ochs-Fisch eq 14; Putvinski eq 7 as seen in WebFetch OCR)",
+    "me_c2_keV_interval": ["510.99895", "511"],
+    "Zeff_definition": "sum n_i Z_i^2 / n_e (W-H eq 41 / D3) = sum n_i Z_i^2 / sum n_i Z_i (Ochs-Fisch) under quasineutrality"
+  },
+  "energy_conversion": {
+    "keV_to_J_text": "1.6e-16 (W-H: 1 MeV = 1.6e-13 J)",
+    "keV_to_J_code_fusion": "1000/6.242e18",
+    "keV_to_J_code_brems": "1000/6.24e18",
+    "keV_to_J_codata": "1.602176634e-16"
+  },
+  "pB11_energy": {"E_MeV_interval": ["8.68", "8.7"], "note": "8.7 MeV: W-H eq (5), W-H code, Wang 2026; 8.68 MeV: Putvinski (WebFetch OCR of TAE flipbook page 2, not a primary read)"}
+}

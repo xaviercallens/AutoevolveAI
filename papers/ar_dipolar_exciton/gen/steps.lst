@@ -1,0 +1,16 @@
+lemma iteratedDeriv_rpow (a : (*@$\mathbb{R}$@*)) (r : (*@$\mathbb{N}$@*)) (t : (*@$\mathbb{R}$@*)) :
+    iteratedDeriv r (fun x : (*@$\mathbb{R}$@*) => x ^ a) t = (descPochhammer (*@$\mathbb{R}$@*) r).eval a * t ^ (a - r) := -- proof elided
+
+lemma iteratedDeriv_shift (a c : (*@$\mathbb{R}$@*)) (r : (*@$\mathbb{N}$@*)) (t : (*@$\mathbb{R}$@*)) :
+    iteratedDeriv r (fun x : (*@$\mathbb{R}$@*) => (x + c) ^ a) t = (descPochhammer (*@$\mathbb{R}$@*) r).eval a * (t + c) ^ (a - r) := -- proof elided
+
+lemma iteratedDeriv_g (d : (*@$\mathbb{R}$@*)) (r : (*@$\mathbb{N}$@*)) {t : (*@$\mathbb{R}$@*)} (ht : 0 < t) :
+    iteratedDeriv r (g d) t =
+      2 * ((descPochhammer (*@$\mathbb{R}$@*) r).eval (-(1 / 2 : (*@$\mathbb{R}$@*))) *
+        (t ^ (-(1 / 2 : (*@$\mathbb{R}$@*)) - r) - (t + d ^ 2) ^ (-(1 / 2 : (*@$\mathbb{R}$@*)) - r))) := -- proof elided
+
+lemma sign_desc (r : (*@$\mathbb{N}$@*)) :
+    (-1 : (*@$\mathbb{R}$@*)) ^ r * (descPochhammer (*@$\mathbb{R}$@*) r).eval (-(1 / 2 : (*@$\mathbb{R}$@*))) = (ascPochhammer (*@$\mathbb{R}$@*) r).eval (1 / 2 : (*@$\mathbb{R}$@*)) := -- proof elided
+
+lemma diff_nonneg (c e : (*@$\mathbb{R}$@*)) (hc : 0 (*@$\le$@*) c) (he : e (*@$\le$@*) 0) {t : (*@$\mathbb{R}$@*)} (ht : 0 < t) :
+    0 (*@$\le$@*) t ^ e - (t + c) ^ e := -- proof elided

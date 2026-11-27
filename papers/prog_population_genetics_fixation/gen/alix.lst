@@ -1,0 +1,11 @@
+def meanFit (w(*@$_1$@*) w(*@$_2$@*) p : (*@$\mathbb{Q}$@*)) : (*@$\mathbb{Q}$@*) := p * w(*@$_1$@*) + (1 - p) * w(*@$_2$@*)
+
+def selectP (w(*@$_1$@*) w(*@$_2$@*) p : (*@$\mathbb{Q}$@*)) : (*@$\mathbb{Q}$@*) := p * w(*@$_1$@*) / meanFit w(*@$_1$@*) w(*@$_2$@*) p
+
+theorem aurelia_mean_fitness_increment (w(*@$_1$@*) w(*@$_2$@*) p : (*@$\mathbb{Q}$@*)) (hm : meanFit w(*@$_1$@*) w(*@$_2$@*) p (*@$\ne$@*) 0) :
+    meanFit w(*@$_1$@*) w(*@$_2$@*) (selectP w(*@$_1$@*) w(*@$_2$@*) p) - meanFit w(*@$_1$@*) w(*@$_2$@*) p
+      = p * (1 - p) * (w(*@$_1$@*) - w(*@$_2$@*)) ^ 2 / meanFit w(*@$_1$@*) w(*@$_2$@*) p := -- proof elided
+
+theorem kal_increment_is_variance (w(*@$_1$@*) w(*@$_2$@*) p : (*@$\mathbb{Q}$@*)) :
+    p * (1 - p) * (w(*@$_1$@*) - w(*@$_2$@*)) ^ 2
+      = p * (w(*@$_1$@*) - meanFit w(*@$_1$@*) w(*@$_2$@*) p) ^ 2 + (1 - p) * (w(*@$_2$@*) - meanFit w(*@$_1$@*) w(*@$_2$@*) p) ^ 2 := -- proof elided

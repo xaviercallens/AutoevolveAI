@@ -21,6 +21,7 @@ from typing import Any
 # Add project root to PYTHONPATH
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(project_root / "scripts" / "shared_gpu_lease"))
 sys.path.insert(0, "/mnt/disks/disk-socrateai-local-1/gpu_lease")
 
 from gpu_lease import gpu_lease  # noqa: E402
@@ -95,6 +96,10 @@ def run_dream_phase() -> dict[str, Any]:
         sleep_batch_size = max(4, min(8, total_traces // 3))
 
         sleep_res = hippocampus.execute_sleep_cycle(batch_size=sleep_batch_size)
+        if sleep_res.get("status") == "REM_SLEEP_CONSOLIDATION_COMPLETE" and float(sleep_res.get("retention_score", 2.0)) <= 1.05:
+            import torch
+            torch.save(predictor.state_dict(), DEFAULT_JEPA_CHECKPOINT)
+            logger.info("💾 Persisted consolidated JEPA predictor checkpoint to %s", DEFAULT_JEPA_CHECKPOINT)
         logger.info(
             f"💤 Hippocampal REM Sleep status: {sleep_res.get('status')} | "
             f"Consolidated traces: {sleep_res.get('consolidated_traces')} | "
@@ -110,17 +115,17 @@ def run_dream_phase() -> dict[str, Any]:
                     if line.strip():
                         try:
                             traces.append(json.loads(line))
-                        except Exception:
-                            pass
+                        except json.JSONDecodeError as exc:
+                            logger.warning("Skipping malformed trace line: %s", exc)
 
         # 2. Laya System 1 LoRA + RCFL/RLCD Fine-Tuning
         logger.info("⚡ Initializing Laya System 1 LoRA Trainer...")
         trainer = LayaDreamLoRATrainer(device=profile.device)
 
-        max_traces = 16 if profile.device == "cpu" else 500
+        max_traces = 18 if profile.device == "cpu" else 500
         batch_size = 2 if profile.device == "cpu" else 8
-        epochs = 1 if profile.device == "cpu" else 3
-        seq_len = 64 if profile.device == "cpu" else 256
+        epochs = 2 if profile.device == "cpu" else 3
+        seq_len = 128 if profile.device == "cpu" else 256
 
         logger.info(
             f"🔄 Running LoRA + RLCD fine-tuning (traces={len(traces)}, max_traces={max_traces}, "

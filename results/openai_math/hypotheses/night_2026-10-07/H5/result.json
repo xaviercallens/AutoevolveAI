@@ -1,0 +1,44 @@
+{
+ "lane": "H5",
+ "hypothesis": "H5': best constant C* of the dyadic triangular Hilbert estimate equals 5/2",
+ "verdict": "REFUTED",
+ "verdict_source": "summary.json (h5_multiscale.py summary, preregistered decision rule)",
+ "refuting_witness": {
+  "chunk": "W_N8_witness_x_witness",
+  "input": "kron(w4, w4), w4 = sign(results/openai_math/hypotheses/H5/best_inputs_N4.npz); saved as witness_N8_w4xw4.npz",
+  "certified_ratio_cubed": "12167/512",
+  "ratio": "23/8",
+  "h5_exact_recheck": "23/8",
+  "independent_direct_implementation": "23/8",
+  "h5_dyadic_float": 2.875,
+  "source": "chunks/W_N8_witness_x_witness.json, verify_tensor.json"
+ },
+ "controls": {
+  "every_chunk_controls_pass": true,
+  "power_control_P01_pass": true,
+  "power_control_detail": "Haar-free form N=4: ascent reaches 5.0 (= N+1), certified exceedance"
+ },
+ "preregistered_secondary": {
+  "exhaustive_N1_pm1_max": "1",
+  "exhaustive_N2_pm1_max": "2",
+  "exhaustive_N2_complete": true,
+  "best_float_ratio_haar": 2.8750000000000018,
+  "ascent_best_ratio_all_A_chunks": "18 chunks N=5..8, per-chunk best between 2.49991857 and 2.49999999; ascent never exceeded 5/2",
+  "walsh_lift_max": "2.5 at N=5..8 (enum N=5,6; samples N=7,8); witness x witness 23/8",
+  "multiscale_sign_samples_best": "N=5 3/4, N=6 1/2"
+ },
+ "blocked": {
+  "A_N5/N6/N7_witness_{coarse,fine}_walsh_top, A_N8_witness_coarse_walsh_top": "BLOCKED: code bug, _init reads json['top'] but the W_* chunk stores result.top (KeyError); fixing would change the hashed script (deviations.md item 6)"
+ },
+ "exploratory_not_preregistered": {
+  "product_rule": "R(f (x) g) = H(g) + |T(g)| R(f) for +-1 f,g (proved in NOTE.md; exact on 6 random pairs and all tensor pairs)",
+  "lower_bound": "C* >= 3: tensor powers of the N=2 maximiser g2 (R=2, H=3/2, T=1/2) give R = 3 - 2^(1-r) at N = 2r; exact 5/2 (N=4), 11/4 (N=6, N=7), 23/8 (N=8), 95/32 (N=12, w4^(x3))",
+  "upper_bounds_real_inputs": "C_1 = 1 (paper proof); Hoelder-marginal bound exact: C_2 <= 2, C_3 <= 5/2; hence C_2 = 2 and 2 <= C_3 <= 5/2",
+  "sources": ["verify_tensor.json", "tensor_search.json", "holder_bound.json", "explain_N4.json", "NOTE.md"]
+ },
+ "structure_note": "N=4 ascent witness has the same (H,T)=(9/4,1/4) as g2 (x) g2 but is not a Kronecker product (each F_v has Kronecker rank 12)",
+ "conjecture": "H5'': C* = 3 (weak evidence: tensor family limit; no upper bound beyond N=3)",
+ "cpu_hours_chunks": 1.01,
+ "tests": "pytest tests/openai_math/test_night_h5.py tests/openai_math/test_night_h5_tensor.py: 20 passed in 1.33s (after tightening two assertions; first run 20 passed in 2.58s)",
+ "date_utc": "2026-10-08"
+}

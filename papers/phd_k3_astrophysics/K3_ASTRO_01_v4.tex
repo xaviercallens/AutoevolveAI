@@ -15,7 +15,7 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-We prove that the Yoshida-4 symplectic integrator reduces the Hamiltonian drift by 16.4\% vs RK4 by preserving the symplectic structure of the Kahler phase space.
+On one harmonic attractor, one conserved Hamiltonian and one step size, Yoshida-4 and RK4 are both fourth order (observed order 4.00). Their drifts differ in kind rather than by a fixed percentage: RK4's drift grows linearly in time (5.6e-09, 5.6e-08, 5.6e-07 at T=10, 100, 1000 for $dt=0.02$) while Yoshida-4's stays at 6.6e-08, so RK4 is smaller at short horizons (by up to 47$\times$ at $T=10$, $dt=0.005$) and Yoshida-4 is smaller beyond a crossover between $T=100$ and $T=1000$. An earlier 16.4\% figure compared the drift of two different functions and is withdrawn.
 All numerical results are computed by an external Python subprocess (zero LLM hallucination).
 The governing mathematics is formally verified using Lean~4 with Mathlib4 (theorem \texttt{k3_01_entropy_monotonic}).
 Domain decomposition: physical energy $E$ is the optimization metric.
@@ -27,7 +27,7 @@ Domain decomposition: physical energy $E$ is the optimization metric.
 \begin{tcolorbox}[colback=blue!6, colframe=blue!40, title=\textbf{Epistemic Disclaimer (Mandatory)}]
 \begin{itemize}
 \item \textbf{Formally Verified (Lean~4, zero \texttt{sorry}):} Theorem \texttt{k3_01_entropy_monotonic} — BPS entropy S = \(\pi\sqrt{I_4}\) is strictly monotone in the quartic invariant \(I_4\).
-\item \textbf{Numerically Computed (external Python subprocess):} \textbf{Baseline}: $E = 0.0001$ \quad\textbf{Improved}: $E = 0.0001$ \quad$\Delta E/E_0 = -16.4\%$
+\item \textbf{Numerically Computed (external Python subprocess):} \textbf{Comparison withdrawn} (arms scored on different functions); see the matched study in \texttt{results/k3\_matched\_integrator\_comparison.json}
 \item \textbf{Physical Hypothesis / Conjecture:} The ANSE energy-based selection correctly identifies the superior algorithm. This is an empirical claim verified by simulation, not a formal theorem.
 \end{itemize}
 \end{tcolorbox}
@@ -68,7 +68,7 @@ Formal invariants are verified via Lean~4 (\texttt{lake build ANSE.K3\_Scientifi
 %% =========================================================
 \section{Novel Algorithmic Contribution}
 %% =========================================================
-We prove that the Yoshida-4 symplectic integrator reduces the Hamiltonian drift by 16.4\% vs RK4 by preserving the symplectic structure of the Kahler phase space.
+On one harmonic attractor, one conserved Hamiltonian and one step size, Yoshida-4 and RK4 are both fourth order (observed order 4.00). Their drifts differ in kind rather than by a fixed percentage: RK4's drift grows linearly in time (5.6e-09, 5.6e-08, 5.6e-07 at T=10, 100, 1000 for $dt=0.02$) while Yoshida-4's stays at 6.6e-08, so RK4 is smaller at short horizons (by up to 47$\times$ at $T=10$, $dt=0.005$) and Yoshida-4 is smaller beyond a crossover between $T=100$ and $T=1000$. An earlier 16.4\% figure compared the drift of two different functions and is withdrawn.
 
 %% =========================================================
 \section{Lean 4 Verification Dossier}
@@ -96,7 +96,7 @@ theorem k3_01_entropy_monotonic (a b : \u211d) (h1 : 0 < a) (h2 : a < b) :
 \toprule
 \textbf{Method} & \textbf{Baseline} & \textbf{Improved (ANSE)} \\
 \midrule
-$E = 0.0001$  & $E = 0.0001$  & $\Delta E/E_0 = -16.4\%$\\
+withdrawn  & withdrawn  & see matched study\\
 \bottomrule
 \end{tabular}
 \end{table}

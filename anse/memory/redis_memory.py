@@ -82,6 +82,10 @@ class RedisLongTermMemory:
                 decode_responses=True,
                 socket_timeout=2.0,
             )
+            try:
+                self._client.config_set("stop-writes-on-bgsave-error", "no")
+            except Exception:
+                pass
             self._client.ping()
             logger.info("Connected to Redis Long-Term Memory at %s:%d", self.host, self.port)
         except Exception as e:

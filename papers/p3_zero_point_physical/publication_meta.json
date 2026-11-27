@@ -1,0 +1,47 @@
+{
+ "title": "The triangular lattice is not a local minimum of the harmonic zero-point energy for planar Yukawa potentials kappa = 1, 2: classically optimal (H2, conditional), not zero-point optimal, a certified partial result via a moving comparison matrix with exact curvature; Riesz s = 3 and dipolar potentials not certified",
+ "version": "v1",
+ "description": "<p>For the planar Yukawa pair potentials V(r) = e<sup>&minus;&kappa;r</sup>/r with &kappa; = 1 and &kappa; = 2 and unit-covolume planar Bravais lattices, let E(t) be the harmonic zero-point energy per particle (&hbar; = m = 1) along the symmetric shear L<sub>t</sub> = P<sub>t</sub> L<sub>&rho;</sub>, P<sub>t</sub> = [[1, t], [t, 1 + t<sup>2</sup>]], starting at the triangular lattice. We show that E(t) &lt; E(0) for every 0 &lt; |t| &le; 10<sup>&minus;5</sup>, so the triangular lattice is not a local minimum of the zero-point energy over lattice shapes, although it is the classical (static) energy minimiser for these potentials (conditional: cited from an earlier preprint, H2, which is itself conditional on an upstream Lean theorem and is not re-checked here).</p><p>The linear-response majorant of the earlier Gaussian result cannot give this: its curvature is certified positive here ([2.393, 2.464] and [2.688, 2.723]). The proof uses a moving comparison matrix X<sub>t</sub> = D<sub>0</sub><sup>1/2</sup> + tY with XY + YX = D<sub>0</sub>&prime;; the majorant U<sub>2</sub> satisfies U<sub>2</sub> &ge; E, U<sub>2</sub>(0) = E(0) and U<sub>2</sub>&Prime;(0) = E&Prime;(0) exactly, and a window bound gives U<sub>2</sub>&Prime; &le; M<sub>hi</sub> &lt; 0 with M<sub>hi</sub> = &minus;2.03704 (&kappa; = 1) and &minus;1.86854 (&kappa; = 2).</p><p><b>Per potential.</b> Yukawa &kappa; = 1: certified. Yukawa &kappa; = 2: certified. Riesz r<sup>&minus;3</sup> and dipolar d = 0.1, 0.5: <b>not certified</b>; the obstacle is the slowly decaying r<sup>&minus;3</sup> lattice-sum tail (a bound on the annulus [R<sub>c</sub>, 2R<sub>c</sub>) of about 6800/R<sub>c</sub>, against a stability margin near 3.8; an Ewald-type remedy is scoped, not attempted), and nothing is claimed for them. Riesz r<sup>&minus;4</sup>: not attempted; Tier X evidence only (finite-difference E&Prime;(0) = +2.754 along the shear, cutoff 40/100) that the triangular lattice is a local minimum for s = 4, not certified in either direction; the earlier refutation was global, via a far competitor, so this is a deviation from the preregistered item. Two of the six preregistered potentials are certified.</p><p><b>Tier split.</b> <b>Tier A</b> (Lean 4.34.1, Mathlib; axioms within propext, Classical.choice, Quot.sound): a window lemma (f&Prime; &le; K on [&minus;t, t] implies f(t) + f(&minus;t) &minus; 2f(0) &le; t<sup>2</sup>K), the logic (a majorant window bound with a negative constant excludes a local minimum), the rational certificates and the assembled theorems, whose analytic inputs are explicit hypotheses; planted-sorry, planted-axiom and a false Gaussian a = 2 certificate are caught or rejected. <b>Tier C-ball</b>: the Brillouin-zone integrals, lattice sums and tails are rigorous Arb ball-arithmetic enclosures (86,581 cells for the two Yukawa runs, 0 failed) computed with python-flint; they are <i>not</i> kernel-checked. <b>Tier C-human</b>: the glue (majorant inequality after integration, exact curvature, differentiation under the integral, mirror symmetry, identification with the earlier E<sub>zp</sub>). The headline is therefore Tier C overall; only its logic and arithmetic are Tier A. Controls: Gaussian a = 1 certified (positive), Gaussian a = 2 rejected by the certifier, by LeanFlow and by the Lean kernel (negative). A side result Lap E<sub>zp</sub>(&rho;) in [&minus;2.0824, &minus;1.0185] (&kappa; = 1) and [&minus;1.6088, &minus;0.9343] (&kappa; = 2) needs extra hypotheses (E<sub>zp</sub> of class C<sup>2</sup>, &rho; critical with isotropic Hessian) and is Tier C-human.</p><p><b>Scope.</b> Local window 10<sup>&minus;5</sup>, one shear path, harmonic approximation, Bravais lattices, two dimensions.</p><p><b>Status.</b> Produced by AI agents (Claude) under the author's direction; the author is responsible for the content. This version has been independently audited by a separate AI agent (verdict ACCEPT_WITH_CORRECTIONS, no blocking item; report AUDIT.md) and applies its corrections (REVISION.md). No human has audited the work or the Lean statements, and there is no statement lock. Kernel replay (leanchecker, Lean 4.34.1) of Programmes.ZeroPointPhys.Taylor, Programmes.ZeroPointPhys.Basic and Programmes.ZeroPointCert.Basic: rc 0 (data/leanchecker_replay.json); replay does not check axioms, the #print axioms audit does. The Elenchus ledger gate exits with code 1 (0 blocking findings, 8 flags LEDGER_UNAUDITED_TIER_A, one per Tier A row, because they ask for a person); it was re-run after the AI-audit field was filled. The result concerns the zero-point energy alone: the classical energy has positive curvature at the triangular lattice, so nothing follows for the total energy at small hbar and no structural transition is claimed. The repository guards antigravity_guard.py and test_rigor_guard.py, and pytest tests/, fail for reasons that predate this work and are reported in the paper. Code docstring errata are stated in the paper.</p>",
+ "keywords": [
+  "zero-point energy",
+  "lattice phonons",
+  "triangular lattice",
+  "Yukawa potential",
+  "certified numerics",
+  "ball arithmetic",
+  "Arb",
+  "moving comparison matrix",
+  "Lean 4",
+  "formal verification",
+  "epistemic tiers",
+  "AI-assisted research"
+ ],
+ "notes": "Preprint v1 (2026-10-26). Proposal 3, item N2, continuing the B2 paper (doi:10.5281/zenodo.23655392). Lean: AutoevolveAI formal_cert/Programmes/ZeroPointPhys/{Taylor,Basic,Controls,RejectGauss2}.lean (sha256 157fb551..., 13b8a1c6..., 6b8b5b33..., 716226af...; full hashes in the paper), Lean 4.34.1 with the pinned toolchain; branch worktree-openai-math-discovery, HEAD at writing d852079433670163545bc8efa9e8533463544152; nothing pushed. Ball arithmetic: python-flint 0.6.0, n2_certify.py sha256 6fa38af9e1043473cc60a2ca7c9bb27b8030c1d64135ec8c320d9f086f9fa0f6 (all reported runs). LeanFlow lean.certify used unmodified for the endpoint arithmetic. Ledger gate (re-run after the ai_audit field was filled): exit code 1, 0 blocking, 8 flags (papers/p3_zero_point_physical/ledger/gate_output.txt). Limitations stated in the paper: two of six potentials certified (Riesz 3 and dipolar blocked by the r^-3 tail, Riesz 4 Tier X evidence of a local minimum, uncertified); mostly Tier C; local window; independent AI audit ACCEPT_WITH_CORRECTIONS (AUDIT.md), no human audit, no statement lock; leanchecker replay rc 0 for Taylor, Basic and ZeroPointCert.Basic; repository guards fail (pre-existing); python-flint installed outside the venv; two code-docstring errata.",
+ "related_identifiers": [
+  {
+   "identifier": "10.5281/zenodo.23655392",
+   "relation": "continues",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23646105",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "10.5281/zenodo.23653833",
+   "relation": "references",
+   "scheme": "doi"
+  },
+  {
+   "identifier": "arXiv:1611.02831",
+   "relation": "references",
+   "scheme": "arxiv"
+  },
+  {
+   "identifier": "arXiv:1910.09336",
+   "relation": "references",
+   "scheme": "arxiv"
+  }
+ ]
+}

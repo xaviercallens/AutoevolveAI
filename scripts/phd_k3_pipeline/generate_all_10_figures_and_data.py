@@ -102,7 +102,10 @@ def compute_and_plot_p01() -> dict[str, Any]:
         t_v.append((i + 1) * dt)
 
     # 4th-order Yoshida symplectic integrator
-    res_yoshida = yoshida4_integrate(grad_v, [15.0], [0.0], dt=dt, steps=steps)
+    res_yoshida = yoshida4_integrate(
+        grad_v, [15.0], [0.0], dt=dt, steps=steps,
+        potential=lambda q: 0.5 * (q[0] - q_att) ** 2,   # the V that grad_v is the gradient of
+    )
     drift_yoshida = [abs(h - res_yoshida.energy_h[0]) / res_yoshida.energy_h[0] 
                      if hasattr(res_yoshida, "energy_h") else res_yoshida.energy_drift 
                      for h in range(len(res_yoshida.trajectory_q))]

@@ -1,0 +1,67 @@
+{
+ "item": "B2 (proposal 2, 2026-10-26)",
+ "locked_by": "independent adversarial auditor (Claude Opus agent, producer != verifier)",
+ "date": "2026-10-26",
+ "lean_toolchain": "pinned Lean 4.34.1 + Mathlib via scripts/certified_numerics/lean_pinned.py",
+ "files_sha256": {
+  "formal_cert/Programmes/ZeroPointCert/Basic.lean": "0241b6afa500e46a2fb79cdedc7770eb20cdb0dc336283d683d55096f4d54c00",
+  "formal_cert/Programmes/ZeroPointCert/Controls.lean": "2e95e21b70af3b4a1719b761636c992cfec8d52a61a7c63962f02ff5562d4ff3",
+  "formal_cert/Programmes/ZeroPointCert/RejectTampered.lean": "02f6930b22e47d7cdc26c89a13102bb1c7af33351e80ec09b7aa4b7ef22e4288",
+  "formal_cert/Programmes/ZeroPointCert/RejectA2.lean": "ab0f5f297b0a24bafa84175d66e225fbe626a941bbcff31c28dd7010c28dada9"
+ },
+ "imported_dependency_sha256": {
+  "formal_cert/Programmes/ZeroPoint/Basic.lean": "7d59f1817767ae64cc37d017348e1eb5f5b9ed83ed068086fae839baff0d64f0"
+ },
+ "audit": "papers/p2_certified_zero_point/AUDIT.md (verdict ACCEPT_WITH_CORRECTIONS)",
+ "main_theorem": {
+  "name": "ProgZeroPointCert.triangular_not_localMin_of_certificate",
+  "statement_source_text": "theorem triangular_not_localMin_of_certificate (E U : ℝ → ℝ) (Upp0 trW esum : ℝ)\n    (hEU : ∀ t, |t| ≤ t0 → E t ≤ U t) (h0 : U 0 = E 0)\n    (hwin : ∀ t, 0 < t → t ≤ t0 → U t + U (-t) - 2 * U 0 ≤ t ^ 2 * (Upp0 + trW * esum))\n    (hU : Upp0 ≤ Upp0_hi) (hW0 : 0 ≤ trW) (hW : trW ≤ trW_hi) (he0 : 0 ≤ esum) (he : esum ≤ esum_hi)\n    (hsym : ∀ t, E (-t) = E t) :\n    ¬ IsLocalMin E 0 ∧ ∀ t, 0 < t → t ≤ t0 → E t < E 0",
+  "statement_source_sha256": "d6947d201166fcf578e8e2ba130bd1d87057a906df6bc23ecca226af9ba6bd24",
+  "elaborated_check_text": "∀ (E U : ℝ → ℝ) (Upp0 trW esum : ℝ),\n  (∀ (t : ℝ), |t| ≤ t0 → E t ≤ U t) →\n    U 0 = E 0 →\n      (∀ (t : ℝ), 0 < t → t ≤ t0 → U t + U (-t) - 2 * U 0 ≤ t ^ 2 * (Upp0 + trW * esum)) →\n        Upp0 ≤ Upp0_hi →\n          0 ≤ trW →\n            trW ≤ trW_hi →\n              0 ≤ esum →\n                esum ≤ esum_hi → (∀ (t : ℝ), E (-t) = E t) → ¬IsLocalMin E 0 ∧ ∀ (t : ℝ), 0 < t → t ≤ t0 → E t < E 0",
+  "elaborated_check_sha256": "d9c6e7033b480cd53c325e7c28e2220ae94d99e456ea297e15c5f807854010c5",
+  "axioms_auditor_run": [
+   "propext",
+   "Classical.choice",
+   "Quot.sound"
+  ]
+ },
+ "key_lemmas": {
+  "two_trace_le_of_inverse": {
+   "statement_source_sha256": "039aea36b1626feab088f04f59dc43eaf80d2d738ed4caa3903ab270bd004ad9",
+   "statement_source_text": "theorem two_trace_le_of_inverse (x11 x12 x22 p11 p12 p22 s11 s12 s22 : ℝ)\n    (hp : 0 < p11) (hdet : 0 ≤ p11 * p22 - p12 ^ 2)\n    (h11 : x11 * p11 + x12 * p12 = 1) (h12 : x11 * p12 + x12 * p22 = 0)\n    (h21 : x12 * p11 + x22 * p12 = 0) (h22 : x12 * p12 + x22 * p22 = 1) :\n    2 * (s11 + s22) ≤ (x11 + x22) +\n      (p11 * (s11 ^ 2 + s12 ^ 2) + 2 * p12 * (s12 * (s11 + s22)) + p22 * (s12 ^ 2 + s22 ^ 2))"
+  },
+  "two_trace_eq_of_eq": {
+   "statement_source_sha256": "41be741e3bf63b53cadfcadc5fcdb36137d68cdbeeea9456827917a2d65b9be2",
+   "statement_source_text": "theorem two_trace_eq_of_eq (x11 x12 x22 p11 p12 p22 : ℝ)\n    (h11 : x11 * p11 + x12 * p12 = 1) (h12 : x11 * p12 + x12 * p22 = 0)\n    (h21 : x12 * p11 + x22 * p12 = 0) (h22 : x12 * p12 + x22 * p22 = 1) :\n    2 * (x11 + x22) = (x11 + x22) +\n      (p11 * (x11 ^ 2 + x12 ^ 2) + 2 * p12 * (x12 * (x11 + x22)) + p22 * (x12 ^ 2 + x22 ^ 2))"
+  },
+  "not_isLocalMin_of_majorant": {
+   "statement_source_sha256": "36451b4147a38e0ab1d308712ba62a8469e0b2fc4b3cbe243a0fb5fa857e18dc",
+   "statement_source_text": "theorem not_isLocalMin_of_majorant {E U : ℝ → ℝ} {t0 B : ℝ} (ht0 : 0 < t0) (hB : B < 0)\n    (hEU : ∀ t, |t| ≤ t0 → E t ≤ U t) (h0 : U 0 = E 0)\n    (hU : ∀ t, 0 < t → t ≤ t0 → U t + U (-t) - 2 * U 0 ≤ t ^ 2 * B) : ¬ IsLocalMin E 0"
+  },
+  "lt_of_majorant_window_symm": {
+   "statement_source_sha256": "52ae176bbb2b417c8c966811a23697002a7f743cb1d668cbedb5994152e9fdaa",
+   "statement_source_text": "theorem lt_of_majorant_window_symm {E U : ℝ → ℝ} {t0 B : ℝ} (hB : B < 0)\n    (hEU : ∀ t, |t| ≤ t0 → E t ≤ U t) (h0 : U 0 = E 0)\n    (hU : ∀ t, 0 < t → t ≤ t0 → U t + U (-t) - 2 * U 0 ≤ t ^ 2 * B)\n    (hsym : ∀ t, E (-t) = E t) {t : ℝ} (ht : 0 < t) (htt : t ≤ t0) : E t < E 0"
+  },
+  "cert_B_neg": {
+   "statement_source_sha256": "6d844cf61aece82911c4a6234962db73d3580b3289026d757f04b6b09ef90441",
+   "statement_source_text": "theorem cert_B_neg : Upp0_hi + trW_hi * esum_hi < 0"
+  },
+  "cert_window": {
+   "statement_source_sha256": "ae00365ce18de68d22952602a0fb736b9bd8893e0418f2e638072023a99b2a3e",
+   "statement_source_text": "theorem cert_window (Upp0 trW esum : ℝ) (hU : Upp0 ≤ Upp0_hi) (hW0 : 0 ≤ trW) (hW : trW ≤ trW_hi)\n    (he0 : 0 ≤ esum) (he : esum ≤ esum_hi) : Upp0 + trW * esum ≤ Upp0_hi + trW_hi * esum_hi"
+  },
+  "cert_stability": {
+   "statement_source_sha256": "f6b6b5dc7a1d3e620028c00f6615e2c63df453867265e3cd964d8344c52cd560",
+   "statement_source_text": "theorem cert_stability : 0 < lmin_lo - dB_hi"
+  }
+ },
+ "certificate_literals": {
+  "t0": "noncomputable def t0 : ℝ := 1 / 100000",
+  "Upp0_hi": "noncomputable def Upp0_hi : ℝ := -475041875131 / 250000000000",
+  "trW_hi": "noncomputable def trW_hi : ℝ := 366706720019 / 200000000000",
+  "esum_hi": "noncomputable def esum_hi : ℝ := 31964165579 / 1000000000000",
+  "lmin_lo": "noncomputable def lmin_lo : ℝ := 183777872659 / 200000000000",
+  "dB_hi": "noncomputable def dB_hi : ℝ := 7528036227 / 1000000000000"
+ },
+ "hash_convention": "sha256 of the UTF-8 source text from the keyword through the last character before ':=' with trailing whitespace stripped; elaborated text = '#check @name' output after 'name : '"
+}

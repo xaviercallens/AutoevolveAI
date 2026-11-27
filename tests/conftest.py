@@ -117,3 +117,66 @@ def isolated_attestation_path(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None
     receipt = tmp_path / ".antigravity_attestation"
     monkeypatch.setenv("ANSE_ATTESTATION_PATH", str(receipt))
     monkeypatch.setattr(execution_attestation, "ATTESTATION_FILE", receipt)
+
+
+# ── T-02: Optional-extras collection guard ───────────────────────────────────
+# These modules require packages from the 'web', 'gateway', or 'training' extras.
+# If the extras are not installed, skip collection without erroring — so that
+# `uv run pytest tests/` succeeds and runs the core suite.
+# To run everything: `uv sync --all-extras && uv run pytest tests/`
+
+import importlib.util as _ilu
+
+_OPTIONAL_EXTRAS_TESTS = [
+    "tests/stronggravity/test_gateway_routing.py",
+    "tests/test_architecture_e2e.py",
+    "tests/test_audit_gateway.py",
+    "tests/test_benchmark_complete_coverage.py",
+    "tests/test_claude_opus_gateway.py",
+    "tests/test_dpo_pipeline.py",
+    "tests/test_harvest_pipeline.py",
+    "tests/test_local_32gb_cpu_antigravity_validation.py",
+    "tests/test_local_lora_gateway.py",
+    "tests/test_mcp_gateway_integration.py",
+    "tests/test_multi_tier_gateway.py",
+    "tests/test_serverless_coldstart_endpoint.py",
+    "tests/test_ten_hardening_validations.py",
+    "tests/test_ui_features.py",
+    "tests/test_web_server.py",
+    "tests/web/test_anse_v2_v3_v4_ui.py",
+    "tests/web/test_anse_v5_ui.py",
+    "tests/web/test_control_center.py",
+    "tests/web/test_factory_api.py",
+    "tests/web/test_factory_mobile.py",
+]
+
+_GATEWAY_EXTRAS_AVAILABLE = all(
+    _ilu.find_spec(pkg) is not None for pkg in ("fastapi", "httpx", "fakeredis")
+)
+
+_REPO_ROOT = Path(__file__).parent
+
+collect_ignore: list[str] = []
+if not _GATEWAY_EXTRAS_AVAILABLE:
+    collect_ignore = [str(_REPO_ROOT / p) for p in _OPTIONAL_EXTRAS_TESTS]
+
+
+
+# torch default dtype isolation. scripts/openai_math/lt_matrix/{instrument,second_variation}.py call
+# torch.set_default_dtype(torch.float64) at import time, and pytest imports them at collection, so without this
+# hook the whole run silently switches to double precision and float32 model tests fail with
+# "mat1 and mat2 must have the same dtype" (seen on the 2026-11-13 merge test run). The tests under
+# tests/openai_math/ need float64; every other test gets the library default float32. A hook, not a fixture:
+# it runs before any fixture is set up, including class- and module-scoped ones.
+try:
+    import torch as _torch
+except ImportError:  # torch is an optional extra
+    _torch = None
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_setup(item: pytest.Item) -> None:
+    if _torch is None:
+        return
+    needs_float64 = "openai_math" in str(item.fspath)
+    _torch.set_default_dtype(_torch.float64 if needs_float64 else _torch.float32)

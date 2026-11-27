@@ -142,11 +142,52 @@ L'énergie physique E est-elle réaliste ? Faut-il du fuzzing sur les singularit
                 system_prompt="You are a Computational Physics Red Team auditor. Focus on numerical illusions.",
                 temperature=0.2
             )
-        except Exception:
-            response = "<think>Grid derivatives commute. We need polar singularity fuzzing.</think> Needs fuzzing if applicable."
+        except Exception as e:
+            raise SimulationRefusedError(
+                f"physics_sandbox_thinker extractor failed (refusing canned fallback): {e}"
+            ) from e
             
         thoughts = state.get("thoughts", [])
         return {"thoughts": thoughts + [response]}
+
+    def verify_with_lean_kernel(
+        self,
+        lean_file: str | Any,
+        formal_dir: Any = None,
+        lean_cmd: list[str] | None = None,
+    ) -> Dict[str, Any]:
+        """Ground-truth formal verification via ``LeanKernelVerifier.verify_file`` (TODO 7).
+
+        Derives the verdict directly from Lean 4 kernel elaboration and axiom footprint
+        analysis instead of prose heuristics.
+        """
+        from anse.formal.lean_runner import LeanKernelVerifier
+
+        verifier = (
+            LeanKernelVerifier(formal_dir, lean_cmd=lean_cmd)
+            if (formal_dir is not None or lean_cmd is not None)
+            else LeanKernelVerifier()
+        )
+        results = verifier.verify_file(lean_file)
+        clean = bool(results) and all(
+            r.compiled_successfully and not r.has_sorry and not r.untrusted_axioms
+            for r in results
+        )
+        return {
+            "verdict": "ACCEPT: KERNEL VERIFIED" if clean else "REJECT: LEAN KERNEL OR FORGERY GATE FAILED",
+            "clean": clean,
+            "theorems": [
+                {
+                    "name": r.theorem_name,
+                    "compiled": r.compiled_successfully,
+                    "axioms": r.axioms,
+                    "has_sorry": r.has_sorry,
+                    "untrusted_axioms": r.untrusted_axioms,
+                    "energy_score": r.energy_score,
+                }
+                for r in results
+            ],
+        }
 
     def final_judgment(self, state: VerificationState) -> dict:
         """Étape 3 : Synthèse et verdict implacable.

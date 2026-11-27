@@ -1,0 +1,60 @@
+{
+  "lane": "LT_D",
+  "date": "2026-10-08",
+  "hypothesis": {
+    "id": "LT_D-H1",
+    "statement": "Upstream's proof of the scalar sharp Lieb-Thirring theorem (import closure of OAI.Analysis.LiebThirring.Main, 38 local files, 13717 lines, Mathlib only) compiles under LeanMaster's Lean v4.34.0-rc2 + its Mathlib build, and `#print axioms OAI.SharpLiebThirring.sharp_lieb_thirring` lists only propext, Classical.choice, Quot.sound. Producer (upstream/OpenAI) != verifier (this machine). This lane does not show the statement equals the intended physics statement; it is a kernel check of the proof term only.",
+    "kind": "pilot kernel check; version drift (upstream v4.34.1 + its pinned Mathlib vs local v4.34.0-rc2) is a possible outcome and a finding"
+  },
+  "verdict_categories": {
+    "part1": [
+      "PILOT_PASS (all 38 compiled AND axiom verdict OK)",
+      "PARTIAL (k of 38 compiled, first blocking error recorded)",
+      "CHALLENGE_NOT_ELABORATED (1a failed)",
+      "BLOCKED (infrastructure, e.g. lake env failure or timeouts)",
+      "AXIOM_FINDING (compiled but sorryAx or non-whitelisted axiom)"
+    ],
+    "part2": [
+      "per file: exit code and findings exactly as printed by elenchus_check.py (VACUITY/SMUGGLING/NO_FOOTPRINT/INHERITED_SORRY/BAD_AXIOM/COMPILE_ERROR) or SKIPPED"
+    ],
+    "statement_lock": "16-hex sha256 prefix per declaration from statement_lock.py --update, plus full sha256 of each of the 4 challenge files"
+  },
+  "decision_rule": {
+    "per_file_compiled": "lean exit code 0, no output line containing 'error', and the .olean was written; timeout (3000 s per file) = failed",
+    "closure_status": "dependents of a failed file are 'blocked', never counted compiled; no upstream file is patched; independent files continue",
+    "axiom_rule": "parse `#print axioms` output; OK iff the theorem's list is a subset of {propext, Classical.choice, Quot.sound}; sorryAx -> SORRY; others -> BAD_AXIOM; no line for the theorem -> NO_FOOTPRINT (not a pass)",
+    "tiering": "No claim is Tier A. Even PILOT_PASS only shows the kernel accepted the closure under the local toolchain; the exact challenge statement is Comparator-checked only after the user approves the D2 request (docs/OPENAI_MATH_D2_REQUEST.md). Challenge elaboration (1a) is a statement-parses check, not a proof check.",
+    "elenchus": "reported verbatim; a challenge file containing `sorry` is expected to produce findings and that is not a defect of the upstream solution"
+  },
+  "controls": {
+    "positive": [
+      "pos_clean.lean: `1+1=2 := rfl` compiles, axiom list empty -> OK",
+      "pos_classical.lean: Classical.em -> axioms within whitelist -> OK"
+    ],
+    "negative": [
+      "neg_sorry.lean -> SORRY",
+      "neg_axiom.lean (declared axiom) -> BAD_AXIOM",
+      "neg_syntax.lean -> classified as compile error"
+    ],
+    "rule": "controls.json must have _all_pass true (run in the lane before and after the closure) or every Part 1 number is reported as crash; the toposort assertion (every dependency before its dependent) must hold; Elenchus is run on a control pair only if time permits, else this is disclosed",
+    "elenchus_note": "Elenchus is run unmodified, in-process, with REPO_ROOT monkeypatched to the LeanMaster dir (its default REPO_ROOT is the Elenchus repo, whose toolchain/Mathlib differ) and LEAN_PATH from `lake env`; a deviation from its documented invocation, disclosed."
+  },
+  "budget": {
+    "cpu": "1 core, one Lean process at a time, no GPU",
+    "per_file_timeout_s": 3000,
+    "per_bash_call_s": "<=540 via --max-seconds 420 resumable slices; long jobs as background process with polling",
+    "lane_work_cap": "workflow lane deadline (default 06:30 UTC)"
+  },
+  "writes": "only the lane dir, docs/OPENAI_MATH_D2_REQUEST.md and scripts/openai_math/lt_d_lean.py; never LeanMaster/.lake or upstream/.lake; never `lake build`; statement_lock run with LEAN_PROJECT_ROOT = lane/lock_root on byte-identical copies",
+  "code": {
+    "scripts/openai_math/lt_d_lean.py": "471b286dbef0f6794e515bdaf06102eb71fdef3fbcd8d0ecbf05bc3407fbcb38",
+    "elenchus_check.py (external, unmodified)": "51f62b8d8186958f5d24a74ad7ef7e3121dcbf6c800771038ce641af117820ef",
+    "statement_lock.py (external)": "57309a78fb15d544f3e817a4087ccf1b662211467b383c50c78b47ac691b2da5"
+  },
+  "smoke_disclosure": "Smoke test in /tmp/ltd_smoke before this file: toposort of the Main closure gave 38 files with all dependencies ordered before dependents; classifier asserts passed; the 5 control files gave the expected verdicts (these ARE control results, to be re-run in the lane); statement_lock --update on copies of the 4 challenge files printed 'locked 101 declarations in 4 files' and --check printed OK. No closure compile, no challenge elaboration, no Elenchus run on the challenges and no axiom result for the theorem has been seen.",
+  "open_design_questions": [
+    "Elenchus on challenge files will probably report NO_FOOTPRINT or sorry-related findings because challenges end in `sorry` by design; no control separates 'challenge-by-design' from a defect",
+    "The axiom check uses an importer scratch file rather than a scratch copy of Main.lean (equivalent for the kernel, disclosed)",
+    "Part 3 doc needs WebFetch of the comparator and ComparatorChallenges READMEs in the execution stage; not done yet"
+  ]
+}

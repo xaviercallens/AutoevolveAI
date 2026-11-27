@@ -306,7 +306,7 @@ class YoshidaResult:
     trajectory_q: list[list[float]]
     trajectory_p: list[list[float]]
     energy_drift: float
-    """Max |H(t) - H(0)| / |H(0)|."""
+    """Max |H(t) - H(0)| / |H(0)|; ``nan`` if V was not supplied and grad_v is not harmonic."""
     symplectic_error: float
     """||J - (dF)^T J dF|| — symplectic area preservation error."""
     elapsed_ms: float
@@ -328,6 +328,7 @@ def yoshida4_integrate(
     p0: list[float],
     dt: float = 0.01,
     steps: int = 10000,
+    potential: Callable[[list[float]], float] | None = None,
 ) -> YoshidaResult:
     """
     4th-order Yoshida symplectic integrator for Hamiltonian systems H = T + V.
@@ -347,6 +348,13 @@ def yoshida4_integrate(
         p0:     Initial momentum vector.
         dt:     Time step.
         steps:  Number of integration steps.
+        potential: V(q) itself. The reported ``energy_drift`` is |H(t)-H(0)|/|H(0)| for
+            H = T + V, which needs V. If omitted, V is assumed to be the harmonic
+            0.5*||q||^2 -- but only after checking that ``grad_v`` really is ``q`` at the
+            start point and at two probes. If it is not, ``energy_drift`` and
+            ``symplectic_error`` are ``nan`` rather than a number computed for a
+            different system (previously the harmonic V was used unconditionally, so a
+            potential centred anywhere but the origin reported a drift for the wrong H).
 
     Returns:
         YoshidaResult with trajectory, energy drift and symplectic error.
@@ -361,10 +369,18 @@ def yoshida4_integrate(
     def ke(p: list[float]) -> float:
         return 0.5 * sum(pi ** 2 for pi in p)
 
-    def ve(q: list[float]) -> float:
-        # Reconstruct V from grad_v via forward difference (approximate)
-        # For harmonic: V = 0.5 * ||q||^2, used in testing
+    def _harmonic(q: list[float]) -> float:
         return 0.5 * sum(qi ** 2 for qi in q)
+
+    def _grad_is_harmonic() -> bool:
+        probes = [list(q0), [qi + 1.0 for qi in q0], [qi - 0.5 * (j + 1) for j, qi in enumerate(q0)]]
+        return all(
+            max((abs(g - x) for g, x in zip(grad_v(pt), pt)), default=0.0) <= 1e-9 * max(1.0, max(map(abs, pt), default=0.0))
+            for pt in probes
+        )
+
+    energy_is_known = potential is not None or _grad_is_harmonic()
+    ve = potential if potential is not None else _harmonic
 
     q = list(q0)
     p = list(p0)
@@ -399,6 +415,8 @@ def yoshida4_integrate(
 
     # Symplectic area error: estimated via phase space volume test (Liouville)
     # ||J - phi_t^T J phi_t|| for a small perturbation delta_q0
+    if not energy_is_known:
+        max_drift = float("nan")
     symplectic_error = max_drift ** 0.5  # Proxy: area error scales as sqrt(energy drift)
     energy_physical = 3.0 + max_drift * 1e-4
 

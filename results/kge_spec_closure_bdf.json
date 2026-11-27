@@ -1,0 +1,176 @@
+{
+  "what": "adversarial specification closure on linear multistep (BDF-type) stencils",
+  "controls": {
+    "oracle_accepts_bdf2": true,
+    "oracle_rejects_bdf7": true,
+    "schur_cohn_vs_numeric_bdf1_8": [
+      {
+        "k": 1,
+        "schur_cohn_exact": true,
+        "numeric_roots": true
+      },
+      {
+        "k": 2,
+        "schur_cohn_exact": true,
+        "numeric_roots": true
+      },
+      {
+        "k": 3,
+        "schur_cohn_exact": true,
+        "numeric_roots": true
+      },
+      {
+        "k": 4,
+        "schur_cohn_exact": true,
+        "numeric_roots": true
+      },
+      {
+        "k": 5,
+        "schur_cohn_exact": true,
+        "numeric_roots": true
+      },
+      {
+        "k": 6,
+        "schur_cohn_exact": true,
+        "numeric_roots": true
+      },
+      {
+        "k": 7,
+        "schur_cohn_exact": false,
+        "numeric_roots": false
+      },
+      {
+        "k": 8,
+        "schur_cohn_exact": false,
+        "numeric_roots": false
+      }
+    ]
+  },
+  "generator_candidates": 247,
+  "spec_v1_order_conditions": {
+    "accepted": 247,
+    "redteam_gaps": 94,
+    "gap_rate": 0.3806,
+    "gap_examples": [
+      {
+        "k": 3,
+        "support": [
+          0,
+          1
+        ],
+        "order": 2
+      },
+      {
+        "k": 4,
+        "support": [
+          0,
+          1
+        ],
+        "order": 2
+      },
+      {
+        "k": 4,
+        "support": [
+          1,
+          2
+        ],
+        "order": 2
+      },
+      {
+        "k": 4,
+        "support": [
+          0,
+          1,
+          2
+        ],
+        "order": 3
+      },
+      {
+        "k": 5,
+        "support": [
+          0,
+          1
+        ],
+        "order": 2
+      },
+      {
+        "k": 5,
+        "support": [
+          0,
+          2
+        ],
+        "order": 2
+      },
+      {
+        "k": 5,
+        "support": [
+          0,
+          3
+        ],
+        "order": 2
+      },
+      {
+        "k": 5,
+        "support": [
+          1,
+          2
+        ],
+        "order": 2
+      },
+      {
+        "k": 5,
+        "support": [
+          2,
+          3
+        ],
+        "order": 2
+      },
+      {
+        "k": 5,
+        "support": [
+          0,
+          1,
+          2
+        ],
+        "order": 3
+      },
+      {
+        "k": 5,
+        "support": [
+          0,
+          1,
+          3
+        ],
+        "order": 3
+      },
+      {
+        "k": 5,
+        "support": [
+          0,
+          2,
+          3
+        ],
+        "order": 3
+      }
+    ]
+  },
+  "spec_v2_order_plus_exact_root_condition": {
+    "accepted": 153,
+    "redteam_gaps": 0,
+    "gap_examples": []
+  },
+  "over_strictness_v2_rejected_but_oracle_bounded": [],
+  "highest_zero_stable_order_by_k_v2": {
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
+    "6": 6,
+    "7": 6
+  },
+  "notes": [
+    "Order conditions are Lean-provable (AlixBDF.lean); the root condition here is decided EXACTLY over Q by Schur-Cohn but is not yet kernel-proved.",
+    "The oracle runs the y' = 0 recurrence in floats from unit-vector starts for 2000 steps with a growth bound of 1e6; it catches root moduli above about 1.006 and would miss a root at 1.001 (finite-horizon oracle). A first 400-step version missed BDF7 (peak 1.7e4 < bound) and was caught by the control that BDF7 must be rejected."
+  ]
+}
